@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 /**
- * API required to describe features in module descriptor.
- *
- * @see io.helidon.common.features.api.Features
+ * Codegen for feature annotations on {@code module-info.java}.
  */
-package io.helidon.common.features.api;
+package io.helidon.common.features.codegen;

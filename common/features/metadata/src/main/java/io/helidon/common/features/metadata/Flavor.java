@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
+package io.helidon.common.features.metadata;
+
 /**
- * API required to describe features in module descriptor.
- *
- * @see io.helidon.common.features.api.Features
+ * Flavors of Helidon.
+ * This is a copy of the same enum in Feature API. To avoid backward incompatible change, this is duplicated.
+ * <p>
+ * This module is used both from codegen and from the implementation.
  */
-package io.helidon.common.features.api;
+public enum Flavor {
+    /**
+     * The "Standard Edition" flavor.
+     */
+    SE,
+    /**
+     * The "MicroProfile" flavor.
+     */
+    MP
+}
