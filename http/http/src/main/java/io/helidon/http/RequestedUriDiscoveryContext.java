@@ -142,7 +142,7 @@ public interface RequestedUriDiscoveryContext {
             requestedUriDiscoveryConfig.get("enabled")
                     .as(Boolean.class)
                     .ifPresent(this::enabled);
-            // TODO - discoveryTypes as a key was never documented but was hand-coded this way. Keep for compatibility
+            // discoveryTypes as a key was never documented but was hand-coded this way. Keep for compatibility
             // in case existing apps happen to use it. Remove as soon as practical.
             requestedUriDiscoveryConfig.get("discoveryTypes")
                     .asList(RequestedUriDiscoveryType.class)

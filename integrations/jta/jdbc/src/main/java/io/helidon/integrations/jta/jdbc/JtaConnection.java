@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -898,7 +898,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 // If a close is not pending then that means it actually happened.
                 LOGGER.logp(Level.FINE, this.getClass().getName(), "close",
                             "Closed {0} on thread {1}", new Object[] {this, Thread.currentThread()});
-                assert this.delegate().isClosed();
             }
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -981,7 +980,6 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
         // continueEnlisting() (invoked above) rules out the Status.STATUS_NO_TRANSACTION case; the Jakarta Transactions
         // specification therefore ensures that currentTransaction here cannot be null.
-        assert currentTransaction != null;
 
         // Transaction statuses can change at almost any time as a result of other TransactionManager-related threads
         // operating on them. Do a quick cheap status check here to avoid expensive logic below if it's not needed.

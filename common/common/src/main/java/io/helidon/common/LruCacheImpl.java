@@ -60,8 +60,6 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
             // make sure the value is the last in the map (I do ignore a race here, as it is not significant)
             // if some other thread moved another record to the front, we just move ours before it
 
-            // TODO this hurts - we just need to move the key to the last position
-            // maybe this should be replaced with a list and a map?
             value = backingMap.get(key);
             if (null == value) {
                 return Optional.empty();

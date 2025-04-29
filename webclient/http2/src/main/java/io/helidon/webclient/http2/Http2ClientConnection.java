@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,6 @@ public class Http2ClientConnection {
     }
 
     Http2ClientStream createStream(Http2StreamConfig config) {
-        //FIXME: priority
         Http2ClientStream stream = new Http2ClientStream(this,
                 serverSettings,
                 ctx,
@@ -405,7 +404,7 @@ public class Http2ClientConnection {
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
-            //FIXME: Max number of concurrent streams
+
             return true;
 
         case WINDOW_UPDATE:

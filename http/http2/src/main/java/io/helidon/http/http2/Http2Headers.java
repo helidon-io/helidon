@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,15 +81,7 @@ public class Http2Headers {
     private static final String HTTPS = "https";
     private static final String PATH_SLASH = "/";
     private static final String PATH_INDEX = "/index.html";
-    /*
-    TODO - in http/2 we may have cookies sent as separate headers or a single one
-    in http/1.1, this must be concatenated into the first representation
-     cookie: a=b; c=d; e=f
 
-     cookie: a=b
-     cookie: c=d
-     cookie: e=f
-     */
     private final Headers headers;
     private final PseudoHeaders pseudoHeaders;
 
