@@ -110,7 +110,7 @@ class RouteCrawler {
                     subCrawler = null;
                 }
             } else {
-                PathMatchers.MatchResult accepts = nextRoute.accepts(prologue);
+                PathMatchers.MatchResult accepts = nextRoute.accepts(prologue, request.headers());
                 if (accepts.accepted()) {
                     PathMatcher pathMatcher = nextRoute.pathMatcher().orElse(null);
                     next = new CrawlerItem(accepts.path(),
