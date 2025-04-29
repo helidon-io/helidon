@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+/*
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,21 +52,21 @@ final class RegistryProducer {
         return getApplicationRegistry();
     }
 
-    // TODO Remove if MP Metrics ever removes @RegistryType.
+    // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = MetricRegistry.Type.APPLICATION)
     public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
     }
 
-    // TODO Remove if MP Metrics ever removes @RegistryType.
+    // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = MetricRegistry.Type.BASE)
     public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
     }
 
-    // TODO Remove if MP Metrics ever removes @RegistryType.
+    // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
