@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,10 @@ public final class GeneratedBuilder {
     /**
      * Utility methods for equals and hash code of specific cases of field types.
      */
-    public static class EqualityUtil {
+    public static final class EqualityUtil {
+        private EqualityUtil() {
+        }
+
         /**
          * Equals that uses {@link java.util.Arrays#equals(char[], char[])} in case both optionals have a value.
          *
