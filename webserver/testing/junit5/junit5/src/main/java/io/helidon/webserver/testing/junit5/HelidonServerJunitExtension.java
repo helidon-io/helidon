@@ -119,8 +119,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             } else {
                 uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
             }
-            // TODO set the port in config
-            // super.setConfig("test.server.port", String.valueOf(server.port()));
         });
     }
 
