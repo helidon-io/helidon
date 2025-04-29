@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 class BaseServiceTest {
 
     private final int port;
-    protected ManagedChannel channel;
+    protected volatile ManagedChannel channel;
 
     BaseServiceTest(WebServer server) {
         this.port = server.port();
