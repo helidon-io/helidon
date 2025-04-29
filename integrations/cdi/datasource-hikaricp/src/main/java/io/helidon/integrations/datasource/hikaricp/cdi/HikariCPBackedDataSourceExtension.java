@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,9 +158,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
                     annotated.getAnnotations(DataSourceDefinition.class);
                 if (dataSourceDefinitions != null && !dataSourceDefinitions.isEmpty()) {
                     for (final DataSourceDefinition dsd : dataSourceDefinitions) {
-                        assert dsd != null;
                         final Set<String> knownDataSourceNames = this.names();
-                        assert knownDataSourceNames != null;
                         final String dataSourceName = dsd.name();
                         if (!knownDataSourceNames.contains(dataSourceName)) {
                             final Entry<? extends String, ? extends Properties> entry = toProperties(dsd);
@@ -218,15 +216,11 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         final Entry<String, Properties> returnValue = new SimpleImmutableEntry<>(dataSourceName, properties);
 
         final String[] propertyStrings = dsd.properties();
-        assert propertyStrings != null;
         for (final String propertyString : propertyStrings) {
-            assert propertyString != null;
             final int equalsIndex = propertyString.indexOf('=');
             if (equalsIndex > 0 && equalsIndex < propertyString.length()) {
                 final String name = propertyString.substring(0, equalsIndex);
-                assert name != null;
                 final String value = propertyString.substring(equalsIndex + 1);
-                assert value != null;
                 properties.setProperty("dataSource." + name.trim(), value.trim());
             }
         }
@@ -269,7 +263,6 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         //
         // Note: *not* dataSource.password
         final String password = dsd.password();
-        assert password != null;
         if (!password.isEmpty()) {
             properties.setProperty("dataSource.password", password);
         }
@@ -306,21 +299,18 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
         // This one's a bit odd.  Note that this does NOT map to
         // dataSource.user!
         final String user = dsd.user();
-        assert user != null;
         if (!user.isEmpty()) {
             properties.setProperty("dataSource.username", user);
         }
 
         // databaseName -> dataSource.databaseName (standard DataSource property)
         final String databaseName = dsd.databaseName();
-        assert databaseName != null;
         if (!databaseName.isEmpty()) {
             properties.setProperty("dataSource.databaseName", databaseName);
         }
 
         // description -> dataSource.description (standard DataSource property)
         final String description = dsd.description();
-        assert description != null;
         if (!description.isEmpty()) {
             properties.setProperty("dataSource.description", description);
         }
@@ -333,14 +323,12 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
 
         // serverName -> dataSource.serverName (standard DataSource property)
         final String serverName = dsd.serverName();
-        assert serverName != null;
         if (!serverName.isEmpty()) {
             properties.setProperty("dataSource.serverName", serverName);
         }
 
         // url -> dataSource.url (standard DataSource property)
         final String url = dsd.url();
-        assert url != null;
         if (!url.isEmpty()) {
             properties.setProperty("dataSource.url", url);
         }

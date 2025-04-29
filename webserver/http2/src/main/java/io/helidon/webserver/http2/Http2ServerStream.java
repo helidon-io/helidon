@@ -196,7 +196,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                      "Received RST_STREAM for stream "
                                              + streamId + " in IDLE state");
         }
-        // TODO interrupt
+
         boolean rapidReset = writeState.get() == WriteState.INIT;
         this.state = Http2StreamState.CLOSED;
         return rapidReset;

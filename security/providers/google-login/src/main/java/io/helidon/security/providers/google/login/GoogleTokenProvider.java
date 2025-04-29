@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,10 +66,10 @@ import com.google.api.client.json.gson.GsonFactory;
  * This expects the token to be sent in a header.
  * By default, Authorization header with bearer is expected, e.g.:
  * {@code Authorization: bearer abcdefg_google_id_token_from_login_button_callback}.
- *
+ * <p>
  * Configure login button as described here:
  * https://developers.google.com/identity/sign-in/web/sign-in
- *
+ * <p>
  * See google-login example.
  */
 public final class GoogleTokenProvider implements AuthenticationProvider, OutboundSecurityProvider {
@@ -351,7 +351,6 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
 
     private String buildInvalidRequestChallenge(Exception e) {
 
-        // TODO possible enhancement: configure scopes, or even get them from annotations???
         return "Bearer"
                 + " realm=\"" + realm + "\""
                 + ",error=\"invalid_request\""
@@ -367,7 +366,7 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
             challenge.append(",error=\"invalid_token\"");
             challenge.append(",error_description=\"").append(description).append("\"");
         }
-        // TODO possible enhancement: configure scopes, or even get them from annotations???
+
         challenge.append(",scope=\"openid profile email\"");
 
         return challenge.toString();

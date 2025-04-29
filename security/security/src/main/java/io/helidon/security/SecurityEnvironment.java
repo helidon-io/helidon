@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class SecurityEnvironment implements AbacSupport {
     /**
      * Time on the server this environment was created for current request.
      * This should be treated as the "decisive" time of the request for security evaluation.
-     *
+     * <p>
      * This can be configured - e.g. there can be a time-shift (moving time by a specific amount of seconds to the past or
      * to the future), or an explicit value (e.g. setting the time to 14:00 e.g. for testing purposes).
      *
@@ -135,7 +135,8 @@ public class SecurityEnvironment implements AbacSupport {
      * Get the URI of the resource requested. For inbound request, this contains the requested URI by
      * remote client (or as close to the original one as we can get), for outbound requests, this contains
      * the actual URI as configured by client to be called on remote server.
-     * TODO if we use service registry, we must have access to the actual endpoint (as signatures may require signing of
+     * If we use service registry (such as Eureka), we must have access to the actual
+     * endpoint (as signatures may require signing of
      * URI with the real host and port). Either this method MUST return a resolved URI, or we MUST have access to registry
      * and enforce an endpoint (when resolved).
      *

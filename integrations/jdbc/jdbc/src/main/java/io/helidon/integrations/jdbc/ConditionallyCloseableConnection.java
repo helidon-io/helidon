@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -361,13 +361,19 @@ public class ConditionallyCloseableConnection extends DelegatingConnection {
         case CLOSEABLE:
             return !this.isClosed(); // reduces to !super.isClosed() which reduces to !this.delegate().isClosed()
         case NOT_CLOSEABLE:
-            assert !this.isClosed(); // reduces to !super.isClosed() which reduces to !this.delegate().isClosed()
+            // reduces to !super.isClosed() which reduces to !this.delegate().isClosed()
+            if (this.isClosed()) {
+                throw new IllegalArgumentException("Connection is closed even though it should not be. State: " + state);
+            }
             return false;
         case CLOSE_PENDING:
             // (Can't assert about isClosed() because its behavior depends on strictClosedChecking constructor parameter.)
             return false;
         case CLOSED:
-            assert this.isClosed(); // reduces to super.isClosed() which reduces to this.delegate().isClosed()
+            // reduces to super.isClosed() which reduces to this.delegate().isClosed()
+            if (!this.isClosed()) {
+                throw new IllegalArgumentException("Connection is not closed even though it should be. State: " + state);
+            }
             return false;
         default:
             throw new AssertionError();

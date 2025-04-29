@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,14 +125,11 @@ public class CDISEPlatform extends JMXServerPlatformBase {
             final CDI<Object> cdi = CDI.current();
             if (cdi != null) {
                 Instance<MBeanServer> instance = cdi.select(MBeanServer.class, Eclipselink.Literal.INSTANCE);
-                assert instance != null;
                 if (instance.isUnsatisfied()) {
                     instance = cdi.select(MBeanServer.class);
                 }
                 if (!instance.isUnsatisfied()) {
-                    final MBeanServer mBeanServer = instance.get();
-                    assert mBeanServer != null;
-                    this.mBeanServer = mBeanServer;
+                    this.mBeanServer = instance.get();
                 }
             }
         }
@@ -163,11 +160,9 @@ public class CDISEPlatform extends JMXServerPlatformBase {
                 super.launchContainerRunnable(runnable);
             } else {
                 Instance<Executor> executorInstance = cdi.select(Executor.class, Eclipselink.Literal.INSTANCE);
-                assert executorInstance != null;
                 if (executorInstance.isUnsatisfied()) {
                     executorInstance = cdi.select(Executor.class);
                 }
-                assert executorInstance != null;
                 final Executor executor;
                 if (executorInstance.isUnsatisfied()) {
                     executor = null;
@@ -215,7 +210,6 @@ public class CDISEPlatform extends JMXServerPlatformBase {
     @Override
     public void initializeExternalTransactionController() {
         final CDI<Object> cdi = CDI.current();
-        assert cdi != null;
         if (cdi.select(TransactionManager.class).isUnsatisfied()) {
             this.disableJTA();
         }

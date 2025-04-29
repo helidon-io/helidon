@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package io.helidon.microprofile.grpc.core;
 
 import java.util.Objects;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+
+import io.helidon.common.LazyValue;
 
 import io.grpc.Status;
 
@@ -110,47 +110,26 @@ public interface InstanceSupplier {
      * @param <T> the type of instance supplied
      */
     class SingletonInstance<T> implements Supplier<T> {
-
-        private final Class<? extends T> instanceClass;
-
-        private T instance;
-
-        private final Lock instanceAccess = new ReentrantLock(true);
+        private final LazyValue<T> instance;
 
         private SingletonInstance(Class<T> instanceClass) {
-            this.instanceClass = instanceClass;
+            this.instance = LazyValue.create(() -> ensureInstance(instanceClass));
         }
 
         private SingletonInstance(T instance) {
-            this.instanceClass = null;
-            this.instance = Objects.requireNonNull(instance);
+            this.instance = LazyValue.create(Objects.requireNonNull(instance));
         }
 
         @Override
         public T get() {
-            return ensureInstance();
+            return instance.get();
         }
 
-        private T ensureInstance() {
-            return accessInstance(() -> {
-                if (instance == null) {
-                    try {
-                        assert instanceClass != null;
-                        instance = instanceClass.getDeclaredConstructor().newInstance();
-                    } catch (Throwable e) {
-                        throw Status.INTERNAL.withCause(e).asRuntimeException();
-                    }
-                }
-                return instance;
-            });
-        }
-
-        private T accessInstance(Supplier<T> operation) {
-            instanceAccess.lock();
+        private static <T> T ensureInstance(Class<T> clazz) {
             try {
-                return operation.get();
-            } finally {
-                instanceAccess.unlock();
+                return clazz.getDeclaredConstructor().newInstance();
+            } catch (Throwable e) {
+                throw Status.INTERNAL.withCause(e).asRuntimeException();
             }
         }
     }
