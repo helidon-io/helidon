@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRoute;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 @ServerTest
 class RoutingTest extends RoutingTestBase {
@@ -46,6 +49,18 @@ class RoutingTest extends RoutingTestBase {
                 .trace("/trace", (req, res) -> res.send("trace"))
                 .patch("/patch", (req, res) -> res.send("patch"))
                 .any("/any", (req, res) -> res.send("any"))
+                .route(HttpRoute.builder()
+                               .path("/header_based")
+                               .methods(Method.GET)
+                               .headers(headers -> headers.isAccepted(MediaTypes.APPLICATION_JSON))
+                               .handler((req, res) -> res.send("header_based_JSON"))
+                               .build())
+                .route(HttpRoute.builder()
+                               .path("/header_based")
+                               .methods(Method.GET)
+                               .headers(headers -> headers.isAccepted(MediaTypes.TEXT_PLAIN))
+                               .handler((req, res) -> res.send("header_based_TEXT"))
+                               .build())
                 // shortcut methods using multiple handlers
                 .get("/get_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("get_multi"))
                 .post("/post_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("post_multi"))
