@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,13 @@
 package io.helidon.scheduling;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
-class TaskConfigDecorator implements Prototype.BuilderDecorator<TaskConfig.BuilderBase<?, ?>> {
+class TaskConfigDecorator<T extends TaskConfig.BuilderBase<?, ?>> implements Prototype.BuilderDecorator<T> {
 
     @Override
-    public void decorate(TaskConfig.BuilderBase<?, ?> target) {
+    public void decorate(T target) {
         if (target.executor().isEmpty()) {
-            target.executor(ScheduledThreadPoolSupplier.builder()
-                                    .threadNamePrefix("scheduled-")
-                                    .build()
-                                    .get());
+            target.executor(Scheduling.DEFAULT_SCHEDULER.get());
         }
     }
 }

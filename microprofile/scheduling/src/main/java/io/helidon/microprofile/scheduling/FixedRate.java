@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Scheduled to be invoked periodically at fixed rate. Fixed rate tasks are never invoked concurrently.
  * Value is interpreted as seconds by default, can be overridden by {@link #timeUnit()}.
+ *
+ * @deprecated kindly use {@link io.helidon.scheduling.Scheduling.FixedRate} instead
  */
 @Retention(RUNTIME)
 @Target({METHOD})
+@Deprecated(forRemoval = true, since = "4.3.0")
 public @interface FixedRate {
 
     /**
