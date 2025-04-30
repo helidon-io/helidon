@@ -83,6 +83,17 @@ public final class Scheduling {
     }
 
     /**
+     * Build a task executed periodically at a fixed rate.
+     *
+     * @return this builder
+     * @deprecated use {@link io.helidon.scheduling.FixedRate#builder()} instead
+     */
+    @Deprecated(since = "4.0.2", forRemoval = true)
+    public static FixedRateConfig.Builder fixedRate() {
+        return io.helidon.scheduling.FixedRate.builder();
+    }
+
+    /**
      * Build a task executed periodically according to provided cron expression.
      *
      * @return this builder
@@ -91,6 +102,17 @@ public final class Scheduling {
     @Deprecated(since = "4.0.2", forRemoval = true)
     public static CronBuilder cronBuilder() {
         return new CronBuilder();
+    }
+
+    /**
+     * Build a task executed periodically according to provided cron expression.
+     *
+     * @return this builder
+     * @deprecated use {@link io.helidon.scheduling.Cron#builder()} instead
+     */
+    @Deprecated(since = "4.0.2", forRemoval = true)
+    public static CronConfig.Builder cron() {
+        return io.helidon.scheduling.Cron.builder();
     }
 
     /**
