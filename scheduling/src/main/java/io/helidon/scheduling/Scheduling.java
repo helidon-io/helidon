@@ -32,26 +32,44 @@ import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import static io.helidon.scheduling.FixedRate.DelayType.SINCE_PREVIOUS_START;
 
 /**
- * Scheduling periodically executed task with specified fixed rate or cron expression.
+ * Annotations for Scheduling.
  * <p>
- * Configure a scheduled task using imperative style:
+ * Scheduling can be done in imperative style as follows:
+ * <p>
+ * Fixed Rate:
  * <pre>{@code
  * FixedRate.builder()
- *      .delay(2)
+ *      .interval(Duration.ofSeconds(2))
  *      .task(inv -> System.out.println("Executed every 2 seconds"))
  *      .build();
  * }</pre>
  *
+ * Cron expression:
  * <pre>{@code
  * Cron.builder()
  *      .expression("0 45 9 ? * *")
  *      .task(inv -> System.out.println("Executed every day at 9:45"))
  *      .build()
  * }</pre>
- *
- * This class also contains nested annotations to use with declarative style (Helidon Declarative, or Helidon MP).
- * Simply annotate a method of a service (or a bean in MP) with the annotation, and invocations of the method will be scheduled
- * periodically.
+ * <p>
+ * The same can be achieved in a declarative style as follows:
+ * <p>
+ * Fixed Rate:
+ * <pre>{@code
+ * @Scheduling.FixedRate("PT2M")
+ * void scheduledMethod() {
+ *     System.out.println("Executed every 2 seconds");
+ * }
+ * }</pre>
+ * Cron expression:
+ * <pre>{@code
+ * @Scheduling.Cron("0 45 9 ? * *")
+ * void scheduledMethod() {
+ *     System.out.println("Executed every day at 9:45");
+ * }
+ * }</pre>
+ * <p>
+ * All other methods and types in this class are now deprecated.
  *
  * @see io.helidon.scheduling.Cron#builder()
  * @see io.helidon.scheduling.FixedRate#builder()
