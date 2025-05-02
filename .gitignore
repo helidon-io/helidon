@@ -84,7 +84,3 @@ docs/se/config/images
 
 # Baseline results for regression tests
 jmh-baseline.json
-
-# misc
-.vscode/
-*.bak
