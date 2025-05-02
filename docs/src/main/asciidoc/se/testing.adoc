@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -101,7 +101,11 @@ and may have any name. The `@SetUpRoute` annotation has `value` with socket name
 
 |===
 
-In addition, a static method annotated with `@SetUpServer` can be defined for `@ServerTest`, which has a single parameter of link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html[`WebServerConfig.Builder`].
+In addition:
+
+- a static method annotated with `@SetUpServer` can be defined for tests, which has a single parameter of link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html[`WebServerConfig.Builder`].
+- a static method annotated with `@SetUpFeatures` can be defined for tests, which returns `List<? extends ServerFeature>` to configure additional features, or update discovered features, feature discovery can be disabled using the annotation `value()``
+
 
 The following table lists the injectable types (through constructor or method injection).
 

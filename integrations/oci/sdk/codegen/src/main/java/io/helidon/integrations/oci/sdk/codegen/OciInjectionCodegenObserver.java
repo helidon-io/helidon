@@ -400,8 +400,6 @@ class OciInjectionCodegenObserver implements InjectCodegenObserver {
                 || ociServiceTypeName.isOptional()) {
             ociServiceTypeName = ociServiceTypeName.typeArguments().getFirst();
         }
-        assert (!ociServiceTypeName.generic()) : ociServiceTypeName.name();
-        assert (ociServiceTypeName.name().startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)) : ociServiceTypeName.name();
 
         TypeName generatedOciServiceClientTypeName = toGeneratedServiceClientTypeName(ociServiceTypeName);
         if (roundCtx.generatedType(generatedOciServiceClientTypeName).isEmpty()) {

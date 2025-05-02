@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.tests;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -80,6 +81,26 @@ abstract class RoutingTestBase {
             String message = response.as(String.class);
             assertThat(message, is("done"));
         }
+    }
+
+    @Test
+    void testRouteWithAcceptJson() {
+        var response = client.get("/header_based")
+                .accept(MediaTypes.APPLICATION_JSON)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("header_based_JSON"));
+    }
+
+    @Test
+    void testRouteWithAcceptText() {
+        var response = client.get("/header_based")
+                .accept(MediaTypes.TEXT_PLAIN)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("header_based_TEXT"));
     }
 
     @ParameterizedTest

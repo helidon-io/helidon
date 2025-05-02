@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,30 @@ import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
 
+    private final GrpcService service;
     private final String serviceName;
     private final List<GrpcRouteHandler<?, ?>> routes;
+
+    private GrpcServiceRoute(GrpcService service, List<GrpcRouteHandler<?, ?>> routes) {
+        this.service = service;
+        this.serviceName = service.serviceName();
+        this.routes = routes;
+    }
 
     private GrpcServiceRoute(String serviceName, List<GrpcRouteHandler<?, ?>> routes) {
         this.serviceName = serviceName;
         this.routes = routes;
+        this.service = null;
+    }
+
+    @Override
+    String serviceName() {
+        return serviceName;
+    }
+
+    @Override
+    public Descriptors.FileDescriptor proto() {
+        return service.proto();
     }
 
     /**
@@ -105,42 +123,40 @@ class GrpcServiceRoute extends GrpcRoute {
 
     static class Routing implements GrpcService.Routing {
         private final List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
-        private final Descriptors.FileDescriptor proto;
-        private final String serviceName;
+        private final GrpcService service;
 
         Routing(GrpcService service) {
-            this.proto = service.proto();
-            this.serviceName = service.serviceName();
+            this.service = service;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing unary(String methodName, ServerCalls.UnaryMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.unary(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.unary(service.proto(), service.serviceName(), methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing bidi(String methodName, ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.bidi(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.bidi(service.proto(), service.serviceName(), methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing serverStream(String methodName,
                                                              ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.serverStream(service.proto(), service.serviceName(), methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing clientStream(String methodName,
                                                              ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.clientStream(service.proto(), service.serviceName(), methodName, method));
             return this;
         }
 
         public GrpcServiceRoute build() {
-            return new GrpcServiceRoute(serviceName, List.copyOf(routes));
+            return new GrpcServiceRoute(service, List.copyOf(routes));
         }
     }
 }

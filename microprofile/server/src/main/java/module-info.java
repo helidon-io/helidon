@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
  */
-@Feature(value = "Server",
-        description = "Server for Helidon MP",
-        in = HelidonFlavor.MP,
-        path = "Server"
-)
+@Features.Name("Server")
+@Features.Description("Server for Helidon MP")
+@Features.Flavor(HelidonFlavor.MP)
 module io.helidon.microprofile.server {
 
     requires io.helidon.config.mp;
     requires io.helidon.common.resumable;
     requires io.helidon.jersey.media.jsonp;
+    requires io.helidon.jersey.webserver;
     requires io.helidon.microprofile.config;
     requires io.helidon.webserver.staticcontent;
     requires java.management; // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation

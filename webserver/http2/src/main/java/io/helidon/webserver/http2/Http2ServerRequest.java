@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ class Http2ServerRequest implements RoutingRequest {
             RequestedUriDiscoveryContext.builder()
                     .build();
 
-
     private static final Runnable NO_OP_RUNNABLE = () -> {
     };
     private final Http2Headers http2Headers;
@@ -72,6 +71,7 @@ class Http2ServerRequest implements RoutingRequest {
     // preparation for continue support in HTTP/2
     private boolean continueSent;
     private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
+    private String matchingPattern;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -191,6 +191,17 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
+    public RoutingRequest matchingPattern(String matchingPattern) {
+        this.matchingPattern = matchingPattern;
+        return this;
+    }
+
+    @Override
+    public Optional<String> matchingPattern() {
+        return Optional.of(matchingPattern);
+    }
+
+    @Override
     public ListenerContext listenerContext() {
         return ctx.listenerContext();
     }
@@ -236,8 +247,8 @@ class Http2ServerRequest implements RoutingRequest {
     private UriInfo createUriInfo() {
         return ctx.listenerContext().config().requestedUriDiscoveryContext()
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
-                .uriInfo(remotePeer().address().toString(),
-                         localPeer().address().toString(),
+                .uriInfo(remotePeer().address(),
+                         localPeer().address(),
                          path.absolute().path(),
                          headers,
                          query(),

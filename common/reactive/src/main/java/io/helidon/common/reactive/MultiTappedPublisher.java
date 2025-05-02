@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -279,8 +279,8 @@ public final class MultiTappedPublisher<T> implements Multi<T>, NamedOperator {
             if (onErrorCallback != null) {
                 try {
                     onErrorCallback.accept(ex);
-                } catch (Throwable exc) {
-                    // FIXME not sure where to put these
+                } catch (Throwable ignored) {
+                    //  not sure where to put these
                     //  can't call onError because cancel
                     //  could be async to the rest of the
                     //  Subscriber

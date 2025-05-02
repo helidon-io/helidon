@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import java.lang.annotation.Target;
  * A static method configuring server features.
  * <p>
  * Supported signatures:
- * {@code static List<? extends ServerFeature> features()}
+ * {@code static List<? extends ServerFeature> features()}.
+ * <p>
+ * Method(s) annotated with this annotation will be invoked before methods annotated with
+ * {@link io.helidon.webserver.testing.junit5.SetUpServer}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

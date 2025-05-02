@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import jakarta.persistence.EntityManager;
  * @deprecated This is an internal class used by the now-deprecated {@link JpaExtension} class.
  */
 @Deprecated(since = "4.0")
+@SuppressWarnings("checkstyle:IllegalToken") // deprecated, to be removed
 class ExtendedEntityManager extends DelegatingEntityManager {
 
 
@@ -243,7 +244,7 @@ class ExtendedEntityManager extends DelegatingEntityManager {
                 // this acquireDelegate() method before at some point
                 // in the past.  That's why our delegate is non-null.
                 // We know here that it was a transactional delegate
-                // that was closed automatically by CDI.  Becase it
+                // that was closed automatically by CDI.  Because it
                 // has been closed, we can't use it again.  But we
                 // still need our persistence context that was "in"
                 // it.  Fortunately, we saved that off in our

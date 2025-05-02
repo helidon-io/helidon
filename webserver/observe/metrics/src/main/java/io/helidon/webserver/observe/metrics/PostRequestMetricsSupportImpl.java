@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,23 @@ import io.helidon.webserver.http.ServerResponse;
 
 class PostRequestMetricsSupportImpl implements PostRequestMetricsSupport {
 
+    private static final System.Logger LOGGER = System.getLogger(PostRequestMetricsSupportImpl.class.getName());
+
+    private static boolean loggedMessageAboutMissingKpiDataStructure = false;
+
     static PostRequestMetricsSupportImpl create() {
         return new PostRequestMetricsSupportImpl();
+    }
+
+    static void logMessageAboutMissingKpiDataStructure() {
+        if (!loggedMessageAboutMissingKpiDataStructure) {
+            loggedMessageAboutMissingKpiDataStructure = true;
+            LOGGER.log(System.Logger.Level.WARNING,
+                       """
+                               An expected metrics data structure is missing from the request context;
+                               an MP application might have set metrics.rest-request.enabled=true instead of assigning the proper
+                               key mp.metrics.rest-request.enabled=true. This message will not be repeated.""");
+        }
     }
 
     private final List<BiConsumer<ServerResponse, Throwable>> tasks = new ArrayList<>();

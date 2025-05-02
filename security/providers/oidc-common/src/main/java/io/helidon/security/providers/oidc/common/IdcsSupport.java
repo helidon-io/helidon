@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,19 @@ class IdcsSupport {
                            WebClient generalClient,
                            URI tokenEndpointUri,
                            URI signJwkUri,
-                           Duration clientTimeout) {
+                           Duration clientTimeout,
+                           TenantConfig tenantConfig) {
         //  need to get token to be able to request this endpoint
-        Parameters form = Parameters.builder("idcs-form-params")
-                .add("grant_type", "client_credentials")
-                .add("scope", "urn:opc:idm:__myscopes__")
-                .build();
+        Parameters.Builder formBuilder = Parameters.builder("idcs-form-params")
+                .add("scope", "urn:opc:idm:__myscopes__");
+
+        if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_CERTIFICATE) {
+            formBuilder.add("grant_type", "tls_client_auth")
+                    .add("client_id", tenantConfig.clientId());
+        } else {
+            formBuilder.add("grant_type", "client_credentials");
+        }
+        Parameters form = formBuilder.build();
 
         try (HttpClientResponse response = appWebClient.post()
                 .uri(tokenEndpointUri)

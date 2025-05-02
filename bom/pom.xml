@@ -78,6 +78,11 @@
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- graphQL -->
             <dependency>
                 <groupId>io.helidon.graphql</groupId>
@@ -618,6 +623,16 @@
             <dependency>
                 <groupId>io.helidon.common.features</groupId>
                 <artifactId>helidon-common-features</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

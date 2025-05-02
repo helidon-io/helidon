@@ -106,6 +106,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             builder.port(0)
                     .shutdownHook(false);
 
+            setupFeatures(builder);
             setupServer(builder);
             addRouting(builder);
 
@@ -118,8 +119,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             } else {
                 uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
             }
-            // TODO set the port in config
-            // super.setConfig("test.server.port", String.valueOf(server.port()));
         });
     }
 
@@ -232,26 +231,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                                                     + ", which is not available on the running webserver");
         }
         return uri;
-    }
-
-    private void setupServer(WebServerConfig.Builder builder) {
-        withStaticMethods(testClass(), SetUpServer.class, (setUpServer, method) -> {
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length != 1) {
-                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
-            }
-            if (!parameterTypes[0].equals(WebServerConfig.Builder.class)) {
-                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
-            }
-            try {
-                method.setAccessible(true);
-                method.invoke(null, builder);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new IllegalStateException("Could not invoke method " + method, e);
-            }
-        });
     }
 
     private void addRouting(WebServerConfig.Builder builder) {

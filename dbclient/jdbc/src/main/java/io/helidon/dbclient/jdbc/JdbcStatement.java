@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,10 +80,19 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
     }
 
     /**
+     * Set the connection.
+     *
+     * @param connection the database connection
+     */
+    protected void connection(Connection connection) {
+        this.connection = connection;
+    }
+
+    /**
      * Create the {@link PreparedStatement}.
      *
      * @param serviceContext client service context
-     * @return PreparedStatement
+     * @return new instance of {@link PreparedStatement}
      */
     protected PreparedStatement prepareStatement(DbClientServiceContext serviceContext) {
         String stmtName = serviceContext.statementName();
@@ -105,7 +114,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
      *
      * @param stmtName statement name
      * @param stmt     statement text
-     * @return statement
+     * @return new instance of {@link PreparedStatement}
      */
     protected PreparedStatement prepareStatement(String stmtName, String stmt) {
         Connection connection = connectionPool.connection();
@@ -120,10 +129,10 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
     /**
      * Create the {@link PreparedStatement}.
      *
-     * @param connection connection
+     * @param connection the database connection
      * @param stmtName   statement name
      * @param stmt       statement text
-     * @return statement
+     * @return new instance of {@link PreparedStatement}
      */
     protected PreparedStatement prepareStatement(Connection connection, String stmtName, String stmt) {
         try {

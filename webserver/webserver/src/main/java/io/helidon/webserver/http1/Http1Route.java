@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpPrologue;
@@ -65,6 +66,11 @@ public class Http1Route implements HttpRoute {
         }
 
         return pathMatcher.match(prologue.uriPath());
+    }
+
+    @Override
+    public Optional<PathMatcher> pathMatcher() {
+        return Optional.of(pathMatcher);
     }
 
     @Override

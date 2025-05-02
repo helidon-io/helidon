@@ -71,6 +71,7 @@
         <module>mp-telemetry</module>
         <module>mp-jaxrs-preserve-headers</module>
         <module>crac</module>
+        <module>mp-metrics-gh-9995</module>
     </modules>
 
     <dependencyManagement>
