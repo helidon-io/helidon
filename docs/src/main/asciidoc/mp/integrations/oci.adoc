@@ -29,17 +29,20 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
-- <<Examples, Examples>>
+- <<_accessing_oci_services, Accessing OCI Services>>
 - <<References, References>>
 
 == Overview
 
-Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
+You can quickly and easily deploy Helidon MP applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.
+
+link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
+injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
+.Adding the Helidon OCI SDK Extension dependency
 ----
 <dependency>
      <groupId>io.helidon.integrations.oci.sdk</groupId>
@@ -47,52 +50,202 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Usage
+NOTE: If your Helidon application is based on the Helidon MP OCI project starter, many of the following configurations are already enabled and you do not need to configure them again. See xref:../guides/oci-guide.adoc[OCI Oracle Cloud Infrastructure Tutorial] for more details.
 
-When added to your application Helidon OCI SDK link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
-injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
+== Authentication
 
-The extension also handles authenticating with OCI by automatically picking up OCI credentials from your environment.
+You must configure authentication between your local environment and the OCI environment. It is recommended that you configure authentication first and then verify your configuration by using the link:{oci-javasdk-url}[OCI CLI] to access the service.
 
-=== Configuring the Helidon OCI SDK Extension
+The Helidon OCI SDK extension authenticates with OCI by picking up OCI credentials from your environment.
+
+To configure authentication, add the ``oci.auth-strategy`` property to ``/src/main/resources/META-INF/microprofile-config.properties``
+
+The ``oci.auth-strategy`` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
+
+[source,properties]
+.oci.auth-strategy example
+----
+oci.auth-strategy=config-file,instance_principals,resource_principal
+----
+
+OCI supports the following client authentication methods:
+
+* ``auto`` (default value): Cycles through all of the authentication types until one succeeds. By default, this value is set to ``config_file,instance_principals,resource_principal``.
+* ``config_file``: Uses the user authentication specified in `~/.oci/config`.
+* ``config``: Uses the user authentication specified in the Helidon `microprofile-config.properties` file.
+* ``instance_principals``: Uses the OCI Compute instance as the authentication and authorization principal. See link:{oci-doc-url}/Content/Identity/Tasks/callingservicesfrominstances.htm[Calling Services from an Instance].
+* ``resource_principal``: Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. This option is similar to the `instance_principals` authentication type. See https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html[About Using Resource Principal to Access Oracle Cloud Infrastructure Resources].
+
+If your environment is already set up to work with the OCI SDK or
+the OCI CLI, then it is likely you do not need to perform any additional configuration of the extension. When the extension is added as a dependency, it will self-configure.
 
 When you inject an OCI SDK Client object, the Helidon OCI SDK extension
 configures and constructs the object for you. The configuration primarily
-consists of initializing an OCI `AuthenticationDetailsProvider`. By default,
-the extension will examine your environment and select the best
-`AuthenticationDetailsProvider` and configure it for you.
+consists of initializing an OCI `AuthenticationDetailsProvider`. By default, the extension examines your environment and selects the best
+`AuthenticationDetailsProvider` and configures it for you.
 
-This means if your environment is already set up to work with the OCI SDK or
-the OCI command line, then it is very likely you do not need to do any additional
-configuration of the extension. Just add it as a dependency, and it will self-configure.
-
-If for some reason you require full control over the OCI configuration you have
-that as well. For more information concerning the extension and its configuration
-and authentication options see the
+If you require greater control over the OCI configuration, see the
 link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension]
-javadocs. In particular the `oci.auth-strategies` property lets you control which
+Javadocs for more information concerning the extension and its configuration
+and authentication options. In particular, the `oci.auth-strategies` property lets you control which
 `AuthenticationDetailsProvider` will be used.
 
-=== Accessing OCI Services
+== Accessing OCI Services
 
-Since the Helidon OCI SDK extension supports injecting any OCI client
-from the OCI SDK, you can use it to access any OCI service supported by the
-OCI SDK. In addition to adding the Helidon OCI SDK Extension dependency
-(as described above) you will need to add dependencies for the specific
-ODI SDK clients you will use.
+The Helidon OCI SDK extension supports injecting the client for any link:{oci-javasdk-url}#Services_Supported[OCI service supported by the OCI SDK for Java].
 
-You will also need to configure your environment to authenticate with OCI.
-It is recommended that you do this first, and verify your configuration
-by using the link:{oci-javasdk-url}[OCI CLI] to access the service.
+After adding the Helidon OCI SDK Extension dependency (as described above), you must add dependencies for each of the specific OCI SDK clients that you plan to use.
 
-== Examples
+NOTE: Each time that you update your application to integrate a OCI service, you must build and redeploy the application to enable the OCI service's features.
 
-This example describes how to use Helidon OCI SDK Extension to access OCI Object Storage.
+Here are some common OCI services and how to use them with your Helidon MP application.
 
-As mentioned above in xref:#_accessing_oci_services[], you need to add a dependency on the OCI SDK
-Object Storage API:
+- <<Monitoring, Monitoring>>
+- <<Logging, Logging>>
+- <<Tracing, Tracing>>
+- <<Streaming, Streaming>>
+- <<_object_storage, Object Storage>>
+
+=== Monitoring
+
+The OCI Monitoring services allows you to actively and passively monitor cloud resources using the Metrics and Alarms features.
+
+Use OCI Monitoring with your Helidon application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. See link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
+
+To enable OCI Monitoring integration, add the following dependency to your project's ``pom.xml``:
 
 [source,xml]
+.Adding the dependency for OCI Monitoring
+----
+<dependency>
+  <groupId>io.helidon.oci.integrations</groupId>
+  <artifactId>helidon-oci-integrations-metrics</artifactId>
+</dependency>
+----
+
+Then, add the following configuration to ``/server/src/main/resources/META-INF/microprofile-config.properties``, modifying its values for your specific project:
+
+[source,properties]
+.Defining properties for OCI metrics
+----
+ocimetrics.compartmentId=cmpt-id <1>
+ocimetrics.namespace=helidon_pegasus <2>
+ocimetrics.initialDelay=30 <3>
+ocimetrics.delay=180 <4>
+ocimetrics.scopes.0=base <5>
+ocimetrics.scopes.1=vendor
+ocimetrics.scopes.2=application
+ocimetrics.enabled=true <6>
+----
+<1> The OCI compartment ID where the metrics will be sent.
+<2> The OCI metrics namespace.
+<3> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
+<4> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
+<5> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
+<6> Enable or disable metrics transmission to OCI. Default is TRUE.
+
+The next time that you launch the application, it will report metrics to OCI monitoring. Let the application run for short while to generate data, then go to the Metrics Explorer in the OCI console to view the monitoring data.
+
+=== Logging
+
+The OCI Logging service is a highly scalable and fully managed single pane of glass for all of the logs in your tenancy. See link:{oci-doc-url}/Content/Logging/home.htm[Logging Overview] in OCI documentation.
+
+Helidon uses the link:{oci-doc-url}/Content/Logging/Concepts/custom_logs.htm[custom logs] feature of OCI Logging for integration. The ability to add custom logs from any OCI Compute instance makes it more flexible to use this feature with other components such as Oracle Kubernetes Engine (OKE).
+
+To enable OCI Logging integration, start by creating a log _group_. Log groups are logical containers for organizing logs. Logs must always be inside log groups. See
+link:{oci-doc-url}/Content/Logging/Task/create-logging-log-group.htm[Create a Log Group] in OCI documentation.
+
+Then, create a custom log object and its associated agent configuration. See link:{oci-doc-url}/Content/Logging/Task/create-logging-log.htm[Creating a Log] in OCI documentation.
+
+Finally, configure Helidon logging to persist its log data to a file that the link:{oci-doc-url}/Content/Logging/Concepts/agent_management.htm[Unified Monitoring Agent] can access and process. For example, in the ``/server/src/main/resources/logging.properties`` file, add:
+
+[source,properties]
+.Defining properties for OCI logging
+----
+handlers=io.helidon.logging.ConsoleHandler,
+java.util.logging.FileHandler
+java.util.logging.FileHandler.pattern=%h/helidon_log/helidon.log
+java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+----
+
+After you configure OCI logging and launch the application, it will start reporting logs to OCI Logging. Logs are indexed in the system, and searchable through the Console, API, and CLI. You can filter, aggregate, and visualize your logs. For more information, see https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/searchinglogs.htm[Logging Search] in OCI documentation.
+
+You can also manually push logs to the custom log configuration. First, add the following dependency to the project's ``pom.xml`` file:
+
+[source,xml]
+.Adding the dependency for Logging Ingestion API (to manually push logs)
+----
+<dependency>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-loggingingestion</artifactId>
+</dependency>
+----
+
+Then, find the https://docs.oracle.com/en-us/iaas/Content/GSG/Tasks/contactingsupport_topic-Locating_Oracle_Cloud_Infrastructure_IDs.htm#resource-ocid[Oracle Cloud Identifier (OCID)] of the custom log configuration and use that OCID with the https://docs.oracle.com/en-us/iaas/api/#/en/logging-dataplane/20200831/[Logging Ingestion API] from the OCI SDK. See https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/using_the_api_customlogs.htm#using_the_api_customlogs[Ingesting Custom Logs] in OCI documentation.
+
+=== Tracing
+
+The OCI Application Performance Monitoring (APM) service provides deep visibility into the performance of applications and provides the ability to diagnose issues quickly in order to deliver a consistent level of service. See link:{oci-doc-url}/application-performance-monitoring/doc/application-performance-monitoring.html[About APM] in OCI documentation.
+
+Use OCI APM with Helidon to trace requests from start to finish, allowing you to analyze requests across your distributed services and thereby obtain a complete picture to identify bottlenecks and issues early on.
+
+To enable OCI Tracing integration, start by creating an APM Domain, an OCI resource that contains the systems being monitored by APM. See link:{oci-doc-url}/application-performance-monitoring/doc/create-apm-domain.html#GUID-ABC79A90-3940-4360-9E21-57D25B86F92B[Create an APM Domain] in OCI documentation.
+
+Make sure that you record the *Data Upload Endpoint* and *Data Keys* for the APM domain - you will need them to configure the APM Java Tracer on the application. If you need to find them again, follow the steps at link:{oci-doc-url}/application-performance-monitoring/doc/obtain-data-upload-endpoint-and-data-keys.html[Obtain Data Upload Endpoint and Data Keys] in OCI documentation.
+
+Next, configure the APM Java Tracer to use with Helidon. The APM Java Tracer (or just APM Tracer) is an APM data source that gathers and uploads data such as metrics and spans for monitoring. See link:{oci-doc-url}/application-performance-monitoring/doc/use-apm-tracer-helidon.html[Use APM Tracer in Helidon] in OCI documentation.
+
+After you configure OCI APM with Helidon, you can use OCI Trace Explorer to view traces and spans and identify performance issues in your monitored application. See link:{oci-doc-url}/application-performance-monitoring/doc/monitor-traces-trace-explorer.html#GUID-D23BCE18-F42F-44A1-B583-47DF9F9817D8[Monitor Traces in Trace Explorer] in OCI documentation.
+
+=== Streaming
+
+The OCI Streaming service provides a fully managed, scalable, and durable solution for ingesting and consuming high-volume data streams in real time. See link:{oci-doc-url}/Content/Streaming/Concepts/streamingoverview.htm[Streaming] in OCI documentation.
+
+In OCI environments, you can choose to use either the OCI Streaming service or Apache Kafka with Helidon applications because the OCI Streaming service understands Kafka clients.
+
+Streams are organized into logical groups called Stream Pools. When you connect to OCI Streaming with a Kafka client, streams are handled as Kafka topics and stream pools as virtual Kafka clusters.
+
+To enable OCI Streaming integration, add the following dependency to your project's ``pom.xml``:
+
+[source,xml]
+.Adding the dependency for OCI Streaming
+----
+<dependency>
+  <groupId>io.helidon.microprofile.messaging</groupId>
+  <artifactId>helidon-microprofile-messaging</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.messaging.kafka</groupId>
+  <artifactId>helidon-messaging-kafka</artifactId>
+</dependency>
+----
+
+Then, in the ``/server/src/main/resources/META-INF/microprofile-config.properties`` file, configure the ``helidon-kafka`` connector based on your OCI Stream:
+
+[source,yaml]
+.Example of a configuration for helidon-kafka
+----
+mp.messaging:
+  connector:
+    helidon-kafka:
+      bootstrap.servers: ${oci.test-stream.endpoint}:${oci.test-stream.port}
+      sasl.mechanism: PLAIN
+      security.protocol: SASL_SSL
+      sasl.jaas.config: >-org.apache.kafka.common.security.plain.PlainLoginModule required
+          username="${oci.tenant}/${oci.user}/${oci.test-stream.streampool-ocid}"
+          password="${oci.user.authtoken}";
+----
+
+After you specify the ``helidon-kafka`` connector, it can be used on messaging channels to integrate with the OCI Streaming service.
+
+=== Object Storage
+
+The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See link:{oci-objstore-url}[OCI Object Storage Overview] in OCI documentation.
+
+To enable OCI Object Storage integration, add the following dependency to your project's ``pom.xml``:
+
+[source,xml]
+.Adding the dependency for OCI Object Storage
 ----
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
@@ -100,9 +253,9 @@ Object Storage API:
 </dependency>
 ----
 
-=== Injecting an Object Storage Client
+==== Injecting an Object Storage Client
 
-Now you can inject OCI SDK Clients.
+Now you can inject OCI SDK Clients for Object Storage.
 
 [source,java]
 .Field-injection example
@@ -119,14 +272,51 @@ include::{sourcedir}/mp/integrations/OciSnippets.java[tag=snippet_2, indent=0]
 The extension implements this injection point by creating an Object Storage client
 object in the link:{jakarta-inject-javadoc-url}/jakarta/inject/Singleton.html[singleton scope].
 
-=== Using the Object Storage client
+After you have injected an ObjectStorage client, you can use it as described in link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs].
 
-Once you have injected an ObjectStorage client you can use it as described in:
+=== Vault
 
-* link:{oci-javasdk-objstore-javadoc-base-url}/package-summary.html[OCI SDK Object Storage Javadocs]
-* link:{oci-objstore-url}[OCI Object Storage Overview]
+The OCI Vault service lets you store and manage encryption keys and secrets to securely access resources. See link:{oci-doc-url}/Content/KeyManagement/home.htm[Vault] in OCI documentation.
+
+To enable OCI Vault integration, add the following dependencies to your project's ``pom.xml``:
+
+[source,xml]
+.Adding the dependency for OCI Vault
+----
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-keymanagement</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-secrets</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.oracle.oci.sdk</groupId>
+    <artifactId>oci-java-sdk-vault</artifactId>
+</dependency>
+----
+
+==== Injecting a Vault Client
+
+Now you can inject OCI SDK Clients for OCI Vault.
+
+[source,java]
+----
+import com.oracle.bmc.keymanagement.KmsCrypto;
+import com.oracle.bmc.secrets.Secrets;
+import com.oracle.bmc.vault.Vaults;
+@Inject
+VaultResource(Secrets secrets,
+    KmsCrypto crypto,
+    Vaults vaults) {
+    this.secrets = secrets;
+    this.crypto = crypto;
+    this.vaults = vaults;
+}
+----
 
 == References
 
-* link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension] Javadocs
-* link:{helidon-github-examples-url}/integrations/oci[OCI SDK Usage Examples]
+* link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension] in the Helidon Javadocs
+* link:{helidon-github-examples-url}/integrations/oci[OCI SDK Usage Examples] in the Helidon Examples GitHub repository

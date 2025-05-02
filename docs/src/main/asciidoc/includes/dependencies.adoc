@@ -20,7 +20,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 // tag::maven-dependency[]
 == Maven Coordinates [[maven-coordinates]]
 
-To enable {feature-name}
+To enable {feature-name},
 ifeval::["{microprofile-bundle}" == "true"]
 either add a dependency on the xref:{rootdir}/mp/introduction/microprofile.adoc[helidon-microprofile bundle] or
 endif::[]
