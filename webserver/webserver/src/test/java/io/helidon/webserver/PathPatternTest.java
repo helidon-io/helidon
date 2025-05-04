@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,6 +121,16 @@ public class PathPatternTest {
 
     private void assertPrefixMatchWithParams(String path, String pattern, String remainingPart, String... nameValue) {
         doAssertMatchWithParams(true, path, pattern, remainingPart, nameValue);
+    }
+
+    @Test
+    void testRegexQuantifier() {
+        var matcher = PathPattern.compile("/{id:\\w{2}}/name");
+        var patternMatcher = (PathPattern.RegexpPathMatcher) matcher;
+
+        var actualPattern = patternMatcher.pattern();
+
+        assertThat(actualPattern.pattern(), is("/(?<gfXdbHQlk0>\\w{2})/name"));
     }
 
     @Test

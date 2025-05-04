@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,10 +212,14 @@ final class PathPattern {
             switch (ch) {
             case '{':
                 subSeqCounter++;
+                // nested curly braces should be added
+                builder.append('{');
                 break;
             case '}':
                 if (subSeqCounter > 0) {
                     subSeqCounter--;
+                    // nested curly braces should be added (except for the last one, because that is end of parameter)
+                    builder.append(ch);
                 } else {
                     return builder.toString();
                 }
@@ -411,6 +415,10 @@ final class PathPattern {
                 }
             }
             return params;
+        }
+
+        Pattern pattern() {
+            return pattern;
         }
 
         @Override
