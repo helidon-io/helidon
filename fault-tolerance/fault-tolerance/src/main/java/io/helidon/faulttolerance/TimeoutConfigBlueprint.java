@@ -50,7 +50,7 @@ interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
      * Flag to indicate that code must be executed in current thread instead
      * of in an executor's thread. This flag is {@code false} by default.
      *
-     * @return  whether to execute on current thread ({@code true}), or in an executor service ({@code false}})
+     * @return whether to execute on current thread ({@code true}), or in an executor service ({@code false}})
      */
     @Option.Configured
     @Option.DefaultBoolean(false)
