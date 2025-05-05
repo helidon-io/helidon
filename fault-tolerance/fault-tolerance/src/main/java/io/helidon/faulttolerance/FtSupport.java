@@ -223,12 +223,21 @@ public final class FtSupport {
                 return chain.proceed(args);
             } catch (Throwable t) {
                 try {
-                    return (V) fallback((T) ctx.serviceInstance().orElse(null), t, args);
+                    var interceptedInstance = ctx.serviceInstance();
+                    // fallback is only available on methods and fields, where instance is present
+                    // there is no way how to do static interception, and constructor interception is not supported
+                    if (interceptedInstance.isEmpty()) {
+                        throw t;
+                    }
+                    return (V) fallback((T) interceptedInstance.get(), t, args);
                 } catch (RuntimeException e) {
                     e.addSuppressed(t);
                     throw e;
                 } catch (Throwable x) {
-                    x.addSuppressed(t);
+                    if (x != t) {
+                        // we may re-throw the original exception, instance equality intentional
+                        x.addSuppressed(t);
+                    }
                     throw new SupplierException("Failed to invoke fallback method for: " + ctx.elementInfo(),
                                                 x);
                 }
@@ -238,7 +247,7 @@ public final class FtSupport {
         /**
          * Implementation of the fallback for exceptions that are valid.
          *
-         * @param service service instance, may be {@code null}
+         * @param service service instance
          * @param t       throwable that was thrown
          * @param params  parameters of the method
          * @return the expected result
