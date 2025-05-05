@@ -92,7 +92,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to create or get timeout.
+     * A base interceptor service implementation to support {@link Ft.Timeout}.
      */
     public abstract static class TimeoutMethod implements Interception.ElementInterceptor {
         /**
