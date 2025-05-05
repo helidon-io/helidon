@@ -242,7 +242,7 @@ public final class FtSupport {
         }
 
         /**
-         * Generated implementation of this method will invoke the fallback for exceptions that are valid.
+         * Implementation of the fallback for exceptions that are valid.
          *
          * @param service service instance, may be {@code null}
          * @param t       throwable that was thrown
