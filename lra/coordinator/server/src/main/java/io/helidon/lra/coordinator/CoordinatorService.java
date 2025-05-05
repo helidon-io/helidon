@@ -17,6 +17,7 @@ package io.helidon.lra.coordinator;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,8 +35,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.scheduling.FixedRate;
 import io.helidon.scheduling.FixedRateInvocation;
-import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -121,16 +122,7 @@ public class CoordinatorService implements HttpService {
         shuttingDown = true;
         Stream.of(recoveryTask, persistTask)
                 .filter(Objects::nonNull)
-                .forEach(task -> {
-                    task.executor().shutdown();
-                    try {
-                        if (!task.executor().awaitTermination(5, TimeUnit.SECONDS)) {
-                            LOGGER.log(Level.WARNING, "Shutdown of the scheduled task took too long.");
-                        }
-                    } catch (InterruptedException e) {
-                        LOGGER.log(Level.WARNING, "Shutdown of the scheduled task was interrupted.", e);
-                    }
-                });
+                .forEach(Task::close);
         lraPersistentRegistry.save();
     }
 
@@ -165,20 +157,35 @@ public class CoordinatorService implements HttpService {
 
     private void init() {
         lraPersistentRegistry.load(this);
-        recoveryTask = Scheduling.fixedRate()
-                .delay(config.get("recovery-interval").asLong().orElse(200L))
-                .initialDelay(200)
-                .timeUnit(TimeUnit.MILLISECONDS)
+
+        Duration recoveryInterval = durationOrMillis(config, "recovery-interval", "PT0.2S");
+
+        recoveryTask = FixedRate.builder()
+                .interval(recoveryInterval)
+                .delayBy(Duration.ofMillis(200))
                 .task(this::tick)
                 .build();
 
         if (config.get("periodical-persist").asBoolean().orElse(false)) {
-            persistTask = Scheduling.fixedRate()
-                    .delay(config.get("persist-interval").asLong().orElse(5000L))
-                    .initialDelay(200)
-                    .timeUnit(TimeUnit.MILLISECONDS)
+            Duration persistInterval = durationOrMillis(config, "persist-interval", "PT5S");
+            persistTask = FixedRate.builder()
+                    .interval(persistInterval)
+                    .delayBy(Duration.ofMillis(200))
                     .task(inv -> lraPersistentRegistry.save())
                     .build();
+        }
+    }
+
+    // This is not documented anywhere, but I want to keep backward compatibility anyway
+    private Duration durationOrMillis(Config config, String key, String defaultValue) {
+        String recoveryString = config.get(key)
+                .asString()
+                .orElse(defaultValue);
+
+        try {
+            return Duration.ofMillis(Long.parseLong(recoveryString));
+        } catch (NumberFormatException e) {
+            return Duration.parse(recoveryString);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.scheduling.Scheduling;
+import io.helidon.scheduling.Cron;
+import io.helidon.scheduling.FixedRate;
 
 @SuppressWarnings("ALL")
 class SchedulingSnippets {
 
     void snippet_1() {
         // tag::snippet_1[]
-        Scheduling.fixedRate()
+        FixedRate.builder()
                 .delay(10)
                 .initialDelay(5)
                 .timeUnit(TimeUnit.MINUTES)
@@ -38,7 +39,7 @@ class SchedulingSnippets {
 
     void snippet_2() {
         // tag::snippet_2[]
-        Scheduling.fixedRate()
+        FixedRate.builder()
                 .delay(10)
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
@@ -47,7 +48,7 @@ class SchedulingSnippets {
 
     void snippet_3() {
         // tag::snippet_3[]
-        Scheduling.cron()
+        Cron.builder()
                 .expression("0 15 8 ? * *")
                 .task(inv -> System.out.println("Executer every day at 8:15"))
                 .build();
@@ -56,7 +57,7 @@ class SchedulingSnippets {
 
     void snippet_4() {
         // tag::snippet_4[]
-        Scheduling.fixedRate()
+        FixedRate.builder()
                 .config(Config.create(() -> ConfigSources.create(
                         """
                                 delay: 4
@@ -72,7 +73,7 @@ class SchedulingSnippets {
 
     void snippet_5() {
         // tag::snippet_5[]
-        Scheduling.fixedRate()
+        FixedRate.builder()
                 .delay(10)
                 .initialDelay(5)
                 .timeUnit(TimeUnit.MINUTES)
@@ -83,7 +84,7 @@ class SchedulingSnippets {
 
     void snippet_6() {
         // tag::snippet_6[]
-        Scheduling.fixedRate()
+        FixedRate.builder()
                 .delay(10)
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();

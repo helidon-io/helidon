@@ -39,6 +39,7 @@ import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+import io.helidon.scheduling.Cron;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 
@@ -87,7 +88,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
         // now schedule for reload checking
         String taskIntervalDescription =
-                io.helidon.scheduling.Scheduling.cron()
+                Cron.builder()
                         .executor(asyncExecutor)
                         .expression(cfg.schedule())
                         .task(inv -> maybeReload())
