@@ -15,24 +15,13 @@
  */
 package io.helidon.tests.integration.transaction.data.mp;
 
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.DataConfig;
 import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.TestConfigFactory;
-import io.helidon.microprofile.cdi.HelidonContainer;
-import io.helidon.service.registry.Service;
-import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
-import io.helidon.testing.junit5.suite.SuiteResolver;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 import io.helidon.tests.integration.transaction.data.mp.repository.PokemonRepository;
 
@@ -75,6 +64,9 @@ public class MySqlSuite implements SuiteProvider/*, SuiteResolver*/ {
         LOGGER.log(System.Logger.Level.INFO, "Running MySqlSuite.beforeSuite()");
         // Database container
         container.start();
+        String oldUrl = config.get(URL_NODE).as(String.class).get();
+        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
+        System.setProperty(URL_NODE, url);
 /*
         // Helidon Data config
         // Config must be updated to contain proper database URL and this change must be propagated

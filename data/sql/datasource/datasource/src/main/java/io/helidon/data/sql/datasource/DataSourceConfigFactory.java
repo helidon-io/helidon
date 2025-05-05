@@ -63,8 +63,8 @@ class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfi
     @Override
     public List<Service.QualifiedInstance<DataSourceConfig>> services() {
         if (explicitConfig == null) {
-            Config dataConfig = config.get().get("data");
-            if (dataConfig.isList()) {
+            Config dataConfig = config.get().get("data-source");
+            if (isList(dataConfig)) {
                 return fromList(dataConfig);
             }
             return List.of(Service.QualifiedInstance.create(DataSourceConfig.create(dataConfig)));
@@ -74,6 +74,18 @@ class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfi
                     .collect(Collectors.toUnmodifiableList());
         }
     }
+
+
+    private boolean isList(Config config) {
+        if (config.isList()) {
+            return true;
+        }
+        if (config.get("provider").exists()) {
+            return false;
+        }
+        return config.get("0").exists();
+    }
+
 
     private Service.QualifiedInstance<DataSourceConfig> toQualifiedInstance(DataSourceConfig dataConfig) {
         return Service.QualifiedInstance.create(dataConfig, Qualifier.createNamed(dataConfig.name()));
