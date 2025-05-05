@@ -151,7 +151,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to support bulkhead.
+     * A base interceptor service implementation to support {@link io.helidon.faulttolerance.Bulkhead}.
      */
     public abstract static class BulkheadMethod implements Interception.ElementInterceptor {
         /**
