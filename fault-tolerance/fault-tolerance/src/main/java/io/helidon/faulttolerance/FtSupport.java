@@ -63,7 +63,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to create or get retry.
+     * A base interceptor service implementation to support {@link Ft.Retry}.
      */
     public abstract static class RetryMethod implements Interception.ElementInterceptor {
         /**
