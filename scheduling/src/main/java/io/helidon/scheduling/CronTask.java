@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,7 +47,11 @@ class CronTask implements Cron {
     private final com.cronutils.model.Cron cron;
     private final ReentrantLock scheduleNextLock = new ReentrantLock();
     private final CronConfig config;
+
     private ZonedDateTime lastNext = null;
+
+    private volatile boolean stopped;
+    private volatile ScheduledFuture<?> future;
 
     CronTask(CronConfig config) {
         this.config = config;
@@ -112,9 +117,26 @@ class CronTask implements Cron {
         return this.executorService;
     }
 
+    @Override
+    public void close() {
+        try {
+            scheduleNextLock.lock();
+            stopped = true;
+            if (future != null) {
+                future.cancel(false);
+            }
+        } finally {
+            scheduleNextLock.unlock();
+        }
+    }
+
     private void scheduleNext() {
         try {
             scheduleNextLock.lock();
+
+            if (stopped) {
+                return;
+            }
 
             ZonedDateTime now = ZonedDateTime.now();
             Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(now);
@@ -134,9 +156,8 @@ class CronTask implements Cron {
             }
 
             time.ifPresent(t -> {
-                        executorService.schedule(this::run, t.toMillis(), TimeUnit.MILLISECONDS);
-                    }
-            );
+                        future = executorService.schedule(this::run, t.toMillis(), TimeUnit.MILLISECONDS);
+                    });
 
         } finally {
             scheduleNextLock.unlock();
