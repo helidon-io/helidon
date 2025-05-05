@@ -211,7 +211,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to support {@link io.helidon.faulttolerance.Fallback}.
+     * A base interceptor service implementation to support {@link io.helidon.faulttolerance.Fallback}.
      *
      * @param <T> service type
      */
