@@ -121,7 +121,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to support circuit breaker without resorting to Class.forName() for exception types.
+     * A base interceptor service implementation to support {@link io.helidon.faulttolerance.Ft.CircuitBreaker}.
      */
     public abstract static class CircuitBreakerMethod implements Interception.ElementInterceptor {
         /**
