@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ public interface WindowSize {
     /**
      * Create inbound window size container with initial window size set.
      *
-     * @param type
-     * @param streamId
+     * @param type               type of the flow control
+     * @param streamId           id of the stream the size is created for
      * @param initialWindowSize  initial window size
      * @param maxFrameSize       maximal frame size
      * @param windowUpdateWriter writer method for HTTP/2 WINDOW_UPDATE frame
