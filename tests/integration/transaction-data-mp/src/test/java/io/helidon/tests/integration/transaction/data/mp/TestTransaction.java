@@ -1,39 +1,24 @@
 package io.helidon.tests.integration.transaction.data.mp;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Optional;
 
-import io.helidon.config.ConfigSources;
-import io.helidon.data.DataRegistry;
-import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
-import io.helidon.testing.junit5.Testing;
 import io.helidon.testing.junit5.suite.Suite;
 import io.helidon.tests.integration.transaction.data.mp.model.Pokemon;
 import io.helidon.tests.integration.transaction.data.mp.repository.PokemonRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.annotation.sql.DataSourceDefinition;
-import jakarta.enterprise.inject.se.SeContainer;
-import jakarta.enterprise.inject.se.SeContainerInitializer;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
-@Configuration(configSources = {MySqlSuite.CONFIG_FILE})
 @AddBean(TestTransaction.Dao.class)
 @Suite(MySqlSuite.class)
 @Testcontainers(disabledWithoutDocker = true)

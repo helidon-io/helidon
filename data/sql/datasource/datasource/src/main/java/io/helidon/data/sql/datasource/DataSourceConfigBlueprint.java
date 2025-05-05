@@ -35,6 +35,7 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
  */
 @Prototype.Blueprint
 @Prototype.Configured("data-source")
+@Prototype.RegistrySupport
 interface DataSourceConfigBlueprint {
 
     /**
