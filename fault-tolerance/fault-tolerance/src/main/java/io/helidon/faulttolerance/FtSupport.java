@@ -57,12 +57,6 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service common interface.
-     */
-    public interface FtMethod {
-    }
-
-    /**
      * A base interceptor service implementation to support {@link Ft.Retry}.
      */
     public abstract static class RetryMethod implements Interception.ElementInterceptor {
