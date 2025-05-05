@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Testing.Test
 class MetricsEnableTest extends CircuitBreakerBaseTest {
 
     private static final long WAIT_TIMEOUT_MILLIS = 5000;
