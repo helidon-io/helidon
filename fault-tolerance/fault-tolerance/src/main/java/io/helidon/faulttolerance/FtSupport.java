@@ -181,7 +181,7 @@ public final class FtSupport {
     }
 
     /**
-     * A generated service to support async.
+     * A base interceptor service implementation to support {@link io.helidon.faulttolerance.Async}.
      */
     public abstract static class AsyncMethod implements Interception.ElementInterceptor {
         /**
