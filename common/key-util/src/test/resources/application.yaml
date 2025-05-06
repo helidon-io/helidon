@@ -58,6 +58,14 @@ unit-5:
 # Certificate chain
 unit-6:
   keystore:
+    trust-store: false
+    cert-chain.alias: "1"
+    resource.path: "src/test/resources/keystore/keystore-chain.p12"
+    passphrase: "helidon"
+
+# Certificate chain
+unit-6-1:
+  keystore:
     trust-store: true
     cert-chain.alias: "1"
     resource.path: "src/test/resources/keystore/keystore-chain.p12"
