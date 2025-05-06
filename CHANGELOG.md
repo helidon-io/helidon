@@ -11,6 +11,21 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.2.2]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- Config: Adjusts OCI vault config sources to read only secret versions that are extant and in the Current rotation state [10094](https://github.com/helidon-io/helidon/pull/10094)
+- Config: Ensures SecretBundleNodeConfigSource can actually be polled [10091](https://github.com/helidon-io/helidon/pull/10091)
+- Config: Fix `asMap` method in MP config on SE config delegate for empty values [10092](https://github.com/helidon-io/helidon/pull/10092)
+- Testing: Use `SetUpFeatures` annotation [10093](https://github.com/helidon-io/helidon/pull/10093)
+- Build: Update test OEL based docker images [10046](https://github.com/helidon-io/helidon/pull/10046)
+- Build: Increase Linux runner free disk space [10045](https://github.com/helidon-io/helidon/pull/10045)
+
 ## [4.2.1]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -1771,6 +1786,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.2.2]: https://github.com/oracle/helidon/compare/4.2.1...4.2.2
 [4.2.1]: https://github.com/oracle/helidon/compare/4.2.0...4.2.1
 [4.2.0]: https://github.com/oracle/helidon/compare/4.1.7...4.2.0
 [4.1.7]: https://github.com/oracle/helidon/compare/4.1.6...4.1.7
