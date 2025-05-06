@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,26 @@
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentelemetry {
-    requires io.helidon.common.config;
-    requires io.helidon.common.context;
-    requires io.helidon.common;
     requires io.helidon.config;
     requires io.opentelemetry.context;
     requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.sdk;
+    requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.semconv;
+
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.tracing;
     requires transitive io.opentelemetry.api;
+    requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+
+    requires static io.opentelemetry.exporter.otlp;
+    requires static io.opentelemetry.exporter.zipkin;
+    requires static io.opentelemetry.exporter.logging;
+    requires static io.opentelemetry.exporter.logging.otlp;
+
 
     exports io.helidon.tracing.providers.opentelemetry;
 
@@ -39,5 +49,8 @@ module io.helidon.tracing.providers.opentelemetry {
 
     provides io.helidon.common.context.spi.DataPropagationProvider
             with io.helidon.tracing.providers.opentelemetry.OpenTelemetryDataPropagationProvider;
+
+    provides io.helidon.config.spi.ConfigMapperProvider
+            with io.helidon.tracing.providers.opentelemetry.OtelConfigMapper;
 
 }

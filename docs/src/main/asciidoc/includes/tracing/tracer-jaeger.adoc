@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@
 ifndef::rootdir[:rootdir: {docdir}/../..]
 ifndef::flavor-lc[:flavor-lc: se]
 :feature-name: Jaeger Tracing
+:tracer-provider-name: Jaeger
+:tracer-provider-name-lc: jaeger
+:tracer-provider-builder-javadoc: {tracing-javadoc-base-url}.providers.jaeger.JaegerTracerBuilder.html
 
-Helidon is integrated with the Jaeger tracer.
-
-The Jaeger builder is loaded through `ServiceLoader` and configured. You could
-also use the Jaeger builder directly, though this would create a source-code dependency
-on the Jaeger tracer.
+include::{rootdir}/includes/tracing/tracer-common.adoc[tags=provider-specific-intro;dependency]
 
 We use Jaeger OpenTelemetry Tracing client to
-integrate with Jaeger tracer.
+integrate with Jaeger tracer provider.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -37,6 +36,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 <dependency>
     <groupId>io.helidon.tracing</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
+    <scope>runtime</scope>
 </dependency>
 ----
 // end::jaeger-dependency[]
