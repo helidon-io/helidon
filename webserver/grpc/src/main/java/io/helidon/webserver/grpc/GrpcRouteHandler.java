@@ -68,7 +68,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                            String methodName,
                                                            ServerCalls.UnaryMethod<ReqT, ResT> method,
                                                            WeightedBag<ServerInterceptor> interceptors) {
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
                 ServerCalls.asyncUnaryCall(method), interceptors);
         return grpc(proto, serviceName, methodName, callHandler);
     }
@@ -78,7 +78,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                           String methodName,
                                                           ServerCalls.BidiStreamingMethod<ReqT, ResT> method,
                                                           WeightedBag<ServerInterceptor> interceptors) {
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
                 ServerCalls.asyncBidiStreamingCall(method), interceptors);
         return grpc(proto, serviceName, methodName, callHandler);
     }
@@ -88,7 +88,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                                   String methodName,
                                                                   ServerCalls.ServerStreamingMethod<ReqT, ResT> method,
                                                                   WeightedBag<ServerInterceptor> interceptors) {
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
                 ServerCalls.asyncServerStreamingCall(method), interceptors);
         return grpc(proto, serviceName, methodName, callHandler);
     }
@@ -98,7 +98,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                                   String methodName,
                                                                   ServerCalls.ClientStreamingMethod<ReqT, ResT> method,
                                                                   WeightedBag<ServerInterceptor> interceptors) {
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
                 ServerCalls.asyncClientStreamingCall(method), interceptors);
         return grpc(proto, serviceName, methodName, callHandler);
     }
@@ -118,7 +118,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
                                                                       Descriptors.FileDescriptor proto,
                                                                       WeightedBag<ServerInterceptor> interceptors) {
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
                 definition.getServerCallHandler(), interceptors);
         return grpc(definition.getMethodDescriptor(), callHandler, proto);
     }
@@ -130,8 +130,10 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
         ServerServiceDefinition definition = service.bindService();
         String path = definition.getServiceDescriptor().getName() + "/"
                 + method.getMethodDescriptor().getBareMethodName();
-        ServerCallHandler<ReqT, ResT> callHandler = InterceptorUtil.interceptHandler(
-                (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler(), interceptors);
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler(),
+                interceptors,
+                service instanceof BindableServiceImpl svc ? svc.serviceDescriptor() : null);
         return new GrpcRouteHandler<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
                                       PathMatchers.exact(path),
                                       callHandler,

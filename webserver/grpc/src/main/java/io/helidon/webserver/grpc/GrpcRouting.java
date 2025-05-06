@@ -188,7 +188,10 @@ public class GrpcRouting implements Routing {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
             }
             services.put(name, service);
-            routes.add(GrpcServiceRoute.create(service, interceptors));
+            WeightedBag<ServerInterceptor> routeInterceptors = WeightedBag.create();
+            routeInterceptors.merge(service.interceptors());
+            routeInterceptors.merge(interceptors);
+            routes.add(GrpcServiceRoute.create(service, routeInterceptors));
             return this;
         }
 

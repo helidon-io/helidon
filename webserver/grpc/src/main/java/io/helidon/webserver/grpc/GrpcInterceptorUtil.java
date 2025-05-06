@@ -25,9 +25,9 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 
-class InterceptorUtil {
+class GrpcInterceptorUtil {
 
-    private InterceptorUtil() {
+    private GrpcInterceptorUtil() {
     }
 
     static <ReqT, RespT> ServerCallHandler<ReqT, RespT> interceptHandler(ServerCallHandler<ReqT, RespT> handler,

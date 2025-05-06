@@ -47,6 +47,10 @@ class BindableServiceImpl implements BindableService {
         return new BindableServiceImpl(descriptor);
     }
 
+    GrpcServiceDescriptor serviceDescriptor() {
+        return descriptor;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public ServerServiceDefinition bindService() {
