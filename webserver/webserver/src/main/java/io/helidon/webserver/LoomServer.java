@@ -207,10 +207,9 @@ class LoomServer implements WebServer, Resumable {
         }
 
         if (!invalidRoutingNames.isEmpty()) {
-            String message = "WebServer has configured named routing, but its"
-                    + " named listener is not defined. Invalid names: \""
+            String message = "Listener not found for named routing(s): \""
                     + String.join(", ", invalidRoutingNames)
-                    + "\", configured listeners: \""
+                    + "\", configured listener(s): \""
                     + String.join(", ", namedListeners) + "\"";
 
             if (serverConfig.ignoreInvalidNamedRouting()) {
