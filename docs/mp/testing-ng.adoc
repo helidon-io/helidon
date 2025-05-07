@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -86,6 +86,41 @@ startup to the test class instantiation (which is too late, as the method source
 
 NOTE: Test method parameters are currently not supported.
 
+==== Configuration Ordering
+The ordering of the test configuration can be controlled using the mechanism defined by the
+link:{microprofile-config-spec-url}#_configsource_ordering[MicroProfile Config specification].
+
+NOTE: The configuration expressed with `@AddConfig` has a fixed ordinal value
+of `1000`
+
+By default `@Configuration.configSources` has lower priority than
+`@AddConfig`. It can be changed via `config_ordinal` .
+
+[source,properties]
+.Test resource (additional-config.properties)
+----
+app.greeting=Hello from resource
+config_ordinal=1001 # value is bigger than fixed ordinal value `@AddConfig`
+----
+
+[source,java]
+.Code sample
+----
+@HelidonTest
+@AddConfig(key = "app.greeting", value = "Hello from annotation")
+@Configuration(configSources = "additional-config.properties")
+class TestExample {
+    @Inject
+    @ConfigProperty(name = "app.greeting")
+    private String message; // property from `additional-config.properties` will be injected
+
+    @Test
+    void testGreeting() {
+        assertThat(message, is("Hello from resource"));
+    }
+}
+----
+
 == API
 
 The annotations described in this section are inherited (for the non-repeatable ones), and additive (for repeatable).
@@ -110,6 +145,9 @@ In addition to this simplification, the following annotations are supported:
 
 |`@io.helidon.microprofile.tests.testng.DisableDiscovery`
 |Used to disable automated discovery of beans and extensions
+
+|`@io.helidon.microprofile.tests.testng.Configuration`
+|Switch between "synthetic" and "existing" configuration. Add classpath resources to the "synthetic" configuration
 |===
 
 == Examples
