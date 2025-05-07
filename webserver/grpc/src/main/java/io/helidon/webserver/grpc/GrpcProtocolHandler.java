@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final AtomicInteger numMessages = new AtomicInteger();
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
     private final StreamFlowControl flowControl;
+    private final GrpcConfig grpcConfig;
 
     private Http2StreamState currentStreamState;
     private ServerCall.Listener<REQ> listener;
@@ -101,7 +102,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         Http2Settings clientSettings,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
-                        GrpcRouteHandler<REQ, RES> route) {
+                        GrpcRouteHandler<REQ, RES> route,
+                        GrpcConfig grpcConfig) {
         this.prologue = prologue;
         this.headers = headers;
         this.streamWriter = streamWriter;
@@ -111,6 +113,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.flowControl = flowControl;
         this.currentStreamState = currentStreamState;
         this.route = route;
+        this.grpcConfig = grpcConfig;
     }
 
     @Override
