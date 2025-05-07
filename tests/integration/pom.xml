@@ -73,7 +73,7 @@
         <module>crac</module>
         <module>mp-metrics-gh-9995</module>
         <module>context-http-propagation</module>
-        <module>transaction-data-mp</module>
+        <module>transaction</module>
     </modules>
 
     <dependencyManagement>

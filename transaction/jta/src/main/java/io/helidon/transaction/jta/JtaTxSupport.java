@@ -357,7 +357,7 @@ class JtaTxSupport implements TxSupport {
                                              Thread.currentThread().hashCode()));
                 }
                 return runOutsideTxScope(task);
-            // FIXME: Lukas? Maybe we can run the task even in those states. It should work.
+            // NEXT VERSION: Lukas? Maybe we can run the task even in those states. It should work.
             case Status.STATUS_PREPARING:
                 throw new TxException("Starting @Tx.Unsupported with transaction being prepared for commit.");
             case Status.STATUS_PREPARED:

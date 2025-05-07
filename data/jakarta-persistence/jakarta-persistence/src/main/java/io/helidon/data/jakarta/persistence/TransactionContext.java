@@ -47,7 +47,6 @@ final class TransactionContext {
         return INSTANCE.get();
     }
 
-    // FIXME: transactionType shall be removed after resource local transactions redesign
     EntityManager entityManager(EntityManagerFactory factory, PersistenceUnitTransactionType transactionType) {
         return switch (transactionType) {
             case JTA -> jtaStorage.manager(factory, context);

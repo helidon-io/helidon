@@ -115,8 +115,7 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
             @Override
             public String get(final int index) {
-                final Iterator<String> iterator = this.iterator();
-                assert iterator != null;
+                Iterator<String> iterator = this.iterator();
                 for (int i = 0; i < index; i++) {
                     iterator.next();
                 }
@@ -333,6 +332,17 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         return this.getPersistenceUnitName() + " (" + this.getPersistenceUnitRootUrl() + ")";
     }
 
+    // Copied from EclipseLink source code.
+    /**
+     * Validate persistence root according to JPA Spec.
+     *
+     * @param file archive file URL. In case of a nested archive, this is
+     *             the URL of the innermost archive.
+     * @param rootEntry a directory entry in the archive (or an empty string).
+     *             In case of a nested archive, this is the entry in the innermost archive.
+     * @return true if the file-entry pair can be a persistence root according
+     *         to Jakarta Persistence spec.
+     */
     private static boolean isValidRootInArchive(String file, String rootEntry) {
         String extension = file.substring(Math.max(0, file.length() - 4));
         if (extension.equalsIgnoreCase(".jar")) {
@@ -352,6 +362,11 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         }
     }
 
+    // Copied from EclipseLink source code.
+    /*
+     * This method fixes incorrect authority attribute
+     * that is set by JDK when UNC is used in classpath.
+     */
     private static URL fixUNC(URL url) throws URISyntaxException, MalformedURLException, UnsupportedEncodingException {
         String protocol = url.getProtocol();
         if (!"file".equalsIgnoreCase(protocol)) {
@@ -362,7 +377,9 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         if (authority != null) {
             //            AbstractSessionLog.getLog().finer(
             //                    "fixUNC: before fixing: url = " + url + ", authority = " + authority + ", file = " + file);
-            assert (url.getPort() == -1);
+            if (url.getPort() != -1) {
+                throw new IllegalStateException(String.format("Value of URL \"%s\" port shall not be set.", url));
+            }
 
             // See GlassFish issue https://glassfish.dev.java.net/issues/show_bug.cgi?id=3209 and
             // JDK issue http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6585937
