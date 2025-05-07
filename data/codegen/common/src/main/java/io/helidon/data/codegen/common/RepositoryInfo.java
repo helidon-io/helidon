@@ -86,7 +86,7 @@ public record RepositoryInfo(TypeInfo interfaceInfo,
      * @return name of the Entity ID attribute
      */
     public String idName() {
-        // FIXME: Implement
+        // NEXT VERSION: Implement
         //        Requires ORM model support on codegen level
         return "id";
     }
