@@ -69,8 +69,7 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
                 ? Optional.empty() : Optional.of(queryResult.getFirst());
     }
 
-    // FIXME: This may be deleted. Keeping until native EclipseLink is implemented.
-
+    // NEXT VERSION: AutoCloseable was added to support native EclipseLink.
     @Override
     default void close() {
     }
