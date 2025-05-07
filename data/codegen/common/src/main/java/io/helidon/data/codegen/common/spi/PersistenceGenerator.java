@@ -593,7 +593,7 @@ public interface PersistenceGenerator {
          * @param returnType          query result type
          * @return settings query settings
          */
-        // FIXME: Try to reduce number of parameters to remove checkstyle suppression
+        // NEXT VERSION: Try to reduce number of parameters to remove checkstyle suppression
         @SuppressWarnings("checkstyle:ParameterNumber")
         List<PersistenceGenerator.QuerySettings> addDynamicPageQueries(Method.Builder builder,
                                                                        RepositoryInfo repositoryInfo,

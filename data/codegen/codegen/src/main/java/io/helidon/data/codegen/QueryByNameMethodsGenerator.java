@@ -1458,7 +1458,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
         }
     }
 
-    // FIXME: Implement missing validations
+    // NEXT VERSION: Implement missing validations
     private void validateResult(DataQuery dataQuery, TypeName returnType) {
         dataQuery.projection()
                 .result()
