@@ -15,16 +15,13 @@
  */
 package io.helidon.data.sql.datasource.hikari;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import io.helidon.common.config.Config;
 import io.helidon.data.sql.datasource.DataSourceConfig;
-import io.helidon.data.sql.datasource.ProviderConfig;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
@@ -33,58 +30,31 @@ import io.helidon.service.registry.Service;
 class HikariDataSourceProviderService implements Service.ServicesFactory<DataSource> {
 
     static final String PROVIDER_TYPE = "hikari";
-    private final Supplier<Config> configSupplier;
+    private final Supplier<List<DataSourceConfig>> dsConfigs;
 
     @Service.Inject
-    HikariDataSourceProviderService(Supplier<Config> configSupplier) {
-        this.configSupplier = configSupplier;
+    HikariDataSourceProviderService(Supplier<List<DataSourceConfig>> dsConfigs) {
+        this.dsConfigs = dsConfigs;
     }
 
     @Override
     public List<Service.QualifiedInstance<DataSource>> services() {
-        Config config = configSupplier.get().get("data-source");
-        if (config.exists()) {
-            if (config.isList()) {
-                return fromList(config);
+        List<Service.QualifiedInstance<DataSource>> instances = new ArrayList<>();
+
+        for (DataSourceConfig dsConfig : dsConfigs.get()) {
+            if (dsConfig.provider() instanceof HikariDataSourceConfig hikariConfig) {
+                // this is a Hikari Data source
+                String name = dsConfig.name();
+
+                instances.add(createDataSource(name, hikariConfig));
             }
-            Service.QualifiedInstance<DataSource> qualifiedInstance = mapSingleConfig(config);
-            return qualifiedInstance != null ? List.of(qualifiedInstance) : List.of();
         }
-        return List.of();
+
+        return instances;
     }
 
-    /**
-     * Transforms {@link Config} to the {@link Service.QualifiedInstance} containing {@link DataSource}.
-     *
-     * @param config the {@link DataSourceConfig} config
-     * @return target {@link Service.QualifiedInstance} with Hikari {@link DataSource}
-     *         or {@code null} when provider config is not {@link HikariDataSourceConfig}
-     */
-    Service.QualifiedInstance<DataSource> mapSingleConfig(Config config) {
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config);
-        ProviderConfig providerConfig = dataSourceConfig.provider();
-        if (providerConfig instanceof HikariDataSourceConfig hikariDataSourceConfig) {
-            return Service.QualifiedInstance.create(HikariDataSourceFactory.create(hikariDataSourceConfig),
-                                                    Qualifier.createNamed(dataSourceConfig.name()));
-        }
-        return null;
+    private Service.QualifiedInstance<DataSource> createDataSource(String name, HikariDataSourceConfig providerConfig) {
+        return Service.QualifiedInstance.create(HikariDataSourceFactory.create(providerConfig),
+                                                Qualifier.createNamed(name));
     }
-
-    /**
-     * Transforms {@link List} of {@link Config} to the {@link List} of {@link Service.QualifiedInstance}
-     * containing {@link DataSource}.
-     *
-     * @param configList the {@link List} of {@link DataSourceConfig} config
-     * @return the {@link List} of {@link Service.QualifiedInstance} containing {@link DataSource}
-     */
-    private List<Service.QualifiedInstance<DataSource>> fromList(Config configList) {
-        return configList.asNodeList()
-                .stream()
-                .flatMap(List::stream)
-                .map(this::mapSingleConfig)
-                // Unsupported configs will appear as null values and must be removed
-                .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
 }

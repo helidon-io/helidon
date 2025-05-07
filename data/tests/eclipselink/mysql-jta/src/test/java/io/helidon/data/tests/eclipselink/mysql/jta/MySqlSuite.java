@@ -136,6 +136,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
         private static final ServiceRegistryManager REGISTRY_MANAGER = ServiceRegistryManager.create();
         private static final ServiceRegistry REGISTRY = REGISTRY_MANAGER.registry();
     }
+
     @Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestApplication extends io.helidon.data.tests.common.TestApplication {

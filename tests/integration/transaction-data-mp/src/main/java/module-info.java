@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,12 @@
  */
 
 /**
- * Narayana Jakarta Transaction Provider.
+ * Helidon Data Tests Model.
  */
-module io.helidon.transaction.helidon.narayana {
+module io.helidon.tests.integration.transaction.data.mp {
 
-    requires jakarta.transaction;
-    requires io.helidon.service.registry;
-    requires io.helidon.transaction.jta;
-    requires narayana.jta;
-
-    provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.transaction.narayana.CdiExtension;
-
-    exports io.helidon.transaction.narayana;
+    requires jakarta.persistence;
+    requires io.helidon.data;
+    requires io.helidon.data.jakarta.persistence;
 
 }

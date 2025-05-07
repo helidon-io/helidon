@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tests.integration.transaction.data.mp.repository;
 
-/**
- * Narayana Jakarta Transaction Provider.
- */
-module io.helidon.transaction.helidon.narayana {
+import io.helidon.data.Data;
+import io.helidon.tests.integration.transaction.data.mp.model.Pokemon;
 
-    requires jakarta.transaction;
-    requires io.helidon.service.registry;
-    requires io.helidon.transaction.jta;
-    requires narayana.jta;
+import jakarta.persistence.EntityManager;
 
-    provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.transaction.narayana.CdiExtension;
+@Data.Repository
+public interface PokemonRepository
+        extends Data.CrudRepository<Pokemon, Integer>, Data.SessionRepository<EntityManager> {
 
-    exports io.helidon.transaction.narayana;
+
 
 }

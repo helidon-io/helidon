@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.tests.common;
+package io.helidon.tests.integration.transaction.data.mp;
 
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.data.tests.model.League;
-import io.helidon.data.tests.model.Pokemon;
-import io.helidon.data.tests.model.Region;
-import io.helidon.data.tests.model.Team;
-import io.helidon.data.tests.model.Trainer;
-import io.helidon.data.tests.model.Type;
+import io.helidon.tests.integration.transaction.data.mp.model.Pokemon;
+import io.helidon.tests.integration.transaction.data.mp.model.Trainer;
+import io.helidon.tests.integration.transaction.data.mp.model.Type;
 
 import jakarta.persistence.EntityManager;
 
-public class InitialData {
+public class Data {
 
-    private static final System.Logger LOGGER = System.getLogger(InitialData.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Data.class.getName());
 
     /**
      * List of {@code Type}s. Array index matches ID.
@@ -57,58 +54,16 @@ public class InitialData {
     };
 
     /**
-     * List of {@code Regions}s. Array index matches ID.
-     */
-    public static final Region[] REGIONS = new Region[] {
-            null, // skip index 0
-            new Region(1, "Kanto"),
-            new Region(2, "Johto"),
-            new Region(3, "Sinnoh"),
-            new Region(4, "Unova"),
-            new Region(5, "Kalos"),
-            new Region(6, "Alola"),
-            new Region(7, "Galar"),
-            new Region(8, "Paldea"),
-            new Region(9, "Kitakami"),
-            new Region(10, "Hoenn")
-    };
-
-    /**
-     * List of {@code League}s. Array index matches ID.
-     */
-    public static final League[] LEAGUES = new League[] {
-            null, // skip index 0
-            new League(1, "Indigo League", REGIONS[1]),
-            new League(2, "Johto League", REGIONS[2]),
-            new League(3, "Sinnoh League", REGIONS[3]),
-            new League(4, "Unova League", REGIONS[4]),
-            new League(5, "Kalos League", REGIONS[5]),
-            new League(6, "Alola League", REGIONS[6]),
-            new League(7, "Galar League", REGIONS[7]),
-            new League(8, "Paldea League", REGIONS[8]),
-            new League(9, "Hoenn League", REGIONS[10]),
-    };
-
-    /**
-     * List of {@code Team}s. Array index matches ID.
-     */
-    public static final Team[] TEAMS = new Team[] {
-            null, // skip index 0
-            new Team(1, "Kanto"),
-            new Team(2, "Johto")
-    };
-
-    /**
      * List of {@code Keeper}s. Array index matches ID.
      */
     public static final Trainer[] TRAINERS = new Trainer[] {
             null, // skip index 0
-            new Trainer(1, "Ash", TEAMS[1]),
-            new Trainer(2, "Brock", TEAMS[1]),
-            new Trainer(3, "Misty", TEAMS[1]),
-            new Trainer(4, "Jasmine", TEAMS[2]),
-            new Trainer(5, "Falkner", TEAMS[2]),
-            new Trainer(6, "Whitney", TEAMS[2])
+            new Trainer(1, "Ash"),
+            new Trainer(2, "Brock"),
+            new Trainer(3, "Misty"),
+            new Trainer(4, "Jasmine"),
+            new Trainer(5, "Falkner"),
+            new Trainer(6, "Whitney")
     };
 
     /**
@@ -157,10 +112,6 @@ public class InitialData {
             109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11]))
     );
 
-    private InitialData() {
-        throw new UnsupportedOperationException("No instances of Data are allowed");
-    }
-
     /**
      * Initialize database data.
      *
@@ -168,43 +119,15 @@ public class InitialData {
      */
     public static void init(EntityManager em) {
         LOGGER.log(System.Logger.Level.DEBUG, "Data initialization");
-        for (int i = 1; i < InitialData.TYPES.length; i++) {
-            em.persist(InitialData.TYPES[i]);
+        for (int i = 1; i < Data.TYPES.length; i++) {
+            em.persist(Data.TYPES[i]);
         }
-        for (int i = 1; i < InitialData.REGIONS.length; i++) {
-            em.persist(InitialData.REGIONS[i]);
+        for (int i = 1; i < Data.TRAINERS.length; i++) {
+            em.persist(Data.TRAINERS[i]);
         }
-        for (int i = 1; i < InitialData.LEAGUES.length; i++) {
-            em.persist(InitialData.LEAGUES[i]);
+        for (int i = 1; i < Data.POKEMONS.length; i++) {
+            em.persist(Data.POKEMONS[i]);
         }
-        for (int i = 1; i < InitialData.TEAMS.length; i++) {
-            em.persist(InitialData.TEAMS[i]);
-        }
-        for (int i = 1; i < InitialData.TRAINERS.length; i++) {
-            em.persist(InitialData.TRAINERS[i]);
-        }
-        for (int i = 1; i < InitialData.POKEMONS.length; i++) {
-            em.persist(InitialData.POKEMONS[i]);
-        }
-    }
-
-    /**
-     * Verify database data
-     */
-    public static void verify(EntityManager em) {
-        LOGGER.log(System.Logger.Level.DEBUG, "Data verification");
-        List<Pokemon> pokemons = em.createQuery("SELECT p FROM Pokemon p", Pokemon.class)
-                .getResultList();
-        LOGGER.log(System.Logger.Level.DEBUG, String.format(" - pokemons: %d", pokemons.size()));
-    }
-
-    /**
-     * Delete temporary data.
-     *
-     * @param em JPA {@link jakarta.persistence.EntityManager}
-     */
-    public static void deleteTemp(EntityManager em) {
-        em.createNamedQuery("Pokemon.deleteTemp").executeUpdate();
     }
 
 }

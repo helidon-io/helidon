@@ -72,6 +72,7 @@
         <module>mp-jaxrs-preserve-headers</module>
         <module>crac</module>
         <module>mp-metrics-gh-9995</module>
+        <module>transaction-data-mp</module>
     </modules>
 
     <dependencyManagement>
