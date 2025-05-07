@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,22 +69,24 @@ class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceD
         context = context.withValue(ContextKeys.HELIDON_CONTEXT,
                 helidonContext.orElseGet(io.helidon.common.context.Context::create));
 
-        // method info
-        String fullMethodName = call.getMethodDescriptor().getFullMethodName();
-        String methodName = extractMethodName(fullMethodName);
-        GrpcMethodDescriptor<ReqT, ResT> methodDescriptor =
-                (GrpcMethodDescriptor<ReqT, ResT>) serviceDescriptor.method(methodName);
+        if (serviceDescriptor != null) {
+            // method info
+            String fullMethodName = call.getMethodDescriptor().getFullMethodName();
+            String methodName = extractMethodName(fullMethodName);
+            GrpcMethodDescriptor<ReqT, ResT> methodDescriptor =
+                    (GrpcMethodDescriptor<ReqT, ResT>) serviceDescriptor.method(methodName);
 
-        // apply context keys from the service followed by the method for overrides
-        Map<Context.Key<?>, Object> contextMap = new HashMap<>();
-        contextMap.putAll(serviceDescriptor.context());
-        contextMap.putAll(methodDescriptor.context());
-        contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
+            // apply context keys from the service followed by the method for overrides
+            Map<Context.Key<?>, Object> contextMap = new HashMap<>();
+            contextMap.putAll(serviceDescriptor.context());
+            contextMap.putAll(methodDescriptor.context());
+            contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
 
-        // set up context from gRPC API
-        for (Map.Entry<Context.Key<?>, Object> entry : contextMap.entrySet()) {
-            Context.Key<Object> key = (Context.Key<Object>) entry.getKey();
-            context = context.withValue(key, entry.getValue());
+            // set up context from gRPC API
+            for (Map.Entry<Context.Key<?>, Object> entry : contextMap.entrySet()) {
+                Context.Key<Object> key = (Context.Key<Object>) entry.getKey();
+                context = context.withValue(key, entry.getValue());
+            }
         }
 
         // intercept with new context

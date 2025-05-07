@@ -137,7 +137,6 @@ public class GrpcRouting implements Routing {
 
         @Override
         public GrpcRouting build() {
-            services.values().forEach(service -> route(GrpcServiceRoute.create(service, interceptors)));
             return new GrpcRouting(this);
         }
 
@@ -148,7 +147,8 @@ public class GrpcRouting implements Routing {
          * @return updated builder
          */
         public Builder service(GrpcService service) {
-            return route(GrpcServiceRoute.create(service));
+            routes.add(GrpcServiceRoute.create(service, interceptors));
+            return this;
         }
 
         /**
@@ -158,7 +158,22 @@ public class GrpcRouting implements Routing {
          * @return updated builder
          */
         public Builder service(BindableService service) {
-            return route(GrpcServiceRoute.create(service));
+            routes.add(GrpcServiceRoute.create(service, interceptors));
+            return this;
+        }
+
+        /**
+         * Add all the routes for a {@link BindableService} service.
+         *
+         * @param proto the proto descriptor
+         * @param service the {@link BindableService} to add routes for
+         * @return updated builder
+         */
+        public Builder service(Descriptors.FileDescriptor proto, BindableService service) {
+            for (ServerMethodDefinition<?, ?> method : service.bindService().getMethods()) {
+                routes.add(GrpcRouteHandler.methodDefinition(method, proto, interceptors));
+            }
+            return this;
         }
 
         /**
@@ -173,6 +188,32 @@ public class GrpcRouting implements Routing {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
             }
             services.put(name, service);
+
+            // compute final bag of interceptors for this route
+            WeightedBag<ServerInterceptor> routeInterceptors;
+            WeightedBag<ServerInterceptor> serviceInterceptors = service.interceptors();
+            if (!serviceInterceptors.isEmpty()) {
+                routeInterceptors = WeightedBag.create();
+                routeInterceptors.merge(serviceInterceptors);
+                routeInterceptors.merge(interceptors);
+            } else {
+                routeInterceptors = interceptors;
+            }
+
+            routes.add(GrpcServiceRoute.create(service, routeInterceptors));
+            return this;
+        }
+
+        /**
+         * Add all the routes for the {@link io.grpc.ServerServiceDefinition} service.
+         *
+         * @param service the {@link io.grpc.ServerServiceDefinition} to add routes for
+         * @return updated builder
+         */
+        public Builder service(ServerServiceDefinition service) {
+            for (ServerMethodDefinition<?, ?> method : service.getMethods()) {
+                routes.add(GrpcRouteHandler.methodDefinition(method, null, interceptors));
+            }
             return this;
         }
 
@@ -223,7 +264,8 @@ public class GrpcRouting implements Routing {
                                           String serviceName,
                                           String methodName,
                                           ServerCalls.UnaryMethod<ReqT, ResT> method) {
-            return route(GrpcRouteHandler.unary(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.unary(proto, serviceName, methodName, method, interceptors));
+            return this;
         }
 
         /**
@@ -241,7 +283,8 @@ public class GrpcRouting implements Routing {
                                          String serviceName,
                                          String methodName,
                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-            return route(GrpcRouteHandler.bidi(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.bidi(proto, serviceName, methodName, method, interceptors));
+            return this;
         }
 
         /**
@@ -259,7 +302,8 @@ public class GrpcRouting implements Routing {
                                                  String serviceName,
                                                  String methodName,
                                                  ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-            return route(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method, interceptors));
+            return this;
         }
 
         /**
@@ -277,38 +321,7 @@ public class GrpcRouting implements Routing {
                                                  String serviceName,
                                                  String methodName,
                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-            return route(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method));
-        }
-
-        /**
-         * Add all the routes for a {@link BindableService} service.
-         *
-         * @param proto the proto descriptor
-         * @param service the {@link BindableService} to add routes for
-         * @return updated builder
-         */
-        public Builder service(Descriptors.FileDescriptor proto, BindableService service) {
-            for (ServerMethodDefinition<?, ?> method : service.bindService().getMethods()) {
-                route(GrpcRouteHandler.methodDefinition(method, proto));
-            }
-            return this;
-        }
-
-        /**
-         * Add all the routes for the {@link ServerServiceDefinition} service.
-         *
-         * @param service the {@link ServerServiceDefinition} to add routes for
-         * @return updated builder
-         */
-        public Builder service(ServerServiceDefinition service) {
-            for (ServerMethodDefinition<?, ?> method : service.getMethods()) {
-                route(GrpcRouteHandler.methodDefinition(method, null));
-            }
-            return this;
-        }
-
-        private Builder route(GrpcRoute route) {
-            routes.add(route);
+            routes.add(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method, interceptors));
             return this;
         }
     }

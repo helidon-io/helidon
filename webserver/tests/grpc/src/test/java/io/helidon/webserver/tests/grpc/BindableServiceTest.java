@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests.grpc;
 
+import io.helidon.webserver.grpc.strings.Strings;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
@@ -23,14 +24,15 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 
 @ServerTest
-class ServiceDefinitionGrpcServiceTest extends BaseStringServiceTest {
+class BindableServiceTest extends BaseStringServiceTest {
 
-    ServiceDefinitionGrpcServiceTest(WebServer server) {
+    BindableServiceTest(WebServer server) {
         super(server);
     }
 
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
-        router.addRouting(GrpcRouting.builder().service(new BindableStringService().bindService()));
+        router.addRouting(GrpcRouting.builder().service(Strings.getDescriptor(),
+                                                        new BindableStringService()));
     }
 }
