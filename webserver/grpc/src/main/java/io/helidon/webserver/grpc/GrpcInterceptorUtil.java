@@ -15,9 +15,6 @@
  */
 package io.helidon.webserver.grpc;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-
 import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.Metadata;
@@ -42,16 +39,10 @@ class GrpcInterceptorUtil {
         interceptors.add(ContextSettingServerInterceptor.create());
 
         // remove duplicates and set proper ordering
-        List<ServerInterceptor> interceptorsList = interceptors.stream().toList();
-        LinkedHashSet<ServerInterceptor> interceptorsSet = new LinkedHashSet<>(interceptorsList.size());
-        // iterate the interceptors in reverse order to set up handler chain
-        for (int i = interceptorsList.size() - 1; i >= 0; i--) {
-            ServerInterceptor interceptor = interceptorsList.get(i);
-            interceptorsSet.add(interceptor);
-        }
-
-        // create interceptor chain
-        for (ServerInterceptor interceptor : interceptorsSet) {
+        for (ServerInterceptor interceptor : interceptors.stream()
+                .distinct()
+                .toList()
+                .reversed()) {
             handler = new InterceptingCallHandler<>(serviceDescriptor, interceptor, handler);
         }
 
@@ -86,8 +77,8 @@ class GrpcInterceptorUtil {
         public ServerCall.Listener<ReqT> startCall(
                 ServerCall<ReqT, RespT> call,
                 Metadata headers) {
-            if (serviceDefinition != null && interceptor instanceof GrpcServiceDescriptor.Aware) {
-                ((GrpcServiceDescriptor.Aware) interceptor).setServiceDescriptor(serviceDefinition);
+            if (serviceDefinition != null && interceptor instanceof GrpcServiceDescriptor.Aware aware) {
+                aware.setServiceDescriptor(serviceDefinition);
             }
             return interceptor.interceptCall(call, headers, callHandler);
         }
