@@ -20,6 +20,12 @@ data-source:
       username: "test"
       password: "password"
       url: "jdbc:mysql://localhost:3306/testdb"
+# Another DataSource to be tested with Laird's modules, does not work
+#  - name: "cditest"
+#    provider.hikari:
+#      username: "test"
+#      password: "password"
+#      url: "jdbc:mysql://localhost:3306/testdb"
 
 data:
   provider.jakarta:
@@ -29,7 +35,7 @@ data:
       eclipselink.target-database: "MySQL"
       eclipselink.target-server: "None"
       eclipselink.weaving: false
-      eclipselink.logging.level: "FINEST"
+      eclipselink.logging.level: "INFO"
       eclipselink.logging.level.weaver: "OFF"
       eclipselink.logging.parameters: true
       jakarta.persistence.schema-generation.database.action: drop-and-create

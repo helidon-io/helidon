@@ -15,11 +15,13 @@
  */
 package io.helidon.tests.integration.transaction.data.mp;
 
+import java.util.Map;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
+import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
@@ -37,18 +39,20 @@ public class MySqlSuite implements SuiteProvider/*, SuiteResolver*/ {
     private static final System.Logger LOGGER = System.getLogger(MySqlSuite.class.getName());
 
     private static final DockerImageName IMAGE = DockerImageName.parse("mysql:8.0");
-    static final String CONFIG_FILE = "application.yaml";
+    private static final String CONFIG_FILE = "application.yaml";
     private static final String PROVIDER_NODE = "data-source.0.provider.hikari";
-    private static final String URL_NODE = PROVIDER_NODE + ".url";
+    private static final String CDI_URL_NODE="javax.sql.DataSource.cditest.dataSource.url";
     private static final int DB_PORT = 3306;
 
+    private static String dbUrl = null;
+
+    private static String urlNode(int i) {
+        return "data-source." + i + ".provider.hikari.url";
+    }
 
     @Container
     private final MySQLContainer<?> container;
-    //private static HelidonContainer helidonContainer;
     private Config config;
-    private DataRegistry data;
-    private PokemonRepository pokemonRepository;
 
     public MySqlSuite() {
         this.config = Config.just(ConfigSources.classpath(CONFIG_FILE));
@@ -64,78 +68,28 @@ public class MySqlSuite implements SuiteProvider/*, SuiteResolver*/ {
         LOGGER.log(System.Logger.Level.INFO, "Running MySqlSuite.beforeSuite()");
         // Database container
         container.start();
-        String oldUrl = config.get(URL_NODE).as(String.class).get();
+        dbUrl = container.getJdbcUrl();
+        String oldUrl = config.get(urlNode(0)).as(String.class).get();
         String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
-        System.setProperty(URL_NODE, url);
-/*
-        // Helidon Data config
-        // Config must be updated to contain proper database URL and this change must be propagated
-        // to Config service factory
-        String oldUrl = config.get(URL_NODE).as(String.class).get();
-        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
-        dbUrl = url;
-        Map<String, String> updatedNodes = new HashMap<>(1);
-        updatedNodes.put(URL_NODE, url);
-        Config newConfig = Config.create(ConfigSources.create(updatedNodes), ConfigSources.create(config));
-        TestConfigFactory configProvider = Services.get(TestConfigFactory.class);
-        List<Service.QualifiedInstance<io.helidon.common.config.Config>> services = configProvider.services();
-        if (services.isEmpty()) {
-            throw new IllegalStateException("TestConfigFactory service is not available");
-        }
-        ((TestConfigFactory.ConfigDelegate) services.getFirst().get()).config(newConfig);
-        config = newConfig;
-        // Helidon DataRegistry initialization
-        data = DataRegistry.create(config.get("data"));
-        pokemonRepository = data.repository(PokemonRepository.class);
-        // Initialize database content
+        System.setProperty(urlNode(0), url);
+// Another DataSource to be tested with Laird's modules, does not work
+//        oldUrl = config.get(urlNode(1)).as(String.class).get();
+//        url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
+//        System.setProperty(urlNode(1), url);
+
+        PokemonRepository pokemonRepository = Services.get(PokemonRepository.class);
         pokemonRepository.run(Data::init);
-*/
-        // JPA CDI
-        //helidonContainer = HelidonContainer.instance();
-        //helidonContainer.start();
     }
 
     @AfterSuite
     public void afterSuite() {
-        //helidonContainer.shutdown();
-        //helidonContainer = null;
         LOGGER.log(System.Logger.Level.INFO, "Running MySqlSuite.afterSuite()");
-        /*
-        try {
-            data.close();
-        } catch (Exception e) {
-            LOGGER.log(System.Logger.Level.WARNING, () -> String.format("Could not close Helidon Data: %s", e.getMessage()));
-        }
-        */
         container.stop();
     }
 
-/*
-    @Override
-    public boolean supportsParameter(Type type) {
-        return (type instanceof Class<?> cls)
-                && (
-                Config.class.isAssignableFrom(cls)
-                        || DataConfig.class.isAssignableFrom(cls)
-                        || DataRegistry.class.isAssignableFrom(cls)
-                        || PokemonRepository.class.isAssignableFrom(cls));
+    // Build MP config with updated CDI persistence unit DataSource URL
+    static Map<String, String> cdiUrlConfig() {
+        return Map.of(CDI_URL_NODE, dbUrl);
     }
-
-    @Override
-    public Object resolveParameter(Type type) {
-        if (type instanceof Class<?> cls) {
-            if (Config.class.isAssignableFrom(cls)) {
-                return config;
-            } else if (DataConfig.class.isAssignableFrom(cls)) {
-                return data.dataConfig();
-            } else if (DataRegistry.class.isAssignableFrom(cls)) {
-                return data;
-            } else if (PokemonRepository.class.isAssignableFrom(cls)) {
-                return pokemonRepository;
-            }
-        }
-        throw new IllegalArgumentException(String.format("Cannot resolve parameter Type %s", type.getTypeName()));
-    }
-*/
 
 }

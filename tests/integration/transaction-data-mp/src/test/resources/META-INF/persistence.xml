@@ -21,12 +21,12 @@
         xmlns="https://jakarta.ee/xml/ns/persistence"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
-
     <persistence-unit name="cdi-test" transaction-type="JTA">
-        <jta-data-source>test</jta-data-source>
-        <class>io.helidon.test.model.Pokemon</class>
-        <class>io.helidon.test.model.Trainer</class>
-        <class>io.helidon.test.model.Type</class>
+        <!-- DataSource is defined in microprofile-config.properties -->
+        <jta-data-source>cditest</jta-data-source>
+        <class>io.helidon.tests.integration.transaction.data.mp.model.Pokemon</class>
+        <class>io.helidon.tests.integration.transaction.data.mp.model.Trainer</class>
+        <class>io.helidon.tests.integration.transaction.data.mp.model.Type</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>

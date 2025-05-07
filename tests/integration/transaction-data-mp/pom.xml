@@ -104,6 +104,14 @@
             <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
@@ -115,6 +123,16 @@
         <dependency>
             <groupId>io.helidon.testing</groupId>
             <artifactId>helidon-testing-junit5-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -268,9 +286,6 @@
                     <systemPropertyVariables>
                         <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
                     </systemPropertyVariables>
-                    <includes>
-                        <include>io.helidon.tests.integration.transaction.data.mp.Test*</include>
-                    </includes>
                 </configuration>
             </plugin>
         </plugins>
