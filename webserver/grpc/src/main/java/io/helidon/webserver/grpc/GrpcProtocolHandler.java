@@ -20,6 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +44,13 @@ import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
@@ -60,6 +69,7 @@ import static io.helidon.http.http2.Http2Flag.DataFlags;
 import static io.helidon.http.http2.Http2Flag.END_OF_HEADERS;
 import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
 import static io.helidon.http.http2.Http2Flag.HeaderFlags;
+import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
@@ -74,6 +84,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final DecompressorRegistry DECOMPRESSOR_REGISTRY = DecompressorRegistry.getDefaultInstance();
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
+
+    private static final Tag OK_TAG = Tag.create("grpc.status", "OK");
 
     private final HttpPrologue prologue;
     private final Http2Headers headers;
@@ -93,6 +105,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private Compressor compressor;
     private Decompressor decompressor;
     private boolean isIdentityCompressor;
+    private long bytesReceived;
+
+    record MetricsData(Counter callStarted,
+                       Timer callDuration,
+                       DistributionSummary sentMessageSize,
+                       DistributionSummary recvMessageSize,
+                       long startMillis) { }
+
+    private MetricsData metricsData;
 
     GrpcProtocolHandler(HttpPrologue prologue,
                         Http2Headers headers,
@@ -125,10 +146,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // setup compression
             initCompression(serverCall, httpHeaders);
 
+            // init metrics
+            if (grpcConfig.enableMetrics()) {
+                initMetrics();
+                metricsData.callStarted.increment();
+            }
+
             // initiate server call
             ServerCallHandler<REQ, RES> callHandler = route.callHandler();
             listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
             listener.onReady();
+            bytesReceived = 0L;
         } catch (Throwable e) {
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;
@@ -173,7 +201,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     }
 
                     // read and possibly decompress data
-                    byte[] bytes = new byte[entityBytes.available()];
+                    int readLength = entityBytes.available();
+                    bytesReceived += readLength;
+                    byte[] bytes = new byte[readLength];
                     entityBytes.read(bytes);
                     ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(bais) : bais);
@@ -187,6 +217,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();
                 currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
+
+                // update metrics
+                if (grpcConfig.enableMetrics()) {
+                    metricsData.recvMessageSize.record(bytesReceived);
+                }
             }
         } catch (Exception e) {
             listener.onCancel();
@@ -207,7 +242,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 Metadata metadata = new Metadata();
                 Set<String> encodings = DECOMPRESSOR_REGISTRY.getAdvertisedMessageEncodings();
                 metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
-                        String.join(",", encodings));
+                             String.join(",", encodings));
                 serverCall.close(Status.UNIMPLEMENTED, metadata);
                 currentStreamState = Http2StreamState.CLOSED;       // stops processing
                 return;
@@ -250,6 +285,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<>() {
+
+            private long bytesSent;
+
             @Override
             public void request(int numMessages) {
                 addNumMessages(numMessages);
@@ -303,13 +341,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     }
 
                     // create data frame, EOS sent in close with trailers
-                    Http2FrameHeader header = Http2FrameHeader.create(bufferData.available(),
-                            Http2FrameTypes.DATA,
-                            DATA_FLAGS_ZERO,
-                            streamId);
+                    int writeLength = bufferData.available();
+                    Http2FrameHeader header = Http2FrameHeader.create(writeLength,
+                                                                      Http2FrameTypes.DATA,
+                                                                      DATA_FLAGS_ZERO,
+                                                                      streamId);
 
                     // write data frame
                     streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
+                    bytesSent += writeLength;
                 } catch (Exception e) {
                     listener.onCancel();
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
@@ -334,6 +374,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                           HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
                                           flowControl.outbound());
                 currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
+
+                // update metrics
+                if (status.isOk() && grpcConfig.enableMetrics()) {
+                    metricsData.sentMessageSize.record(bytesSent);
+                    metricsData.callDuration.record(
+                            Duration.ofMillis(System.currentTimeMillis() - metricsData.startMillis));
+                }
             }
 
             @Override
@@ -346,5 +393,53 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return route.method();
             }
         };
+    }
+
+    /**
+     * Gets or creates gRPC server metrics for the method being invoked. Note that
+     * duration and size metrics are currently recorded only for successful calls,
+     * using the {@link #OK_TAG}. If a call fails, it will only increment the number
+     * of started calls, but not record any of the other metrics.
+     */
+    private void initMetrics() {
+        if (grpcConfig.enableMetrics()) {
+            MetricsFactory metricsFactory = MetricsFactory.getInstance();
+            MeterRegistry meterRegistry = Metrics.globalRegistry();
+
+            Tag grpcMethod = Tag.create("grpc.method", route.method().getFullMethodName());
+
+            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder(
+                            "grpc.server.call.started")
+                            .scope(VENDOR);
+            callStartedBuilder.tags(List.of(grpcMethod));
+            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+
+            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder(
+                            "grpc.server.call.duration")
+                            .scope(VENDOR)
+                            .baseUnit(Timer.BaseUnits.MILLISECONDS);
+            callDurationOkBuilder.tags(List.of(grpcMethod, OK_TAG));
+            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+
+            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.server.call.sent_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
+                            .scope(VENDOR);
+            sendMessageSizeBuilder.tags(List.of(grpcMethod, OK_TAG));
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+
+            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.server.call.rcvd_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
+                            .scope(VENDOR);
+            recvMessageSizeBuilder.tags(List.of(grpcMethod, OK_TAG));
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
+
+            metricsData = new MetricsData(callStarted,
+                                          callDuration,
+                                          sentMessageSize,
+                                          recvMessageSize,
+                                          System.currentTimeMillis());
+        }
     }
 }
