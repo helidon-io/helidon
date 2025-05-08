@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.grpc.tests;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,28 +32,15 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
 @ServerTest
-class GrpcMetricsTest extends GrpcBaseTest {
+class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
 
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
-    static final Tag[] METHOD_TAGS = {
-            Tag.create("grpc.method", "StringService/Upper"),
-            Tag.create("grpc.method", "StringService/Split")
-    };
-    static final String CALL_STARTED = "grpc.client.attempt.started";
-    static final String CALL_DURATION = "grpc.client.attempt.duration";
-    static final String SENT_MESSAGE_SIZE = "grpc.client.attempt.sent_total_compressed_message_size";
-    static final String RCVD_MESSAGE_SIZE = "grpc.client.attempt.rcvd_total_compressed_message_size";
-
-    private static GrpcClient grpcClient;
-
-    private GrpcMetricsTest(WebServer server) {
+    GrpcEnabledMetricsTest(WebServer server) {
         Tls clientTls = Tls.builder()
                 .trust(trust -> trust
                         .keystore(store -> store
@@ -69,33 +55,17 @@ class GrpcMetricsTest extends GrpcBaseTest {
                 .build();
     }
 
-    @RepeatedTest(20)
-    void testUnaryUpper() {
-        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
-        Strings.StringMessage res = service.upper(newStringMessage("hello"));
-        assertThat(res.getText(), is("HELLO"));
-    }
-
-    @RepeatedTest(20)
-    void testServerStreamingSplit() {
-        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
-        Iterator<Strings.StringMessage> res = service.split(newStringMessage("hello world"));
-        assertThat(res.next().getText(), is("hello"));
-        assertThat(res.next().getText(), is("world"));
-        assertThat(res.hasNext(), is(false));
-    }
-
     @AfterAll
     static void checkMetrics() {
         MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
         Tag grpcTarget = Tag.create("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
 
         for (Tag grpcMethod : METHOD_TAGS) {
-            Optional<Counter> counter = meterRegistry.counter(CALL_STARTED, List.of(grpcMethod, grpcTarget));
+            Optional<Counter> counter = meterRegistry.counter(ATTEMPT_STARTED, List.of(grpcMethod, grpcTarget));
             assertThat(counter.isPresent(), is(true));
             assertThat(counter.get().count(), is(20L));
 
-            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(grpcMethod, grpcTarget, OK_TAG));
+            Optional<Timer> timer = meterRegistry.timer(ATTEMPT_DURATION, List.of(grpcMethod, grpcTarget, OK_TAG));
             assertThat(timer.isPresent(), is(true));
             assertThat(timer.get().count(), is(20L));
 

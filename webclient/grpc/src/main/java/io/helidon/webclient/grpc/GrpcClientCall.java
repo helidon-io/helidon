@@ -200,12 +200,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         continue;
                     }
                     if (frameData != null) {
-                        receivingQueue.add(frameData.data());
-                        socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
+                        BufferData bufferData = frameData.data();
                         // update bytes received excluding prefix
                         if (enableMetrics()) {
-                            bytesRcvd().addAndGet(frameData.data().available() - DATA_PREFIX_LENGTH);
+                            bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
                         }
+                        receivingQueue.add(bufferData);
+                        socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                     }
                 }
 
