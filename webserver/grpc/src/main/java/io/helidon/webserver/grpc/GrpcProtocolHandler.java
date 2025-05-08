@@ -404,37 +404,35 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      * of started calls, but not record any of the other metrics.
      */
     private void initMetrics() {
-        if (grpcConfig.enableMetrics()) {
-            String methodName = route.method().getFullMethodName();
-            methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
-                MeterRegistry meterRegistry = Metrics.globalRegistry();
-                Tag grpcMethod = Tag.create("grpc.method", name);
+        String methodName = route.method().getFullMethodName();
+        methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
+            MeterRegistry meterRegistry = Metrics.globalRegistry();
+            Tag grpcMethod = Tag.create("grpc.method", name);
 
-                Counter.Builder callStartedBuilder = Counter.builder("grpc.server.call.started")
-                        .scope(VENDOR)
-                        .tags(List.of(grpcMethod));
-                Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+            Counter.Builder callStartedBuilder = Counter.builder("grpc.server.call.started")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod));
+            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
 
-                Timer.Builder callDurationOkBuilder = Timer.builder("grpc.server.call.duration")
-                        .scope(VENDOR)
-                        .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                        .tags(List.of(grpcMethod, OK_TAG));
-                Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+            Timer.Builder callDurationOkBuilder = Timer.builder("grpc.server.call.duration")
+                    .scope(VENDOR)
+                    .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                    .tags(List.of(grpcMethod, OK_TAG));
+            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
 
-                DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
-                                "grpc.server.call.sent_total_compressed_message_size")
-                        .scope(VENDOR)
-                        .tags(List.of(grpcMethod, OK_TAG));
-                DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+            DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
+                            "grpc.server.call.sent_total_compressed_message_size")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod, OK_TAG));
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
 
-                DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
-                                "grpc.server.call.rcvd_total_compressed_message_size")
-                        .scope(VENDOR)
-                        .tags(List.of(grpcMethod, OK_TAG));
-                DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
+            DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
+                            "grpc.server.call.rcvd_total_compressed_message_size")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod, OK_TAG));
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
 
-                return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
-            });
-        }
+            return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
+        });
     }
 }
