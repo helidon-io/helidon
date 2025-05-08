@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.lra</groupId>
         <artifactId>helidon-lra-coordinator-client-project</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.2</version>
     </parent>
 
     <artifactId>helidon-lra-coordinator-client-spi</artifactId>

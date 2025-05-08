@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.service</groupId>
         <artifactId>helidon-service-project</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

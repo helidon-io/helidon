@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-metadata-project</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.2</version>
     </parent>
     <artifactId>helidon-config-metadata</artifactId>
     <name>Helidon Config Metadata</name>
