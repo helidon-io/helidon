@@ -148,12 +148,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
                         boolean lastEndOfStream = endOfStream;
                         socket().log(LOGGER, DEBUG, "[Writing thread] writing bufferData %b", lastEndOfStream);
-                        clientStream().writeData(bufferData, endOfStream);
-
                         // update bytes sent
                         if (enableMetrics()) {
                             bytesSent().addAndGet(bufferData.available());
                         }
+                        clientStream().writeData(bufferData, endOfStream);
                     }
                 }
             } catch (Throwable e) {
@@ -203,7 +202,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     if (frameData != null) {
                         receivingQueue.add(frameData.data());
                         socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
-
                         // update bytes received excluding prefix
                         if (enableMetrics()) {
                             bytesRcvd().addAndGet(frameData.data().available() - DATA_PREFIX_LENGTH);
