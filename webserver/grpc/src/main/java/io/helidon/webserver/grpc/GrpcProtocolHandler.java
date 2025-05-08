@@ -22,10 +22,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -48,7 +51,6 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -86,6 +88,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
 
     private static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+    private record MethodMetrics(Counter callStarted,
+                                 Timer callDuration,
+                                 DistributionSummary sentMessageSize,
+                                 DistributionSummary recvMessageSize) { }
+    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final HttpPrologue prologue;
     private final Http2Headers headers;
@@ -106,14 +113,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private Decompressor decompressor;
     private boolean isIdentityCompressor;
     private long bytesReceived;
-
-    record MetricsData(Counter callStarted,
-                       Timer callDuration,
-                       DistributionSummary sentMessageSize,
-                       DistributionSummary recvMessageSize,
-                       long startMillis) { }
-
-    private MetricsData metricsData;
+    private MethodMetrics methodMetrics;
+    private long startMillis;
 
     GrpcProtocolHandler(HttpPrologue prologue,
                         Http2Headers headers,
@@ -149,7 +150,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // init metrics
             if (grpcConfig.enableMetrics()) {
                 initMetrics();
-                metricsData.callStarted.increment();
+                startMillis = System.currentTimeMillis();
+                methodMetrics.callStarted.increment();
             }
 
             // initiate server call
@@ -220,7 +222,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 // update metrics
                 if (grpcConfig.enableMetrics()) {
-                    metricsData.recvMessageSize.record(bytesReceived);
+                    methodMetrics.recvMessageSize.record(bytesReceived);
                 }
             }
         } catch (Exception e) {
@@ -377,9 +379,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 // update metrics
                 if (status.isOk() && grpcConfig.enableMetrics()) {
-                    metricsData.sentMessageSize.record(bytesSent);
-                    metricsData.callDuration.record(
-                            Duration.ofMillis(System.currentTimeMillis() - metricsData.startMillis));
+                    methodMetrics.sentMessageSize.record(bytesSent);
+                    methodMetrics.callDuration.record(
+                            Duration.ofMillis(System.currentTimeMillis() - startMillis));
                 }
             }
 
@@ -396,50 +398,43 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     /**
-     * Gets or creates gRPC server metrics for the method being invoked. Note that
+     * Initializes gRPC server metrics for the method being invoked. Note that
      * duration and size metrics are currently recorded only for successful calls,
      * using the {@link #OK_TAG}. If a call fails, it will only increment the number
      * of started calls, but not record any of the other metrics.
      */
     private void initMetrics() {
         if (grpcConfig.enableMetrics()) {
-            MetricsFactory metricsFactory = MetricsFactory.getInstance();
-            MeterRegistry meterRegistry = Metrics.globalRegistry();
+            String methodName = route.method().getFullMethodName();
+            methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
+                MeterRegistry meterRegistry = Metrics.globalRegistry();
+                Tag grpcMethod = Tag.create("grpc.method", name);
 
-            Tag grpcMethod = Tag.create("grpc.method", route.method().getFullMethodName());
+                Counter.Builder callStartedBuilder = Counter.builder("grpc.server.call.started")
+                        .scope(VENDOR)
+                        .tags(List.of(grpcMethod));
+                Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
 
-            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder(
-                            "grpc.server.call.started")
-                            .scope(VENDOR);
-            callStartedBuilder.tags(List.of(grpcMethod));
-            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+                Timer.Builder callDurationOkBuilder = Timer.builder("grpc.server.call.duration")
+                        .scope(VENDOR)
+                        .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                        .tags(List.of(grpcMethod, OK_TAG));
+                Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
 
-            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder(
-                            "grpc.server.call.duration")
-                            .scope(VENDOR)
-                            .baseUnit(Timer.BaseUnits.MILLISECONDS);
-            callDurationOkBuilder.tags(List.of(grpcMethod, OK_TAG));
-            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+                DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
+                                "grpc.server.call.sent_total_compressed_message_size")
+                        .scope(VENDOR)
+                        .tags(List.of(grpcMethod, OK_TAG));
+                DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
 
-            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.server.call.sent_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                            .scope(VENDOR);
-            sendMessageSizeBuilder.tags(List.of(grpcMethod, OK_TAG));
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+                DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
+                                "grpc.server.call.rcvd_total_compressed_message_size")
+                        .scope(VENDOR)
+                        .tags(List.of(grpcMethod, OK_TAG));
+                DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
 
-            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
-                            "grpc.server.call.rcvd_total_compressed_message_size",
-                            metricsFactory.distributionStatisticsConfigBuilder())
-                            .scope(VENDOR);
-            recvMessageSizeBuilder.tags(List.of(grpcMethod, OK_TAG));
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
-
-            metricsData = new MetricsData(callStarted,
-                                          callDuration,
-                                          sentMessageSize,
-                                          recvMessageSize,
-                                          System.currentTimeMillis());
+                return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
+            });
         }
     }
 }
