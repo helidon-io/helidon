@@ -59,9 +59,18 @@ public class GrpcChannel extends Channel {
 
     @Override
     public String authority() {
-        ClientUri clientUri = grpcClient.prototype()
+        return baseUri().authority();
+    }
+
+    /**
+     * Gets base URI for this gRPC client.
+     *
+     * @return the base URI
+     * @throws java.lang.IllegalArgumentException if no base URI is defined
+     */
+    public ClientUri baseUri() {
+        return grpcClient.prototype()
                 .baseUri()
                 .orElseThrow(() -> new IllegalArgumentException("No base URI provided for GrpcClient"));
-        return clientUri.authority();
     }
 }
