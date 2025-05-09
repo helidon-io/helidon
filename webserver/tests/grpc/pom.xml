@@ -46,6 +46,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
