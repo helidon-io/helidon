@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-microprofile-project</artifactId>
         <groupId>io.helidon.microprofile</groupId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.3-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.telemetry</groupId>
     <artifactId>helidon-microprofile-telemetry</artifactId>
