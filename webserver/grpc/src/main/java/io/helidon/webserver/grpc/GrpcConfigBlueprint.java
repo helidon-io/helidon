@@ -41,4 +41,13 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
      */
     @Option.Default(GrpcProtocolProvider.CONFIG_NAME)
     String type();
+
+    /**
+     * Whether to collect metrics for gRPC server calls.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
 }
