@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,13 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.Header;
@@ -33,6 +38,12 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -50,6 +61,7 @@ import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 
+import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
 
 /**
@@ -64,6 +76,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     protected static final BufferData PING_FRAME = BufferData.create("PING");
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
+    protected static final int DATA_PREFIX_LENGTH = 5;
+
+    protected static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+    protected record MethodMetrics(Counter callStarted,
+                                   Timer callDuration,
+                                   DistributionSummary sentMessageSize,
+                                   DistributionSummary recvMessageSize) { }
+    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -74,6 +94,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final boolean abortPollTimeExpired;
     private final Duration heartbeatPeriod;
     private final ClientUriSupplier clientUriSupplier;
+    private final GrpcClientConfig grpcConfig;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -82,9 +103,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile GrpcClientStream clientStream;
     private volatile Listener<ResT> responseListener;
     private volatile HelidonSocket socket;
+    private volatile MethodMetrics methodMetrics;
+    private volatile long startMillis;
+
+    private AtomicLong bytesSent;
+    private AtomicLong bytesRcvd;
 
     GrpcBaseClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         this.grpcClient = (GrpcClientImpl) grpcChannel.grpcClient();
+        this.grpcConfig = grpcClient.clientConfig();
         this.grpcChannel = grpcChannel;
         this.methodDescriptor = methodDescriptor;
         this.callOptions = callOptions;
@@ -102,6 +129,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         LOGGER.log(DEBUG, "start called");
 
         this.responseListener = responseListener;
+
+        // init metrics
+        if (grpcConfig.enableMetrics()) {
+            initMetrics();
+            bytesSent = new AtomicLong(0L);
+            bytesRcvd = new AtomicLong(0L);
+            startMillis = System.currentTimeMillis();
+            methodMetrics.callStarted.increment();
+        }
 
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
@@ -251,6 +287,26 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return socket;
     }
 
+    protected MethodMetrics methodMetrics() {
+        return methodMetrics;
+    }
+
+    protected long startMillis() {
+        return startMillis;
+    }
+
+    protected boolean enableMetrics() {
+        return grpcConfig.enableMetrics();
+    }
+
+    protected AtomicLong bytesSent() {
+        return bytesSent;
+    }
+
+    protected AtomicLong bytesRcvd() {
+        return bytesRcvd;
+    }
+
     /**
      * Retrieves the next URI either from the supplier or directly from config. If
      * a supplier is provided, it will take precedence.
@@ -261,5 +317,41 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private ClientUri nextClientUri() {
         return clientUriSupplier == null ? grpcClient.prototype().baseUri().orElseThrow()
                 : clientUriSupplier.next();
+    }
+
+    protected void initMetrics() {
+        String baseUri = grpcChannel.baseUri().toString();
+        String methodName = methodDescriptor.getFullMethodName();
+
+        methodMetrics = METHOD_METRICS.get().computeIfAbsent(baseUri + methodName, uri -> {
+            MeterRegistry meterRegistry = Metrics.globalRegistry();
+            Tag grpcMethod = Tag.create("grpc.method", methodName);
+            Tag grpcTarget = Tag.create("grpc.target", baseUri);
+
+            Counter.Builder callStartedBuilder = Counter.builder("grpc.client.attempt.started")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod, grpcTarget));
+            Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
+
+            Timer.Builder callDurationOkBuilder = Timer.builder("grpc.client.attempt.duration")
+                    .scope(VENDOR)
+                    .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+            Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
+
+            DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
+                            "grpc.client.attempt.sent_total_compressed_message_size")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
+
+            DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
+                            "grpc.client.attempt.rcvd_total_compressed_message_size")
+                    .scope(VENDOR)
+                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
+
+            return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
+        });
     }
 }
