@@ -101,6 +101,7 @@ backend:
                   - "testing-junit5.adoc"
                   - "jbatch.adoc"
                   - "performance-tuning.adoc"
+                  - "oci-guide.adoc"
               - type: "PAGE"
                 title: "Bean Validation"
                 source: "beanvalidation.adoc"
