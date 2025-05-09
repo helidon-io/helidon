@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.jpa</groupId>
         <artifactId>helidon-tests-integration-jpa-project</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-tests-integration-jpa-common</artifactId>
     <name>Helidon Tests Integration JPA Common</name>

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.http.tests.media</groupId>
         <artifactId>helidon-http-tests-media-project</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-http-tests-media-jsonp</artifactId>
