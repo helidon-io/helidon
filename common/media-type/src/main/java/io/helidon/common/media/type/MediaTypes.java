@@ -135,6 +135,111 @@ public final class MediaTypes {
      */
     public static final MediaType APPLICATION_HOCON = MediaTypeEnum.APPLICATION_HOCON;
 
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String WILDCARD_VALUE = "*/*";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_XML_VALUE = "application/xml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_ATOM_XML_VALUE = "application/atom+xml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_XHTML_XML_VALUE = "application/xhtml+xml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_SVG_XML_VALUE = "application/svg+xml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_JSON_VALUE = "application/json";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_JSON_PATCH_JSON_VALUE = "application/json-patch+json";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_STREAM_JSON_VALUE = "application/stream+json";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_FORM_URLENCODED_VALUE = "application/x-www-form-urlencoded";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String MULTIPART_FORM_DATA_VALUE = "multipart/form-data";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String MULTIPART_BYTERANGES_VALUE = "multipart/byteranges";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_OCTET_STREAM_VALUE = "application/octet-stream";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_PLAIN_VALUE = "text/plain";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_XML_VALUE = "text/xml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_HTML_VALUE = "text/html";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_OPENMETRICS_TEXT_VALUE = "application/openmetrics-text";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_OPENAPI_YAML_VALUE = "application/vnd.oai.openapi";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_OPENAPI_JSON_VALUE = "application/vnd.oai.openapi+json";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_X_YAML_VALUE = "application/x-yaml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_YAML_VALUE = "application/yaml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_X_YAML_VALUE = "text/x-yaml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_YAML_VALUE = "text/yaml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_JAVASCRIPT_VALUE = "application/javascript";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String TEXT_EVENT_STREAM_VALUE = "text/event-stream";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_X_NDJSON_VALUE = "application/x-ndjson";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_HOCON_VALUE = "application/hocon";
+
     // prevent instantiation of utility class
     private MediaTypes() {
     }
