@@ -219,7 +219,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public Optional<String> matchingPattern() {
-        return Optional.of(matchingPattern);
+        return Optional.ofNullable(matchingPattern);
     }
 
     @Override
