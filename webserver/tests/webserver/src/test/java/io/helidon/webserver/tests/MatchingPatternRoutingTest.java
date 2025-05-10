@@ -19,6 +19,8 @@ package io.helidon.webserver.tests;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRouting;
@@ -37,9 +39,9 @@ class MatchingPatternRoutingTest extends MatchingPatternBase {
     static void routing(HttpRouting.Builder builder) {
         builder.addFilter(
                 (chain, req, res) -> {
-                  assertThat(req.matchingPattern().orElse(null), nullValue());
+                  assertThat(req.matchingPattern(), optionalEmpty());
                   chain.proceed();
-                  assertThat(req.matchingPattern().orElse(null), notNullValue());
+                  assertThat(req.matchingPattern(), optionalPresent());
                 })
                 .get("/", HANDLER)
                 .get("/foo", HANDLER)
