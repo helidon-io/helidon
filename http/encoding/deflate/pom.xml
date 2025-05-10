@@ -29,6 +29,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.encoding</groupId>
             <artifactId>helidon-http-encoding</artifactId>
         </dependency>
