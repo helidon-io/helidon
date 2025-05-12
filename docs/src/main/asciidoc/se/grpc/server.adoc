@@ -225,8 +225,8 @@ for a certain method.
 |===
 
 At the time of writing, Helidon only tracks successful method calls, so the value of the
-`grpc.status` label must always be set to the string "OK". Support for metrics of unsuccessful calls
-may be supported in the future, hence the need to include the label at this time.
+`grpc.status` label is always set to the string "OK". Support for metrics of unsuccessful calls
+may be added in the future, hence the need to include the label at this time.
 
 As stated above, gRPC metrics are disabled by default but can be enabled
 by configuring the gRPC protocol in the Webserver. This can be accomplished

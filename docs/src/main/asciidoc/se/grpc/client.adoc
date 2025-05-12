@@ -228,8 +228,8 @@ certain method and target.
 The value of the label `grpc.method` is the fully-qualified method name; the value
 of the label `grpc.target` is the base URI of the gRPC service.
 At the time of writing, Helidon only tracks _successful_ client method calls, so the value
-of the `grpc.status` label must always be set to the string "OK". Support for
-metrics of unsuccessful calls may be supported in the future, hence the need to include
+of the `grpc.status` label is always set to the string "OK". Support for
+metrics of unsuccessful calls may be added in the future, hence the need to include
 the label at this time.
 
 As stated above, gRPC client metrics are disabled by default but can be enabled
@@ -240,8 +240,7 @@ programmatically when building the client as shown next:
 include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_11, indent=0]
 ----
 
-NOTE: Metrics are only available for gRPC clients running alongside the
-Helidon Webserver, that is, for gRPC clients running in a server environment.
+NOTE: Metrics are only available for gRPC clients running in a server environment.
 
 For more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
