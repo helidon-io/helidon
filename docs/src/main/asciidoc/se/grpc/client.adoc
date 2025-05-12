@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Generated Stubs, Generated Stubs>>
 ** <<Service Descriptors, Service Descriptors>>
 ** <<Client URI Suppliers, Client URI Suppliers>>
-** <<gRPC Interceptors, gRPC Interceptors>>
+** <<Client Interceptors, Client Interceptors>>
+** <<Metrics, Metrics>>
 - <<Configuration, Configuration>>
 
 == Overview
@@ -178,7 +179,7 @@ include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_9, indent=0]
 If both a base URI and a client URI supplier are configured, the latter will
 take precendence over the former.
 
-=== gRPC Interceptors
+=== Client Interceptors
 
 The gRPC API supports the notion of an interceptor on a channel. Interceptors are
 useful to implement cross-cutting concerns that apply to many or all invocations.
@@ -190,6 +191,59 @@ with a list of interceptors to execute on every invocation.
 ----
 include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_10, indent=0]
 ----
+
+== Metrics
+
+Helidon supports a few metrics that are specific to gRPC clients and are based
+on those defined in https://grpc.io/docs/guides/opentelemetry-metrics/[gRPC OpenTelemetry Metrics].
+Metrics are disabled by default, but can be easily enabled as we shall discuss shortly.
+
+Here is the list of gRPC client metrics available in Helidon:
+
+|===
+|Metric |Type |Labels| Description
+
+|grpc.client.attempt.started
+|Counter
+|grpc.method, grpc.target
+|The total number of calls started, including not completed ones, for a
+certain method and target.
+
+|grpc.client.attempt.duration
+|Timer
+|grpc.method, grpc.target, grpc.status
+|Timer that tracks call durations for a certain method and target.
+
+|grpc.client.attempt.sent_total_compressed_message_size
+|Distribution Summary
+|grpc.method, grpc.target, grpc.status
+|Summary of message sizes sent to clients for a certain method and target.
+
+|grpc.client.attempt.rcvd_total_compressed_message_size
+|Distribution Summary
+|grpc.method, grpc.target, grpc.status
+|Summary of message sizes received from clients for a certain method and target.
+|===
+
+The value of the label `grpc.method` is the fully-qualified method name; the value
+of the label `grpc.target` is the base URI of the gRPC service.
+At the time of writing, Helidon only tracks _successful_ client method calls, so the value
+of the `grpc.status` label must always be set to the string "OK". Support for
+metrics of unsuccessful calls may be supported in the future, hence the need to include
+the label at this time.
+
+As stated above, gRPC client metrics are disabled by default but can be enabled
+programmatically when building the client as shown next:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_11, indent=0]
+----
+
+NOTE: Metrics are only available for gRPC clients running alongside the
+Helidon Webserver, that is, for gRPC clients running in a server environment.
+
+For more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
 == Configuration
 
