@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -132,11 +133,27 @@ abstract class HeaderValueBase implements Header {
         if (!(o instanceof HeaderValueBase that)) {
             return false;
         }
-        return changing == that.changing
-                && sensitive == that.sensitive
-                && actualName.equals(that.actualName)
-                && valueCount() == that.valueCount()
-                && allValues().equals(that.allValues());
+        int valueCount = valueCount();
+        if (changing != that.changing
+                || sensitive != that.sensitive
+                || !actualName.equalsIgnoreCase(that.actualName)
+                || valueCount != that.valueCount()) {
+            return false;
+        }
+        List<String> thatValues = that.allValues();
+        for (String thisValue : allValues()) {
+            boolean found = false;
+            for (String thatValue : thatValues) {
+                if (thisValue.equalsIgnoreCase(thatValue)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

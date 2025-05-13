@@ -65,14 +65,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     @Override
     public boolean contains(Header headerWithValue) {
         Header headerValue = findOrNull(headerWithValue.headerName());
-        if (headerValue == null) {
-            return false;
-        }
-        if (headerWithValue.valueCount() == 1 && headerValue.valueCount() == 1) {
-            // just a string compare instead of list compare
-            return headerWithValue.get().equals(headerValue.get());
-        }
-        return headerWithValue.allValues().equals(headerValue.allValues());
+        return headerValue != null && headerValue.equals(headerWithValue);
     }
 
     @Override
