@@ -696,8 +696,16 @@ public class GrpcServiceDescriptor {
                 return (Class<T>) Object.class;
             }
 
+            // find service and method
             Descriptors.ServiceDescriptor svc = proto.findServiceByName(name);
+            if (svc == null) {
+                throw new IllegalArgumentException("Unable to find service " + name);
+            }
             Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
+            if (mtd == null) {
+                throw new IllegalArgumentException("Unable to find method "
+                                                   + methodName + " in service " + name);
+            }
             Descriptors.Descriptor type = fInput ? mtd.getInputType() : mtd.getOutputType();
 
             String pkg = getPackageName();
