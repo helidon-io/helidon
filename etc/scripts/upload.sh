@@ -49,10 +49,10 @@ $(basename "${0}") [OPTIONS] --directory=DIR CMD
   CMD:
 
     upload_release
-        Deploy /staging to a release repository
+        Upload staging directory to a release repository
 
     upload_snapshot
-        Deploy /staging directory to a snapshots repository
+        Uploading staging directory to a snapshots repository
 EOF
 }
 
@@ -211,7 +211,7 @@ central_upload() {
   responseFile=$(mktemp)
   statusFile=$(mktemp)
 
-  printf "Uploading %s to %s...\n" "${UPLOAD_BUNDLE}" "${CENTRAL_URL}" >&2
+  printf "Uploading %s to %s...\n" "${UPLOAD_BUNDLE}" "${1}" >&2
   # Upload bundle in one shot
   # publishingType of USER_MANAGED acts like "staging". Artifacts are uploaded and verified but not published.
   curl --request POST \
@@ -221,7 +221,7 @@ central_upload() {
     --form bundle=@"${UPLOAD_BUNDLE}" \
     --retry 3 \
     -o  "${responseFile}" \
-    "${CENTRAL_URL}/publisher/upload?name=helidon-${version}&publishingType=USER_MANAGED" > "${statusFile}"
+    "${1}/publisher/upload?name=helidon-${version}&publishingType=USER_MANAGED" > "${statusFile}"
 
   # handle errors
   if [ "$(cat "${statusFile}")" != "201" ] ; then
@@ -249,7 +249,7 @@ central_finish() {
     "VALIDATING")
       ;;
     "VALIDATED")
-      printf "Done. Bits are staged." >&2
+      printf "Done. Bits are uploaded." >&2
       exit
       ;;
     "PUBLISHING")
