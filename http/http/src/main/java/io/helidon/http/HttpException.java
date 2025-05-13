@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,17 @@ package io.helidon.http;
  * before the status code is sent.
  */
 public class HttpException extends RuntimeException {
-
+    /**
+     * HTTP status to return.
+     */
     private final Status status;
+    /**
+     * Whether the connection can be kept alive.
+     */
     private final boolean keepAlive;
+    /**
+     * Header to return with the response.
+     */
     private final ServerResponseHeaders headers = ServerResponseHeaders.create();
 
     /**

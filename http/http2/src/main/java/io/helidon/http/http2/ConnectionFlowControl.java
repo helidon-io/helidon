@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,8 +174,18 @@ public class ConnectionFlowControl {
         return timeout;
     }
 
-    enum Type {
-        SERVER, CLIENT;
+    /**
+     * Type of the flow control.
+     */
+    public enum Type {
+        /**
+         * Flow control for the server.
+         */
+        SERVER,
+        /**
+         * Flow control for the client.
+         */
+        CLIENT;
     }
 
     /**

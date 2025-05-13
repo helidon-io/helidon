@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
@@ -50,6 +51,7 @@ class MediaTypesTest {
             .filter(it -> Modifier.isStatic(it.getModifiers()))
             .filter(it -> Modifier.isFinal(it.getModifiers()))
             .filter(it -> Modifier.isPublic(it.getModifiers()))
+            .filter(it -> it.getType().equals(MediaType.class))
             .map(Field::getName)
             .collect(Collectors.toSet());
 
@@ -83,7 +85,20 @@ class MediaTypesTest {
                     () -> assertThat(value.subtype(), notNullValue()),
                     () -> assertThat(value.type(), notNullValue())
             );
+        }
+    }
 
+    @Test
+    @DisplayName("Test all MediaType constants have matching String value constant")
+    void testAllConstantsHaveValue() throws Exception {
+        for (String constant : constants) {
+            MediaType mediaType = (MediaType) clazz.getField(constant)
+                    .get(null);
+            String value = (String) clazz.getField(constant + "_VALUE")
+                    .get(null);
+            assertThat("String value must match text of the MediaType constant for: " + constant,
+                       value,
+                       is(mediaType.text()));
         }
     }
 
