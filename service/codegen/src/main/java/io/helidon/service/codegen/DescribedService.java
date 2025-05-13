@@ -37,6 +37,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_QUALIFIER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_REPLACEMENT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_INJECTION_POINT_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_SERVICES_FACTORY;
@@ -65,6 +66,8 @@ class DescribedService {
     private final ServiceSuperType superType;
     // in case this service is a qualified provider, we also get the qualifier it handles
     private final TypeName qualifiedProviderQualifier;
+    // if marked as replacement
+    private final boolean isReplacement;
 
     private DescribedService(DescribedType serviceType,
                              DescribedType providedType,
@@ -73,7 +76,8 @@ class DescribedService {
                              TypeName descriptorType,
                              Set<Annotation> qualifiers,
                              FactoryType providerType,
-                             TypeName qualifiedProviderQualifier) {
+                             TypeName qualifiedProviderQualifier,
+                             boolean isReplacement) {
 
         this.serviceType = serviceType;
         this.providedType = providedType;
@@ -83,6 +87,7 @@ class DescribedService {
         this.qualifiers = Set.copyOf(qualifiers);
         this.providerType = providerType;
         this.qualifiedProviderQualifier = qualifiedProviderQualifier;
+        this.isReplacement = isReplacement;
     }
 
     static DescribedService create(RegistryCodegenContext ctx,
@@ -206,6 +211,8 @@ class DescribedService {
                                                    providedElements);
         }
 
+        boolean isReplacement = serviceInfo.hasAnnotation(SERVICE_ANNOTATION_REPLACEMENT);
+
         return new DescribedService(
                 serviceDescriptor,
                 providedDescriptor,
@@ -214,7 +221,8 @@ class DescribedService {
                 descriptorType,
                 gatherQualifiers(serviceInfo),
                 providerType,
-                qualifiedProviderQualifier
+                qualifiedProviderQualifier,
+                isReplacement
         );
     }
 
@@ -278,6 +286,10 @@ class DescribedService {
 
     TypeName qualifiedProviderQualifier() {
         return qualifiedProviderQualifier;
+    }
+
+    boolean isReplacement() {
+        return isReplacement;
     }
 
     private static TypeName createType(TypeName... types) {
