@@ -31,6 +31,8 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 ** <<gRPC Server Routing, gRPC Server Routing>>
 ** <<Service Implementation, Service Implementation>>
+** <<Server Interceptors, Server Interceptors>>
+** <<Metrics, Metrics>>
 - <<Configuration, Configuration>>
 ** <<Configuring the gRPC Server, Configuring the gRPC Server>>
 ** <<Configuring the gRPC Reflection Service, Configuring the gRPC Reflection Service>>
@@ -69,8 +71,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 - <<Customizing Service Definitions, Customizing Service Definitions>>
 
 Unlike the HTTP server, which allows you to route requests based on path expression
-and the HTTP verb, the gRPC server always routes requests based on the service and
-method name. This makes routing configuration somewhat simpler -- all you need
+and an HTTP verb, the gRPC server always routes requests based on the service and
+method names. This makes routing configuration somewhat simpler -- all you need
 to do is register your services:
 
 [source,java]
@@ -84,8 +86,8 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_1, indent=0]
 <4> Register a custom unary gRPC route
 
 Both "standard" gRPC services that implement `io.grpc.BindableService` interface
-(typically implemented by extending the generated server-side stub and overriding
-its methods), and Helidon gRPC services that implement
+(typically implemented by extending generated server-side stubs and overriding
+their methods), and Helidon gRPC services that implement
 `io.helidon.grpc.server.GrpcService` interface can be registered.
 The difference is that Helidon gRPC services allow you to customize behavior
 down to the method level, and provide a number of useful helper methods that
@@ -94,7 +96,8 @@ make service implementation easier, as we'll see in a moment.
 ==== Customizing Service Definitions
 
 When registering a service, regardless of its type, you can customize its
-descriptor by providing an instance of `ServerServiceDefinition` to `service` method.
+descriptor by providing an instance of `ServerServiceDefinition` as an
+argument to the `service` method.
 
 === Service Implementation
 
@@ -143,17 +146,104 @@ The service implementation will be very similar to our original implementation:
 include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_2, indent=0]
 ----
 
-<1> Specify the proto descriptor in order to provide necessary type information and
+<1> Specify the proto descriptor in order to provide the necessary type information and
 enable Protobuf marshalling.
-<2> Define unary method `Echo` and map it to the `this::echo` handler.
+<2> Define the unary method `Echo` and map it to the `this::echo` handler.
 <3> Create a handler for the `Echo` method, using Protobuf message types for request and response.
-<4> Extract message string from the request.
-<5> Create the response containing extracted message.
-<6> Send the response back to the client by completing response observer.
+<4> Extract the message string from the request.
+<5> Create the response containing the extracted message.
+<6> Send the response back to the client by completing the response observer.
 
 NOTE: The `complete` method shown in the example above is just one of many helper
 methods available in the `ResponseHelper` class. See the full list
 link:{grpc-server-javadoc-base-url}/io/helidon/webserver/grpc/ResponseHelper.html[here].
+
+=== Server Interceptors
+
+gRPC supports the notion of _server interceptors_ which are useful to implement
+common tasks (cross-cutting concerns) on any subset of methods and services.
+Interceptors implement the `io.grpc.ServerInterceptor` interface which defines
+a single `interceptCall` method. Server interceptors are arranged in a _chain_ that
+wraps the actual gRPC method invocation and that can be ordered by weight.
+
+Server interceptors are registered while creating routes, and will intercept any
+gRPC method calls that follow: that is, registration ordering is important to
+make sure interceptor chains are properly constructed to accomplish a
+certain task. For example, consider the following routing definition:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_4, indent=0]
+----
+
+This routing includes two server interceptor instances of types `Interceptor1` and
+`Interceptor2`. As stated above, the order in which these interceptors are
+registered is important. In this example, `Interceptor1` will be called for
+any method in `EchoService` and `MathService`, but not for `GreetService`.
+Similarly, `Interceptor2` will be called only for methods in `MathService`.
+The default weight of a server interceptor is `InterceptorWeights.USER`;
+it follows that for `MathService`, `Interceptor2` will be called _before_
+`Interceptor1` given its _higher_ weight of `Interceptor.USER + 100`.
+
+NOTE: Even though the gRPC API supports interception of methods via
+alternative mechanisms, it is recommended to use the `intercept` method
+on a `GrpcRouting` builder, as shown above, to ensure correct ordering
+based on weights.
+
+=== Metrics
+
+Helidon supports a few metrics that are specific to gRPC and are based
+on those defined in https://grpc.io/docs/guides/opentelemetry-metrics/[gRPC OpenTelemetry Metrics].
+Metrics are disabled by default, but can be easily enabled via configuration
+as we shall discuss shortly.
+
+Here is the list of gRPC server metrics available in Helidon:
+
+|===
+|Metric |Type |Labels| Description
+
+|grpc.server.call.started
+|Counter
+|grpc.method
+|The total number of calls started, including not completed ones,
+for a certain method.
+
+|grpc.server.call.duration
+|Timer
+|grpc.method, grpc.status
+|Timer that tracks call durations for a certain method.
+
+|grpc.server.call.sent_total_compressed_message_size
+|Distribution Summary
+|grpc.method, grpc.status
+|Summary of message sizes sent to clients for a certain method.
+
+|grpc.server.call.rcvd_total_compressed_message_size
+|Distribution Summary
+|grpc.method, grpc.status
+|Summary of message sizes received from clients for a certain method.
+|===
+
+At the time of writing, Helidon only tracks successful method calls, so the value of the
+`grpc.status` label is always set to the string "OK". Support for metrics of unsuccessful calls
+may be added in the future, hence the need to include the label at this time.
+
+As stated above, gRPC metrics are disabled by default but can be enabled
+by configuring the gRPC protocol in the Webserver. This can be accomplished
+either programmatically or directly in your server config file as follows:
+
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  protocols:
+    grpc:
+      enable-metrics: true
+----
+
+The configuration above shall enable metrics on the Webserver's default port 8080. For
+more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
 == Configuration
 Configure the gRPC server using the Helidon configuration framework, either programmatically
@@ -161,7 +251,7 @@ or via a configuration file.
 
 === Configuring the gRPC Server
 
-Currently, we do not have any custom configuration options for gRPC protocol.
+Currently, we do not have any custom configuration options for the gRPC protocol.
 
 To register a routing with Helidon WebServer, simply add the routing to the listener
 (WebServer configuration is itself the default listener configuration)

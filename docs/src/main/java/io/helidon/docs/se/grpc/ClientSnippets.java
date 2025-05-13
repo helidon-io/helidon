@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,5 +185,23 @@ class ClientSnippets {
         // tag::snippet_10[]
         Channel newChannel = grpcClient.channel(myInterceptors());
         // end::snippet_10[]
+    }
+
+    void snippets3() {
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+
+        // tag::snippet_11[]
+        GrpcClient grpcClient = GrpcClient.builder()
+                .tls(clientTls)
+                .baseUri("https://localhost:8080")
+                .enableMetrics(true)        // enables metrics
+                .build();
+        // end::snippet_11[]
     }
 }
