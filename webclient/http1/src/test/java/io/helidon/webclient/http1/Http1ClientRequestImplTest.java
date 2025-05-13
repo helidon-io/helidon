@@ -29,20 +29,20 @@ class Http1ClientRequestImplTest {
     void testUpgradeHeaders() {
         Header req = HeaderValues.create("Upgrade", "websocket");
         Header res = HeaderValues.create("Upgrade", "WebSocket");       // camel case
-        assertThat(Http1ClientRequestImpl.isUpgradeSuccessful(req, res), is(true));
+        assertThat(Http1ClientRequestImpl.upgradeSuccessful(req, res), is(true));
     }
 
     @Test
     void testUpgradeHeadersMany() {
         Header req = HeaderValues.create("Upgrade", "websocket", "h2c");
         Header res = HeaderValues.create("Upgrade", "WebSocket");       // camel case
-        assertThat(Http1ClientRequestImpl.isUpgradeSuccessful(req, res), is(true));
+        assertThat(Http1ClientRequestImpl.upgradeSuccessful(req, res), is(true));
     }
 
     @Test
     void testUpgradeHeadersFail() {
         Header req = HeaderValues.create("Upgrade", "websocket", "http3");
         Header res = HeaderValues.create("Upgrade", "h2c");
-        assertThat(Http1ClientRequestImpl.isUpgradeSuccessful(req, res), is(false));
+        assertThat(Http1ClientRequestImpl.upgradeSuccessful(req, res), is(false));
     }
 }

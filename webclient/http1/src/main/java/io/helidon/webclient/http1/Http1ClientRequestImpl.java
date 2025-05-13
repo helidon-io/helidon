@@ -154,7 +154,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
         if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
             // is the upgrade request successful?
-            if (isUpgradeSuccessful(requestedUpgrade, response.headers().get(HeaderNames.UPGRADE))) {
+            if (upgradeSuccessful(requestedUpgrade, response.headers().get(HeaderNames.UPGRADE))) {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                     response.connection()
                             .helidonSocket().log(LOGGER,
@@ -210,9 +210,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
      * @param responseUpgrade response upgrade header
      * @return check if protocol upgrade can proceed
      */
-    static boolean isUpgradeSuccessful(Header requestUpgrade, Header responseUpgrade) {
+    static boolean upgradeSuccessful(Header requestUpgrade, Header responseUpgrade) {
+        String selectedProtocol = responseUpgrade.get();
         for (String protocol : requestUpgrade.allValues()) {
-            if (protocol.equalsIgnoreCase(responseUpgrade.get())) {
+            if (protocol.equalsIgnoreCase(selectedProtocol)) {
                 return true;
             }
         }
