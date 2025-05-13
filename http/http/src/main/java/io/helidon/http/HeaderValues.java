@@ -101,6 +101,11 @@ public final class HeaderValues {
     public static final Header CACHE_NORMAL = createCached(HeaderNames.CACHE_CONTROL, "no-transform");
 
     /**
+     * Discourage browsers from attempting to detect the content type by "sniffing" the data.
+     */
+    public static final Header X_CONTENT_TYPE_OPTIONS_NOSNIFF = createCached(HeaderNames.X_CONTENT_TYPE_OPTIONS, "nosniff");
+
+    /**
      * TE header set to {@code trailers}, used to enable trailer headers.
      */
     public static final Header TE_TRAILERS = createCached(HeaderNames.TE, "trailers");
