@@ -134,8 +134,12 @@ if [ ! -d "${STAGING_DIR}" ] ; then
   exit 1
 fi
 
-#readonly CENTRAL_URL="https://central.sonatype.com/api/v1"
+# Central Portal URL for releases
 readonly CENTRAL_URL="http://localhost:8080/api/v1/"
+#readonly CENTRAL_URL="https://central.sonatype.com/api/v1"
+# Central SNAPSHOT URL
+readonly SNAPSHOT_URL="https://central.sonatype.com/repository/maven-snapshots"
+
 BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
 
 find_version() {
@@ -173,9 +177,7 @@ upload_snapshot() {
     exit 1
   fi
 
-  # central_upload "${CENTRAL_URL}/content/repositories/snapshots" "${STAGING_DIR}"
-  echo "ERROR: Uploading SNAPSHOT releases is not currently implemented." >&2
-  exit 1
+  nexus_upload "${SNAPSHOT_URL}" "${STAGING_DIR}"
 }
 
 upload_release() {
@@ -278,6 +280,32 @@ central_get_deployment_state() {
     --header "Authorization: Bearer ${BEARER}" \
     "${CENTRAL_URL}/publisher/status?id=${1}" \
     | jq -r ".deploymentState"
+}
+
+# Upload to a nexus repository. This is used to support SNAPSHOT releases
+# arg1: base URL
+# arg2: staging directory
+nexus_upload() {
+  printf "\nUploading artifacts...\n" >&2
+
+  local tmpfile
+  tmpfile=$(mktemp)
+
+  # Generate a curl config file for all files to deploy
+  # Use -T <file> --url <url> for each file
+  while read -r i ; do
+      echo "-T ${2}/${i}" >> "${tmpfile}"
+      echo "--url ${1}/${i}" >> "${tmpfile}"
+  done < <(find "${2}" -type f | cut -c $((${#2} + 2))-)
+
+  # Upload
+  curl -s \
+    --user "${NEXUS_USER}:${NEXUS_PASSWORD}" \
+    --write-out "%{stderr}%{http_code} %{url_effective}\n" \
+    --config "${tmpfile}" \
+    --parallel \
+    --parallel-max 10 \
+    --retry 3
 }
 
 ${COMMAND}
