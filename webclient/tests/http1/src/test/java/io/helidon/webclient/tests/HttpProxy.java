@@ -51,7 +51,7 @@ class HttpProxy {
     private final String user;
     private final String password;
     // Starts with -1 because there is one first test connection to verify the HttpProxy is available
-    private final AtomicInteger counter = new AtomicInteger(-1);
+    private final AtomicInteger counter = new AtomicInteger(0);
     private int connectedPort;
 
     HttpProxy(int port, String user, String password) {
@@ -70,12 +70,12 @@ class HttpProxy {
             try (ServerSocket server = new ServerSocket(port)) {
                 this.connectedPort = server.getLocalPort();
                 LOGGER.log(Level.INFO, "Listening connections in port: " + connectedPort);
+                ready.countDown();
                 while (!stop) {
                     // Origin is the socket that starts the connection
                     Socket origin = server.accept();
                     LOGGER.log(Level.DEBUG, "Open: " + origin);
                     counter.incrementAndGet();
-                    ready.countDown();
                     origin.setSoTimeout(TIMEOUT);
                     // Remote is the socket that will connect to the desired host, for example www.google.com
                     // It is not connected yet because we need to wait for the HTTP CONNECT to know where.
@@ -92,15 +92,13 @@ class HttpProxy {
                 stop();
             }
         });
-        // Makes sure that HttpProxy is ready
-        boolean responding = false;
-        while (!responding) {
-            try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(connectedPort), 10000);
-                responding = true;
-                // Wait for counter is set to 0
-                ready.await(5, TimeUnit.SECONDS);
-            } catch (IOException | InterruptedException e) {}
+
+        try {
+            if (!ready.await(5, TimeUnit.SECONDS)) {
+                throw new RuntimeException("HttpProxy server is not ready!! Waited for " + TIMEOUT + " seconds.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
