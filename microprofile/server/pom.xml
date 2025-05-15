@@ -127,6 +127,10 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-cdi1x</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-media-jsonp</artifactId>
         </dependency>
