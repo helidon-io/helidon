@@ -845,7 +845,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Whether PKCE is enabled.
+     * Whether Proof Key Code Exchange (PKCE) is enabled.
      *
      * @return enabled PKCE
      */
@@ -854,7 +854,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Selected PKCE challenge generation method.
+     * Selected Proof Key Code Exchange (PKCE) challenge generation method.
      *
      * @return PKCE challenge generation method
      */
@@ -1871,7 +1871,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * PKCE challenge creation method.
+         * Proof Key Code Exchange (PKCE) challenge creation method.
          * Default value is {@link PkceChallengeMethod#S256}.
          *
          * @param pkceChallengeMethod challenge creation method

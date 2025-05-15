@@ -74,13 +74,6 @@ public class TestResource {
                     .request()
                     .get(String.class);
         }
-//        WebClient client = WebClient.builder()
-////                .servicesDiscoverServices(false)
-//                .build();
-//        return client.get()
-//                .uri(uri.getBaseUri())
-//                .path("/test/redirected")
-//                .requestEntity(String.class);
     }
 
     @GET

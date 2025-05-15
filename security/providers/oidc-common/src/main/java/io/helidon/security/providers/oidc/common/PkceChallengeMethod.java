@@ -25,7 +25,7 @@ import java.util.function.Function;
 import io.helidon.common.crypto.HashDigest;
 
 /**
- * PKCE challenge generation type.
+ * Proof Key Code Exchange (PKCE) challenge generation type.
  * Based on <a href="https://datatracker.ietf.org/doc/html/rfc7636#section-4.2">RFC7636 - Section 4.2</a>
  */
 public enum PkceChallengeMethod {
@@ -57,7 +57,7 @@ public enum PkceChallengeMethod {
     }
 
     /**
-     * Transform PKCE verifier to the challenge.
+     * Transform Proof Key Code Exchange (PKCE) verifier to the challenge.
      *
      * @param verifier PKCE verifier
      * @return PKCE challenge
@@ -67,7 +67,7 @@ public enum PkceChallengeMethod {
     }
 
     /**
-     * PKCE method name.
+     * Proof Key Code Exchange (PKCE) method name.
      *
      * @return method name
      */
