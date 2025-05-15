@@ -94,6 +94,7 @@ enum HeaderNameEnum implements HeaderName {
     VARY("Vary"),
     WARNING("Warning"),
     WWW_AUTHENTICATE("WWW-Authenticate"),
+    X_CONTENT_TYPE_OPTIONS("X-Content-Type-Options"),
     X_FORWARDED_FOR("X-Forwarded-For"),
     X_FORWARDED_HOST("X-Forwarded-Host"),
     X_FORWARDED_PORT("X-Forwarded-Port"),
