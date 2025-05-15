@@ -252,8 +252,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
                     .add("grant_type", "client_credentials");
 
-            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder);
-
             if (!oidcConfig.baseScopes().isEmpty()) {
                 formBuilder.add("scope", oidcConfig.baseScopes());
             }
@@ -261,6 +259,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             HttpClientRequest postRequest = oidcConfig.appWebClient()
                     .post()
                     .uri(oidcConfig.tokenEndpointUri());
+
+            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
 
             try (var response = postRequest.submit(formBuilder.build())) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {
