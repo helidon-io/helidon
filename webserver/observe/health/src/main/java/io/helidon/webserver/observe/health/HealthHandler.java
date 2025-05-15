@@ -85,7 +85,8 @@ class HealthHandler implements Handler {
         };
 
         res.status(responseStatus);
-        res.header(HeaderValues.CACHE_NO_CACHE);
+        res.header(HeaderValues.CACHE_NO_CACHE)
+                .header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
 
         if (details) {
             entityWriter.write(JsonpSupport.JSON_OBJECT_TYPE,
