@@ -120,7 +120,8 @@ public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeTy
             if (sb.routingBuilders().hasRouting(GrpcRouting.Builder.class)) {
                 sb.routingBuilders()
                         .routingBuilder(GrpcRouting.Builder.class)
-                        .service(new GrpcReflectionService(socket));
+                        .service(new GrpcReflectionService(socket))
+                        .service(new GrpcReflectionServiceV1Alpha(socket));     // older version for some tools
             } else {
                 LOGGER.log(Level.WARNING, "Unable to register gRPC reflection service, "
                         + "no gRPC routes found for socket " + socket);

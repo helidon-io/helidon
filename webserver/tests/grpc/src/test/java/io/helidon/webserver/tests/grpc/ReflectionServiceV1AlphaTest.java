@@ -30,12 +30,12 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import io.grpc.reflection.v1.ExtensionRequest;
-import io.grpc.reflection.v1.FileDescriptorResponse;
-import io.grpc.reflection.v1.ServerReflectionGrpc;
-import io.grpc.reflection.v1.ServerReflectionRequest;
-import io.grpc.reflection.v1.ServerReflectionResponse;
-import io.grpc.reflection.v1.ServiceResponse;
+import io.grpc.reflection.v1alpha.ExtensionRequest;
+import io.grpc.reflection.v1alpha.FileDescriptorResponse;
+import io.grpc.reflection.v1alpha.ServerReflectionGrpc;
+import io.grpc.reflection.v1alpha.ServerReflectionRequest;
+import io.grpc.reflection.v1alpha.ServerReflectionResponse;
+import io.grpc.reflection.v1alpha.ServiceResponse;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,12 +48,17 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
+/**
+ * Reflection service test for version v1alpha.
+ *
+ * @see io.helidon.webserver.tests.grpc.ReflectionServiceTest
+ */
 @ServerTest
-class ReflectionServiceTest extends BaseServiceTest {
+class ReflectionServiceV1AlphaTest extends BaseServiceTest {
 
     private ServerReflectionGrpc.ServerReflectionStub stub;
 
-    ReflectionServiceTest(WebServer server) {
+    ReflectionServiceV1AlphaTest(WebServer server) {
         super(server);
     }
 
@@ -95,7 +100,9 @@ class ReflectionServiceTest extends BaseServiceTest {
         Set<String> names = serviceResponses.stream()
                 .map(ServiceResponse::getName)
                 .collect(Collectors.toSet());
-        assertThat(names, hasItems("StringService", "grpc.reflection.v1.ServerReflection"));
+        assertThat(names, hasItems("StringService",
+                                   "grpc.reflection.v1.ServerReflection",
+                                   "grpc.reflection.v1alpha.ServerReflection"));
     }
 
     /**
