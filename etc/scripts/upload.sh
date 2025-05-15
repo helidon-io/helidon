@@ -217,18 +217,16 @@ central_upload() {
   # Upload bundle in one shot
   # publishingType of USER_MANAGED acts like "staging". Artifacts are uploaded and verified but not published.
   curl --request POST \
-    -s \
+    --retry 2 \
     --header "Authorization: Bearer ${BEARER}" \
     --write-out "%{stderr}%{http_code} %{url_effective}\n%{stdout}%{http_code}" \
     --form bundle=@"${UPLOAD_BUNDLE}" \
-    --retry 3 \
     -o  "${responseFile}" \
-    "${1}/publisher/upload?name=helidon-${version}&publishingType=USER_MANAGED" > "${statusFile}"
+    "${1}/publisher/upload?name=io-helidon-${version}&publishingType=USER_MANAGED" > "${statusFile}"
 
   # handle errors
   if [ "$(cat "${statusFile}")" != "201" ] ; then
-    printf "Error trying to upload bundle." >&2
-    cat "${responseFile}" >&2
+    printf "[ERROR] %s\n" "$(cat ${responseFile})" >&2
     exit 1
   fi
 
@@ -300,7 +298,7 @@ nexus_upload() {
 
   # Upload
   curl -s \
-    --user "${NEXUS_USER}:${NEXUS_PASSWORD}" \
+    --user "${CENTRAL_USER}:${CENTRAL_PASSWORD}" \
     --write-out "%{stderr}%{http_code} %{url_effective}\n" \
     --config "${tmpfile}" \
     --parallel \
