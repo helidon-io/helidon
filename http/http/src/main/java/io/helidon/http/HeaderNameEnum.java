@@ -94,6 +94,7 @@ enum HeaderNameEnum implements HeaderName {
     VARY(Strings.VARY_NAME),
     WARNING(Strings.WARNING_NAME),
     WWW_AUTHENTICATE(Strings.WWW_AUTHENTICATE_NAME),
+    X_CONTENT_TYPE_OPTIONS(Strings.X_CONTENT_TYPE_OPTIONS_NAME),
     X_FORWARDED_FOR(Strings.X_FORWARDED_FOR_NAME),
     X_FORWARDED_HOST(Strings.X_FORWARDED_HOST_NAME),
     X_FORWARDED_PORT(Strings.X_FORWARDED_PORT_NAME),
@@ -221,6 +222,7 @@ enum HeaderNameEnum implements HeaderName {
         static final String VARY_NAME = "Vary";
         static final String WARNING_NAME = "Warning";
         static final String WWW_AUTHENTICATE_NAME = "WWW-Authenticate";
+        static final String X_CONTENT_TYPE_OPTIONS_NAME = "X-Content-Type-Options";
         static final String X_FORWARDED_FOR_NAME = "X-Forwarded-For";
         static final String X_FORWARDED_HOST_NAME = "X-Forwarded-Host";
         static final String X_FORWARDED_PORT_NAME = "X-Forwarded-Port";

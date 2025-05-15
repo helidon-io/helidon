@@ -15,8 +15,11 @@
  */
 package io.helidon.webserver.observe.health;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -25,13 +28,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.is;
 
 @ServerTest
-class TestNoCacheHeaders {
+class TestHeaders {
 
     private final Http1Client client;
 
-    TestNoCacheHeaders(Http1Client client) {
+    TestHeaders(Http1Client client) {
         this.client = client;
     }
 
@@ -48,6 +52,17 @@ class TestNoCacheHeaders {
                                                          "no-store",
                                                          "must-revalidate",
                                                          "no-transform")));
+        }
+    }
+
+    @Test
+    void testNosniffHeader() {
+        try (HttpClientResponse response = client.get("/observe/health").accept(MediaTypes.APPLICATION_JSON)
+                .request()) {
+            assertThat("Response", response.status().code(), is(Status.NO_CONTENT_204.code()));
+            assertThat("Response headers",
+                       response.headers(),
+                       HttpHeaderMatcher.hasHeader(HeaderNames.X_CONTENT_TYPE_OPTIONS, "nosniff"));
         }
     }
 }
