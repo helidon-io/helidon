@@ -135,8 +135,8 @@ if [ ! -d "${STAGING_DIR}" ] ; then
 fi
 
 # Central Portal URL for releases
-readonly CENTRAL_URL="http://localhost:8080/api/v1/"
-#readonly CENTRAL_URL="https://central.sonatype.com/api/v1"
+#readonly CENTRAL_URL="http://localhost:8080/api/v1/"
+readonly CENTRAL_URL="https://central.sonatype.com/api/v1"
 # Central SNAPSHOT URL
 readonly SNAPSHOT_URL="https://central.sonatype.com/repository/maven-snapshots"
 
