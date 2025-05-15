@@ -226,7 +226,7 @@ central_upload() {
 
   # handle errors
   if [ "$(cat "${statusFile}")" != "201" ] ; then
-    printf "[ERROR] %s\n" "$(cat ${responseFile})" >&2
+    printf "[ERROR] %s\n" "$(cat "${responseFile}")" >&2
     exit 1
   fi
 
