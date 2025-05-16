@@ -521,13 +521,6 @@
                 <version>${version.lib.bytebuddy}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.coherence.ce</groupId>
-                <artifactId>coherence-bom</artifactId>
-                <version>${version.lib.coherence}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.websocket</groupId>
                 <artifactId>jakarta.websocket-api</artifactId>
                 <version>${version.lib.jakarta.websockets-api}</version>
@@ -1402,6 +1395,13 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <dependency>
+                <groupId>com.oracle.coherence.ce</groupId>
+                <artifactId>coherence-bom</artifactId>
+                <version>${version.lib.coherence}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
