@@ -30,6 +30,8 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.langchain4j.providers.coherence {
     requires static io.helidon.common.features.api;
 
+    requires com.oracle.coherence;
+    requires com.oracle.coherence.hnsw;
     requires langchain4j.coherence;
     requires langchain4j.core;
 

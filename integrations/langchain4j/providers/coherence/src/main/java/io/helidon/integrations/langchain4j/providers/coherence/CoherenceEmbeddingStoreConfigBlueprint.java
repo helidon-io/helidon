@@ -48,7 +48,7 @@ interface CoherenceEmbeddingStoreConfigBlueprint {
      * @return an {@link java.util.Optional} containing the session name qualifier.
      */
     @Option.Configured
-    Optional<String> session;
+    Optional<String> session();
 
     /**
      * The name of the Coherence {@link com.tangosol.net.NamedMap} to use to store embeddings.
@@ -56,7 +56,7 @@ interface CoherenceEmbeddingStoreConfigBlueprint {
      * @return an {@link java.util.Optional} containing the NamedMap name.
      */
     @Option.Configured
-    Optional<String> name;
+    Optional<String> name();
 
     /**
      * The index name to use.
@@ -64,7 +64,7 @@ interface CoherenceEmbeddingStoreConfigBlueprint {
      * @return an {@link java.util.Optional} containing index name.
      */
     @Option.Configured
-    Optional<String> index;
+    Optional<String> index();
 
     /**
      * Force normalization of embeddings on add and search.
@@ -72,5 +72,5 @@ interface CoherenceEmbeddingStoreConfigBlueprint {
      * @return an {@link java.util.Optional} containing
      */
     @Option.Configured
-    Optional<Boolean> normalizeEmbeddings;
+    Optional<Boolean> normalizeEmbeddings();
 }

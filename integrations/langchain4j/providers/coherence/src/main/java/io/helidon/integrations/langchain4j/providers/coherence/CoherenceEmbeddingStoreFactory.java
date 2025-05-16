@@ -16,7 +16,13 @@
 
 package io.helidon.integrations.langchain4j.providers.coherence;
 
+import com.oracle.coherence.ai.DocumentChunk;
+import com.oracle.coherence.ai.VectorIndexExtractor;
+import com.oracle.coherence.ai.hnsw.HnswIndex;
+import com.tangosol.util.ValueExtractor;
+
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -39,6 +45,7 @@ import dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore;
 @Service.Named(Service.Named.WILDCARD_NAME)
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class CoherenceEmbeddingStoreFactory implements Service.ServicesFactory<CoherenceEmbeddingStore> {
+    private static final System.Logger LOGGER = System.getLogger(CoherenceEmbeddingStoreFactory.class.getName());
     private static final Qualifier COHERENCE_QUALIFIER = Qualifier.createNamed("coherence");
 
     private final CoherenceEmbeddingStore store;
@@ -69,19 +76,6 @@ class CoherenceEmbeddingStoreFactory implements Service.ServicesFactory<Coherenc
         return List.of();
     }
 
-    private static DataSource named(ServiceRegistry registry, String name) {
-        if (Service.Named.DEFAULT_NAME.equals(name)) {
-            return registry.get(DataSource.class);
-        }
-        return registry.<DataSource>first(Lookup.builder()
-                                                  .addContract(DataSource.class)
-                                                  .addQualifier(Qualifier.createNamed(name))
-                                                  .build())
-                .orElseThrow(() -> new ServiceRegistryException("Cannot find DataSource with name " + name
-                                                                        + " configured for "
-                                                                        + "CoherenceeEmbeddingStoreFactory."));
-    }
-
     /**
      * Creates and returns an {@link dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore} configured using the provided
      * configuration.
@@ -93,7 +87,18 @@ class CoherenceEmbeddingStoreFactory implements Service.ServicesFactory<Coherenc
         var builder = CoherenceEmbeddingStore.builder();
         config.session().ifPresent(builder::session);
         config.name().ifPresent(builder::name);
-        config.index().ifPresent(builder::index);
+
+        VectorIndexExtractor extractor = null;
+        if (config.index().isPresent()) {
+            if ("hnsw".equalsIgnoreCase(config.index().get())) {
+                //TODO: Hardcoding dimension, which can be a config
+                extractor = new HnswIndex<>(ValueExtractor.of(DocumentChunk::vector), 768);
+            } else {
+                LOGGER.log(System.Logger.Level.WARNING,"Cannot create embedding store index - No index name has been specified for the Coherence embedding store.");
+            }
+        }
+
+        builder.index(extractor);
         config.normalizeEmbeddings().ifPresent(builder::normalizeEmbeddings);
 
         return builder.build();

@@ -69,6 +69,11 @@
             <version>25.03.1</version>
         </dependency>
         <dependency>
+            <groupId>com.oracle.coherence.ce</groupId>
+            <artifactId>coherence-hnsw</artifactId>
+            <version>25.03.1</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

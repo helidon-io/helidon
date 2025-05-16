@@ -20,5 +20,5 @@ langchain4j:
       enabled: true
       session: "session"
       name: "namedMap"
-      normalizeEmbeddings: "false"
+      normalize-embeddings: false
       index: "hnsw"
