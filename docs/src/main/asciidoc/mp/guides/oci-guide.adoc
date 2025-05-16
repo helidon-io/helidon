@@ -34,7 +34,9 @@ Oracle Cloud Infrastructure (OCI) is a set of complementary cloud services that 
 By deploying Helidon applications on OCI, you can take advantage of OCI services and features. Helidon integration with OCI includes support for the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java] - allowing you to write custom code to extend features. Helidon also provides a link:{jakarta-cdi-spec-url}#spi[Helidon OCI SDK CDI portable extension] to support
 injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
 
-Currently, Helidon on OCI is only supported on Helidon MP.
+This guide and the Helidon Quick Start for OCI are currently only available with Helidon MP.
+
+You can write Helidon SE applications directly with the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java APIs] and use this guide as an outline for setting up your OCI environment.
 
 == What You Need
 
@@ -48,7 +50,7 @@ You can generate Helidon MP project files for OCI using the Helidon Project Star
 
 A Helidon Project Starter allows you to choose from a set of archetypes with pre-defined feature sets and lets you customize it by providing a host of options.
 
-. Go to the link:{https://helidon.io/starter/4.2.1}[Helidon Project Starter] page on the Helidon website.
+. Go to the https://helidon.io/starter[Helidon Project Starter] page on the Helidon website.
 . Under *Helidon Flavor*, select *Helidon MP* and click *Next*.
 . Under *Application Type*, select *OCI* and click *Next*.
 . If you are using this application for testing or development purposes, then under *Customize Project*, leave the values as default and go to the next step. If you want to use the generated project as the basis for a production application, then replace `groupId`, `artifactId` and `package` with values appropriate for your application.
@@ -113,7 +115,7 @@ A Helidon Project Starter allows you to choose from a set of archetypes with pre
 ----
 ====
 
-Alternatively, you can also use the Helidon OCI Maven archetype or the Helidon CLI to generate the Helidon MP OCI project instead.
+Alternatively, you can also use the Helidon CLI to generate the Helidon MP OCI project instead.
 
 == Running the Application Locally
 
@@ -156,23 +158,23 @@ curl -X GET http://localhost:8080/greet/Jose
 
 == Deploying a Helidon Application on OCI
 
-You can deploy the Helidon application on either OCI OKE or OCI Compute. Depending on your requirements, one option might be better suited to your needs than the other.
+You can deploy the Helidon application to an Oracle Cloud Infrastructure (OCI) environment, using either OCI Compute or OCI Kubernetes Engine (OKE). Depending on your requirements, one option might be better suited to your needs than the other.
 
-* **Oracle Cloud Infrastructure Compute** lets you provision and manage Compute hosts, known as instances, to run your applications. Instances can be either bare metal or virtual machines (VM). See link:{oci-doc-url}/Content/Compute/home.htm[Compute] in OCI documentation for more information.
+* **OCI Compute** lets you provision and manage Compute hosts, known as instances, to run your applications. Instances can be either bare metal or virtual machines (VM). See link:{oci-doc-url}/Content/Compute/home.htm[Compute] in OCI documentation for more information.
 
-* **Oracle Cloud Infrastructure Kubernetes Engine (OKE)** is a fully-managed, scalable, and highly available service that you can use to deploy your containerized applications to the cloud. See link:{oci-doc-url}/Content/ContEng/home.htm[Kubernetes Engine] in OCI documentation for more information.
+* **OKE** is a fully-managed, scalable, and highly available service that you can use to deploy your containerized applications to the cloud. See link:{oci-doc-url}/Content/ContEng/home.htm[Kubernetes Engine] in OCI documentation for more information.
 
-
-Once you have selected your OCI environment, you can get started with deploying your Helidon applications:
+After you have selected your OCI environment, you can get started with deploying your Helidon applications.
 
 * To learn how to deploy a Helidon MP application on OCI Compute, follow the instructions outlined at https://github.com/helidon-io/helidon-labs/blob/main/hols/oci-basic-setup/README.md[Deploying a Helidon OCI MP Application on a Basic OCI Setup] in the Helidon Labs GitHub repository.
 * To learn how to deploy a Helidon MP application on OCI OKE, follow the instructions outlined at link:{oci-doc-url}/developer-tutorials/tutorials/helidon-k8s/01oci-helidon-k8s-summary.htm[Kubernetes: Deploy a Java Helidon Application] in OCI documentation. Make sure you select *OCI* as the Application Type, and _not_ Quickstart.
 
+=== Integrating with OCI Services
 
-== Integrating with OCI Services
+Before you can use OCI services, you must properly configure your application to run on OCI. The Helidon MP OCI Project Starter is already partially configured to integrate with several common OCI services but you must update its configuration with values specific to your application and OCI environment. 
 
-The Helidon MP OCI Project Starter is already configured to integrate with several common OCI services but the Helidon OCI SDK extension supports injecting clients for any link:{oci-javasdk-url}#Services_Supported[OCI service supported by the OCI SDK for Java].
+The Helidon OCI SDK extension also supports injecting clients for any link:{oci-javasdk-url}#Services_Supported[OCI service supported by the OCI SDK for Java].
 
-See xref:../integrations/oci.adoc[OCI Integration] for more information on how to configure additional OCI services with your Helidon application.
+See xref:../integrations/oci.adoc[OCI Integration] for more information on how to configure OCI services with your Helidon application.
 
 NOTE: Whenever you integrate a new OCI service in your application, you must build and redeploy the application to enable the OCI service's features.

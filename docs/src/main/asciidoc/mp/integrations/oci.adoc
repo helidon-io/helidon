@@ -34,7 +34,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-You can quickly and easily deploy Helidon MP applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.
+You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.
 
 link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
 injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
@@ -58,7 +58,7 @@ You must configure authentication between your local environment and the OCI env
 
 The Helidon OCI SDK extension authenticates with OCI by picking up OCI credentials from your environment.
 
-To configure authentication, add the ``oci.auth-strategy`` property to ``/src/main/resources/META-INF/microprofile-config.properties``
+To configure authentication, add the ``oci.auth-strategy`` property to ``/server/src/main/resources/META-INF/microprofile-config.properties``
 
 The ``oci.auth-strategy`` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
 
@@ -96,7 +96,7 @@ The Helidon OCI SDK extension supports injecting the client for any link:{oci-ja
 
 After adding the Helidon OCI SDK Extension dependency (as described above), you must add dependencies for each of the specific OCI SDK clients that you plan to use.
 
-NOTE: Each time that you update your application to integrate a OCI service, you must build and redeploy the application to enable the OCI service's features.
+NOTE: Each time that you update your application to integrate to an OCI service, you must build and redeploy the application to enable the OCI service's features.
 
 Here are some common OCI services and how to use them with your Helidon MP application.
 
@@ -123,26 +123,43 @@ To enable OCI Monitoring integration, add the following dependency to your proje
 </dependency>
 ----
 
+Next, update ``/server/src/main/resources/application.yaml`` so the application sends Helidon generated metrics to the OCI monitoring services:
+
+[source,yaml]
+.Adding OCI metrics configuration details
+----
+ocimetrics:
+  compartmentId: <1>
+  namespace: <2>
+----
+<1> The OCI compartment ID where the metrics will be sent.
+<2> The OCI metrics namespace.
+
+You can also update these optional values:
+
+[source,yaml]
+----
+ocimetrics:
+  initialDelay: 30 <3>
+  delay: 180 <4>
+  scopes: [base, vendor, application] <5>
+  enabled: true <6>
+----
+<3> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
+<4> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
+<5> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
+<6> Enable or disable metrics transmission to OCI. Default is TRUE.
+
 Then, add the following configuration to ``/server/src/main/resources/META-INF/microprofile-config.properties``, modifying its values for your specific project:
 
 [source,properties]
 .Defining properties for OCI metrics
 ----
-ocimetrics.compartmentId=cmpt-id <1>
-ocimetrics.namespace=helidon_pegasus <2>
-ocimetrics.initialDelay=30 <3>
-ocimetrics.delay=180 <4>
-ocimetrics.scopes.0=base <5>
-ocimetrics.scopes.1=vendor
-ocimetrics.scopes.2=application
-ocimetrics.enabled=true <6>
+oci.monitoring.compartmentId=cmpt-id <1>
+oci.monitoring.namespace=helidon_pegasus <2>
 ----
 <1> The OCI compartment ID where the metrics will be sent.
 <2> The OCI metrics namespace.
-<3> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
-<4> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
-<5> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
-<6> Enable or disable metrics transmission to OCI. Default is TRUE.
 
 The next time that you launch the application, it will report metrics to OCI monitoring. Let the application run for short while to generate data, then go to the Metrics Explorer in the OCI console to view the monitoring data.
 
