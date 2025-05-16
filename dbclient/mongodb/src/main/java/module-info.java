@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon Database Client MongoDB.
  */
-@Features.Name("mongo")
-@Features.Description("Database client with mongo driver")
-@Features.Path({"DbClient", "mongo"})
-@Features.Flavor(HelidonFlavor.SE)
+@Feature(value = "mongo",
+        description = "Database Client with mongo driver",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "mongo"}
+)
 module io.helidon.dbclient.mongodb {
 
     requires java.sql;

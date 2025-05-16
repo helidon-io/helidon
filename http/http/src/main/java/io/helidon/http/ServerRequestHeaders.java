@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,23 +106,19 @@ public interface ServerRequestHeaders extends Headers {
      * A media type is accepted if the {@code Accept} header is not present in the
      * request or if it contains the provided media type.
      *
-     * @param mediaTypes the media type(s) to test
+     * @param mediaType the media type to test
      * @return {@code true} if provided type is acceptable, {@code false} otherwise
      * @throws NullPointerException if the provided type is {@code null}.
      */
-    @Override
-    default boolean isAccepted(MediaType... mediaTypes) {
+    default boolean isAccepted(MediaType mediaType) {
         List<HttpMediaType> accepted = acceptedTypes();
         if (accepted.isEmpty()) {
             return true;
         }
         for (HttpMediaType acceptedType : accepted) {
-            for (MediaType type : mediaTypes) {
-                if (acceptedType.test(type)) {
-                    return true;
-                }
+            if (acceptedType.test(mediaType)) {
+                return true;
             }
-
         }
         return false;
     }
@@ -229,33 +225,5 @@ public interface ServerRequestHeaders extends Headers {
                     .map(URI::create);
         }
         return Optional.empty();
-    }
-
-    /**
-     * Check if the content type provided over the network matches one of the content types.
-     * If any of the media types is {@link io.helidon.common.media.type.MediaTypes#WILDCARD}, this method always returns
-     * {@code true}.
-     * If {@link #contentType()} is not defined, this method returns false.
-     *
-     * @param mediaTypes media types that we check against
-     * @return {@code true} if any of the media types provided matches the {@link #contentType()}
-     */
-    default boolean testContentType(MediaType... mediaTypes) {
-        for (MediaType mediaType : mediaTypes) {
-            if (mediaType.isWildcardType() && mediaType.isWildcardSubtype()) {
-                return true;
-            }
-        }
-        Optional<HttpMediaType> httpMediaType = contentType();
-        if (httpMediaType.isEmpty()) {
-            return false;
-        }
-        HttpMediaType contentType = httpMediaType.get();
-        for (MediaType mediaType : mediaTypes) {
-            if (contentType.test(mediaType)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

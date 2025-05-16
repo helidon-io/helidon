@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.webserver.grpc;
 
-import io.helidon.grpc.core.WeightedBag;
-
 import com.google.protobuf.Descriptors;
 import org.junit.jupiter.api.Test;
 
@@ -28,16 +26,8 @@ public class GrpcRouteHandlerTest {
     @Test
     void testBadServiceNames() throws Descriptors.DescriptorValidationException {
         assertThrows(IllegalArgumentException.class,
-                () -> GrpcRouteHandler.unary(Strings.getDescriptor(),
-                                             "foo",
-                                             "Upper",
-                                             null,
-                                             WeightedBag.create()));
+                () -> GrpcRouteHandler.unary(Strings.getDescriptor(), "foo", "Upper", null));
         assertThrows(IllegalArgumentException.class,
-                () -> GrpcRouteHandler.unary(Strings.getDescriptor(),
-                                             "StringService",
-                                             "foo",
-                                             null,
-                                             WeightedBag.create()));
+                () -> GrpcRouteHandler.unary(Strings.getDescriptor(), "StringService", "foo", null));
     }
 }

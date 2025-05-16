@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ public class DataReader {
      * @return buffer data with the length requested
      */
     public BufferData readBuffer(int length) {
-        BufferData data = getBuffer(length);
+        BufferData data = getBuffer(length); // TODO optimization - merge getChunk and skip into one loop; if required
         skip(length);
         return data;
     }
@@ -528,9 +528,6 @@ public class DataReader {
             }
         }
 
-        // adding an if to assert this would be a performance overhead
-        // this is truly to help when running unit or integration tests (when assertion is enabled)
-        @SuppressWarnings("checkstyle:IllegalToken")
         Node next() {
             if (this.next == null) {
                 assert this == tail;

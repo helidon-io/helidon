@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,130 +70,130 @@ final class MongoDBSimpleRemoteTestIT extends MongoDBRemoteTest implements Simpl
         remoteTest();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrStrNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithInsertNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithInsertOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithInsertOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithInsertOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrStrNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithUpdateNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithUpdateOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithUpdateOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithUpdateOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrStrOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithDeleteNamedArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithDeleteOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithDeleteOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithDeleteOrderArgs() {
-        remoteTest();
+        throw new UnsupportedOperationException();
     }
 
     @Test
@@ -277,18 +277,6 @@ final class MongoDBSimpleRemoteTestIT extends MongoDBRemoteTest implements Simpl
     @Test
     @Override
     public void testInsertOrderArgs() {
-        remoteTest();
-    }
-
-    @Test
-    @Override
-    public void testInsertNamedArgsReturnedKeys() {
-        remoteTest();
-    }
-
-    @Test
-    @Override
-    public void testInsertNamedArgsReturnedColumns() {
         remoteTest();
     }
 

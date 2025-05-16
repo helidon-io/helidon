@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
 
     @Override
     public AuthorizationResponse submit() {
+        // TODO ABAC - if annotated with Attribute meta annot, make sure that all are processed
         return security.resolveAtzProvider(providerName)
                 .map(this::authorize)
                 .orElse(AuthorizationResponse.permit());

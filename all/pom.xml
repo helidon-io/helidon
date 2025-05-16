@@ -476,14 +476,6 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-metadata</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-codegen</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.concurrency</groupId>
             <artifactId>helidon-common-concurrency-limits</artifactId>
         </dependency>

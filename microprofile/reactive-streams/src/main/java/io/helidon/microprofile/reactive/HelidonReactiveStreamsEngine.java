@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                     } else {
                         // act as a middle operator
                         Processor processor = ((Stage.ProcessorStage) stage).getRsProcessor();
-                        // maybe this could be deferred for when the downstream actually subscribes?
+                        // FIXME should this be deferred for when the downstream actually subscribes?
                         result = new DeferredViaProcessor(result, FlowAdapters.toFlowProcessor(processor));
                     }
                     continue;
@@ -308,6 +308,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                     requireSource(result, stage);
 
                     Function mapper = ((Stage.FlatMap) stage).getMapper();
+                    // FIXME dedicated concatMap
                     result = result.flatMap(v -> new MultiNullGuard<>(
                             FlowAdapters.toFlowPublisher(
                                     (Publisher) build(((Graph) mapper.apply(v)).getStages(), Mode.PUBLISHER)
@@ -319,6 +320,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                     requireSource(result, stage);
 
                     Function mapper = ((Stage.FlatMapCompletionStage) stage).getMapper();
+                    // FIXME dedicated concatMap
                     result = result.flatMap(v -> Multi.create((CompletionStage) mapper.apply(v)), 1, false, 1);
                     continue;
                 }

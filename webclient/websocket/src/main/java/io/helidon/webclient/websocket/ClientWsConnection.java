@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -298,6 +298,7 @@ public class ClientWsConnection implements WsSession, Runnable {
 
     private ServerWsFrame readFrame() {
         try {
+            // TODO check may payload size, danger of oom
             return ServerWsFrame.read(helidonSocket, connection.reader(), Integer.MAX_VALUE);
         } catch (WsCloseException e) {
             close(e.closeCode(), e.getMessage());

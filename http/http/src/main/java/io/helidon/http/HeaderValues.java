@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,11 +99,6 @@ public final class HeaderValues {
      * Cache control that allows caching with no transform.
      */
     public static final Header CACHE_NORMAL = createCached(HeaderNames.CACHE_CONTROL, "no-transform");
-
-    /**
-     * Discourage browsers from attempting to detect the content type by "sniffing" the data.
-     */
-    public static final Header X_CONTENT_TYPE_OPTIONS_NOSNIFF = createCached(HeaderNames.X_CONTENT_TYPE_OPTIONS, "nosniff");
 
     /**
      * TE header set to {@code trailers}, used to enable trailer headers.

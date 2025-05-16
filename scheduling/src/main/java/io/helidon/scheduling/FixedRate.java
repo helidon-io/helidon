@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.builder.api.RuntimeType;
  *
  * <pre>{@code
  * Scheduling.fixedRate()
- *      .interval(Duration.ofSecond(2))
+ *      .delay(2)
  *      .task(inv -> System.out.println("Executed every 2 seconds"))
  *      .build();
  * }</pre>
@@ -63,15 +63,15 @@ public interface FixedRate extends RuntimeType.Api<FixedRateConfig>, Task {
     }
 
     /**
-     * Whether the interval of the next invocation should be calculated from the start or end of the previous task.
+     * Whether the delay should be calculated from the start or end of the previous task.
      */
     enum DelayType {
         /**
-         * Next invocation start is measured from the previous invocation task start.
+         * Next invocation delay is measured from the previous invocation task start.
          */
         SINCE_PREVIOUS_START,
         /**
-         * Next invocation start is measured from the previous invocation task end.
+         * Next invocation delay is measured from the previous invocation task end.
          */
         SINCE_PREVIOUS_END
     }

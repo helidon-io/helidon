@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.codegen.apt;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +31,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
@@ -41,7 +39,6 @@ import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.Option;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -135,15 +132,12 @@ public final class AptProcessor extends AbstractProcessor {
 
         if (usedAnnotations.isEmpty()) {
             // no annotations, no types, still call the codegen, maybe it has something to do
-            codegen.process(List.of(), List.of());
+            codegen.process(List.of());
             return annotations.isEmpty();
         }
 
-        List<TypeInfo> allTypes = new ArrayList<>();
-        List<ModuleTypeInfo> allModules = new ArrayList<>();
-
-        discoverTypes(usedAnnotations, roundEnv, allTypes, allModules);
-        codegen.process(allTypes, allModules);
+        List<TypeInfo> allTypes = discoverTypes(usedAnnotations, roundEnv);
+        codegen.process(allTypes);
 
         return usedAnnotations.stream()
                 .map(UsedAnnotation::annotationElement)
@@ -214,16 +208,12 @@ public final class AptProcessor extends AbstractProcessor {
         }
     }
 
-    private void discoverTypes(Set<UsedAnnotation> annotations,
-                                         RoundEnvironment roundEnv,
-                                         List<TypeInfo> allTypes,
-                                         List<ModuleTypeInfo> allModules) {
+    private List<TypeInfo> discoverTypes(Set<UsedAnnotation> annotations, RoundEnvironment roundEnv) {
         // we must discover all types that should be handled, create TypeInfo and only then check if these should be processed
         // as we may replace annotations, elements, and whole types.
 
         // first collect all types (group by type name, so we do not have duplicity)
         Map<TypeName, TypeElement> types = new HashMap<>();
-        Map<String, ModuleElement> modules = new HashMap<>();
 
         for (UsedAnnotation annotation : annotations) {
             TypeElement annotationElement = annotation.annotationElement();
@@ -235,13 +225,12 @@ public final class AptProcessor extends AbstractProcessor {
                 case ENUM_CONSTANT, CONSTRUCTOR, METHOD, FIELD, STATIC_INIT, INSTANCE_INIT, RECORD_COMPONENT ->
                         addType(types, element.getEnclosingElement(), element, annotationElement);
                 case PARAMETER -> addType(types, element.getEnclosingElement().getEnclosingElement(), element, annotationElement);
-                case MODULE -> addModule(modules, element);
                 default -> ctx.logger().log(TRACE, "Ignoring annotated element, not supported: " + element + ", kind: " + kind);
                 }
             }
         }
 
-        types.values()
+        return types.values()
                 .stream()
                 .flatMap(element -> {
                     Optional<TypeInfo> typeInfo = AptTypeInfoFactory.create(ctx, element);
@@ -255,17 +244,7 @@ public final class AptProcessor extends AbstractProcessor {
                     }
                     return typeInfo.stream();
                 })
-                .forEach(allTypes::add);
-
-        modules.values()
-                .stream()
-                .map(element -> AptModuleFactory.create(ctx, element))
-                .forEach(allModules::add);
-    }
-
-    private void addModule(Map<String, ModuleElement> modules, Element element) {
-        ModuleElement me = (ModuleElement) element;
-        modules.putIfAbsent(me.getQualifiedName().toString(), me);
+                .toList();
     }
 
     private void addType(Map<TypeName, TypeElement> types,

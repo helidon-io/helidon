@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void priority(Http2Priority http2Priority) {
+        //FIXME: priority
     }
 
     @Override
@@ -312,6 +313,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             this.connection.updateLastStreamId(streamId);
             this.buffer = new StreamBuffer(this, streamId);
 
+            // fixme Configurable initial win size, max frame size
             this.flowControl = connection.flowControl().createStreamFlowControl(
                     streamId,
                     WindowSize.DEFAULT_WIN_SIZE,

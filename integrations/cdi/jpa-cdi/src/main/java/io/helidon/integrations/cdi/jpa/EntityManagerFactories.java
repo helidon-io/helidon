@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,7 +154,7 @@ final class EntityManagerFactories {
         Objects.requireNonNull(beanManager);
 
         final PersistenceUnitInfo pu = getPersistenceUnitInfo(instance, suppliedQualifiers);
-
+        assert pu != null;
         if (LOGGER.isLoggable(Level.WARNING) && PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
           LOGGER.logp(Level.WARNING, cn, mn, "resourceLocalPersistenceUnitWarning", pu);
         }
@@ -190,10 +190,8 @@ final class EntityManagerFactories {
         }
 
         final EntityManagerFactory returnValue = persistenceProvider.createContainerEntityManagerFactory(pu, properties);
-
-        if (returnValue == null || !returnValue.isOpen()) {
-            throw new IllegalStateException("Created entity manager factory is either null, or not open: " + returnValue);
-        }
+        assert returnValue != null;
+        assert returnValue.isOpen();
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
@@ -284,9 +282,7 @@ final class EntityManagerFactories {
         // This may very well throw a resolution exception; that is
         // anticipated.
         final PersistenceUnitInfo returnValue = puInstance.get();
-        if (returnValue == null) {
-            throw new IllegalStateException("Persistence unit info instance returned null");
-        }
+        assert returnValue != null;
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);

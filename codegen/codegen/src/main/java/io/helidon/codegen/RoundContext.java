@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 package io.helidon.codegen;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -45,15 +43,6 @@ public interface RoundContext {
      * @return matching types
      */
     Collection<TypeInfo> types();
-
-    /**
-     * All modules that are processed in this round. Only contains modules that are valid for processing by this extension.
-     *
-     * @return matching modules
-     */
-    default Collection<ModuleTypeInfo> modules() {
-        return List.of();
-    }
 
     /**
      * All types annotated with a specific annotation (including types that inherit such annotation from super types or

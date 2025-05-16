@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ class JavadocParser {
                     if (space < 0) {
                         // should be @param paramName documentation
                         // there is no param name defined, this is bad
+                        // TODO add location!
                         throw new IllegalStateException("Failed to parse javadoc, @param without param name: " + line);
                     }
                     int secondSpace = line.indexOf(' ', space + 2);
@@ -88,6 +89,7 @@ class JavadocParser {
                     int space = line.indexOf(' ');
                     if (space < 0) {
                         // should be @tag documentation
+                        // TODO add location!
                         throw new IllegalStateException("Failed to parse javadoc, @tag without space: " + line);
                     }
                     currentTagName = line.substring(1, space); // without @

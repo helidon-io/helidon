@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Declaration of support for ahead of time compilation using native image.
- * @deprecated use {@link io.helidon.common.features.api.Features.Aot} instead.
  */
-@Deprecated(forRemoval = true, since = "4.3.0")
 @Target(ElementType.MODULE)
 @Retention(RetentionPolicy.SOURCE)
 public @interface Aot {

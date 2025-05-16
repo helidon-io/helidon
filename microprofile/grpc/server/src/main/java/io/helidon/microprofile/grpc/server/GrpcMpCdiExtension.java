@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,8 @@ public class GrpcMpCdiExtension implements Extension {
 
     private void discoverRoutes(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
         config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-        GrpcRouting.Builder routingBuilder = GrpcRouting.builder();
-        loadExtensions(beanManager, config, routingBuilder);        // load first for interceptors
-        discoverGrpcRouting(beanManager, routingBuilder);
+        GrpcRouting.Builder routingBuilder = discoverGrpcRouting(beanManager);
+        loadExtensions(beanManager, config, routingBuilder);
         ServerCdiExtension extension = beanManager.getExtension(ServerCdiExtension.class);
         extension.addRouting(routingBuilder);
     }
@@ -63,12 +62,12 @@ public class GrpcMpCdiExtension implements Extension {
      * Discover the services and interceptors to use to configure the {@link GrpcRouting}.
      *
      * @param beanManager the CDI bean manager
-     * @param builder the routing builder
      * @return the {@link GrpcRouting} to use or {@code null} if no services
      * or routing were discovered
      */
-    private void discoverGrpcRouting(BeanManager beanManager, GrpcRouting.Builder builder) {
+    private GrpcRouting.Builder discoverGrpcRouting(BeanManager beanManager) {
         Instance<Object> instance = beanManager.createInstance();
+        GrpcRouting.Builder builder = GrpcRouting.builder();
 
         // discover @Grpc annotated beans
         // we use the bean manager to do this as we need the actual bean class
@@ -99,6 +98,8 @@ public class GrpcMpCdiExtension implements Extension {
                     Object service = instance.select(beanClass, qualifiers).get();
                     builder.service((BindableService) service);
                 });
+
+        return builder;
     }
 
     /**

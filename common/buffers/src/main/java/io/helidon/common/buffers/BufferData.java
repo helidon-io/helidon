@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -462,6 +462,9 @@ public interface BufferData {
 
     /**
      * HPack integer value (may be 1 or more bytes).
+     *
+     * TODO enforce limit that the hpack int is max 4 bytes (as otherwise we overflow int and this may be an attack)
+     * TODO enforce limit to string values (not here, but on headers processing)
      *
      * @param originalValue value (only bitsOfPrefix are used, bits before that are ignored)
      * @param bitsOfPrefix number of bits significant in the value

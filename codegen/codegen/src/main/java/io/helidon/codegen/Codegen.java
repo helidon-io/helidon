@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -135,21 +134,8 @@ public class Codegen {
      * This method analyzes the types and invokes each extension with the correct subset.
      *
      * @param allTypes all types for this processing round
-     * @deprecated use {@link #process(java.util.List, java.util.List)} instead
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public void process(List<TypeInfo> allTypes) {
-        process(allTypes, List.of());
-    }
-
-    /**
-     * Process all types and modules discovered.
-     * This method analyzes the types and modules and invokes each extension with the correct subset.
-     *
-     * @param allTypes all types for this processing round
-     * @param allModules all annotated modules for this processing round
-     */
-    public void process(List<TypeInfo> allTypes, List<ModuleTypeInfo> allModules) {
         List<ClassCode> toWrite = new ArrayList<>();
 
         // type info list will contain all mapped annotations, so this is the state we can do annotation processing on
@@ -158,7 +144,7 @@ public class Codegen {
         for (var extension : extensions) {
             // and now for each extension, we discover types that contain annotations supported by that extension
             // and create a new round context
-            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, allModules, extension, toWrite);
+            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, extension, toWrite);
             extension.extension().process(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
@@ -174,7 +160,7 @@ public class Codegen {
 
         // do processing over in each extension
         for (var extension : extensions) {
-            RoundContextImpl roundCtx = createRoundContext(List.of(), List.of(), extension, toWrite);
+            RoundContextImpl roundCtx = createRoundContext(List.of(), extension, toWrite);
             extension.extension().processingOver(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
@@ -261,14 +247,12 @@ public class Codegen {
     }
 
     private RoundContextImpl createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes,
-                                                List<ModuleTypeInfo> allModules,
                                                 ExtensionInfo extension,
                                                 List<ClassCode> newTypes) {
         Set<TypeName> availableAnnotations = new HashSet<>();
         Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
         Map<TypeName, TypeInfo> processedTypes = new HashMap<>();
         Map<TypeName, Set<TypeName>> metaAnnotationToAnnotations = new HashMap<>();
-        Map<String, ModuleTypeInfo> validModules = new HashMap<>();
 
         // now go through all available annotated types and make sure we only include the ones required by this extension
         for (TypeInfoAndAnnotations annotatedType : annotatedTypes) {
@@ -285,22 +269,13 @@ public class Codegen {
             }
         }
 
-        for (ModuleTypeInfo aModule : allModules) {
-            for (Annotation annotation : aModule.annotations()) {
-                if (extension.supportedAnnotationsPredicate().test(annotation.typeName())) {
-                    validModules.putIfAbsent(aModule.name(), aModule);
-                }
-            }
-        }
-
         return new RoundContextImpl(
                 ctx,
                 newTypes,
                 Set.copyOf(availableAnnotations),
                 Map.copyOf(annotationToTypes),
                 Map.copyOf(metaAnnotationToAnnotations),
-                List.copyOf(processedTypes.values()),
-                List.copyOf(validModules.values()));
+                List.copyOf(processedTypes.values()));
     }
 
     private boolean metaAnnotations(ExtensionInfo extension,

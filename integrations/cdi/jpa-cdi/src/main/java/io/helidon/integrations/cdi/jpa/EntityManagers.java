@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,10 +94,8 @@ final class EntityManagers {
         // request.
         final EntityManagerFactory emf =
             EntityManagerFactories.getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
-
-        if (emf == null || !emf.isOpen()) {
-            throw new IllegalStateException("EntityManagerFactory is either null or closed: " + emf);
-        }
+        assert emf != null;
+        assert emf.isOpen();
 
         // Trim down the selection qualifiers to use to look for
         // persistence context properties.
@@ -141,18 +139,39 @@ final class EntityManagers {
         // EntityManager's properties so other code can figure out
         // what it was.  It is slightly amazing this was not made part
         // of the JPA APIs.
+        assert !properties.containsKey(SynchronizationType.class.getName());
         properties.put(SynchronizationType.class.getName(), syncType);
 
         // Use the synchronization type we computed and the properties
         // we found to actually create the EntityManager.
         final EntityManager returnValue = emf.createEntityManager(syncType, properties);
-        if (returnValue == null || !returnValue.isOpen()) {
-            throw new IllegalStateException("EntityManager is either null or closed: " + returnValue);
-        }
+        assert returnValue != null;
+        assert returnValue.isOpen();
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
+
+    static SynchronizationType getSynchronizationTypeFor(final EntityManager entityManager) {
+        final SynchronizationType returnValue;
+        if (entityManager == null) {
+            returnValue = null;
+        } else {
+            final Map<String, Object> properties = entityManager.getProperties();
+            if (properties == null || properties.isEmpty()) {
+                returnValue = null;
+            } else {
+                final Object propertyValue = properties.get(SynchronizationType.class.getName());
+                if (propertyValue instanceof SynchronizationType) {
+                    returnValue = (SynchronizationType) propertyValue;
+                } else {
+                    returnValue = null;
+                }
+            }
+        }
+        return returnValue;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ final class LocalXAResource implements XAResource {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(this.getClass().getName(), "start", new Object[] {x, a});
         }
-        // x has already been vetted and is known to be non-null
+        assert x != null; // x has already been vetted and is known to be non-null
         if (a != null) {
             throw new UncheckedXAException((XAException) new XAException(XAER_DUPID)
                                            .initCause(new IllegalArgumentException("xid: " + x + "; association: " + a)));
@@ -552,6 +552,7 @@ final class LocalXAResource implements XAResource {
             throw new UncheckedXAException((XAException) new XAException(XAER_NOTA)
                                            .initCause(new NullPointerException("xid: " + x + "; association: null")));
         } else if (a.suspended()) {
+            assert a.branchState() == Association.BranchState.IDLE;
             throw new UncheckedXAException((XAException) new XAException(XAER_PROTO)
                                            .initCause(new IllegalStateException("xid: " + x + "; association: " + a)));
         }
@@ -599,7 +600,7 @@ final class LocalXAResource implements XAResource {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "commitAndReset", new Object[] {a, onePhase});
         }
-        // already vetted
+        assert a != null; // already vetted
         try {
             a = a.commitAndReset(onePhase);
         } catch (SQLException e) {
@@ -607,6 +608,7 @@ final class LocalXAResource implements XAResource {
         } catch (XAException e) {
             throw new UncheckedXAException(e);
         }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, Association.class.getName(), "commitAndReset",
                         "Removing association {0}", a);
@@ -623,12 +625,13 @@ final class LocalXAResource implements XAResource {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "rollbackAndReset", a);
         }
-        // already vetted
+        assert a != null; // already vetted
         try {
             a = a.rollbackAndReset();
         } catch (SQLException sqlException) {
             throw new UncheckedSQLException(sqlException);
         }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, Association.class.getName(), "rollbackAndReset",
                         "Removing association {0}", a);
@@ -645,14 +648,12 @@ final class LocalXAResource implements XAResource {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "prepare", a);
         }
-        // already vetted
-        if (a.suspended()) {
-            // can't be in T2
-            throw new IllegalStateException("Association " + a + " is suspended");
-        }
+        assert a != null; // already vetted
+        assert !a.suspended(); // can't be in T2
         try {
             if (a.connection().isReadOnly()) {
                 a = a.reset();
+                assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.logp(Level.FINE, Association.class.getName(), "prepare",
                                 "Removing association {0}", a);
@@ -674,12 +675,13 @@ final class LocalXAResource implements XAResource {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(Association.class.getName(), "forgetAndReset", a);
         }
-        // already vetted
+        assert a != null; // already vetted
         try {
             a = a.forgetAndReset();
         } catch (SQLException e) {
             throw new UncheckedSQLException(e);
         }
+        assert a.branchState() == Association.BranchState.NON_EXISTENT_TRANSACTION;
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, Association.class.getName(), "forgetAndReset",
                         "Removing association {0}", a);
@@ -853,6 +855,7 @@ final class LocalXAResource implements XAResource {
         }
 
         public boolean suspended() {
+            assert this.suspended ? this.branchState() == BranchState.IDLE : true;
             return this.suspended;
         }
 

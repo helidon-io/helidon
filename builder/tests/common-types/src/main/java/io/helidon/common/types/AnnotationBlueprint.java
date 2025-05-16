@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -672,14 +672,9 @@ interface AnnotationBlueprint {
      * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
      */
     default boolean hasMetaAnnotation(TypeName annotationType) {
-        for (Annotation metaAnnotation : metaAnnotations()) {
-            if (metaAnnotation.typeName().equals(annotationType)) {
-                return true;
-            }
-            if (metaAnnotation.hasMetaAnnotation(annotationType)) {
-                return true;
-            }
-        }
-        return false;
+        return metaAnnotations()
+                .stream()
+                .map(Annotation::typeName)
+                .anyMatch(annotationType::equals);
     }
 }

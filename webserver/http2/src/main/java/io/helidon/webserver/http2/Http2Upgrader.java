@@ -85,7 +85,7 @@ public class Http2Upgrader implements Http1Upgrader {
         http2Headers.method(prologue.method());
         headers.remove(HeaderNames.HOST,
                        it -> http2Headers.authority(it.get()));
-        http2Headers.scheme("http");
+        http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 
         HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
                                                        prologue.protocol(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,18 +59,9 @@ public class GrpcChannel extends Channel {
 
     @Override
     public String authority() {
-        return baseUri().authority();
-    }
-
-    /**
-     * Gets base URI for this gRPC client.
-     *
-     * @return the base URI
-     * @throws java.lang.IllegalArgumentException if no base URI is defined
-     */
-    public ClientUri baseUri() {
-        return grpcClient.prototype()
+        ClientUri clientUri = grpcClient.prototype()
                 .baseUri()
                 .orElseThrow(() -> new IllegalArgumentException("No base URI provided for GrpcClient"));
+        return clientUri.authority();
     }
 }

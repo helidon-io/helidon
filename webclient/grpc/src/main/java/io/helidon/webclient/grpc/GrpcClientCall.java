@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         // serialize and queue message for writing
         byte[] serialized = serializeMessage(message);
         BufferData messageData = BufferData.createReadOnly(serialized, 0, serialized.length);
-        BufferData headerData = BufferData.create(DATA_PREFIX_LENGTH);
+        BufferData headerData = BufferData.create(5);
         headerData.writeInt8(0);                                // no compression
         headerData.writeUnsignedInt32(messageData.available());         // length prefixed
         sendingQueue.add(BufferData.create(headerData, messageData));
@@ -148,10 +148,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
                         boolean lastEndOfStream = endOfStream;
                         socket().log(LOGGER, DEBUG, "[Writing thread] writing bufferData %b", lastEndOfStream);
-                        // update bytes sent
-                        if (enableMetrics()) {
-                            bytesSent().addAndGet(bufferData.available());
-                        }
                         clientStream().writeData(bufferData, endOfStream);
                     }
                 }
@@ -200,12 +196,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         continue;
                     }
                     if (frameData != null) {
-                        BufferData bufferData = frameData.data();
-                        // update bytes received excluding prefix
-                        if (enableMetrics()) {
-                            bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
-                        }
-                        receivingQueue.add(bufferData);
+                        receivingQueue.add(frameData.data());
                         socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                     }
                 }
@@ -231,15 +222,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         clientStream().cancel();
         connection().close();
         unblockUnaryExecutor();
-
-        // update metrics
-        if (enableMetrics()) {
-            MethodMetrics methodMetrics = methodMetrics();
-            methodMetrics.callDuration().record(
-                    Duration.ofMillis(System.currentTimeMillis() - startMillis()));
-            methodMetrics.recvMessageSize().record(bytesRcvd().get());
-            methodMetrics.sentMessageSize().record(bytesSent().get());
-        }
     }
 
     private void drainReceivingQueue() {

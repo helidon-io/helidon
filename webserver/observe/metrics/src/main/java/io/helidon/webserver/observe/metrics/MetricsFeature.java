@@ -185,8 +185,7 @@ class MetricsFeature {
                              Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
-        res.header(HeaderValues.CACHE_NO_CACHE)
-                .header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
+        res.header(HeaderValues.CACHE_NO_CACHE);
         if (mediaType == null) {
             res.status(Status.NOT_ACCEPTABLE_406);
             res.send();

@@ -17,7 +17,6 @@
 package io.helidon.webserver.http;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpPrologue;
@@ -93,11 +92,6 @@ class ServiceRoute extends HttpRouteBase implements HttpRoute {
     @Override
     boolean isList() {
         return true;
-    }
-
-    @Override
-    public Optional<PathMatcher> pathMatcher() {
-        return Optional.of(pathMatcher);
     }
 
     RouteCrawler crawler(ConnectionContext ctx, RoutingRequest request) {

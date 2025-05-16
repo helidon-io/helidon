@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,19 +118,6 @@ public interface Headers extends Iterable<Header> {
     }
 
     /**
-     * Find the first header.
-     *
-     * @param headerName the header name
-     * @return the header, or empty optional if the header is not defined
-     */
-    default Optional<Header> find(HeaderName headerName) {
-        if (contains(headerName)) {
-            return Optional.of(get(headerName));
-        }
-        return Optional.empty();
-    }
-
-    /**
      * Returns an unmodifiable {@link java.util.List} of all comma separated header value parts - <b>Such segmentation is NOT
      * valid for
      * all header semantics, however it is very common</b>. Refer to actual header semantics standard/description before use.
@@ -200,10 +187,10 @@ public interface Headers extends Iterable<Header> {
      * Whether this media type is accepted by these headers.
      * As this method is useful only for server request headers, it returns {@code true } by default.
      *
-     * @param mediaTypes media type to test
+     * @param mediaType media type to test
      * @return {@code true} if this media type would be accepted
      */
-    default boolean isAccepted(MediaType... mediaTypes) {
+    default boolean isAccepted(MediaType mediaType) {
         return true;
     }
 

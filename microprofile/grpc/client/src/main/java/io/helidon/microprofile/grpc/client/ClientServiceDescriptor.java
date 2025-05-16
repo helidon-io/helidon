@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -590,16 +590,11 @@ public class ClientServiceDescriptor {
                 return Object.class;
             }
 
-            // find service and method
+            // todo: add error handling here, and fail fast with a more
+            // todo: meaningful exception (and message) than a NPE
+            // todo: if the service or the method cannot be found
             Descriptors.ServiceDescriptor svc = proto.findServiceByName(name);
-            if (svc == null) {
-                throw new IllegalArgumentException("Unable to find service " + name);
-            }
             Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
-            if (mtd == null) {
-                throw new IllegalArgumentException("Unable to find method "
-                                                   + methodName + " in service " + name);
-            }
             Descriptors.Descriptor type = fInput ? mtd.getInputType() : mtd.getOutputType();
 
             String pkg = getPackageName();

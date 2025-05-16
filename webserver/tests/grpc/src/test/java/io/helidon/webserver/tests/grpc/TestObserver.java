@@ -18,23 +18,16 @@ package io.helidon.webserver.tests.grpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import io.grpc.stub.StreamObserver;
 
 class TestObserver<T> implements StreamObserver<T> {
 
-    private CountDownLatch latch;
     private final List<T> responses = new ArrayList<>();
 
-    TestObserver() {
-    }
+    private CountDownLatch latch;
 
-    TestObserver(int count) {
-        latch(count);
-    }
-
-    public CountDownLatch latch(int count) {
+    public CountDownLatch setLatch(int count) {
         latch = new CountDownLatch(count);
         return latch;
     }
@@ -61,12 +54,5 @@ class TestObserver<T> implements StreamObserver<T> {
 
     @Override
     public void onCompleted() {
-    }
-
-    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        if (latch != null) {
-            return latch.await(timeout, unit);
-        }
-        return false;
     }
 }

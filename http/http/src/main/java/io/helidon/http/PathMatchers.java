@@ -19,8 +19,6 @@ package io.helidon.http;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,7 +62,6 @@ public final class PathMatchers {
      * @return prefix match path matcher
      */
     public static PathMatcher prefix(String pathToMatch) {
-        Objects.requireNonNull(pathToMatch);
         return new PrefixPathMatcher(fixPrefix(pathToMatch));
     }
 
@@ -137,7 +134,7 @@ public final class PathMatchers {
                                                     + ", index: " + (iter.index() - 1));
         }
 
-        return new PatternPathMatcher(regexp.toString(), paramToGroupName, pattern);
+        return new PatternPathMatcher(regexp.toString(), paramToGroupName);
     }
 
     /**
@@ -331,11 +328,6 @@ public final class PathMatchers {
         }
 
         @Override
-        public Optional<String> matchingElement() {
-            return Optional.of(path);
-        }
-
-        @Override
         public String toString() {
             return "exact: " + path;
         }
@@ -406,11 +398,6 @@ public final class PathMatchers {
         }
 
         @Override
-        public Optional<String> matchingElement() {
-            return Optional.of(exactMatch + "/*");
-        }
-
-        @Override
         public String toString() {
             return "prefix: " + prefix;
         }
@@ -423,14 +410,12 @@ public final class PathMatchers {
         private final Pattern pattern;
         private final Pattern leftPattern;
         private final String patternString;
-        private final String sourcePattern;
 
-        PatternPathMatcher(String pattern, Map<String, String> paramToGroupName, String sourcePattern) {
+        PatternPathMatcher(String pattern, Map<String, String> paramToGroupName) {
             this.patternString = pattern;
             this.pattern = Pattern.compile(pattern);
             this.leftPattern = Pattern.compile(pattern + "(?<" + RIGHT_PART_PARAM_NAME + ">/.+)?");
             this.paramToGroupName = paramToGroupName;
-            this.sourcePattern = sourcePattern;
         }
 
         @Override
@@ -473,11 +458,6 @@ public final class PathMatchers {
 
         Pattern pattern() {
             return pattern;
-        }
-
-        @Override
-        public Optional<String> matchingElement() {
-            return Optional.of(sourcePattern);
         }
 
         private Parameters extractParams(Matcher matcher) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,12 +123,14 @@ public final class NarayanaTransactionServices implements TransactionServices {
         }
 
         final Instance<JTAEnvironmentBean> jtaEnvironmentBeans = CDI.current().select(JTAEnvironmentBean.class);
+        assert jtaEnvironmentBeans != null;
         final JTAEnvironmentBean jtaEnvironmentBean;
         if (jtaEnvironmentBeans.isUnsatisfied()) {
             jtaEnvironmentBean = com.arjuna.ats.jta.common.jtaPropertyManager.getJTAEnvironmentBean();
         } else {
             jtaEnvironmentBean = jtaEnvironmentBeans.get();
         }
+        assert jtaEnvironmentBean != null;
         final UserTransaction returnValue = jtaEnvironmentBean.getUserTransaction();
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -182,9 +184,10 @@ public final class NarayanaTransactionServices implements TransactionServices {
 
         final boolean returnValue;
         final Instance<Transaction> transactions = CDI.current().select(Transaction.class);
+        assert transactions != null;
         if (!transactions.isUnsatisfied()) {
             final Transaction transaction = transactions.get();
-
+            assert transaction != null;
             boolean temp = false;
             try {
                 final int status = transaction.getStatus();
@@ -236,7 +239,7 @@ public final class NarayanaTransactionServices implements TransactionServices {
         Transaction transaction = null;
         if (transactionInstance.isUnsatisfied()) {
             Instance<TransactionManager> transactionManagerInstance = cdi.select(TransactionManager.class);
-
+            assert transactionManagerInstance != null;
             final TransactionManager transactionManager;
             if (transactionManagerInstance.isUnsatisfied()) {
                 transactionManager = com.arjuna.ats.jta.TransactionManager.transactionManager();

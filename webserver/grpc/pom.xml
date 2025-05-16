@@ -73,10 +73,6 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -159,15 +155,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <!-- Do not generate javax dependency -->
-                        <configuration>
-                            <pluginParameter>
-                                @generated=omit
-                            </pluginParameter>
-                        </configuration>
                         <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
                             <goal>test-compile</goal>
                         </goals>
                     </execution>
@@ -175,7 +163,8 @@
                 <configuration>
                     <protocArtifact>com.google.protobuf:protoc:${version.lib.google-protobuf}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}</pluginArtifact>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
+                    </pluginArtifact>
                 </configuration>
             </plugin>
         </plugins>

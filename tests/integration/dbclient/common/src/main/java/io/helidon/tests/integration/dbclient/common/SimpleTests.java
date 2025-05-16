@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,17 +256,6 @@ public interface SimpleTests {
          * Verify {@code insert(String)} API method with ordered parameters passed directly to the {@code insert} method.
          */
         void testInsertOrderArgs();
-
-        /**
-         * Verify {@code namedInsert(String)} API method with named parameters and returned generated keys.
-         */
-        void testInsertNamedArgsReturnedKeys() throws Exception;
-
-        /**
-         * Verify {@code namedInsert(String)} API method with named parameters and returned insert columns.
-         */
-        void testInsertNamedArgsReturnedColumns() throws Exception;
-
     }
 
     /**

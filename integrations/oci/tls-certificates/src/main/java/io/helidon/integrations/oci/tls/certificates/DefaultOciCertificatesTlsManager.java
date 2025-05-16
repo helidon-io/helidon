@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
-import io.helidon.scheduling.Cron;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 
@@ -88,7 +87,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
         // now schedule for reload checking
         String taskIntervalDescription =
-                Cron.builder()
+                io.helidon.scheduling.Scheduling.cron()
                         .executor(asyncExecutor)
                         .expression(cfg.schedule())
                         .task(inv -> maybeReload())
@@ -135,6 +134,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             OciCertificatesDownloader cd = certDownloader.get();
             OciCertificatesDownloader.Certificates certificates = cd.loadCertificates(cfg.certOcid());
             if (lastVersionDownloaded.get().equals(certificates.version())) {
+                assert (!initialLoad);
                 return false;
             }
 

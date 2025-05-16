@@ -45,7 +45,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * @deprecated Microstream is renamed to Eclipse store and no longer updated
  */
 @Deprecated(forRemoval = true, since = "4.2.1")
-@SuppressWarnings("checkstyle:IllegalToken") // deprecated, to be removed
 public class CacheExtension implements Extension {
 
     private final Set<Descriptor> cacheBeans;

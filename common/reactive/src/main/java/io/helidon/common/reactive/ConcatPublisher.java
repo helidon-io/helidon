@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,6 +183,9 @@ public final class ConcatPublisher<T> implements Flow.Publisher<T>, Multi<T> {
                     downstream.onError(t);
 
                     parent.cancel();
+                } else {
+                    // FIXME
+                    //  HelidonReactivePlugins.onError(t);
                 }
             }
 

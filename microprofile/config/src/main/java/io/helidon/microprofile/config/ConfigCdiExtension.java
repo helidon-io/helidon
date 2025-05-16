@@ -41,8 +41,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.config.ConfigException;
+import io.helidon.config.mp.MpConfig;
 
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -64,7 +64,6 @@ import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessObserverMethod;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.inject.Provider;
-import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -114,7 +113,7 @@ public class ConfigCdiExtension implements Extension {
             for (InjectionPoint beanInjectionPoint : beanInjectionPoints) {
                 if (beanInjectionPoint != null) {
                     Set<Annotation> qualifiers = beanInjectionPoint.getQualifiers();
-
+                    assert qualifiers != null;
                     for (Annotation qualifier : qualifiers) {
                         if (qualifier instanceof ConfigProperty) {
                             ips.add(beanInjectionPoint);
@@ -148,7 +147,7 @@ public class ConfigCdiExtension implements Extension {
                             && !annotatedParameter.isAnnotationPresent(Observes.class)) {
                         InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
                         Set<Annotation> qualifiers = injectionPoint.getQualifiers();
-
+                        assert qualifiers != null;
                         for (Annotation qualifier : qualifiers) {
                             if (qualifier instanceof ConfigProperty) {
                                 ips.add(injectionPoint);
@@ -166,13 +165,26 @@ public class ConfigCdiExtension implements Extension {
      *
      * @param abd event from CDI container
      */
-    private void registerConfigProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_BEFORE) AfterBeanDiscovery abd) {
+    private void registerConfigProducer(@Observes AfterBeanDiscovery abd) {
         // we also must support injection of Config itself
         abd.addBean()
                 .addTransitiveTypeClosure(org.eclipse.microprofile.config.Config.class)
                 .beanClass(org.eclipse.microprofile.config.Config.class)
                 .scope(ApplicationScoped.class)
                 .createWith(creationalContext -> new SerializableConfig());
+
+        abd.addBean()
+                .addTransitiveTypeClosure(io.helidon.config.Config.class)
+                .beanClass(io.helidon.config.Config.class)
+                .scope(ApplicationScoped.class)
+                .createWith(creationalContext -> {
+                    Config config = ConfigProvider.getConfig();
+                    if (config instanceof io.helidon.config.Config) {
+                        return config;
+                    } else {
+                        return MpConfig.toHelidonConfig(config);
+                    }
+                });
 
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
