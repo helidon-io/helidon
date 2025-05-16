@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier) {
-        Header headerValue = findOrNull(name);
+        Header headerValue = find(name);
         if (headerValue == null) {
             return defaultSupplier.get();
         }
@@ -59,12 +59,12 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public boolean contains(HeaderName name) {
-        return findOrNull(name) != null;
+        return find(name) != null;
     }
 
     @Override
     public boolean contains(Header headerWithValue) {
-        Header headerValue = findOrNull(headerWithValue.headerName());
+        Header headerValue = find(headerWithValue.headerName());
         if (headerValue == null) {
             return false;
         }
@@ -77,7 +77,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public Header get(HeaderName name) {
-        Header headerValue = findOrNull(name);
+        Header headerValue = find(name);
         if (headerValue == null) {
             throw new NoSuchElementException("Header " + name + " is not present in these headers");
         }
@@ -112,7 +112,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public T setIfAbsent(Header header) {
-        Header found = findOrNull(header.headerName());
+        Header found = find(header.headerName());
         if (found == null) {
             set(header);
         }
@@ -123,7 +123,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     @Override
     public T add(Header header) {
         HeaderName name = header.headerName();
-        Header headerValue = findOrNull(name);
+        Header headerValue = find(name);
         if (headerValue == null) {
             set(header);
         } else {
@@ -237,7 +237,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         return customHeaders().remove(name);
     }
 
-    private Header findOrNull(HeaderName name) {
+    private Header find(HeaderName name) {
         int index = name.index();
 
         if (index > -1) {

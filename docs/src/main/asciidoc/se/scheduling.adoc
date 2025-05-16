@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 === Fixed rate
 
 [source,java]
-.Scheduling with fixed rate using `Scheduling.fixedRate()` builder.
+.Scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
 include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
@@ -112,7 +112,7 @@ include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_4, indent=0]
 For simple fixed rate invocation use .
 
 [source,java]
-.Example of scheduling with fixed rate using `FixedRate.builder()` builder.
+.Example of scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
 include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_5, indent=0]
 ----

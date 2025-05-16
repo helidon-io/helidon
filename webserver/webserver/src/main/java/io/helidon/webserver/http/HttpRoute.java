@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package io.helidon.webserver.http;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
-import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.Route;
 
 /**
@@ -36,7 +34,7 @@ public interface HttpRoute extends Route {
      *
      * @return builder
      */
-    static HttpRoute.Builder builder() {
+    static HttpRouteImpl.Builder builder() {
         return new Builder();
     }
 
@@ -50,32 +48,11 @@ public interface HttpRoute extends Route {
     PathMatchers.MatchResult accepts(HttpPrologue prologue);
 
     /**
-     * Whether this route accept the provided request.
-     *
-     * @param prologue prologue of the request
-     * @param headers headers of the request
-     * @return result of the validation
-     * @see io.helidon.http.PathMatchers.MatchResult#notAccepted()
-     */
-    default PathMatchers.MatchResult accepts(HttpPrologue prologue, ServerRequestHeaders headers) {
-        return accepts(prologue);
-    }
-
-    /**
      * Handler of this route.
      *
      * @return handler
      */
     Handler handler();
-
-    /**
-     * Path matcher for this HTTP route.
-     *
-     * @return optional path matcher
-     */
-    default Optional<PathMatcher> pathMatcher() {
-        return Optional.empty();
-    }
 
     /**
      * Fluent API builder for {@link HttpRoute}.
@@ -84,7 +61,6 @@ public interface HttpRoute extends Route {
         private Predicate<Method> methodPredicate = Method.predicate();
         private PathMatcher pathMatcher = PathMatchers.any();
         private Handler handler;
-        private Predicate<ServerRequestHeaders> headersPredicate = headers -> true;
 
         private Builder() {
         }
@@ -113,17 +89,6 @@ public interface HttpRoute extends Route {
          */
         public Builder methods(Predicate<Method> methodPredicate) {
             this.methodPredicate = methodPredicate;
-            return this;
-        }
-
-        /**
-         * HTTP Headers predicate to use.
-         *
-         * @param headersPredicate headers predicate
-         * @return updated builder
-         */
-        public Builder headers(Predicate<ServerRequestHeaders> headersPredicate) {
-            this.headersPredicate = headersPredicate;
             return this;
         }
 
@@ -169,10 +134,6 @@ public interface HttpRoute extends Route {
 
         Handler handler() {
             return handler;
-        }
-
-        Predicate<ServerRequestHeaders> headersPredicate() {
-            return headersPredicate;
         }
     }
 }

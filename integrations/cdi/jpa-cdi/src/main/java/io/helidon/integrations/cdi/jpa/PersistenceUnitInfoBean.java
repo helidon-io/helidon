@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -570,6 +570,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                 @Override
                 public String get(final int index) {
                     final Iterator<String> iterator = this.iterator();
+                    assert iterator != null;
                     for (int i = 0; i < index; i++) {
                         iterator.next();
                     }
@@ -1005,12 +1006,14 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                 persistenceUnitProperties.getProperty();
             if (propertyInstances != null && !propertyInstances.isEmpty()) {
                 for (final PersistenceUnit.Properties.Property property : propertyInstances) {
+                    assert property != null;
                     properties.setProperty(property.getName(), property.getValue());
                 }
             }
         }
 
         final Collection<String> managedClasses = persistenceUnit.getClazz();
+        assert managedClasses != null;
         String name = persistenceUnit.getName();
         if (name == null || name.isEmpty()) {
             name = PersistenceExtension.DEFAULT_PERSISTENCE_UNIT_NAME;

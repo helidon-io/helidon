@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,14 +45,5 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
      * @return a supplier for zero or more client URIs
      */
     Optional<ClientUriSupplier> clientUriSupplier();
-
-    /**
-     * Whether to collect metrics for gRPC client calls.
-     *
-     * @return metrics flag
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean enableMetrics();
 }
 

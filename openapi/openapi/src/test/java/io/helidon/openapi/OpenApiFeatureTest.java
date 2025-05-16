@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
@@ -111,9 +110,7 @@ class OpenApiFeatureTest {
                 .accept(testMediaType)
                 .request(String.class);
         assertThat(response.status(), is(Status.OK_200));
-        assertThat("Response headers",
-                   response.headers(),
-                   HttpHeaderMatcher.hasHeader(HeaderNames.X_CONTENT_TYPE_OPTIONS, "nosniff"));
+
         HttpMediaType contentType = response.headers().contentType().orElseThrow();
 
         if (contentType.test(MediaTypes.APPLICATION_OPENAPI_YAML)

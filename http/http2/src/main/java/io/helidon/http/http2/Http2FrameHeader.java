@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ public class Http2FrameHeader {
                                                                 Http2FrameTypes<T> frameType,
                                                                 T flags,
                                                                 int streamIdentifier) {
+        // TODO validate
         // length <= 3 bytes
         // stream identifier <= 31 bits (4 bytes - 1 bit)
         return new Http2FrameHeader(frameType.type(),

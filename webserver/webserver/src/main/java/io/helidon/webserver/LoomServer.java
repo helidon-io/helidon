@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -102,8 +101,6 @@ class LoomServer implements WebServer, Resumable {
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create)));
         });
-
-        validateRoutingsHaveNamedListener(serverConfig, listenerMap.keySet());
 
         listeners = Map.copyOf(listenerMap);
         ResumableSupport.get().register(this);
@@ -192,34 +189,6 @@ class LoomServer implements WebServer, Resumable {
     @Override
     public Context context() {
         return context;
-    }
-
-    private static void validateRoutingsHaveNamedListener(WebServerConfig serverConfig, Set<String> namedListeners) {
-        var routingNames = serverConfig.namedRoutings()
-                .keySet();
-
-        List<String> invalidRoutingNames = new ArrayList<>();
-
-        for (String routingName : routingNames) {
-            if (!namedListeners.contains(routingName)) {
-                invalidRoutingNames.add(routingName);
-            }
-        }
-
-        if (!invalidRoutingNames.isEmpty()) {
-            String message = "Listener not found for named routing(s): \""
-                    + String.join(", ", invalidRoutingNames)
-                    + "\", configured listener(s): \""
-                    + String.join(", ", namedListeners) + "\"";
-
-            if (serverConfig.ignoreInvalidNamedRouting()) {
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                    LOGGER.log(System.Logger.Level.DEBUG, message);
-                }
-            } else {
-                throw new IllegalStateException(message);
-            }
-        }
     }
 
     private void stopIt() {

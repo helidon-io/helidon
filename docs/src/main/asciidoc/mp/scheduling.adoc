@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,19 +50,19 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-For scheduling tasks in Helidon you can choose from `@Scheduling.Cron` or `@Scheduling.FixedRate` annotations by required
-complexity of invocation interval. All you need is to define a method with one of the annotations in an application scoped bean.
+For scheduling tasks in Helidon you can choose from `@Scheduled` or `@FixedRate` annotations by required complexity
+of invocation interval. All you need is define method with one of the annotations in application scoped bean.
 
 === Fixed rate
 
-For simple fixed rate invocation interval, the `@Scheduling.FixedRate` is the easiest way to schedule task invocation.
+For simple fixed rate invocation interval is `@FixedRate` the easiest way for scheduling task invocation.
 
 [source,java]
 ----
 include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
 
-All values defined with the annotation can be overridden from config.
+All values defined with the annotation can be overridden from the config.
 
 [source,yaml]
 .Overriding annotated values from config
@@ -84,7 +84,7 @@ include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_2, indent=0]
 
 === Cron expression
 
-For more complicated interval definition, cron expression can be leveraged with `@Scheduling.Cron` annotation.
+For more complicated interval definition, cron expression can be leveraged with `@Schedule` annotation.
 
 [source,java]
 ----
@@ -119,7 +119,7 @@ fully.qualified.ClassName.methodName:
 |====
 | Property              | Description
 | cron                  | String containing cron setup
-| concurrent            | Boolean, equivalent `concurrent` property of `@Scheduling.Cron`. Defaults to `true`.
+| concurrent            | Boolean, equivalent `concurrentExecution` property of `@Scheduled`. Default `true`.
 |====
 
 == Examples
@@ -159,4 +159,4 @@ include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_8, indent=0]
 == Reference
 
 * https://github.com/jmrozanec/cron-utils[Cron-utils GitHub page]
-* link:{scheduling-javadoc-base-url}/io/helidon/scheduling/package-summary.html[Helidon Scheduling JavaDoc]
+* link:{scheduling-javadoc-base-url}/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]

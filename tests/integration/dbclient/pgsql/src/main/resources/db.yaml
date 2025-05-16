@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,10 +26,3 @@ db:
   health-check:
     type: query
     statement: "SELECT 0"
-  statements:
-    create-matches: |
-      CREATE TABLE Matches (
-        id SERIAL NOT NULL PRIMARY KEY,
-        red INTEGER NOT NULL REFERENCES Pokemons(id),
-        blue INTEGER NOT NULL REFERENCES Pokemons(id)
-      )

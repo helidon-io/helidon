@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,130 +76,130 @@ final class MongoDBSimpleLocalTestIT extends MongoDBLocalTest implements SimpleT
         ctx.delegate().testDeleteOrderArgs();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrStrNamedArgs() {
-        ctx.delegate().testCreateNamedDmlWithInsertStrStrNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrNamedArgs() {
-        ctx.delegate().testCreateNamedDmlWithInsertStrNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithInsertStrOrderArgs() {
-        ctx.delegate().testCreateNamedDmlWithInsertStrOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithInsertNamedArgs() {
-        ctx.delegate().testCreateDmlWithInsertNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithInsertOrderArgs() {
-        ctx.delegate().testCreateDmlWithInsertOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithInsertOrderArgs() {
-        ctx.delegate().testNamedDmlWithInsertOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithInsertOrderArgs() {
-        ctx.delegate().testDmlWithInsertOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrStrNamedArgs() {
-        ctx.delegate().testCreateNamedDmlWithUpdateStrStrNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrNamedArgs() {
-        ctx.delegate().testCreateNamedDmlWithUpdateStrNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithUpdateStrOrderArgs() {
-        ctx.delegate().testCreateNamedDmlWithUpdateStrOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithUpdateNamedArgs() {
-        ctx.delegate().testCreateDmlWithUpdateNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithUpdateOrderArgs() {
-        ctx.delegate().testCreateDmlWithUpdateOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithUpdateOrderArgs() {
-        ctx.delegate().testNamedDmlWithUpdateOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithUpdateOrderArgs() {
-        ctx.delegate().testDmlWithUpdateOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrStrOrderArgs() {
-        ctx.delegate().testCreateNamedDmlWithDeleteStrStrOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrNamedArgs() {
-        ctx.delegate().testCreateNamedDmlWithDeleteStrNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateNamedDmlWithDeleteStrOrderArgs() {
-        ctx.delegate().testCreateNamedDmlWithDeleteStrOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithDeleteNamedArgs() {
-        ctx.delegate().testCreateDmlWithDeleteNamedArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testCreateDmlWithDeleteOrderArgs() {
-        ctx.delegate().testCreateDmlWithDeleteOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testNamedDmlWithDeleteOrderArgs() {
-        ctx.delegate().testNamedDmlWithDeleteOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
-    @Test
     @Override
+    @SuppressWarnings("ALL")
     public void testDmlWithDeleteOrderArgs() {
-        ctx.delegate().testDmlWithDeleteOrderArgs();
+        throw new UnsupportedOperationException();
     }
 
     @Test
@@ -284,18 +284,6 @@ final class MongoDBSimpleLocalTestIT extends MongoDBLocalTest implements SimpleT
     @Override
     public void testInsertOrderArgs() {
         ctx.delegate().testInsertOrderArgs();
-    }
-
-    @Test
-    @Override
-    public void testInsertNamedArgsReturnedKeys() throws Exception {
-        ctx.delegate().testInsertNamedArgsReturnedKeys();
-    }
-
-    @Test
-    @Override
-    public void testInsertNamedArgsReturnedColumns() throws Exception {
-        ctx.delegate().testInsertNamedArgsReturnedColumns();
     }
 
     @Test

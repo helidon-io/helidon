@@ -444,8 +444,8 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                 // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-core/src/main/java/com/netflix/eureka/resources/InstanceResource.java;
                 // there is often no entity returned, presumably to indicate no changes.
                 if (response.entity().hasEntity()) {
-                    // this method can never return null, it would fail if the entity cannot be read
                     instanceInfo = response.entity().as(JsonObject.class);
+                    assert instanceInfo != null : "Eureka Server contract violation; instanceInfo == null";
                     if (LOGGER.isLoggable(DEBUG)) {
                         LOGGER.log(DEBUG,
                                    "New registration details received: " + instanceInfo);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,6 +184,7 @@ public final class Bytes {
     // this method is copied from Netty, and validated by them that it is the optimal
     // way to figure out the index, see https://github.com/netty/netty/issues/10731
     private static int unrolledFirstIndexOf(byte[] buffer, int fromIndex, int byteCount, byte value) {
+        assert byteCount > 0 &&  byteCount < 8;
         if (buffer[fromIndex] == value) {
             return fromIndex;
         }

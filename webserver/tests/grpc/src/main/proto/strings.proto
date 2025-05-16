@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 
-syntax = "proto2";
+syntax = "proto3";
 option java_package = "io.helidon.webserver.grpc.strings";
 
 service StringService {
@@ -27,10 +27,5 @@ service StringService {
 }
 
 message StringMessage {
-  required string text = 1;
-  extensions 100 to 199;
-}
-
-extend StringMessage {
-  optional string language = 100;
+  string text = 1;
 }

@@ -71,7 +71,6 @@ class Http2ServerRequest implements RoutingRequest {
     // preparation for continue support in HTTP/2
     private boolean continueSent;
     private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
-    private String matchingPattern;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -188,17 +187,6 @@ class Http2ServerRequest implements RoutingRequest {
     public RoutingRequest prologue(HttpPrologue newPrologue) {
         this.prologue = newPrologue;
         return this;
-    }
-
-    @Override
-    public RoutingRequest matchingPattern(String matchingPattern) {
-        this.matchingPattern = matchingPattern;
-        return this;
-    }
-
-    @Override
-    public Optional<String> matchingPattern() {
-        return Optional.ofNullable(matchingPattern);
     }
 
     @Override

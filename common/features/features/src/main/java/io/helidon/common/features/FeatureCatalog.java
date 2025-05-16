@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,77 +20,102 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
-import io.helidon.common.features.metadata.FeatureMetadata;
-import io.helidon.common.features.metadata.FeatureRegistry;
-import io.helidon.metadata.hson.Hson;
+import io.helidon.common.Version;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Feature catalog discovers features from META-INF/helidon/feature-metadata.properties.
  */
 final class FeatureCatalog {
     private static final System.Logger LOGGER = System.getLogger(FeatureCatalog.class.getName());
+    private static final HelidonFlavor[] NO_FLAVORS = new HelidonFlavor[0];
 
     // hide utility class constructor
     private FeatureCatalog() {
     }
 
-    static List<FeatureMetadata> features(ClassLoader classLoader) {
-        Map<String, FeatureMetadata> features = new LinkedHashMap<>();
-
+    static List<FeatureDescriptor> features(ClassLoader classLoader) {
+        List<FeatureDescriptor> features = new LinkedList<>();
         try {
-            Enumeration<URL> hsons = classLoader.getResources(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V2);
-            while (hsons.hasMoreElements()) {
-                URL url = hsons.nextElement();
-                Hson.Array hson;
-                try (InputStream in = url.openStream()) {
-                    hson = Hson.parse(in)
-                            .asArray();
-                }
-
-                List<FeatureMetadata> metadatas = FeatureRegistry.metadata("Classpath: " + url, hson);
-                for (FeatureMetadata metadata : metadatas) {
-                    features.putIfAbsent(metadata.name(), metadata);
-                }
-            }
-
-            Enumeration<URL> resources = classLoader.getResources(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V1);
+            Enumeration<URL> resources = classLoader.getResources("META-INF/helidon/feature-metadata.properties");
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 Properties props = new Properties();
                 try (InputStream in = url.openStream()) {
                     props.load(in);
                 }
-                var metadata = FeatureRegistry.metadata("Classpath: " + url.toString(), props);
-                features.putIfAbsent(metadata.name(), metadata);
+                String module = props.getProperty("m");
+                if (module == null) {
+                    LOGGER.log(Level.WARNING, "Got module descriptor with no module name. Available properties: " + props
+                            + " at " + url);
+                    continue;
+                }
+                FeatureDescriptor.Builder builder = FeatureDescriptor.builder();
+                builder.name(props.getProperty("n", module))
+                        .module(module)
+                        .description(props.getProperty("d", ""))
+                        .path(toArray(props.getProperty("p"), props.getProperty("n")))
+                        .flavor(toFlavor(module, props.getProperty("in"), true))
+                        .notFlavor(toFlavor(module, props.getProperty("not"), false))
+                        .since(props.getProperty("s", "1.0.0"));
+
+                if ("true".equals(props.getProperty("pr"))) {
+                    builder.preview(true);
+                }
+                if ("false".equals(props.getProperty("aot"))) {
+                    builder.nativeSupported(false);
+                }
+                if ("true".equals(props.getProperty("i"))) {
+                    builder.incubating(true);
+                }
+                if ("true".equals(props.getProperty("dep"))) {
+                    builder.deprecated(true);
+                    builder.deprecatedSince(props.getProperty("deps", Version.VERSION));
+                }
+                String aotDescription = props.getProperty("aotd");
+                if (aotDescription != null) {
+                    builder.nativeDescription(aotDescription);
+                }
+                features.add(builder.build());
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Could not discover Helidon features", e);
         }
-        return orderFeatureMetadata(features);
+        Collections.sort(features);
+        return features;
     }
 
-    private static List<FeatureMetadata> orderFeatureMetadata(Map<String, FeatureMetadata> features) {
-        List<FeatureMetadata> result = new ArrayList<>(features.values());
-        result.sort((first, second) -> {
-            List<String> path = first.path();
-            List<String> path2 = second.path();
-
-            for (int i = 0; i < path.size() && i < path2.size(); i++) {
-                int comparison = path.get(i).compareTo(path2.get(i));
-                if (comparison != 0) {
-                    return comparison;
-                }
+    private static HelidonFlavor[] toFlavor(String module, String flavorString, boolean useAllIfMissing) {
+        if (flavorString == null || flavorString.isBlank()) {
+            return useAllIfMissing ? HelidonFlavor.values() : NO_FLAVORS;
+        }
+        String[] values = toArray(flavorString, flavorString);
+        HelidonFlavor[] result = new HelidonFlavor[values.length];
+        for (int i = 0; i < values.length; i++) {
+            try {
+                result[i] = HelidonFlavor.valueOf(values[i]);
+            } catch (IllegalArgumentException e) {
+                LOGGER.log(Level.ERROR, "Invalid flavor defined: " + values[i] + " in module " + module);
+                return NO_FLAVORS;
             }
-            // same base path
-            return path.size() - path2.size();
-        });
+        }
         return result;
+    }
+
+    private static String[] toArray(String property, String defaultValue) {
+        String toProcess = property;
+        if (property == null) {
+            toProcess = defaultValue;
+        }
+        if (toProcess == null) {
+            return new String[0];
+        }
+        return toProcess.split(",");
     }
 }

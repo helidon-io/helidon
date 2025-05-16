@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,20 +34,12 @@ db:
         id_pokemon INTEGER NOT NULL REFERENCES Pokemons(id) ON DELETE CASCADE,
         id_type INTEGER NOT NULL REFERENCES Types(id) ON DELETE CASCADE
       )
-    create-matches: |
-      CREATE TABLE Matches (
-        id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        red INTEGER NOT NULL REFERENCES Pokemons(id),
-        blue INTEGER NOT NULL REFERENCES Pokemons(id)
-      )
     drop-types: "DROP TABLE Types"
     drop-pokemons: "DROP TABLE Pokemons"
     drop-poketypes: "DROP TABLE PokemonTypes"
-    drop-matches: "DROP TABLE Matches"
     insert-type: "INSERT INTO Types(id, name) VALUES(?, ?)"
     insert-pokemon: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
     insert-poketype: "INSERT INTO PokemonTypes(id_pokemon, id_type) VALUES(?, ?)"
-    insert-match: "INSERT INTO Matches(red, blue) VALUES (:red, :blue)"
     insert-pokemon-named-arg: "INSERT INTO Pokemons(id, name) VALUES(:id, :name)"
     insert-pokemon-order-arg: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
     insert-pokemon-order-arg-rev: "INSERT INTO Pokemons(name, id) VALUES(?, ?)"

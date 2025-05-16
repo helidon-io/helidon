@@ -8,8 +8,11 @@ type: 'Feature'
 
 ---
 
-Helidon Version:
+## Environment Details
+* Helidon Version:
+* Helidon SE or Helidon MP
+
+----------
 
 ## Enhancement Description
-
 

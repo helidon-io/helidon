@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,8 @@ package io.helidon.faulttolerance;
 /**
  * General timeout runtime exception.
  */
-public class TimeoutException extends FaultToleranceException {
+public class TimeoutException extends RuntimeException {
     private static final long serialVersionUID = 1900924677490550714L;
-
-    /**
-     * A new timeout exception with custom message.
-     *
-     * @param message detail message
-     */
-    public TimeoutException(String message) {
-        super(message);
-    }
 
     /**
      * Constructs a {@code TimeoutException} with the specified detail

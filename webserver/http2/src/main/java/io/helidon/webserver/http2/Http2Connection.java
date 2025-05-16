@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -372,7 +372,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
         case PING -> pingFrame();
         case SEND_PING_ACK -> writePingAck();
-        case GO_AWAY -> goAwayFrame();
+        case GO_AWAY ->
+            // todo we may need to do graceful shutdown to process the last stream
+                goAwayFrame();
         case RST_STREAM -> rstStream();
         default -> unknownFrame();
         }
@@ -439,6 +441,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // somebody expects header data, we cannot receive anything else
             if (state == State.CONTINUATION) {
                 if (continuationExpectedStreamId != streamId) {
+                    // TODO go away should send the id of the last processed stream (for retries etc.)
                     // received headers for wrong stream
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received CONTINUATION for stream " + streamId
                             + ", expected for " + continuationExpectedStreamId);
@@ -528,6 +531,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             clientSettings(Http2Settings.create(inProgressFrame()));
 
+            // TODO for each
+            //        Http2Setting.MAX_HEADER_LIST_SIZE;
             state = State.ACK_SETTINGS;
         }
     }
@@ -596,6 +601,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             buffer = inProgressFrame();
         }
 
+        // TODO buffer now contains the actual data bytes
         stream.stream().data(frameHeader, buffer, endOfStream);
 
         // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,41 +31,24 @@ import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
 
-    private final GrpcService service;
     private final String serviceName;
     private final List<GrpcRouteHandler<?, ?>> routes;
-
-    private GrpcServiceRoute(GrpcService service, List<GrpcRouteHandler<?, ?>> routes) {
-        this.service = service;
-        this.serviceName = service.serviceName();
-        this.routes = routes;
-    }
 
     private GrpcServiceRoute(String serviceName, List<GrpcRouteHandler<?, ?>> routes) {
         this.serviceName = serviceName;
         this.routes = routes;
-        this.service = null;
-    }
-
-    @Override
-    String serviceName() {
-        return serviceName;
-    }
-
-    @Override
-    public Descriptors.FileDescriptor proto() {
-        return service.proto();
     }
 
     /**
      * Creates a gRPC route for an instance of {@link GrpcService}.
+     * A server interceptor chain will not be automatically associated
+     * with calls to this service.
      *
      * @param service the service
-     * @param interceptors the interceptors
      * @return the route
      */
-    static GrpcRoute create(GrpcService service, WeightedBag<ServerInterceptor> interceptors) {
-        Routing svcRouter = new Routing(service, interceptors);
+    static GrpcRoute create(GrpcService service) {
+        Routing svcRouter = new Routing(service);
         service.update(svcRouter);
         return svcRouter.build();
     }
@@ -74,28 +57,28 @@ class GrpcServiceRoute extends GrpcRoute {
      * Creates a gRPC route for an instance of {@link BindableService}.
      *
      * @param service the service
-     * @param interceptors the interceptors
      * @return the route
      */
-    static GrpcRoute create(BindableService service, WeightedBag<ServerInterceptor> interceptors) {
+    static GrpcRoute create(BindableService service) {
         ServerServiceDefinition definition = service.bindService();
         String serviceName = definition.getServiceDescriptor().getName();
         List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
         service.bindService().getMethods().forEach(
-                method -> routes.add(GrpcRouteHandler.bindableMethod(service, method, interceptors)));
+                method -> routes.add(GrpcRouteHandler.bindableMethod(service, method)));
         return new GrpcServiceRoute(serviceName, routes);
     }
 
     /**
      * Creates a gRPC route for an instance CDI bean annotated with {@link @Grpc}.
-     * Registers interceptors for context on all the routes.
+     * Registers global interceptors for context on all the routes.
      *
      * @param service the service
      * @param interceptors interceptor bag
      * @return the route
      */
     static GrpcRoute create(GrpcServiceDescriptor service, WeightedBag<ServerInterceptor> interceptors) {
-        return create(BindableServiceImpl.create(service), interceptors);
+        interceptors.add(ContextSettingServerInterceptor.create());
+        return create(BindableServiceImpl.create(service, interceptors));
     }
 
     @Override
@@ -122,58 +105,42 @@ class GrpcServiceRoute extends GrpcRoute {
 
     static class Routing implements GrpcService.Routing {
         private final List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
-        private final GrpcService service;
-        private final WeightedBag<ServerInterceptor> interceptors;
+        private final Descriptors.FileDescriptor proto;
+        private final String serviceName;
 
-        Routing(GrpcService service, WeightedBag<ServerInterceptor> interceptors) {
-            this.service = service;
-            this.interceptors = interceptors;
+        Routing(GrpcService service) {
+            this.proto = service.proto();
+            this.serviceName = service.serviceName();
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing unary(String methodName, ServerCalls.UnaryMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.unary(service.proto(),
-                                              service.serviceName(),
-                                              methodName,
-                                              method,
-                                              interceptors));
+            routes.add(GrpcRouteHandler.unary(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing bidi(String methodName, ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.bidi(service.proto(),
-                                             service.serviceName(),
-                                             methodName,
-                                             method,
-                                             interceptors));
+            routes.add(GrpcRouteHandler.bidi(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing serverStream(String methodName,
                                                              ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.serverStream(service.proto(),
-                                                     service.serviceName(),
-                                                     methodName,
-                                                     method,
-                                                     interceptors));
+            routes.add(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing clientStream(String methodName,
                                                              ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-            routes.add(GrpcRouteHandler.clientStream(service.proto(),
-                                                     service.serviceName(),
-                                                     methodName,
-                                                     method,
-                                                     interceptors));
+            routes.add(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method));
             return this;
         }
 
         public GrpcServiceRoute build() {
-            return new GrpcServiceRoute(service, List.copyOf(routes));
+            return new GrpcServiceRoute(serviceName, List.copyOf(routes));
         }
     }
 }

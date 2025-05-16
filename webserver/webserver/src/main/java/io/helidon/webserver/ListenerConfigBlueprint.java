@@ -421,13 +421,4 @@ interface ListenerConfigBlueprint {
     @Option.Configured
     @Option.Default("true")
     boolean restoreResponseHeaders();
-
-    /**
-     * If set to {@code true}, any named routing configured that does not have an associated named listener will NOT
-     * cause an exception to be thrown (default behavior is to throw an exception).
-     *
-     * @return whether to ignore invalid routing name, defaults to {@code false}
-     */
-    @Option.Configured
-    boolean ignoreInvalidNamedRouting();
 }

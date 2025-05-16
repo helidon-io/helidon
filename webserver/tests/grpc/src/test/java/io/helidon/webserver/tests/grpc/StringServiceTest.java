@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 
 @ServerTest
-class StringServiceTest extends BaseStringServiceTest {
-
+class StringServiceTest
+    extends BaseStringServiceTest {
     StringServiceTest(WebServer server) {
         super(server);
     }
 
-    @SetUpRoute
-    static void routing(Router.RouterBuilder<?> router) {
-        router.addRouting(GrpcRouting.builder().service(new StringService()));
-    }
+     @SetUpRoute
+     static void routing(Router.RouterBuilder<?> router) {
+         router.addRouting(GrpcRouting.builder().service(new StringService()));
+     }
 }

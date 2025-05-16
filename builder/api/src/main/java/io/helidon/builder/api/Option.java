@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -455,17 +455,7 @@ public final class Option {
      * Define an option decorator.
      * This is useful for example when setting a compound option, where we need to set additional options on this builder.
      * <p>
-     * Decorator on {@link java.util.List} option will have the
-     * {@link io.helidon.builder.api.Prototype.OptionDecorator#decorate(Object, Object)} called for singular values,
-     * and {@link io.helidon.builder.api.Prototype.OptionDecorator#decorateSetList(Object, java.util.List)}
-     * called for setter of the list, and
-     * {@link io.helidon.builder.api.Prototype.OptionDecorator#decorateAddList(Object, java.util.List)}
-     * called for additive setter of the list.
-     * <p>
-     * Similar approach is taken when decorating a {@link java.util.Set} option.
-     * <p>
-     * Decorator on {@link java.util.Map} based options will be ignored.
-     * <p>
+     * Decorator on collection based options will be ignored.
      * Decorator on optional values must accept an optional (as it would be called both from the setter and unset methods).
      */
     @Target(ElementType.METHOD)

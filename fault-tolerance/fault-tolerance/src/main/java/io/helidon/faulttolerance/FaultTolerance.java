@@ -24,9 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.service.registry.Services;
+import io.helidon.config.Config;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -44,6 +43,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *     <li>{@link io.helidon.faulttolerance.Timeout} - time out a request if it takes too long</li>
  * </ul>
  *
+ * @see #config(io.helidon.config.Config)
  * @see #executor()
  * @see #builder()
  */
@@ -57,8 +57,9 @@ public final class FaultTolerance {
     public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
 
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
+
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
-    private static final AtomicReference<Config> CONFIG = new AtomicReference<>();
+    private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
 
     static {
         EXECUTOR.set(LazyValue.create(() -> ThreadPoolSupplier.builder()
@@ -73,13 +74,9 @@ public final class FaultTolerance {
 
     /**
      * Configure Helidon wide defaults from a config instance.
-     * The default is now to use {@link io.helidon.service.registry.Services#get(Class)} to get
-     * a configuration. This method will work as it used to, but fallback will always
-     * be to the config instance provided by service registry.
      *
      * @param config config to read fault tolerance configuration
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public static void config(Config config) {
         CONFIG.set(config);
     }
@@ -88,12 +85,7 @@ public final class FaultTolerance {
      * Configure Helidon wide executor service for Fault Tolerance.
      *
      * @param executor executor service to use
-     * @deprecated this method will be removed without replacement; each fault tolerance component that supports executor
-     * service can be configured with such explicitly in its builder
-     * (i.e. {@link io.helidon.faulttolerance.AsyncConfig.Builder#executor(java.util.concurrent.ExecutorService)}). When using
-     * declarative, the executor service can be configured as a named service.
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public static void executor(Supplier<? extends ExecutorService> executor) {
         EXECUTOR.set(LazyValue.create(executor::get));
     }
@@ -124,9 +116,7 @@ public final class FaultTolerance {
      * @param runnable the runnable
      * @param millis the time to sleep
      * @return the new runnable
-     * @deprecated this method was not intended for public use, and will be removed in a future version of Helidon
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public static Runnable toDelayedRunnable(Runnable runnable, long millis) {
         return () -> {
             try {
@@ -147,9 +137,7 @@ public final class FaultTolerance {
      * @param millis the time to sleep
      * @return the new callable
      * @param <T> type of value returned
-     * @deprecated this method was not intended for public use, and will be removed in a future version of Helidon
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public static <T> Callable<T> toDelayedCallable(Callable<T> callable, long millis) {
         return () -> {
             try {
@@ -167,11 +155,7 @@ public final class FaultTolerance {
     }
 
     static Config config() {
-        var config = CONFIG.get();
-        if (config == null) {
-            return Services.get(Config.class);
-        }
-        return config;
+        return CONFIG.get();
     }
 
     abstract static class BaseBuilder<B extends BaseBuilder<B>> {

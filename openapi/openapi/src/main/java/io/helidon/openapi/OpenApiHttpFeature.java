@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.BadRequestException;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
@@ -90,8 +89,7 @@ class OpenApiHttpFeature implements HttpFeature {
                         format, OpenApiFeature.SUPPORTED_FORMATS.keySet()));
             }
             res.status(Status.OK_200);
-            res.header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF)
-                    .headers().contentType(contentType);
+            res.headers().contentType(contentType);
             res.send(content(contentType));
         } else {
             // check if we should delegate to a service
@@ -116,8 +114,7 @@ class OpenApiHttpFeature implements HttpFeature {
             }
 
             res.status(Status.OK_200);
-            res.header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF)
-                    .headers().contentType(contentType);
+            res.headers().contentType(contentType);
             res.send(content(contentType));
         }
     }

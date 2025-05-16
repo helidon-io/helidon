@@ -26,9 +26,7 @@ import java.util.function.Supplier;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Service;
 
-@Service.PerInstance(TimeoutConfigBlueprint.class)
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
@@ -42,7 +40,6 @@ class TimeoutImpl implements Timeout {
     private Counter callsCounterMetric;
     private Timer executionDurationMetric;
 
-    @Service.Inject
     TimeoutImpl(TimeoutConfig config) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
@@ -108,7 +105,7 @@ class TimeoutImpl implements Timeout {
             try {
                 T result = supplier.get();
                 if (interrupted.get()) {
-                    throw new TimeoutException("Supplier execution interrupted");
+                    throw new TimeoutException("Supplier execution interrupted", null);
                 }
                 return result;
             } catch (Throwable t) {
@@ -138,7 +135,7 @@ class TimeoutImpl implements Timeout {
         if (throwable instanceof InterruptedException) {
             return new TimeoutException("Call interrupted", throwable);
         } else if (throwable instanceof java.util.concurrent.TimeoutException) {
-            return new TimeoutException("Timeout reached", throwable);
+            return new TimeoutException("Timeout reached", throwable.getCause());
         } else if (interrupted != null && interrupted.get()) {
             return new TimeoutException("Supplier execution interrupted", t);
         }

@@ -39,14 +39,6 @@
             <artifactId>helidon-common-features-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-metadata</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metadata</groupId>
-            <artifactId>helidon-metadata-hson</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>

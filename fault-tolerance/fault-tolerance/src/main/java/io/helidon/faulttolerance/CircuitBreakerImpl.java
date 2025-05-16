@@ -25,9 +25,7 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
-import io.helidon.service.registry.Service;
 
-@Service.PerInstance(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options
@@ -56,7 +54,6 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private Counter callsCounterMetric;
     private Counter openedCounterMetric;
 
-    @Service.Inject
     CircuitBreakerImpl(CircuitBreakerConfig config) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();

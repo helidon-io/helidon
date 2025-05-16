@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,11 +27,3 @@ db:
     statement: "SELECT 1 FROM DUAL"
   statements:
     ping: "SELECT 1 FROM DUAL"
-    create-matches: |
-      CREATE TABLE Matches (
-        id INTEGER NOT NULL PRIMARY KEY,
-        red INTEGER NOT NULL REFERENCES Pokemons(id),
-        blue INTEGER NOT NULL REFERENCES Pokemons(id)
-      )
-    create-matches-seq: "CREATE SEQUENCE MatchesSeq START WITH 1"
-    insert-match: "INSERT INTO Matches(id, red, blue) VALUES (MatchesSeq.NEXTVAL, :red, :blue)"
