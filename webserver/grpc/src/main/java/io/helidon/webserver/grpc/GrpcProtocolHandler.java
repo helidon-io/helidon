@@ -359,13 +359,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void close(Status status, Metadata trailers) {
-                // headers are required even if call is cancelled
-                if (!headersSent) {
-                    sendHeaders(new Metadata());
-                }
-
                 // prepare trailers, may override status code to CANCELLED
                 WritableHeaders<?> writable = WritableHeaders.create();
+                if (!headersSent) {
+                    writable.set(GRPC_CONTENT_TYPE);
+                }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
                 int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
                 writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
@@ -376,6 +374,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 // write headers frame with trailers and EOS
                 Http2Headers http2Headers = Http2Headers.create(writable);
+                if (!headersSent) {
+                    http2Headers.status(io.helidon.http.Status.OK_200);
+                }
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
