@@ -37,6 +37,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
@@ -112,6 +113,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
+    private boolean callCancelled;
 
     GrpcProtocolHandler(HttpPrologue prologue,
                         Http2Headers headers,
@@ -166,6 +168,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     @Override
     public void rstStream(Http2RstStream rstStream) {
+        callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
         listener.onCancel();
     }
 
@@ -361,10 +364,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     sendHeaders(new Metadata());
                 }
 
-                // prepare trailers
+                // prepare trailers, may override status code to CANCELLED
                 WritableHeaders<?> writable = WritableHeaders.create();
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
+                int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
+                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
                 String description = status.getDescription();
                 if (description != null) {
                     writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
