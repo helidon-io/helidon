@@ -60,43 +60,43 @@ public interface TypeRepository extends Data.PageableRepository<Type, Integer> {
 
     List<Type> sortedListByNameNotIgnoreCase(Sort sort, String name);
 
-    Stream<Type> listByNameContains(String name);
+    Stream<Type> streamByNameContains(String name);
 
-    Stream<Type> sortedListByNameContains(Sort sort, String name);
+    Stream<Type> sortedStreamByNameContains(Sort sort, String name);
 
-    Stream<Type> sortedListByNameIgnoreCaseContains(Sort sort, String name);
+    Stream<Type> sortedStreamByNameIgnoreCaseContains(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotContains(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotContains(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotIgnoreCaseContains(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotIgnoreCaseContains(Sort sort, String name);
 
-    Stream<Type> listByNameEndsWith(String name);
+    Stream<Type> streamByNameEndsWith(String name);
 
-    Stream<Type> sortedListByNameEndsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameEndsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameIgnoreCaseEndsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameIgnoreCaseEndsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotEndsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotEndsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotIgnoreCaseEndsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotIgnoreCaseEndsWith(Sort sort, String name);
 
-    Stream<Type> listByNameStartsWith(String name);
+    Stream<Type> streamByNameStartsWith(String name);
 
-    Stream<Type> sortedListByNameStartsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameStartsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameIgnoreCaseStartsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameIgnoreCaseStartsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotStartsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotStartsWith(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotIgnoreCaseStartsWith(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotIgnoreCaseStartsWith(Sort sort, String name);
 
-    Stream<Type> listByIdLessThan(int id);
+    Stream<Type> streamByIdLessThan(int id);
 
-    Stream<Type> sortedListByIdLessThan(Sort sort, int id);
+    Stream<Type> sortedStreamByIdLessThan(Sort sort, int id);
 
     // IgnoreCase can't be used with non String argument
     //Stream<Kind> sortedListByIdIgnoreCaseLessThan(Sort sort, int id);
-    Stream<Type> sortedListByIdNotLessThan(Sort sort, int id);
+    Stream<Type> sortedStreamByIdNotLessThan(Sort sort, int id);
     // IgnoreCase can't be used with non String argument
     //Stream<Kind> sortedListByIdNotIgnoreCaseLessThan(Sort sort, int id);
 
@@ -126,49 +126,49 @@ public interface TypeRepository extends Data.PageableRepository<Type, Integer> {
 
     Collection<Type> sortedListByIdNotBetween(Sort sort, int min, int max);
 
-    Stream<Type> listByNameLike(String name);
+    Stream<Type> streamByNameLike(String name);
 
-    Stream<Type> sortedListByNameLike(Sort sort, String name);
+    Stream<Type> sortedStreamByNameLike(Sort sort, String name);
 
-    Stream<Type> sortedListByNameIgnoreCaseLike(Sort sort, String name);
+    Stream<Type> sortedStreamByNameIgnoreCaseLike(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotLike(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotLike(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotIgnoreCaseLike(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotIgnoreCaseLike(Sort sort, String name);
 
-    Stream<Type> listByNameIn(List<String> name);
+    Stream<Type> streamByNameIn(List<String> name);
 
-    Stream<Type> listByNameIgnoreCaseIn(List<String> name);
+    Stream<Type> streamByNameIgnoreCaseIn(List<String> name);
 
-    Stream<Type> sortedListByNameIn(Sort sort, List<String> name);
+    Stream<Type> sortedStreamByNameIn(Sort sort, List<String> name);
 
     //Stream<Kind> sortedListByNameIgnoreCaseIn(Sort sort, List<String> name);
-    Stream<Type> sortedListByNameNotIn(Sort sort, List<String> name);
+    Stream<Type> sortedStreamByNameNotIn(Sort sort, List<String> name);
     //Stream<Kind> sortedListByNameIgnoreCaseNotIn(Sort sort, List<String> name);
 
-    Stream<Type> listByNameEmpty(String name);
+    Stream<Type> streamByNameEmpty(String name);
 
-    Stream<Type> sortedListByNameEmpty(Sort sort, String name);
+    Stream<Type> sortedStreamByNameEmpty(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotEmpty(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotEmpty(Sort sort, String name);
 
-    Stream<Type> listByNameNull(String name);
+    Stream<Type> streamByNameNull(String name);
 
-    Stream<Type> sortedListByNameNull(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNull(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotNull(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotNull(Sort sort, String name);
 
-    Stream<Type> listByNameTrue(String name);
+    Stream<Type> streamByNameTrue(String name);
 
-    Stream<Type> sortedListByNameTrue(Sort sort, String name);
+    Stream<Type> sortedStreamByNameTrue(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotTrue(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotTrue(Sort sort, String name);
 
-    Stream<Type> listByNameFalse(String name);
+    Stream<Type> streamByNameFalse(String name);
 
-    Stream<Type> sortedListByNameFalse(Sort sort, String name);
+    Stream<Type> sortedStreamByNameFalse(Sort sort, String name);
 
-    Stream<Type> sortedListByNameNotFalse(Sort sort, String name);
+    Stream<Type> sortedStreamByNameNotFalse(Sort sort, String name);
 
     List<Type> sortedListByNameOrderByName(Sort sort, String name);
 
@@ -176,7 +176,7 @@ public interface TypeRepository extends Data.PageableRepository<Type, Integer> {
 
     Slice<Type> sliceListByNameOrderByName(PageRequest pageRequest, Sort sort, String name);
 
-    Optional<String> getNameById(Sort sort, int id);
+    Optional<String> findNameById(Sort sort, int id);
 
     String getNameByName(Sort sort, String name);
 

@@ -37,6 +37,8 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator.QueryReturnType;
 import io.helidon.data.codegen.parser.MethodNameParser;
 import io.helidon.data.codegen.query.DataQuery;
+import io.helidon.data.codegen.query.ProjectionExpression;
+import io.helidon.data.codegen.query.ProjectionResult;
 
 import static io.helidon.data.codegen.HelidonDataTypes.PAGE;
 import static io.helidon.data.codegen.HelidonDataTypes.SLICE;
@@ -1254,7 +1256,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
     private void generateMethod(Method.Builder builder, TypedElementInfo methodInfo) {
         MethodParams methodParams = generateHeader(builder, methodInfo);
         DataQuery dataQuery = parser.dataQuery();
-        validateResult(dataQuery, methodInfo.typeName());
+        validateResult(dataQuery, methodInfo);
 
         codegenContext().logger()
                 .log(Level.TRACE, String.format("QbMN method %s", methodInfo.elementName()));
@@ -1418,7 +1420,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                      PersistenceGenerator.Query query,
                                      DataQuery dataQuery,
                                      MethodParams methodParams) {
-        if (STREAM.equals(methodInfo.typeName())) {
+        if (isStream(methodInfo.typeName())) {
             generateQueryStream(builder, methodInfo, statementGenerator(), query);
         } else if (isListOrCollection(methodInfo.typeName())) {
             generateQueryList(builder, methodInfo, statementGenerator(), query);
@@ -1437,7 +1439,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                             TypedElementInfo methodInfo,
                                             DataQuery dataQuery,
                                             MethodParams methodParams) {
-        if (STREAM.equals(methodInfo.typeName())) {
+        if (isStream(methodInfo.typeName())) {
             generateDynamicQueryStream(builder, repositoryInfo(), methodInfo, statementGenerator(), methodParams, dataQuery);
         } else if (isListOrCollection(methodInfo.typeName())) {
             generateDynamicQueryList(builder, repositoryInfo(), methodInfo, statementGenerator(), methodParams, dataQuery);
@@ -1459,13 +1461,12 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
     }
 
     // NEXT VERSION: Implement missing validations
-    private void validateResult(DataQuery dataQuery, TypeName returnType) {
+    private void validateResult(DataQuery dataQuery, TypedElementInfo methodInfo) {
+        TypeName returnType = methodInfo.typeName();
         dataQuery.projection()
                 .result()
                 .ifPresentOrElse(
-                        result -> {
-
-                        },
+                        result -> validateProjectionResult(dataQuery, methodInfo, result),
                         () -> {
                             throw new IllegalArgumentException("Missing projection result in DataQuery instance");
                         });
@@ -1474,26 +1475,123 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
         case Select:
             dataQuery.projection()
                     .expression()
-                    .ifPresent(expression -> {
-                        // Avg expression operator requires Double as return type
-                        switch (expression.operator()) {
-                        case Avg:
-                            if (!returnType.equals(TypeNames.PRIMITIVE_DOUBLE)
-                                    && !returnType.equals(TypeNames.BOXED_DOUBLE)
-                                    && !returnType.equals(TypeNames.PRIMITIVE_FLOAT)
-                                    && !returnType.equals(TypeNames.BOXED_FLOAT)) {
-                                throw new IllegalArgumentException(
-                                        "Projection operator Avg requires method return type float or double");
-                            }
-                            break;
-                        default:
-                            // Do nothing
-                        }
-                    });
+                    .ifPresent(expression -> validateProjectionExpression(dataQuery, methodInfo, expression));
             break;
         default:
             // Do nothing
         }
+    }
+
+    // Validate method return type for ProjectionResult
+    private void validateProjectionResult(DataQuery dataQuery,
+                                          TypedElementInfo methodInfo,
+                                          ProjectionResult result) {
+        TypeName returnType = methodInfo.typeName();
+        switch (result) {
+            case Exists:
+                if (!BOOLEAN_RESULT_GENERATORS.containsKey(returnType)) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with exists prefix requires boolean return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            case Count:
+                if (!NUMBER_RESULT_GENERATORS.containsKey(returnType)) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with count prefix requires numeric return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            // Stream and Collection may be returned as projection of entity attributes with mapping, can't be restricted.
+            case Get:
+                if (returnType.isOptional()) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with get prefix does not allow Optional as return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            case Find:
+                // NEXT VERSION: Keep just Optional as allowed return types?
+                if (!returnType.isOptional()
+                        && !isListOrCollection(methodInfo.typeName())
+                        && !isStream(methodInfo.typeName())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with find prefix requires Optional return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            case List:
+                if (!isListOrCollection(methodInfo.typeName())
+                        && !isSliceOrPage(methodInfo.typeName())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with list prefix requires Collection or List return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            case Stream:
+                if (!isStream(methodInfo.typeName())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with stream prefix requires Collection or List return type, but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            case Dml:
+                if (!DML_GENERATORS.containsKey(returnType)) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s with update or delete prefix requires void, boolean or numeric return type,"
+                                            + " but %s was found",
+                                    methodNameForException(methodInfo),
+                                    returnType));
+                }
+                break;
+            default:
+                // Do nothing
+        }
+    }
+
+    private void validateProjectionExpression(DataQuery dataQuery,
+                                              TypedElementInfo methodInfo,
+                                              ProjectionExpression expression) {
+        TypeName returnType = methodInfo.typeName();
+        // Avg expression operator requires Double as return type
+        switch (expression.operator()) {
+            case Avg:
+                if (!returnType.equals(TypeNames.PRIMITIVE_DOUBLE)
+                        && !returnType.equals(TypeNames.BOXED_DOUBLE)
+                        && !returnType.equals(TypeNames.PRIMITIVE_FLOAT)
+                        && !returnType.equals(TypeNames.BOXED_FLOAT)) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Method %s projection operator Avg requires method return type float or double",
+                                    methodNameForException(methodInfo)));
+                }
+                break;
+            default:
+                // Do nothing
+        }
+    }
+
+    // Builds method name to be added to Exception message
+    private static String methodNameForException(TypedElementInfo methodInfo) {
+        StringBuilder sb = new StringBuilder();
+        methodInfo.enclosingType().ifPresent(
+                t -> sb.append(t.className())
+                        .append("::"));
+        sb.append(methodInfo.elementName());
+        return sb.toString();
     }
 
     // Dispatcher interface

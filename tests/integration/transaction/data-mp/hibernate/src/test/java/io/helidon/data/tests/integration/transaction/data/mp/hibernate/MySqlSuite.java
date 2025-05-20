@@ -29,7 +29,6 @@ import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
 import io.helidon.testing.junit5.suite.Suite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
-import io.helidon.tests.integration.transaction.data.mp.model.Pokemon;
 import io.helidon.tests.integration.transaction.data.mp.repository.PokemonRepository;
 import io.helidon.tests.integration.transaction.data.mp.test.Data;
 
