@@ -1462,13 +1462,14 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
 
     // NEXT VERSION: Implement missing validations
     private void validateResult(DataQuery dataQuery, TypedElementInfo methodInfo) {
-        TypeName returnType = methodInfo.typeName();
         dataQuery.projection()
                 .result()
                 .ifPresentOrElse(
                         result -> validateProjectionResult(dataQuery, methodInfo, result),
                         () -> {
-                            throw new IllegalArgumentException("Missing projection result in DataQuery instance");
+                            throw new IllegalArgumentException(String.format(
+                                    "Method %s: missing projection result in DataQuery instance",
+                                    methodNameForException(methodInfo)));
                         });
         switch (dataQuery.projection().action()) {
         // SELECT validations
