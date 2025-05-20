@@ -86,8 +86,6 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                                                        headers,
                                                                        streamWriter,
                                                                        streamId,
-                                                                       serverSettings,
-                                                                       clientSettings,
                                                                        flowControl,
                                                                        currentStreamState,
                                                                        route,

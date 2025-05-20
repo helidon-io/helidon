@@ -43,7 +43,6 @@ import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
@@ -119,8 +118,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
-                        Http2Settings serverSettings,
-                        Http2Settings clientSettings,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
