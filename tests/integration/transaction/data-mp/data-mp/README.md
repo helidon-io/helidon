@@ -12,3 +12,4 @@ Tests to validate Helidon Data and MP JPA modules interoperability
   * database got erased after persistence context init with `jakarta.persistence.schema-generation.database.action` set to `none`,
     but that's not an issue on our side
 
+* Tx annotations interceptors do not work with CDI yet.

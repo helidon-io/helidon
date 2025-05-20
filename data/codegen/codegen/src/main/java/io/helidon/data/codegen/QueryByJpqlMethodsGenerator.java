@@ -189,15 +189,15 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
         PersistenceGenerator.Query query = queryBuilder().buildQuery(jpql,
                                                                      parser.parse(jpql),
                                                                      params(methodParams));
-        if (STREAM.equals(methodInfo.typeName())) {
+        if (isStream(methodInfo.typeName())) {
             generateQueryStream(builder, methodInfo, statementGenerator(), query);
         } else if (isListOrCollection(methodInfo.typeName())) {
             generateQueryList(builder, methodInfo, statementGenerator(), query);
         } else if (methodInfo.typeName().isOptional()) {
             generateQueryOptional(builder, methodInfo, query);
-        } else if (SLICE.equals(methodInfo.typeName())) {
+        } else if (isSlice(methodInfo.typeName())) {
             generateQuerySlice(builder, methodInfo, statementGenerator(), query, methodParams);
-        } else if (PAGE.equals(methodInfo.typeName())) {
+        } else if (isPage(methodInfo.typeName())) {
             generateQueryPage(builder, methodInfo, statementGenerator(), query, methodParams);
         } else {
             generateQueryItem(builder, query, methodInfo.typeName());
