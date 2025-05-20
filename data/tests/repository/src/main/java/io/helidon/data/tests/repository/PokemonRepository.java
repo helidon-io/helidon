@@ -35,12 +35,12 @@ public interface PokemonRepository
     // Simple (JPQL) projection get
     Pokemon getByName(String name);
 
-    Optional<Pokemon> optionalGetByName(String name);
+    Optional<Pokemon> optionalFindByName(String name);
 
     // Dynamic (criteria API) projection get
     Pokemon getByName(String name, Sort sort);
 
-    Optional<Pokemon> optionalGetByName(String name, Sort sort);
+    Optional<Pokemon> optionalFindByName(String name, Sort sort);
 
     // Simple (JPQL) projection find
     List<Pokemon> find();
@@ -477,7 +477,7 @@ public interface PokemonRepository
     // Sort argument in DML methods causes an exception in codegen so tests are not possible
 
     // Simple (JPQL) criteria AND/OR
-    Optional<Pokemon> getByNameAndHp(String name, int hp);
+    Optional<Pokemon> findByNameAndHp(String name, int hp);
 
     List<Pokemon> findByNameOrHp(String name, int hp);
 
@@ -488,7 +488,7 @@ public interface PokemonRepository
     List<Pokemon> findByIdOrHpAndName(int id, int hp, String name);
 
     // Dynamic (criteria API) criteria AND/OR
-    Optional<Pokemon> getByNameAndHp(String name, int hp, Sort sort);
+    Optional<Pokemon> findByNameAndHp(String name, int hp, Sort sort);
 
     List<Pokemon> findByNameOrHp(String name, int hp, Sort sort);
 
