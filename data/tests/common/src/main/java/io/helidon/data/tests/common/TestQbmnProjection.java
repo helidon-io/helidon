@@ -81,7 +81,7 @@ public class TestQbmnProjection {
     public void testOptionalGetByName() {
         // Pokemon is in the database
         Pokemon pokemon = POKEMONS[2];
-        Optional<Pokemon> result = pokemonRepository.optionalGetByName(pokemon.getName());
+        Optional<Pokemon> result = pokemonRepository.optionalFindByName(pokemon.getName());
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(pokemon));
     }
@@ -89,7 +89,7 @@ public class TestQbmnProjection {
     @Test
     public void testOptionalGetMissingByName() {
         // Pokemon is not in the database
-        Optional<Pokemon> result = pokemonRepository.optionalGetByName("Kakuna");
+        Optional<Pokemon> result = pokemonRepository.optionalFindByName("Kakuna");
         assertThat(result.isPresent(), is(false));
     }
 
@@ -117,7 +117,7 @@ public class TestQbmnProjection {
     public void testDynamicOptionalGetByName() {
         // Pokemon is in the database
         Pokemon pokemon = POKEMONS[2];
-        Optional<Pokemon> result = pokemonRepository.optionalGetByName(pokemon.getName(), Sort.create(Order.create("name")));
+        Optional<Pokemon> result = pokemonRepository.optionalFindByName(pokemon.getName(), Sort.create(Order.create("name")));
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(pokemon));
     }
@@ -127,7 +127,7 @@ public class TestQbmnProjection {
     @Test
     public void testDynamicOptionalGetMissingByName() {
         // Pokemon is not in the database
-        Optional<Pokemon> result = pokemonRepository.optionalGetByName("Kakuna", Sort.create(Order.create("name")));
+        Optional<Pokemon> result = pokemonRepository.optionalFindByName("Kakuna", Sort.create(Order.create("name")));
         assertThat(result.isPresent(), is(false));
     }
 

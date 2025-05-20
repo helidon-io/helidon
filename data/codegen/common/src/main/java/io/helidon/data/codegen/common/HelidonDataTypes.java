@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.data.codegen.common;
 
-/**
- * Helidon Data Tests Model.
- */
-module io.helidon.tests.integration.transaction.data.mp {
+import io.helidon.common.types.TypeName;
 
-    requires jakarta.cdi;
-    requires jakarta.transaction;
-    requires jakarta.persistence;
-    requires microprofile.config.api;
+class HelidonDataTypes {
 
-    requires io.helidon.transaction;
-    requires io.helidon.data;
-    requires io.helidon.data.jakarta.persistence;
+    static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
+    static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
 
-    requires org.junit.jupiter.api;
-    requires hamcrest.all;
-
-    exports io.helidon.tests.integration.transaction.data.mp.model;
-    exports io.helidon.tests.integration.transaction.data.mp.repository;
-    exports io.helidon.tests.integration.transaction.data.mp.test;
+    private HelidonDataTypes() {
+        throw new UnsupportedOperationException("No instances of HelidonDataTypes are allowed");
+    }
 
 }

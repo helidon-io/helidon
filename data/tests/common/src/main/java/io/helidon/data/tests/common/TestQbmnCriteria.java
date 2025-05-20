@@ -865,7 +865,7 @@ public class TestQbmnCriteria {
     @Test
     public void testFindByNameAndHp() {
         Pokemon pokemon = POKEMONS[1];
-        Optional<Pokemon> maybeFromDb = pokemonRepository.getByNameAndHp(pokemon.getName(), pokemon.getHp());
+        Optional<Pokemon> maybeFromDb = pokemonRepository.findByNameAndHp(pokemon.getName(), pokemon.getHp());
         assertThat(maybeFromDb.isPresent(), is(true));
         Pokemon fromDb = maybeFromDb.get();
         assertThat(fromDb, is(pokemon));
@@ -904,8 +904,8 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameAndHp() {
         Pokemon pokemon = POKEMONS[1];
-        Optional<Pokemon> maybeFromDb = pokemonRepository.getByNameAndHp(pokemon.getName(), pokemon.getHp(),
-                                                                         Sort.create(Order.create("name")));
+        Optional<Pokemon> maybeFromDb = pokemonRepository.findByNameAndHp(pokemon.getName(), pokemon.getHp(),
+                                                                          Sort.create(Order.create("name")));
         assertThat(maybeFromDb.isPresent(), is(true));
         Pokemon fromDb = maybeFromDb.get();
         assertThat(fromDb, is(pokemon));
