@@ -625,8 +625,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
         abortRequest(res,
                      response,
                      Status.UNAUTHORIZED_401.code(),
-                     Map.of(HeaderNames.WWW_AUTHENTICATE,
-                            List.of("Basic realm=\"Security Realm\"")));
+                     Map.of());
         return true;
     }
 
