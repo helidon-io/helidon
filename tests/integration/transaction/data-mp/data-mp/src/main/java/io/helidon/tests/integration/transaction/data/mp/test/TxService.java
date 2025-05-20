@@ -60,6 +60,40 @@ public class TxService {
     }
 
     /**
+     * Run transaction test as {@link Tx.Required} top level transaction.
+     *
+     * @param pokemonRepository {@link PokemonRepository} instance
+     * @param cdiEm CDI injected EntityManager
+     * @param dataTask data repository task
+     * @param cdiTask CDI task
+     */
+    @Tx.Required
+    public void requiredDataFirst(PokemonRepository pokemonRepository,
+                         CdiEM cdiEm,
+                         Consumer<PokemonRepository> dataTask,
+                         Consumer<CdiEM> cdiTask) {
+        dataTask.accept(pokemonRepository);
+        cdiTask.accept(cdiEm);
+    }
+
+    /**
+     * Run transaction test as {@link Tx.Required} top level transaction.
+     *
+     * @param pokemonRepository {@link PokemonRepository} instance
+     * @param cdiEm CDI injected EntityManager
+     * @param dataTask data repository task
+     * @param cdiTask CDI task
+     */
+    @Tx.Required
+    public void requiredCdiFirst(PokemonRepository pokemonRepository,
+                                  CdiEM cdiEm,
+                                  Consumer<PokemonRepository> dataTask,
+                                  Consumer<CdiEM> cdiTask) {
+        cdiTask.accept(cdiEm);
+        dataTask.accept(pokemonRepository);
+    }
+
+    /**
      * Run data repository sub-task as {@link Tx.New} transaction.
      *
      * @param pokemonRepository {@link PokemonRepository} instance

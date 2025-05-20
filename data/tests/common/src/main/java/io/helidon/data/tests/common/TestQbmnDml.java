@@ -60,14 +60,14 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameVoid() {
         pokemonRepository.deleteByName("Pansear");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Pansear");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Pansear");
         assertThat(maybePokemon.isPresent(), is(false));
     }
 
     @Test
     public void testDeleteByNameBoxedVoid() {
         Void result = pokemonRepository.boxedVoidDeleteByName("Simisear");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Simisear");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Simisear");
         assertThat(result, is(nullValue()));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -75,7 +75,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoolean() {
         boolean result = pokemonRepository.booleanDeleteByName("Pansage");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Pansage");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Pansage");
         assertThat(result, is(true));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -83,7 +83,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoxedBoolean() {
         Boolean result = pokemonRepository.boxedBooleanDeleteByName("Simisage");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Simisage");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Simisage");
         assertThat(result, is(notNullValue()));
         assertThat(result, is(true));
         assertThat(maybePokemon.isPresent(), is(false));
@@ -92,7 +92,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameLong() {
         long result = pokemonRepository.longDeleteByName("Purrloin");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Purrloin");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Purrloin");
         assertThat(result, is(1L));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -100,7 +100,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoxedLong() {
         Long result = pokemonRepository.boxedLongDeleteByName("Liepard");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Liepard");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Liepard");
         assertThat(result, is(notNullValue()));
         assertThat(result, is(1L));
         assertThat(maybePokemon.isPresent(), is(false));
@@ -109,7 +109,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameInt() {
         int result = pokemonRepository.intDeleteByName("Panpour");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Panpour");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Panpour");
         assertThat(result, is(1));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -117,7 +117,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoxedInt() {
         Integer result = pokemonRepository.boxedIntDeleteByName("Simipour");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Simipour");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Simipour");
         assertThat(result, is(notNullValue()));
         assertThat(result, is(1));
         assertThat(maybePokemon.isPresent(), is(false));
@@ -126,7 +126,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameShort() {
         short result = pokemonRepository.shortDeleteByName("Munna");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Munna");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Munna");
         assertThat(result, is((short) 1));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -134,7 +134,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoxedShort() {
         Short result = pokemonRepository.boxedShortDeleteByName("Musharna");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Musharna");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Musharna");
         assertThat(result, is(notNullValue()));
         assertThat(result, is((short) 1));
         assertThat(maybePokemon.isPresent(), is(false));
@@ -143,7 +143,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameByte() {
         byte result = pokemonRepository.byteDeleteByName("Blitzle");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Blitzle");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Blitzle");
         assertThat(result, is((byte) 1));
         assertThat(maybePokemon.isPresent(), is(false));
     }
@@ -151,7 +151,7 @@ public class TestQbmnDml {
     @Test
     public void testDeleteByNameBoxedByte() {
         Byte result = pokemonRepository.boxedByteDeleteByName("Zebstrika");
-        Optional<Pokemon> maybePokemon = pokemonRepository.optionalGetByName("Zebstrika");
+        Optional<Pokemon> maybePokemon = pokemonRepository.optionalFindByName("Zebstrika");
         assertThat(result, is(notNullValue()));
         assertThat(result, is((byte) 1));
         assertThat(maybePokemon.isPresent(), is(false));
