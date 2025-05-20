@@ -16,6 +16,7 @@
 package io.helidon.data.codegen.common;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -29,10 +30,18 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 
+import static io.helidon.data.codegen.common.HelidonDataTypes.PAGE;
+import static io.helidon.data.codegen.common.HelidonDataTypes.SLICE;
+
 /**
  * Data repository interface code generator base class for methods generators.
  */
 public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInterfaceGenerator {
+
+    /**
+     * {@link java.util.stream.Stream} type.
+     */
+    private static final TypeName STREAM = TypeName.create(Stream.class);
 
     /**
      * Creates an instance of data repository interface code generator base class for methods generators.
@@ -81,6 +90,50 @@ public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInter
     protected static boolean isListOrCollection(TypeName typeName) {
         return typeName.isList()
                 || TypeNames.COLLECTION.equals(typeName);
+    }
+
+    /**
+     * Check whether provided {@link TypeName} is {@link java.util.stream.Stream}.
+     *
+     * @param typeName type to check
+     * @return value of {@code true} when provided {@link TypeName} is {@link java.util.stream.Stream},
+     *         value of {@code false} otherwise
+     */
+    protected static boolean isStream(TypeName typeName) {
+        return STREAM.equals(typeName);
+    }
+
+    /**
+     * Check whether provided {@link TypeName} is {@code io.helidon.data.Slice}.
+     *
+     * @param typeName type to check
+     * @return value of {@code true} when provided {@link TypeName} is {@code io.helidon.data.Slice},
+     *         value of {@code false} otherwise
+     */
+    protected static boolean isSlice(TypeName typeName) {
+        return SLICE.equals(typeName);
+    }
+
+    /**
+     * Check whether provided {@link TypeName} is {@code io.helidon.data.Page}.
+     *
+     * @param typeName type to check
+     * @return value of {@code true} when provided {@link TypeName} is {@code io.helidon.data.Page},
+     *         value of {@code false} otherwise
+     */
+    protected static boolean isPage(TypeName typeName) {
+        return PAGE.equals(typeName);
+    }
+
+    /**
+     * Check whether provided {@link TypeName} is {@code io.helidon.data.Slice} or {@code io.helidon.data.Page}.
+     *
+     * @param typeName type to check
+     * @return value of {@code true} when provided {@link TypeName} is {@code io.helidon.data.Slice}
+     *         or {@code io.helidon.data.Page}, value of {@code false} otherwise
+     */
+    protected static boolean isSliceOrPage(TypeName typeName) {
+        return SLICE.equals(typeName) || PAGE.equals(typeName);
     }
 
     /**

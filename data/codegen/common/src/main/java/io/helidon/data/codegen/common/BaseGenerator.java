@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
@@ -106,10 +105,6 @@ public abstract class BaseGenerator {
      * {@link BigDecimal} type.
      */
     protected static final TypeName BIG_DECIMAL = TypeName.create(BigDecimal.class);
-    /**
-     * {@link Stream} type.
-     */
-    protected static final TypeName STREAM = TypeName.create(Stream.class);
     /**
      * Type of the {@code Class<?>}.
      */

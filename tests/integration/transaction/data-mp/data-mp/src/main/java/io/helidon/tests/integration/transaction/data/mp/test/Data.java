@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.transaction.data.mp.test;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -98,21 +97,48 @@ public class Data {
     /**
      * Pokemons not stored in the database.
      */
-    public static final Map<Integer, Pokemon> NEW_POKEMONS = Map.of(
-            100, new Pokemon(100, TRAINERS[1], "Diglett", 32, true, List.of(TYPES[5])),
-            101, new Pokemon(101, TRAINERS[1], "Dugtrio", 72, true, List.of(TYPES[5])),
-            102, new Pokemon(102, TRAINERS[2], "Meowth", 90, true, List.of(TYPES[1])),
-            103, new Pokemon(103, TRAINERS[2], "Persian", 123, true, List.of(TYPES[1])),
-            // TestTransaction.testManual<type>2ndLevel
-            104, new Pokemon(104, TRAINERS[3], "Pikachu", 92, true, List.of(TYPES[13])),
-            105, new Pokemon(105, TRAINERS[3], "Machop", 138, true, List.of(TYPES[2])),
-            // TestTransaction.testAutomatic<type>2ndLevel
-            106, new Pokemon(106, TRAINERS[3], "Snorlax", 293, true, List.of(TYPES[1])),
-            107, new Pokemon(107, TRAINERS[3], "Charizard", 151, true, List.of(TYPES[10], TYPES[3])),
-            // TestTransaction.testUser<type>2ndLevel
-            108, new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])),
-            109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11]))
-    );
+    public static final Map<Integer, Pokemon> NEW_POKEMONS;
+
+    static {
+        Map<Integer, Pokemon> newPokemons = new HashMap<>(16);
+        newPokemons.put(100,
+                        new Pokemon(100, TRAINERS[1], "Diglett", 32, true, List.of(TYPES[5])));
+        newPokemons.put(101,
+                        new Pokemon(101, TRAINERS[1], "Dugtrio", 72, true, List.of(TYPES[5])));
+        newPokemons.put(102,
+                        new Pokemon(102, TRAINERS[2], "Meowth", 90, true, List.of(TYPES[1])));
+        newPokemons.put(103,
+                        new Pokemon(103, TRAINERS[2], "Persian", 123, true, List.of(TYPES[1])));
+        newPokemons.put(104,
+                        new Pokemon(104, TRAINERS[3], "Pikachu", 92, true, List.of(TYPES[13])));
+        newPokemons.put(105,
+                        new Pokemon(105, TRAINERS[3], "Machop", 138, true, List.of(TYPES[2])));
+        newPokemons.put(106,
+                        new Pokemon(106, TRAINERS[3], "Snorlax", 293, true, List.of(TYPES[1])));
+        newPokemons.put(107,
+                        new Pokemon(107, TRAINERS[3], "Charizard", 151, true, List.of(TYPES[10], TYPES[3])));
+        newPokemons.put(108,
+                        new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])));
+        newPokemons.put(109,
+                        new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11])));
+        newPokemons.put(110,
+                        new Pokemon(110, TRAINERS[3], "Fearow", 123, true, List.of(TYPES[1], TYPES[3])));
+        newPokemons.put(111,
+                        new Pokemon(111, TRAINERS[3], "Ekans", 72, true, List.of(TYPES[4])));
+        newPokemons.put(112,
+                        new Pokemon(112, TRAINERS[4], "Sandshrew", 98, true, List.of(TYPES[5])));
+        newPokemons.put(113,
+                        new Pokemon(113, TRAINERS[4], "Sandslash", 140, true, List.of(TYPES[5])));
+        newPokemons.put(114,
+                        new Pokemon(114, TRAINERS[4], "Diglett", 30, true, List.of(TYPES[5])));
+        newPokemons.put(115,
+                        new Pokemon(115, TRAINERS[5], "Rayquaza", 191, true, List.of(TYPES[3], TYPES[16])));
+        newPokemons.put(116,
+                        new Pokemon(116, TRAINERS[5], "Lugia", 193, true, List.of(TYPES[3], TYPES[14])));
+        newPokemons.put(117,
+                        new Pokemon(117, TRAINERS[5], "Ho-Oh", 193, true, List.of(TYPES[3], TYPES[10])));
+        NEW_POKEMONS = Map.copyOf(newPokemons);
+    }
 
     /**
      * Initialize database data.
