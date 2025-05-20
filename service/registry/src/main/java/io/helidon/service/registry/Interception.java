@@ -138,4 +138,51 @@ public final class Interception {
      */
     public interface ElementInterceptor extends Interceptor {
     }
+
+    /**
+     * Interceptor around initial entry into the Helidon system.
+     * <p>
+     * The following should be considered entry points:
+     * <ul>
+     *     <li>HTTP Request on the WebServer (includes grpc, initial web-socket request, graphQL)</li>
+     *     <li>Messaging inbound message handled by Helidon component</li>
+     *     <li>WebSocket message</li>
+     *     <li>Scheduling trigger</li>
+     * </ul>
+     * The exceptional behavior of this interceptor is that it is invoked exactly once for each entry
+     * point. This can be used for resource management, such as when there is a requirement to close
+     * resources after the request finishes.
+     * <p>
+     * Important note: entry point interceptors only trigger for entry points fully managed by Helidon, such as when
+     * using Helidon Declarative. This is not triggered when using injection "just" to set up the application.
+     *
+     * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
+     *               and full removal. We welcome feedback for incubating features.
+     */
+    @Deprecated
+    @Service.Contract
+    public interface EntryPointInterceptor {
+        /*
+        Developer note:
+        This cannot be handled using regular interceptors on the generated methods, as we would lose the annotations
+        defined on the endpoint type and method
+         */
+
+        /**
+         * Handle entry point interception.
+         *
+         * @param invocationContext invocation context to access type and method information
+         * @param chain             interceptor chain, you must call
+         *                          {@link io.helidon.service.registry.Interception.Interceptor.Chain#proceed(Object[])} to
+         *                          continue
+         * @param args              original parameters of the intercepted method, to be passed to proceed method
+         * @param <T>               type of the returned value
+         * @return result of the proceed method
+         * @throws java.lang.Exception in case the proceed method throws an exception, or the interceptor encounters a problem
+         *                             that should finish regular processing of the request
+         */
+        <T> T proceed(InterceptionContext invocationContext,
+                      Interception.Interceptor.Chain<T> chain,
+                      Object... args) throws Exception;
+    }
 }
