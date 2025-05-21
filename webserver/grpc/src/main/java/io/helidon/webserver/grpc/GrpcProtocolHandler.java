@@ -37,12 +37,12 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
@@ -94,12 +94,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                  DistributionSummary recvMessageSize) { }
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
-    private final HttpPrologue prologue;
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
-    private final Http2Settings serverSettings;
-    private final Http2Settings clientSettings;
     private final GrpcRouteHandler<REQ, RES> route;
     private final AtomicInteger numMessages = new AtomicInteger();
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
@@ -115,23 +112,19 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
+    private boolean callCancelled;
 
     GrpcProtocolHandler(HttpPrologue prologue,
                         Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
-                        Http2Settings serverSettings,
-                        Http2Settings clientSettings,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
                         GrpcConfig grpcConfig) {
-        this.prologue = prologue;
         this.headers = headers;
         this.streamWriter = streamWriter;
         this.streamId = streamId;
-        this.serverSettings = serverSettings;
-        this.clientSettings = clientSettings;
         this.flowControl = flowControl;
         this.currentStreamState = currentStreamState;
         this.route = route;
@@ -172,7 +165,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        listener.onComplete();
+        callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
+        listener.onCancel();
     }
 
     @Override
@@ -215,10 +209,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 }
             }
 
-            // if EOS then half close
+            // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();
-                currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
+                currentStreamState = Http2StreamState.HALF_CLOSED_REMOTE;
 
                 // update metrics
                 if (grpcConfig.enableMetrics()) {
@@ -289,6 +283,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return new ServerCall<>() {
 
             private long bytesSent;
+            private boolean headersSent;
 
             @Override
             public void request(int numMessages) {
@@ -317,6 +312,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                           streamId,
                                           HeaderFlags.create(END_OF_HEADERS),
                                           flowControl.outbound());
+                headersSent = true;
             }
 
             @Override
@@ -360,10 +356,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void close(Status status, Metadata trailers) {
-                // prepare trailers
+                // prepare trailers, may override status code to CANCELLED
                 WritableHeaders<?> writable = WritableHeaders.create();
+                if (!headersSent) {
+                    writable.set(GRPC_CONTENT_TYPE);
+                }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
+                int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
+                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
                 String description = status.getDescription();
                 if (description != null) {
                     writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
@@ -371,6 +371,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 // write headers frame with trailers and EOS
                 Http2Headers http2Headers = Http2Headers.create(writable);
+                if (!headersSent) {
+                    http2Headers.status(io.helidon.http.Status.OK_200);
+                }
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),

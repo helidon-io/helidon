@@ -20,7 +20,6 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 
 import org.junit.jupiter.api.Test;
@@ -41,8 +40,6 @@ class GrpcProtocolHandlerTest {
                                                               Http2Headers.create(headers),
                                                               null,
                                                               1,
-                                                              Http2Settings.builder().build(),
-                                                              Http2Settings.builder().build(),
                                                               null,
                                                               Http2StreamState.OPEN,
                                                               null,
@@ -60,8 +57,6 @@ class GrpcProtocolHandlerTest {
                                                               Http2Headers.create(headers),
                                                               null,
                                                               1,
-                                                              Http2Settings.builder().build(),
-                                                              Http2Settings.builder().build(),
                                                               null,
                                                               Http2StreamState.OPEN,
                                                               null,

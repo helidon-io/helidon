@@ -803,6 +803,17 @@ public final class HeaderNames {
      */
     public static final HeaderName X_FORWARDED_PROTO = HeaderNameEnum.X_FORWARDED_PROTO;
 
+    /**
+     * The {@value} header name.
+     * Represents non-standard content type options (such as {@code nosniff}).
+     */
+    public static final String X_CONTENT_TYPE_OPTIONS_NAME = Strings.X_CONTENT_TYPE_OPTIONS_NAME;
+    /**
+     * The {@value #X_CONTENT_TYPE_OPTIONS_NAME} header name.
+     * Represents non-standard content type options (such as {@code nosniff}).
+     */
+    public static final HeaderName X_CONTENT_TYPE_OPTIONS = HeaderNameEnum.X_CONTENT_TYPE_OPTIONS;
+
     private HeaderNames() {
     }
 

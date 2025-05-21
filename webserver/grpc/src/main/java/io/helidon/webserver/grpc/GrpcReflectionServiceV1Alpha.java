@@ -27,24 +27,25 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.Status;
-import io.grpc.reflection.v1.ErrorResponse;
-import io.grpc.reflection.v1.FileDescriptorResponse;
-import io.grpc.reflection.v1.ListServiceResponse;
-import io.grpc.reflection.v1.ServerReflectionProto;
-import io.grpc.reflection.v1.ServerReflectionRequest;
-import io.grpc.reflection.v1.ServerReflectionResponse;
-import io.grpc.reflection.v1.ServiceResponse;
+import io.grpc.reflection.v1alpha.ErrorResponse;
+import io.grpc.reflection.v1alpha.FileDescriptorResponse;
+import io.grpc.reflection.v1alpha.ListServiceResponse;
+import io.grpc.reflection.v1alpha.ServerReflectionProto;
+import io.grpc.reflection.v1alpha.ServerReflectionRequest;
+import io.grpc.reflection.v1alpha.ServerReflectionResponse;
+import io.grpc.reflection.v1alpha.ServiceResponse;
 import io.grpc.stub.StreamObserver;
 
 /**
- * Grpc reflection service version v1. Note the code in this class is almost identical
- * to {@link io.helidon.webserver.grpc.GrpcReflectionServiceV1Alpha} except for the
- * code-generated protobuf types. The v1alpha will be phased out once more tools
- * add support for v1.
+ * Grpc reflection service version v1alpha. Some tools such as Postman still do not
+ * support version v1. Once more tools support the new version we can remove support
+ * for version v1alpha. Note the code in this class is almost identical to
+ * {@link io.helidon.webserver.grpc.GrpcReflectionService} except for the code-generated
+ * protobuf types.
  *
- * @see io.helidon.webserver.grpc.GrpcReflectionServiceV1Alpha
+ * @see io.helidon.webserver.grpc.GrpcReflectionService
  */
-class GrpcReflectionService implements GrpcService {
+class GrpcReflectionServiceV1Alpha implements GrpcService {
 
     /**
      * Caches FileDescriptorProto representations as byte strings to avoid serialization
@@ -54,7 +55,7 @@ class GrpcReflectionService implements GrpcService {
 
     private final String socket;
 
-    GrpcReflectionService(String socket) {
+    GrpcReflectionServiceV1Alpha(String socket) {
         this.socket = socket;
     }
 
