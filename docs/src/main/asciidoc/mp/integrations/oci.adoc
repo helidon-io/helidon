@@ -37,7 +37,7 @@ include::{rootdir}/includes/mp.adoc[]
 You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Extension.
 
 link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK link:{jakarta-cdi-spec-url}#spi[CDI portable extension] provides support for
-injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon MicroProfile application.
+injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] into your Helidon applications.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -50,7 +50,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-NOTE: If your Helidon application is based on the Helidon MP OCI project starter, many of the following configurations are already enabled and you do not need to configure them again. See xref:../guides/oci-guide.adoc[OCI Oracle Cloud Infrastructure Tutorial] for more details.
+NOTE: If your Helidon application is based on the xref:../guides/oci-guide.adoc[Helidon MP OCI project starter], many of the following dependencies are already included and you do not need to add them.
 
 == Authentication
 
@@ -84,9 +84,9 @@ configures and constructs the object for you. The configuration primarily
 consists of initializing an OCI `AuthenticationDetailsProvider`. By default, the extension examines your environment and selects the best
 `AuthenticationDetailsProvider` and configures it for you.
 
-If you require greater control over the OCI configuration, see the
+If you require greater control over the OCI configuration, see 
 link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension]
-Javadocs for more information concerning the extension and its configuration
+in the Helidon Javadocs for more information concerning the extension and its configuration
 and authentication options. In particular, the `oci.auth-strategies` property lets you control which
 `AuthenticationDetailsProvider` will be used.
 
@@ -110,7 +110,7 @@ Here are some common OCI services and how to use them with your Helidon applicat
 
 The OCI Monitoring services allows you to actively and passively monitor cloud resources using the Metrics and Alarms features.
 
-Use OCI Monitoring with your Helidon application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. See link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
+Use OCI Monitoring with your Helidon application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. For an overview of OCI Monitoring features, see link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
 
 To enable OCI Monitoring integration, add the following dependency to your project's ``pom.xml``:
 
@@ -148,7 +148,7 @@ ocimetrics:
 <1> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
 <2> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
 <3> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
-<4> Enable or disable metrics transmission to OCI. Default is TRUE.
+<4> Enable or disable metrics transmission to OCI. Default is true.
 
 Then, add the following configuration to ``/server/src/main/resources/META-INF/microprofile-config.properties``, modifying its values for your specific project:
 
@@ -165,7 +165,7 @@ The next time that you launch the application, it will report metrics to OCI mon
 
 === Logging
 
-The OCI Logging service is a highly scalable and fully managed single pane of glass for all of the logs in your tenancy. See link:{oci-doc-url}/Content/Logging/home.htm[Logging Overview] in OCI documentation.
+The OCI Logging service is a highly scalable and fully managed single pane of glass for all of the logs in your tenancy. For an overview of the OCI Logging feature, see link:{oci-doc-url}/Content/Logging/Concepts/loggingoverview.htm[Logging Overview] in OCI documentation.
 
 Helidon uses the link:{oci-doc-url}/Content/Logging/Concepts/custom_logs.htm[custom logs] feature of OCI Logging for integration. The ability to add custom logs from any OCI Compute instance makes it more flexible to use this feature with other components such as Oracle Kubernetes Engine (OKE).
 
@@ -185,7 +185,7 @@ java.util.logging.FileHandler.pattern=%h/helidon_log/helidon.log
 java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
 ----
 
-After you configure OCI logging and launch the application, it will start reporting logs to OCI Logging. Logs are indexed in the system, and searchable through the Console, API, and CLI. You can filter, aggregate, and visualize your logs. For more information, see https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/searchinglogs.htm[Logging Search] in OCI documentation.
+After you configure OCI logging and launch the application, it will start reporting logs to OCI Logging. Logs are indexed in the system, and searchable through the OCI Console, API, and CLI. You can filter, aggregate, and visualize your logs. For more information, see https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/searchinglogs.htm[Logging Search] in OCI documentation.
 
 You can also manually push logs to the custom log configuration. First, add the following dependency to the project's ``pom.xml`` file:
 
@@ -214,6 +214,8 @@ Next, configure the APM Java Tracer to use with Helidon. The APM Java Tracer (or
 
 After you configure OCI APM with Helidon, you can use OCI Trace Explorer to view traces and spans and identify performance issues in your monitored application. See link:{oci-doc-url}/application-performance-monitoring/doc/monitor-traces-trace-explorer.html#GUID-D23BCE18-F42F-44A1-B583-47DF9F9817D8[Monitor Traces in Trace Explorer] in OCI documentation.
 
+TIP: You can use OpenTelemetry for tracing and then ship the traces to OCI APM. Read the https://medium.com/oracledevs/distributed-tracing-in-helidon-coherence-and-oracle-autonomous-database-with-opentelemetry-and-c60fe965f902[Distributed Tracing in Helidon, Coherence and Oracle Autonomous Database with OpenTelemetry and OCI APM] article on Medium.
+
 === Streaming
 
 The OCI Streaming service provides a fully managed, scalable, and durable solution for ingesting and consuming high-volume data streams in real time. See link:{oci-doc-url}/Content/Streaming/Concepts/streamingoverview.htm[Streaming] in OCI documentation.
@@ -230,7 +232,7 @@ After you have finished creating the stream, make a note of the following values
 * Messages endpoint (on the Stream Details page)
 * OCID of the stream _pool_ (on the Stream Pool Details page)
 
-You can also click Kafka Connection Settings (on the Stream Pool Details page) to see an example of Kafka Connection Settings.
+You can also click Kafka Connection Settings (on the Stream Pool Details page) to see an example of Kafka connection settings.
 
 Next, add the following dependency to your project's ``pom.xml``:
 
@@ -264,7 +266,7 @@ oci:
 ----
 <1> The name of the OCI tenancy.
 <2> The OCI account user name.
-<3> The OCI authentication token. See link:{oci-doc-url}/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token]
+<3> The OCI authentication token. See link:{oci-doc-url}/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token] in OCI documentation.
 <4> The details of the stream which you saved earlier. The ``port`` should be the standard Kafka port number ``9092``.
 
 Then, still in ``/server/src/main/resources/application.yaml``, configure messaging channels to use Helidon's Kafka connector.
@@ -301,11 +303,11 @@ mp.messaging:
        key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
        value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ----
-<1> The `oci.test-stream.name` value you defined earlier in application.yaml.
-<2> ID for the stream group
-<3> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector. The format is ``${oci.test-stream.endpoint}:${oci.test-stream.port}``.
-<4> username in the format ``${oci.tenant}/${oci.user}/${oci.test-stream.streampool-ocid}``.
-<5> OCI authentication token.
+<1> The OCI stream name (which should match the value that you defined earlier in application.yaml).
+<2> The ID for the stream group
+<3> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector, using the following structure ``_<oci.test-stream.endpoint>:<oci.test-stream.port>_``.
+<4> A username in this structure: ``_<oci.tenant>_/_<oci.user>_/_<oci.test-stream.streampool-ocid>_``.
+<5> The OCI authentication token.
 
 After you configure the ``helidon-kafka`` connector, you can use it on messaging channels to integrate with the OCI Streaming service.
 
