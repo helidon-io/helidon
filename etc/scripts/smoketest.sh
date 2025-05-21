@@ -63,7 +63,7 @@ for ((i=0;i<${#ARGS[@]};i++))
   ARG=${ARGS[${i}]}
   case ${ARG} in
   "--staged")
-    MVN_ARGS="${MVN_ARGS} -Possrh-staging"
+    MVN_ARGS="${MVN_ARGS} -Pcentral.manual.testing"
     ;;
   "--clean")
     MVN_ARGS="${MVN_ARGS} -Dmaven.repo.local=.m2/repository"
@@ -86,12 +86,14 @@ for ((i=0;i<${#ARGS[@]};i++))
 }
 readonly ARGS
 readonly ARCHETYPE
+readonly BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
 
 if [ -z "${VERSION}" ] ; then
     echo "ERROR: version required" >&2
     usage
     exit 1
 fi
+
 
 PID=""
 trap '[ -n "${PID}" ] && kill ${PID} 2> /dev/null || true' 0
@@ -124,35 +126,36 @@ maven_settings() {
      <proxies>
  $(maven_proxies)
      </proxies>
+   <servers>
+     <server>
+       <id>central.manual.testing</id>
+       <configuration>
+         <httpHeaders>
+           <property>
+             <name>Authorization</name>
+             <value>Bearer ${BEARER}</value>
+           </property>
+         </httpHeaders>
+       </configuration>
+     </server>
+   </servers>
      <profiles>
          <profile>
-             <id>ossrh-staging</id>
-             <repositories>
-                 <repository>
-                     <id>ossrh-staging</id>
-                     <name>OSS Sonatype Staging</name>
-                     <url>https://oss.sonatype.org/content/groups/staging/</url>
-                     <snapshots>
-                         <enabled>false</enabled>
-                     </snapshots>
-                     <releases>
-                         <enabled>true</enabled>
-                     </releases>
-                 </repository>
-             </repositories>
-             <pluginRepositories>
-                 <pluginRepository>
-                     <id>ossrh-staging</id>
-                     <name>OSS Sonatype Staging</name>
-                     <url>https://oss.sonatype.org/content/groups/staging/</url>
-                     <snapshots>
-                         <enabled>false</enabled>
-                     </snapshots>
-                     <releases>
-                         <enabled>true</enabled>
-                     </releases>
-                 </pluginRepository>
-             </pluginRepositories>
+           <id>central.manual.testing</id>
+           <repositories>
+             <repository>
+               <id>central.manual.testing</id>
+               <name>Central Testing repository</name>
+               <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+             </repository>
+           </repositories>
+           <pluginRepositories>
+               <pluginRepository>
+                   <id>central.manual.testing</id>
+                   <name>Central Testing repository</name>
+                   <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+               </pluginRepository>
+           </pluginRepositories>
          </profile>
      </profiles>
  </settings>
