@@ -172,7 +172,16 @@ Helidon uses the link:{oci-doc-url}/Content/Logging/Concepts/custom_logs.htm[cus
 To enable OCI Logging integration, start by creating a log _group_. Log groups are logical containers for organizing logs. Logs must always be inside log groups. See
 link:{oci-doc-url}/Content/Logging/Task/create-logging-log-group.htm[Create a Log Group] in OCI documentation.
 
-Then, create a custom log object and its associated agent configuration. See link:{oci-doc-url}/Content/Logging/Task/create-logging-log.htm[Creating a Log] in OCI documentation.
+Next, create a custom log object and its associated agent configuration. See link:{oci-doc-url}/Content/Logging/Task/create-logging-log.htm[Creating a Log] in OCI documentation.
+
+Then, in ``/server/src/main/resources/META-INF/microprofile-config.properties``, add the following property:
+
+[source,properties]
+.Defining MP properties for OCI logging
+----
+oci.logging.id=oci-custom-log-id # <1>
+----
+<1> The OCID of the custom log for the Logging service.
 
 Finally, configure Helidon logging to persist its log data to a file that the link:{oci-doc-url}/Content/Logging/Concepts/agent_management.htm[Unified Monitoring Agent] can access and process. For example, in the ``/server/src/main/resources/logging.properties`` file, add:
 
