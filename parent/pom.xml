@@ -198,26 +198,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>ossrh-staging</id>
-            <repositories>
-                <repository>
-                    <id>ossrh-staging</id>
-                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>ossrh-staging</id>
-                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
     </profiles>
 </project>
