@@ -36,8 +36,7 @@ class GrpcProtocolHandlerTest {
     void testIdentityCompressorFlag() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "identity");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(null,
-                                                              Http2Headers.create(headers),
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
                                                               null,
                                                               1,
                                                               null,
@@ -45,7 +44,7 @@ class GrpcProtocolHandlerTest {
                                                               null,
                                                               GrpcConfig.create());
         handler.initCompression(null, headers);
-        assertThat(handler.isIdentityCompressor(), is(true));
+        assertThat(handler.identityCompressor(), is(true));
     }
 
     @Test
@@ -53,8 +52,7 @@ class GrpcProtocolHandlerTest {
     void testGzipCompressor() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "gzip");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(null,
-                                                              Http2Headers.create(headers),
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
                                                               null,
                                                               1,
                                                               null,
@@ -62,6 +60,24 @@ class GrpcProtocolHandlerTest {
                                                               null,
                                                               GrpcConfig.create());
         handler.initCompression(null, headers);
-        assertThat(handler.isIdentityCompressor(), is(false));
+        assertThat(handler.identityCompressor(), is(false));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testIgnoreGzipCompressor() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(GRPC_ACCEPT_ENCODING, "gzip");
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+                                                              null,
+                                                              1,
+                                                              null,
+                                                              Http2StreamState.OPEN,
+                                                              null,
+                                                              GrpcConfig.builder()
+                                                                      .enableCompression(false)
+                                                                      .build());
+        handler.initCompression(null, headers);
+        assertThat(handler.identityCompressor(), is(true));
     }
 }

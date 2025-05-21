@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.grpc;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Duration;
@@ -35,7 +35,6 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
@@ -60,6 +59,7 @@ import io.grpc.Compressor;
 import io.grpc.CompressorRegistry;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
+import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
@@ -88,10 +88,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
 
     private static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+
     private record MethodMetrics(Counter callStarted,
                                  Timer callDuration,
                                  DistributionSummary sentMessageSize,
                                  DistributionSummary recvMessageSize) { }
+
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final Http2Headers headers;
@@ -108,14 +110,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private BufferData entityBytes;
     private Compressor compressor;
     private Decompressor decompressor;
-    private boolean isIdentityCompressor;
+    private boolean identityCompressor;
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
     private boolean callCancelled;
 
-    GrpcProtocolHandler(HttpPrologue prologue,
-                        Http2Headers headers,
+    GrpcProtocolHandler(Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
                         StreamFlowControl flowControl,
@@ -197,12 +198,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     }
 
                     // read and possibly decompress data
-                    int readLength = entityBytes.available();
-                    bytesReceived += readLength;
-                    byte[] bytes = new byte[readLength];
-                    entityBytes.read(bytes);
-                    ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                    REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(bais) : bais);
+                    bytesReceived += entityBytes.available();
+                    InputStream is = entityBytes.asInputStream();
+                    REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
                     listenerQueue.add(request);
                     flushQueue();
                     entityBytes = null;
@@ -226,45 +224,47 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     void initCompression(ServerCall<REQ, RES> serverCall, Headers httpHeaders) {
-        // check for encoding and respond using same algorithm
-        if (httpHeaders.contains(GRPC_ENCODING)) {
-            Header grpcEncoding = httpHeaders.get(GRPC_ENCODING);
-            String encoding = grpcEncoding.asString().get();
-            decompressor = DECOMPRESSOR_REGISTRY.lookupDecompressor(encoding);
-            compressor = COMPRESSOR_REGISTRY.lookupCompressor(encoding);
-
-            // report encoding not supported
-            if (decompressor == null || compressor == null) {
-                Metadata metadata = new Metadata();
-                Set<String> encodings = DECOMPRESSOR_REGISTRY.getAdvertisedMessageEncodings();
-                metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
-                             String.join(",", encodings));
-                serverCall.close(Status.UNIMPLEMENTED, metadata);
-                currentStreamState = Http2StreamState.CLOSED;       // stops processing
-                return;
-            }
-        } else if (httpHeaders.contains(GRPC_ACCEPT_ENCODING)) {
-            Header acceptEncoding = httpHeaders.get(GRPC_ACCEPT_ENCODING);
-
-            // check for matching encoding
-            for (String encoding : acceptEncoding.allValues()) {
+        if (grpcConfig.enableCompression()) {
+            // check for encoding and respond using same algorithm
+            if (httpHeaders.contains(GRPC_ENCODING)) {
+                Header grpcEncoding = httpHeaders.get(GRPC_ENCODING);
+                String encoding = grpcEncoding.asString().get();
+                decompressor = DECOMPRESSOR_REGISTRY.lookupDecompressor(encoding);
                 compressor = COMPRESSOR_REGISTRY.lookupCompressor(encoding);
-                if (compressor != null) {
-                    decompressor = DECOMPRESSOR_REGISTRY.lookupDecompressor(encoding);
-                    if (decompressor != null) {
-                        break;      // found match
+
+                // report encoding not supported
+                if (decompressor == null || compressor == null) {
+                    Metadata metadata = new Metadata();
+                    Set<String> encodings = DECOMPRESSOR_REGISTRY.getAdvertisedMessageEncodings();
+                    metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
+                                 String.join(",", encodings));
+                    serverCall.close(Status.UNIMPLEMENTED, metadata);
+                    currentStreamState = Http2StreamState.CLOSED;       // stops processing
+                    return;
+                }
+            } else if (httpHeaders.contains(GRPC_ACCEPT_ENCODING)) {
+                Header acceptEncoding = httpHeaders.get(GRPC_ACCEPT_ENCODING);
+
+                // check for matching encoding
+                for (String encoding : acceptEncoding.allValues()) {
+                    compressor = COMPRESSOR_REGISTRY.lookupCompressor(encoding);
+                    if (compressor != null) {
+                        decompressor = DECOMPRESSOR_REGISTRY.lookupDecompressor(encoding);
+                        if (decompressor != null) {
+                            break;      // found match
+                        }
+                        compressor = null;
                     }
-                    compressor = null;
                 }
             }
         }
 
         // special handling for identity compressor
-        isIdentityCompressor = (compressor instanceof Codec.Identity);
+        identityCompressor = (compressor == null || compressor instanceof Codec.Identity);
     }
 
-    boolean isIdentityCompressor() {
-        return isIdentityCompressor;
+    boolean identityCompressor() {
+        return identityCompressor;
     }
 
     private void addNumMessages(int n) {
@@ -320,12 +320,21 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 try (InputStream inputStream = route.method().streamResponse(message)) {
                     // prepare buffer for writing
                     BufferData bufferData;
-                    if (compressor == null || isIdentityCompressor) {
-                        byte[] bytes = inputStream.readAllBytes();
-                        bufferData = BufferData.create(5 + bytes.length);
-                        bufferData.write(0);        // off for identity compressor
-                        bufferData.writeUnsignedInt32(bytes.length);
-                        bufferData.write(bytes);
+                    if (identityCompressor) {
+                        // avoid buffer copy if length is known
+                        if (inputStream instanceof KnownLength knownLength) {
+                            int bytesLength = knownLength.available();
+                            bufferData = BufferData.create(5 + bytesLength);
+                            bufferData.write(0);        // off for identity compressor
+                            bufferData.writeUnsignedInt32(bytesLength);
+                            bufferData.readFrom(inputStream);
+                        } else {
+                            byte[] bytes = inputStream.readAllBytes();
+                            bufferData = BufferData.create(5 + bytes.length);
+                            bufferData.write(0);        // off for identity compressor
+                            bufferData.writeUnsignedInt32(bytes.length);
+                            bufferData.write(bytes);
+                        }
                     } else {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         try (OutputStream os = compressor.compress(baos)) {
@@ -348,7 +357,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     // write data frame
                     streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
                     bytesSent += writeLength;
-                } catch (Exception e) {
+                } catch (IOException e) {
                     listener.onCancel();
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
                 }
