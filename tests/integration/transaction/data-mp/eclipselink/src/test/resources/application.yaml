@@ -14,28 +14,30 @@
 # limitations under the License.
 #
 
-data-source:
-  - name: "test"
-    provider.hikari:
-      username: "test"
-      password: "password"
-      url: "jdbc:mysql://localhost:3306/testdb"
-# Another DataSource to be tested with Laird's modules, does not work
-#  - name: "cditest"
-#    provider.hikari:
-#      username: "test"
-#      password: "password"
-#      url: "jdbc:mysql://localhost:3306/testdb"
 
-data:
-  provider.jakarta:
-    data-source: "test"
-    # EclipseLink properties
-    properties:
-      eclipselink.target-database: "MySQL"
-      eclipselink.target-server: "None"
-      eclipselink.weaving: false
-      eclipselink.logging.level: "INFO"
-      eclipselink.logging.level.weaver: "OFF"
-      eclipselink.logging.parameters: true
-      jakarta.persistence.schema-generation.database.action: drop-and-create
+data-sources:
+  sql: # implements javax.sql.DataSource
+    - name: "test-source"
+      provider.hikari:
+        username: "test"
+        password: "password"
+        url: "jdbc:mysql://localhost:3306/testdb"
+    - name: "jdbc"
+      provider.jdbc:
+        username: "test"
+        password: "password"
+        url: "jdbc:mysql://localhost:3306/testdb"
+
+persistence-units:
+  jakarta:
+    - name: "test"
+      data-source: "test"
+      # EclipseLink properties
+      properties:
+        eclipselink.target-database: "MySQL"
+        eclipselink.target-server: "None"
+        eclipselink.weaving: false
+        eclipselink.logging.level: "INFO"
+        eclipselink.logging.level.weaver: "OFF"
+        eclipselink.logging.parameters: true
+        jakarta.persistence.schema-generation.database.action: drop-and-create

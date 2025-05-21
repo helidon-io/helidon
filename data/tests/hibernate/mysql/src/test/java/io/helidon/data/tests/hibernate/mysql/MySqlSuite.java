@@ -48,7 +48,6 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     @Container
     private final MySQLContainer<?> container;
     private final Config config;
-    private DataRegistry data;
     private PokemonRepository pokemonRepository;
 
     public MySqlSuite() {
@@ -61,7 +60,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     public void beforeSuite() {
         container.start();
         // Update URL in config with exposed port
-        data = DataRegistry.create(SqlTestContainerConfig.configureDataRegistry(config, container, 3306));
+        data = DataRegistry.create(SqlTestContainerConfig.configureDataSource(config, container, 3306));
         pokemonRepository = data.repository(PokemonRepository.class);
         // Initialize database content
         try {

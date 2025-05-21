@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
 
 /**
@@ -36,18 +37,24 @@ public final class Data {
     /**
      * Repository interface.
      * Data repository interface marked with this annotation will be processed by code generator.
+     * This is a required repository annotation.
      */
     @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.SOURCE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Repository {
     }
 
     /**
-     * Repository data source.
+     * Repository persistence unit name.
+     * <p>
+     * This is an optional repository annotation.
+     * <p>
+     * When used, the persistence unit name will be used to lookup appropriate instance to handle this repository.
+     * This is useful when multiple databases are used from a single application.
      */
     @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface DataSource {
+    @Retention(RetentionPolicy.CLASS)
+    public @interface PersistenceUnit {
 
         /**
          * Name of a named data source.
@@ -58,21 +65,42 @@ public final class Data {
         String value();
 
         /**
-         * Whether the named {@link DataSource} is required.
+         * Whether the named {@link io.helidon.data.Data.PersistenceUnit} is required.
          *
-         * @return value of {@code true} when the {@link #value()} named {@link DataSource} is required,
+         * @return value of {@code true} when the {@link #value()} named {@link io.helidon.data.Data.PersistenceUnit} is required,
          *         {@code false} otherwise, to use the default configuration if a named one is not available
          */
         boolean required() default false;
     }
 
     /**
-     * Qualifier used in generated code to reference which support type to use when creating instances of repositories,
+     * Provider used to implement the repository.
+     * <p>
+     * This is an optional repository annotation.
+     * <p>
+     * When used, code generation will be done only by the defined provider type.
+     * This is useful when multiple providers are used from a single application.
+     */
+    @Target({ElementType.TYPE, ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Provider {
+        /**
+         * Type of the Helidon Data Provider that will handle this instance.
+         *
+         * @return provider type
+         */
+        String value();
+    }
+
+    /**
+     * Qualifier used in generated code to reference which provider type to use when creating instances of repositories,
      * such as {@code eclipselink, jakarta, sql}.
      */
     @Service.Qualifier
     @Target({ElementType.TYPE, ElementType.PARAMETER, ElementType.FIELD})
-    public @interface SupportType {
+    public @interface ProviderType {
+        TypeName TYPE = TypeName.create(ProviderType.class);
+
         /**
          * Type of the Helidon Data Support that will handle this instance.
          *

@@ -28,8 +28,9 @@ import io.helidon.service.registry.Service;
  * Data config factory.
  */
 @Service.Singleton
-@Service.Named(Service.Named.WILDCARD_NAME)
 class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfig> {
+
+    private static final String SQL_DATA_SOURCES_CONFIG_KEY = "data-sources.sql";
 
     private final Supplier<Config> config;
     private final List<DataSourceConfig> explicitConfig;
@@ -63,29 +64,16 @@ class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfi
     @Override
     public List<Service.QualifiedInstance<DataSourceConfig>> services() {
         if (explicitConfig == null) {
-            Config dataConfig = config.get().get("data-source");
-            if (isList(dataConfig)) {
-                return fromList(dataConfig);
-            }
-            return List.of(Service.QualifiedInstance.create(DataSourceConfig.create(dataConfig)));
+            Config dataConfig = config.get()
+                    .get(SQL_DATA_SOURCES_CONFIG_KEY);
+
+            return fromList(dataConfig);
         } else {
             return explicitConfig.stream()
                     .map(this::toQualifiedInstance)
                     .collect(Collectors.toUnmodifiableList());
         }
     }
-
-
-    private boolean isList(Config config) {
-        if (config.isList()) {
-            return true;
-        }
-        if (config.get("provider").exists()) {
-            return false;
-        }
-        return config.get("0").exists();
-    }
-
 
     private Service.QualifiedInstance<DataSourceConfig> toQualifiedInstance(DataSourceConfig dataConfig) {
         return Service.QualifiedInstance.create(dataConfig, Qualifier.createNamed(dataConfig.name()));

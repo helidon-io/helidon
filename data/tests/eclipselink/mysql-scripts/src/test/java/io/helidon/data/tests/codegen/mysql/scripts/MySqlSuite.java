@@ -22,6 +22,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataConfig;
+import io.helidon.data.sql.testing.ConfigUtils;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
@@ -57,7 +58,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     public void beforeSuite() {
         container.start();
         // Update URL in config with exposed port
-        String url = SqlTestContainerConfig.replacePortInUrl(config.get(URL_NODE)
+        String url = ConfigUtils.replacePortInUrl(config.get(URL_NODE)
                 .as(String.class).get(), container.getMappedPort(DB_PORT));
         Map<String, String> updatedNodes = new HashMap<>(1);
         updatedNodes.put(URL_NODE, url);

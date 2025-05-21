@@ -26,6 +26,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.data.DataConfig;
 import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.common.ConnectionConfig;
+import io.helidon.data.sql.testing.ConfigUtils;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestConfigFactory;
 import io.helidon.data.tests.common.InitialData;
@@ -56,7 +57,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
 
     private static final DockerImageName IMAGE = DockerImageName.parse("mysql:8.0");
     private static final String CONFIG_FILE = "application.yaml";
-    private static final String PROVIDER_NODE = "data-source.0.provider.hikari";
+    private static final String PROVIDER_NODE = "data-sources.sql.0.provider.hikari";
     private static final String URL_NODE = PROVIDER_NODE + ".url";
     private static final int DB_PORT = 3306;
 
@@ -81,7 +82,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
         // Config must be updated to contain proper database URL and this change must be propagated
         // to Config service factory
         String oldUrl = config.get(URL_NODE).as(String.class).get();
-        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
+        String url = ConfigUtils.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
         Map<String, String> updatedNodes = new HashMap<>(1);
         updatedNodes.put(URL_NODE, url);
         Config newConfig = Config.create(ConfigSources.create(updatedNodes), ConfigSources.create(config));

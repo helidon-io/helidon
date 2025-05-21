@@ -21,6 +21,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.data.sql.common.ConnectionConfig;
+import io.helidon.data.sql.testing.ConfigUtils;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.microprofile.testing.AddConfigSource;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -77,7 +78,7 @@ public class MySqlSuite implements SuiteProvider {
         container.start();
         dbUrl = container.getJdbcUrl();
         String oldUrl = config.get(urlNode(0)).as(String.class).get();
-        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
+        String url = ConfigUtils.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
         System.setProperty(urlNode(0), url);
         // Another DataSource to be tested with Laird's modules, does not work
         //        oldUrl = config.get(urlNode(1)).as(String.class).get();
