@@ -98,7 +98,7 @@ After adding the Helidon OCI SDK Extension dependency (as described above), you 
 
 NOTE: Each time that you update your application to integrate to an OCI service, you must build and redeploy the application to enable the OCI service's features.
 
-Here are some common OCI services and how to use them with your Helidon MP application.
+Here are some common OCI services and how to use them with your Helidon application.
 
 - <<Monitoring, Monitoring>>
 - <<Logging, Logging>>
@@ -129,8 +129,8 @@ Next, update ``/server/src/main/resources/application.yaml`` so the application 
 .Adding OCI metrics configuration details
 ----
 ocimetrics:
-  compartmentId: <1>
-  namespace: <2>
+  compartmentId: compartmentocid1234 # <1>
+  namespace: helidon_pegasus # <2>
 ----
 <1> The OCI compartment ID where the metrics will be sent.
 <2> The OCI metrics namespace.
@@ -140,22 +140,22 @@ You can also update these optional values:
 [source,yaml]
 ----
 ocimetrics:
-  initialDelay: 30 <3>
-  delay: 180 <4>
-  scopes: [base, vendor, application] <5>
-  enabled: true <6>
+  initialDelay: 30 # <1>
+  delay: 180 # <2>
+  scopes: [base, vendor, application] # <3>
+  enabled: true # <4>
 ----
-<3> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
-<4> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
-<5> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
-<6> Enable or disable metrics transmission to OCI. Default is TRUE.
+<1> The delay (in seconds) before the first metrics transmission to OCI takes place. Default is 1 second.
+<2> The interval (in seconds) between metrics transmission to OCI. Default is 60 seconds.
+<3> Filter only the scopes that will be sent to OCI. This is optional. Default is all scopes.
+<4> Enable or disable metrics transmission to OCI. Default is TRUE.
 
 Then, add the following configuration to ``/server/src/main/resources/META-INF/microprofile-config.properties``, modifying its values for your specific project:
 
 [source,properties]
 .Defining properties for OCI metrics
 ----
-oci.monitoring.compartmentId=cmpt-id <1>
+oci.monitoring.compartmentId=cmpt-ocid <1>
 oci.monitoring.namespace=helidon_pegasus <2>
 ----
 <1> The OCI compartment ID where the metrics will be sent.
@@ -218,11 +218,21 @@ After you configure OCI APM with Helidon, you can use OCI Trace Explorer to view
 
 The OCI Streaming service provides a fully managed, scalable, and durable solution for ingesting and consuming high-volume data streams in real time. See link:{oci-doc-url}/Content/Streaming/Concepts/streamingoverview.htm[Streaming] in OCI documentation.
 
-In OCI environments, you can choose to use either the OCI Streaming service or Apache Kafka with Helidon applications because the OCI Streaming service understands Kafka clients.
+The OCI Streaming service is compatible with Apache Kafka clients which means that when your Helidon applications are deployed in OCI environments, you can use either the OCI Streaming service or Apache Kafka. See link:{oci-doc-url}/Content/Streaming/Tasks/kafkacompatibility.htm[Using Streaming with Apache Kafka] in OCI documentation.
 
 Streams are organized into logical groups called Stream Pools. When you connect to OCI Streaming with a Kafka client, streams are handled as Kafka topics and stream pools as virtual Kafka clusters.
 
-To enable OCI Streaming integration, add the following dependency to your project's ``pom.xml``:
+To enable OCI Streaming integration, first you need to create a new stream in OCI. For instructions, see link:{oci-doc-url}/Content/Streaming/Tasks/creatingstreamsandstreampools_create-stream.htm[Creating a Stream] in OCI documentation. 
+
+After you have finished creating the stream, make a note of the following values:
+
+* Stream name (on the Stream Details page)
+* Messages endpoint (on the Stream Details page)
+* OCID of the stream _pool_ (on the Stream Pool Details page)
+
+You can also click Kafka Connection Settings (on the Stream Pool Details page) to see an example of Kafka Connection Settings.
+
+Next, add the following dependency to your project's ``pom.xml``:
 
 [source,xml]
 .Adding the dependency for OCI Streaming
@@ -237,23 +247,68 @@ To enable OCI Streaming integration, add the following dependency to your projec
 </dependency>
 ----
 
-Then, in the ``/server/src/main/resources/META-INF/microprofile-config.properties`` file, configure the ``helidon-kafka`` connector based on your OCI Stream:
+Next, update ``/server/src/main/resources/application.yaml`` with streaming connection properties:
 
 [source,yaml]
-.Example of a configuration for helidon-kafka
+.Example of an application.yaml configured for OCI Streaming
+----
+oci:
+ tenant: helidon-app-example # <1>
+ user: email@domain.com # <2>
+ token: oci-auth-token # <3>
+ test-stream: # <4>
+   name: TestStream
+   endpoint: cell-1.streaming.us-phoenix-1.oci.oraclecloud.com
+   port: 9092
+   streampool-ocid: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq
+----
+<1> The name of the OCI tenancy.
+<2> The OCI account user name.
+<3> The OCI authentication token. See link:{oci-doc-url}/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token]
+<4> The details of the stream which you saved earlier. The ``port`` should be the standard Kafka port number ``9092``.
+
+Then, still in ``/server/src/main/resources/application.yaml``, configure messaging channels to use Helidon's Kafka connector.
+
+[source,yaml]
+.Example of a configuration for the helidon-kafka connector
 ----
 mp.messaging:
-  connector:
-    helidon-kafka:
-      bootstrap.servers: ${oci.test-stream.endpoint}:${oci.test-stream.port}
-      sasl.mechanism: PLAIN
-      security.protocol: SASL_SSL
-      sasl.jaas.config: >-org.apache.kafka.common.security.plain.PlainLoginModule required
-          username="${oci.tenant}/${oci.user}/${oci.test-stream.streampool-ocid}"
-          password="${oci.user.authtoken}";
-----
 
-After you specify the ``helidon-kafka`` connector, it can be used on messaging channels to integrate with the OCI Streaming service.
+  incoming.from-stream:
+    connector: helidon-kafka
+    topic: TestStream # <1>
+    auto.offset.reset: latest
+    enable.auto.commit: true
+    group.id: example-group-id # <2>
+ 
+  outgoing.to-stream:
+    connector: helidon-kafka
+    topic: TestStream # <1>
+
+  connector:
+     helidon-kafka:
+       bootstrap.servers: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq:9092 # <3>
+       sasl.mechanism: PLAIN
+       security.protocol: SASL_SSL
+       sasl.jaas.config:  >-
+         org.apache.kafka.common.security.plain.PlainLoginModule
+         required
+         username="helidon-app-example/person@domain.com/ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq" # <4>
+         password="oci-auth-token"; # <5>
+  
+       key.serializer: org.apache.kafka.common.serialization.StringSerializer
+       value.serializer: org.apache.kafka.common.serialization.StringSerializer
+       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+----
+<1> The `oci.test-stream.name` value you defined earlier in application.yaml.
+<2> ID for the stream group
+<3> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector. The format is ``${oci.test-stream.endpoint}:${oci.test-stream.port}``.
+<4> username in the format ``${oci.tenant}/${oci.user}/${oci.test-stream.streampool-ocid}``.
+<5> OCI authentication token.
+
+After you configure the ``helidon-kafka`` connector, you can use it on messaging channels to integrate with the OCI Streaming service.
+
 
 === Object Storage
 
