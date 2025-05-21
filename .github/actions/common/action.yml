@@ -91,6 +91,7 @@ runs:
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
+        overwrite-settings: false
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
       uses: actions/cache@v4.2.0
@@ -128,6 +129,15 @@ runs:
         restore-keys: |
           build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
+    - name: Build cache (write-only)
+      if: ${{ inputs.build-cache == 'write-only' }}
+      uses: actions/cache@v4.2.0
+      with:
+        path: |
+          ./**/target/**
+          .m2/repository/io/helidon/**
+        enableCrossOsArchive: true
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
       uses: actions/cache/restore@v4.2.0
