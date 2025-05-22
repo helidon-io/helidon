@@ -128,8 +128,10 @@ jobs:
       - uses: ./.github/actions/common
         with:
           run: |
+            central-settings.sh --dir=. |
             mvn ${MVN_ARGS} -N \
-              -Possrh-staging \
+              -s settings.xml
+              -Pcentral.manual.testing \
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get
   smoketest:
