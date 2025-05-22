@@ -268,11 +268,12 @@ endif::[]
 :openapi-spec-base-url: https://github.com/OAI/OpenAPI-Specification/blob/master/versions
 :openapi-spec-url: {openapi-spec-base-url}/{openapi-version}.md
 
+:oci-doc-url: https://docs.oracle.com/en-us/iaas
 :oci-sdk-config-url: https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#SDK_and_CLI_Configuration_File
 :oci-database-url: https://docs.oracle.com/en-us/iaas/Content/Database/home.htm
 :oci-cli-url: https://docs.oracle.com/en-us/iaas/tools/oci-cli/latest
-:oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
-:oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
+:oci-javasdk-url: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
+:oci-objstore-url: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
 :oci-vault-url: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
 
 :oci-javasdk-javadoc-base-url: https://docs.oracle.com/en-us/iaas/tools/java/latest
