@@ -27,7 +27,6 @@ import io.helidon.data.Sort;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
@@ -42,7 +41,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Testing.Test
 public class TestQbmnProjection {
 
     private static PokemonRepository pokemonRepository;

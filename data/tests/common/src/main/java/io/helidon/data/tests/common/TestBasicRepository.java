@@ -25,7 +25,6 @@ import io.helidon.data.tests.model.Region;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.data.tests.repository.RegionRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +38,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-@Testing.Test
 public class TestBasicRepository {
 
     private static RegionRepository regionRepository;

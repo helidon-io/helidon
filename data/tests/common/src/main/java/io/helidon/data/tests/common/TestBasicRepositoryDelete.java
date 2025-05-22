@@ -20,7 +20,6 @@ import java.util.List;
 import io.helidon.data.tests.model.League;
 import io.helidon.data.tests.repository.LeagueRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +30,6 @@ import static io.helidon.data.tests.common.InitialData.LEAGUES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Testing.Test
 public class TestBasicRepositoryDelete {
 
     private static LeagueRepository leagueRepository;

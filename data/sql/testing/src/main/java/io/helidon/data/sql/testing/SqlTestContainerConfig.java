@@ -38,6 +38,8 @@ public final class SqlTestContainerConfig {
      *
      * @param container    container to configure (before it is started)
      * @param configSource config source with database configuration (this must be the only config source in test)
+     * @return a test container handler, that can be used to start the container, update configuration, and then stop the
+     *         container
      */
     public static TestContainerHandler configureContainer(GenericContainer<?> container,
                                                           Supplier<? extends ConfigSource> configSource) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+
 /**
  * JDBC connection based {@link javax.sql.DataSource} support.
+ * This module does not provide connection pooling, a new connection is created each time it is requested.
  */
 module io.helidon.data.sql.datasource.jdbc {
 

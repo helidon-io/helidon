@@ -23,7 +23,6 @@ import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
 import io.helidon.testing.junit5.suite.Suite;
@@ -35,7 +34,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Oracle DB suite.
@@ -77,37 +76,31 @@ public class OraDbSuite implements SuiteProvider {
         containerHandler.stopContainer();
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestApplication extends io.helidon.data.tests.common.TestApplication {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestBasicRepository extends io.helidon.data.tests.common.TestBasicRepository {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestBasicRepositoryDelete extends io.helidon.data.tests.common.TestBasicRepositoryDelete {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestCrudRepository extends io.helidon.data.tests.common.TestCrudRepository {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnCriteria extends io.helidon.data.tests.common.TestQbmnCriteria {
@@ -144,7 +137,6 @@ public class OraDbSuite implements SuiteProvider {
 
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnCriteriaExtended extends io.helidon.data.tests.common.TestQbmnCriteriaExtended {
@@ -181,31 +173,26 @@ public class OraDbSuite implements SuiteProvider {
 
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnDml extends io.helidon.data.tests.common.TestQbmnDml {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnOrder extends io.helidon.data.tests.common.TestQbmnOrder {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.common.TestQueryByAnnotation {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
     }
 
-    @Testing.Test
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {

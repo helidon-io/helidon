@@ -14,30 +14,45 @@
 # limitations under the License.
 #
 
+server.port: 0
+
+test.database:
+  username: "test"
+  password: "changeit"
+  url: "jdbc:mysql://localhost:3306/testdb"
 
 data-sources:
-  sql: # implements javax.sql.DataSource
-    - name: "test-source"
+  sql:
+    - name: "test"
       provider.hikari:
-        username: "test"
-        password: "password"
-        url: "jdbc:mysql://localhost:3306/testdb"
-    - name: "jdbc"
-      provider.jdbc:
-        username: "test"
-        password: "password"
-        url: "jdbc:mysql://localhost:3306/testdb"
+        username: "${test.database.username}"
+        password: "${test.database.password}"
+        url: "${test.database.url}"
+# Another DataSource to be tested with CDI modules, does not work
+#  - name: "cditest"
+#    provider.hikari:
+#      username: "test"
+#      password: "password"
+#      url: "jdbc:mysql://localhost:3306/testdb"
 
 persistence-units:
   jakarta:
-    - name: "test"
-      data-source: "test"
+    - data-source: "test"
       # EclipseLink properties
       properties:
         eclipselink.target-database: "MySQL"
         eclipselink.target-server: "None"
         eclipselink.weaving: false
-        eclipselink.logging.level: "INFO"
+        eclipselink.logging.level: "FINEST"
         eclipselink.logging.level.weaver: "OFF"
         eclipselink.logging.parameters: true
-        jakarta.persistence.schema-generation.database.action: drop-and-create
+        jakarta.persistence.schema-generation.database.action: "create"
+
+  # MP configuration
+
+javax.sql.DataSource.cditest:
+  dataSourceClassName: "com.mysql.cj.jdbc.MysqlDataSource"
+  dataSource:
+    url: "${test.database.url}"
+    user: "${test.database.username}"
+    password: "${test.database.password}"

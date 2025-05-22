@@ -20,14 +20,12 @@ import java.util.Optional;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Testing.Test
 public class TestApplication {
 
     @Test

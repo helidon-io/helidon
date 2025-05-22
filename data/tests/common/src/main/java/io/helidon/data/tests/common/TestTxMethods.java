@@ -20,7 +20,6 @@ import java.util.Optional;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
 
@@ -34,7 +33,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Testing.Test
 public class TestTxMethods {
 
     private static final System.Logger LOGGER = System.getLogger(TestTxMethods.class.getName());

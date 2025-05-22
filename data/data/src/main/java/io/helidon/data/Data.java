@@ -99,6 +99,9 @@ public final class Data {
     @Service.Qualifier
     @Target({ElementType.TYPE, ElementType.PARAMETER, ElementType.FIELD})
     public @interface ProviderType {
+        /**
+         * Type of this annotation (from Helidon Common Types).
+         */
         TypeName TYPE = TypeName.create(ProviderType.class);
 
         /**
