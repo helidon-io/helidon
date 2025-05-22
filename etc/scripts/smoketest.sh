@@ -27,6 +27,19 @@ on_error(){
 }
 trap on_error ERR
 
+# Path to this script
+if [ -h "${0}" ] ; then
+  SCRIPT_PATH="$(readlink "${0}")"
+else
+  # shellcheck disable=SC155
+  SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
+
 usage(){
     cat <<EOF
 
@@ -86,7 +99,6 @@ for ((i=0;i<${#ARGS[@]};i++))
 }
 readonly ARGS
 readonly ARCHETYPE
-BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
 
 if [ -z "${VERSION}" ] ; then
     echo "ERROR: version required" >&2
@@ -94,73 +106,8 @@ if [ -z "${VERSION}" ] ; then
     exit 1
 fi
 
-
 PID=""
 trap '[ -n "${PID}" ] && kill ${PID} 2> /dev/null || true' 0
-
-maven_proxies() {
-  [ -f "${HOME}/.m2/settings.xml" ] && \
-  awk -f- "${HOME}/.m2/settings.xml" <<EOF
-      BEGIN{
-        IN_PROXIES="FALSE"
-        FS="[<>]"
-      }
-      /<proxies>/{
-        IN_PROXIES="true"
-        next
-      }
-      /<\/proxies>/{
-        IN_PROXIES="false"
-      }
-      {
-        if (IN_PROXIES=="true") {
-          print \$0
-        }
-      }
-EOF
-}
-
-maven_settings() {
- cat <<EOF
- <settings>
-     <proxies>
- $(maven_proxies)
-     </proxies>
-   <servers>
-     <server>
-       <id>central.manual.testing</id>
-       <configuration>
-         <httpHeaders>
-           <property>
-             <name>Authorization</name>
-             <value>Bearer ${BEARER}</value>
-           </property>
-         </httpHeaders>
-       </configuration>
-     </server>
-   </servers>
-     <profiles>
-         <profile>
-           <id>central.manual.testing</id>
-           <repositories>
-             <repository>
-               <id>central.manual.testing</id>
-               <name>Central Testing repository</name>
-               <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
-             </repository>
-           </repositories>
-           <pluginRepositories>
-               <pluginRepository>
-                   <id>central.manual.testing</id>
-                   <name>Central Testing repository</name>
-                   <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
-               </pluginRepository>
-           </pluginRepositories>
-         </profile>
-     </profiles>
- </settings>
-EOF
-}
 
 # arg1: uri
 wait_ready() {
@@ -296,7 +243,8 @@ readonly LOG_FILE
 
 mkdir -p "${WORK_DIR}"
 
-maven_settings > "${WORK_DIR}/settings.xml"
+"${WS_DIR}/etc/scripts/central-settings.sh" --dir="${WORK_DIR}"
+
 MVN_ARGS="${MVN_ARGS} -s ${WORK_DIR}/settings.xml"
 
 exec 1>> >(tee  "${LOG_FILE}")
