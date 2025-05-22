@@ -86,7 +86,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 }
 readonly ARGS
 readonly ARCHETYPE
-readonly BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
+BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
 
 if [ -z "${VERSION}" ] ; then
     echo "ERROR: version required" >&2
