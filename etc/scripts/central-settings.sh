@@ -57,6 +57,18 @@ for ((i=0;i<${#ARGS[@]};i++))
   esac
 }
 
+if [ -z "${DESTINATION_DIRECTORY}" ] ; then
+    echo "ERROR: destination directory required" >&2
+    usage
+    exit 1
+fi
+
+if [ ! -d "${DESTINATION_DIRECTORY}" ] ; then
+    echo "ERROR: destination directory ${DESTINATION_DIRECTORY} does not exist or is not a directory" >&2
+    usage
+    exit 1
+fi
+
 if [ -z "${CENTRAL_USER}" ] ; then
     echo "ERROR: environment variable CENTRAL_USER is required." >&2
     usage
@@ -65,12 +77,6 @@ fi
 
 if [ -z "${CENTRAL_PASSWORD}" ] ; then
     echo "ERROR: environment variable CENTRAL_PASSWORD is required." >&2
-    usage
-    exit 1
-fi
-
-if [ -z "${DESTINATION_DIRECTORY}" ] ; then
-    echo "ERROR: destination directory required" >&2
     usage
     exit 1
 fi
