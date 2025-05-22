@@ -22,3 +22,4 @@ langchain4j:
       name: "namedMap"
       normalize-embeddings: false
       index: "hnsw"
+      dimension: 768

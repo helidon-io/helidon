@@ -41,6 +41,8 @@ class CoherenceEmbeddingStorePropertiesTest {
         assertThat(config.name().get(), is("namedMap"));
         assertThat(config.index().isPresent(), is(true));
         assertThat(config.index().get(), is("hnsw"));
+        assertThat(config.dimension().isPresent(), is(true));
+        assertThat(config.dimension().get(), is(768));
         assertThat(config.normalizeEmbeddings().isPresent(), is(true));
         assertThat(config.normalizeEmbeddings().get(), is(false));
     }

@@ -16,23 +16,20 @@
 
 package io.helidon.integrations.langchain4j.providers.coherence;
 
-import com.oracle.coherence.ai.DocumentChunk;
-import com.oracle.coherence.ai.VectorIndexExtractor;
-import com.oracle.coherence.ai.hnsw.HnswIndex;
-import com.tangosol.util.ValueExtractor;
-
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
-import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryException;
 
+import com.oracle.coherence.ai.DocumentChunk;
+import com.oracle.coherence.ai.VectorIndexExtractor;
+import com.oracle.coherence.ai.hnsw.HnswIndex;
+import com.tangosol.util.ValueExtractor;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore;
 
 /**
@@ -57,7 +54,6 @@ class CoherenceEmbeddingStoreFactory implements Service.ServicesFactory<Coherenc
     @Service.Inject
     CoherenceEmbeddingStoreFactory(ServiceRegistry registry, Config config) {
         var storeConfig = CoherenceEmbeddingStoreConfig.create(config.get(CoherenceEmbeddingStoreConfig.CONFIG_ROOT));
-
         this.enabled = storeConfig.enabled();
 
         if (enabled) {
@@ -87,19 +83,22 @@ class CoherenceEmbeddingStoreFactory implements Service.ServicesFactory<Coherenc
         var builder = CoherenceEmbeddingStore.builder();
         config.session().ifPresent(builder::session);
         config.name().ifPresent(builder::name);
+        config.normalizeEmbeddings().ifPresent(builder::normalizeEmbeddings);
 
         VectorIndexExtractor extractor = null;
         if (config.index().isPresent()) {
             if ("hnsw".equalsIgnoreCase(config.index().get())) {
-                //TODO: Hardcoding dimension, which can be a config
-                extractor = new HnswIndex<>(ValueExtractor.of(DocumentChunk::vector), 768);
-            } else {
-                LOGGER.log(System.Logger.Level.WARNING,"Cannot create embedding store index - No index name has been specified for the Coherence embedding store.");
+                EmbeddingModel embeddingModel = registry.get(EmbeddingModel.class);
+                Integer dimension = embeddingModel != null ? (Integer) embeddingModel.dimension() : (config.dimension().isPresent() ? config.dimension().get() : null );
+                if (dimension != null) {
+                    extractor = new HnswIndex<>(ValueExtractor.of(DocumentChunk::vector), dimension);
+                } else {
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               "Cannot create embedding hnsw store index - No dimension name has been specified for the hnsw index.");
+                }
             }
         }
-
         builder.index(extractor);
-        config.normalizeEmbeddings().ifPresent(builder::normalizeEmbeddings);
 
         return builder.build();
     }

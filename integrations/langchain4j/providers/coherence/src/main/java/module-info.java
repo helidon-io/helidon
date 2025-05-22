@@ -38,6 +38,7 @@ module io.helidon.integrations.langchain4j.providers.coherence {
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
     requires transitive io.helidon.common.config;
+    requires java.sql;
 
     exports io.helidon.integrations.langchain4j.providers.coherence;
 }

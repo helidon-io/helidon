@@ -69,8 +69,19 @@ interface CoherenceEmbeddingStoreConfigBlueprint {
     /**
      * Force normalization of embeddings on add and search.
      *
-     * @return an {@link java.util.Optional} containing
+     * @return an {@link java.util.Optional} indicating force normalization.
      */
     @Option.Configured
     Optional<Boolean> normalizeEmbeddings();
+
+    /**
+     * The number of dimensions in the embeddings.
+     * <p>
+     * If an embedding model configures than the model's dimensions
+     * will be used instead of this configuration.
+     *
+     * @return an {@link java.util.Optional} containing number of dimensions in the embeddings.
+     */
+    @Option.Configured
+    Optional<Integer> dimension();
 }
