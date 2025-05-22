@@ -94,7 +94,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
         ((TestConfigFactory.ConfigDelegate) services.getFirst().get()).config(newConfig);
         config = newConfig;
         data = DataRegistry.create(config.get("data"));
-        pokemonRepository = data.repository(PokemonRepository.class);
+        pokemonRepository = Services.get(PokemonRepository.class);
         // Initialize database content
         pokemonRepository.run(InitialData::init);
     }

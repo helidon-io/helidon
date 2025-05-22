@@ -20,9 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,6 +37,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test
 public class TestQueryByAnnotation {
 
     private static final System.Logger LOGGER = System.getLogger(TestQueryByAnnotation.class.getName());
@@ -45,8 +47,8 @@ public class TestQueryByAnnotation {
     // Return single Pokemon bv annotation
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
     }
 
     @AfterAll

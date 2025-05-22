@@ -20,7 +20,7 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 
-class HelidonDataTypes {
+class DataCodegenTypes {
 
     /* Helidon Data interfaces */
 
@@ -59,7 +59,7 @@ class HelidonDataTypes {
     // Set of annotations passed to codegen repository interfaces filtering
     static final Set<TypeName> ANNOTATIONS = Set.of(REPOSITORY);
 
-    private HelidonDataTypes() {
+    private DataCodegenTypes() {
         throw new UnsupportedOperationException("No instances of HelidonDataTypes are allowed");
     }
 

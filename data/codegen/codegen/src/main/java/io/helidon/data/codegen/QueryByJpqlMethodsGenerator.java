@@ -30,8 +30,8 @@ import io.helidon.data.codegen.common.RepositoryInfo;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.parser.QueryParametersParser;
 
-import static io.helidon.data.codegen.HelidonDataTypes.PAGE;
-import static io.helidon.data.codegen.HelidonDataTypes.SLICE;
+import static io.helidon.data.codegen.DataCodegenTypes.PAGE;
+import static io.helidon.data.codegen.DataCodegenTypes.SLICE;
 
 class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
 
@@ -181,7 +181,7 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
         }
 
         // Query string from @Query annotation
-        String jpql = methodInfo.annotation(HelidonDataTypes.QUERY_ANNOTATION)
+        String jpql = methodInfo.annotation(DataCodegenTypes.QUERY_ANNOTATION)
                 .value()
                 .orElseThrow(() -> new CodegenException("@Data.Query annotation value is missing",
                                                         methodInfo.originatingElement()));

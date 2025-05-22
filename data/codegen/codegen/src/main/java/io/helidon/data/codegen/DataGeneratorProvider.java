@@ -13,17 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.codegen.common;
+package io.helidon.data.codegen;
 
-import io.helidon.common.types.TypeName;
+import io.helidon.data.codegen.common.spi.RepositoryGenerator;
+import io.helidon.data.codegen.common.spi.RepositoryGeneratorProvider;
 
-class HelidonDataTypes {
+/**
+ * Data repository generator provider.
+ */
+public class DataGeneratorProvider implements RepositoryGeneratorProvider {
 
-    static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
-    static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
+    /**
+     * Creates an instance of Data repository generator provider.
+     */
+    public DataGeneratorProvider() {
+    }
 
-    private HelidonDataTypes() {
-        throw new UnsupportedOperationException("No instances of HelidonDataTypes are allowed");
+    @Override
+    public RepositoryGenerator create() {
+        return new DataGenerator();
     }
 
 }

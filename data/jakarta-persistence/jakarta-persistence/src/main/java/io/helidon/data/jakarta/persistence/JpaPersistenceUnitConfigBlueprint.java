@@ -23,6 +23,7 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.sql.common.SqlConfig;
+import io.helidon.service.registry.Service;
 
 /**
  * Configuration of Helidon Data for Jakarta Persistence.
@@ -36,6 +37,7 @@ interface JpaPersistenceUnitConfigBlueprint extends SqlConfig {
      *
      * @return the persistence unit name
      */
+    @Option.Default(Service.Named.DEFAULT_NAME)
     String name();
 
     /**

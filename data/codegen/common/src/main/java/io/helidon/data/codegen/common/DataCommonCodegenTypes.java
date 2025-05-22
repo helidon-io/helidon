@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.tests.application;
+package io.helidon.data.codegen.common;
 
-import io.helidon.data.DataConfig;
-import io.helidon.data.DataRegistry;
+import io.helidon.common.types.TypeName;
 
-/**
- * Helidon Data application level context holder.
- */
-public class ApplicationData {
+class DataCommonCodegenTypes {
 
-    private final DataRegistry data;
+    static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
+    static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
+    static final TypeName PROVIDER = TypeName.create("io.helidon.data.Data.Provider");
 
-    // Config is updated by testcontainers to contain proper DB port
-    public ApplicationData(DataConfig config) {
-        this.data = DataRegistry.create(config);
-    }
-
-    public DataRegistry data() {
-        return data;
+    private DataCommonCodegenTypes() {
+        throw new UnsupportedOperationException("No instances of HelidonDataTypes are allowed");
     }
 
 }

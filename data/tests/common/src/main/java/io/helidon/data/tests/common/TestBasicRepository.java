@@ -20,11 +20,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.model.Region;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.data.tests.repository.RegionRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,15 +39,16 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
+@Testing.Test
 public class TestBasicRepository {
 
     private static RegionRepository regionRepository;
     private static PokemonRepository pokemonRepository;
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        regionRepository = data.repository(RegionRepository.class);
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        regionRepository = Services.get(RegionRepository.class);
+        pokemonRepository = Services.get(PokemonRepository.class);
         // Used in testSaveExisting()
         pokemonRepository.insert(NEW_POKEMONS.get(106));
         // Used in testSaveAllExisting()

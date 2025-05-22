@@ -30,36 +30,36 @@ import io.helidon.data.codegen.common.RepositoryInterfaceGenerator;
 import io.helidon.data.codegen.common.RepositoryInterfaceInfo;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 
-class HelidonDataGenerator extends BaseRepositoryGenerator {
+class DataGenerator extends BaseRepositoryGenerator {
 
     private static final Map<TypeName, GeneratorFactory> GENERATOR_FACTORIES;
 
     static {
         Map<TypeName, GeneratorFactory> generatorFactories = new HashMap<>();
-        generatorFactories.put(HelidonDataTypes.BASIC_REPOSITORY, BasicRepositoryInterfaceGenerator::new);
-        generatorFactories.put(HelidonDataTypes.CRUD_REPOSITORY, CrudRepositoryInterfaceGenerator::new);
-        generatorFactories.put(HelidonDataTypes.PAGEABLE_REPOSITORY, PageableRepositoryInterfaceGenerator::new);
+        generatorFactories.put(DataCodegenTypes.BASIC_REPOSITORY, BasicRepositoryInterfaceGenerator::new);
+        generatorFactories.put(DataCodegenTypes.CRUD_REPOSITORY, CrudRepositoryInterfaceGenerator::new);
+        generatorFactories.put(DataCodegenTypes.PAGEABLE_REPOSITORY, PageableRepositoryInterfaceGenerator::new);
         GENERATOR_FACTORIES = Map.copyOf(generatorFactories);
     }
 
-    HelidonDataGenerator() {
+    DataGenerator() {
         super();
     }
 
     @Override
     public Set<TypeName> annotations() {
-        return HelidonDataTypes.ANNOTATIONS;
+        return DataCodegenTypes.ANNOTATIONS;
     }
 
     @Override
     public Set<TypeName> interfaces() {
-        return HelidonDataTypes.INTERFACES;
+        return DataCodegenTypes.INTERFACES;
     }
 
     @Override
     public RepositoryInterfaceInfo genericInterface(Map<TypeName, RepositoryInterfaceInfo> interfacesInfo) {
         Objects.requireNonNull(interfacesInfo, "Implemented interfaces Map value is null");
-        for (TypeName name : HelidonDataTypes.INTERFACES_PRIORITY) {
+        for (TypeName name : DataCodegenTypes.INTERFACES_PRIORITY) {
             if (interfacesInfo.containsKey(name)) {
                 return interfacesInfo.get(name);
             }

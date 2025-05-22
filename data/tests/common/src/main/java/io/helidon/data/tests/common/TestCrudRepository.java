@@ -18,9 +18,10 @@ package io.helidon.data.tests.common;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test
 public class TestCrudRepository {
 
     private static final System.Logger LOGGER = System.getLogger(TestCrudRepository.class.getName());
@@ -40,8 +42,8 @@ public class TestCrudRepository {
     private static PokemonRepository pokemonRepository;
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
         // Used in testUpdate()
         pokemonRepository.insert(NEW_POKEMONS.get(106));
         // Used in testUpdateAll()

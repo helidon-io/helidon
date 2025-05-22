@@ -57,6 +57,7 @@
         <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.tests</groupId>
@@ -69,17 +70,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.tests</groupId>
-            <artifactId>helidon-data-tests-application</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
         </dependency>
     </dependencies>
 

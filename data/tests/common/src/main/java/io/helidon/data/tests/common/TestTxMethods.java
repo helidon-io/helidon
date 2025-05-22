@@ -17,9 +17,10 @@ package io.helidon.data.tests.common;
 
 import java.util.Optional;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
 
@@ -33,17 +34,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test
 public class TestTxMethods {
 
     private static final System.Logger LOGGER = System.getLogger(TestTxMethods.class.getName());
 
-    private static DataRegistry data;
     private static PokemonRepository pokemonRepository;
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        TestTxMethods.data = data;
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
         pokemonRepository.run(InitialData::deleteTemp);
     }
 
@@ -54,7 +54,7 @@ public class TestTxMethods {
     }
 
     @BeforeEach
-    public void before() {
+    public void beforeEach() {
         pokemonRepository.run(InitialData::deleteTemp);
     }
 
@@ -62,7 +62,7 @@ public class TestTxMethods {
     public void testMandatoryTopLevel() {
         LOGGER.log(System.Logger.Level.INFO, "Running testMandatoryTopLevel");
         assertThrows(TxException.class,
-                     () ->  Tx.transaction(
+                     () -> Tx.transaction(
                              Tx.Type.MANDATORY,
                              () -> pokemonRepository.insert(Pokemon.clone(NEW_POKEMONS.get(100)))));
     }

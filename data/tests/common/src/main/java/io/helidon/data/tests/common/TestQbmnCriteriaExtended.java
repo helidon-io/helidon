@@ -20,11 +20,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.Order;
 import io.helidon.data.Sort;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +36,7 @@ import static io.helidon.data.tests.common.TestUtils.checkPokemonsSortedList;
 import static io.helidon.data.tests.common.TestUtils.pokemonsList;
 import static io.helidon.data.tests.common.TestUtils.sortedPokemonsListByName;
 
+@Testing.Test
 public class TestQbmnCriteriaExtended {
 
     private static final Map<Integer, Pokemon> EMPTY_POKEMONS = Map.of(
@@ -48,8 +50,8 @@ public class TestQbmnCriteriaExtended {
     // Simple (JPQL) criteria Empty
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
         EMPTY_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(EMPTY_POKEMONS.get(key)));
     }
 

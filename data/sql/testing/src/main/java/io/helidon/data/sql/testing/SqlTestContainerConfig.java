@@ -19,6 +19,7 @@ package io.helidon.data.sql.testing;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigSource;
 
 import org.testcontainers.containers.GenericContainer;
@@ -44,7 +45,13 @@ public final class SqlTestContainerConfig {
 
         String username = testConfig.get("username").asString().orElse("");
         String password = testConfig.get("password").asString().orElse("");
-        String url = testConfig.get("url").asString().get();
+        String url = null;
+        try {
+            url = testConfig.get("url").asString().get();
+        } catch (MissingValueException e) {
+            throw new IllegalStateException("Configuration key test.database.url is required for test container based tests",
+                                            e);
+        }
 
         TestContainerHandler testConnectionInfo = new TestContainerHandler(configSource, username, password, url, container);
 

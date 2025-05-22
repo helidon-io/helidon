@@ -953,12 +953,18 @@ final class Activators {
 
         @Override
         public void postConstruct() {
-            source.postConstruct(instance);
+            // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
+            if (instance != null) {
+                source.postConstruct(instance);
+            }
         }
 
         @Override
         public void preDestroy() {
-            source.preDestroy(instance);
+            // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
+            if (instance != null) {
+                source.preDestroy(instance);
+            }
         }
     }
 

@@ -20,9 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,9 +36,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+@Testing.Test
 public class TestQbmnDml {
-
-    private static final System.Logger LOGGER = System.getLogger(TestQbmnDml.class.getName());
 
     private static final Map<Integer, Pokemon> DELETE_POKEMONS = deletePokemons();
 
@@ -46,8 +46,8 @@ public class TestQbmnDml {
     // DML simple delete (JPQL)
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
         DELETE_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(DELETE_POKEMONS.get(key)));
     }
 
