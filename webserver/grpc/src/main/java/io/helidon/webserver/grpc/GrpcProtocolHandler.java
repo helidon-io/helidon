@@ -168,6 +168,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void rstStream(Http2RstStream rstStream) {
         callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
         listener.onCancel();
+        currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
     }
 
     @Override
@@ -210,8 +211,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();
-                currentStreamState = Http2StreamState.HALF_CLOSED_REMOTE;
-
+                currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
                 // update metrics
                 if (grpcConfig.enableMetrics()) {
                     methodMetrics.recvMessageSize.record(bytesReceived);
@@ -239,7 +239,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
                                  String.join(",", encodings));
                     serverCall.close(Status.UNIMPLEMENTED, metadata);
-                    currentStreamState = Http2StreamState.CLOSED;       // stops processing
+                    currentStreamState = nextStreamState(Http2StreamState.CLOSED);       // stops processing
                     return;
                 }
             } else if (httpHeaders.contains(GRPC_ACCEPT_ENCODING)) {
@@ -279,6 +279,29 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         }
     }
 
+    /**
+     * Ensures that if moving to a HALF_CLOSE state we can reach the CLOSED state
+     * if already on the other HALF_CLOSE state. Reaching CLOSED state is necessary
+     * for {@link io.helidon.webserver.http2.Http2ConnectionStreams} to remove
+     * streams from its map.
+     *
+     * @param desiredStreamState desired new state
+     * @return actual next state
+     */
+    Http2StreamState nextStreamState(Http2StreamState desiredStreamState) {
+        return switch (desiredStreamState) {
+            case HALF_CLOSED_LOCAL ->
+                    currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
+                            ? Http2StreamState.CLOSED
+                            : Http2StreamState.HALF_CLOSED_LOCAL;
+            case HALF_CLOSED_REMOTE ->
+                    currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
+                            ? Http2StreamState.CLOSED
+                            : Http2StreamState.HALF_CLOSED_REMOTE;
+            default -> desiredStreamState;
+        };
+    }
+
     private ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<>() {
 
@@ -293,7 +316,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void sendHeaders(Metadata headers) {
-                // prepare response haaders
+                // prepare response headers
                 WritableHeaders<?> writable = WritableHeaders.create();
                 GrpcHeadersUtil.updateHeaders(writable, headers);
                 writable.set(GRPC_CONTENT_TYPE);
@@ -387,7 +410,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                           streamId,
                                           HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
                                           flowControl.outbound());
-                currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
+                currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_LOCAL);
 
                 // update metrics
                 if (status.isOk() && grpcConfig.enableMetrics()) {
