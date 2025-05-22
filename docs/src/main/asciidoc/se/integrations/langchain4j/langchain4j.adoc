@@ -90,6 +90,8 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:cohere.adoc#_coherescoringmodel[`CohereScoringModel`]
 * xref:oracle.adoc[*Oracle*]
     ** xref:oracle.adoc#_oracleembeddingmodel[`OracleEmbeddingStore`]
+* xref:coherence.adoc[*Coherence*]
+    ** xref:coherence.adoc#_coherenceembeddingmodel[`CoherenceEmbeddingStore`]
 
 NOTE: This integration does not limit the use of other LangChain4J components in your application. The components listed above receive special treatment, meaning they can be automatically created based on configuration.
 
@@ -306,4 +308,6 @@ For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-lev
 ** xref:open-ai.adoc[Open AI]
 ** xref:ollama.adoc[Ollama]
 ** xref:cohere.adoc[Cohere]
+** xref:oracle.adoc[Oracle]
+** xref:coherence.adoc[Coherence]
 
