@@ -126,9 +126,12 @@ jobs:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
       - uses: ./.github/actions/common
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         with:
           run: |
-            central-settings.sh --dir=. |
+            ./etc/scripts/central-settings.sh --dir=. |
             mvn ${MVN_ARGS} -N \
               -s settings.xml
               -Pcentral.manual.testing \
@@ -154,6 +157,9 @@ jobs:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
       - uses: ./.github/actions/common
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         with:
           run: |
             ./etc/scripts/smoketest.sh \
