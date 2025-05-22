@@ -30,6 +30,10 @@
     <artifactId>helidon-data-jakarta-persistence</artifactId>
     <name>Helidon Data Jakarta Persistence</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
