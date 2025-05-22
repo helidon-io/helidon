@@ -41,6 +41,7 @@
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.17.5</version.lib.bytebuddy>
+        <version.lib.coherence>25.03.1</version.lib.coherence>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
@@ -991,6 +992,11 @@
             </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-coherence</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j</artifactId>
                 <version>${version.lib.langchain4j}</version>
             </dependency>
@@ -1389,6 +1395,13 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <dependency>
+                <groupId>com.oracle.coherence.ce</groupId>
+                <artifactId>coherence-bom</artifactId>
+                <version>${version.lib.coherence}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
