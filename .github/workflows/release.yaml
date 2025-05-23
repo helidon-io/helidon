@@ -136,7 +136,7 @@ jobs:
         with:
           run: |
             mvn ${MVN_ARGS} -N \
-              -s settings.xml
+              -s settings.xml \
               -Pcentral.manual.testing \
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get
