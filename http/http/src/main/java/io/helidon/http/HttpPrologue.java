@@ -21,10 +21,12 @@ import java.util.Objects;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.service.registry.Service;
 
 /**
  * A prologue of an HTTP protocol.
  */
+@Service.Describe(Service.PerRequest.class)
 public class HttpPrologue {
     private final String rawProtocol;
     private final String protocol;
