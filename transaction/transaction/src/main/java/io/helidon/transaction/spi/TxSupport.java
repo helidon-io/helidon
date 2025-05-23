@@ -18,10 +18,9 @@ package io.helidon.transaction.spi;
 import java.util.concurrent.Callable;
 
 import io.helidon.transaction.Tx;
-//import java.util.function.Function;
 
 /**
- *  Implemented by each transaction handling support.
+ * Implemented by each transaction handling support.
  */
 public interface TxSupport {
 
@@ -44,29 +43,4 @@ public interface TxSupport {
      * @throws io.helidon.transaction.TxException when result computation failed
      */
     <T> T transaction(Tx.Type type, Callable<T> task);
-
-/* Removed: need to decide whether this is needed at all
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * /
-    <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task);
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @param type transaction type
-     * @return transaction handler
-     * /
-    Tx.Transaction transaction(Tx.Type type);
-
-*/
-
 }

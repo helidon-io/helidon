@@ -29,9 +29,9 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.query.DataQuery;
 import io.helidon.data.codegen.query.Projection;
 
-import static io.helidon.data.codegen.HelidonDataTypes.DATA_QUERY;
-import static io.helidon.data.codegen.HelidonDataTypes.PAGE;
-import static io.helidon.data.codegen.HelidonDataTypes.SLICE;
+import static io.helidon.data.codegen.DataCodegenTypes.DATA_QUERY;
+import static io.helidon.data.codegen.DataCodegenTypes.PAGE;
+import static io.helidon.data.codegen.DataCodegenTypes.SLICE;
 
 class PageableRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator {
     /**
@@ -40,7 +40,7 @@ class PageableRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenera
     protected static final String PAGE_REQUEST_PARAM_NAME = "pageRequest";
     protected static final Parameter PAGE_REQUEST_PARAM = Parameter.builder()
             .name(PAGE_REQUEST_PARAM_NAME)
-            .type(HelidonDataTypes.PAGE_REQUEST)
+            .type(DataCodegenTypes.PAGE_REQUEST)
             .build();
 
     PageableRepositoryInterfaceGenerator(RepositoryInfo repositoryInfo,

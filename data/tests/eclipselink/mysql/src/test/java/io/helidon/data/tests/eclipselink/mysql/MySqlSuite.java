@@ -15,12 +15,9 @@
  */
 package io.helidon.data.tests.eclipselink.mysql;
 
-import java.lang.System.Logger.Level;
-
-import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
+import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
@@ -31,7 +28,6 @@ import io.helidon.testing.junit5.suite.Suite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
@@ -40,43 +36,28 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class MySqlSuite implements SuiteProvider {
 
-    private static final System.Logger LOGGER = System.getLogger(MySqlSuite.class.getName());
-    @Container
-    private final MySQLContainer<?> container;
-    private final Config config;
-    private DataRegistry data;
-    private PokemonRepository pokemonRepository;
+    private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        this.config = Config.just(ConfigSources.classpath("application.yaml"));
-        this.container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-        SqlTestContainerConfig.configureContainer(config, container);
+        MySQLContainer<?> container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
+        this.containerHandler = SqlTestContainerConfig.configureContainer(container,
+                                                                          ConfigSources.classpath("application.yaml"));
     }
 
     @BeforeSuite
     public void beforeSuite() {
-        container.start();
-        // Update URL in config with exposed port
-        System.setProperty("sql.mysql.port", String.valueOf(container.getMappedPort(3306)));
-        try {
-            data = Services.get(DataRegistry.class);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-        pokemonRepository = data.repository(PokemonRepository.class);
+        this.containerHandler.startContainer();
+        this.containerHandler.setConfig();
+
+        PokemonRepository pokemonRepository = Services.get(PokemonRepository.class);
         // Initialize database content
         pokemonRepository.run(InitialData::init);
+        pokemonRepository.run(InitialData::verify);
     }
 
     @AfterSuite
     public void afterSuite() {
-        try {
-            data.close();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Could not close Helidon Data: %s", e.getMessage()));
-        }
-        container.stop();
+        containerHandler.stopContainer();
     }
 
     @Testing.Test

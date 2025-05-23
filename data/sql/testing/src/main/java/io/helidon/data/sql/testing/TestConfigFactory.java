@@ -34,7 +34,7 @@ import io.helidon.service.registry.Service;
 public class TestConfigFactory implements Service.ServicesFactory<Config> {
 
     // Hold config in static context
-    private static Config config = Config.create();
+    private static volatile Config config;
 
     private final ConfigDelegate configDelegate;
 
@@ -48,10 +48,18 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
     }
 
     private Config config() {
+        if (config == null) {
+            config = Config.create();
+        }
         return config;
     }
 
-    private static void config(Config config) {
+    /**
+     * Set the config instance to use.
+     *
+     * @param config config instance to use
+     */
+    public static void config(Config config) {
         TestConfigFactory.config = config;
     }
 
@@ -72,7 +80,7 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
          * @param config the {@link Config} insgtance
          */
         public void config(Config config) {
-            factory.config(config);
+            TestConfigFactory.config(config);
         }
 
         @Override

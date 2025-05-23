@@ -36,6 +36,11 @@ class JakartaPersistenceGenerator extends BasePersistenceGenerator {
     }
 
     @Override
+    protected String provider() {
+        return "jakarta";
+    }
+
+    @Override
     public PersistenceGenerator.QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
         return new JakartaQueryBuilder(repositoryInfo);
     }
@@ -69,29 +74,4 @@ class JakartaPersistenceGenerator extends BasePersistenceGenerator {
                 .className(baseName.className() + "__Jpa")
                 .build();
     }
-
-    @Override
-    protected TypeName providerClassName(TypeName baseName) {
-        return TypeName.builder(baseName)
-                .className(baseName.className() + "__JpaProvider")
-                .build();
-    }
-
-    @Override
-    protected void generateRepositoryProvider(CodegenContext codegenContext,
-                                              RoundContext roundContext,
-                                              RepositoryGenerator repositoryGenerator,
-                                              RepositoryInfo repositoryInfo,
-                                              TypeName className,
-                                              TypeName repositoryClassName,
-                                              ClassModel.Builder classModel) {
-        JakartaRepositoryProviderGenerator.generate(codegenContext,
-                                                    roundContext,
-                                                    repositoryGenerator,
-                                                    repositoryInfo,
-                                                    className,
-                                                    repositoryClassName,
-                                                    classModel);
-    }
-
 }

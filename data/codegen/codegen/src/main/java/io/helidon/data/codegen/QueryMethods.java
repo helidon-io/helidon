@@ -62,7 +62,7 @@ class QueryMethods {
         private static final Map<TypeName, Type> TYPES_MAP = new HashMap<>(LENGTH);
 
         static {
-            TYPES_MAP.put(HelidonDataTypes.QUERY_ANNOTATION, Type.QUERY);
+            TYPES_MAP.put(DataCodegenTypes.QUERY_ANNOTATION, Type.QUERY);
         }
 
     }

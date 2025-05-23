@@ -37,7 +37,7 @@ import jakarta.persistence.Table;
  * Tests Model: Pokemon.
  */
 @Entity
-@Table(name = "POKEMNON")
+@Table(name = "POKEMON")
 @NamedQuery(name = "Pokemon.deleteTemp", query = "DELETE FROM Pokemon p WHERE p.id >= 100")
 public class Pokemon {
 
@@ -45,9 +45,9 @@ public class Pokemon {
     @JoinColumn(name = "TRAINER_ID")
     public Trainer trainer;
     @ManyToMany(targetEntity = Type.class, fetch = FetchType.EAGER)
-    @JoinTable(name = "POKEMNON_TYPE",
+    @JoinTable(name = "POKEMON_TYPE",
                joinColumns = @JoinColumn(
-                       name = "POKEMNON_ID",
+                       name = "POKEMON_ID",
                        referencedColumnName = "ID"
                ),
                inverseJoinColumns = @JoinColumn(
