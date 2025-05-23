@@ -134,6 +134,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-write
+          build-cache-id: resolveall
           run: |
             mvn ${MVN_ARGS} -N \
               -s settings.xml \
@@ -141,7 +142,7 @@ jobs:
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get
   smoketest:
-    needs: [ resolve-all ]
+    needs: [ resolve-all, create-tag, deploy ]
     timeout-minutes: 30
     environment: release
     strategy:
@@ -169,6 +170,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: resolveall
           run: |
             ./etc/scripts/smoketest.sh \
               --clean \
