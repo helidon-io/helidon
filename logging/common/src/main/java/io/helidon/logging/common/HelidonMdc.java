@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,33 @@
  */
 package io.helidon.logging.common;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.logging.common.spi.MdcProvider;
 
 /**
  * Helidon MDC delegates values across all of the supported logging frameworks on the classpath.
+ * <p>
+ * Helidon permits adding MDC entries using {@code Supplier<String>} values as well as direct {@code String} values.
+ * Although some logging implementations provide their own context maps (for example {@code ThreadContext} in Log4J and
+ * {@code MDC} in SLF4J), they map MDC keys to {@code String} values, not to arbitrary objects that would accommodate
+ * {@code Supplier<String>}. Therefore, Helidon not only propagates every {@code set} operation to the loaded MDC providers,
+ * but also manages its own map of key/supplier pairs. Helidon resolves each lookup using that map
+ * if possible, delegating a look-up to the loaded MDC providers only if there is no supplier for a key.
  */
 public class HelidonMdc {
 
     private static final List<MdcProvider> MDC_PROVIDERS = HelidonServiceLoader
             .builder(ServiceLoader.load(MdcProvider.class)).build().asList();
+
+    private static final ThreadLocal<Map<String, Supplier<String>>> SUPPLIERS = ThreadLocal.withInitial(HashMap::new);
 
     private HelidonMdc() {
         throw new UnsupportedOperationException("This class cannot be instantiated");
@@ -46,11 +58,36 @@ public class HelidonMdc {
     }
 
     /**
+     * Propagate the value supplier to all {@link MdcProvider} instances registered.
+     *
+     * @param key entry key
+     * @param valueSupplier supplier of the entry value
+     */
+    public static void set(String key, Supplier<String> valueSupplier) {
+        SUPPLIERS.get().put(key, valueSupplier);
+        MDC_PROVIDERS.forEach(provider -> provider.put(key, valueSupplier.get()));
+    }
+
+    /**
+     * Sets a value supplier <em>without</em> immediately getting the value and propagating the value to
+     * underlying logging implementations.
+     * <p>
+     * Normally, user code should use {@link #set(String, java.util.function.Supplier)} instead.
+     *
+     * @param key entry key
+     * @param valueSupplier  supplier of the entry value
+     */
+    public static void setDeferred(String key, Supplier<String> valueSupplier) {
+        SUPPLIERS.get().put(key, valueSupplier);
+    }
+
+    /**
      * Remove value with the specific key from all of the instances of {@link MdcProvider}.
      *
      * @param key key
      */
     public static void remove(String key) {
+        SUPPLIERS.get().remove(key);
         MDC_PROVIDERS.forEach(provider -> provider.remove(key));
     }
 
@@ -58,6 +95,7 @@ public class HelidonMdc {
      * Remove all of the entries bound to the current thread from the instances of {@link MdcProvider}.
      */
     public static void clear() {
+        SUPPLIERS.get().clear();
         MDC_PROVIDERS.forEach(MdcProvider::clear);
     }
 
@@ -68,10 +106,29 @@ public class HelidonMdc {
      * @return found value bound to key
      */
     public static Optional<String> get(String key) {
-        return MDC_PROVIDERS.stream()
-                .map(provider -> provider.get(key))
-                .filter(Objects::nonNull)
-                .findFirst();
+        /*
+        User or 3rd-party code might have added values directly to the logger's own context store. So look in other
+        providers if our data structure cannot resolve the key.
+         */
+        return SUPPLIERS.get().containsKey(key)
+                ? Optional.of(SUPPLIERS.get().get(key).get())
+                : MDC_PROVIDERS.stream()
+                        .map(provider -> provider.get(key))
+                        .filter(Objects::nonNull)
+                        .findFirst();
+    }
+
+    static Map<String, Supplier<String>> suppliers() {
+        return new HashMap<>(SUPPLIERS.get());
+    }
+
+    static void suppliers(Map<String, Supplier<String>> suppliers) {
+        SUPPLIERS.get().clear();
+        SUPPLIERS.get().putAll(suppliers);
+    }
+
+    static void clearSuppliers() {
+        SUPPLIERS.get().clear();
     }
 
 }

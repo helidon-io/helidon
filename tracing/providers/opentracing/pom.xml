@@ -141,6 +141,19 @@
                         </configurationParameters>
                     </properties>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>mdc-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestMdc.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
