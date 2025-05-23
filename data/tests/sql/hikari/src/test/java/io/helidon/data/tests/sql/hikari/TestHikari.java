@@ -16,7 +16,6 @@
 package io.helidon.data.tests.sql.hikari;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -25,58 +24,40 @@ import io.helidon.config.Config;
 import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.testing.junit5.suite.Suite;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Suite(MySqlSuite.class)
 @Testcontainers(disabledWithoutDocker = true)
+@Testing.Test
 class TestHikari {
-
-    private static ServiceRegistryManager registryManager;
-    private static ServiceRegistry registry;
-
-    @BeforeAll
-    public static void initRegistry() {
-        registryManager = ServiceRegistryManager.create();
-        registry = registryManager.registry();
-    }
-
-    @AfterAll
-    public static void tearDownRegistry() {
-        registryManager.shutdown();
-    }
-
     @Test
     void testDataSourceConfig(Config config) {
         assertThat(config.exists(), is(true));
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-source.0"));
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-sources.sql.0"));
         HikariDataSourceConfig hikariDataSourceConfig = (HikariDataSourceConfig) dataSourceConfig.provider();
         assertThat(hikariDataSourceConfig.username().isPresent(), is(true));
         assertThat(hikariDataSourceConfig.username().get(),
-                   is(config.get("data-source.0.provider.hikari.username").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.hikari.username").as(String.class).get()));
         assertThat(hikariDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(hikariDataSourceConfig.password().get()),
-                   is(config.get("data-source.0.provider.hikari.password").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.hikari.password").as(String.class).get()));
         assertThat(hikariDataSourceConfig.url(),
-                   is(config.get("data-source.0.provider.hikari.url").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.hikari.url").as(String.class).get()));
     }
 
     @Test
     void testDataSourceRegistry() {
         TypeName hikariName = TypeName.create("io.helidon.data.sql.datasource.hikari.HikariDataSourceProviderService");
-        Supplier<Service.ServicesFactory<DataSource>> provider = registry.supply(hikariName);
-        assertThat(provider, notNullValue());
-        List<Service.QualifiedInstance<DataSource>> services = provider.get().services();
+        Service.ServicesFactory<DataSource> factory = Services.get(hikariName);
+        List<Service.QualifiedInstance<DataSource>> services = factory.services();
         assertThat(services.size(), is(1));
     }
 

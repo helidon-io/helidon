@@ -17,11 +17,11 @@ package io.helidon.data.tests.common;
 
 import java.util.List;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.Order;
 import io.helidon.data.Sort;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,8 +38,8 @@ public class TestQbmnOrder {
     private static PokemonRepository pokemonRepository;
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
     }
 
     @AfterAll

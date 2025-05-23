@@ -18,6 +18,7 @@ package io.helidon.data.sql.datasource.hikari;
 import javax.sql.DataSource;
 
 import io.helidon.common.config.Config;
+import io.helidon.data.sql.datasource.TransactionIsolation;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -81,7 +82,9 @@ public class HikariDataSourceFactory {
         dataSourceConfig.readOnly().ifPresent(hikariConfig::setReadOnly);
         dataSourceConfig.registerMbeans().ifPresent(hikariConfig::setRegisterMbeans);
         dataSourceConfig.schema().ifPresent(hikariConfig::setSchema);
-        dataSourceConfig.transactionIsolation().ifPresent(hikariConfig::setTransactionIsolation);
+        dataSourceConfig.transactionIsolation()
+                .map(TransactionIsolation::name)
+                .ifPresent(hikariConfig::setTransactionIsolation);
         dataSourceConfig.validationTimeout().ifPresent(hikariConfig::setValidationTimeout);
         dataSourceConfig.username().ifPresent(hikariConfig::setUsername);
         return new HikariDataSource(hikariConfig);

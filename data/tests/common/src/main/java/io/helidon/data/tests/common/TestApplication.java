@@ -17,50 +17,24 @@ package io.helidon.data.tests.common;
 
 import java.util.Optional;
 
-import io.helidon.data.DataConfig;
-import io.helidon.data.ProviderConfig;
-import io.helidon.data.jakarta.persistence.DataJpaConfig;
-import io.helidon.data.tests.application.ApplicationData;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 public class TestApplication {
 
-    private static final System.Logger LOGGER = System.getLogger(TestApplication.class.getName());
-
-    // Verify full Data instance cycle from application context
     @Test
-    void testDataInitialization(DataConfig dataConfig) throws Exception {
-        LOGGER.log(System.Logger.Level.DEBUG, "Running testDataInitialization");
-        // Turn off DDL drop-and-create
-        DataConfig.Builder builder = DataConfig.builder()
-                .name(dataConfig.name());
+    void testDataInitialization() throws Exception {
 
-        ProviderConfig provider = dataConfig.provider();
-        if (provider instanceof DataJpaConfig jakartaConfig) {
-            // this is the expected one
-            builder.provider(DataJpaConfig.builder()
-                                     .from(jakartaConfig)
-                                     .putProperty("jakarta.persistence.schema-generation.database.action", "none")
-                                     .build());
-        }
-        DataConfig newDataConfig = builder.build();
-
-        ApplicationData applicationData = new ApplicationData(newDataConfig);
-        MatcherAssert.assertThat(applicationData.data(), notNullValue());
-        io.helidon.data.DataRegistry data = applicationData.data();
-        PokemonRepository pokemonRepository = data.repository(PokemonRepository.class);
+        PokemonRepository pokemonRepository = Services.get(PokemonRepository.class);
         Optional<Pokemon> pokemon = pokemonRepository.findById(InitialData.POKEMONS[1].getId());
         assertThat(pokemon.isPresent(), is(true));
         assertThat(pokemon.get(), is(InitialData.POKEMONS[1]));
-        data.close();
     }
 
 }

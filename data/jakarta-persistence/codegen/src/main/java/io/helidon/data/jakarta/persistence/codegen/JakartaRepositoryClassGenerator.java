@@ -23,9 +23,11 @@ import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.data.codegen.common.BaseRepositoryGenerator;
 import io.helidon.data.codegen.common.RepositoryInfo;
 import io.helidon.data.codegen.common.spi.RepositoryGenerator;
@@ -33,6 +35,8 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceGenerator.GENERATOR;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.BASE_REPOSITORY_EXECUTOR;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.GENERIC_R;
+import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.INJECTION_SINGLETON;
+import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.PU_NAME_ANNOTATION;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.SESSION_CONSUMER;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.SESSION_FUNCTION;
 import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceTypes.SESSION_REPOSITORY;
@@ -56,6 +60,7 @@ final class JakartaRepositoryClassGenerator {
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  repositoryInterface,
                                                  className))
+                .addAnnotation(INJECTION_SINGLETON)
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
                                                                repositoryInterface,
                                                                className,
@@ -64,8 +69,10 @@ final class JakartaRepositoryClassGenerator {
                 .classType(ElementKind.CLASS)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(repositoryInterface);
+
         generateFields(classModel);
-        classModel.addConstructor(JakartaRepositoryClassGenerator::generateConstructor);
+        generateConstructor(classModel, repositoryInfo);
+
         // Generate all interfaces supported by data repository generators
         repositoryGenerator.generateInterfaces(repositoryInfo, classModel, codegenContext, generator);
         // Generate all query methods
@@ -107,6 +114,7 @@ final class JakartaRepositoryClassGenerator {
     private static void generateCloseMethod(ClassModel.Builder classModel) {
         classModel.addMethod(close -> close
                 .name("close")
+                .addAnnotation(Annotation.create(TypeName.create("io.helidon.service.registry.Service.PreDestroy")))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addContentLine("this.executor.close();")
         );
@@ -118,12 +126,59 @@ final class JakartaRepositoryClassGenerator {
                 .type(BASE_REPOSITORY_EXECUTOR));
     }
 
-    private static void generateConstructor(Constructor.Builder builder) {
-        builder.accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addParameter(Parameter.builder()
-                                      .name("executor")
-                                      .type(BASE_REPOSITORY_EXECUTOR)
-                                      .build())
-                .addContent("this.executor = executor;");
+    private static void generateConstructor(ClassModel.Builder classModel, RepositoryInfo repositoryInfo) {
+        var ctr = Constructor.builder()
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+
+        boolean hasNamed = false;
+        String name = null;
+        boolean nameRequired = false;
+
+        if (repositoryInfo.interfaceInfo().hasAnnotation(PU_NAME_ANNOTATION)) {
+            Annotation dataSourceAnnotation = repositoryInfo.interfaceInfo().annotation(PU_NAME_ANNOTATION);
+
+            name = dataSourceAnnotation.value().orElse("@default");
+            nameRequired = dataSourceAnnotation.booleanValue("required").orElse(false);
+            hasNamed = !name.equals("@default");
+        }
+
+        if (hasNamed) {
+            Annotation named = Annotation.builder()
+                    .typeName(TypeName.create("io.helidon.service.registry.Service.Named"))
+                    .putValue("value", name)
+                    .build();
+
+            if (nameRequired) {
+                ctr.addParameter(Parameter.builder()
+                                         .addAnnotation(named)
+                                         .name("executor")
+                                         .type(BASE_REPOSITORY_EXECUTOR)
+                                         .build())
+                        .addContent("this.executor = executor;");
+            } else {
+                ctr.addParameter(Parameter.builder()
+                                         .addAnnotation(named)
+                                         .name("namedExecutor")
+                                         .type(TypeName.builder(TypeNames.OPTIONAL)
+                                                       .addTypeArgument(BASE_REPOSITORY_EXECUTOR)
+                                                       .build())
+                                         .build())
+                        .addParameter(Parameter.builder()
+                                              .name("executor")
+                                              .type(TypeName.builder(TypeNames.SUPPLIER)
+                                                            .addTypeArgument(BASE_REPOSITORY_EXECUTOR)
+                                                            .build())
+                                              .build())
+                        .addContent("this.executor = namedExecutor.orElseGet(executor);");
+            }
+        } else {
+            ctr.addParameter(Parameter.builder()
+                                     .name("executor")
+                                     .type(BASE_REPOSITORY_EXECUTOR)
+                                     .build())
+                    .addContent("this.executor = executor;");
+        }
+
+        classModel.addConstructor(ctr);
     }
 }

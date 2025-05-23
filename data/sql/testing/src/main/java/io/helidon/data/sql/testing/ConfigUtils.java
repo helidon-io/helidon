@@ -74,4 +74,85 @@ class ConfigUtils {
         return dbName;
     }
 
+    /**
+     * Replace port value in provided URL.
+     *
+     * @param url  source URL
+     * @param port new port value in returned URL
+     * @return source url with port replaced by {@code port} value.
+     */
+    static String replacePortInUrl(String url, int port) {
+        IndexAndLength hostSeparator = findHostSeparator(url);
+        if (hostSeparator.index() >= 0) {
+            int fromIndex = hostSeparator.index() + hostSeparator.length();
+
+            int end = url.indexOf('/', fromIndex);
+            int portBeg = url.indexOf(':', fromIndex);
+            // Found port position in URL
+            if (end > 0 && portBeg < end) {
+                String frontPart = url.substring(0, portBeg + 1);
+                String endPart = url.substring(end);
+                return frontPart + port + endPart;
+            } else {
+                throw new IllegalStateException(
+                        String.format("URL %s does not contain host and port part \"://host:port/\"", url));
+            }
+        } else {
+            throw new IllegalStateException(
+                    String.format("Could not find host separator \"://\" in URL %s", url));
+        }
+    }
+
+    static int portFromDbUrl(String url) {
+        // UCP     : jdbc:mysql://localhost:3306/testdb
+        // mysql   : jdbc:oracle:thin:@localhost:1521/FREE
+
+        IndexAndLength hostSeparator = findHostSeparator(url);
+        if (hostSeparator.index() >= 0) {
+            int fromIndex = hostSeparator.index() + hostSeparator.length();
+            int end = url.indexOf('/', fromIndex);
+            int portBeg = url.indexOf(':', fromIndex);
+            // Found port position in URL
+            if (end > 0 && portBeg < end) {
+                return Integer.parseInt(url.substring(portBeg + 1, end));
+            } else {
+                throw new IllegalStateException(
+                        String.format("URL %s does not contain host and port part \"://host:port/\"", url));
+            }
+        } else {
+            throw new IllegalStateException(
+                    String.format("Could not find host separator \"://\" in URL %s", url));
+        }
+    }
+
+    // Find separator before host in database URL
+    // Regular separator is "://", bur Oracle DB has an exception and uses ":@"
+    // mysql : jdbc:mysql://localhost:3306/testdb
+    // UCP   : jdbc:oracle:thin:@localhost:1521/FREE
+    private static IndexAndLength findHostSeparator(String src) {
+        // First check DB type
+        int jdbcSep = src.indexOf(':');
+        String scheme = src.substring(0, jdbcSep);
+        if (!"jdbc".equals(scheme)) {
+            throw new IllegalArgumentException(
+                    String.format("Database JDBC url shall start with \"jdbc:\" prefix, but URC is %s", src));
+        }
+        if (src.length() > jdbcSep + 2) {
+            int typeSep = src.indexOf(':', jdbcSep + 1);
+            String dbType = src.substring(jdbcSep + 1, typeSep);
+            // Keeping switch here to simplify future extension
+            if ("oracle".equals(dbType)) {
+                int begin = src.indexOf(":@");
+                return new IndexAndLength(begin, 2);
+            } else {
+                int begin = src.indexOf("://");
+                return new IndexAndLength(begin, 3);
+            }
+        } else {
+            throw new IllegalArgumentException("Database JDBC url has nothing after \"jdbc:\" prefix");
+        }
+    }
+
+    private record IndexAndLength(int index, int length) {
+    }
 }

@@ -35,6 +35,7 @@
         <module>datasource</module>
         <module>hikari</module>
         <module>ucp</module>
+        <module>jdbc</module>
     </modules>
 
 </project>

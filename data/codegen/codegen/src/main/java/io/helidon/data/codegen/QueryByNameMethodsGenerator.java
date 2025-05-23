@@ -40,8 +40,8 @@ import io.helidon.data.codegen.query.DataQuery;
 import io.helidon.data.codegen.query.ProjectionExpression;
 import io.helidon.data.codegen.query.ProjectionResult;
 
-import static io.helidon.data.codegen.HelidonDataTypes.PAGE;
-import static io.helidon.data.codegen.HelidonDataTypes.SLICE;
+import static io.helidon.data.codegen.DataCodegenTypes.PAGE;
+import static io.helidon.data.codegen.DataCodegenTypes.SLICE;
 
 /**
  * Helidon Data <i>Query by method name</i> methods generator.

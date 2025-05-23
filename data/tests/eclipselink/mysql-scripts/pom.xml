@@ -31,6 +31,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
             <scope>test</scope>
@@ -89,12 +94,6 @@
         <dependency>
             <groupId>io.helidon.data.tests</groupId>
             <artifactId>helidon-data-tests-repository</artifactId>
-            <version>${helidon.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.tests</groupId>
-            <artifactId>helidon-data-tests-application</artifactId>
             <version>${helidon.version}</version>
             <scope>test</scope>
         </dependency>

@@ -35,18 +35,18 @@ class RepositoryInfoBuilder extends RepositoryInfo.Builder {
         // Search for entity class from top level interfaces
         TypeName entity = TypeName.create(Object.class);
         TypeName id = TypeName.create(Object.class);
-        if (interfaces().containsKey(HelidonDataTypes.CRUD_REPOSITORY)) {
-            entity = interfaces().get(HelidonDataTypes.CRUD_REPOSITORY).entityType();
-            id = interfaces().get(HelidonDataTypes.CRUD_REPOSITORY).idType();
-        } else if (interfaces().containsKey(HelidonDataTypes.BASIC_REPOSITORY)) {
-            entity = interfaces().get(HelidonDataTypes.BASIC_REPOSITORY).entityType();
-            id = interfaces().get(HelidonDataTypes.BASIC_REPOSITORY).idType();
-        } else if (interfaces().containsKey(HelidonDataTypes.PAGEABLE_REPOSITORY)) {
-            entity = interfaces().get(HelidonDataTypes.PAGEABLE_REPOSITORY).entityType();
-            id = interfaces().get(HelidonDataTypes.PAGEABLE_REPOSITORY).idType();
-        } else if (interfaces().containsKey(HelidonDataTypes.GENERIC_REPOSITORY)) {
-            entity = interfaces().get(HelidonDataTypes.GENERIC_REPOSITORY).entityType();
-            id = interfaces().get(HelidonDataTypes.GENERIC_REPOSITORY).idType();
+        if (interfaces().containsKey(DataCodegenTypes.CRUD_REPOSITORY)) {
+            entity = interfaces().get(DataCodegenTypes.CRUD_REPOSITORY).entityType();
+            id = interfaces().get(DataCodegenTypes.CRUD_REPOSITORY).idType();
+        } else if (interfaces().containsKey(DataCodegenTypes.BASIC_REPOSITORY)) {
+            entity = interfaces().get(DataCodegenTypes.BASIC_REPOSITORY).entityType();
+            id = interfaces().get(DataCodegenTypes.BASIC_REPOSITORY).idType();
+        } else if (interfaces().containsKey(DataCodegenTypes.PAGEABLE_REPOSITORY)) {
+            entity = interfaces().get(DataCodegenTypes.PAGEABLE_REPOSITORY).entityType();
+            id = interfaces().get(DataCodegenTypes.PAGEABLE_REPOSITORY).idType();
+        } else if (interfaces().containsKey(DataCodegenTypes.GENERIC_REPOSITORY)) {
+            entity = interfaces().get(DataCodegenTypes.GENERIC_REPOSITORY).entityType();
+            id = interfaces().get(DataCodegenTypes.GENERIC_REPOSITORY).idType();
         }
         Optional<TypeInfo> maybeEntityInfo = codegenContext().typeInfo(entity);
         if (maybeEntityInfo.isEmpty()) {

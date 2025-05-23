@@ -22,7 +22,7 @@ import io.helidon.common.types.TypeName;
 class JakartaPersistenceTypes {
 
     static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
-    static final TypeName DATA_SOURCE_ANNOTATION = TypeName.create("io.helidon.data.Data.DataSource");
+    static final TypeName PU_NAME_ANNOTATION = TypeName.create("io.helidon.data.Data.PersistenceUnit");
     static final TypeName BASE_REPOSITORY_EXECUTOR = TypeName.create(
             "io.helidon.data.jakarta.persistence.JpaRepositoryExecutor");
     static final TypeName REPOSITORY_FACTORY = TypeName.create("io.helidon.data.spi.RepositoryFactory");

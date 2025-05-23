@@ -14,11 +14,16 @@
 # limitations under the License.
 #
 
-data-source:
-  # Separate config
-  - name: "test"
-    provider.hikari:
-      # DataSource config
-      username: "test"
-      password: "password"
-      url: "jdbc:mysql://localhost:3306/testdb"
+test.database:
+  username: "test"
+  password: "changeit"
+  url: "jdbc:mysql://localhost:3306/testdb"
+
+data-sources:
+  sql:
+    - name: "test"
+      provider.hikari:
+        # DataSource config
+        username: "${test.database.username}"
+        password: "${test.database.password}"
+        url: "${test.database.url}"

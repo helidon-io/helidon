@@ -20,6 +20,7 @@ import java.util.Objects;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
@@ -49,21 +50,37 @@ public abstract class BasePersistenceGenerator
         Objects.requireNonNull(repositoryGenerator, "Data repository generator value is null");
 
         TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
-        TypeName providerClassName = providerClassName(interfaceInfo.typeName());
         RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
 
-        generateRepositoryClass(codegenContext,
-                                roundContext,
-                                repositoryInfo,
-                                repositoryClassName,
-                                repositoryGenerator);
-        generateRepositoryProvider(codegenContext,
-                                   roundContext,
-                                   repositoryInfo,
-                                   providerClassName,
-                                   repositoryClassName,
-                                   repositoryGenerator);
+        // only generate if matches required provider, or if the provider annotation is not present
+        boolean should = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
+                .flatMap(Annotation::value)
+                .orElse(provider())
+                .equals(provider());
+
+        if (should) {
+            ClassModel.Builder classModel = ClassModel.builder();
+
+            generateRepositoryClass(codegenContext,
+                                    roundContext,
+                                    repositoryGenerator,
+                                    repositoryInfo,
+                                    repositoryClassName,
+                                    classModel);
+
+            roundContext.addGeneratedType(repositoryClassName,
+                                          classModel,
+                                          repositoryInfo.interfaceInfo().typeName(),
+                                          repositoryInfo.interfaceInfo().originatingElementValue());
+        }
     }
+
+    /**
+     * Name of the provider.
+     *
+     * @return provider name
+     */
+    protected abstract String provider();
 
     /**
      * Data repository interface implementing class name for specific persistence provider.
@@ -72,15 +89,6 @@ public abstract class BasePersistenceGenerator
      * @return @return implementing class name
      */
     protected abstract TypeName repositoryClassName(TypeName baseName);
-
-    /**
-     * Data repository interface implementing class provider name for specific persistence provider.
-     * This is the name of {@code RepositoryProvider} implementing class.
-     *
-     * @param baseName repository interface name (target name base)
-     * @return implementing class provider name
-     */
-    protected abstract TypeName providerClassName(TypeName baseName);
 
     /**
      * Generate data repository interface implementing class for specific persistence provider.
@@ -98,64 +106,4 @@ public abstract class BasePersistenceGenerator
                                                     RepositoryInfo repositoryInfo,
                                                     TypeName className,
                                                     ClassModel.Builder classModel);
-
-    /**
-     * Generate data repository interface implementing class provider for specific persistence provider.
-     *
-     * @param codegenContext      code processing and generation context
-     * @param roundContext        code processing and generation round context
-     * @param repositoryInfo      data repository interface info
-     * @param className           implementing provider class name (from {#link {@link #providerClassName(TypeName)}})
-     * @param repositoryClassName data repository implementation class name
-     * @param classModel          target implementing provider class model builder
-     * @param repositoryGenerator specific data repository code generator
-     */
-    protected abstract void generateRepositoryProvider(CodegenContext codegenContext,
-                                                       RoundContext roundContext,
-                                                       RepositoryGenerator repositoryGenerator,
-                                                       RepositoryInfo repositoryInfo,
-                                                       TypeName className,
-                                                       TypeName repositoryClassName,
-                                                       ClassModel.Builder classModel);
-
-    private void generateRepositoryClass(CodegenContext codegenContext,
-                                         RoundContext roundContext,
-                                         RepositoryInfo repositoryInfo,
-                                         TypeName className,
-                                         RepositoryGenerator repositoryGenerator) {
-        ClassModel.Builder classModel = ClassModel.builder();
-        generateRepositoryClass(codegenContext,
-                                roundContext,
-                                repositoryGenerator,
-                                repositoryInfo,
-                                className,
-                                classModel);
-
-        roundContext.addGeneratedType(className,
-                                      classModel,
-                                      repositoryInfo.interfaceInfo().typeName(),
-                                      repositoryInfo.interfaceInfo().originatingElementValue());
-    }
-
-    private void generateRepositoryProvider(CodegenContext codegenContext,
-                                            RoundContext roundContext,
-                                            RepositoryInfo repositoryInfo,
-                                            TypeName className,
-                                            TypeName repositoryClassName,
-                                            RepositoryGenerator repositoryGenerator) {
-        ClassModel.Builder classModel = ClassModel.builder();
-        generateRepositoryProvider(codegenContext,
-                                   roundContext,
-                                   repositoryGenerator,
-                                   repositoryInfo,
-                                   className,
-                                   repositoryClassName,
-                                   classModel);
-
-        roundContext.addGeneratedType(className,
-                                      classModel,
-                                      repositoryInfo.interfaceInfo().typeName(),
-                                      repositoryInfo.interfaceInfo().originatingElementValue());
-    }
-
 }

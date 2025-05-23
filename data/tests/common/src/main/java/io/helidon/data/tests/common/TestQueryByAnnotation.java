@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,8 +45,8 @@ public class TestQueryByAnnotation {
     // Return single Pokemon bv annotation
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
     }
 
     @AfterAll
