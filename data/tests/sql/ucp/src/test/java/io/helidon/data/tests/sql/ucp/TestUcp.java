@@ -16,7 +16,6 @@
 package io.helidon.data.tests.sql.ucp;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -25,12 +24,10 @@ import io.helidon.config.Config;
 import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.data.sql.datasource.ucp.UcpDataSourceConfig;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.testing.junit5.suite.Suite;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -40,43 +37,30 @@ import static org.hamcrest.Matchers.is;
 
 @Suite(OraDbSuite.class)
 @Testcontainers(disabledWithoutDocker = true)
+@Testing.Test
 class TestUcp {
-
-    private static ServiceRegistryManager registryManager;
-    private static ServiceRegistry registry;
-
-    @BeforeAll
-    public static void initRegistry() {
-        registryManager = ServiceRegistryManager.create();
-        registry = registryManager.registry();
-    }
-
-    @AfterAll
-    public static void tearDownRegistry() {
-        registryManager.shutdown();
-    }
 
     @Test
     void testDataSourceConfig(Config config) {
         assertThat(config.exists(), is(true));
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-source.0"));
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-sources.sql.0"));
         UcpDataSourceConfig ucpDataSourceConfig = (UcpDataSourceConfig) dataSourceConfig.provider();
         assertThat(ucpDataSourceConfig.username().isPresent(), is(true));
         assertThat(ucpDataSourceConfig.username().get(),
-                   is(config.get("data-source.0.provider.ucp.username").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.ucp.username").as(String.class).get()));
         assertThat(ucpDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(ucpDataSourceConfig.password().get()),
-                   is(config.get("data-source.0.provider.ucp.password").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.ucp.password").as(String.class).get()));
         assertThat(ucpDataSourceConfig.url(),
-                   is(config.get("data-source.0.provider.ucp.url").as(String.class).get()));
+                   is(config.get("data-sources.sql.0.provider.ucp.url").as(String.class).get()));
     }
 
     @Test
     void testDataSourceRegistry() {
         TypeName hikariName = TypeName.create("io.helidon.data.sql.datasource.ucp.UcpDataSourceProviderService");
-        Supplier<Service.ServicesFactory<DataSource>> provider = registry.supply(hikariName);
+        Service.ServicesFactory<DataSource> provider = Services.get(hikariName);
         assertThat(provider, notNullValue());
-        List<Service.QualifiedInstance<DataSource>> services = provider.get().services();
+        List<Service.QualifiedInstance<DataSource>> services = provider.services();
         assertThat(services.size(), is(1));
     }
 

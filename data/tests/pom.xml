@@ -34,7 +34,6 @@
         <module>sql</module>
         <module>model</module>
         <module>repository</module>
-        <module>application</module>
         <module>common</module>
         <module>eclipselink</module>
         <module>hibernate</module>

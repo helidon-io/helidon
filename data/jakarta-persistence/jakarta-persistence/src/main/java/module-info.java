@@ -30,11 +30,7 @@ module io.helidon.data.jakarta.persistence {
     exports io.helidon.data.jakarta.persistence;
     exports io.helidon.data.jakarta.persistence.spi;
 
-    provides io.helidon.data.spi.ProviderConfigProvider
-            with io.helidon.data.jakarta.persistence.DataJpaConfigProvider;
-
     // Temporary code for Jakarta Persistence 3.1 compliant initialization
     uses jakarta.persistence.spi.PersistenceProvider;
-    uses io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
 
 }

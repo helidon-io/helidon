@@ -17,7 +17,6 @@ package io.helidon.data.tests.common;
 
 import java.util.Optional;
 
-import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Service;
@@ -39,14 +38,12 @@ public class TestTxAnnotations {
 
     private static final System.Logger LOGGER = System.getLogger(TestTxAnnotations.class.getName());
 
-    private static DataRegistry data;
     private static PokemonRepository pokemonRepository;
     private static Dao dao;
 
     @BeforeAll
-    public static void before(DataRegistry data) {
-        TestTxAnnotations.data = data;
-        pokemonRepository = data.repository(PokemonRepository.class);
+    public static void before() {
+        pokemonRepository = Services.get(PokemonRepository.class);
         dao = Services.get(Dao.class);
         dao.setup(pokemonRepository);
         pokemonRepository.run(InitialData::deleteTemp);
@@ -59,7 +56,7 @@ public class TestTxAnnotations {
     }
 
     @BeforeEach
-    public void before() {
+    public void beforeEach() {
         pokemonRepository.run(InitialData::deleteTemp);
     }
 

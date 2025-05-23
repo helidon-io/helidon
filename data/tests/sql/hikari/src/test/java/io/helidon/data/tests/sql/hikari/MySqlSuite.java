@@ -15,93 +15,37 @@
  */
 package io.helidon.data.tests.sql.hikari;
 
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-
-import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.TestConfigFactory;
-import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
-import io.helidon.testing.junit5.suite.SuiteResolver;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 /**
  * MySQL suite.
  */
-public class MySqlSuite implements SuiteProvider, SuiteResolver {
+public class MySqlSuite implements SuiteProvider {
 
-    private static final System.Logger LOGGER = System.getLogger(MySqlSuite.class.getName());
-    @Container
-    private final MySQLContainer<?> container;
-    private Config config;
+    private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        config = Config.just(ConfigSources.classpath("application.yaml"));
-        container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
-        Config dsConfig = config.get("data-source");
-        if (dsConfig.exists()) {
-            Config dsConfig1 = dsConfig.get("0");
-            if (dsConfig1.exists()) {
-                Config poolConfig = dsConfig1.get("provider.hikari");
-                SqlTestContainerConfig.configureContainer(ConnectionConfig.create(poolConfig),
-                                                          container);
-            }
-        }
+        MySQLContainer<?> container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
+        this.containerHandler = SqlTestContainerConfig.configureContainer(container,
+                                                                          ConfigSources.classpath("application.yaml"));
     }
 
     @BeforeSuite
     public void beforeSuite() {
-        container.start();
-        String oldUrl = config.get("data-source.0.provider.hikari.url").as(String.class).get();
-        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(3306));
-        Map<String, String> updatedNodes = new HashMap<>(1);
-        updatedNodes.put("data-source.0.provider.hikari.url", url);
-        Config newConfig = Config.create(ConfigSources.create(updatedNodes), ConfigSources.create(config));
-        Supplier<TestConfigFactory> configProvider = Registry.REGISTRY.supply(TestConfigFactory.class);
-        List<Service.QualifiedInstance<io.helidon.common.config.Config>> services = configProvider.get().services();
-        if (services.isEmpty()) {
-            throw new IllegalStateException("TestConfigFactory service is not available");
-        }
-        ((TestConfigFactory.ConfigDelegate) services.getFirst().get()).config(newConfig);
-        config = newConfig;
+        this.containerHandler.startContainer();
+        this.containerHandler.setConfig();
     }
 
     @AfterSuite
     public void afterSuite() {
-        container.stop();
+        containerHandler.stopContainer();
     }
-
-    @Override
-    public boolean supportsParameter(Type type) {
-        return (type instanceof Class<?>)
-                && Config.class.isAssignableFrom((Class<?>) type);
-    }
-
-    @Override
-    public Object resolveParameter(Type type) {
-        if (Config.class.isAssignableFrom((Class<?>) type)) {
-            return config;
-        }
-        throw new IllegalArgumentException(String.format("Cannot resolve parameter Type %s", type.getTypeName()));
-    }
-
-    // Lazy initialized static instances of ServiceRegistry
-    private static final class Registry {
-        private static final ServiceRegistryManager REGISTRY_MANAGER = ServiceRegistryManager.create();
-        private static final ServiceRegistry REGISTRY = REGISTRY_MANAGER.registry();
-    }
-
 }

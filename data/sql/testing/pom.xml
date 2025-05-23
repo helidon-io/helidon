@@ -46,24 +46,24 @@
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.sql</groupId>
-            <artifactId>helidon-data-sql-common</artifactId>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>jdbc</artifactId>
+            <artifactId>testcontainers</artifactId>
         </dependency>
     </dependencies>
 

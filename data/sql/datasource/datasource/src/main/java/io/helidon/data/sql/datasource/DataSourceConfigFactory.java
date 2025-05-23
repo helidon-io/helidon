@@ -28,67 +28,28 @@ import io.helidon.service.registry.Service;
  * Data config factory.
  */
 @Service.Singleton
-@Service.Named(Service.Named.WILDCARD_NAME)
 class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfig> {
 
+    private static final String SQL_DATA_SOURCES_CONFIG_KEY = "data-sources.sql";
+
     private final Supplier<Config> config;
-    private final List<DataSourceConfig> explicitConfig;
 
     @Service.Inject
     DataSourceConfigFactory(Supplier<Config> config) {
         Objects.requireNonNull(config, "config must not be null");
         this.config = config;
-        this.explicitConfig = null;
-    }
-
-    private DataSourceConfigFactory(List<DataSourceConfig> explicitConfig) {
-        Objects.requireNonNull(explicitConfig, "explicitConfig must not be null");
-        this.config = null;
-        this.explicitConfig = explicitConfig;
-    }
-
-    /**
-     * Create a new instance with a list of configurations.
-     *
-     * @param configurations {@link javax.sql.DataSource} configs to use
-     * @return a new factory instance to registry with
-     *         {@link
-     *         io.helidon.service.registry.ServiceRegistryConfig.Builder#putServiceInstance(io.helidon.service.registry.ServiceDescriptor,
-     *         Object)}
-     */
-    public static DataSourceConfigFactory create(List<DataSourceConfig> configurations) {
-        return new DataSourceConfigFactory(configurations);
     }
 
     @Override
     public List<Service.QualifiedInstance<DataSourceConfig>> services() {
-        if (explicitConfig == null) {
-            Config dataConfig = config.get().get("data-source");
-            if (isList(dataConfig)) {
-                return fromList(dataConfig);
-            }
-            return List.of(Service.QualifiedInstance.create(DataSourceConfig.create(dataConfig)));
-        } else {
-            return explicitConfig.stream()
-                    .map(this::toQualifiedInstance)
-                    .collect(Collectors.toUnmodifiableList());
+        Config dataConfig = config.get()
+                .get(SQL_DATA_SOURCES_CONFIG_KEY);
+
+        if (dataConfig.get("provider").exists()) {
+            return List.of(mapSingleConfig(dataConfig));
         }
-    }
 
-
-    private boolean isList(Config config) {
-        if (config.isList()) {
-            return true;
-        }
-        if (config.get("provider").exists()) {
-            return false;
-        }
-        return config.get("0").exists();
-    }
-
-
-    private Service.QualifiedInstance<DataSourceConfig> toQualifiedInstance(DataSourceConfig dataConfig) {
-        return Service.QualifiedInstance.create(dataConfig, Qualifier.createNamed(dataConfig.name()));
+        return fromList(dataConfig);
     }
 
     private List<Service.QualifiedInstance<DataSourceConfig>> fromList(Config dataConfig) {
@@ -102,7 +63,7 @@ class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfi
     private Service.QualifiedInstance<DataSourceConfig> mapSingleConfig(Config config) {
         DataSourceConfig dataConfig = DataSourceConfig.create(config);
 
-        return Service.QualifiedInstance.create(DataSourceConfig.create(config), Qualifier.createNamed(dataConfig.name()));
+        return Service.QualifiedInstance.create(dataConfig, Qualifier.createNamed(dataConfig.name()));
     }
 
 }

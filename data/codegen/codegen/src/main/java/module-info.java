@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.data.codegen.DataGeneratorProvider;
+
 /**
  * Code processing and generation with Helidon Data API.
  */
@@ -25,6 +27,6 @@ module io.helidon.data.codegen {
     requires io.helidon.data.codegen.parser;
 
     provides io.helidon.data.codegen.common.spi.RepositoryGeneratorProvider
-            with io.helidon.data.codegen.HelidonDataGeneratorProvider;
+            with DataGeneratorProvider;
 
 }

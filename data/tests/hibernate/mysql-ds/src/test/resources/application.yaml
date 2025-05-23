@@ -14,17 +14,22 @@
 # limitations under the License.
 #
 
-data-source:
-  - name: "test"
-    provider.hikari:
-      username: "test"
-      password: "password"
-      url: "jdbc:mysql://localhost:3306/testdb"
+test.database:
+  username: "test"
+  password: "changeit"
+  url: "jdbc:mysql://localhost:3306/testdb"
 
-data:
-  provider.jakarta:
-    data-source: "test"
-    # Hibernate properties
-    properties:
-      hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
-      jakarta.persistence.schema-generation.database.action: drop-and-create
+data-sources:
+  sql:
+    - name: "test"
+      provider.hikari:
+        username: "${test.database.username}"
+        password: "${test.database.password}"
+        url: "${test.database.url}"
+
+persistence-units:
+  jakarta:
+    - data-source: "test"
+      # Hibernate properties
+      properties:
+        jakarta.persistence.schema-generation.database.action: "create"

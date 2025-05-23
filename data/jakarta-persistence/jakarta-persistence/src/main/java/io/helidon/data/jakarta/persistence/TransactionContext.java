@@ -72,6 +72,7 @@ final class TransactionContext {
 
     // Current thread context.
     // Contains counters to evaluate transaction methods being called and new transaction levels started.
+    @SuppressWarnings("deprecation")
     static final class Context {
 
         // Transaction methods depth counter.
