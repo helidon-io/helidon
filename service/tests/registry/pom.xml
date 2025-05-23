@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.service.tests</groupId>
         <artifactId>helidon-service-tests-project</artifactId>
-        <version>4.2.3-SNAPSHOT</version>
+        <version>4.2.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
