@@ -22,8 +22,12 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.datasource.ProviderConfig;
+import io.helidon.data.sql.datasource.TransactionIsolation;
 import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
 
+/**
+ * Hikari connection pool specific configuration for {@link javax.sql.DataSource}.
+ */
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = HikariDataSourceProviderService.PROVIDER_TYPE)
 @Prototype.Provides(DataSourceConfigProvider.class)
@@ -229,14 +233,13 @@ interface HikariDataSourceConfigBlueprint extends ConnectionConfig, ProviderConf
     Optional<String> schema();
 
     /**
-     * Set the default transaction isolation level. The specified value is the constant name
-     * from the {@link java.sql.Connection} class, e.g. {@code TRANSACTION_REPEATABLE_READ}.
+     * Set the default transaction isolation level.
      * See {@link com.zaxxer.hikari.HikariConfig#setTransactionIsolation(String)} for details.
      *
-     * @return the name of the isolation level
+     * @return the isolation level
      */
     @Option.Configured
-    Optional<String> transactionIsolation();
+    Optional<TransactionIsolation> transactionIsolation();
 
     /**
      * Sets the maximum number of milliseconds that the pool will wait for a connection to be validated as alive.

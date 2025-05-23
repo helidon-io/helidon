@@ -30,8 +30,8 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 
-import static io.helidon.data.codegen.common.HelidonDataTypes.PAGE;
-import static io.helidon.data.codegen.common.HelidonDataTypes.SLICE;
+import static io.helidon.data.codegen.common.DataCommonCodegenTypes.PAGE;
+import static io.helidon.data.codegen.common.DataCommonCodegenTypes.SLICE;
 
 /**
  * Data repository interface code generator base class for methods generators.

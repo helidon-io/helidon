@@ -735,6 +735,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
+                <artifactId>helidon-data-sql-datasource-jdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource-ucp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

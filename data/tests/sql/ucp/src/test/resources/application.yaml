@@ -14,11 +14,16 @@
 # limitations under the License.
 #
 
-data-source:
-  # Separate config
-  - name: "test"
-    provider.ucp:
-      # DataSource config
-      username: "system"
-      password: "oracle123"
-      url: "jdbc:oracle:thin:@localhost:1521/FREE"
+test.database:
+  username: "system"
+  password: "oracle123"
+  url: "jdbc:oracle:thin:@localhost:1521/FREE"
+
+data-sources:
+  sql:
+    - name: "test"
+      provider.ucp:
+        # DataSource config
+        username: "${test.database.username}"
+        password: "${test.database.password}"
+        url: "${test.database.url}"
