@@ -147,7 +147,7 @@ public final class RestClient {
     @Documented
     public @interface Headers {
         /**
-         * Headers to add o request.
+         * Headers to add to request.
          *
          * @return headers
          */
@@ -183,7 +183,7 @@ public final class RestClient {
     @Documented
     public @interface ComputedHeaders {
         /**
-         * Headers to add o request.
+         * Headers to add to request.
          *
          * @return headers
          */

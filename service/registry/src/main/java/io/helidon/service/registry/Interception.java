@@ -154,7 +154,8 @@ public final class Interception {
      * resources after the request finishes.
      * <p>
      * Important note: entry point interceptors only trigger for entry points fully managed by Helidon, such as when
-     * using Helidon Declarative. This is not triggered when using injection "just" to set up the application.
+     * using Helidon Declarative. This is not triggered when using injection without declarative endpoint (i.e. when setting
+     * up WebServer using routing imperatively).
      *
      * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
      *               and full removal. We welcome feedback for incubating features.

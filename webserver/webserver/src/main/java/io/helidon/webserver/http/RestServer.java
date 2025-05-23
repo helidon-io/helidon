@@ -79,7 +79,7 @@ public final class RestServer {
     @Documented
     public @interface Headers {
         /**
-         * Headers to add o request.
+         * Headers to add to request.
          *
          * @return headers
          */
@@ -115,7 +115,7 @@ public final class RestServer {
     @Documented
     public @interface ComputedHeaders {
         /**
-         * Headers to add o request.
+         * Headers to add to request.
          *
          * @return headers
          */
