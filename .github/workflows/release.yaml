@@ -120,6 +120,7 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-22.04
     name: resolve-all
+    environment: release
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,6 +143,7 @@ jobs:
   smoketest:
     needs: [ create-tag, deploy ]
     timeout-minutes: 30
+    environment: release
     strategy:
       matrix:
         archetype:
@@ -153,9 +155,6 @@ jobs:
           - database-mp
     runs-on: ubuntu-22.04
     name: smoketest/${{ matrix.archetype }}
-    env:
-      CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
-      CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
