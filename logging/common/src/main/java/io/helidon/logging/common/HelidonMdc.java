@@ -32,9 +32,9 @@ import io.helidon.logging.common.spi.MdcProvider;
  * Helidon permits adding MDC entries using {@code Supplier<String>} values as well as direct {@code String} values.
  * Although some logging implementations provide their own context maps (for example {@code ThreadContext} in Log4J and
  * {@code MDC} in SLF4J), they map MDC keys to {@code String} values, not to arbitrary objects that would accommodate
- * {@code Supplier<String>}. Therefore, Helidon manages its own map of key/supplier pairs and resolves all lookups using that map.
- * <p>
- * Helidon also propagates key/string pair assignments to the logging implementations' context maps.
+ * {@code Supplier<String>}. Therefore, Helidon not only propagates every {@code set} operation to the loaded MDC providers,
+ * but also manages its own map of key/supplier pairs. Helidon resolves each lookup using that map
+ * if possible, delegating a look-up to the loaded MDC providers only if there is no supplier for a key.
  */
 public class HelidonMdc {
 
