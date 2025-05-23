@@ -120,18 +120,20 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-22.04
     name: resolve-all
-    env:
-      CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
-      CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/central-settings.sh --dir=.
       - uses: ./.github/actions/common
         with:
           run: |
-            ./etc/scripts/central-settings.sh --dir=. |
             mvn ${MVN_ARGS} -N \
               -s settings.xml
               -Pcentral.manual.testing \
@@ -159,6 +161,12 @@ jobs:
         with:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/central-settings.sh --dir=.
       - uses: ./.github/actions/common
         with:
           run: |

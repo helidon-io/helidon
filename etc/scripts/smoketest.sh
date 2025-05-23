@@ -243,9 +243,12 @@ readonly LOG_FILE
 
 mkdir -p "${WORK_DIR}"
 
-"${WS_DIR}/etc/scripts/central-settings.sh" --dir="${WORK_DIR}"
-
-MVN_ARGS="${MVN_ARGS} -s ${WORK_DIR}/settings.xml"
+if [ -f "${WS_DIR}/settings.xml" ]; then
+    MVN_ARGS="${MVN_ARGS} -s ${WS_DIR}/settings.xml"
+    printf "INFO: using %s\n" "${WS_DIR}/settings.xml"
+else
+    printf "WARNING: %s does not exist. Assuming default settings.xml\n" "${WS_DIR}/settings.xml"
+fi
 
 exec 1>> >(tee  "${LOG_FILE}")
 exec 2>> >(tee  "${LOG_FILE}")
