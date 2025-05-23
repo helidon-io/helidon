@@ -117,6 +117,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestMdc.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -128,6 +129,17 @@
                         <configuration>
                             <includes>
                                 <include>**/TestGlobalTracerAssignment.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mdc-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestMdc.java</include>
                             </includes>
                         </configuration>
                     </execution>

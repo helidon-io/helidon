@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.logging.common.HelidonMdc;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**
@@ -52,6 +53,17 @@ final class TracerProviderHelper {
         }
 
         TRACER_PROVIDER = provider == null ? new NoOpTracerProvider() : provider;
+
+        /*
+        To obtain the current span, the Helidon tracing providers delegate to the underlying implementations.
+        Therefore we can centrally set up MDC support for the trace ID here, using the neutral API, and still correctly
+        retrieve the current trace ID for logging even if the user's code has used the underlying tracing library directly to
+        activate a span.
+         */
+        HelidonMdc.set("trace_id", () -> currentSpan()
+                .map(Span::context)
+                .map(SpanContext::traceId)
+                .orElse("none"));
     }
 
     private TracerProviderHelper() {
