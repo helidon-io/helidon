@@ -18,6 +18,7 @@ package io.helidon.logging.common;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -106,7 +107,16 @@ public class HelidonMdc {
      * @return found value bound to key
      */
     public static Optional<String> get(String key) {
-        return SUPPLIERS.get().containsKey(key) ? Optional.of(SUPPLIERS.get().get(key).get()) : Optional.empty();
+        /*
+        User or 3rd-party code might have added values directly to the logger's own context store. So look in other
+        providers if our data structure cannot resolve the key.
+         */
+        return SUPPLIERS.get().containsKey(key)
+                ? Optional.of(SUPPLIERS.get().get(key).get())
+                : MDC_PROVIDERS.stream()
+                        .map(provider -> provider.get(key))
+                        .filter(Objects::nonNull)
+                        .findFirst();
     }
 
     static Map<String, Supplier<String>> suppliers() {
