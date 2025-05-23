@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,4 +201,46 @@ class KeyConfigTest {
         assertThat(conf.publicCert(), is(Optional.empty()));
         assertThat("Cert chain must be empty", conf.certChain(), is(List.of()));
     }
+
+
+    @Test
+    void testTrustStoreCreationInMemoryWithoutPrivateKey() {
+        Keys keystoreWithPrivateKey = Keys.create(config.get("unit-6-1"));
+
+        Keys trustStore = Keys.builder()
+                .keystore(keystore -> keystore
+                        .trustStore(true)
+                         // this two lines below are not neccessery
+                         // currently KeystoreKeys.BuilderBase.validatePrototype requires keystore
+                         // but with trustStore Resource shouldn't be required
+                         .keystore(Resource.create("keystore/keystore.p12"))
+                         .passphrase("password".toCharArray()))
+		.addCerts(keystoreWithPrivateKey.certs())
+                .build();
+
+       assertThat(trustStore.privateKey(), is(Optional.empty()));
+       assertThat(trustStore.publicKey(), is(Optional.empty()));
+       assertThat(trustStore.certChain().size(), is(0)); // trustStore shouldn't contain private key and its certChain
+       assertThat(trustStore.publicCert(), is(Optional.empty()));
+       assertThat(trustStore.certs().size(), is(1));
+    }
+
+    @Test
+    void testTrustStoreCreationFromKeystore() {
+
+       Keys trustStore = Keys.builder()
+                .keystore(keystore -> keystore
+                       .trustStore(true)
+                       .keystore(Resource.create("keystore/keystore.p12"))
+                       .passphrase("password".toCharArray()))
+               .build();
+
+      assertThat(trustStore.privateKey(), is(Optional.empty()));
+      assertThat(trustStore.publicKey(), is(Optional.empty()));
+      assertThat(trustStore.certChain().size(), is(0)); // trustStore shouldn't contain private key and its certChain
+      assertThat(trustStore.publicCert(), is(Optional.empty()));
+      assertThat(trustStore.certs().size(), is(1));
+   }
+
+
 }
