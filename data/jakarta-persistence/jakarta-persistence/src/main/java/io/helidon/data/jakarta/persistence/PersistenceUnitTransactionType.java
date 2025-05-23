@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jakarta.persistence;
 
+import io.helidon.data.DataException;
+
 /**
  * Temporary replacement of Jakarta Persistence 3.2 {@code PersistenceUnitTransactionType} class
  * while Helidon depends on Jakarta Persistence 3.1.
@@ -27,11 +29,32 @@ public enum PersistenceUnitTransactionType {
     /**
      * Transaction management via JTA.
      */
-    JTA,
+    JTA("jta", jakarta.persistence.spi.PersistenceUnitTransactionType.JTA),
 
     /**
      * Resource-local transaction management.
      */
-    RESOURCE_LOCAL
+    RESOURCE_LOCAL("resource-local", jakarta.persistence.spi.PersistenceUnitTransactionType.RESOURCE_LOCAL);
 
+    private final String transactionType;
+    private final jakarta.persistence.spi.PersistenceUnitTransactionType jpaType;
+
+    PersistenceUnitTransactionType(String transactionType, jakarta.persistence.spi.PersistenceUnitTransactionType jpaType) {
+        this.transactionType = transactionType;
+        this.jpaType = jpaType;
+    }
+
+    static PersistenceUnitTransactionType parse(String type) {
+        for (PersistenceUnitTransactionType value : PersistenceUnitTransactionType.values()) {
+            if (value.transactionType.equals(type)) {
+                return value;
+            }
+        }
+        throw new DataException("Unsupported transaction type available. Expected one of "
+                                        + "[jta, resource-local], but got: " + type);
+    }
+
+    jakarta.persistence.spi.PersistenceUnitTransactionType jpaType() {
+        return jpaType;
+    }
 }

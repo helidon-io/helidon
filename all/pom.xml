@@ -542,6 +542,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.data.sql.datasource</groupId>
+            <artifactId>helidon-data-sql-datasource-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.sql.datasource</groupId>
             <artifactId>helidon-data-sql-datasource-ucp</artifactId>
         </dependency>
         <dependency>

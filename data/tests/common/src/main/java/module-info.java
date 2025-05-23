@@ -25,9 +25,8 @@ module io.helidon.data.tests.common {
     requires io.helidon.data;
     requires io.helidon.data.tests.model;
     requires io.helidon.data.tests.repository;
-    requires io.helidon.data.tests.application;
-    requires io.helidon.data.jakarta.persistence;
     requires io.helidon.service.registry;
+    requires jakarta.persistence;
 
     exports io.helidon.data.tests.common;
 
