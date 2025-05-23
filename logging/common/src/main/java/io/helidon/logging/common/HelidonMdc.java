@@ -54,7 +54,6 @@ public class HelidonMdc {
      * @param value entry value
      */
     public static void set(String key, String value) {
-        SUPPLIERS.get().put(key, value::toString);
         MDC_PROVIDERS.forEach(provider -> provider.put(key, value));
     }
 
