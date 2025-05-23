@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 
 import static io.helidon.config.PollingStrategies.regular;
@@ -64,13 +65,16 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         String testMethodName = testInfo.getTestMethod()
                 .map(Method::getName)
                 .orElse(this.getClass().getName());
-        /* Hack to let us re-use setup from jgit 6's LocalDiskRepositoryTestCase */
+
+        /* Hacks to let us re-use setup from jgit 7's LocalDiskRepositoryTestCase */
         super.currentTest = new TestName() {
             @Override
             public String getMethodName() {
                 return testMethodName;
             }
         };
+        super.testRoot.create();
+        /* end of hacks */
 
         super.setUp();
 
