@@ -69,6 +69,19 @@ public class HelidonMdc {
     }
 
     /**
+     * Sets a value supplier <em>without</em> immediately getting the value and propagating the value to
+     * underlying logging implementations.
+     * <p>
+     * Normally, user code should use {@link #set(String, java.util.function.Supplier)} instead.
+     *
+     * @param key entry key
+     * @param valueSupplier  supplier of the entry value
+     */
+    public static void setDeferred(String key, Supplier<String> valueSupplier) {
+        SUPPLIERS.get().put(key, valueSupplier);
+    }
+
+    /**
      * Remove value with the specific key from all of the instances of {@link MdcProvider}.
      *
      * @param key key

@@ -60,7 +60,7 @@ final class TracerProviderHelper {
         retrieve the current trace ID for logging even if the user's code has used the underlying tracing library directly to
         activate a span.
          */
-        HelidonMdc.set("trace_id", () -> currentSpan()
+        HelidonMdc.setDeferred("trace_id", () -> currentSpan()
                 .map(Span::context)
                 .map(SpanContext::traceId)
                 .orElse("none"));
