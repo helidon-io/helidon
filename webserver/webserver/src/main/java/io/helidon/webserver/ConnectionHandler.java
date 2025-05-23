@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.io.UncheckedIOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -183,6 +184,13 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof SocketException) {
+                // socket exception - the socket failed, probably killed by OS, proxy or client
+                helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+            } else {
+                helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
+            }
         } catch (Exception e) {
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {

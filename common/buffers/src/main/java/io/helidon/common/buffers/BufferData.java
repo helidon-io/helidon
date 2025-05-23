@@ -651,4 +651,20 @@ public interface BufferData {
         read(bytes);
         return bytes;
     }
+
+    /**
+     * Converts this buffer into an {@link java.io.InputStream} that reads
+     * all available bytes from the buffer. This method never resets
+     * or rewinds the buffer.
+     *
+     * @return an input stream backed by this buffer
+     */
+    default InputStream asInputStream() {
+        return new InputStream() {
+            @Override
+            public int read() {
+                return BufferData.this.available() > 0 ? BufferData.this.read() : -1;
+            }
+        };
+    }
 }
