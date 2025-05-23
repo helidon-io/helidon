@@ -26,6 +26,7 @@ import io.helidon.data.EntityNotFoundException;
 import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.OptimisticLockException;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.spi.TxSupport;
@@ -34,12 +35,14 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceException;
 
-import static io.helidon.data.jakarta.persistence.JpaExtensionImpl.TRANSACTION_TYPE;
+import static io.helidon.data.jakarta.persistence.PersistenceUnitFactory.TRANSACTION_TYPE;
 
 /**
  * Jakarta Persistence specific repository tasks executor.
  */
 @SuppressWarnings("deprecation")
+@Service.Singleton
+@Service.PerInstance(EntityManagerFactory.class)
 class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
     private static final Logger LOGGER = System.getLogger(JpaRepositoryExecutorImpl.class.getName());
@@ -62,6 +65,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     private final EntityManagerFactory factory;
     private final PersistenceUnitTransactionType transactionType;
 
+    @Service.Inject
     JpaRepositoryExecutorImpl(EntityManagerFactory factory) {
         this.factory = factory;
         if (factory.getProperties().containsKey(TRANSACTION_TYPE)) {
@@ -167,18 +171,18 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         // PersistenceException mapping
         private static void handlePersistenceException(PersistenceException pe) throws DataException {
             switch (pe) {
-                case jakarta.persistence.EntityExistsException ex:
-                    throw new EntityExistsException("Entity already exists.", ex);
-                case jakarta.persistence.EntityNotFoundException ex:
-                    throw new EntityNotFoundException("Entity was not found.", ex);
-                case jakarta.persistence.NoResultException ex:
-                    throw new NoResultException("Query returned no result.", ex);
-                case jakarta.persistence.NonUniqueResultException ex:
-                    throw new NonUniqueResultException("Query returned multiple result.", ex);
-                case jakarta.persistence.OptimisticLockException ex:
-                    throw new OptimisticLockException("Optimistic locking conflict.", ex);
-                default:
-                    throw new DataException("Persistence session task failed.", pe);
+            case jakarta.persistence.EntityExistsException ex:
+                throw new EntityExistsException("Entity already exists.", ex);
+            case jakarta.persistence.EntityNotFoundException ex:
+                throw new EntityNotFoundException("Entity was not found.", ex);
+            case jakarta.persistence.NoResultException ex:
+                throw new NoResultException("Query returned no result.", ex);
+            case jakarta.persistence.NonUniqueResultException ex:
+                throw new NonUniqueResultException("Query returned multiple result.", ex);
+            case jakarta.persistence.OptimisticLockException ex:
+                throw new OptimisticLockException("Optimistic locking conflict.", ex);
+            default:
+                throw new DataException("Persistence session task failed.", pe);
             }
         }
     }
@@ -229,7 +233,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 em.joinTransaction();
                 return call(executor, em, task);
             });
-       }
+        }
 
         @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
@@ -244,6 +248,10 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             });
         }
 
+        private static TxSupport initJtaTxSupport() {
+            return Services.first(TxSupport.class).orElse(null);
+        }
+
         // PERF: This check is being run with every task execution but doing it in constructor will crash
         //       the whole application with RESOURCE_LOCAL TxSupport
         // This must be done better after RESOURCE_LOCAL code is rewritten.
@@ -252,10 +260,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
                                                       txSupport.type()));
             }
-        }
-
-        private static TxSupport initJtaTxSupport() {
-            return Services.first(TxSupport.class).orElse(null);
         }
 
     }
@@ -293,6 +297,10 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             });
         }
 
+        private static TxSupport initJtaTxSupport() {
+            return Services.first(TxSupport.class).orElse(null);
+        }
+
         // PERF: This check is being run with every task execution but doing it in constructor will crash
         //       the whole application with RESOURCE_LOCAL TxSupport
         // This must be done better after RESOURCE_LOCAL code is rewritten.
@@ -301,10 +309,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
                                                       txSupport.type()));
             }
-        }
-
-        private static TxSupport initJtaTxSupport() {
-            return Services.first(TxSupport.class).orElse(null);
         }
 
     }

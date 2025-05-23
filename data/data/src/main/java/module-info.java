@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.Incubating;
+import io.helidon.common.features.api.Features;
 
 /**
  * Helidon Data Repository Runtime.
  */
-@Feature(value = "Data",
-         since = "4.3.0",
-         path = "Data",
-         description = "Helidon Data - repository pattern")
-@Incubating
+@Features.Name("Data")
+@Features.Since("4.3.0")
+@Features.Path("Data")
+@Features.Description("Helidon Data - repository pattern")
+@Features.Incubating
 module io.helidon.data {
 
     requires static io.helidon.common.features.api;
@@ -35,11 +34,4 @@ module io.helidon.data {
     requires transitive io.helidon.common.config;
 
     exports io.helidon.data;
-    exports io.helidon.data.spi;
-
-    uses io.helidon.data.spi.DataProvider;
-    uses io.helidon.data.spi.ProviderConfigProvider;
-
-    provides io.helidon.data.spi.DataProvider
-            with io.helidon.data.HelidonDataProvider;
 }

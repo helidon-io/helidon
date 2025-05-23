@@ -23,6 +23,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.datasource.ProviderConfig;
+import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
 
 /**
  * UCP specific configuration for {@link javax.sql.DataSource}.
@@ -34,7 +35,8 @@ import io.helidon.data.sql.datasource.ProviderConfig;
  * <p>Oracle Database 23ai compliant config.
  */
 @Prototype.Blueprint
-@Prototype.Configured(root = false)
+@Prototype.Configured(root = false, value = UcpDataSourceProviderService.PROVIDER_TYPE)
+@Prototype.Provides(DataSourceConfigProvider.class)
 interface UcpDataSourceConfigBlueprint extends ConnectionConfig, ProviderConfig {
 
     /**

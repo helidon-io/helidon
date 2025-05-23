@@ -15,138 +15,65 @@
  */
 package io.helidon.data.tests.eclipselink.ucp;
 
-import java.lang.reflect.Type;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.DataConfig;
-import io.helidon.data.DataRegistry;
-import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.TestConfigFactory;
+import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
-import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
 import io.helidon.testing.junit5.suite.Suite;
-import io.helidon.testing.junit5.suite.SuiteResolver;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Oracle DB suite.
  */
-public class OraDbSuite implements SuiteProvider, SuiteResolver {
-
+public class OraDbSuite implements SuiteProvider {
     private static final System.Logger LOGGER = System.getLogger(OraDbSuite.class.getName());
-
     private static final DockerImageName IMAGE = DockerImageName.parse(
             "container-registry.oracle.com/database/free");
-    private static final String CONFIG_FILE = "application.yaml";
-    private static final String URL_NODE = "data-source.0.provider.ucp.url";
-    private static final int DB_PORT = 1521;
 
-    @Container
-    private final GenericContainer<?> container;
-    private Config config;
-    private DataRegistry data;
-    private PokemonRepository pokemonRepository;
+    private final TestContainerHandler containerHandler;
 
     public OraDbSuite() {
-        config = Config.just(ConfigSources.classpath(CONFIG_FILE));
-        container = new GenericContainer<>(IMAGE);
-        Config dsConfig = config.get("data-source");
-        if (dsConfig.exists()) {
-            Config dsConfig1 = dsConfig.get("0");
-            if (dsConfig1.exists()) {
-                Config poolConfig = dsConfig1.get("provider.ucp");
-                ConnectionConfig connectionConfig = ConnectionConfig.create(poolConfig);
-                connectionConfig.password()
-                        .ifPresent(password -> container.withEnv("ORACLE_PWD", new String(password)));
-                container.withExposedPorts(DB_PORT)
-                        .waitingFor(Wait.forHealthcheck()
-                                            .withStartupTimeout(Duration.ofMinutes(5)));
-            }
-        }
+        GenericContainer<?> container = new GenericContainer<>(IMAGE);
+        this.containerHandler = SqlTestContainerConfig.configureContainer(container,
+                                                                          ConfigSources.classpath("application.yaml"));
+
+        this.containerHandler.config()
+                .get("test.database.password")
+                .asString()
+                .ifPresent(password -> container.withEnv("ORACLE_PWD", password));
+
+        container.withExposedPorts(this.containerHandler.originalPort())
+                .waitingFor(Wait.forHealthcheck()
+                                    .withStartupTimeout(Duration.ofMinutes(5)));
     }
 
     @BeforeSuite
     public void beforeSuite() {
-        container.start();
-        String oldUrl = config.get(URL_NODE).as(String.class).get();
-        String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(DB_PORT));
-        Map<String, String> updatedNodes = new HashMap<>(1);
-        updatedNodes.put(URL_NODE, url);
-        Config newConfig = Config.create(ConfigSources.create(updatedNodes), ConfigSources.create(config));
-        Supplier<TestConfigFactory> configProvider = Registry.REGISTRY.supply(TestConfigFactory.class);
-        List<Service.QualifiedInstance<io.helidon.common.config.Config>> services = configProvider.get().services();
-        if (services.isEmpty()) {
-            throw new IllegalStateException("TestConfigFactory service is not available");
-        }
-        ((TestConfigFactory.ConfigDelegate) services.getFirst().get()).config(newConfig);
-        config = newConfig;
-        data = DataRegistry.create(config.get("data"));
-        pokemonRepository = data.repository(PokemonRepository.class);
+        this.containerHandler.startContainer();
+        this.containerHandler.setConfig();
+
+        PokemonRepository pokemonRepository = Services.get(PokemonRepository.class);
         // Initialize database content
         pokemonRepository.run(InitialData::init);
     }
 
     @AfterSuite
     public void afterSuite() {
-        try {
-            data.close();
-        } catch (Exception e) {
-            LOGGER.log(System.Logger.Level.WARNING, () -> String.format("Could not close Helidon Data: %s", e.getMessage()));
-        }
-        container.stop();
-    }
-
-    @Override
-    public boolean supportsParameter(Type type) {
-        return (type instanceof Class<?> cls)
-                && (
-                Config.class.isAssignableFrom(cls)
-                        || DataConfig.class.isAssignableFrom(cls)
-                        || DataRegistry.class.isAssignableFrom(cls)
-                        || PokemonRepository.class.isAssignableFrom(cls));
-    }
-
-    @Override
-    public Object resolveParameter(Type type) {
-        if (type instanceof Class<?> cls) {
-            if (Config.class.isAssignableFrom(cls)) {
-                return config;
-            } else if (DataConfig.class.isAssignableFrom(cls)) {
-                return data.dataConfig();
-            } else if (DataRegistry.class.isAssignableFrom(cls)) {
-                return data;
-            } else if (PokemonRepository.class.isAssignableFrom(cls)) {
-                return pokemonRepository;
-            }
-        }
-        throw new IllegalArgumentException(String.format("Cannot resolve parameter Type %s", type.getTypeName()));
-    }
-
-    // Lazy initialized static instances of ServiceRegistry
-    private static final class Registry {
-        private static final ServiceRegistryManager REGISTRY_MANAGER = ServiceRegistryManager.create();
-        private static final ServiceRegistry REGISTRY = REGISTRY_MANAGER.registry();
+        containerHandler.stopContainer();
     }
 
     @Suite(OraDbSuite.class)
