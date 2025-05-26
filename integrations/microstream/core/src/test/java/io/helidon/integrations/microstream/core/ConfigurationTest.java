@@ -26,6 +26,8 @@ import io.helidon.config.ConfigSources;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -33,6 +35,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.text.StringContainsInOrder.stringContainsInOrder;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@DisabledOnJre(
+        value = JRE.OTHER,
+        disabledReason = "https://github.com/helidon-io/helidon/issues/10152")
 class ConfigurationTest {
 
     @TempDir

@@ -26,8 +26,13 @@ import io.helidon.config.ConfigSources;
 import one.microstream.cache.types.Cache;
 import one.microstream.cache.types.CacheConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.io.TempDir;
 
+@DisabledOnJre(
+        value = JRE.OTHER,
+        disabledReason = "https://github.com/helidon-io/helidon/issues/10152")
 class CacheTest {
 
     @TempDir

@@ -25,6 +25,8 @@ import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,6 +34,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
+@DisabledOnJre(
+        value = JRE.OTHER,
+        disabledReason = "https://github.com/helidon-io/helidon/issues/10152")
 class MicrostreamExtensionTest {
 
     @TempDir
