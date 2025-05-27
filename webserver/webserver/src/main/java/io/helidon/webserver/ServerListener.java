@@ -238,10 +238,9 @@ class ServerListener implements ListenerContext {
         try {
             // Stop listening for connections
             serverSocket.close();
-            if (!shutdownExecutors) {
-                // Close all active connections
-                activeConnections().forEach(connection -> connection.close(true));
-            } else {
+            // Stop handling any new requests on all active connections
+            activeConnections().forEach(connection -> connection.close(false));
+            if (shutdownExecutors) {
                 // Shutdown reader executor
                 readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
                 if (!readerExecutor.isTerminated()) {
@@ -263,6 +262,8 @@ class ServerListener implements ListenerContext {
                     // falls through
                 }
             }
+            // Interrupt and close any active connections
+            activeConnections().forEach(connection -> connection.close(true));
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
