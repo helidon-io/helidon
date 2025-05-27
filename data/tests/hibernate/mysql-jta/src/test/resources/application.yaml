@@ -19,17 +19,17 @@ test.database:
   password: "changeit"
   url: "jdbc:mysql://localhost:3306/testdb"
 
-data-sources:
-  sql:
-    - name: "test"
-      provider.hikari:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
-
-persistence-units:
-  jakarta:
-    - data-source: "test"
-      # Hibernate properties
-      properties:
-          jakarta.persistence.schema-generation.database.action: "create"
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.hikari:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
+        # Hibernate properties
+        properties:
+            jakarta.persistence.schema-generation.database.action: "create"
