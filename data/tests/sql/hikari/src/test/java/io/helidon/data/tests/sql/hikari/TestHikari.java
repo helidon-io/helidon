@@ -41,16 +41,16 @@ class TestHikari {
     @Test
     void testDataSourceConfig(Config config) {
         assertThat(config.exists(), is(true));
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-sources.sql.0"));
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data.sources.sql.0"));
         HikariDataSourceConfig hikariDataSourceConfig = (HikariDataSourceConfig) dataSourceConfig.provider();
         assertThat(hikariDataSourceConfig.username().isPresent(), is(true));
         assertThat(hikariDataSourceConfig.username().get(),
-                   is(config.get("data-sources.sql.0.provider.hikari.username").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.hikari.username").as(String.class).get()));
         assertThat(hikariDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(hikariDataSourceConfig.password().get()),
-                   is(config.get("data-sources.sql.0.provider.hikari.password").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.hikari.password").as(String.class).get()));
         assertThat(hikariDataSourceConfig.url(),
-                   is(config.get("data-sources.sql.0.provider.hikari.url").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.hikari.url").as(String.class).get()));
     }
 
     @Test
