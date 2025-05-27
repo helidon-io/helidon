@@ -74,6 +74,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 return testMethodName;
             }
         };
+        super.testRoot.create();
 
         super.setUp();
 
