@@ -21,30 +21,29 @@ test.database:
   password: "changeit"
   url: "jdbc:mysql://localhost:3306/testdb"
 
-data-sources:
-  sql:
-    - name: "test"
-      provider.hikari:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.hikari:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
 # Another DataSource to be tested with CDI modules, does not work
-#  - name: "cditest"
-#    provider.hikari:
-#      username: "test"
-#      password: "password"
-#      url: "jdbc:mysql://localhost:3306/testdb"
+#    - name: "cditest"
+#      provider.hikari:
+#        username: "test"
+#        password: "password"
+#        url: "jdbc:mysql://localhost:3306/testdb"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
+        # EclipseLink properties
+        properties:
+          hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
+          jakarta.persistence.schema-generation.database.action: "create"
 
-persistence-units:
-  jakarta:
-    - data-source: "test"
-      # EclipseLink properties
-      properties:
-        hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
-        jakarta.persistence.schema-generation.database.action: "create"
-
-  # MP configuration
-
+# MP configuration
 javax.sql.DataSource.cditest:
   dataSourceClassName: "com.mysql.cj.jdbc.MysqlDataSource"
   dataSource:
