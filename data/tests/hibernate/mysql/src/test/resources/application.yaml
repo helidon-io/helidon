@@ -19,13 +19,14 @@ test.database:
   password: "changeit"
   url: "jdbc:mysql://localhost:3306/testdb"
 
-persistence-units:
-  jakarta:
-    - connection:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
-        jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
-      # Hibernate properties
-      properties:
-        jakarta.persistence.schema-generation.database.action: "create"
+data:
+  persistence-units:
+    jakarta:
+      - connection:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+        # Hibernate properties
+        properties:
+          jakarta.persistence.schema-generation.database.action: "create"
