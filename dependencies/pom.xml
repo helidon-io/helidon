@@ -94,7 +94,7 @@
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.10</version.lib.jersey>
-        <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
+        <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.8.1</version.lib.kafka>
