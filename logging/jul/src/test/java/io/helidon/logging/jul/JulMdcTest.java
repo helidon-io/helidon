@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ public class JulMdcTest {
 
     private static final String TEST_KEY = "test";
     private static final String TEST_VALUE = "value";
+    private static final String TEST_SUPPLIED_KEY = "supplied_test";
+    private static final String TEST_SUPPLIED_VALUE = "supplied_value";
 
     @Test
     public void testMdc() {
@@ -54,19 +56,22 @@ public class JulMdcTest {
             LogConfig.initClass();
             OUTPUT_STREAM.reset();
             HelidonMdc.set(TEST_KEY, TEST_VALUE);
+            HelidonMdc.set(TEST_SUPPLIED_KEY, () -> TEST_SUPPLIED_VALUE);
             String message = "This is test logging message";
             String thread = Thread.currentThread().toString();
             String logMessage = logMessage(message);
-            assertThat(logMessage, endsWith(thread + ": " + message + " " + TEST_VALUE + System.lineSeparator()));
+            assertThat(logMessage, endsWith(thread + ": " + message + " " + TEST_VALUE + " " + TEST_SUPPLIED_VALUE + System.lineSeparator()));
 
             HelidonMdc.remove(TEST_KEY);
+            HelidonMdc.remove(TEST_SUPPLIED_KEY);
             logMessage = logMessage(message);
-            assertThat(logMessage, endsWith(thread + ": " + message + " " + System.lineSeparator()));
+            assertThat(logMessage, endsWith(thread + ": " + message + " " + " " + System.lineSeparator()));
 
             HelidonMdc.set(TEST_KEY, TEST_VALUE);
+            HelidonMdc.set(TEST_SUPPLIED_KEY, () -> TEST_SUPPLIED_VALUE);
             HelidonMdc.clear();
             logMessage = logMessage(message);
-            assertThat(logMessage, endsWith(thread + ": " + message + " " + System.lineSeparator()));
+            assertThat(logMessage, endsWith(thread + ": " + message + " " + " " + System.lineSeparator()));
         } finally {
             System.setOut(original);
         }
@@ -84,13 +89,14 @@ public class JulMdcTest {
     @Test
     public void testThreadPropagationWithContext() {
         HelidonMdc.set(TEST_KEY, TEST_VALUE);
+        HelidonMdc.set(TEST_SUPPLIED_KEY, () -> TEST_SUPPLIED_VALUE);
         Context context = Context.create();
         ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         Contexts.runInContext(context, () -> {
             try {
                 String value = executor.submit(new TestCallable()).get();
-                assertThat(value, is(TEST_VALUE));
+                assertThat(value, is(TEST_VALUE + "/" + TEST_SUPPLIED_VALUE));
             } catch (Exception e) {
                 throw new ExecutorException("failed to execute", e);
             }
@@ -100,11 +106,12 @@ public class JulMdcTest {
     @Test
     public void testThreadPropagationWithoutContext() {
         HelidonMdc.set(TEST_KEY, TEST_VALUE);
+        HelidonMdc.set(TEST_SUPPLIED_KEY, () -> TEST_SUPPLIED_VALUE);
         ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         try {
             String value = executor.submit(new TestCallable()).get();
-            assertThat(value, is(TEST_VALUE));
+            assertThat(value, is(TEST_VALUE + "/" + TEST_SUPPLIED_VALUE));
         } catch (Exception e) {
             throw new ExecutorException("failed to execute", e);
         }
@@ -114,7 +121,7 @@ public class JulMdcTest {
 
         @Override
         public String call() {
-            return JulMdc.get(TEST_KEY);
+            return JulMdc.get(TEST_KEY) + "/" + JulMdc.get(TEST_SUPPLIED_KEY);
         }
     }
 
