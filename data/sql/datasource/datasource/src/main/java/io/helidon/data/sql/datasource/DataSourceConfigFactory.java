@@ -30,7 +30,7 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfig> {
 
-    private static final String SQL_DATA_SOURCES_CONFIG_KEY = "data-sources.sql";
+    private static final String SQL_DATA_SOURCES_CONFIG_KEY = "data.sources.sql";
 
     private final Supplier<Config> config;
 

@@ -43,16 +43,16 @@ class TestUcp {
     @Test
     void testDataSourceConfig(Config config) {
         assertThat(config.exists(), is(true));
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data-sources.sql.0"));
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config.get("data.sources.sql.0"));
         UcpDataSourceConfig ucpDataSourceConfig = (UcpDataSourceConfig) dataSourceConfig.provider();
         assertThat(ucpDataSourceConfig.username().isPresent(), is(true));
         assertThat(ucpDataSourceConfig.username().get(),
-                   is(config.get("data-sources.sql.0.provider.ucp.username").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.ucp.username").as(String.class).get()));
         assertThat(ucpDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(ucpDataSourceConfig.password().get()),
-                   is(config.get("data-sources.sql.0.provider.ucp.password").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.ucp.password").as(String.class).get()));
         assertThat(ucpDataSourceConfig.url(),
-                   is(config.get("data-sources.sql.0.provider.ucp.url").as(String.class).get()));
+                   is(config.get("data.sources.sql.0.provider.ucp.url").as(String.class).get()));
     }
 
     @Test
