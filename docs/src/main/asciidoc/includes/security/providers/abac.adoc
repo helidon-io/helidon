@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ Annotations: `@RolesAllowed`, `@RoleValidator.Roles`
 ----
 security:
   web-server.paths:
-    - path: "/user[/{*}]"
+    - path: "/user/*"
       roles-allowed: ["user"]
 ----
 
@@ -161,7 +161,7 @@ Annotations: `@Scope`
 ----
 security:
   web-server.paths:
-    - path: "/user[/{*}]"
+    - path: "/user/*"
       abac.scopes:
         ["calendar_read", "calendar_edit"]
 ----
@@ -186,7 +186,7 @@ Example of a policy statement: `${env.time.year >= 2017}`
 ----
 security:
   web-server.paths:
-    - path: "/user[/{*}]"
+    - path: "/user/*"
       policy:
         statement: "hasScopes('calendar_read','calendar_edit') AND timeOfDayBetween('8:15', '17:30')"
 ----

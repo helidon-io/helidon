@@ -33,6 +33,83 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class PathMatchersTest {
     @Test
+    void testUnnamedSegment() {
+        // as in documentation
+        // * `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
+        String pattern = "/foo/{+}";
+
+        PathMatcher matcher = PathMatchers.create(pattern);
+
+        PathMatchers.MatchResult match = matcher.match(UriPath.create("/foo"));
+        assertThat("no trailing slash", match.accepted(), is(false));
+
+        match = matcher.match(UriPath.create("/foo/"));
+        assertThat("trailing slash", match.accepted(), is(false));
+
+        match = matcher.match(UriPath.create("/foo/first"));
+        assertThat("subpath", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/foo/first/second"));
+        assertThat("nested", match.accepted(), is(true));
+    }
+    @Test
+    void testSubpathRegexp() {
+        String pattern = "/all/subpaths[/{:.*}]";
+
+        PathMatcher matcher = PathMatchers.create(pattern);
+
+        PathMatchers.MatchResult match = matcher.match(UriPath.create("/all/subpaths"));
+        assertThat("exact match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpaths/subpath/other"));
+        assertThat("subpath match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpaths/"));
+        assertThat("trailing slash match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpathsbad"));
+        assertThat("trailing slash match", match.accepted(), is(false));
+    }
+
+    @Test
+    void testSubpathPattern() {
+        String pattern = "/all/subpaths[/{*}]";
+
+        PathMatcher matcher = PathMatchers.create(pattern);
+
+        PathMatchers.MatchResult match = matcher.match(UriPath.create("/all/subpaths"));
+        assertThat("exact match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpaths/subpath/other"));
+        assertThat("subpath match", match.accepted(), is(false));
+
+        match = matcher.match(UriPath.create("/all/subpaths/"));
+        assertThat("trailing slash match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpathsbad"));
+        assertThat("trailing slash match", match.accepted(), is(false));
+    }
+
+    @Test
+    void testSubpathWildcard() {
+        String pattern = "/all/subpaths/*";
+
+        PathMatcher matcher = PathMatchers.create(pattern);
+
+        PathMatchers.MatchResult match = matcher.match(UriPath.create("/all/subpaths"));
+        assertThat("exact match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpaths/subpath/other"));
+        assertThat("subpath match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpaths/"));
+        assertThat("trailing slash match", match.accepted(), is(true));
+
+        match = matcher.match(UriPath.create("/all/subpathsbad"));
+        assertThat("trailing slash match", match.accepted(), is(false));
+    }
+
+    @Test
     void testRegexQuantifier() {
         var matcher = PathMatchers.pattern("/{id:\\w{2}}/name");
         var patternMatcher = (PathMatchers.PatternPathMatcher) matcher;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,14 +53,14 @@ security:
     defaults:
       authenticate: true # <3>
     paths:
-      - path: "/metrics[/{*}]" # <4>
+      - path: "/metrics/*" # <4>
         roles-allowed: "admin"
-      - path: "/health[/{*}]" # <5>
+      - path: "/health/*" # <5>
         roles-allowed: "monitor"
-      - path: "/openapi[/{*}]" # <6>
+      - path: "/openapi/*" # <6>
         abac:
           scopes: ["openapi"]
-      - path: "/static[/{*}]" # <7>
+      - path: "/static/*" # <7>
         roles-allowed: ["user", "monitor"]
 ----
 
@@ -81,8 +81,8 @@ can convert the file by using index based numbers for arrays, such as:
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false
 security.web-server.defaults.authenticate=true
-security.web-server.paths.0.path=/metrics[/{*}]
+security.web-server.paths.0.path=/metrics/*
 security.web-server.paths.0.roles-allowed=admin
-security.web-server.paths.3.path=/static[/{*}]
+security.web-server.paths.3.path=/static/*
 security.web-server.paths.3.roles-allowed=user,monitor
 ----

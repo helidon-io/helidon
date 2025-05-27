@@ -248,6 +248,7 @@ You can use *path pattern* instead of _path_ with the following syntax:
 * `/foo/{:\d+}` - Unnamed regular expression segment with a specified expression
 * `/foo/{+var}` - Convenience shortcut for `{var:.+}`
 * `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
+* `/foo/{*}` - Convenience shortcut for unnamed segment with regular expression `{:.*}`
 * `/foo[/bar]` - An optional block, which translates to the `/foo(/bar)?` regular expression
 * `/*` or `/foo*` - `*` Wildcard character can be matched with any number of characters.
 
