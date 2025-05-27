@@ -19,23 +19,23 @@ test.database:
   password: "changeit"
   url: "jdbc:mysql://localhost:3306/testdb"
 
-data-sources:
-  sql:
-    - name: "test"
-      provider.hikari:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
-
-persistence-units:
-  jakarta:
-    - data-source: "test"
-      # EclipseLink properties
-      properties:
-        eclipselink.target-database: "MySQL"
-        eclipselink.target-server: "None"
-        eclipselink.weaving: false
-        eclipselink.logging.level: "FINEST"
-        eclipselink.logging.level.weaver: "OFF"
-        eclipselink.logging.parameters: true
-        jakarta.persistence.schema-generation.database.action: drop-and-create
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.hikari:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
+        # EclipseLink properties
+        properties:
+          eclipselink.target-database: "MySQL"
+          eclipselink.target-server: "None"
+          eclipselink.weaving: false
+          eclipselink.logging.level: "FINEST"
+          eclipselink.logging.level.weaver: "OFF"
+          eclipselink.logging.parameters: true
+          jakarta.persistence.schema-generation.database.action: drop-and-create
