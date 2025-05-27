@@ -19,24 +19,24 @@ test.database:
   password: "oracle123"
   url: "jdbc:oracle:thin:@localhost:1521/FREE"
 
-data-sources:
-  sql:
-    - name: "test"
-      provider.ucp:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
-        connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
-
-persistence-units:
-  jakarta:
-    - data-source: "test"
-      # EclipseLink properties
-      properties:
-        eclipselink.target-database: "Oracle"
-        eclipselink.target-server: "None"
-        eclipselink.weaving: false
-        eclipselink.logging.level: "FINEST"
-        eclipselink.logging.level.weaver: "OFF"
-        eclipselink.logging.parameters: true
-        jakarta.persistence.schema-generation.database.action: drop-and-create
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.ucp:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+          connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
+        # EclipseLink properties
+        properties:
+          eclipselink.target-database: "Oracle"
+          eclipselink.target-server: "None"
+          eclipselink.weaving: false
+          eclipselink.logging.level: "FINEST"
+          eclipselink.logging.level.weaver: "OFF"
+          eclipselink.logging.parameters: true
+          jakarta.persistence.schema-generation.database.action: drop-and-create
