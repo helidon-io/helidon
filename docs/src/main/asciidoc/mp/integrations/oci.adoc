@@ -58,14 +58,14 @@ You must configure authentication between your local environment and the OCI env
 
 The Helidon OCI SDK extension authenticates with OCI by picking up OCI credentials from your environment.
 
-To configure authentication, add the ``oci.auth-strategy`` property to ``/server/src/main/resources/META-INF/microprofile-config.properties``
+To configure authentication, add the ``oci.auth-strategies`` property to ``/server/src/main/resources/META-INF/microprofile-config.properties``
 
-The ``oci.auth-strategy`` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
+The ``oci.auth-strategies`` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
 
 [source,properties]
-.oci.auth-strategy example
+.oci.auth-strategies example
 ----
-oci.auth-strategy=config-file,instance_principals,resource_principal
+oci.auth-strategies=config-file,instance_principals,resource_principal
 ----
 
 OCI supports the following client authentication methods:
