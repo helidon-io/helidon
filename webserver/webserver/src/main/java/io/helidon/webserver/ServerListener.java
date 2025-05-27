@@ -238,10 +238,10 @@ class ServerListener implements ListenerContext {
         try {
             // Stop listening for connections
             serverSocket.close();
-            // Close all active connections
-            activeConnections().forEach(connection -> connection.close(true));
-
-            if (shutdownExecutors) {
+            if (!shutdownExecutors) {
+                // Close all active connections
+                activeConnections().forEach(connection -> connection.close(true));
+            } else { // if (shutdownExecutors) {
                 // Shutdown reader executor
                 readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
                 if (!readerExecutor.isTerminated()) {
