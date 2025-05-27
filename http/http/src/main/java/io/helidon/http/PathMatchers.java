@@ -220,7 +220,7 @@ public final class PathMatchers {
                 String r2 = name.toString().trim();
                 if (r2.length() == 1 && r2.charAt(0) == '*') {
                     // special case - {*} - matches empty string as well, and is an unnamed parameter
-                    builder.append("[^/]*");
+                    builder.append(".*");
                     return "";
                 }
                 addParamRegexp(builder,
