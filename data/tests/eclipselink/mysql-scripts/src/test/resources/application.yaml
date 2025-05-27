@@ -19,27 +19,28 @@ test.database:
   password: "changeit"
   url: "jdbc:mysql://localhost:3306/testdb"
 
-persistence-units:
-  jakarta:
-    - connection:
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
-        jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
-      init-script: "init.sql"
-      # EclipseLink properties
-      properties:
-        eclipselink.target-database: "MySQL"
-        eclipselink.target-server: "None"
-        eclipselink.weaving: false
-        eclipselink.logging.level: "FINEST"
-        eclipselink.logging.level.weaver: "OFF"
-        eclipselink.logging.level.sql: "INFO"
-        eclipselink.logging.parameters: true
-  # Uncomment to let EclipseLink generate example DDL scripts
-  #      jakarta.persistence.schema-generation.create-script-source: "init-script.sql"
-  #      jakarta.persistence.schema-generation.create-source: "metadata"
-  #      jakarta.persistence.schema-generation.scripts.action: "drop-and-create"
-  #      jakarta.persistence.schema-generation.scripts.create-target: "init-ddl.sql"
-  #      jakarta.persistence.schema-generation.scripts.drop-target: "drop-ddl.sql"
-  #      jakarta.persistence.schema-generation.database.action: "drop-and-create"
+data:
+  persistence-units:
+    jakarta:
+      - connection:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+        init-script: "init.sql"
+        # EclipseLink properties
+        properties:
+          eclipselink.target-database: "MySQL"
+          eclipselink.target-server: "None"
+          eclipselink.weaving: false
+          eclipselink.logging.level: "FINEST"
+          eclipselink.logging.level.weaver: "OFF"
+          eclipselink.logging.level.sql: "INFO"
+          eclipselink.logging.parameters: true
+# Uncomment to let EclipseLink generate example DDL scripts
+#        jakarta.persistence.schema-generation.create-script-source: "init-script.sql"
+#        jakarta.persistence.schema-generation.create-source: "metadata"
+#        jakarta.persistence.schema-generation.scripts.action: "drop-and-create"
+#        jakarta.persistence.schema-generation.scripts.create-target: "init-ddl.sql"
+#        jakarta.persistence.schema-generation.scripts.drop-target: "drop-ddl.sql"
+#        jakarta.persistence.schema-generation.database.action: "drop-and-create"
