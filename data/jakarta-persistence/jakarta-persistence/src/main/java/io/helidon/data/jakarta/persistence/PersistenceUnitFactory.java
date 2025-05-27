@@ -42,7 +42,7 @@ import jakarta.persistence.spi.PersistenceProvider;
 
 @Service.Singleton
 class PersistenceUnitFactory implements Service.ServicesFactory<EntityManagerFactory> {
-    static final String JPA_PU_CONFIG_KEY = "persistence-units.jakarta";
+    static final String JPA_PU_CONFIG_KEY = "data.persistence-units.jakarta";
     static final String PROVIDER_TYPE = "jakarta";
     /**
      * In Jakarta Persistence 3.1 transaction type is stored as {@link EntityManagerFactory} property.
