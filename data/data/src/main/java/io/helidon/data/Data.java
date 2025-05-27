@@ -57,8 +57,9 @@ public final class Data {
     public @interface PersistenceUnit {
 
         /**
-         * Name of a named data source.
-         * When using configuration, this would a list of named configurations under {@code data}.
+         * Name of a named persistence unit.
+         * When using configuration, this is expected under {@code data.persistence-units.provider-type}, where provider-type
+         * is the provider of the persistence unit (such as {@code jakarta}).
          *
          * @return the name
          */
@@ -67,10 +68,10 @@ public final class Data {
         /**
          * Whether the named {@link io.helidon.data.Data.PersistenceUnit} is required.
          *
-         * @return value of {@code true} when the {@link #value()} named {@link io.helidon.data.Data.PersistenceUnit} is required,
+         * @return value of {@code true} when the {@link #value() named} {@link io.helidon.data.Data.PersistenceUnit} is required,
          *         {@code false} otherwise, to use the default configuration if a named one is not available
          */
-        boolean required() default false;
+        boolean required() default true;
     }
 
     /**
