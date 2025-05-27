@@ -19,19 +19,19 @@ test.database:
   password: "oracle123"
   url: "jdbc:oracle:thin:@localhost:1521/FREE"
 
-data-sources:
-  sql:
-    - name: "test"
-      provider.ucp:
-          username: "${test.database.username}"
-          password: "${test.database.password}"
-          url: "${test.database.url}"
-          connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
-
-persistence-units:
-  jakarta:
-    - data-source: "test"
-      # Hibernate properties
-      properties:
-        hibernate.dialect: "org.hibernate.dialect.OracleDialect"
-        jakarta.persistence.schema-generation.database.action: "create"
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.ucp:
+            username: "${test.database.username}"
+            password: "${test.database.password}"
+            url: "${test.database.url}"
+            connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
+        # Hibernate properties
+        properties:
+          hibernate.dialect: "org.hibernate.dialect.OracleDialect"
+          jakarta.persistence.schema-generation.database.action: "create"
