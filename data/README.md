@@ -54,7 +54,7 @@ Note that the PU must be of the same type as the Provider
 There are the following new nodes of configuration:
 
 - `data-sources` - a section for data sources
-- `data-sources.sql` - a list of SQL data sources (implement `javax.sql.DataSource`)
+- `data.sources.sql` - a list of SQL data sources (implement `javax.sql.DataSource`)
 - `persistence-units` - a section for persistence units
 - `persistence-units.jakarta` - a list of JPA Persistence unit configurations
 
@@ -65,7 +65,7 @@ Always
 - Repository instance annotated with `@Data.Repository`, named with provider name, or unnamed
 
 When `helidon-data-sql-datasource` is on classpath (and at least one provider of it, such as `hikari` or `ucp`)
-- `javax.sql.DataSource` for each `data-sources.sql` configuration (named or unnamed) `io.helidon.data.sql.datasource.DataSourceConfigFactory.SQL_DATA_SOURCES_CONFIG_KEY`
+- `javax.sql.DataSource` for each `data.sources.sql` configuration (named or unnamed) `io.helidon.data.sql.datasource.DataSourceConfigFactory.SQL_DATA_SOURCES_CONFIG_KEY`
 
 When `helidon-data-jakarta-persistence` is on classpath
 - `jakarta.persistence.EntityManagerFactory` for each `persistence-untis.jakarta` configuration (named or unnamed) `io.helidon.data.jakarta.persistence.PersistenceUnitFactory.JPA_PU_CONFIG_KEY`
