@@ -73,7 +73,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                                     .build())
                 .routing(routing -> routing
                         .get("/noRoles", SecurityFeature.secure())
-                        .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                        .get("/user/*", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))
                         .get("/deny", SecurityFeature.rolesAllowed("deny"), (req, res) -> {
                             res.status(Status.INTERNAL_SERVER_ERROR_500);
@@ -84,7 +84,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                                 .auditEventType("unit_test")
                                 .auditMessageFormat(AUDIT_MESSAGE_FORMAT)
                         )
-                        .get("/{*}", (req, res) -> {
+                        .get("/*", (req, res) -> {
                             Optional<SecurityContext> securityContext = Contexts.context()
                                     .flatMap(it -> it.get(SecurityContext.class));
                             res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
