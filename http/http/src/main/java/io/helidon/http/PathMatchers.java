@@ -113,7 +113,7 @@ public final class PathMatchers {
                     break;
                 case '{':
                     String name = parseParameter(iter, regexp, paramCounter);
-                    if (name.length() > 0) {
+                    if (!name.isEmpty()) {
                         paramToGroupName.put(name, PARAM_PREFIX + paramCounter);
                         paramCounter++;
                     }
@@ -144,7 +144,7 @@ public final class PathMatchers {
      * Create a path matcher from a path pattern.
      * This method will analyze the pattern and return appropriate path matcher.
      *
-     * @param pathPattern path pattern to match agains
+     * @param pathPattern path pattern to match against
      * @return path matcher
      */
     public static PathMatcher create(String pathPattern) {
@@ -213,13 +213,18 @@ public final class PathMatchers {
                                                             + ", index: " + (iter.index() - 1));
                 }
                 String r1 = name.toString().trim();
-                addParamRegexp(builder, r1.length() > 0 ? index : -1, parseParamRegexp(iter));
+                addParamRegexp(builder, !r1.isEmpty() ? index : -1, parseParamRegexp(iter));
                 return r1;
             }
             case '}' -> {
                 String r2 = name.toString().trim();
+                if (r2.length() == 1 && r2.charAt(0) == '*') {
+                    // special case - {*} - matches empty string as well, and is an unnamed parameter
+                    builder.append(".*");
+                    return "";
+                }
                 addParamRegexp(builder,
-                               r2.length() > 0 ? index : -1,
+                               !r2.isEmpty() ? index : -1,
                                greedy ? ".+" : "[^/]+");
                 return r2;
             }

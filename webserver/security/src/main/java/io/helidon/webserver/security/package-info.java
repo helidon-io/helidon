@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
  * .register({@link io.helidon.webserver.security.SecurityHttpFeature}.{@link
  * io.helidon.webserver.security.SecurityHttpFeature#create(io.helidon.security.Security) from(security)})
  * // authenticate all paths under /user and require role "user"
- * .get("/user[/{*}]", WebSecurity.{@link io.helidon.webserver.security.SecurityFeature#authenticate() authenticate()}
+ * .get("/user/*", WebSecurity.{@link io.helidon.webserver.security.SecurityFeature#authenticate() authenticate()}
  * .{@link io.helidon.webserver.security.SecurityFeature#rolesAllowed(String...) rolesAllowed("user")})
  * // authenticate "/admin" path and require role "admin"
  * .get("/admin", WebSecurity.rolesAllowed("admin")
