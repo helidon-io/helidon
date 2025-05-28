@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -105,7 +107,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
 
-    private Http2StreamState currentStreamState;
     private ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
     private Compressor compressor;
@@ -114,7 +115,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
-    private boolean callCancelled;
+
+    private final AtomicBoolean callCancelled = new AtomicBoolean();
+    private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     GrpcProtocolHandler(Http2Headers headers,
                         Http2StreamWriter streamWriter,
@@ -127,7 +130,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.streamWriter = streamWriter;
         this.streamId = streamId;
         this.flowControl = flowControl;
-        this.currentStreamState = currentStreamState;
+        this.currentStreamState.set(currentStreamState);
         this.route = route;
         this.grpcConfig = grpcConfig;
     }
@@ -161,14 +164,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     @Override
     public Http2StreamState streamState() {
-        return currentStreamState;
+        return currentStreamState.get();
     }
 
+    /**
+     * An RST stream framed was received, and it is called in the HTTP/2 connection
+     * thread, so proper synchronization is required.
+     *
+     * @param rstStream RST stream frame
+     */
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
+        callCancelled.set(rstStream.errorCode() == Http2ErrorCode.CANCEL);
         listener.onCancel();
-        currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
+        currentStreamState.set(nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE));
     }
 
     @Override
@@ -211,7 +220,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();
-                currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
+                currentStreamState.set(nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE));
                 // update metrics
                 if (grpcConfig.enableMetrics()) {
                     methodMetrics.recvMessageSize.record(bytesReceived);
@@ -239,7 +248,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
                                  String.join(",", encodings));
                     serverCall.close(Status.UNIMPLEMENTED, metadata);
-                    currentStreamState = nextStreamState(Http2StreamState.CLOSED);       // stops processing
+                    currentStreamState.set(nextStreamState(Http2StreamState.CLOSED));       // stops processing
                     return;
                 }
             } else if (httpHeaders.contains(GRPC_ACCEPT_ENCODING)) {
@@ -291,11 +300,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     Http2StreamState nextStreamState(Http2StreamState desiredStreamState) {
         return switch (desiredStreamState) {
             case HALF_CLOSED_LOCAL ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
+                    currentStreamState.get() == Http2StreamState.HALF_CLOSED_REMOTE
                             ? Http2StreamState.CLOSED
                             : Http2StreamState.HALF_CLOSED_LOCAL;
             case HALF_CLOSED_REMOTE ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
+                    currentStreamState.get() == Http2StreamState.HALF_CLOSED_LOCAL
                             ? Http2StreamState.CLOSED
                             : Http2StreamState.HALF_CLOSED_REMOTE;
             default -> desiredStreamState;
@@ -394,7 +403,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     writable.set(GRPC_CONTENT_TYPE);
                 }
                 GrpcHeadersUtil.updateHeaders(writable, trailers);
-                int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
+                int statusValue = callCancelled.get() ? Status.CANCELLED.getCode().value()
+                        : status.getCode().value();
                 writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
                 String description = status.getDescription();
                 if (description != null) {
@@ -410,7 +420,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                           streamId,
                                           HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM),
                                           flowControl.outbound());
-                currentStreamState = nextStreamState(Http2StreamState.HALF_CLOSED_LOCAL);
+                currentStreamState.set(nextStreamState(Http2StreamState.HALF_CLOSED_LOCAL));
 
                 // update metrics
                 if (status.isOk() && grpcConfig.enableMetrics()) {
@@ -422,7 +432,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public boolean isCancelled() {
-                return currentStreamState == Http2StreamState.CLOSED;
+                return currentStreamState.get() == Http2StreamState.CLOSED;
             }
 
             @Override
