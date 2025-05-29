@@ -50,4 +50,15 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
+
+    /**
+     * Whether to support compression if requested by a client. If explicitly
+     * disabled, no compression will be ever be used by the server even if a
+     * client-compatible compressor is found.
+     *
+     * @return true if compression is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enableCompression();
 }
