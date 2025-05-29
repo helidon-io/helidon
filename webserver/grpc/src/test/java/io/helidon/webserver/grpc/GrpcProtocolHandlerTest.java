@@ -82,32 +82,16 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testFromHalfCloseLocalTransition() {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
-                                                              null,
-                                                              1,
-                                                              null,
-                                                              Http2StreamState.HALF_CLOSED_LOCAL,
-                                                              null,
-                                                              GrpcConfig.create());
-        Http2StreamState next = handler.nextStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
+        Http2StreamState next = GrpcProtocolHandler.nextStreamState(
+                Http2StreamState.HALF_CLOSED_LOCAL, Http2StreamState.HALF_CLOSED_REMOTE);
         assertThat(next, is(Http2StreamState.CLOSED));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void testFromHalfCloseRemoteTransition() {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
-                                                              null,
-                                                              1,
-                                                              null,
-                                                              Http2StreamState.HALF_CLOSED_REMOTE,
-                                                              null,
-                                                              GrpcConfig.create());
-        Http2StreamState next = handler.nextStreamState(Http2StreamState.HALF_CLOSED_LOCAL);
+        Http2StreamState next = GrpcProtocolHandler.nextStreamState(
+                Http2StreamState.HALF_CLOSED_REMOTE, Http2StreamState.HALF_CLOSED_LOCAL);
         assertThat(next, is(Http2StreamState.CLOSED));
     }
 }
