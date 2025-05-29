@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,13 +404,14 @@ public interface Config extends io.helidon.common.config.Config {
      * it as global.
      * The instance returned may differ from {@link io.helidon.common.config.GlobalConfig#config()} in case the
      * global config registered in not an instance of this type.
+     * <p>
+     * NOTE: Behavior of this method will change in the next major version of Helidon, as we are discontinuing the support
+     * for {@link io.helidon.common.config.GlobalConfig} class; this method will then return the current config instance
+     * from {@link io.helidon.service.registry.ServiceRegistry#get(Class)}
      *
      * @return global config instance, creates one if not yet registered
-     * @deprecated either use {@link io.helidon.service.registry.Services#get(Class)} instead for static access,
-     *  inject an instance into your service when creating a service, or use your service registry instance
      */
     @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.2.0")
     static Config global() {
         if (io.helidon.common.config.GlobalConfig.configured()) {
             io.helidon.common.config.Config global = io.helidon.common.config.GlobalConfig.config();
