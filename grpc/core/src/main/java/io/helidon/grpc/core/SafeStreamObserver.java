@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.core;
 
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 
 import io.grpc.Status;
@@ -62,11 +63,13 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
     public void onError(Throwable thrown) {
         try {
             if (done) {
-                LOGGER.log(Level.ERROR, () -> "OnError called after StreamObserver was closed");
+                LOGGER.log(Level.TRACE, () -> "OnError called after StreamObserver was closed");
             } else {
                 done = true;
                 delegate.onError(checkNotNull(thrown));
             }
+        } catch (UncheckedIOException e) {
+            LOGGER.log(Level.TRACE, () -> "Caught I/O exception handling onError", e);
         } catch (Throwable t) {
             throwIfFatal(t);
             LOGGER.log(Level.ERROR, () -> "Caught exception handling onError", t);
@@ -76,11 +79,13 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
     @Override
     public void onCompleted() {
         if (done) {
-            LOGGER.log(Level.WARNING, "onComplete called after StreamObserver was closed");
+            LOGGER.log(Level.TRACE, "onComplete called after StreamObserver was closed");
         } else {
             try {
                 done = true;
                 delegate.onCompleted();
+            } catch (UncheckedIOException e) {
+                LOGGER.log(Level.TRACE, () -> "Caught I/O exception handling onComplete", e);
             } catch (Throwable thrown) {
                 throwIfFatal(thrown);
                 LOGGER.log(Level.ERROR, () -> "Caught exception handling onComplete", thrown);

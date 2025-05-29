@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,8 @@ public interface Http2SubProtocolSelector {
      */
     interface SubProtocolHandler {
         /**
-         * Called once the sub-protocol handler is available.
+         * Called once the sub-protocol handler is available. Always dispatched on the
+         * HTTP/2 stream thread.
          */
         void init();
 
@@ -82,25 +83,27 @@ public interface Http2SubProtocolSelector {
         Http2StreamState streamState();
 
         /**
-         * RST stream was received.
+         * RST stream was received. Note that this method will be dispatched on the
+         * HTTP/2 connection thread, not the stream thread.
          *
          * @param rstStream RST stream frame
          */
         void rstStream(Http2RstStream rstStream);
 
         /**
-         * Window update was received.
+         * Window update was received. Note that this method will be dispatched on the
+         * HTTP/2 connection thread, not the stream thread.
          *
          * @param update window update frame
          */
         void windowUpdate(Http2WindowUpdate update);
 
         /**
-         * Data was received.
+         * Data was received. Always dispatched on the HTTP/2 stream thread.
          * The data may be empty. Check the
          * {@link io.helidon.http.http2.Http2FrameHeader#flags(io.helidon.http.http2.Http2FrameTypes)}
-         * if this is {@link io.helidon.http.http2.Http2Flag.DataFlags#END_OF_STREAM} to identify if this is the last data
-         * incoming.
+         * if this is {@link io.helidon.http.http2.Http2Flag.DataFlags#END_OF_STREAM} to identify if
+         * this is the last data incoming.
          *
          * @param header frame header
          * @param data   frame data
