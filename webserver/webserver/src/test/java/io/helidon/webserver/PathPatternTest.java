@@ -20,13 +20,19 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
  * The PathTemplateTest.
@@ -122,6 +128,60 @@ public class PathPatternTest {
     private void assertPrefixMatchWithParams(String path, String pattern, String remainingPart, String... nameValue) {
         doAssertMatchWithParams(true, path, pattern, remainingPart, nameValue);
     }
+
+    static Stream<Arguments> subpathData() {
+        return Stream.of(
+                // DOCS: `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
+                Arguments.arguments(named("Requires subpath with at least one character",
+                                          new TestData("/foo/{+}",
+                                                       "/foo",
+                                                       false,
+                                                       false,
+                                                       true,
+                                                       true,
+                                                       false))),
+                arguments(named("Regular expression - any string with optional slash",
+                                new TestData("/foo[/{:.*}]",
+                                             "/foo",
+                                             true,
+                                             true,
+                                             true,
+                                             true,
+                                             false))),
+                arguments(named("Subpath placeholder {*} with optional slash",
+                                new TestData("/foo[/{*}]",
+                                             "/foo",
+                                             true,
+                                             true,
+                                             true,
+                                             true,
+                                             false)))
+
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("subpathData")
+    void testSubpathMatching(TestData testData) {
+        PathMatcher matcher = PathMatcher.create(testData.pattern);
+
+        String pathPrefix = testData.pathPrefix;
+        PathMatcher.Result match = matcher.match(pathPrefix);
+        assertThat("no trailing slash", match.matches(), is(testData.noTrailing));
+
+        match = matcher.match(pathPrefix + "/");
+        assertThat("trailing slash", match.matches(), is(testData.trailing));
+
+        match = matcher.match(pathPrefix + "/first");
+        assertThat("subpath", match.matches(), is(testData.subpath));
+
+        match = matcher.match(pathPrefix + "/first/second");
+        assertThat("nested", match.matches(), is(testData.nested));
+
+        match = matcher.match(pathPrefix + "suffix");
+        assertThat("suffix without slash", match.matches(), is(testData.pathStartingWithString));
+    }
+
 
     @Test
     void testRegexQuantifier() {
@@ -263,5 +323,14 @@ public class PathPatternTest {
         assertNotMatch("/foo/bar/baz", "/foo[/{var}]");
         assertMatchWithParams("/foo/bar/baz", "/foo[/{var}]/baz", "var", "bar");
         assertMatchWithParams("/foo/baz", "/foo[/{var}]/baz");
+    }
+
+    record TestData(String pattern,
+                    String pathPrefix,
+                    boolean noTrailing,
+                    boolean trailing,
+                    boolean subpath,
+                    boolean nested,
+                    boolean pathStartingWithString) {
     }
 }
