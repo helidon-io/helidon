@@ -65,6 +65,7 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.PkceChallengeMethod;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
@@ -357,6 +358,7 @@ class TenantAuthenticationHandler {
                 return errorResponseNoRedirect(code, description, status);
             }
             String state = generateRandomString();
+            String pkceVerifier = oidcConfig.pkceEnabled() ? generateCodeVerifier() : "";
 
             Set<String> expectedScopes = expectedScopes(providerRequest);
 
@@ -394,10 +396,19 @@ class TenantAuthenticationHandler {
                     + "nonce=" + nonce + "&"
                     + "state=" + state;
 
+            if (oidcConfig.pkceEnabled()) {
+                PkceChallengeMethod pkceChallengeMethod = oidcConfig.pkceChallengeMethod();
+                String codeChallenge = pkceChallengeMethod.transform(pkceVerifier);
+                queryString += "&"
+                        + "code_challenge=" + codeChallenge + "&"
+                        + "code_challenge_method=" + pkceChallengeMethod.method();
+            }
+
             JsonObject stateJson = JSON_BUILDER_FACTORY.createObjectBuilder()
                     .add("originalUri", origUri)
                     .add("state", state)
                     .add("nonce", nonce)
+                    .add("pkceVerifier", pkceVerifier)
                     .build();
 
             String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -854,4 +865,12 @@ class TenantAuthenticationHandler {
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
     }
+
+    //Created based on https://datatracker.ietf.org/doc/html/rfc7636#section-4.1 -> see NOTE section
+    private static String generateCodeVerifier() {
+        byte[] randomBytes = new byte[32];
+        RANDOM.get().nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
 }

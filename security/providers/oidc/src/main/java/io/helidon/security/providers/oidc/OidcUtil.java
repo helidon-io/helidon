@@ -34,7 +34,7 @@ class OidcUtil {
                               TenantConfig tenantConfig,
                               Parameters.Builder form,
                               HttpClientRequest request) {
-        if (type == OidcConfig.RequestType.CODE_TO_TOKEN) {
+        if (type == OidcConfig.RequestType.CODE_TO_TOKEN || type == OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN) {
             if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_POST) {
                 form.add("client_id", tenantConfig.clientId());
                 form.add("client_secret", tenantConfig.clientSecret());
