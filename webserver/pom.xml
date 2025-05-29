@@ -38,6 +38,7 @@
         <module>graphql</module>
         <module>grpc</module>
         <module>http2</module>
+        <module>json-rpc</module>
         <module>observe</module>
         <module>security</module>
         <module>service-common</module>
