@@ -149,8 +149,8 @@ For more information see link:{helidon-github-examples-url}/logging/slf4j[Helido
 
 == Mapped Diagnostic Context (MDC) support
 
-The Mapped Diagnostic Context provides a mechanism for application code to store
-values in a context that are then included in log output. These values could
+The Mapped Diagnostic Context provides a mechanism for Helidon and application code to store
+values in a context that can then be included in log output. These values could
 be a tracing ID, the current user, or a similar contextual value, and they are
 propagated by Helidon across threads.
 
@@ -161,21 +161,26 @@ but also works with the other supported frameworks (slf4j or log4j).
 
 To use Helidon MDC, you need to do three things:
 
-1. Add a dependencies on one of the supported logging frameworks. See previous sections.
+1. Add a dependency on one of the supported logging frameworks. See previous sections.
 2. Store values in the MDC in your code.
 3. Configure logging to display the values in its output.
 
+=== MDC values provided by Helidon
+If you include tracing in your project, Helidon automatically provides the MDC key `trace_id`. Logging inserts the trace ID of the current span (if there is one) or the string "none" if no span is active.
+
 === Storing values in MDC
 
-To set values in the MDC you can use `io.helidon.logging.common.HelidonMdc` class:
+To set your own values in the MDC you can use `io.helidon.logging.common.HelidonMdc` class:
 
-[source]
+[source,java]
 ----
-HelidonMdc.set("name", "Joe");
+HelidonMdc.set("name", "Joe"); // <1>
+HelidonMdc.set("otherName", () -> retrieveStringValue()); // <2>
 ----
+<1> Stores an attribute named "name" with the fixed value "Joe" in the MDC.
+<2> Stores an attribute named "otherName" with the given `Supplier<String>`.
 
-This will store an attribute named "name" with the value "Joe" in the MDC so that it can be
-extracted later in log output.
+The `set(<String, String>`) method associates the name with a fixed value. The `set(<String>, <Supplier<String>>) form associates the name with a lambda or method reference. This second form might be useful if your code (or Helidon) maintains the value you want to log in some context that your code can access and if that value changes as the server runs. In both cases, when your logging format refers to the name logging extracts the corresponding fixed value or invoked the supplier to obtain the value, using the result in log output.
 
 `HelidonMdc` works with the supported logging frameworks. But if you prefer, you can
 use a logging framework specific API. Such as `org.slf4j.MDC` or `org.apache.logging.log4j.ThreadContext` instead.
