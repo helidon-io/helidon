@@ -68,7 +68,7 @@ security:
       defaults:
         authenticate: true
       paths:
-        - path: "/service1/[/{*}]"
+        - path: "/service1/*"
           methods: ["get"]
           roles-allowed: ["user"]
 ----

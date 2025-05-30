@@ -163,7 +163,7 @@ ifdef::mp-flavor[]
 .Controlling REST request {metrics}
 [source,properties]
 ----
-metrics.rest-request-enabled=true
+metrics.rest-request.enabled=true
 ----
 Helidon automatically registers and updates `Timer` {metrics} for every REST endpoint in your service.
 endif::[]
