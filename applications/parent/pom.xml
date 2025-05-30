@@ -294,11 +294,11 @@
     </profiles>
 
     <!-- Remove the Helidon specific info from the effective pom. -->
-    <url/>
+    <url>https://example.com</url>
     <scm>
         <connection/>
         <developerConnection/>
-        <url/>
+        <url>https://example.com</url>
     </scm>
     <inceptionYear/>
     <organization/>

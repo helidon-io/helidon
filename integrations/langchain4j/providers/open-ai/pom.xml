@@ -28,6 +28,7 @@
     </parent>
 
     <artifactId>helidon-integrations-langchain4j-providers-open-ai</artifactId>
+    <name>Helidon Integrations Langchain4j Providers OpenAI</name>
 
     <dependencies>
         <dependency>

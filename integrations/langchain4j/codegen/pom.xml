@@ -28,6 +28,7 @@
     </parent>
 
     <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+    <name>Helidon Integrations Langchain4j Codegen</name>
 
     <dependencies>
         <dependency>
