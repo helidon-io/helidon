@@ -28,6 +28,7 @@
     </parent>
 
     <artifactId>helidon-integrations-langchain4j</artifactId>
+    <name>Helidon Integrations Langchain4j</name>
 
     <dependencies>
         <dependency>
