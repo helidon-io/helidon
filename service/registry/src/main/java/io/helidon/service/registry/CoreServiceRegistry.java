@@ -301,10 +301,17 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                 ResolvedType theOnlyContractRequested = lookup.contracts().iterator().next();
                 Set<ServiceInfo> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
                 if (subsetOfMatches != null) {
-                    // the subset is ordered, cannot use parallel, also no need to re-order
-                    subsetOfMatches.stream()
-                            .filter(lookup::matches)
-                            .forEach(result::add);
+
+                    // the subset is ordered
+                    for (var descriptor : subsetOfMatches) {
+                        if (lookup.matches(descriptor)) {
+                            result.add(descriptor);
+                        }
+                        if (descriptor.isReplacement()) {
+                            // break on first replacement
+                            break;
+                        }
+                    }
                     if (!result.isEmpty()) {
                         traceLookup(lookup, "by single contract", result);
                         if (cacheEnabled) {
@@ -319,11 +326,14 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             // table scan :-(
             metrics.fullScan();
             // we need to go through each service descriptor if it matches
-            servicesByDescriptor.keySet()
+            var tmpResult = servicesByDescriptor.keySet()
                     .stream()
                     .filter(lookup::matches)
                     .sorted(SERVICE_INFO_COMPARATOR)
-                    .forEach(result::add);
+                    .collect(Collectors.toUnmodifiableList());
+            tmpResult = handleReplacements(tmpResult);
+            result.addAll(tmpResult);
+
             traceLookup(lookup, "from full table scan", result);
 
             if (result.isEmpty() && !lookup.qualifiers().isEmpty()) {
@@ -335,14 +345,18 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                         Set<ServiceInfo> found = typedQualifiedProviders.get(new ServiceRegistryManager.TypedQualifiedProviderKey(
                                 qualifierType,
                                 contract));
+
+                        List<ServiceInfo> foundList = null;
                         if (found != null) {
-                            traceLookup(lookup, "from typed qualified providers", found);
-                            result.addAll(found);
+                            foundList = handleReplacements(List.copyOf(found));
+                            traceLookup(lookup, "from typed qualified providers", foundList);
+                            result.addAll(foundList);
                         }
                         found = qualifiedProvidersByQualifier.get(qualifierType);
                         if (found != null) {
-                            traceLookup(lookup, "from typed qualified providers", found);
-                            result.addAll(found);
+                            foundList = handleReplacements(List.copyOf(found));
+                            traceLookup(lookup, "from typed qualified providers", foundList);
+                            result.addAll(foundList);
                         }
                     }
                 }
@@ -638,6 +652,18 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     void ensureInjectionPlans() {
         servicesByDescriptor.values()
                 .forEach(ServiceManager::ensureBindingPlan);
+    }
+
+    private List<ServiceInfo> handleReplacements(List<ServiceInfo> found) {
+        List<ServiceInfo> result = new ArrayList<>();
+
+        for (ServiceInfo descriptor : found) {
+            result.add(descriptor);
+            if (descriptor.isReplacement()) {
+                break;
+            }
+        }
+        return result;
     }
 
     private void accessed(ServiceInfo service) {
