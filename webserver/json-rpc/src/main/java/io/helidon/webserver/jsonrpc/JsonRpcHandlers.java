@@ -30,7 +30,7 @@ public class JsonRpcHandlers {
         return new JsonRpcHandlers.Builder();
     }
 
-    public Map<String, JsonRpcHandler> handlers() {
+    public Map<String, JsonRpcHandler> handlersMap() {
         return handlers;
     }
 

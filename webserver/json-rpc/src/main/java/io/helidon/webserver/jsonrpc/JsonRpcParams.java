@@ -17,13 +17,25 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
-public interface JsonRpcRequest {
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
-    String version();
+public interface JsonRpcParams {
 
-    String method();
+    JsonObject asJsonObject();
 
-    Optional<Integer> id();
+    JsonValue get(String name);
 
-    JsonRpcParams params();
+    String getString(String name);
+
+    Optional<JsonValue> optionalGet(String name);
+
+    JsonArray asJsonArray();
+
+    JsonValue get(int index);
+
+    String getString(int index);
+
+    Optional<JsonValue> optionalGet(int index);
 }
