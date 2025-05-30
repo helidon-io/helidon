@@ -15,5 +15,27 @@
  */
 package io.helidon.webserver.jsonrpc;
 
+import io.helidon.http.Status;
+
+import jakarta.json.JsonValue;
+
 public interface JsonRpcResponse {
+
+    JsonRpcResponse id(Integer id);
+
+    JsonRpcResponse result(JsonValue result);
+
+    JsonRpcResponse error(JsonRpcError error);
+
+    JsonRpcResponse status(int status);
+
+    Integer id();
+
+    JsonValue result();
+
+    JsonRpcError error();
+
+    Status status();
+
+    void send();
 }

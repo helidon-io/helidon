@@ -15,15 +15,20 @@
  */
 package io.helidon.webserver.jsonrpc;
 
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface JsonRpcRequest {
+class JsonRpcRulesImpl implements JsonRpcRules {
 
-    String version();
+    private final Map<String, JsonRpcHandlers> rules = new HashMap<>();
 
-    String method();
+    @Override
+    public JsonRpcRules register(String pathPattern, JsonRpcHandlers handlers) {
+        rules.put(pathPattern, handlers);
+        return this;
+    }
 
-    Optional<Integer> id();
-
-    JsonRpcParams params();
+    Map<String, JsonRpcHandlers> rulesMap() {
+        return rules;
+    }
 }

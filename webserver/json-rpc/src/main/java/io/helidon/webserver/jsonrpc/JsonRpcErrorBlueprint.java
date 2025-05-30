@@ -17,13 +17,16 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
-public interface JsonRpcRequest {
+import io.helidon.builder.api.Prototype;
 
-    String version();
+import jakarta.json.JsonValue;
 
-    String method();
+@Prototype.Blueprint
+interface JsonRpcErrorBlueprint {
 
-    Optional<Integer> id();
+    Integer code();
 
-    JsonRpcParams params();
+    String message();
+
+    Optional<JsonValue> data();
 }

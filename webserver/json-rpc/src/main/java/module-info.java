@@ -35,6 +35,7 @@ module io.helidon.webserver.jsonrpc {
 
     requires static io.helidon.common.features.api;
     requires io.helidon.webserver;
+    requires jakarta.json;
 
     exports io.helidon.webserver.jsonrpc;
 }
