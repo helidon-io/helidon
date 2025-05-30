@@ -86,8 +86,9 @@ class Content {
      * Fluent API builder for {@link Content}.
      */
     static final class Builder implements ContentBuilder<Builder>, io.helidon.common.Builder<Builder, Content> {
-
-        private static final Pattern TYPE_NAME_PATTERN = Pattern.compile(TYPE_TOKEN + "(.*?)" + TYPE_TOKEN);
+        // @fully.qualified.TypeName@ can be used as a placeholder to be replaced with an import when written
+        // the regexp must only use characters allowed in such a type name
+        private static final Pattern TYPE_NAME_PATTERN = Pattern.compile(TYPE_TOKEN + "([.a-zA-Z0-9_]+)" + TYPE_TOKEN);
         private static final Pattern TYPE_IDENTIFICATION_PATTERN = Pattern.compile("[.a-zA-Z0-9_]+");
 
         private final StringBuilder content = new StringBuilder();
