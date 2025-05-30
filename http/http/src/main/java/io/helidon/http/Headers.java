@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.service.registry.Service;
 
 /**
  * View of HTTP Headers.
@@ -39,6 +40,7 @@ import io.helidon.common.media.type.MediaType;
  * will be as sent on the transport. These value will be available using any cased names (though performance may be worse
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
+@Service.Describe(Service.PerRequest.class)
 public interface Headers extends Iterable<Header> {
     /**
      * Get all values of a header.
