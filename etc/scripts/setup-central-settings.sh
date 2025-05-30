@@ -91,39 +91,9 @@ fi
 BEARER=$(printf "%s:%s" "${CENTRAL_USER}" "${CENTRAL_PASSWORD}" | base64)
 readonly BEARER
 
-# If there is a local settings.xml with proxy settings then include then
-# extract them so they can be included in the generated settings.xml.
-maven_proxies() {
-  if [ ! -f "${HOME}/.m2/settings.xml" ]; then
-    return
-  fi
-
-  awk -f- "${HOME}/.m2/settings.xml" <<EOF
-      BEGIN{
-        IN_PROXIES="FALSE"
-        FS="[<>]"
-      }
-      /<proxies>/{
-        IN_PROXIES="true"
-        next
-      }
-      /<\/proxies>/{
-        IN_PROXIES="false"
-      }
-      {
-        if (IN_PROXIES=="true") {
-          print \$0
-        }
-      }
-EOF
-}
-
 maven_settings() {
  cat <<EOF
  <settings>
-   <proxies>
- ${MAVEN_PROXIES}
-   </proxies>
    <servers>
      <server>
        <id>central.manual.testing</id>
@@ -162,7 +132,6 @@ EOF
 
 setup_central_settings() {
   echo "INFO: creating settings.xml in ${DESTINATION_DIRECTORY}"
-  MAVEN_PROXIES=$(maven_proxies)
   maven_settings > "${DESTINATION_DIRECTORY}/settings.xml"
 }
 
