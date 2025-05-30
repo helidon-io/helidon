@@ -31,10 +31,13 @@ This guide describes the basic process of deploying a Helidon MP application on 
 
 Oracle Cloud Infrastructure (OCI) is a set of complementary cloud services that enable you to build and run a range of applications and services in a highly available hosted environment. For an overview of OCI features, see link:{oci-doc-url}/Content/GSG/Concepts/baremetalintro.htm[Welcome to Oracle Cloud Infrastructure] in OCI documentation.
 
-By deploying Helidon applications on OCI, you can take advantage of OCI services and features. Helidon integration with OCI includes support for the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java] - allowing you to write custom code to extend features. Helidon also provides a link:{jakarta-cdi-spec-url}#spi[Helidon OCI SDK CDI portable extension] to support
-injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon application.
+The Helidon MP OCI Project Starter intended to quickly create a Helidon project for deployment on OCI. It is currently only available with Helidon MP, but you can write Helidon SE applications directly with the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java APIs] and use this guide as a guideline for setting up your OCI environment.
 
-The Helidon Quick Start for OCI is currently only available with Helidon MP. However, you can write Helidon SE applications directly with the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java APIs] and use this guide as a guideline for setting up your OCI environment.
+By deploying Helidon applications on OCI, you can take advantage of OCI services and features. Helidon integration with OCI includes support for the link:{oci-doc-url}/Content/API/SDKDocs/javasdk.htm[OCI SDK for Java] - allowing you to write custom code to extend features. 
+
+Helidon also provides a link:{jakarta-cdi-spec-url}#spi[Helidon OCI SDK CDI portable extension] to support
+injecting link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] in your Helidon application. See xref:../integrations/oci.adoc[OCI Integration].
+
 
 This guide assumes that you have basic knowledge and familiarity with OCI. If you already have an OCI environment set up and running, you can consult the https://github.com/helidon-io/helidon-labs/blob/main/hols/oci-basic-setup/README.md[Deploying a Helidon OCI MP Application on a Basic OCI Setup] lab in the Helidon Labs GitHub repository for the requirements of configuring and running the server service.
 
@@ -59,9 +62,13 @@ A Helidon Project Starter allows you to choose from a set of archetypes with pre
 
 You can also use the Helidon CLI to generate the Helidon MP OCI project instead.
 
-The Helidon MP OCI project is pre-configured to integrate with several common OCI services but you must update its configuration with values specific to your application and OCI environment. 
+The Helidon MP OCI project is pre-configured to integrate with several common OCI services but you must update its configuration with values specific to your application and OCI environment. To learn more about the components of Helidon MP OCI Starter Project, see ``/README.md`` and ``/server/README.md``, included in the starter project.
 
-Refer to the starter project's ``README.md`` for a high-level description of the components and features of the Helidon MP OCI project, then see xref:../integrations/oci.adoc[OCI Integration] for more information on how to configure your Helidon application to integrate with OCI services.
+The client service provides support for working with OpenAPI. For more information on Helidon OpenAPI support, see the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification]. 
+
+The server service allows you to build, configure and test the application locally.
+
+The Helidon MP OCI Starter Project also includes Helidon's built in liveness and readiness health checks which allow you to expose the project's health status to external tools. See xref:../health.adoc[MicroProfile Health] for general information on the Health Check feature and then read the **Health Checks** section in ``/server/README.md`` for how it's implemented in this project.
 
 .Click here to view the structure of the Helidon MP OCI Project.
 [%collapsible]
@@ -121,10 +128,6 @@ Refer to the starter project's ``README.md`` for a high-level description of the
 ----
 ====
 
-The client service provides support for working with OpenAPI. For more information on Helidon OpenAPI support, see the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification]. 
-
-The server service allows you to build, configure and test the application locally.
-
 == Running the Application Locally
 
 Use the project to build an application jar for the example. It saves all runtime dependencies in the `/target/libs` directory, allowing you to easily start the application by running the application jar file.
@@ -151,6 +154,7 @@ For example:
 
 [source,bash]
 .Try the Application
+
 ----
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
@@ -196,8 +200,139 @@ If you already have an OCI environment, you can deploy the application there ins
 
 Before you can use OCI services, you must properly configure your application to run on OCI. The Helidon MP OCI Project Starter is already partially configured to integrate with several common OCI services but you must update its configuration with values specific to your application and OCI environment. 
 
-See xref:../integrations/oci.adoc[OCI Integration] for more information on how to configure your Helidon application to integrate with OCI services.
-
-The Helidon OCI SDK extension also supports injecting clients for any link:{oci-javasdk-url}#Services_Supported[OCI services supported by the OCI SDK for Java].
+The Helidon OCI SDK extension also supports injecting clients for any link:{oci-javasdk-url}#Services_Supported[OCI services supported by the OCI SDK for Java]. See xref:../integrations/oci.adoc[OCI Integration].
 
 NOTE: Whenever you integrate a new OCI service in your application, you must build and redeploy the application to enable the feature of that OCI service.
+
+The https://github.com/helidon-io/helidon-labs/blob/main/hols/oci-basic-setup/README.md[Deploying a Helidon OCI MP Application on a Basic OCI Setup] lab in the Helidon Labs GitHub repository includes a ``update_config_values.sh`` script , which updates the necessary values required to set up OCI Monitoring and OCI Logging. You can also read the applicable sections in ``/server/README.md`` for instructions.
+
+==== Helidon MP Metrics to OCI Monitoring
+
+The OCI Monitoring services allows you to actively and passively monitor cloud resources using the Metrics and Alarms features.
+
+Use OCI Monitoring with your Helidon application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. For an overview of OCI Monitoring features, see link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
+
+To learn how to send Helidon MP metrics to OCI Monitoring, read the **Helidon MP Metrics to OCI Monitoring** section in ``/server/README.md``.
+
+==== Logging
+
+The OCI Logging service is a highly scalable and fully managed single pane of glass for all of the logs in your tenancy. For an overview of the OCI Logging feature, see link:{oci-doc-url}/Content/Logging/Concepts/loggingoverview.htm[Logging Overview] in OCI documentation.
+
+Helidon uses the link:{oci-doc-url}/Content/Logging/Concepts/custom_logs.htm[custom logs] feature of OCI Logging for integration. The ability to add custom logs from any OCI Compute instance makes it more flexible to use this feature with other components such as Oracle Kubernetes Engine (OKE).
+
+To learn how to enable OCI Logging integration, read the **Custom Logs Monitoring** section in ``/server/README.md``.
+
+== Working with Other OCI Services
+
+While the Helidon MP OCI Starter Project focuses on the OCI Monitoring and OCI Logging services, you can use other OCI services with Helidon projects.
+
+=== Streaming
+
+The OCI Streaming service provides a fully managed, scalable, and durable solution for ingesting and consuming high-volume data streams in real time. See link:{oci-doc-url}/Content/Streaming/Concepts/streamingoverview.htm[Streaming] in OCI documentation.
+
+The OCI Streaming service is compatible with Apache Kafka clients which means that when your Helidon applications are deployed in OCI environments, you can use either the OCI Streaming service or Apache Kafka. See link:{oci-doc-url}/Content/Streaming/Tasks/kafkacompatibility.htm[Using Streaming with Apache Kafka] in OCI documentation.
+
+Streams are organized into logical groups called Stream Pools. When you connect to OCI Streaming with a Kafka client, streams are handled as Kafka topics and stream pools as virtual Kafka clusters.
+
+To enable OCI Streaming integration, first you need to create a new stream in OCI. For instructions, see link:{oci-doc-url}/Content/Streaming/Tasks/creatingstreamsandstreampools_create-stream.htm[Creating a Stream] in OCI documentation. 
+
+After you have finished creating the stream, make a note of the following values:
+
+* Stream name (on the Stream Details page)
+* Messages endpoint (on the Stream Details page)
+* OCID of the stream _pool_ (on the Stream Pool Details page)
+
+You can also click Kafka Connection Settings (on the Stream Pool Details page) to see an example of Kafka connection settings.
+
+Next, add the following dependency to your project's ``pom.xml``:
+
+[source,xml]
+.Adding the dependency for OCI Streaming
+----
+<dependency>
+  <groupId>io.helidon.microprofile.messaging</groupId>
+  <artifactId>helidon-microprofile-messaging</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.messaging.kafka</groupId>
+  <artifactId>helidon-messaging-kafka</artifactId>
+</dependency>
+----
+
+Next, update ``/server/src/main/resources/application.yaml`` with streaming connection properties:
+
+[source,yaml]
+.Example of an application.yaml configured for OCI Streaming
+----
+oci:
+ tenant: helidon-app-example # <1>
+ user: email@domain.com # <2>
+ token: oci-auth-token # <3>
+ test-stream: # <4>
+   name: TestStream
+   endpoint: cell-1.streaming.us-phoenix-1.oci.oraclecloud.com
+   port: 9092
+   streampool-ocid: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq
+----
+<1> The name of the OCI tenancy.
+<2> The OCI account user name.
+<3> The OCI authentication token. See link:{oci-doc-url}/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token] in OCI documentation.
+<4> The details of the stream which you saved earlier. The ``port`` should be the standard Kafka port number ``9092``.
+
+Then, still in ``/server/src/main/resources/application.yaml``, configure messaging channels to use Helidon's Kafka connector.
+
+[source,yaml]
+.Example of a configuration for the helidon-kafka connector
+----
+mp.messaging:
+
+  incoming.from-stream:
+    connector: helidon-kafka
+    topic: TestStream # <1>
+    auto.offset.reset: latest
+    enable.auto.commit: true
+    group.id: example-group-id # <2>
+ 
+  outgoing.to-stream:
+    connector: helidon-kafka
+    topic: TestStream # <1>
+
+  connector:
+     helidon-kafka:
+       bootstrap.servers: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq:9092 # <3>
+       sasl.mechanism: PLAIN
+       security.protocol: SASL_SSL
+       sasl.jaas.config:  >-
+         org.apache.kafka.common.security.plain.PlainLoginModule
+         required
+         username="helidon-app-example/person@domain.com/ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq" # <4>
+         password="oci-auth-token"; # <5>
+  
+       key.serializer: org.apache.kafka.common.serialization.StringSerializer
+       value.serializer: org.apache.kafka.common.serialization.StringSerializer
+       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+----
+<1> The OCI stream name (which should match the value that you defined earlier in application.yaml).
+<2> The ID for the stream group
+<3> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector, using the following structure ``_<oci.test-stream.endpoint>:<oci.test-stream.port>_``.
+<4> A username in this structure: ``_<oci.tenant>_/_<oci.user>_/_<oci.test-stream.streampool-ocid>_``.
+<5> The OCI authentication token.
+
+After you configure the ``helidon-kafka`` connector, you can use it on messaging channels to integrate with the OCI Streaming service.
+
+=== Tracing
+
+The OCI Application Performance Monitoring (APM) service provides deep visibility into the performance of applications and provides the ability to diagnose issues quickly in order to deliver a consistent level of service. See link:{oci-doc-url}/application-performance-monitoring/doc/application-performance-monitoring.html[About APM] in OCI documentation.
+
+Use OCI APM with Helidon to trace requests from start to finish, allowing you to analyze requests across your distributed services and thereby obtain a complete picture to identify bottlenecks and issues early on.
+
+To enable OCI Tracing integration, start by creating an APM Domain, an OCI resource that contains the systems being monitored by APM. See link:{oci-doc-url}/application-performance-monitoring/doc/create-apm-domain.html#GUID-ABC79A90-3940-4360-9E21-57D25B86F92B[Create an APM Domain] in OCI documentation.
+
+Make sure that you record the *Data Upload Endpoint* and *Data Keys* for the APM domain - you will need them to configure the APM Java Tracer on the application. If you need to find them again, follow the steps at link:{oci-doc-url}/application-performance-monitoring/doc/obtain-data-upload-endpoint-and-data-keys.html[Obtain Data Upload Endpoint and Data Keys] in OCI documentation.
+
+Next, configure the APM Java Tracer to use with Helidon. The APM Java Tracer (or just APM Tracer) is an APM data source that gathers and uploads data such as metrics and spans for monitoring. See link:{oci-doc-url}/application-performance-monitoring/doc/use-apm-tracer-helidon.html[Use APM Tracer in Helidon] in OCI documentation.
+
+After you configure OCI APM with Helidon, you can use OCI Trace Explorer to view traces and spans and identify performance issues in your monitored application. See link:{oci-doc-url}/application-performance-monitoring/doc/monitor-traces-trace-explorer.html#GUID-D23BCE18-F42F-44A1-B583-47DF9F9817D8[Monitor Traces in Trace Explorer] in OCI documentation.
+
+TIP: You can use OpenTelemetry for tracing and then ship the traces to OCI APM. Read the https://medium.com/oracledevs/distributed-tracing-in-helidon-coherence-and-oracle-autonomous-database-with-opentelemetry-and-c60fe965f902[Distributed Tracing in Helidon, Coherence and Oracle Autonomous Database with OpenTelemetry and OCI APM] article on Medium.
