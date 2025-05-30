@@ -210,7 +210,7 @@ The https://github.com/helidon-io/helidon-labs/blob/main/hols/oci-basic-setup/RE
 
 The OCI Monitoring services allows you to actively and passively monitor cloud resources using the Metrics and Alarms features.
 
-Use OCI Monitoring with your Helidon application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. For an overview of OCI Monitoring features, see link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
+Use OCI Monitoring with your Helidon MP application to amass an abundance of valuable server and application insight and place it directly into OCI Monitoring where it can be analyzed as needed. For an overview of OCI Monitoring features, see link:{oci-doc-url}/Content/Monitoring/Concepts/monitoringoverview.htm[Monitoring] in OCI documentation.
 
 To learn how to send Helidon MP metrics to OCI Monitoring, read the **Helidon MP Metrics to OCI Monitoring** section in ``/server/README.md``.
 
