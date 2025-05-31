@@ -103,10 +103,10 @@ jobs:
           merge-multiple: true
       - shell: bash
         env:
-          NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         run: |
-          etc/scripts/nexus.sh deploy_snapshots \
+          etc/scripts/upload.sh upload_snapshot \
             --dir="staging"
       - uses: actions/upload-artifact@v4
         with:

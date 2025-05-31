@@ -63,7 +63,7 @@ for ((i=0;i<${#ARGS[@]};i++))
   ARG=${ARGS[${i}]}
   case ${ARG} in
   "--staged")
-    MVN_ARGS="${MVN_ARGS} -Possrh-staging"
+    MVN_ARGS="${MVN_ARGS} -Pcentral.manual.testing"
     ;;
   "--clean")
     MVN_ARGS="${MVN_ARGS} -Dmaven.repo.local=.m2/repository"
@@ -95,69 +95,6 @@ fi
 
 PID=""
 trap '[ -n "${PID}" ] && kill ${PID} 2> /dev/null || true' 0
-
-maven_proxies() {
-  [ -f "${HOME}/.m2/settings.xml" ] && \
-  awk -f- "${HOME}/.m2/settings.xml" <<EOF
-      BEGIN{
-        IN_PROXIES="FALSE"
-        FS="[<>]"
-      }
-      /<proxies>/{
-        IN_PROXIES="true"
-        next
-      }
-      /<\/proxies>/{
-        IN_PROXIES="false"
-      }
-      {
-        if (IN_PROXIES=="true") {
-          print \$0
-        }
-      }
-EOF
-}
-
-maven_settings() {
- cat <<EOF
- <settings>
-     <proxies>
- $(maven_proxies)
-     </proxies>
-     <profiles>
-         <profile>
-             <id>ossrh-staging</id>
-             <repositories>
-                 <repository>
-                     <id>ossrh-staging</id>
-                     <name>OSS Sonatype Staging</name>
-                     <url>https://oss.sonatype.org/content/groups/staging/</url>
-                     <snapshots>
-                         <enabled>false</enabled>
-                     </snapshots>
-                     <releases>
-                         <enabled>true</enabled>
-                     </releases>
-                 </repository>
-             </repositories>
-             <pluginRepositories>
-                 <pluginRepository>
-                     <id>ossrh-staging</id>
-                     <name>OSS Sonatype Staging</name>
-                     <url>https://oss.sonatype.org/content/groups/staging/</url>
-                     <snapshots>
-                         <enabled>false</enabled>
-                     </snapshots>
-                     <releases>
-                         <enabled>true</enabled>
-                     </releases>
-                 </pluginRepository>
-             </pluginRepositories>
-         </profile>
-     </profiles>
- </settings>
-EOF
-}
 
 # arg1: uri
 wait_ready() {
@@ -292,9 +229,6 @@ LOG_FILE="${WORK_DIR}/test.log"
 readonly LOG_FILE
 
 mkdir -p "${WORK_DIR}"
-
-maven_settings > "${WORK_DIR}/settings.xml"
-MVN_ARGS="${MVN_ARGS} -s ${WORK_DIR}/settings.xml"
 
 exec 1>> >(tee  "${LOG_FILE}")
 exec 2>> >(tee  "${LOG_FILE}")
