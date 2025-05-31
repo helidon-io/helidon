@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 // tag::maven-dependency[]
 == Maven Coordinates [[maven-coordinates]]
 
-To enable {feature-name}
+To enable {feature-name},
 ifeval::["{microprofile-bundle}" == "true"]
 either add a dependency on the xref:{rootdir}/mp/introduction/microprofile.adoc[helidon-microprofile bundle] or
 endif::[]
