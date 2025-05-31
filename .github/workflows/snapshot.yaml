@@ -106,7 +106,7 @@ jobs:
           CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         run: |
-          etc/scripts/upload.sh upload_snapshots \
+          etc/scripts/upload.sh upload_snapshot \
             --dir="staging"
       - uses: actions/upload-artifact@v4
         with:
