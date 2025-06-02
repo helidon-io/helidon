@@ -105,10 +105,10 @@ jobs:
           merge-multiple: true
       - shell: bash
         env:
-          NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
         run: |
-          etc/scripts/nexus.sh deploy_release \
+          etc/scripts/upload.sh upload_release \
             --dir="staging" \
             --description="Helidon v%{version}"
       - uses: actions/upload-artifact@v4
@@ -119,22 +119,31 @@ jobs:
     needs: [ create-tag, deploy ]
     timeout-minutes: 30
     runs-on: ubuntu-22.04
-    name: resolve-all
+    environment: release
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/setup-central-settings.sh
       - uses: ./.github/actions/common
         with:
+          build-cache: write-only
+          build-cache-id: resolve-all
           run: |
             mvn ${MVN_ARGS} -N \
-              -Possrh-staging \
+              -Pcentral.manual.testing \
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get
   smoketest:
-    needs: [ create-tag, deploy ]
+    needs: [ resolve-all, create-tag, deploy ]
     timeout-minutes: 30
+    environment: release
     strategy:
       matrix:
         archetype:
@@ -151,11 +160,19 @@ jobs:
         with:
           fetch-depth: '0'
           ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/setup-central-settings.sh
       - uses: ./.github/actions/common
         with:
+          build-cache: read-only
+          build-cache-id: resolve-all
+          maven-cache: read-only
           run: |
             ./etc/scripts/smoketest.sh \
-              --clean \
               --staged \
               --version=${{ needs.create-tag.outputs.version }} \
               --archetype=${{ matrix.archetype }}
