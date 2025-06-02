@@ -55,7 +55,7 @@ class LimitsHelper {
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            var span = tracer != null ? tracer.spanBuilder("limits-wait").start();
+            var span = tracer != null ? tracer.spanBuilder("limits-wait").start() : null;
             var scope = span != null ? span.activate() : null;
             token = handler.tryAcquire(true);
             if (token.isPresent()) {
