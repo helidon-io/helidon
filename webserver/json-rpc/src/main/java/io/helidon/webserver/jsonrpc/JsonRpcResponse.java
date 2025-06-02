@@ -25,9 +25,15 @@ public interface JsonRpcResponse {
 
     JsonRpcResponse result(JsonValue result);
 
+    JsonRpcResponse result(Object object) throws Exception;
+
     JsonRpcResponse error(JsonRpcError error);
 
     JsonRpcResponse status(int status);
+
+    default JsonRpcResponse status(Status status) {
+        return status(status.code());
+    }
 
     Integer id();
 

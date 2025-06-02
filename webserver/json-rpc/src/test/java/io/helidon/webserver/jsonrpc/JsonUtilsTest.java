@@ -15,7 +15,19 @@
  */
 package io.helidon.webserver.jsonrpc;
 
-import io.helidon.webserver.Route;
+import jakarta.json.JsonObject;
+import org.junit.jupiter.api.Test;
 
-class JsonRpcRoute implements Route {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class JsonUtilsTest {
+
+    @Test
+    void testJsonb() throws Exception {
+        JsonRpcError error = JsonRpcError.builder().code(0).build();
+        JsonObject value = JsonUtils.jsonbToJsonp(error).asJsonObject();
+        assertThat(value.getInt("code"), is(0));
+        assertThat(value.getString("message"), is("Error processing request"));
+    }
 }
