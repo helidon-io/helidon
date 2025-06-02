@@ -31,6 +31,7 @@
 
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-project</artifactId>
+    <name>Helidon Integrations Langchain4j Providers Project</name>
 
     <modules>
         <module>open-ai</module>
