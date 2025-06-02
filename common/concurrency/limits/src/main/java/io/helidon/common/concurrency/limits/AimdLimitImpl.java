@@ -34,6 +34,7 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -47,10 +48,10 @@ class AimdLimitImpl {
     private final AtomicInteger concurrentRequests;
     private final AtomicInteger rejectedRequests;
     private final AdjustableSemaphore semaphore;
-    private final LimitHandlers.LimiterHandler handler;
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
-    private final int queueLength;
+    private final LimitsHelper limitsHelper;
+
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
@@ -67,12 +68,13 @@ class AimdLimitImpl {
         this.rejectedRequests = new AtomicInteger();
         this.limit = new AtomicInteger(initialLimit);
 
-        this.queueLength = config.queueLength();
+        int queueLength = config.queueLength();
         this.semaphore = new AdjustableSemaphore(initialLimit, config.fair());
-        this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
-                                                                queueLength,
-                                                                config.queueTimeout(),
-                                                                () -> new AimdToken(clock, concurrentRequests));
+        LimitHandlers.LimiterHandler handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                                        queueLength,
+                                                                                        config.queueTimeout(),
+                                                                                        () -> new AimdToken(clock,
+                                                                                                            concurrentRequests));
 
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
@@ -86,6 +88,8 @@ class AimdLimitImpl {
         if (initialLimit < minLimit) {
             throw new ConfigException("Initial limit must be higher than minimum limit, or equal to it");
         }
+        Tracer tracer = config.enableTracing() ? Tracer.global() : null;
+        limitsHelper = new LimitsHelper(handler, clock, queueLength, queueWaitTimer, rejectedRequests, tracer);
     }
 
     Semaphore semaphore() {
@@ -97,22 +101,7 @@ class AimdLimitImpl {
     }
 
     Optional<LimitAlgorithm.Token> tryAcquire(boolean wait) {
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
-        if (token.isPresent()) {
-            return token;
-        }
-        if (wait && queueLength > 0) {
-            long startWait = clock.get();
-            token = handler.tryAcquire(true);
-            if (token.isPresent()) {
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
-                }
-                return token;
-            }
-        }
-        rejectedRequests.getAndIncrement();
-        return token;
+        return limitsHelper.tryAcquire(wait);
     }
 
     void invoke(Runnable runnable) throws Exception {

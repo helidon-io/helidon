@@ -33,6 +33,7 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -70,7 +71,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     private final Supplier<Long> clock;
     private final AtomicInteger concurrentRequests;
     private final AtomicInteger rejectedRequests;
-    private final int queueLength;
+    private final LimitsHelper helper;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
@@ -81,20 +82,23 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         this.rejectedRequests = new AtomicInteger();
         this.clock = config.clock().orElseGet(() -> System::nanoTime);
 
+        int queueLength;
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.semaphore = null;
             this.initialPermits = 0;
-            this.queueLength = 0;
+            queueLength = 0;
             this.handler = new LimitHandlers.NoOpSemaphoreHandler();
         } else {
             this.semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
             this.initialPermits = semaphore.availablePermits();
-            this.queueLength = Math.max(0, config.queueLength());
+            queueLength = Math.max(0, config.queueLength());
             this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
                                                                     queueLength,
                                                                     config.queueTimeout(),
                                                                     () -> new FixedLimit.FixedToken(clock, concurrentRequests));
         }
+        Tracer tracer = config.enableTracing() ? Tracer.global() : null;
+        helper = new LimitsHelper(handler, clock, queueLength, queueWaitTimer, rejectedRequests, tracer);
     }
 
     /**
@@ -164,22 +168,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
-        if (token.isPresent()) {
-            return token;
-        }
-        if (wait && queueLength > 0) {
-            long startWait = clock.get();
-            token = handler.tryAcquire(true);
-            if (token.isPresent()) {
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
-                }
-                return token;
-            }
-        }
-        rejectedRequests.getAndIncrement();
-        return token;
+        return helper.tryAcquire(wait);
     }
 
     @Override
