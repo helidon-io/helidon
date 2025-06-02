@@ -37,6 +37,10 @@
             <artifactId>jakarta.json-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.json.bind</groupId>
+            <artifactId>jakarta.json.bind-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
@@ -67,6 +71,12 @@
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-http1</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse</groupId>
+            <artifactId>yasson</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

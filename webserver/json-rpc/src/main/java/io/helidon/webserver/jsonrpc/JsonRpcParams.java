@@ -38,4 +38,8 @@ public interface JsonRpcParams {
     String getString(int index);
 
     Optional<JsonValue> optionalGet(int index);
+
+    <T> T as(Class<T> type) throws Exception;
+
+    <T> T getAs(String name, Class<T> type) throws Exception;
 }

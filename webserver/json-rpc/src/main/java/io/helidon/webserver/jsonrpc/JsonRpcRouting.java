@@ -23,8 +23,10 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.http.HttpRouting;
 
 import jakarta.json.Json;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonStructure;
 
 public class JsonRpcRouting implements Routing {
 
@@ -34,6 +36,11 @@ public class JsonRpcRouting implements Routing {
         this.rules = builder.rules;
     }
 
+    /**
+     * Returns a builder for this class.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -43,47 +50,94 @@ public class JsonRpcRouting implements Routing {
         return JsonRpcRouting.class;
     }
 
+    /**
+     * Converts this instance to an {@link io.helidon.webserver.http.HttpRouting.Builder}
+     * that can be registered in the Webserver.
+     *
+     * @return an instance of HttpRouting
+     */
     public HttpRouting.Builder toHttpRouting() {
         Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
         HttpRouting.Builder builder = HttpRouting.builder();
         for (String pathPattern : rulesMap.keySet()) {
             Map<String, JsonRpcHandler> handlersMap = rulesMap.get(pathPattern).handlersMap();
             builder.post(pathPattern, (req, res) -> {
-                JsonObject rpc = req.content().as(JsonObject.class);
+                JsonStructure structure = req.content().as(JsonStructure.class);
 
-                String version = rpc.getString("jsonrpc");
-                if (version == null || !version.equals("2.0")) {
-                    res.status(400).send("JSON-RPC version must be 2.0");
+                // if single request, create an array
+                JsonArray array;
+                if (structure instanceof JsonObject object) {
+                    array = Json.createArrayBuilder().add(object).build();
+                } else {
+                    array = (JsonArray) structure;
+                }
+
+                // verify that requests are valid
+                if (!verifyJsonRpc(array, handlersMap)) {
+                    res.status(400).send("Invalid JSON-RPC request");
                     return;
                 }
 
-                String method = rpc.getString("method");
-                if (!handlersMap.containsKey(method)) {
-                    res.status(400).send("Unable to find JSON-RPC method");
-                    return;
-                }
-                JsonRpcHandler handler = handlersMap.get(method);
-                JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(rpc);
-                JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl() {
-                    @Override
-                    public void send() {
-                        JsonObjectBuilder builder = Json.createObjectBuilder()
-                                                        .add("jsonrpc", "2.0");
-                        jsonRpcRequest.id().map(id -> builder.add("id", id));
-                        if (result() != null) {
-                            builder.add("result", result());
-                        } else {
-                            // TODO error
+                // execute each request in order
+                for (int i = 0; i < array.size(); i++) {
+                    JsonObject rpc = array.getJsonObject(i);
+                    JsonRpcHandler handler = handlersMap.get(rpc.getString("method"));
+                    JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(rpc);
+                    JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl() {
+                        @Override
+                        public void send() {
+                            try {
+                                JsonObjectBuilder builder = Json.createObjectBuilder()
+                                        .add("jsonrpc", "2.0");
+                                jsonRpcRequest.id().map(id -> builder.add("id", id));
+                                if (result() != null) {
+                                    builder.add("result", result());
+                                } else {
+                                    builder.add("error", JsonUtils.jsonbToJsonp(error()));
+                                }
+                                res.status(status().code()).send(builder.build());
+                            } catch (Exception e) {
+                                res.status(500).send();
+                            }
                         }
-                        res.status(status().code()).send(builder.build());
-                    }
-                };
-                handler.handle(jsonRpcRequest, jsonRpcResponse);
+                    };
+                    handler.handle(jsonRpcRequest, jsonRpcResponse);
+                }
             });
         }
         return builder;
     }
 
+    /**
+     * Verifies that JSON-RPC requests are valid checking for version and method.
+     *
+     * @param array array of requests
+     * @param handlersMap register handlers
+     * @return outcome of verification
+     */
+    private boolean verifyJsonRpc(JsonArray array, Map<String, JsonRpcHandler> handlersMap) {
+        try {
+            for (int i = 0; i < array.size(); i++) {
+                JsonObject rpc = array.getJsonObject(i);
+                String version = rpc.getString("jsonrpc");
+                if (!"2.0".equals(version)) {
+                    return false;
+                }
+                String method = rpc.getString("method");
+                JsonRpcHandler handler = handlersMap.get(method);
+                if (handler == null) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (ClassCastException e) {
+            return false;       // malformed
+        }
+    }
+
+    /**
+     * Builder for {@link io.helidon.webserver.jsonrpc.JsonRpcRouting}.
+     */
     public static class Builder implements io.helidon.common.Builder<Builder, JsonRpcRouting> {
 
         private final JsonRpcRulesImpl rules = new JsonRpcRulesImpl();
@@ -92,6 +146,12 @@ public class JsonRpcRouting implements Routing {
         private Builder() {
         }
 
+        /**
+         * Builds a {@link io.helidon.webserver.jsonrpc.JsonRpcRouting} with the
+         * registered services.
+         *
+         * @return a routing instance
+         */
         @Override
         public JsonRpcRouting build() {
             for (JsonRpcService service : services) {
@@ -100,6 +160,12 @@ public class JsonRpcRouting implements Routing {
             return new JsonRpcRouting(this);
         }
 
+        /**
+         * Adds a JSON-RPC service to this routing.
+         *
+         * @param service the server to add
+         * @return this builder
+         */
         Builder service(JsonRpcService service) {
             services.add(service);
             return this;

@@ -51,6 +51,12 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
+    public JsonRpcResponse result(Object object) throws Exception {
+        result = JsonUtils.jsonbToJsonp(object);
+        return this;
+    }
+
+    @Override
     public Integer id() {
         return id;
     }
@@ -59,6 +65,7 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     public JsonValue result() {
         return result;
     }
+
 
     @Override
     public JsonRpcError error() {
