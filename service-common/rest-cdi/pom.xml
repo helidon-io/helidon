@@ -25,6 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-service-common-rest-cdi</artifactId>
+    <name>Helidon Service Common Rest CDI</name>
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
