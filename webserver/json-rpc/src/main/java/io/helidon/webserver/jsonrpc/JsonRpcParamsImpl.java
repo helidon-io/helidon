@@ -25,15 +25,15 @@ import jakarta.json.JsonValue;
 
 class JsonRpcParamsImpl implements JsonRpcParams {
 
-    private final JsonStructure json;
+    private final JsonStructure params;
 
-    JsonRpcParamsImpl(JsonStructure json) {
-        this.json = json;
+    JsonRpcParamsImpl(JsonStructure params) {
+        this.params = params;
     }
 
     @Override
     public JsonObject asJsonObject() {
-        return json.asJsonObject();
+        return params.asJsonObject();
     }
 
     @Override
@@ -53,7 +53,7 @@ class JsonRpcParamsImpl implements JsonRpcParams {
 
     @Override
     public JsonArray asJsonArray() {
-        return json.asJsonArray();
+        return params.asJsonArray();
     }
 
     @Override
@@ -73,5 +73,16 @@ class JsonRpcParamsImpl implements JsonRpcParams {
             return Optional.of(array.get(index));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public <T> T as(Class<T> type) throws Exception {
+        return JsonUtils.jsonpToJsonb(params, type);
+    }
+
+    @Override
+    public <T> T getAs(String name, Class<T> type) throws Exception {
+        JsonValue value = get(name);
+        return value == null ? null : JsonUtils.jsonpToJsonb(value, type);
     }
 }
