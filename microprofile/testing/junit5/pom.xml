@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.testing</groupId>
         <artifactId>helidon-microprofile-testing-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-testing-junit5</artifactId>
