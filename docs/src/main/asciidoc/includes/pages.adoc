@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ ifdef::se-flavor[]
 :health-page: {rootdir}/se/health.adoc
 :metrics-page: {rootdir}/se/metrics/metrics.adoc
 :openapi-page: {rootdir}/se/openapi/openapi.adoc
+:tracing-page: {rootdir}/se/tracing.adoc
 endif::[]
 ifdef::mp-flavor[]
 :health-page: {rootdir}/mp/health.adoc
 :metrics-page: {rootdir}/mp/metrics/metrics.adoc
 :openapi-page: {rootdir}/mp/openapi/openapi.adoc
+:tracing-page: {rootdir}/mp/tracing.adoc
 endif::[]
 
 :webclient-page: {rootdir}/se/webclient.adoc
