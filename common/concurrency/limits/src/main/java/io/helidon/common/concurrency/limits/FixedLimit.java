@@ -33,7 +33,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -174,32 +173,16 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            Span.Builder<?> spanBuilder = null;
-            if (tracer != null) {
-                spanBuilder = tracer.spanBuilder("limits-wait");
-                var currentSpan = Span.current();
-                if (currentSpan.isPresent()) {
-                    currentSpan.get().context().asParent(spanBuilder);
-                }
-            }
-            var span = (spanBuilder != null) ? spanBuilder.start() : null;
-            var scope = span != null ? span.activate() : null;
+            var limitSpan = LimitSpan.create(tracer, "fixed");
             token = handler.tryAcquire(true);
             if (token.isPresent()) {
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
                 }
-                if (scope != null) {
-                    scope.close();
-                    span.end();
-                }
+                limitSpan.close();
                 return token;
             }
-            if (scope != null) {
-                scope.close();
-                span.status(Span.Status.ERROR);
-                span.end();
-            }
+            limitSpan.closeWithError();
         }
         rejectedRequests.getAndIncrement();
         return token;
