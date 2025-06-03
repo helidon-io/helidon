@@ -205,18 +205,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     /**
      * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
      *
-     * @param method the {@code Method} for which the Timer instance is needed
-     * @return the located or created {@code Timer}
-     * @deprecated Use {@link #restEndpointTimer(Class, java.lang.reflect.Method)} instead.
-     */
-    @Deprecated(since = "4.2.3", forRemoval = true)
-    static Timer restEndpointTimer(Method method) {
-        return restEndpointTimer(method.getDeclaringClass(), method);
-    }
-
-    /**
-     * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
-     *
      * @param clazz The {@code Class} on which the method to be timed exists
      * @param method the {@code Method} for which the Timer instance is needed
      * @return the located or created {@code Timer}
@@ -228,17 +216,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
                 .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(clazz, method));
-    }
-
-    /**
-     * Creates or looks up the {@code Counter} instance for measuring REST requests on any JAX-RS method.
-     *
-     * @param method the {@code Method} for which the Counter instance is needed
-     * @return the located or created {@code Counter}
-     * @deprecated Use {@link #restEndpointCounter(Class, java.lang.reflect.Method)} instead.
-     */
-    static Counter restEndpointCounter(Method method) {
-        return restEndpointCounter(method.getDeclaringClass(), method);
     }
 
     /**
@@ -259,18 +236,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     /**
      * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
      *
-     * @param method Java method of interest
-     * @return {@code MetricID} for the simpletimer for this Java method
-     * @deprecated Use {@link #restEndpointTimerMetricID(Class, java.lang.reflect.Method)} instead.
-     */
-    @Deprecated(since = "4.2.3", forRemoval = true)
-    static MetricID restEndpointTimerMetricID(Method method) {
-        return restEndpointTimerMetricID(method.getDeclaringClass(), method);
-    }
-
-    /**
-     * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
-     *
      * @param clazz Java class on which the method exists
      * @param method Java method of interest
      * @return {@code MetricID} for the simpletimer for this Java method
@@ -282,36 +247,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     /**
      * Creates the {@link MetricID} for the synthetic {@link Counter} metric we add to each JAX-RS method.
      *
-     * @param method Java method of interest
-     * @return {@code MetricID} for the counter for this Java method
-     * @deprecated Use {@link #restEndpointCounterMetricID(Class, java.lang.reflect.Method)} instead.
-     */
-    @Deprecated(since = "4.2.3", forRemoval = true)
-    MetricID restEndpointCounterMetricID(Method method) {
-        return restEndpointCounterMetricID(method.getDeclaringClass(), method);
-    }
-
-    /**
-     * Creates the {@link MetricID} for the synthetic {@link Counter} metric we add to each JAX-RS method.
-     *
      * @param clazz Java class on which the method exists
      * @param method Java method of interest
      * @return {@code MetricID} for the counter for this Java method
      */
     MetricID restEndpointCounterMetricID(Class<?> clazz, Method method) {
         return new MetricID(syntheticTimerMetricUnmappedExceptionName, syntheticRestRequestMetricTags(clazz, method));
-    }
-
-    /**
-     * Returns the {@code Tag} array for a synthetic {@code SimplyTimed} annotation.
-     *
-     * @param method the Java method of interest
-     * @return the {@code Tag}s indicating the class and method
-     * @deprecated Use {@link #syntheticRestRequestMetricTags(Class, java.lang.reflect.Method)} instead.
-     */
-    @Deprecated(since = "4.2.3", forRemoval = true)
-    static Tag[] syntheticRestRequestMetricTags(Method method) {
-        return syntheticRestRequestMetricTags(method.getDeclaringClass(), method);
     }
 
     /**

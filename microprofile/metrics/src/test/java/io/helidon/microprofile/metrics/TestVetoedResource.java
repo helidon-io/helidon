@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                         + "method with an explicit metrics annotation",
                 syntheticTimerTimerRegistry()
                         .getTimers()
-                        .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(method)),
+                        .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(VetoedResource.class, method)),
                 is(false));
     }
 
@@ -68,7 +68,8 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                         + VetoedJaxRsButOtherwiseUnmeasuredResource.class.getName() + "#" + method.getName(),
                 MetricsCdiExtension.getRegistryForSyntheticRestRequestMetrics()
                         .getTimers()
-                        .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(method)),
+                        .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(VetoedJaxRsButOtherwiseUnmeasuredResource.class,
+                                                                                   method)),
                 is(false));
     }
 }
