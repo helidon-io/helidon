@@ -174,7 +174,15 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            var span = tracer != null ? tracer.spanBuilder("limits-wait").start() : null;
+            Span.Builder<?> spanBuilder = null;
+            if (tracer != null) {
+                spanBuilder = tracer.spanBuilder("limits-wait");
+                var currentSpan = Span.current();
+                if (currentSpan.isPresent()) {
+                    currentSpan.get().context().asParent(spanBuilder);
+                }
+            }
+            var span = (spanBuilder != null) ? spanBuilder.start() : null;
             var scope = span != null ? span.activate() : null;
             token = handler.tryAcquire(true);
             if (token.isPresent()) {
