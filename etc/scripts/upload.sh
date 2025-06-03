@@ -299,7 +299,7 @@ nexus_upload() {
   # Upload
   curl -s \
     --user "${CENTRAL_USER}:${CENTRAL_PASSWORD}" \
-    --write-out "%{stderr}%{http_code} %{url_effective}\n" \
+    --write-out "%{stderr}%{http_code} %{url_effective} t_pretrans=%{time_pretransfer}s t_tot=%{time_total}s %{speed_upload}B/s\n" \
     --config "${tmpfile}" \
     --parallel \
     --parallel-max 10 \
