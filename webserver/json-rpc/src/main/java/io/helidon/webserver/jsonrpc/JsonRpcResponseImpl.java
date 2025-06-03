@@ -54,7 +54,7 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public JsonRpcResponse result(Object object) throws Exception {
-        result = JsonUtils.jsonbToJsonp(object);
+        result = JsonUtil.jsonbToJsonp(object);
         return this;
     }
 

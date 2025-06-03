@@ -86,16 +86,16 @@ class JsonRpcParamsImpl implements JsonRpcParams {
 
     @Override
     public <T> T as(Class<T> type) throws Exception {
-        return JsonUtils.jsonpToJsonb(params, type);
+        return JsonUtil.jsonpToJsonb(params, type);
     }
 
     @Override
     public <T> T getAs(String name, Class<T> type) throws Exception {
-        return JsonUtils.jsonpToJsonb(get(name), type);
+        return JsonUtil.jsonpToJsonb(get(name), type);
     }
 
     @Override
     public <T> T getAs(int index, Class<T> type) throws Exception {
-        return JsonUtils.jsonpToJsonb(get(index), type);
+        return JsonUtil.jsonpToJsonb(get(index), type);
     }
 }

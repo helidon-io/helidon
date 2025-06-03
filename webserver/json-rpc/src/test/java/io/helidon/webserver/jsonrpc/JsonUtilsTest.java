@@ -26,7 +26,7 @@ class JsonUtilsTest {
     @Test
     void testJsonb() {
         JsonRpcError error = JsonRpcError.builder().code(0).build();
-        JsonObject value = JsonUtils.jsonbToJsonp(error).asJsonObject();
+        JsonObject value = JsonUtil.jsonbToJsonp(error).asJsonObject();
         assertThat(value.getInt("code"), is(0));
         assertThat(value.getString("message"), is("Error processing request"));
     }
