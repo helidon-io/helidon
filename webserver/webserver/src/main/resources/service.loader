@@ -1,0 +1,2 @@
+# List of service contracts we want to support either from service registry, or from service loader
+io.helidon.webserver.spi.ServerFeatureProvider
