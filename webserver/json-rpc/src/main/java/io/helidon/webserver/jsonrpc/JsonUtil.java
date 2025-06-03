@@ -31,11 +31,11 @@ import jakarta.json.bind.JsonbBuilder;
  * Provides JSONP <-> JSONB conversions. Not efficient, but simple and portable
  * for now. A more efficient implementation should avoid serialization.
  */
-class JsonUtils {
+class JsonUtil {
 
     private static final LazyValue<Jsonb> JSONB = LazyValue.create(JsonbBuilder::create);
 
-    private JsonUtils() {
+    private JsonUtil() {
     }
 
     static JsonValue jsonbToJsonp(Object object) {

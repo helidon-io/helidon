@@ -45,7 +45,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
         try (var res = client().post("/jsonrpc")
                 .contentType(APPLICATION_JSON)
                 .submit("Not an object or array")) {
-            assertThat(res.status().code(), is(Status.BAD_REQUEST_400_CODE));
+            assertThat(res.status(), is(Status.OK_200));
+            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            assertThat(error.getInt("code"), is(JsonRpcError.PARSE_ERROR));
         }
     }
 
@@ -54,7 +56,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
         try (var res = client().post("/jsonrpc")
                 .contentType(APPLICATION_JSON)
                 .submit(JSON_RPC_START_BAD_JSON)) {
-            assertThat(res.status().code(), is(Status.BAD_REQUEST_400_CODE));
+            assertThat(res.status(), is(Status.OK_200));
+            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            assertThat(error.getInt("code"), is(JsonRpcError.PARSE_ERROR));
         }
     }
 
@@ -63,7 +67,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
         try (var res = client().post("/jsonrpc")
                 .contentType(APPLICATION_JSON)
                 .submit(JSON_RPC_START.replace("2.0", "5.0"))) {
-            assertThat(res.status().code(), is(Status.OK_200_CODE));
+            assertThat(res.status(), is(Status.OK_200));
             JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.INVALID_REQUEST));
         }
@@ -74,7 +78,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
         try (var res = client().post("/jsonrpc")
                 .contentType(APPLICATION_JSON)
                 .submit(JSON_RPC_START.replace("start", "badMethod"))) {
-            assertThat(res.status().code(), is(Status.OK_200_CODE));
+            assertThat(res.status(), is(Status.OK_200));
             JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.METHOD_NOT_FOUND));
         }
