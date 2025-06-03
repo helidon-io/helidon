@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.jsonrpc;
 
+import java.util.Optional;
+
 import io.helidon.http.Status;
 
 import jakarta.json.JsonValue;
@@ -27,7 +29,7 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     private Status status = Status.OK_200;
 
     @Override
-    public JsonRpcResponse id(Integer id) {
+    public JsonRpcResponse id(int id) {
         this.id = id;
         return this;
     }
@@ -57,19 +59,19 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
-    public Integer id() {
-        return id;
+    public Optional<Integer> id() {
+        return Optional.ofNullable(id);
     }
 
     @Override
-    public JsonValue result() {
-        return result;
+    public Optional<JsonValue> result() {
+        return Optional.ofNullable(result);
     }
 
 
     @Override
-    public JsonRpcError error() {
-        return error;
+    public Optional<JsonRpcError> error() {
+        return Optional.ofNullable(error);
     }
 
     @Override

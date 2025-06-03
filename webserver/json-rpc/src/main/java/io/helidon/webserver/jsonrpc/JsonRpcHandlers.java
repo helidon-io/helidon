@@ -17,7 +17,12 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+/**
+ * Aggregates zero or more JSON-RPC handlers in a map using method
+ * names as keys.
+ */
 public class JsonRpcHandlers {
 
     private final Map<String, JsonRpcHandler> handlers;
@@ -26,14 +31,27 @@ public class JsonRpcHandlers {
         this.handlers = builder.handlers;
     }
 
+    /**
+     * Return a new builder for this class.
+     *
+     * @return a new builder
+     */
     public static JsonRpcHandlers.Builder builder() {
         return new JsonRpcHandlers.Builder();
     }
 
+    /**
+     * Return a map of method names to handles.
+     *
+     * @return a map
+     */
     public Map<String, JsonRpcHandler> handlersMap() {
         return handlers;
     }
 
+    /**
+     * A builder for {@link io.helidon.webserver.jsonrpc.JsonRpcHandlers}.
+     */
     public static class Builder implements io.helidon.common.Builder<JsonRpcHandlers.Builder, JsonRpcHandlers> {
 
         private final Map<String, JsonRpcHandler> handlers = new HashMap<>();
@@ -46,7 +64,16 @@ public class JsonRpcHandlers {
             return new JsonRpcHandlers(this);
         }
 
+        /**
+         * Add a new method and its handler.
+         *
+         * @param method method name
+         * @param handler the handler
+         * @return this builder
+         */
         public Builder method(String method, JsonRpcHandler handler) {
+            Objects.requireNonNull(method);
+            Objects.requireNonNull(handler);
             handlers.put(method, handler);
             return this;
         }

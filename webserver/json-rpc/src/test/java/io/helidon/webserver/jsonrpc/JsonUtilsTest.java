@@ -24,7 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JsonUtilsTest {
 
     @Test
-    void testJsonb() throws Exception {
+    void testJsonb() {
         JsonRpcError error = JsonRpcError.builder().code(0).build();
         JsonObject value = JsonUtils.jsonbToJsonp(error).asJsonObject();
         assertThat(value.getInt("code"), is(0));
