@@ -32,13 +32,22 @@ class JsonRpcParamsImpl implements JsonRpcParams {
     }
 
     @Override
+    public boolean isPresent() {
+        return params != null;
+    }
+
+    @Override
     public JsonObject asJsonObject() {
         return params.asJsonObject();
     }
 
     @Override
     public JsonValue get(String name) {
-        return asJsonObject().get(name);
+        JsonValue value = asJsonObject().get(name);
+        if (value == null) {
+            throw new IllegalArgumentException("Unable to find param " + name);
+        }
+        return value;
     }
 
     @Override
@@ -82,7 +91,11 @@ class JsonRpcParamsImpl implements JsonRpcParams {
 
     @Override
     public <T> T getAs(String name, Class<T> type) throws Exception {
-        JsonValue value = get(name);
-        return value == null ? null : JsonUtils.jsonpToJsonb(value, type);
+        return JsonUtils.jsonpToJsonb(get(name), type);
+    }
+
+    @Override
+    public <T> T getAs(int index, Class<T> type) throws Exception {
+        return JsonUtils.jsonpToJsonb(get(index), type);
     }
 }

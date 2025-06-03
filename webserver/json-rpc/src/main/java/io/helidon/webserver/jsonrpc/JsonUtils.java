@@ -22,17 +22,14 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.common.LazyValue;
 
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
-import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
 /**
  * Provides JSONP <-> JSONB conversions. Not efficient, but simple and portable
- * for now.
+ * for now. A more efficient implementation should avoid serialization.
  */
 class JsonUtils {
 
@@ -41,7 +38,7 @@ class JsonUtils {
     private JsonUtils() {
     }
 
-    static JsonValue jsonbToJsonp(Object object) throws Exception {
+    static JsonValue jsonbToJsonp(Object object) {
         String serialized = JSONB.get().toJson(object);
         InputStream stream = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8));
         try (JsonReader reader = Json.createReader(stream)) {
@@ -49,16 +46,8 @@ class JsonUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    static <T> T jsonpToJsonb(JsonValue value, Class<T> type) throws Exception {
-        if (type == JsonObject.class) {
-            return (T) value.asJsonObject();
-        } else if (type == JsonArray.class) {
-            return (T) value.asJsonArray();
-        } else if (type == JsonStructure.class) {
-            return (T) value;
-        } else {
-            return JSONB.get().fromJson(value.toString(), type);
-        }
+    static <T> T jsonpToJsonb(JsonValue value, Class<T> type) {
+        String serialized = value.toString();
+        return JSONB.get().fromJson(serialized, type);
     }
 }
