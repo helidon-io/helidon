@@ -18,13 +18,17 @@ package io.helidon.webserver.jsonrpc;
 
 import io.helidon.webserver.ServerLifecycle;
 
+/**
+ * An interface that must be implemented by all JSON-RPC services. The single
+ * {@link #routing} method is used to update the routes.
+ */
 @FunctionalInterface
 public interface JsonRpcService extends ServerLifecycle {
 
     /**
-     * Updates the routing to add handlers of this service.
+     * Update JSON-RPC rules for this service.
      *
-     * @param rules to update
+     * @param rules the rules to update
      */
     void routing(JsonRpcRules rules);
 }

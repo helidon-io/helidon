@@ -16,7 +16,18 @@
 
 package io.helidon.webserver.jsonrpc;
 
+/**
+ * The JSON-RPC rules on which handlers can be registered.
+ */
 public interface JsonRpcRules {
 
+    /**
+     * Register JSON-RPC handlers on a given path pattern. All JSON-RPC methods are
+     * invoked using POST.
+     *
+     * @param pathPattern the path pattern
+     * @param handlers the handlers
+     * @return the rules instance
+     */
     JsonRpcRules register(String pathPattern, JsonRpcHandlers handlers);
 }

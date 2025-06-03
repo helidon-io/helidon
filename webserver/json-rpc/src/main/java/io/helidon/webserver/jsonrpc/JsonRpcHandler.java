@@ -17,7 +17,17 @@ package io.helidon.webserver.jsonrpc;
 
 import io.helidon.webserver.ServerLifecycle;
 
+/**
+ * A JSON-RPC handler that can process a request and produce a response.
+ */
 public interface JsonRpcHandler extends ServerLifecycle {
 
+    /**
+     * Handler for a JSON-RPC call.
+     *
+     * @param req the request
+     * @param res the response
+     * @throws Exception if an unexpected condition is found
+     */
     void handle(JsonRpcRequest req, JsonRpcResponse res) throws Exception;
 }
