@@ -15,32 +15,39 @@
  */
 package io.helidon.data;
 
-/**
- * Order definition of the query result ordering.
- */
-public interface Order {
+import io.helidon.builder.api.Prototype;
+
+// OrderBlueprint custom methods
+class OrderSupport {
 
     /**
      * Create new instance of order definition with default direction and case-sensitivity.
-     * Default direction is {@link Direction#ASC} and default value of {@link #ignoreCase()} is {@code false}.
+     * Default direction is {@link OrderDirection#ASC} and default value of {@link Order#ignoreCase()} is {@code false}.
      *
      * @param property entity property
      * @return new order definition instance
      */
+    @Prototype.FactoryMethod
     static Order create(String property) {
-        return new OrderImpl(property, Direction.ASC, false);
+        return Order.builder()
+                .property(property)
+                .build();
     }
 
     /**
      * Create new instance of order definition with default case-sensitivity.
-     * Default value of {@link #ignoreCase()} is {@code false}.
+     * Default value of {@link Order#ignoreCase()} is {@code false}.
      *
      * @param property  entity property
      * @param direction direction of the ordering
      * @return new order definition instance
      */
-    static Order create(String property, Direction direction) {
-        return new OrderImpl(property, direction, false);
+    @Prototype.FactoryMethod
+    static Order create(String property, OrderDirection direction) {
+        return Order.builder()
+                .property(property)
+                .direction(direction)
+                .build();
     }
 
     /**
@@ -51,43 +58,13 @@ public interface Order {
      * @param ignoreCase value of {@code true} for case-insensitive or {@code false} for case-sensitive ordering
      * @return new order definition instance
      */
-    static Order create(String property, Direction direction, boolean ignoreCase) {
-        return new OrderImpl(property, direction, ignoreCase);
-    }
-
-    /**
-     * Entity property used for ordering.
-     *
-     * @return entity property
-     */
-    String property();
-
-    /**
-     * Direction of the ordering.
-     *
-     * @return direction of the ordering
-     */
-    Direction direction();
-
-    /**
-     * Whether ordering is case-insensitive.
-     *
-     * @return value of {@code true} when ordering is case-insensitive or {@code false} otherwise
-     */
-    boolean ignoreCase();
-
-    /**
-     * Direction of the ordering.
-     */
-    enum Direction {
-        /**
-         * Ordering in ascending direction.
-         */
-        ASC,
-        /**
-         * Ordering in descending direction.
-         */
-        DESC
+    @Prototype.FactoryMethod
+    static Order create(String property, OrderDirection direction, boolean ignoreCase) {
+        return Order.builder()
+                .property(property)
+                .direction(direction)
+                .ignoreCase(ignoreCase)
+                .build();
     }
 
 }
