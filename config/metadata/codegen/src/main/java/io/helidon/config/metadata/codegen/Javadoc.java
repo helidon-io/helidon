@@ -78,8 +78,6 @@ final class Javadoc {
         javadoc = JAVADOC_LINKPLAIN.matcher(javadoc).replaceAll(it -> javadocLink(it.group(1)));
         // replace all {@value ...} with just the reference
         javadoc = JAVADOC_VALUE.matcher(javadoc).replaceAll(it -> javadocValue(it.group(1)));
-        // replace all {@see ...} with just the reference
-        javadoc = JAVADOC_SEE.matcher(javadoc).replaceAll(it -> javadocSee(it.group(1)));
 
         int count = 9;
         index = javadoc.indexOf(" @return");
@@ -111,6 +109,9 @@ final class Javadoc {
                 javadoc = javadoc.substring(0, index) + javadoc.substring(endIndex);
             }
         }
+
+        // replace all {@see ...} with just the reference - after removing @return
+        javadoc = JAVADOC_SEE.matcher(javadoc).replaceAll(it -> javadocSee(it.group(1)));
 
         return javadoc.trim();
     }
