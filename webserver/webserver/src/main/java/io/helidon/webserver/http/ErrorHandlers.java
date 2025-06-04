@@ -144,8 +144,9 @@ public final class ErrorHandlers {
                                         RoutingResponse response,
                                         RequestException e) {
         if (!response.reset()) {
-            ctx.log(LOGGER, System.Logger.Level.WARNING, "Request failed: " + request.prologue()
-                    + ", cannot send error response, as response already sent", e);
+            ctx.log(LOGGER, System.Logger.Level.WARNING,
+                    "Request failed: %s, cannot send error response, as response already sent",
+                    e, request.prologue());
             throw new CloseConnectionException(
                     "Cannot send response of an error handler, status and headers already written");
         }
