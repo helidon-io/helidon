@@ -99,7 +99,7 @@ class WebSecurityBuilderGateDefaultsTest {
                 .routing(builder -> builder
                         // will only accept admin (due to gate defaults)
                         .get("/noRoles", SecurityFeature.authenticate())
-                        .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                        .get("/user/*", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))
                         // will also accept admin (due to gate defaults)
                         .get("/deny", SecurityFeature.rolesAllowed("deny"))
@@ -110,7 +110,7 @@ class WebSecurityBuilderGateDefaultsTest {
                                 .skipAuthorization()
                                 .auditEventType("unit_test")
                                 .auditMessageFormat(WebSecurityTests.AUDIT_MESSAGE_FORMAT))
-                        .get("/{*}", (req, res) -> {
+                        .get("/*", (req, res) -> {
                             Optional<SecurityContext> securityContext = Contexts.context()
                                     .flatMap(it -> it.get(SecurityContext.class));
                             res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);

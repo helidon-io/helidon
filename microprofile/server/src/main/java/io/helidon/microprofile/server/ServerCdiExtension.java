@@ -37,13 +37,18 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Scopes;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.RequestScopeFeature;
+import io.helidon.webserver.RequestScopeFeatureProvider;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -51,8 +56,6 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
@@ -63,13 +66,8 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Any;
-import jakarta.enterprise.inject.CreationException;
-import jakarta.enterprise.inject.Default;
-import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
@@ -344,6 +342,17 @@ public class ServerCdiExtension implements Extension {
             // not created automatically from configuration, create it manually
             serverBuilder.addFeature(ContextFeature.create());
         }
+        if (!config.get("server.features.request-scope").exists()) {
+            var feature = GlobalServiceRegistry.registry()
+                    .first(RequestScopeFeatureProvider.class)
+                    .map(it -> {
+                        Config cfg = Config.just(ConfigSources.create(Map.of("enabled", "true")));
+                        return it.create(cfg, it.configKey());
+                    })
+                    .orElseGet(() -> RequestScopeFeature.create(GlobalServiceRegistry.registry().supply(Scopes.class), true));
+
+            serverBuilder.addFeature(feature);
+        }
     }
 
     // Priority must ensure that these handlers are added before the MetricsSupport KPI metrics handler.
@@ -490,27 +499,6 @@ public class ServerCdiExtension implements Extension {
         namedRouters = null;
 
         STARTUP_LOGGER.log(Level.TRACE, "Server created");
-    }
-
-    /**
-     * Make WebServer's {@code ServerRequest} and {@code ServerResponse} available for injection
-     * via CDI by registering them as beans.
-     *
-     * @param event after bean discovery event
-     */
-    private void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
-        event.addBean()
-                .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
-                .addTransitiveTypeClosure(ServerRequest.class)
-                .scope(RequestScoped.class)
-                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerRequest.class))
-                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerRequest from context")));
-        event.addBean()
-                .qualifiers(Set.of(Default.Literal.INSTANCE, Any.Literal.INSTANCE))
-                .addTransitiveTypeClosure(ServerResponse.class)
-                .scope(RequestScoped.class)
-                .createWith(cc -> Contexts.context().flatMap(c -> c.get(ServerResponse.class))
-                        .orElseThrow(() -> new CreationException("Unable to retrieve ServerResponse from context")));
     }
 
     private void registerJaxRsApplications(BeanManager beanManager) {

@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.helidon.common.uri.UriPath;
 
@@ -26,12 +27,78 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class PathMatchersTest {
+    static Stream<Arguments> subpathData() {
+        return Stream.of(
+                // DOCS: `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
+                Arguments.arguments(named("Requires subpath with at least one character",
+                                          new TestData("/foo/{+}",
+                                                       "/foo",
+                                                       false,
+                                                       false,
+                                                       true,
+                                                       true,
+                                                       false))),
+                arguments(named("Regular expression - any string with optional slash",
+                                new TestData("/foo[/{:.*}]",
+                                             "/foo",
+                                             true,
+                                             true,
+                                             true,
+                                             true,
+                                             false))),
+                arguments(named("Subpath placeholder {*} with optional slash",
+                                new TestData("/foo[/{*}]",
+                                             "/foo",
+                                             true,
+                                             true,
+                                             true,
+                                             true,
+                                             false))),
+                arguments(named("Subpath wildcard /*",
+                                new TestData("/foo/*",
+                                             "/foo",
+                                             true,
+                                             true,
+                                             true,
+                                             true,
+                                             false)))
+
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("subpathData")
+    void testSubpathMatching(TestData testData) {
+        PathMatcher matcher = PathMatchers.create(testData.pattern);
+
+        String pathPrefix = testData.pathPrefix;
+        PathMatchers.MatchResult match = matcher.match(UriPath.create(pathPrefix));
+        assertThat("no trailing slash", match.accepted(), is(testData.noTrailing));
+
+        match = matcher.match(UriPath.create(pathPrefix + "/"));
+        assertThat("trailing slash", match.accepted(), is(testData.trailing));
+
+        match = matcher.match(UriPath.create(pathPrefix + "/first"));
+        assertThat("subpath", match.accepted(), is(testData.subpath));
+
+        match = matcher.match(UriPath.create(pathPrefix + "/first/second"));
+        assertThat("nested", match.accepted(), is(testData.nested));
+
+        match = matcher.match(UriPath.create(pathPrefix + "suffix"));
+        assertThat("suffix without slash", match.accepted(), is(testData.pathStartingWithString));
+    }
+
     @Test
     void testRegexQuantifier() {
         var matcher = PathMatchers.pattern("/{id:\\w{2}}/name");
@@ -149,5 +216,14 @@ class PathMatchersTest {
         for (Map.Entry<String, String> entry : stringMap.entrySet()) {
             assertThat(matcher.group(entry.getKey()), Is.is(entry.getValue()));
         }
+    }
+
+    record TestData(String pattern,
+                    String pathPrefix,
+                    boolean noTrailing,
+                    boolean trailing,
+                    boolean subpath,
+                    boolean nested,
+                    boolean pathStartingWithString) {
     }
 }

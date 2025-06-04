@@ -23,12 +23,14 @@ import java.util.function.UnaryOperator;
 import io.helidon.common.context.Context;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
 
 /**
  * HTTP server request.
  */
+@Service.Describe(Service.PerRequest.class)
 public interface ServerRequest extends HttpRequest {
 
     /**

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing.providers</groupId>
         <artifactId>helidon-tracing-providers-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -154,6 +154,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>io.helidon.tracing.providers.tests.TestTracerAndSpanPropagation.java</exclude>
+                                <exclude>**/TestMdc.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -165,6 +166,17 @@
                         <configuration>
                             <includes>
                                 <include>io.helidon.tracing.providers.tests.TestTracerAndSpanPropagation.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>mdc-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestMdc.java</include>
                             </includes>
                         </configuration>
                     </execution>

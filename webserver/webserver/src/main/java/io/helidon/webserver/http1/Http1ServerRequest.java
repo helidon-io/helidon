@@ -219,7 +219,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public Optional<String> matchingPattern() {
-        return Optional.of(matchingPattern);
+        return Optional.ofNullable(matchingPattern);
     }
 
     @Override
@@ -230,6 +230,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
         return ctx.proxyProtocolData();
+    }
+
+    @Override
+    public String toString() {
+        return prologue.rawProtocol() + " " + prologue.method() + " " + path().rawPathNoParams();
     }
 
     private UriInfo createUriInfo() {

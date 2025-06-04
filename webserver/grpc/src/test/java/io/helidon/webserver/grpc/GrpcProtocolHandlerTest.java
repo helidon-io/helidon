@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class GrpcProtocolHandlerTest {
 
@@ -36,17 +36,15 @@ class GrpcProtocolHandlerTest {
     void testIdentityCompressorFlag() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "identity");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(null,
-                Http2Headers.create(headers),
-                null,
-                1,
-                Http2Settings.builder().build(),
-                Http2Settings.builder().build(),
-                null,
-                Http2StreamState.OPEN,
-                null);
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+                                                              null,
+                                                              1,
+                                                              null,
+                                                              Http2StreamState.OPEN,
+                                                              null,
+                                                              GrpcConfig.create());
         handler.initCompression(null, headers);
-        assertThat(handler.isIdentityCompressor(), is(true));
+        assertThat(handler.identityCompressor(), is(true));
     }
 
     @Test
@@ -54,16 +52,46 @@ class GrpcProtocolHandlerTest {
     void testGzipCompressor() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "gzip");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(null,
-                Http2Headers.create(headers),
-                null,
-                1,
-                Http2Settings.builder().build(),
-                Http2Settings.builder().build(),
-                null,
-                Http2StreamState.OPEN,
-                null);
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+                                                              null,
+                                                              1,
+                                                              null,
+                                                              Http2StreamState.OPEN,
+                                                              null,
+                                                              GrpcConfig.create());
         handler.initCompression(null, headers);
-        assertThat(handler.isIdentityCompressor(), is(false));
+        assertThat(handler.identityCompressor(), is(false));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testIgnoreGzipCompressor() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(GRPC_ACCEPT_ENCODING, "gzip");
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+                                                              null,
+                                                              1,
+                                                              null,
+                                                              Http2StreamState.OPEN,
+                                                              null,
+                                                              GrpcConfig.builder()
+                                                                      .enableCompression(false)
+                                                                      .build());
+        handler.initCompression(null, headers);
+        assertThat(handler.identityCompressor(), is(true));
+    }
+
+    @Test
+    void testFromHalfCloseLocalTransition() {
+        Http2StreamState next = GrpcProtocolHandler.nextStreamState(
+                Http2StreamState.HALF_CLOSED_LOCAL, Http2StreamState.HALF_CLOSED_REMOTE);
+        assertThat(next, is(Http2StreamState.CLOSED));
+    }
+
+    @Test
+    void testFromHalfCloseRemoteTransition() {
+        Http2StreamState next = GrpcProtocolHandler.nextStreamState(
+                Http2StreamState.HALF_CLOSED_REMOTE, Http2StreamState.HALF_CLOSED_LOCAL);
+        assertThat(next, is(Http2StreamState.CLOSED));
     }
 }

@@ -21,6 +21,15 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import io.helidon.webserver.Router;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.grpc.GrpcReflectionFeature;
+import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+
 import io.grpc.reflection.v1.ExtensionRequest;
 import io.grpc.reflection.v1.FileDescriptorResponse;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
@@ -33,15 +42,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-
-import io.helidon.webserver.Router;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.grpc.GrpcReflectionFeature;
-import io.helidon.webserver.grpc.GrpcRouting;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -100,6 +100,7 @@ class ReflectionServiceTest extends BaseServiceTest {
 
     /**
      * Tests find symbol for service, method and type.
+     *
      * @param symbol the symbol to look for
      * @throws InterruptedException if the waiting time expires
      */

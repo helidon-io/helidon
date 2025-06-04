@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tests.benchmark</groupId>
         <artifactId>helidon-tests-benchmark-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-benchmark-jmh</artifactId>

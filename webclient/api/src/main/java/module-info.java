@@ -43,6 +43,7 @@ module io.helidon.webclient.api {
     requires transitive io.helidon.http.media;
     requires transitive io.helidon.http;
     requires io.helidon.common.resumable;
+    requires io.helidon.service.registry;
 
     exports io.helidon.webclient.api;
     exports io.helidon.webclient.spi;

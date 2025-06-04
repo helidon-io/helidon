@@ -46,7 +46,7 @@ class ConfigProvider implements Supplier<Config> {
 
     @SuppressWarnings("removal")
     @Service.Inject
-    ConfigProvider(Supplier<Optional<MetaConfig>> metaConfig,
+    ConfigProvider(Supplier<Optional<MetaConfig>> metaConfigSupplier,
                    Supplier<List<ConfigSource>> configSources,
                    Supplier<List<ConfigParser>> configParsers,
                    Supplier<List<ConfigFilter>> configFilters,
@@ -54,12 +54,17 @@ class ConfigProvider implements Supplier<Config> {
         if (io.helidon.common.config.GlobalConfig.configured()) {
             config = wrapCommon(io.helidon.common.config.GlobalConfig.config());
         } else {
+            Optional<MetaConfig> metaConfig = metaConfigSupplier.get();
             config = Config.builder()
-                    .update(it -> metaConfig.get().ifPresent(metaConfigInstance ->
+                    .update(it -> metaConfig.ifPresent(metaConfigInstance ->
                                                                      it.config(metaConfigInstance.metaConfiguration())))
                     .update(it -> configSources.get()
                             .forEach(it::addSource))
-                    .update(it -> defaultConfigSources(it, configParsers))
+                    .update(it -> {
+                        if (metaConfig.isEmpty()) {
+                            defaultConfigSources(it, configParsers);
+                        }
+                    })
                     .disableParserServices()
                     .update(it -> configParsers.get()
                             .forEach(it::addParser))
@@ -100,7 +105,9 @@ class ConfigProvider implements Supplier<Config> {
         // profile source(s) before defaults
         MetaConfigFinder.profile()
                 .ifPresent(profile -> MetaConfigFinder.configSources(new ArrayList<>(supportedSuffixes),
-                                                                     profile));
+                                                                     profile)
+                        .forEach(configBuilder::addSource));
+
         // default config source(s)
         MetaConfigFinder.configSources(new ArrayList<>(supportedSuffixes))
                 .forEach(configBuilder::addSource);

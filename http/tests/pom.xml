@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.http</groupId>
         <artifactId>helidon-http-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.http.tests</groupId>
@@ -47,5 +47,6 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
     </properties>
 </project>

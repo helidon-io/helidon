@@ -21,13 +21,17 @@
     <parent>
         <groupId>io.helidon.http.encoding</groupId>
         <artifactId>helidon-http-encoding-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-http-encoding</artifactId>
     <name>Helidon HTTP Encoding</name>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
@@ -37,18 +41,8 @@
             <artifactId>helidon-http</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-uri</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
-            <!-- @Generated -->
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

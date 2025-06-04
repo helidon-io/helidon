@@ -1,0 +1,78 @@
+#
+# Copyright (c) 2025 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Nightly Build"
+
+on:
+  schedule:
+    - cron: '0 10 * * 0-6'
+
+env:
+  MVN_ARGS: |
+    -B -fae -e
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
+
+jobs:
+  build:
+    timeout-minutes: 15
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-write
+          maven-cache: read-write
+          setup-latest-java: true
+          run: |
+            mvn ${MVN_ARGS} --version
+            mvn ${MVN_ARGS} build-cache:go-offline
+            mvn ${MVN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -DskipTests \
+              -Ptests \
+              install
+  tests:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ ubuntu-22.04, windows-2022 ]
+        moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others ]
+        include:
+          - { os: ubuntu-22.04, platform: linux }
+          - { os: windows-2022, platform: windows }
+    runs-on: ${{ matrix.os }}
+    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}-latest-java
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          setup-latest-java: true
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}-latest-java
+          run: |
+            mvn --version
+            mvn ${MVN_ARGS} \
+              -DreactorRule=tests \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
+              verify

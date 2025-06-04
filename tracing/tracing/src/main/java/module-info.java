@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.tracing {
 
-    requires io.helidon.common;
-
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.config;
+    requires io.helidon.logging.common;
 
     exports io.helidon.tracing;
     exports io.helidon.tracing.spi;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,6 +51,9 @@ inputs:
   free-space:
     description: Whether to aggressively free disk space on the runner
     default: 'false'
+  setup-latest-java:
+    description: Whether to setup latest stable java version
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -87,10 +90,19 @@ runs:
         check-for-updates: 'false'
         set-java-home: 'false'
     - name: Set up JDK
+      if: ${{ inputs.setup-latest-java == 'false' }}
       uses: actions/setup-java@v4.1.0
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
+        overwrite-settings: false
+    - name: Set up JDK ea-stable
+      if: ${{ inputs.setup-latest-java == 'true' }}
+      uses: oracle-actions/setup-java@v1
+      with:
+        website: jdk.java.net
+        release: ea
+        version: stable
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
       uses: actions/cache@v4.2.0
@@ -128,6 +140,15 @@ runs:
         restore-keys: |
           build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
+    - name: Build cache (write-only)
+      if: ${{ inputs.build-cache == 'write-only' }}
+      uses: actions/cache@v4.2.0
+      with:
+        path: |
+          ./**/target/**
+          .m2/repository/io/helidon/**
+        enableCrossOsArchive: true
+        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
       uses: actions/cache/restore@v4.2.0
@@ -159,7 +180,7 @@ runs:
           **/target/failsafe-reports/**
           **/target/it/**/*.log
     - name: Archive artifacts
-      if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}
+      if: ${{ inputs.artifact-name != '' && inputs.artifact-path != '' && always() }}
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'

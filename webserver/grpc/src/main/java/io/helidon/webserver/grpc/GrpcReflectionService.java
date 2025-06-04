@@ -37,7 +37,12 @@ import io.grpc.reflection.v1.ServiceResponse;
 import io.grpc.stub.StreamObserver;
 
 /**
- * Grpc reflection service.
+ * Grpc reflection service version v1. Note the code in this class is almost identical
+ * to {@link io.helidon.webserver.grpc.GrpcReflectionServiceV1Alpha} except for the
+ * code-generated protobuf types. The v1alpha will be phased out once more tools
+ * add support for v1.
+ *
+ * @see io.helidon.webserver.grpc.GrpcReflectionServiceV1Alpha
  */
 class GrpcReflectionService implements GrpcService {
 

@@ -198,9 +198,22 @@ interface MetricsConfigBlueprint {
      *
      * @return true/false
      */
-    @Option.Configured
+    @Option.Configured("rest-request.enabled")
     @Option.DefaultBoolean(false)
     boolean restRequestEnabled();
+
+    /**
+     * Whether automatic REST request metrics should be measured (as indicated by the deprecated config
+     * key {@code rest-request-enabled}, the config key using a hyphen instead of a dot separator).
+     *
+     * @return true/false
+     * @deprecated Use {@code rest-request.enabled} instead.
+     */
+    @Deprecated(since = "4.2.3", forRemoval = true)
+    @Option.Configured("rest-request-enabled")
+    @Option.Access("")
+    @Option.Decorator(MetricsConfigSupport.RestRequestEnabledDecorator.class)
+    Optional<Boolean> restRequestEnabledShadow();
 
     /**
      * Whether Helidon should expose meters related to virtual threads.

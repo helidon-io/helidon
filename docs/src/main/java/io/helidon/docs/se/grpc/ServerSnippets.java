@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,14 @@ import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcService;
+import io.helidon.grpc.core.InterceptorWeights;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerCall;
+import io.grpc.Metadata;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
 
@@ -174,4 +179,33 @@ class ServerSnippets {
         // end::snippet_3[]
     }
 
+    static class Interceptor1 implements ServerInterceptor {
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                     Metadata headers,
+                                                                     ServerCallHandler<ReqT, RespT> next) {
+            return next.startCall(call, headers);
+        }
+    }
+
+    static class Interceptor2 implements ServerInterceptor {
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                     Metadata headers,
+                                                                     ServerCallHandler<ReqT, RespT> next) {
+            return next.startCall(call, headers);
+        }
+    }
+
+    private static void snippet4(Config config) {
+        // tag::snippet_4[]
+        GrpcRouting.builder()
+                .service(new GreetService(config))
+                .intercept(new Interceptor1())
+                .service(new EchoService())
+                .intercept(InterceptorWeights.USER + 100, new Interceptor2())
+                .service(new MathService())
+                .build();
+        // end::snippet_4[]
+    }
 }
