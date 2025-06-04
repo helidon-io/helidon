@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.data;
 
-import io.helidon.common.config.NamedService;
-
 /**
- * Provider specific configuration.
- * Each provider, such as {@code jakarta}, {@code eclipselink} would have its own configuration.
+ * Direction of the query result ordering.
  */
-public interface ProviderConfig extends NamedService {
+public enum OrderDirection {
+
+    /**
+     * Ordering in ascending direction.
+     */
+    ASC,
+
+    /**
+     * Ordering in descending direction.
+     */
+    DESC
+
 }

@@ -21,6 +21,7 @@ module io.helidon.data.sql.common {
     requires transitive io.helidon.data;
     requires java.sql;
     requires io.helidon.builder.api;
+    requires io.helidon.common.config;
 
     exports io.helidon.data.sql.common;
 }
