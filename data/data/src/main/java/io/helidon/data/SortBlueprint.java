@@ -1,3 +1,5 @@
+package io.helidon.data;
+
 /*
  * Copyright (c) 2025 Oracle and/or its affiliates.
  *
@@ -13,17 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data;
 
-import java.util.Objects;
+import java.util.List;
 
-record OrderImpl(String property,
-                 Direction direction,
-                 boolean ignoreCase) implements Order {
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
 
-    OrderImpl {
-        Objects.requireNonNull(property, "Order definition entity property is null");
-        Objects.requireNonNull(direction, "Order definition direction is null");
-    }
+/**
+ * Query result ordering.
+ */
+@Prototype.Blueprint
+@Prototype.CustomMethods(SortSupport.class)
+interface SortBlueprint {
+
+    /**
+     * Order definitions for the query result.
+     * Default value is an empty {@link List} to return unsorted result.
+     *
+     * @return {@link List} of order definitions
+     */
+    @Option.Default("EMPTY")
+    List<Order> orderBy();
 
 }
