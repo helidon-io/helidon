@@ -14,4 +14,19 @@
 # limitations under the License.
 #
 
-property: "default"
+server:
+  features:
+    context:
+      records:
+        - header: "X-First"
+          classifier: "X-First"
+        - header: "X-Second"
+          classifier: "io.helidon.tests.second"
+client:
+  services:
+    context:
+      records:
+        - header: "X-First"
+          classifier: "X-First"
+        - header: "X-Second"
+          classifier: "io.helidon.tests.second"
