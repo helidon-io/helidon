@@ -95,8 +95,9 @@ public class JsonRpcRouting implements Routing {
     public HttpRouting.Builder toHttpRouting() {
         Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
         HttpRouting.Builder builder = HttpRouting.builder();
-        for (String pathPattern : rulesMap.keySet()) {
-            Map<String, JsonRpcHandler> handlersMap = rulesMap.get(pathPattern).handlersMap();
+        for (Map.Entry<String, JsonRpcHandlers> entry : rulesMap.entrySet()) {
+            String pathPattern = entry.getKey();
+            Map<String, JsonRpcHandler> handlersMap = entry.getValue().handlersMap();
             builder.post(pathPattern, (req, res) -> {
                 try {
                     // attempt to parse request as JSON
@@ -104,7 +105,7 @@ public class JsonRpcRouting implements Routing {
                     try {
                         jsonRequest = req.content().as(JsonStructure.class);
                     } catch (JsonParsingException e) {
-                        JsonObject parseError = jsonRpcResponse(PARSE_ERROR_ERROR, null);
+                        JsonObject parseError = jsonRpcError(PARSE_ERROR_ERROR, null);
                         res.status(Status.OK_200).send(parseError);
                         return;
                     }
@@ -114,7 +115,7 @@ public class JsonRpcRouting implements Routing {
                         // if request fails verification, return JSON-RPC error
                         JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                         if (error != null) {
-                            JsonObject verifyError = jsonRpcResponse(error, jsonObject);
+                            JsonObject verifyError = jsonRpcError(error, jsonObject);
                             res.status(Status.OK_200).send(verifyError);
                             return;
                         }
@@ -165,7 +166,7 @@ public class JsonRpcRouting implements Routing {
 
                             // requests must be objects
                             if (!(jsonValue instanceof JsonObject jsonObject)) {
-                                JsonObject invalidRequest = jsonRpcResponse(INVALID_REQUEST_ERROR, null);
+                                JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, null);
                                 jsonResult.add(invalidRequest);
                                 continue;       // skip bad request
                             }
@@ -173,7 +174,7 @@ public class JsonRpcRouting implements Routing {
                             // check if request passes validation before proceeding
                             JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                             if (error != null) {
-                                JsonObject verifyError = jsonRpcResponse(error, jsonObject);
+                                JsonObject verifyError = jsonRpcError(error, jsonObject);
                                 jsonResult.add(verifyError);
                                 continue;       // skip bad request
                             }
@@ -241,10 +242,12 @@ public class JsonRpcRouting implements Routing {
         }
     }
 
-    private JsonObject jsonRpcResponse(JsonRpcError error, JsonObject jsonObject) {
+    private JsonObject jsonRpcError(JsonRpcError error, JsonObject jsonObject) {
         JsonObjectBuilder errorBuilder = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0");
-        if (jsonObject != null && jsonObject.containsKey("id")) {
+        if (jsonObject == null) {
+            errorBuilder.add("id", JsonValue.NULL);
+        } else if (jsonObject.containsKey("id")) {
             errorBuilder.add("id", jsonObject.getInt("id"));
         }
         errorBuilder.add("error", jsonbToJsonp(error));
@@ -252,12 +255,12 @@ public class JsonRpcRouting implements Routing {
     }
 
     private void sendInternalError(ServerResponse res) {
-        JsonObject internalError = jsonRpcResponse(INTERNAL_ERROR_ERROR, null);
+        JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, null);
         res.status(Status.OK_200).send(internalError);
     }
 
     private void sendInvalidRequest(ServerResponse res) {
-        JsonObject invalidRequest = jsonRpcResponse(INVALID_REQUEST_ERROR, null);
+        JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, null);
         res.status(Status.OK_200).send(invalidRequest);
     }
 

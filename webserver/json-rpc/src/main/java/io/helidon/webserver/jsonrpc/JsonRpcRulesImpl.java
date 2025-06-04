@@ -28,6 +28,13 @@ class JsonRpcRulesImpl implements JsonRpcRules {
         return this;
     }
 
+    @Override
+    public JsonRpcRules register(String pathPattern, String method, JsonRpcHandler handler) {
+        JsonRpcHandlers handlers = JsonRpcHandlers.create(method, handler);
+        rules.put(pathPattern, handlers);
+        return this;
+    }
+
     Map<String, JsonRpcHandlers> rulesMap() {
         return rules;
     }

@@ -19,7 +19,9 @@ import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
@@ -46,7 +48,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit("Not an object or array")) {
             assertThat(res.status(), is(Status.OK_200));
-            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(JsonValue.NULL));
+            JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.PARSE_ERROR));
         }
     }
@@ -57,7 +61,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(JSON_RPC_START_BAD_JSON)) {
             assertThat(res.status(), is(Status.OK_200));
-            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(JsonValue.NULL));
+            JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.PARSE_ERROR));
         }
     }
@@ -68,7 +74,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_START.replace("2.0", "5.0"))) {
             assertThat(res.status(), is(Status.OK_200));
-            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(Json.createValue(1)));
+            JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.INVALID_REQUEST));
         }
     }
@@ -79,7 +87,9 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_START.replace("start", "badMethod"))) {
             assertThat(res.status(), is(Status.OK_200));
-            JsonObject error = res.entity().as(JsonObject.class).getJsonObject("error");
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(Json.createValue(1)));
+            JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.METHOD_NOT_FOUND));
         }
     }
@@ -90,9 +100,11 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_START.replace("NOW", "LATER"))) {
             assertThat(res.status().code(), is(200));
-            JsonObject json = res.as(JsonObject.class).getJsonObject("error");
-            assertThat(json.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(json.getJsonObject("data").getString("reason"), is("Bad param"));
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(Json.createValue(1)));
+            JsonObject error = object.getJsonObject("error");
+            assertThat(error.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
+            assertThat(error.getJsonObject("data").getString("reason"), is("Bad param"));
         }
     }
 
@@ -102,9 +114,11 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_STOP.replace("NOW", "LATER"))) {
             assertThat(res.status().code(), is(200));
-            JsonObject json = res.as(JsonObject.class).getJsonObject("error");
-            assertThat(json.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(json.getJsonObject("data").getString("reason"), is("Bad param"));
+            JsonObject object = res.entity().as(JsonObject.class);
+            assertThat(object.get("id"), is(Json.createValue(2)));
+            JsonObject error = object.getJsonObject("error");
+            assertThat(error.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
+            assertThat(error.getJsonObject("data").getString("reason"), is("Bad param"));
         }
     }
 }
