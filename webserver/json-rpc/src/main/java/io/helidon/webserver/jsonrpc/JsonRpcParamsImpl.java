@@ -37,6 +37,11 @@ class JsonRpcParamsImpl implements JsonRpcParams {
     }
 
     @Override
+    public JsonStructure asJsonStructure() {
+        return params;
+    }
+
+    @Override
     public JsonObject asJsonObject() {
         return params.asJsonObject();
     }
@@ -90,12 +95,12 @@ class JsonRpcParamsImpl implements JsonRpcParams {
     }
 
     @Override
-    public <T> T getAs(String name, Class<T> type) throws Exception {
+    public <T> T getAs(String name, Class<T> type) {
         return JsonUtil.jsonpToJsonb(get(name), type);
     }
 
     @Override
-    public <T> T getAs(int index, Class<T> type) throws Exception {
+    public <T> T getAs(int index, Class<T> type) {
         return JsonUtil.jsonpToJsonb(get(index), type);
     }
 }
