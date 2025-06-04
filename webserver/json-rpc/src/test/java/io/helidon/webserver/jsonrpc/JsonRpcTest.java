@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.jsonrpc;
 
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
@@ -27,17 +28,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class JsonRpcTest extends JsonRpcBaseTest {
-    
+
     JsonRpcTest(Http1Client client) {
         super(client);
     }
-    
+
     @Test
     void testStart() {
-        try (var res = client().post("/jsonrpc")
+        try (var res = client().post("/machine")
                 .contentType(APPLICATION_JSON)
-                .submit(JSON_RPC_START)) {
-            assertThat(res.status().code(), is(200));
+                .submit(MACHINE_START)) {
+            assertThat(res.status(), is(Status.OK_200));
             JsonObject json = res.as(JsonObject.class).getJsonObject("result");
             assertThat(json.getString("status"), is("RUNNING"));
         }
@@ -45,36 +46,34 @@ class JsonRpcTest extends JsonRpcBaseTest {
 
     @Test
     void testStop() {
-        try (var res = client().post("/jsonrpc")
+        try (var res = client().post("/machine")
                 .contentType(APPLICATION_JSON)
-                .submit(JSON_RPC_STOP)) {
-            assertThat(res.status().code(), is(200));
+                .submit(MACHINE_STOP)) {
+            assertThat(res.status(), is(Status.OK_200));
             JsonObject json = res.as(JsonObject.class).getJsonObject("result");
             assertThat(json.getString("status"), is("STOPPED"));
         }
     }
 
     @Test
-    void testStartError() {
-        try (var res = client().post("/jsonrpc")
+    void testAddArray() {
+        try (var res = client().post("/calculator")
                 .contentType(APPLICATION_JSON)
-                .submit(JSON_RPC_START.replace("NOW", "LATER"))) {
-            assertThat(res.status().code(), is(200));
-            JsonObject json = res.as(JsonObject.class).getJsonObject("error");
-            assertThat(json.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(json.getJsonObject("data").getString("reason"), is("Bad param"));
+                .submit(CALCULATOR_ADD_ARRAY)) {
+            assertThat(res.status(), is(Status.OK_200));
+            int sum = res.as(JsonObject.class).getInt("result");
+            assertThat(sum, is(45));
         }
     }
 
     @Test
-    void testStopError() {
-        try (var res = client().post("/jsonrpc")
+    void testAddObject() {
+        try (var res = client().post("/calculator")
                 .contentType(APPLICATION_JSON)
-                .submit(JSON_RPC_STOP.replace("NOW", "LATER"))) {
-            assertThat(res.status().code(), is(200));
-            JsonObject json = res.as(JsonObject.class).getJsonObject("error");
-            assertThat(json.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(json.getJsonObject("data").getString("reason"), is("Bad param"));
+                .submit(CALCULATOR_ADD_OBJECT)) {
+            assertThat(res.status(), is(Status.OK_200));
+            int sum = res.as(JsonObject.class).getInt("result");
+            assertThat(sum, is(45));
         }
     }
 }

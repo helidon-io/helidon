@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 
 /**
@@ -50,6 +51,13 @@ public interface JsonRpcParams {
      * @throws ClassCastException if not a JSON array
      */
     JsonArray asJsonArray();
+
+    /**
+     * Access all request params as a single JSON structure.
+     *
+     * @return a JSON structure
+     */
+    JsonStructure asJsonStructure();
 
     /**
      * Get a single param by name as a JSON value.
