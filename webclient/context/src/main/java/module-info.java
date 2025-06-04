@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.webclient.context.WebClientContextServiceProvider;
 
 /**
  * Helidon WebClient Context Propagation.
@@ -34,6 +38,6 @@ module io.helidon.webclient.context {
     exports io.helidon.webclient.context;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
-            with io.helidon.webclient.context.WebClientContextPropagationProvider;
+            with WebClientContextServiceProvider;
 
 }

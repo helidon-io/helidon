@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Oracle and/or its affiliates.
+# Copyright (c) 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,5 +24,5 @@ unit-1:
       array: true
     - classifier: "io.helidon.webclient.context.propagation.cid"
       header: "x_helidon_cid"
-      default-value: ["first", "second"]
+      default-values: ["first", "second"]
       array: true

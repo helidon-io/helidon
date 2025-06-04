@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 /**
  * Client Context Propagation service provider implementation.
  */
-public class WebClientContextPropagationProvider implements WebClientServiceProvider {
+public class WebClientContextServiceProvider implements WebClientServiceProvider {
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
      */
-    public WebClientContextPropagationProvider() {
+    public WebClientContextServiceProvider() {
     }
 
     @Override
