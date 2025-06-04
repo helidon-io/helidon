@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,19 @@ public class ClassPathContentHandlerTest {
                 .path("/some/bar/not.exist")
                 .get();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+    }
+
+    @Test
+    public void badAcceptTypes() throws Exception {
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.create("content"))
+                .build();
+        // /some/root-a.txt
+        TestResponse response = TestClient.create(routing)
+                .path("/some/root-a.txt")
+                .header("Accept", "86279333026148305409260801579029123580362081")
+                .get();
+        assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
     }
 
     @Test
