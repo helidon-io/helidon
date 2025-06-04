@@ -212,4 +212,49 @@ class Upgrade4xSnippets {
         public void routing(HttpRules rules) {
         }
     }
+    /* Helidon 3 code
+    // tag::snippet_11[]
+    import io.helidon.webserver.RequestPredicate;
+
+    public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+        // ~~
+
+            protected Handler requestHandler(final HttpRules rules, final Method method, final Handler applyHandler) {
+                switch (method) {
+                case PUT:
+                    return RequestPredicate.create()
+                        .accepts(MediaType.APPLICATION_JSON)
+                        .containsHeader(HttpHeaderField.AUTHORIZATION.headerName())
+                        .hasContentType(ContentHeader.TYPE_JSON)
+                        .thenApply(applyHandler);
+                }
+                // ~~
+            }
+    }
+    // end::snippet_11[]
+    */
+
+   // tag::snippet_12[]
+    public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+        protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
+            return switch (method.text()) {
+                case "PUT" -> (req, res) -> {
+                    ServerRequestHeaders headers = req.headers();
+                    if (headers.isAccepted(MediaTypes.APPLICATION_JSON)
+                        && headers.contains(HeaderNames.AUTHORIZATION)
+                        && headers.contentType()
+                                .filter(HttpMediaTypes.JSON_PREDICATE)
+                                .isPresent()) {
+                        applyHandler.handle(req, res);
+                    } else {
+                        res.next();
+                    }
+                };
+                default -> (req, res) -> res.next();
+            };
+        }
+    }
+    // end::snippet_12[]
 }
