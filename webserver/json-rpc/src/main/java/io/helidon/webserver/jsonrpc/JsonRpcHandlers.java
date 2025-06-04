@@ -41,6 +41,17 @@ public class JsonRpcHandlers {
     }
 
     /**
+     * Create an instance of this class from a single method and handler pair.
+     *
+     * @param method the method name
+     * @param handler the handler
+     * @return a newly created instance of this class
+     */
+    public static JsonRpcHandlers create(String method, JsonRpcHandler handler) {
+        return builder().method(method, handler).build();
+    }
+
+    /**
      * Return a map of method names to handles.
      *
      * @return a map

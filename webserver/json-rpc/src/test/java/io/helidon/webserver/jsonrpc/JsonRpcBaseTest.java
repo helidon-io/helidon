@@ -22,16 +22,35 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
+
 class JsonRpcBaseTest {
 
-    static final String JSON_RPC_START = """
+    static final String CALCULATOR_ADD_ARRAY = """
+            {"jsonrpc": "2.0",
+                "method": "add",
+                "params": [20, 25]},
+                "id": 1}
+            """;
+
+    static final String CALCULATOR_ADD_OBJECT = """
+            {"jsonrpc": "2.0",
+                "method": "add",
+                "params": { "left" : 20, "right": 25 },
+                "id": 1}
+            """;
+
+    static final String MACHINE_START = """
             {"jsonrpc": "2.0",
                 "method": "start",
                 "params": { "when" : "NOW", "duration" : "PT0S" },
                 "id": 1}
             """;
 
-    static final String JSON_RPC_STOP = """
+    static final String MACHINE_STOP = """
             {"jsonrpc": "2.0",
                 "method": "stop",
                 "params": { "when" : "NOW" },
@@ -51,10 +70,36 @@ class JsonRpcBaseTest {
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
         JsonRpcRouting routing = JsonRpcRouting.builder()
+                // register a single method
+                .register("/calculator", "add", JsonRpcBaseTest::addNumbers)
+                // register a service under "/machine"
                 .service(new JsonRpcService1())
                 .build();
         router.addRouting(routing.toHttpRouting());
     }
+
+    // -- Calculator ----------------------------------------------------------
+
+    static void addNumbers(JsonRpcRequest req, JsonRpcResponse res) {
+        int left, right;
+
+        // collect params either as array or object
+        JsonStructure params = req.params().asJsonStructure();
+        if (params instanceof JsonArray array) {
+            left = array.getInt(0);
+            right = array.getInt(1);
+        } else if (params instanceof JsonObject object) {
+            left = object.getInt("left");
+            right = object.getInt("right");
+        } else {
+            throw new IllegalArgumentException("Should fail JSON-RPC validation");
+        }
+
+        // send response
+        res.result(Json.createValue(left + right)).send();
+    }
+
+    // -- Machine -------------------------------------------------------------
 
     public record StartStopParams(String when, Duration duration) {
     }
@@ -69,7 +114,7 @@ class JsonRpcBaseTest {
 
         @Override
         public void routing(JsonRpcRules rules) {
-            rules.register("/jsonrpc",
+            rules.register("/machine",
                            JsonRpcHandlers.builder()
                                    .method("start", this::start)
                                    .method("stop", this::stop)

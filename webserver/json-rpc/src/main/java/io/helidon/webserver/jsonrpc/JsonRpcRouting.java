@@ -53,7 +53,7 @@ public class JsonRpcRouting implements Routing {
 
     static final JsonRpcError METHOD_NOT_FOUND_ERROR = JsonRpcError.builder()
             .code(METHOD_NOT_FOUND)
-            .message("he method does not exist or is not available")
+            .message("The method does not exist or is not available")
             .build();
 
     static final JsonRpcError INTERNAL_ERROR_ERROR = JsonRpcError.builder()
@@ -150,25 +150,33 @@ public class JsonRpcRouting implements Routing {
                             sendInternalError(res);
                         }
                     } else if (jsonRequest instanceof JsonArray jsonArray) {
-                        int size  = jsonArray.size();
+                        int size = jsonArray.size();
 
-                        // first verify every request in batch
-                        for (int i = 0; i < size; i++) {
-                            JsonObject jsonObject = jsonArray.getJsonObject(i);
-
-                            // if request fails verification, return JSON-RPC error
-                            JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
-                            if (error != null) {
-                                JsonObject verifyError = jsonRpcResponse(error, jsonObject);
-                                res.status(Status.OK_200).send(verifyError);
-                                return;
-                            }
+                        // we must receive at least one request
+                        if (size == 0) {
+                            sendInvalidRequest(res);
+                            return;
                         }
 
                         // process batch requests
                         JsonArrayBuilder jsonResult = Json.createArrayBuilder();
                         for (int i = 0; i < size; i++) {
-                            JsonObject jsonObject = jsonArray.getJsonObject(i);
+                            JsonValue jsonValue = jsonArray.get(i);
+
+                            // requests must be objects
+                            if (!(jsonValue instanceof JsonObject jsonObject)) {
+                                JsonObject invalidRequest = jsonRpcResponse(INVALID_REQUEST_ERROR, null);
+                                jsonResult.add(invalidRequest);
+                                continue;       // skip bad request
+                            }
+
+                            // check if request passes validation before proceeding
+                            JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
+                            if (error != null) {
+                                JsonObject verifyError = jsonRpcResponse(error, jsonObject);
+                                jsonResult.add(verifyError);
+                                continue;       // skip bad request
+                            }
 
                             // prepare and call method handler
                             JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
@@ -206,8 +214,7 @@ public class JsonRpcRouting implements Routing {
                         // respond to batch request with batch response
                         res.status(Status.OK_200).send(jsonResult.build());
                     } else {
-                        JsonObject invalidRequest = jsonRpcResponse(INVALID_REQUEST_ERROR, null);
-                        res.status(Status.OK_200).send(invalidRequest);
+                        sendInvalidRequest(res);
                     }
                 } catch (Exception e) {
                     sendInternalError(res);
@@ -249,6 +256,11 @@ public class JsonRpcRouting implements Routing {
         res.status(Status.OK_200).send(internalError);
     }
 
+    private void sendInvalidRequest(ServerResponse res) {
+        JsonObject invalidRequest = jsonRpcResponse(INVALID_REQUEST_ERROR, null);
+        res.status(Status.OK_200).send(invalidRequest);
+    }
+
     /**
      * Builder for {@link io.helidon.webserver.jsonrpc.JsonRpcRouting}.
      */
@@ -282,6 +294,32 @@ public class JsonRpcRouting implements Routing {
          */
         public Builder service(JsonRpcService service) {
             services.add(service);
+            return this;
+        }
+
+        /**
+         * Register JSON-RPC handlers directly without implementing a
+         * {@link io.helidon.webserver.jsonrpc.JsonRpcService}.
+         *
+         * @param pathPattern the path pattern
+         * @param handlers the handlers
+         * @return this builder
+         */
+        public Builder register(String pathPattern, JsonRpcHandlers handlers) {
+            rules.register(pathPattern, handlers);
+            return this;
+        }
+
+        /**
+         * Register a single JSON-RPC handler for a method and path pattern.
+         *
+         * @param pathPattern the path pattern
+         * @param method the method name
+         * @param handler the handler
+         * @return this builder
+         */
+        public Builder register(String pathPattern, String method, JsonRpcHandler handler) {
+            register(pathPattern, JsonRpcHandlers.create(method, handler));
             return this;
         }
     }
