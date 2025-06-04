@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ import io.helidon.webserver.http.ServerResponse;
  * <pre>
  * // continue from example above...
  * // create a gate for method GET: authenticate all paths under /user and require role "user" for authorization
- * .get("/user[/{*}]", WebSecurity.{@link SecurityFeature#rolesAllowed(String...)
+ * .get("/user/*", WebSecurity.{@link SecurityFeature#rolesAllowed(String...)
  * rolesAllowed("user")})
  * </pre>
  */
@@ -119,7 +119,7 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
      * This method is to be used together with other routing methods to protect web resources programmatically.
      * Example:
      * <pre>
-     * .get("/user[/{*}]", WebSecurity.authenticate()
+     * .get("/user/*", WebSecurity.authenticate()
      * .rolesAllowed("user"))
      * </pre>
      *
