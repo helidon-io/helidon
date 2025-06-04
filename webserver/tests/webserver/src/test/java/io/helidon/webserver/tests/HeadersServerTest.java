@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.webserver.tests;
 import java.io.IOException;
 import java.io.InputStream;
 
+import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -45,6 +47,9 @@ class HeadersServerTest {
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
     private static final HeaderName CLIENT_PORT_HEADER_NAME = HeaderNames.create("client-port");
+    private static final Header BAD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE_NAME, "bullseye");
+    private static final Header GOOD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE_NAME,
+                                                                       MediaTypes.APPLICATION_XML_VALUE);
 
     private int clientPort = -1;
 
@@ -99,6 +104,30 @@ class HeadersServerTest {
                          res.trailers().add(TEST_TRAILER_HEADER);
                      }
         );
+        router.route(GET, "/content/type",
+                     (req, res) -> {
+                        res.send(req.headers().contentType().map(MediaType::text).orElse("none"));
+                     });
+    }
+
+    @Test
+    void testGoodContentType(WebClient webClient) {
+        // sanity check
+        var response = webClient.get("/content/type")
+                .header(GOOD_CONTENT_TYPE)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is(MediaTypes.APPLICATION_XML_VALUE));
+    }
+
+    @Test
+    void testBadContentType(WebClient webClient) {
+        var response = webClient.get("/content/type")
+                .header(BAD_CONTENT_TYPE)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
     }
 
     @Test
