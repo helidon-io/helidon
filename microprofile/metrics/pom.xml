@@ -131,6 +131,7 @@
                                 <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                                 <exclude>**/TestDistributionCustomizationsNoInit.java</exclude>
+                                <exclude>**/TestRestServiceInheritance.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
@@ -206,6 +207,17 @@
                         <configuration>
                             <includes>
                                 <include>**/TestDistributionCustomizationsNoInit.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-rest-service-inheritance</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestRestServiceInheritance.java</include>
                             </includes>
                         </configuration>
                     </execution>
