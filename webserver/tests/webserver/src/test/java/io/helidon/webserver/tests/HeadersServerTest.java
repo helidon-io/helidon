@@ -47,9 +47,9 @@ class HeadersServerTest {
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
     private static final HeaderName CLIENT_PORT_HEADER_NAME = HeaderNames.create("client-port");
-    private static final Header BAD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE_NAME, "bullseye");
-    private static final Header GOOD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE_NAME,
-                                                                       MediaTypes.APPLICATION_XML_VALUE);
+    private static final Header BAD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "bullseye");
+    private static final Header GOOD_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE,
+                                                                       MediaTypes.APPLICATION_XML.text());
 
     private int clientPort = -1;
 
@@ -118,7 +118,7 @@ class HeadersServerTest {
                 .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity(), is(MediaTypes.APPLICATION_XML_VALUE));
+        assertThat(response.entity(), is(MediaTypes.APPLICATION_XML.text()));
     }
 
     @Test
