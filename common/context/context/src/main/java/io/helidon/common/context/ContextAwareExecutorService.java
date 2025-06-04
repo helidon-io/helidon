@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.common.context;
 
-package io.helidon.webserver.context;
+import java.util.concurrent.ExecutorService;
 
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
-
-@RoutingTest
-class ContextFeatureTest extends ContextFeatureTestBase {
-    ContextFeatureTest(DirectClient client) {
-        super(client);
-    }
+/**
+ * An interface for wrapped executor services.
+ */
+public interface ContextAwareExecutorService extends ExecutorService {
+    /**
+     * Unwrap the executor service.
+     *
+     * @return the instance that was used to create this wrapper.
+     */
+    ExecutorService unwrap();
 }

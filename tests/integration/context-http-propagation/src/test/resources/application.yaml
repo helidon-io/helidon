@@ -14,19 +14,35 @@
 # limitations under the License.
 #
 
+# configuration of propagation from server request headers to context
 server:
   features:
     context:
       records:
         - header: "X-First"
-          classifier: "X-First"
         - header: "X-Second"
           classifier: "io.helidon.tests.second"
+        - classifier: "io.helidon.webclient.context.propagation.tid"
+          header: "X-Helidon-Tid"
+          array: true
+        - classifier: "io.helidon.webclient.context.propagation.cid"
+          header: "x_helidon_cid"
+          default-value: ["third", "fourth"]
+          array: true
+
+# configuration of propagation from context to client request headers
 client:
   services:
     context:
       records:
         - header: "X-First"
-          classifier: "X-First"
         - header: "X-Second"
           classifier: "io.helidon.tests.second"
+        - classifier: "io.helidon.webclient.context.propagation.tid"
+          header: "X-Helidon-Tid"
+          default-value: "unknown"
+          array: true
+        - classifier: "io.helidon.webclient.context.propagation.cid"
+          header: "X-Helidon-Cid"
+          default-value: [ "first", "second" ]
+          array: true

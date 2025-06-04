@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.webclient.context;
+package io.helidon.webserver.context;
 
 import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.http.ContextRecordConfig;
-import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
+import io.helidon.http.ServerRequestHeaders;
 
 /**
- * Propagation record mapping classifier to header, may be a {@link java.lang.String} type, or and array of strings.
+ * Propagation record mapping classifier to header, may be a {@link String} type, or and array of strings.
  */
 interface PropagationRecord {
     static PropagationRecord create(ContextRecordConfig contextRecord) {
@@ -53,13 +54,12 @@ interface PropagationRecord {
     }
 
     /**
-     * Apply this record on web client headers, reading the classifier from the provided context and registering
-     * headers.
+     * Apply this record on the request headers, and propagate configured header value to the context.
      *
-     * @param context context to read data from
      * @param headers headers to write headers to
+     * @param context context to read data from
      */
-    void apply(Context context, ClientRequestHeaders headers);
+    void apply(ServerRequestHeaders headers, Context context);
 
     class ArrayRecord implements PropagationRecord {
         private final String classifier;
@@ -73,10 +73,12 @@ interface PropagationRecord {
         }
 
         @Override
-        public void apply(Context context, ClientRequestHeaders headers) {
-            context.get(classifier, String[].class)
+        public void apply(ServerRequestHeaders headers, Context context) {
+            headers.find(headerName)
+                    .map(Header::allValues)
+                    .map(it -> it.toArray(String[]::new))
                     .or(() -> defaultValue)
-                    .ifPresent(it -> headers.set(headerName, it));
+                    .ifPresent(array -> context.register(classifier, array));
         }
 
         @Override
@@ -97,10 +99,11 @@ interface PropagationRecord {
         }
 
         @Override
-        public void apply(Context context, ClientRequestHeaders headers) {
-            context.get(classifier, String.class)
+        public void apply(ServerRequestHeaders headers, Context context) {
+            headers.find(headerName)
+                    .map(Header::get)
                     .or(() -> defaultValue)
-                    .ifPresent(it -> headers.set(headerName, it));
+                    .ifPresent(value -> context.register(classifier, value));
         }
 
         @Override

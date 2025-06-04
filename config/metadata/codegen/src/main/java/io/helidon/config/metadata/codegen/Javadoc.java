@@ -93,7 +93,8 @@ final class Javadoc {
             } else {
                 // need to find the next @ not preceded by {
                 int endIndex = javadoc.length();
-                int nextIndex = index;
+                // and we need to start from the end of the current @return
+                int nextIndex = index + count;
                 while (true) {
                     int nextAt = javadoc.indexOf('@', nextIndex);
                     if (nextAt == -1 || nextAt == 0 || nextAt == javadoc.length() - 1) {

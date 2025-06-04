@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.context.http.propagation;
 
+import java.util.Arrays;
+
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -41,9 +43,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class TransportContextPropagationTest {
+    /*
+    These values are mapped in application.yaml
+     */
     private static final HeaderName FIRST = HeaderNames.create("X-First");
     private static final String SECOND_CLASSIFIER = "io.helidon.tests.second";
     private static final HeaderName THIRD = HeaderNames.create("X-Third");
+    private static final HeaderName TID_HEADER = HeaderNames.create("X-Helidon-Tid");
+    private static final String TID_CLASSIFIER = "io.helidon.webclient.context.propagation.tid";
+    private static final HeaderName CID_HEADER = HeaderNames.create("X-Helidon-Cid");
+    private static final String CID_CLASSIFIER = "io.helidon.webclient.context.propagation.cid";
     private static final Config CONFIG = Config.create();
 
     private final WebClient client;
@@ -74,7 +83,13 @@ class TransportContextPropagationTest {
                                                 () -> client.get("/propagation")
                                                         .requestEntity(String.class));
 
-        assertThat(response, is("context-values:{EMPTY},{EMPTY},{EMPTY}"));
+        validate("nothing should be propagated except defaults",
+                 response,
+                 "${EMPTY}",
+                 "${EMPTY}",
+                 "${EMPTY}",
+                 "unknown",
+                 "first,second");
     }
 
     @Test
@@ -87,7 +102,13 @@ class TransportContextPropagationTest {
                                                 () -> client.get("/propagation")
                                                         .requestEntity(String.class));
 
-        assertThat(response, is("context-values:some-value,{EMPTY},{EMPTY}"));
+        validate("Both first should be propagated, arrays are default",
+                 response,
+                 "some-value",
+                 "${EMPTY}",
+                 "${EMPTY}",
+                 "unknown",
+                 "first,second");
     }
 
     @Test
@@ -101,7 +122,44 @@ class TransportContextPropagationTest {
                                                 () -> client.get("/propagation")
                                                         .requestEntity(String.class));
 
-        assertThat(response, is("context-values:some-value,other-value,{EMPTY}"));
+        validate("Both first and second should be propagated, arrays are default",
+                 response,
+                 "some-value",
+                 "other-value",
+                 "${EMPTY}",
+                 "unknown",
+                 "first,second");
+    }
+
+    @Test
+    void testPropagationArrays() {
+        Context context = Context.create();
+        context.register(CID_CLASSIFIER, new String[] {"cid-1", "cid-2"});
+        context.register(TID_CLASSIFIER, new String[] {"tid-1"});
+
+        String response = Contexts.runInContext(context,
+                                                () -> client.get("/propagation")
+                                                        .requestEntity(String.class));
+
+        validate("only arrays should be propagated",
+                 response,
+                 "${EMPTY}",
+                 "${EMPTY}",
+                 "${EMPTY}",
+                 "cid-1,cid-2",
+                 "tid-1");
+    }
+
+    private static void validate(String message,
+                                 String response,
+                                 String first,
+                                 String second,
+                                 String third,
+                                 String cid,
+                                 String tid) {
+        assertThat(message,
+                   response,
+                   is(first + "|" + second + "|" + third + "|" + cid + "|" + tid));
     }
 
     private static void propagationRoute(ServerRequest req, ServerResponse res) {
@@ -118,7 +176,13 @@ class TransportContextPropagationTest {
                 .orElse("{EMPTY}");
         String third = context.get(THIRD.defaultCase(), String.class)
                 .orElse("{EMPTY}");
+        String cid = context.get(CID_CLASSIFIER, String[].class)
+                .map(Arrays::toString)
+                .orElse("{EMPTY}");
+        String tid = context.get(TID_CLASSIFIER, String[].class)
+                .map(Arrays::toString)
+                .orElse("{EMPTY}");
 
-        res.send("context-values:" + first + "," + second + "," + third);
+        res.send(first + "|" + second + "|" + third + "|" + cid + "|" + tid);
     }
 }

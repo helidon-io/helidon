@@ -47,7 +47,6 @@
         <module>webserver</module>
         <module>websocket</module>
         <module>concurrency-limits</module>
-        <module>context-propagation</module>
     </modules>
 
     <profiles>

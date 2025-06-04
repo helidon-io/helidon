@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.context</groupId>
+            <artifactId>helidon-common-context-http</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

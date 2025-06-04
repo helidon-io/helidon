@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,42 +13,38 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-  -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <groupId>io.helidon.common</groupId>
+        <artifactId>helidon-common-context-project</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-webserver-context</artifactId>
-    <name>Helidon WebServer Context</name>
-    <description>Integration of Helidon Common Context with Helidon WebServer</description>
+    <groupId>io.helidon.common.context</groupId>
+    <artifactId>helidon-common-context-http</artifactId>
+    <name>Helidon Common Context HTTP</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common.context</groupId>
-            <artifactId>helidon-common-context-http</artifactId>
-        </dependency>
-        <dependency>
-            <artifactId>helidon-builder-api</artifactId>
             <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver.testing.junit5</groupId>
-            <artifactId>helidon-webserver-testing-junit5</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -70,13 +66,13 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.config.metadata</groupId>
-                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -93,13 +89,13 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config.metadata</groupId>
-                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

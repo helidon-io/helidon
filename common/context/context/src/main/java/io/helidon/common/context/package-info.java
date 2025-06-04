@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.webserver.context;
-
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
-
-@RoutingTest
-class ContextFeatureTest extends ContextFeatureTestBase {
-    ContextFeatureTest(DirectClient client) {
-        super(client);
-    }
-}
+/**
+ * Support for context propagation across executor boundaries.
+ */
+package io.helidon.common.context;

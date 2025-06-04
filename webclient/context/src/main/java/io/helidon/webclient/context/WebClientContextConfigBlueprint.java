@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.context.http.ContextRecordConfig;
 
 /**
  * Configuration of WebClient transport level propagation of context values.
@@ -42,5 +43,5 @@ interface WebClientContextConfigBlueprint extends Prototype.Factory<WebClientCon
      */
     @Option.Singular
     @Option.Configured
-    List<ContextRecord> records();
+    List<ContextRecordConfig> records();
 }
