@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,14 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
                 result = LazyList.create(acceptValues.stream()
                         .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
                         .map(String::trim)
-                        .map(s -> LazyValue.create(() -> MediaType.parse(s)))
+                        .map(s -> LazyValue.create(() -> {
+                            try {
+                                return MediaType.parse(s);
+                            } catch (IllegalArgumentException e) {
+                                // we must throw a bad request, as a header value we should understand is invalid
+                                throw new BadRequestException("Invalid Accept header", e);
+                            }
+                        }))
                         .collect(Collectors.toList()));
             }
 

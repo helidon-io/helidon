@@ -105,6 +105,19 @@ public class ClassPathContentHandlerTest {
     }
 
     @Test
+    public void badAcceptTypes() throws Exception {
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.create("content"))
+                .build();
+        // /some/root-a.txt
+        TestResponse response = TestClient.create(routing)
+                .path("/some/root-a.txt")
+                .header("Accept", "86279333026148305409260801579029123580362081")
+                .get();
+        assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+    }
+
+    @Test
     public void serveFromFilesWithWelcome() throws Exception {
         Routing routing = Routing.builder()
                 .register(StaticContentSupport.builder("content")
