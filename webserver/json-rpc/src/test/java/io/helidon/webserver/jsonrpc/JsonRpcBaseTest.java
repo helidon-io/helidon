@@ -124,7 +124,7 @@ class JsonRpcBaseTest {
         void start(JsonRpcRequest req, JsonRpcResponse res) throws Exception {
             StartStopParams params = req.params().as(StartStopParams.class);
             if (params.when().equals("NOW")) {
-                res.id(req.id().orElseThrow());
+                res.responseId(req.requestId().orElseThrow());
                 res.result(new StartStopResult("RUNNING"));
                 res.status(Status.OK_200).send();
             } else {
@@ -139,7 +139,7 @@ class JsonRpcBaseTest {
         void stop(JsonRpcRequest req, JsonRpcResponse res) throws Exception {
             StartStopParams params = req.params().as(StartStopParams.class);
             if (params.when().equals("NOW")) {
-                res.id(req.id().orElseThrow());
+                res.responseId(req.requestId().orElseThrow());
                 res.result(new StartStopResult("STOPPED"));
                 res.status(Status.OK_200).send();
             } else {

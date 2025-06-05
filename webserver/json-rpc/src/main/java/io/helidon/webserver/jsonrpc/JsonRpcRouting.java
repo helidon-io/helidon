@@ -122,14 +122,14 @@ public class JsonRpcRouting implements Routing {
 
                         // prepare and call method handler
                         JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
-                        JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(jsonObject);
-                        JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl() {
+                        JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(req, jsonObject);
+                        JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl(res) {
                             @Override
                             public void send() {
                                 try {
                                     JsonObjectBuilder builder = Json.createObjectBuilder()
                                             .add("jsonrpc", "2.0");
-                                    jsonRpcRequest.id().map(id -> builder.add("id", id));
+                                    jsonRpcRequest.requestId().map(id -> builder.add("id", id));
                                     Optional<JsonValue> result = result();
                                     if (result.isPresent()) {
                                         builder.add("result", result.get());
@@ -181,14 +181,14 @@ public class JsonRpcRouting implements Routing {
 
                             // prepare and call method handler
                             JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
-                            JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(jsonObject);
-                            JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl() {
+                            JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(req, jsonObject);
+                            JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl(res) {
                                 @Override
                                 public void send() {
                                     try {
                                         JsonObjectBuilder builder = Json.createObjectBuilder()
                                                 .add("jsonrpc", "2.0");
-                                        jsonRpcRequest.id().map(id -> builder.add("id", id));
+                                        jsonRpcRequest.requestId().map(id -> builder.add("id", id));
                                         Optional<JsonValue> result = result();
                                         if (result.isPresent()) {
                                             builder.add("result", result.get());
