@@ -27,11 +27,9 @@ import io.helidon.common.features.api.Features;
 module io.helidon.data {
 
     requires static io.helidon.common.features.api;
-
     requires io.helidon.service.registry;
-
     requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.config;
 
     exports io.helidon.data;
+
 }

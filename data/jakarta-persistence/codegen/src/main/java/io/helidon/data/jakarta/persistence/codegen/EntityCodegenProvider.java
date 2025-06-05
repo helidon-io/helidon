@@ -38,7 +38,6 @@ import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceType
  * can be discovered from the service registry.
  */
 public class EntityCodegenProvider implements CodegenExtensionProvider {
-    private static final TypeName ENTITY = TypeName.create("jakarta.persistence.Entity");
 
     /**
      * Creates an instance of entity providers codegen.
@@ -53,20 +52,19 @@ public class EntityCodegenProvider implements CodegenExtensionProvider {
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(ENTITY);
+        return Set.of(JakartaPersistenceTypes.ENTITY);
     }
 
     private static final class EntityCodegen implements CodegenExtension {
+
         private static final TypeName GENERATOR = TypeName.create(EntityCodegen.class);
-        private static final TypeName ENTITY_PROVIDER = TypeName.create(
-                "io.helidon.data.jakarta.persistence.spi.JpaEntityProvider");
 
         private EntityCodegen() {
         }
 
         @Override
         public void process(RoundContext roundContext) {
-            Collection<TypeInfo> typeInfos = roundContext.annotatedTypes(ENTITY);
+            Collection<TypeInfo> typeInfos = roundContext.annotatedTypes(JakartaPersistenceTypes.ENTITY);
             for (TypeInfo typeInfo : typeInfos) {
                 createProvider(roundContext, typeInfo);
             }
@@ -116,7 +114,7 @@ public class EntityCodegenProvider implements CodegenExtensionProvider {
         }
 
         private TypeName providerInterfaceType(TypeName trigger) {
-            return TypeName.builder(ENTITY_PROVIDER)
+            return TypeName.builder(JakartaPersistenceTypes.ENTITY_PROVIDER)
                     .addTypeArgument(trigger)
                     .build();
         }

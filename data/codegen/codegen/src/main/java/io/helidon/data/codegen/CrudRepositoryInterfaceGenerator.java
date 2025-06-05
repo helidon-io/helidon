@@ -89,11 +89,11 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
                 .addParameter(T_ENTITY)
                 .returnType(T)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()));
-        // NEXT VERSION: Implement properly
+        // Implement properly:
         //       Update requires an entity to already exist in the database, but this check is not trivial:
         //       - verify entity existence with em.find
         //       - or at least verify that entity has ID present
-        //       But codegen code does not have an access to ID attribute information
+        //       But codegen code does not have access to ID attribute information
         //       EntityManager merge call should work this way, but there are known reported issues in Hibernate.
         // Method body: return executor.call(em -> em.merge(entity));
         returnStatement(builder,
@@ -111,11 +111,11 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
                 .addParameter(ITERABLE_T_ENTITIES)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()))
                 .returnType(ITERABLE_T);
-        // NEXT VERSION: Implement properly
+        // Implement properly:
         //       Update requires an entity to already exist in the database, but this check is not trivial:
         //       - verify entity existence with em.find
         //       - or at least verify that entity has ID present
-        //       But codegen code does not have an access to ID attribute information
+        //       But codegen code does not have access to ID attribute information
         //       EntityManager merge call should work this way, but there are known reported issues in Hibernate.
         // Method body: executor.run(em -> entities.forEach(em::merge));
         // Method body: List<T> mergedEntities = new ArrayList<>();

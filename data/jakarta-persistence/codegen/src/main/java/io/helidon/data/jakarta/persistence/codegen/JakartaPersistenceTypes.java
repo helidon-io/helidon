@@ -21,15 +21,14 @@ import io.helidon.common.types.TypeName;
 
 class JakartaPersistenceTypes {
 
-    static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
     static final TypeName PU_NAME_ANNOTATION = TypeName.create("io.helidon.data.Data.PersistenceUnit");
     static final TypeName BASE_REPOSITORY_EXECUTOR = TypeName.create(
             "io.helidon.data.jakarta.persistence.JpaRepositoryExecutor");
-    static final TypeName REPOSITORY_FACTORY = TypeName.create("io.helidon.data.spi.RepositoryFactory");
-    static final TypeName REPOSITORY_PROVIDER = TypeName.create("io.helidon.data.spi.RepositoryProvider");
     static final TypeName EXECUTOR = TypeName.create("io.helidon.data.jakarta.persistence.JpaRepositoryExecutor");
-
+    static final TypeName ENTITY = TypeName.create("jakarta.persistence.Entity");
     static final TypeName ENTITY_MANAGER = TypeName.create("jakarta.persistence.EntityManager");
+    static final TypeName ENTITY_PROVIDER = TypeName.create(
+            "io.helidon.data.jakarta.persistence.spi.JpaEntityProvider");
     // SessionRepository<EntityManager>
     static final TypeName SESSION_REPOSITORY = TypeName.builder()
             .from(TypeName.create("io.helidon.data.Data.SessionRepository"))
@@ -63,10 +62,9 @@ class JakartaPersistenceTypes {
     static final TypeName ORDER = TypeName.create("jakarta.persistence.criteria.Order");
     // Jakarta Persistence criteria Expression with no generic type
     static final TypeName RAW_EXPRESSION = TypeName.create("jakarta.persistence.criteria.Expression");
+
     static final Annotation INJECTION_SINGLETON = Annotation.create(TypeName.create(
             "io.helidon.service.registry.Service.Singleton"));
-    static final Annotation INJECTION_PRE_DESTROY = Annotation.create(TypeName.create(
-            "io.helidon.service.registry.Service.PreDestroy"));
 
     private JakartaPersistenceTypes() {
         throw new UnsupportedOperationException("No instances of Types are allowed");

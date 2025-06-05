@@ -32,11 +32,13 @@ class DataCodegenTypes {
     static final TypeName CRUD_REPOSITORY = TypeName.create("io.helidon.data.Data.CrudRepository");
     // PageableRepository<E, ID> extends GenericRepository<E, ID> adds pagination support
     static final TypeName PAGEABLE_REPOSITORY = TypeName.create("io.helidon.data.Data.PageableRepository");
+
     // Interfaces sorted from the most generic top the most specific interface.
     static final List<TypeName> INTERFACES_PRIORITY = List.of(GENERIC_REPOSITORY,
                                                               BASIC_REPOSITORY,
                                                               PAGEABLE_REPOSITORY,
                                                               CRUD_REPOSITORY);
+    // Set of data repository interfaces
     static final Set<TypeName> INTERFACES = Set.copyOf(INTERFACES_PRIORITY);
 
     /* Helidon Data types */
@@ -45,9 +47,6 @@ class DataCodegenTypes {
     static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
     static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
     static final TypeName PAGE_REQUEST = TypeName.create("io.helidon.data.PageRequest");
-
-    static final TypeName DATA_QUERY = TypeName.create("io.helidon.data.query.DataQuery");
-    static final TypeName PROJECTION = TypeName.create("io.helidon.data.query.Projection");
 
     /* Helidon Data annotations */
 
