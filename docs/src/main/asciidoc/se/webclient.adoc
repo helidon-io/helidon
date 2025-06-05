@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 - <<Configuring the WebClient, Configuring the WebClient>>
 - <<Examples, Examples>>
+- <<Context Propagation, Context Propagation>>
 - <<Reference, Reference>>
 
 == Overview
@@ -518,6 +519,41 @@ include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 
 <1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
 <2> Passing the client configuration node
+
+== Context Propagation
+
+WebClient supports the capability to propagate values from `io.helidon.common.context.Context` over HTTP headers.
+
+To enable this feature (implemented as a WebClient service), add the following dependency to your pom file:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-context</artifactId>
+</dependency>
+----
+
+Example configuration:
+
+[source, yaml]
+----
+client:
+  services:
+    context:
+      records:
+          # This looks up a `java.lang.String` context value classified `X-Helidon-Tid` and sends it as a `X-Helidon_Tid` header
+        - header: "X-Helidon-Tid"
+          # This looks up a `java.lang.String[]` context value classified with the classifier and sends it as a `X-Helidon-Cid` header, in case the value is not present, values "first" and "second" are sent instead
+        - classifier: "io.helidon.webclient.context.propagation.cid"
+          header: "X-Helidon-Cid"
+          default-value: [ "first", "second" ]
+          array: true
+----
+
+Full configuration reference:
+
+include::{rootdir}/config/io_helidon_webclient_context_WebClientContextService.adoc[leveloffset=+1]
 
 == Reference
 

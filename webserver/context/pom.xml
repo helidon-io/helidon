@@ -38,6 +38,10 @@
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.context</groupId>
+            <artifactId>helidon-common-context-http</artifactId>
+        </dependency>
+        <dependency>
             <artifactId>helidon-builder-api</artifactId>
             <groupId>io.helidon.builder</groupId>
         </dependency>
