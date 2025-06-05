@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.graphql</groupId>
-    <artifactId>helidon-graphql-server</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-graphql</artifactId>
 </dependency>
 ----
 
