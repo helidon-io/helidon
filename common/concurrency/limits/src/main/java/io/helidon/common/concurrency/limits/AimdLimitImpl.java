@@ -34,6 +34,7 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -51,6 +52,7 @@ class AimdLimitImpl {
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
     private final int queueLength;
+    private final Tracer tracer;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
@@ -73,6 +75,7 @@ class AimdLimitImpl {
                                                                 queueLength,
                                                                 config.queueTimeout(),
                                                                 () -> new AimdToken(clock, concurrentRequests));
+        tracer = config.enableTracing() ? Tracer.global() : null;
 
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
@@ -103,13 +106,16 @@ class AimdLimitImpl {
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
+            var limitSpan = LimitSpan.create(tracer, "aimd");
             token = handler.tryAcquire(true);
             if (token.isPresent()) {
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
                 }
+                limitSpan.close();
                 return token;
             }
+            limitSpan.closeWithError();
         }
         rejectedRequests.getAndIncrement();
         return token;
