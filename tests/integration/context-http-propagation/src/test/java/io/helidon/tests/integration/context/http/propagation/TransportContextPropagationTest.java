@@ -23,6 +23,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -53,20 +54,23 @@ class TransportContextPropagationTest {
     private static final String TID_CLASSIFIER = "io.helidon.webclient.context.propagation.tid";
     private static final HeaderName CID_HEADER = HeaderNames.create("X-Helidon-Cid");
     private static final String CID_CLASSIFIER = "io.helidon.webclient.context.propagation.cid";
-    private static final Config CONFIG = Config.create();
+
+    private static Config config;
 
     private final WebClient client;
+
 
     TransportContextPropagationTest(WebServer webServer) {
         this.client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .config(CONFIG.get("client"))
+                .config(config.get("client"))
                 .build();
     }
 
     @SetUpServer
-    static void server(WebServerConfig.Builder config) {
-        config.config(CONFIG.get("server"));
+    static void server(WebServerConfig.Builder serverBuilder) {
+        config = Services.get(Config.class);
+        serverBuilder.config(config.get("server"));
     }
 
     @SetUpRoute
@@ -85,11 +89,11 @@ class TransportContextPropagationTest {
 
         validate("nothing should be propagated except defaults",
                  response,
-                 "${EMPTY}",
-                 "${EMPTY}",
-                 "${EMPTY}",
-                 "unknown",
-                 "first,second");
+                 "{EMPTY}",
+                 "{EMPTY}",
+                 "{EMPTY}",
+                 "[unknown]",
+                 "[first, second]");
     }
 
     @Test
@@ -105,10 +109,10 @@ class TransportContextPropagationTest {
         validate("Both first should be propagated, arrays are default",
                  response,
                  "some-value",
-                 "${EMPTY}",
-                 "${EMPTY}",
-                 "unknown",
-                 "first,second");
+                 "{EMPTY}",
+                 "{EMPTY}",
+                 "[unknown]",
+                 "[first, second]");
     }
 
     @Test
@@ -126,9 +130,9 @@ class TransportContextPropagationTest {
                  response,
                  "some-value",
                  "other-value",
-                 "${EMPTY}",
-                 "unknown",
-                 "first,second");
+                 "{EMPTY}",
+                 "[unknown]",
+                 "[first, second]");
     }
 
     @Test
@@ -143,11 +147,11 @@ class TransportContextPropagationTest {
 
         validate("only arrays should be propagated",
                  response,
-                 "${EMPTY}",
-                 "${EMPTY}",
-                 "${EMPTY}",
-                 "cid-1,cid-2",
-                 "tid-1");
+                 "{EMPTY}",
+                 "{EMPTY}",
+                 "{EMPTY}",
+                 "[tid-1]",
+                 "[cid-1, cid-2]");
     }
 
     private static void validate(String message,
@@ -155,8 +159,8 @@ class TransportContextPropagationTest {
                                  String first,
                                  String second,
                                  String third,
-                                 String cid,
-                                 String tid) {
+                                 String tid,
+                                 String cid) {
         assertThat(message,
                    response,
                    is(first + "|" + second + "|" + third + "|" + cid + "|" + tid));

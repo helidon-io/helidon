@@ -74,11 +74,12 @@ interface PropagationRecord {
 
         @Override
         public void apply(ServerRequestHeaders headers, Context context) {
-            headers.find(headerName)
-                    .map(Header::allValues)
-                    .map(it -> it.toArray(String[]::new))
-                    .or(() -> defaultValue)
-                    .ifPresent(array -> context.register(classifier, array));
+            List<String> values = headers.all(headerName, List::of);
+            if (values.isEmpty()) {
+                defaultValue.ifPresent(array -> context.register(classifier, array));
+            } else {
+                context.register(classifier, values.toArray(new String[0]));
+            }
         }
 
         @Override
