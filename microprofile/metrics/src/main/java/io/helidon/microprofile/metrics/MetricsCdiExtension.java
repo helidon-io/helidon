@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,9 +152,15 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private static Metadata syntheticTimerUnmappedExceptionMetadata;
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
     private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
+
+    // Built by ProcessAnnotatedType observer to contain all possible REST request methods,
+    // even if the bean might be vetoed.
     private final Map<Class<?>, Set<Method>> methodsWithRestRequestMetrics = new HashMap<>();
+
+    // Built by ProcessManagedBean observer to contain only methods from non-vetoed beans.
+    private final Map<Class<?>, Set<Method>> restRequestMethods = new HashMap<>();
+
     private final Set<Class<?>> restRequestMetricsClassesProcessed = new HashSet<>();
-    private final Set<Method> restRequestMetricsToRegister = new HashSet<>();
     private final WorkItemsManager<MetricWorkItem> workItemsManager = WorkItemsManager.create();
     private final List<MetricAnnotationDiscoveryObserver> metricAnnotationDiscoveryObservers = new ArrayList<>();
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
@@ -199,60 +205,65 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     /**
      * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
      *
+     * @param clazz The {@code Class} on which the method to be timed exists
      * @param method the {@code Method} for which the Timer instance is needed
      * @return the located or created {@code Timer}
      */
-    static Timer restEndpointTimer(Method method) {
+    static Timer restEndpointTimer(Class<?> clazz, Method method) {
         // By spec, the synthetic Timers are always in the base registry.
         LOGGER.log(Level.DEBUG,
-                   () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
+                   () -> String.format("Registering synthetic SimpleTimer for %s#%s", clazz.getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(method));
+                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
      * Creates or looks up the {@code Counter} instance for measuring REST requests on any JAX-RS method.
      *
+     * @param clazz the {@code Class} on which the method to be counted exists
      * @param method the {@code Method} for which the Counter instance is needed
      * @return the located or created {@code Counter}
      */
-    static Counter restEndpointCounter(Method method) {
+    static Counter restEndpointCounter(Class<?> clazz, Method method) {
         LOGGER.log(Level.DEBUG,
-                   () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
+                   () -> String.format("Registering synthetic Counter for %s#%s", clazz.getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .counter(syntheticTimerUnmappedExceptionMetadata, syntheticRestRequestMetricTags(method));
+                .counter(syntheticTimerUnmappedExceptionMetadata, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
      * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
      *
+     * @param clazz Java class on which the method exists
      * @param method Java method of interest
      * @return {@code MetricID} for the simpletimer for this Java method
      */
-    static MetricID restEndpointTimerMetricID(Method method) {
-        return new MetricID(SYNTHETIC_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(method));
+    static MetricID restEndpointTimerMetricID(Class<?> clazz, Method method) {
+        return new MetricID(SYNTHETIC_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
      * Creates the {@link MetricID} for the synthetic {@link Counter} metric we add to each JAX-RS method.
      *
+     * @param clazz Java class on which the method exists
      * @param method Java method of interest
      * @return {@code MetricID} for the counter for this Java method
      */
-    MetricID restEndpointCounterMetricID(Method method) {
-        return new MetricID(syntheticTimerMetricUnmappedExceptionName, syntheticRestRequestMetricTags(method));
+    MetricID restEndpointCounterMetricID(Class<?> clazz, Method method) {
+        return new MetricID(syntheticTimerMetricUnmappedExceptionName, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
      * Returns the {@code Tag} array for a synthetic {@code SimplyTimed} annotation.
      *
+     * @param clazz the Java class on which the measured method exists
      * @param method the Java method of interest
      * @return the {@code Tag}s indicating the class and method
      */
-    static Tag[] syntheticRestRequestMetricTags(Method method) {
-        return new Tag[] {new Tag("class", method.getDeclaringClass().getName()),
+    static Tag[] syntheticRestRequestMetricTags(Class<?> clazz, Method method) {
+        return new Tag[] {new Tag("class", clazz.getName()),
                 new Tag("method", methodTagValueForSyntheticRestRequestMetric(method))};
     }
 
@@ -756,7 +767,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                                      DELETE.class, PATCH.class})
                                              ProcessAnnotatedType<?> pat) {
 
-        /// Ignore abstract classes or interceptors. Make sure synthetic SimpleTimer creation is enabled, and if so record the
+        // Ignore abstract classes or interceptors. Check if synthetic Timer creation is enabled, and if so record the
         // class and JAX-RS methods to use in later bean processing.
         if (!checkCandidateMetricClass(pat)
                 || !restEndpointsMetricsEnabled) {
@@ -782,15 +793,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                      AnnotatedMethod<?> annotatedMethod = annotatedMethodConfigurator.getAnnotated();
                                      if (annotatedMethod.isAnnotationPresent(jaxRsAnnotation)) {
                                          Method m = annotatedMethod.getJavaMember();
-                                         // For methods, add the SyntheticRestRequest annotation only on the declaring
-                                         // class, not subclasses.
-                                         if (clazz.equals(m.getDeclaringClass())) {
 
-                                             LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
-                                                                                         m.toString()));
-                                             annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
-                                             methodsToRecord.add(m);
-                                         }
+                                         LOGGER.log(Level.DEBUG, () -> String.format("Adding @SyntheticRestRequest to %s",
+                                                                                     m.toString()));
+                                         annotatedMethodConfigurator.add(SyntheticRestRequest.Literal.getInstance());
+                                         methodsToRecord.add(m);
                                      }
                                  }));
         if (!methodsToRecord.isEmpty()) {
@@ -798,12 +805,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         }
     }
 
-    private void registerAndSaveRestRequestMetrics(Method method) {
+    private void registerAndSaveRestRequestMetrics(Class<?> clazz, Method method) {
         workItemsManager.put(method, SyntheticRestRequest.class,
-                             SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(method),
-                                                                 restEndpointTimer(method),
-                                                                 restEndpointCounterMetricID(method),
-                                                                 restEndpointCounter(method)));
+                             SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(clazz, method),
+                                                                 restEndpointTimer(clazz, method),
+                                                                 restEndpointCounterMetricID(clazz, method),
+                                                                 restEndpointCounter(clazz, method)));
     }
 
     private void collectRestRequestMetrics(@Observes ProcessManagedBean<?> pmb) {
@@ -816,11 +823,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         LOGGER.log(Level.DEBUG, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
 
         restRequestMetricsClassesProcessed.add(clazz);
-        restRequestMetricsToRegister.addAll(methodsWithRestRequestMetrics.get(clazz));
+        restRequestMethods.put(clazz, methodsWithRestRequestMetrics.get(clazz));
     }
 
     private void registerRestRequestMetrics() {
-        restRequestMetricsToRegister.forEach(this::registerAndSaveRestRequestMetrics);
+        restRequestMethods.forEach((clazz, methods) ->
+                                           methods.forEach(method -> registerAndSaveRestRequestMetrics(clazz, method)));
         if (LOGGER.isLoggable(Level.DEBUG)) {
             Set<Class<?>> syntheticTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
             syntheticTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
@@ -831,7 +839,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
             }
         }
         restRequestMetricsClassesProcessed.clear();
-        restRequestMetricsToRegister.clear();
+        restRequestMethods.clear();
     }
 
     private void recordAnnotatedGaugeSite(@Observes ProcessManagedBean<?> pmb) {
