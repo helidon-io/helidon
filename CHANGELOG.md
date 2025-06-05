@@ -11,6 +11,28 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.2.3]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- Metrics: Add support for `metrics.rest-request.enabled` (with dot instead of hyphen) in SE metrics config [10208](https://github.com/helidon-io/helidon/pull/10208)
+- Metrics: Manage REST request metrics for resource methods on a superclass [10216](https://github.com/helidon-io/helidon/pull/10216)
+- Observability: Add header to metrics, health, OpenAPI, info, and config output to discourage browsers from sniffing data to infer the content type [10140](https://github.com/helidon-io/helidon/pull/10140)
+- Security: Removed default header when abstain [10221](https://github.com/helidon-io/helidon/pull/10221)
+- Security: SecurityEnvironment query propagation [10222](https://github.com/helidon-io/helidon/pull/10222)
+- WebServer: Fix 10124 UnknownFormatConversionException in log statement [10212](https://github.com/helidon-io/helidon/pull/10212)
+- WebServer: Fix content type handling in server request headers. [10209](https://github.com/helidon-io/helidon/pull/10209)
+- WebServer: Path pattern fix for WebServer [10206](https://github.com/helidon-io/helidon/pull/10206)
+- Build: Add project names to langchain4j modules. Add urls to application poms [10185](https://github.com/helidon-io/helidon/pull/10185)
+- Build: migrate release workflow to use Central Publishing Portal [10188](https://github.com/helidon-io/helidon/pull/10188)
+- Dependencies: Upgrade jgit to 7.2.1 [10205](https://github.com/helidon-io/helidon/pull/10205)
+- Docs: dependency fix for GraphQL server. [10220](https://github.com/helidon-io/helidon/pull/10220)
+- Docs: fixes typo in REST.request configuration option [10207](https://github.com/helidon-io/helidon/pull/10207)
+
 ## [4.2.2]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -1786,6 +1808,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.2.3]: https://github.com/oracle/helidon/compare/4.2.2...4.2.3
 [4.2.2]: https://github.com/oracle/helidon/compare/4.2.1...4.2.2
 [4.2.1]: https://github.com/oracle/helidon/compare/4.2.0...4.2.1
 [4.2.0]: https://github.com/oracle/helidon/compare/4.1.7...4.2.0
