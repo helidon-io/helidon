@@ -15,8 +15,14 @@
  */
 package io.helidon.docs.se.guides;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Method;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -194,7 +200,7 @@ class Upgrade4xSnippets {
         // end::snippet_9[]
         return webserver;
     }
-     */
+    */
 
     // tag::snippet_10[]
     static class MyService implements HttpService {
@@ -212,4 +218,45 @@ class Upgrade4xSnippets {
         public void routing(HttpRules rules) {
         }
     }
+
+    /* Helidon 3 code
+    // tag::snippet_11[]
+    public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+            protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
+                switch (method) {
+                case PUT:
+                    return RequestPredicate.create()
+                        .accepts(MediaType.APPLICATION_JSON)
+                        .containsHeader(HttpHeaderField.AUTHORIZATION.headerName())
+                        .hasContentType(ContentHeader.TYPE_JSON)
+                        .thenApply(applyHandler);
+                }
+            }
+    }
+    // end::snippet_11[]
+    */
+
+    // tag::snippet_12[]
+    public abstract class RoutingHandlerResource<I, R> implements HttpService {
+
+        protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
+            return switch (method.text()) {
+                case "PUT" -> (req, res) -> {
+                    ServerRequestHeaders headers = req.headers();
+                    if (headers.isAccepted(MediaTypes.APPLICATION_JSON)
+                        && headers.contains(HeaderNames.AUTHORIZATION)
+                        && headers.contentType()
+                                .filter(HttpMediaTypes.JSON_PREDICATE)
+                                .isPresent()) {
+                        applyHandler.handle(req, res);
+                    } else {
+                        res.next();
+                    }
+                };
+                default -> (req, res) -> res.next();
+            };
+        }
+    }
+    // end::snippet_12[]
 }
