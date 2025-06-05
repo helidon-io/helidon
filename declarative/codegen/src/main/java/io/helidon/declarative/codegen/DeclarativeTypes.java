@@ -51,15 +51,10 @@ public final class DeclarativeTypes {
     public static final TypeName THROWABLE = TypeName.create(Throwable.class);
 
     /**
-     * Type name for {@code io.helidon.service.registry.Interception.ElementInterceptor}.
-     */
-    public static final TypeName ELEMENT_INTERCEPTOR =
-            TypeName.create("io.helidon.service.registry.Interception.ElementInterceptor");
-
-    /**
      * Annotation instance for {@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_SINGLETON}.
      */
     public static final Annotation SINGLETON_ANNOTATION = Annotation.create(SERVICE_ANNOTATION_SINGLETON);
+
     /**
      * Type for set of {@link #THROWABLE}.
      */

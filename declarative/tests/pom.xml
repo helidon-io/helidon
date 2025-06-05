@@ -44,6 +44,7 @@
     </properties>
 
     <modules>
+        <module>codegen</module>
         <module>http</module>
         <module>scheduling</module>
     </modules>
