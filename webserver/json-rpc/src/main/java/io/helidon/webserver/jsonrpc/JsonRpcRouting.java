@@ -18,7 +18,6 @@ package io.helidon.webserver.jsonrpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.helidon.http.Status;
 import io.helidon.webserver.Routing;
@@ -127,17 +126,8 @@ public class JsonRpcRouting implements Routing {
                             @Override
                             public void send() {
                                 try {
-                                    JsonObjectBuilder builder = Json.createObjectBuilder()
-                                            .add("jsonrpc", "2.0");
-                                    jsonRpcRequest.requestId().map(id -> builder.add("id", id));
-                                    Optional<JsonValue> result = result();
-                                    if (result.isPresent()) {
-                                        builder.add("result", result.get());
-                                    } else {
-                                        Optional<JsonRpcError> error = error();
-                                        error.ifPresent(e -> builder.add("error", jsonbToJsonp(e)));
-                                    }
-                                    res.status(status().code()).send(builder.build());
+                                    jsonRpcRequest.jsonId().map(this::jsonId);
+                                    res.status(status().code()).send(asJsonObject());
                                 } catch (Exception e) {
                                     sendInternalError(res);
                                 }
@@ -186,17 +176,8 @@ public class JsonRpcRouting implements Routing {
                                 @Override
                                 public void send() {
                                     try {
-                                        JsonObjectBuilder builder = Json.createObjectBuilder()
-                                                .add("jsonrpc", "2.0");
-                                        jsonRpcRequest.requestId().map(id -> builder.add("id", id));
-                                        Optional<JsonValue> result = result();
-                                        if (result.isPresent()) {
-                                            builder.add("result", result.get());
-                                        } else {
-                                            Optional<JsonRpcError> error = error();
-                                            error.ifPresent(e -> builder.add("error", jsonbToJsonp(e)));
-                                        }
-                                        jsonResult.add(builder.build());
+                                        jsonRpcRequest.jsonId().map(this::jsonId);
+                                        jsonResult.add(asJsonObject());
                                     } catch (Exception e) {
                                         sendInternalError(res);
                                     }
