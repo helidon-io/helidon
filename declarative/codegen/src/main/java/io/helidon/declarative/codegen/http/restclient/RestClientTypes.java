@@ -26,8 +26,6 @@ final class RestClientTypes {
     static final TypeName REST_CLIENT_HEADERS = TypeName.create("io.helidon.webclient.api.RestClient.Headers");
     static final TypeName REST_CLIENT_COMPUTED_HEADER = TypeName.create("io.helidon.webclient.api.RestClient.ComputedHeader");
     static final TypeName REST_CLIENT_COMPUTED_HEADERS = TypeName.create("io.helidon.webclient.api.RestClient.ComputedHeaders");
-    static final TypeName REST_CLIENT_HEADER_PRODUCER = TypeName.create("io.helidon.webclient.api.RestClient.HeaderProducer");
-    static final TypeName REST_CLIENT_ERROR_HANDLER = TypeName.create("io.helidon.webclient.api.RestClient.ErrorHandler");
     static final TypeName REST_CLIENT_ERROR_HANDLING = TypeName.create("io.helidon.webclient.api.RestClient.ErrorHandling");
     static final TypeName WEB_CLIENT = TypeName.create("io.helidon.webclient.api.WebClient");
 
