@@ -17,7 +17,10 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.JsonValue;
 
@@ -27,9 +30,14 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     private JsonValue result;
     private JsonRpcError error;
     private Status status = Status.OK_200;
+    private ServerResponse delegate;
+
+    JsonRpcResponseImpl(ServerResponse delegate) {
+        this.delegate = delegate;
+    }
 
     @Override
-    public JsonRpcResponse id(int id) {
+    public JsonRpcResponse responseId(int id) {
         this.id = id;
         return this;
     }
@@ -59,7 +67,7 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
-    public Optional<Integer> id() {
+    public Optional<Integer> responseId() {
         return Optional.ofNullable(id);
     }
 
@@ -77,6 +85,16 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     @Override
     public Status status() {
         return status;
+    }
+
+    @Override
+    public ServerResponseHeaders headers() {
+        return delegate.headers();
+    }
+
+    @Override
+    public ServerResponseTrailers trailers() {
+        return delegate.trailers();
     }
 
     @Override

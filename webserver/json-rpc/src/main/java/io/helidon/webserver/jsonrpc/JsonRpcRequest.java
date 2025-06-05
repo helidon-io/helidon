@@ -17,10 +17,12 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.webserver.http.HttpRequest;
+
 /**
  * A representation of a JSON-RPC request.
  */
-public interface JsonRpcRequest {
+public interface JsonRpcRequest extends HttpRequest {
 
     /**
      * The request version. Must be "2.0".
@@ -41,7 +43,7 @@ public interface JsonRpcRequest {
      *
      * @return an optional request ID
      */
-    Optional<Integer> id();
+    Optional<Integer> requestId();
 
     /**
      * The params associated with the request. If params were not present
