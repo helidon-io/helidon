@@ -35,6 +35,7 @@
         <module>parser</module>
         <module>common</module>
         <module>codegen</module>
+        <module>tests</module>
     </modules>
 
 </project>
