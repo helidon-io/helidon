@@ -240,6 +240,13 @@ final class TypeNameSupport {
      */
     @Prototype.FactoryMethod
     static TypeName create(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return TypeStash.stash(clazz);
+        }
+        return doCreate(type);
+    }
+
+    static TypeName doCreate(Type type) {
         return TypeName.builder()
                 .type(type)
                 .build();
@@ -254,6 +261,10 @@ final class TypeNameSupport {
     @Prototype.FactoryMethod
     static TypeName create(String typeName) {
         Objects.requireNonNull(typeName);
+        return TypeStash.stash(typeName);
+    }
+
+    static TypeName doCreate(String typeName) {
         if (typeName.startsWith("?")) {
             if (typeName.startsWith("? extends ")) {
                 return TypeName.builder(create(typeName.substring(10).trim()))
