@@ -273,10 +273,18 @@ final class TypeNameSupport {
             Stream.of(genericSection.split(","))
                     .map(String::trim) // remove possible spaces
                     .map(it -> {
-                        if (it.contains(".")) {
-                            return TypeName.create(it);
+                        if (it.contains(" extends ")) {
+                            // T extends io.helidon.webserver.spi.ServerFeature
+                            return createExtends(it);
+                        } else if (it.contains(" super ")) {
+                            // T super java.lang.String
+                            return createSuper(it);
                         } else {
-                            return TypeName.createFromGenericDeclaration(it);
+                            if (it.contains(".")) {
+                                return TypeName.create(it);
+                            } else {
+                                return TypeName.createFromGenericDeclaration(it);
+                            }
                         }
                     })
                     .forEach(builder::addTypeArgument);
@@ -328,6 +336,38 @@ final class TypeNameSupport {
                 .className(Objects.requireNonNull(genericAliasTypeName))
                 .wildcard(genericAliasTypeName.startsWith("?"))
                 .build();
+    }
+
+    private static TypeName createExtends(String typeNames) {
+        // T extends io.helidon.webserver.spi.ServerFeature
+        int index = typeNames.indexOf(" extends ");
+
+        var builder = TypeName.builder()
+                .generic(true)
+                .className(typeNames.substring(0, index));
+        String theOtherPart = typeNames.substring(index + 9);
+        if (theOtherPart.contains(".")) {
+            builder.addUpperBound(TypeName.create(theOtherPart));
+        } else {
+            builder.addUpperBound(TypeName.createFromGenericDeclaration(theOtherPart));
+        }
+        return builder.build();
+    }
+
+    private static TypeName createSuper(String typeNames) {
+        // T extends io.helidon.webserver.spi.ServerFeature
+        int index = typeNames.indexOf(" super ");
+
+        var builder = TypeName.builder()
+                .generic(true)
+                .className(typeNames.substring(0, index));
+        String theOtherPart = typeNames.substring(index + 9);
+        if (theOtherPart.contains(".")) {
+            builder.addLowerBound(TypeName.create(theOtherPart));
+        } else {
+            builder.addLowerBound(TypeName.createFromGenericDeclaration(theOtherPart));
+        }
+        return builder.build();
     }
 
     private static String resolveGenericName(TypeName instance) {
