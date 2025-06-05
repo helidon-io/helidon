@@ -25,8 +25,10 @@ import io.helidon.builder.api.Prototype;
 @Prototype.CustomMethods(OrderSupport.class)
 interface OrderBlueprint {
 
-    // Default value of Sort.orderBy
-    Order[] EMPTY = new Order[] {};
+    /**
+     * Query result ordering with no ordering set (unsorted).
+     */
+    Order[] UNSORTED = new Order[] {};
 
     /**
      * Entity property used for ordering.

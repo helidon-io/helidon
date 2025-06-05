@@ -15,8 +15,6 @@
  */
 package io.helidon.data.codegen;
 
-import java.util.function.Consumer;
-
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
@@ -29,7 +27,6 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.query.DataQuery;
 import io.helidon.data.codegen.query.Projection;
 
-import static io.helidon.data.codegen.DataCodegenTypes.DATA_QUERY;
 import static io.helidon.data.codegen.DataCodegenTypes.PAGE;
 import static io.helidon.data.codegen.DataCodegenTypes.SLICE;
 
@@ -55,25 +52,6 @@ class PageableRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenera
         classModel()
                 .addMethod(this::generateFindAllPages)
                 .addMethod(this::generateFindAllSlices);
-    }
-
-    // DataQuery <identifier> = DataQuery.builder()
-    //              <content>
-    //              .build()
-    private static void buildDataQuery(Method.Builder builder,
-                                       Consumer<Method.Builder> content,
-                                       String identifier) {
-        builder.addContent(DATA_QUERY)
-                .addContent(" ")
-                .addContent(identifier)
-                .addContent(" = ")
-                .addContent(DATA_QUERY)
-                .addContentLine(".builder()");
-        increasePadding(builder, 2);
-        content.accept(builder);
-        builder.addContentLine("")
-                .addContent(".build()");
-        decreasePadding(builder, 2);
     }
 
     // Page<E> findAllPages(PageRequest pageable)
