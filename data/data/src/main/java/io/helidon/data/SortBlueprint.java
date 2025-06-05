@@ -1,5 +1,3 @@
-package io.helidon.data;
-
 /*
  * Copyright (c) 2025 Oracle and/or its affiliates.
  *
@@ -15,6 +13,7 @@ package io.helidon.data;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.data;
 
 import java.util.List;
 
@@ -34,7 +33,7 @@ interface SortBlueprint {
      *
      * @return {@link List} of order definitions
      */
-    @Option.Default("EMPTY")
+    @Option.Default("UNSORTED")
     List<Order> orderBy();
 
 }

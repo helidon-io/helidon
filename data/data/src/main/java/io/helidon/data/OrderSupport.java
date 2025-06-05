@@ -20,6 +20,10 @@ import io.helidon.builder.api.Prototype;
 // OrderBlueprint custom methods
 class OrderSupport {
 
+    private OrderSupport() {
+        throw new UnsupportedOperationException("No instances of OrderSupport are allowed");
+    }
+
     /**
      * Create new instance of order definition with default direction and case-sensitivity.
      * Default direction is {@link OrderDirection#ASC} and default value of {@link Order#ignoreCase()} is {@code false}.
