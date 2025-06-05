@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.transaction.data.mp</groupId>
         <artifactId>io.helidon.data.tests.integration.transaction.data.mp-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>io.helidon.data.tests.integration.transaction.data.mp</artifactId>
