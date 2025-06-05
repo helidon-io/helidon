@@ -17,6 +17,8 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 
 import jakarta.json.JsonValue;
@@ -32,7 +34,7 @@ public interface JsonRpcResponse {
      * @param id the ID
      * @return this response
      */
-    JsonRpcResponse id(int id);
+    JsonRpcResponse responseId(int id);
 
     /**
      * Set a result for this response as a JSON value.
@@ -89,7 +91,7 @@ public interface JsonRpcResponse {
      *
      * @return the ID
      */
-    Optional<Integer> id();
+    Optional<Integer> responseId();
 
     /**
      * Get the result set on this response.
@@ -117,4 +119,21 @@ public interface JsonRpcResponse {
      * until the response is delivered.
      */
     void send();
+
+    /**
+     * Response headers (mutable).
+     *
+     * @return the headers
+     */
+    ServerResponseHeaders headers();
+
+    /**
+     * Response trailers (mutable).
+     *
+     * @return the trailers
+     * @throws java.lang.IllegalStateException if client didn't ask for trailers with
+     * {@code TE: trailers} header in request or response doesn't contain trailer
+     * declaration headers {@code Trailer: <trailer-name>}
+     */
+    ServerResponseTrailers trailers();
 }

@@ -17,14 +17,25 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.webserver.http.HttpRequest;
+
 import jakarta.json.JsonObject;
 import jakarta.json.JsonStructure;
 
 class JsonRpcRequestImpl implements JsonRpcRequest {
 
+    private final HttpRequest delegate;
     private final JsonObject json;
 
-    JsonRpcRequestImpl(JsonObject json) {
+    JsonRpcRequestImpl(HttpRequest delegate, JsonObject json) {
+        this.delegate = delegate;
         this.json = json;
     }
 
@@ -39,7 +50,7 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
-    public Optional<Integer> id() {
+    public Optional<Integer> requestId() {
         return json.containsKey("id")
                 ? Optional.of(json.getInt("id"))
                 : Optional.empty();
@@ -48,5 +59,55 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     @Override
     public JsonRpcParams params() {
         return new JsonRpcParamsImpl((JsonStructure) json.get("params"));
+    }
+
+    @Override
+    public HttpPrologue prologue() {
+        return delegate.prologue();
+    }
+
+    @Override
+    public ServerRequestHeaders headers() {
+        return delegate.headers();
+    }
+
+    @Override
+    public UriPath path() {
+        return delegate.path();
+    }
+
+    @Override
+    public UriQuery query() {
+        return delegate.query();
+    }
+
+    @Override
+    public PeerInfo remotePeer() {
+        return delegate.remotePeer();
+    }
+
+    @Override
+    public PeerInfo localPeer() {
+        return delegate.localPeer();
+    }
+
+    @Override
+    public String authority() {
+        return delegate.authority();
+    }
+
+    @Override
+    public void header(Header header) {
+        delegate.header(header);
+    }
+
+    @Override
+    public int id() {
+        return delegate.id();
+    }
+
+    @Override
+    public UriInfo requestedUri() {
+        return delegate.requestedUri();
     }
 }
