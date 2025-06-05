@@ -39,11 +39,11 @@ public interface JsonRpcRequest extends HttpRequest {
     String method();
 
     /**
-     * The request ID, if present.
+     * The JSON-RPC request ID, if present.
      *
      * @return an optional request ID
      */
-    Optional<Integer> requestId();
+    Optional<Integer> jsonId();
 
     /**
      * The params associated with the request. If params were not present

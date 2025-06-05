@@ -22,23 +22,29 @@ import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerResponse;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+
+import static io.helidon.webserver.jsonrpc.JsonUtil.jsonbToJsonp;
 
 abstract class JsonRpcResponseImpl implements JsonRpcResponse {
 
-    private Integer id;
+    private Integer responseId;
     private JsonValue result;
     private JsonRpcError error;
     private Status status = Status.OK_200;
-    private ServerResponse delegate;
+
+    private final ServerResponse delegate;
 
     JsonRpcResponseImpl(ServerResponse delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public JsonRpcResponse responseId(int id) {
-        this.id = id;
+    public JsonRpcResponse jsonId(int id) {
+        this.responseId = id;
         return this;
     }
 
@@ -67,8 +73,8 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
-    public Optional<Integer> responseId() {
-        return Optional.ofNullable(id);
+    public Optional<Integer> jsonId() {
+        return Optional.ofNullable(responseId);
     }
 
     @Override
@@ -99,4 +105,19 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public abstract void send();
+
+    @Override
+    public JsonObject asJsonObject() {
+        JsonObjectBuilder builder = Json.createObjectBuilder()
+                .add("jsonrpc", "2.0");
+        if (responseId != null) {
+            builder.add("id", responseId);
+        }
+        if (result != null) {
+            builder.add("result", result);
+        } else if (error != null) {
+            builder.add("error", jsonbToJsonp(error));
+        }
+        return builder.build();
+    }
 }
