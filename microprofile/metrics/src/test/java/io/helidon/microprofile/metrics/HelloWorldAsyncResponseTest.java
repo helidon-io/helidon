@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,8 @@ public class HelloWorldAsyncResponseTest {
     @Test
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
-                .restEndpointTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
+                .restEndpointTimerMetricID(HelloWorldResource.class,
+                                           HelloWorldResource.class.getMethod("slowMessage",
                                                                               AsyncResponse.class,
                                                                               ServerResponse.class));
 
@@ -142,6 +143,7 @@ public class HelloWorldAsyncResponseTest {
         MetricID metricID = null;
         try {
             metricID = MetricsCdiExtension.restEndpointTimerMetricID(
+                    HelloWorldResource.class,
                     HelloWorldResource.class.getMethod("slowMessageWithArg",
                     String.class, AsyncResponse.class));
         } catch (NoSuchMethodException e) {
