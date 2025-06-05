@@ -69,7 +69,7 @@ public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
         StreamSupport.stream(new TypeInfoSpliterator(interfaceInfo), false)
                 .forEach(info -> {
                     if (!interfaceInfo.typeName().equals(info.typeName())
-                            // NEXT VERSION: This filter should be better, but it's sufficient for current version
+                            // This filter should be implemented better, but it's sufficient for current version
                             && info.typeName().typeArguments().size() == 2) {
                         builder.addInterface(info.typeName(), RepositoryInterfaceInfo.create(info));
                     }

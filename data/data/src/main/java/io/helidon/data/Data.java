@@ -31,7 +31,9 @@ import io.helidon.service.registry.Service;
  * Helidon Data Repository annotations and interfaces.
  */
 public final class Data {
+
     private Data() {
+        throw new UnsupportedOperationException("No instances of Data are allowed");
     }
 
     /**
