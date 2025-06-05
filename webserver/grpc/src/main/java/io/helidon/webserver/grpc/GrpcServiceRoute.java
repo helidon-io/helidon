@@ -23,6 +23,7 @@ import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
 
+import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
@@ -31,20 +32,20 @@ import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
 
-    private final GrpcService service;
     private final String serviceName;
     private final List<GrpcRouteHandler<?, ?>> routes;
+    private final Descriptors.FileDescriptor proto;
 
     private GrpcServiceRoute(GrpcService service, List<GrpcRouteHandler<?, ?>> routes) {
-        this.service = service;
         this.serviceName = service.serviceName();
         this.routes = routes;
+        this.proto = service.proto();
     }
 
     private GrpcServiceRoute(String serviceName, List<GrpcRouteHandler<?, ?>> routes) {
         this.serviceName = serviceName;
         this.routes = routes;
-        this.service = null;
+        this.proto = emptyProto();
     }
 
     @Override
@@ -54,7 +55,7 @@ class GrpcServiceRoute extends GrpcRoute {
 
     @Override
     public Descriptors.FileDescriptor proto() {
-        return service.proto();
+        return proto;
     }
 
     /**
@@ -118,6 +119,15 @@ class GrpcServiceRoute extends GrpcRoute {
             }
         }
         return PathMatchers.MatchResult.notAccepted();
+    }
+
+    private Descriptors.FileDescriptor emptyProto() {
+        try {
+            DescriptorProtos.FileDescriptorProto proto = DescriptorProtos.FileDescriptorProto.getDefaultInstance();
+            return Descriptors.FileDescriptor.buildFrom(proto, new Descriptors.FileDescriptor[] {});
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static class Routing implements GrpcService.Routing {

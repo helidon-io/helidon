@@ -54,6 +54,19 @@ public interface Grpc {
     }
 
     /**
+     * An annotation to mark a method as returning a proto file description
+     * used by the gRPC reflection service. Annotated method must return
+     * {@code com.google.protobuf.Descriptors.FileDescriptor} and expect
+     * no parameters.
+     */
+    @Target({ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Inherited
+    @interface Proto {
+    }
+
+    /**
      * An annotation to mark a method as representing a unary gRPC method.
      */
     @Target({ElementType.METHOD})
