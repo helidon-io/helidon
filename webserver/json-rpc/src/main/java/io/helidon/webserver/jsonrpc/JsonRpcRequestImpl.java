@@ -50,7 +50,7 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
-    public Optional<Integer> requestId() {
+    public Optional<Integer> jsonId() {
         return json.containsKey("id")
                 ? Optional.of(json.getInt("id"))
                 : Optional.empty();

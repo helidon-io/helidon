@@ -21,6 +21,7 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 /**
@@ -29,12 +30,12 @@ import jakarta.json.JsonValue;
 public interface JsonRpcResponse {
 
     /**
-     * Set an ID for this response.
+     * Set a JSON-RPC ID for this response.
      *
      * @param id the ID
      * @return this response
      */
-    JsonRpcResponse responseId(int id);
+    JsonRpcResponse jsonId(int id);
 
     /**
      * Set a result for this response as a JSON value.
@@ -87,11 +88,11 @@ public interface JsonRpcResponse {
     }
 
     /**
-     * Get the ID set on this response.
+     * Get the JSON-RPC ID set on this response.
      *
      * @return the ID
      */
-    Optional<Integer> responseId();
+    Optional<Integer> jsonId();
 
     /**
      * Get the result set on this response.
@@ -115,12 +116,6 @@ public interface JsonRpcResponse {
     Status status();
 
     /**
-     * Send this response over the wire to the client. This method blocks
-     * until the response is delivered.
-     */
-    void send();
-
-    /**
      * Response headers (mutable).
      *
      * @return the headers
@@ -136,4 +131,17 @@ public interface JsonRpcResponse {
      * declaration headers {@code Trailer: <trailer-name>}
      */
     ServerResponseTrailers trailers();
+
+    /**
+     * Send this response over the wire to the client. This method blocks
+     * until the response is delivered.
+     */
+    void send();
+
+    /**
+     * Get complete response as a JSON object.
+     *
+     * @return a JSON object that represents the response
+     */
+    JsonObject asJsonObject();
 }
