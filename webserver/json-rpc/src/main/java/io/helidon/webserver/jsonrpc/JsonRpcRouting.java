@@ -18,7 +18,10 @@ package io.helidon.webserver.jsonrpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.http.HttpRouting;
@@ -92,8 +95,19 @@ public class JsonRpcRouting implements Routing {
      * @return an instance of HttpRouting
      */
     public HttpRouting.Builder toHttpRouting() {
-        Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
         HttpRouting.Builder builder = HttpRouting.builder();
+        toHttpRouting(builder);
+        return builder;
+    }
+
+    /**
+     * Populates an {@link io.helidon.webserver.http.HttpRouting.Builder} with
+     * all the routes for this JSON-RPC routing instance.
+     *
+     * @param builder an HTTP routing builder
+     */
+    public void toHttpRouting(HttpRouting.Builder builder) {
+        Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
         for (Map.Entry<String, JsonRpcHandlers> entry : rulesMap.entrySet()) {
             String pathPattern = entry.getKey();
             Map<String, JsonRpcHandler> handlersMap = entry.getValue().handlersMap();
@@ -120,14 +134,21 @@ public class JsonRpcRouting implements Routing {
                         }
 
                         // prepare and call method handler
+                        AtomicBoolean sendCalled = new AtomicBoolean();
                         JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
-                        JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(req, jsonObject);
-                        JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl(res) {
+                        JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
+                        JsonRpcResponse jsonRes = new JsonRpcResponseImpl(res) {
                             @Override
                             public void send() {
                                 try {
-                                    jsonRpcRequest.jsonId().map(this::jsonId);
-                                    res.status(status().code()).send(asJsonObject());
+                                    jsonReq.jsonId().ifPresentOrElse(id -> {
+                                        jsonId(id);
+                                        res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
+                                        res.status(status()).send(asJsonObject());
+                                    }, () -> {
+                                        res.status(status()).send();        // notification
+                                    });
+                                    sendCalled.set(true);
                                 } catch (Exception e) {
                                     sendInternalError(res);
                                 }
@@ -136,7 +157,12 @@ public class JsonRpcRouting implements Routing {
 
                         // invoke single handler
                         try {
-                            handler.handle(jsonRpcRequest, jsonRpcResponse);
+                            handler.handle(jsonReq, jsonRes);
+
+                            // if send() not called, return empty HTTP response
+                            if (!sendCalled.get()) {
+                                res.status(jsonRes.status()).send();
+                            }
                         } catch (Exception e) {
                             sendInternalError(res);
                         }
@@ -150,14 +176,14 @@ public class JsonRpcRouting implements Routing {
                         }
 
                         // process batch requests
-                        JsonArrayBuilder jsonResult = Json.createArrayBuilder();
+                        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
                         for (int i = 0; i < size; i++) {
                             JsonValue jsonValue = jsonArray.get(i);
 
                             // requests must be objects
                             if (!(jsonValue instanceof JsonObject jsonObject)) {
                                 JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, null);
-                                jsonResult.add(invalidRequest);
+                                arrayBuilder.add(invalidRequest);
                                 continue;       // skip bad request
                             }
 
@@ -165,19 +191,23 @@ public class JsonRpcRouting implements Routing {
                             JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                             if (error != null) {
                                 JsonObject verifyError = jsonRpcError(error, jsonObject);
-                                jsonResult.add(verifyError);
+                                arrayBuilder.add(verifyError);
                                 continue;       // skip bad request
                             }
 
                             // prepare and call method handler
                             JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
-                            JsonRpcRequest jsonRpcRequest = new JsonRpcRequestImpl(req, jsonObject);
-                            JsonRpcResponse jsonRpcResponse = new JsonRpcResponseImpl(res) {
+                            JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
+                            JsonRpcResponse jsonRes = new JsonRpcResponseImpl(res) {
                                 @Override
                                 public void send() {
                                     try {
-                                        jsonRpcRequest.jsonId().map(this::jsonId);
-                                        jsonResult.add(asJsonObject());
+                                        jsonReq.jsonId().ifPresent(id -> {
+                                            jsonId(id);
+                                            res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
+                                            arrayBuilder.add(asJsonObject());
+
+                                        });
                                     } catch (Exception e) {
                                         sendInternalError(res);
                                     }
@@ -186,15 +216,20 @@ public class JsonRpcRouting implements Routing {
 
                             // invoke handler
                             try {
-                                handler.handle(jsonRpcRequest, jsonRpcResponse);
+                                handler.handle(jsonReq, jsonRes);
                             } catch (Exception e) {
                                 sendInternalError(res);
                                 return;
                             }
                         }
 
-                        // respond to batch request with batch response
-                        res.status(Status.OK_200).send(jsonResult.build());
+                        // respond to batch request always with 200
+                        JsonArray result = arrayBuilder.build();
+                        if (result.isEmpty()) {
+                            res.status(Status.OK_200).send();
+                        } else {
+                            res.status(Status.OK_200).send(result);
+                        }
                     } else {
                         sendInvalidRequest(res);
                     }
@@ -203,7 +238,6 @@ public class JsonRpcRouting implements Routing {
                 }
             });
         }
-        return builder;
     }
 
     private JsonRpcError verifyJsonRpc(JsonObject object, Map<String, JsonRpcHandler> handlersMap) {

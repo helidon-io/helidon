@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.jsonrpc;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -39,6 +40,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_START)) {
             assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.headers().get(HeaderNames.CONTENT_TYPE).get(),
+                       is("application/json"));
             JsonObject json = res.as(JsonObject.class).getJsonObject("result");
             assertThat(json.getString("status"), is("RUNNING"));
         }
@@ -50,6 +53,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(MACHINE_STOP)) {
             assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.headers().get(HeaderNames.CONTENT_TYPE).get(),
+                       is("application/json"));
             JsonObject json = res.as(JsonObject.class).getJsonObject("result");
             assertThat(json.getString("status"), is("STOPPED"));
         }
@@ -61,6 +66,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(CALCULATOR_ADD_ARRAY)) {
             assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.headers().get(HeaderNames.CONTENT_TYPE).get(),
+                       is("application/json"));
             int sum = res.as(JsonObject.class).getInt("result");
             assertThat(sum, is(45));
         }
@@ -72,8 +79,21 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .contentType(APPLICATION_JSON)
                 .submit(CALCULATOR_ADD_OBJECT)) {
             assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.headers().get(HeaderNames.CONTENT_TYPE).get(),
+                       is("application/json"));
             int sum = res.as(JsonObject.class).getInt("result");
             assertThat(sum, is(45));
+        }
+    }
+
+    @Test
+    void testNotification() {
+        try (var res = client().post("/notifier")
+                .contentType(APPLICATION_JSON)
+                .submit(NOTIFICATION)) {
+            assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.headers().contains(HeaderNames.CONTENT_TYPE), is(false));
+            assertThat(res.entity().hasEntity(), is(false));
         }
     }
 }

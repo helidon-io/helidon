@@ -32,7 +32,7 @@ class JsonRpcBaseTest {
     static final String CALCULATOR_ADD_ARRAY = """
             {"jsonrpc": "2.0",
                 "method": "add",
-                "params": [20, 25]},
+                "params": [20, 25],
                 "id": 1}
             """;
 
@@ -57,6 +57,12 @@ class JsonRpcBaseTest {
                 "id": 2}
             """;
 
+    static final String NOTIFICATION = """
+            {"jsonrpc": "2.0",
+                "method": "ping",
+                "params": {}}
+            """;
+
     private final Http1Client client;
 
     JsonRpcBaseTest(Http1Client client) {
@@ -70,10 +76,11 @@ class JsonRpcBaseTest {
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
         JsonRpcRouting routing = JsonRpcRouting.builder()
-                // register a single method
+                // register a single method under "/calculator"
                 .register("/calculator", "add", JsonRpcBaseTest::addNumbers)
                 // register a service under "/machine"
                 .service(new JsonRpcService1())
+                .register("/notifier", "ping", JsonRpcBaseTest::ping)
                 .build();
         router.addRouting(routing.toHttpRouting());
     }
@@ -150,5 +157,11 @@ class JsonRpcBaseTest {
                 res.status(Status.OK_200).send();
             }
         }
+    }
+
+    // -- Notifier ------------------------------------------------------------
+
+    static void ping(JsonRpcRequest req, JsonRpcResponse res) {
+        // don't call send, just HTTP status response returned
     }
 }
