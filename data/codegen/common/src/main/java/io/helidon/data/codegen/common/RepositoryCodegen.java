@@ -37,8 +37,8 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
  */
 class RepositoryCodegen implements CodegenExtension {
 
-    static final TypeName GENERATOR = TypeName.create(RepositoryCodegen.class);
     private static final System.Logger LOGGER = System.getLogger(RepositoryCodegen.class.getName());
+
     private final CodegenContext codegenContext;
     private final List<RepositoryGenerator> repositoryGenerators;
     private final List<PersistenceGenerator> persistenceGenerators;
