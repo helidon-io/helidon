@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -216,11 +217,13 @@ public class WebClientSecurity implements WebClientService {
     }
 
     private SecurityContext createContext(WebClientServiceRequest request) {
+        ClientUri uri = request.uri();
         SecurityContext.Builder builder = security.contextBuilder(UUID.randomUUID().toString())
                 .endpointConfig(EndpointConfig.builder()
                                         .build())
                 .env(SecurityEnvironment.builder()
-                             .path(request.uri().path().path())
+                             .path(uri.path().path())
+                             .queryParams(uri.query())
                              .build());
         request.context().get(Tracer.class).ifPresent(builder::tracingTracer);
         request.context().get(SpanContext.class).ifPresent(builder::tracingSpan);
