@@ -29,7 +29,7 @@ import jakarta.json.JsonValue;
 
 import static io.helidon.webserver.jsonrpc.JsonUtil.jsonbToJsonp;
 
-abstract class JsonRpcResponseImpl implements JsonRpcResponse {
+class JsonRpcResponseImpl implements JsonRpcResponse {
 
     private JsonValue jsonRpcId;
     private JsonValue result;
@@ -37,6 +37,10 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     private Status status = Status.OK_200;
 
     private final ServerResponse delegate;
+
+    JsonRpcResponseImpl(JsonValue jsonRpcId) {
+        this(jsonRpcId, null);
+    }
 
     JsonRpcResponseImpl(JsonValue jsonRpcId, ServerResponse delegate) {
         this.jsonRpcId = jsonRpcId;
@@ -96,16 +100,18 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public ServerResponseHeaders headers() {
-        return delegate.headers();
+        return delegate == null ? ServerResponseHeaders.create() : delegate.headers();
     }
 
     @Override
     public ServerResponseTrailers trailers() {
-        return delegate.trailers();
+        return delegate == null ? ServerResponseTrailers.create() : delegate.trailers();
     }
 
     @Override
-    public abstract void send();
+    public void send() {
+        throw new UnsupportedOperationException("This method should be overridden");
+    }
 
     @Override
     public JsonObject asJsonObject() {
