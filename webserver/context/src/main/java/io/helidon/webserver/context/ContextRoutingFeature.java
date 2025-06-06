@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package io.helidon.webserver.context;
 
+import java.util.List;
+
 import io.helidon.common.Weighted;
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -29,21 +33,39 @@ import io.helidon.webserver.http.RoutingResponse;
  * When added to the processing, further processing will be executed in a request specific context.
  */
 class ContextRoutingFeature implements HttpFeature, Weighted {
+    private final ContextFeatureConfig config;
+    private final List<PropagationRecord> propagations;
 
-    private final double weight;
-
-    ContextRoutingFeature(double weight) {
-        this.weight = weight;
+    ContextRoutingFeature(ContextFeatureConfig config) {
+        this.config = config;
+        this.propagations = config.records()
+                .stream()
+                .map(PropagationRecord::create)
+                .toList();
     }
 
     @Override
     public void setup(HttpRouting.Builder routing) {
-        routing.addFilter(this::filter);
+        if (propagations.isEmpty()) {
+            routing.addFilter(this::filter);
+        } else {
+            routing.addFilter(this::propagationFilter);
+        }
     }
 
     @Override
     public double weight() {
-        return weight;
+        return config.weight();
+    }
+
+    private void propagationFilter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+        ServerRequestHeaders headers = req.headers();
+        Context context = req.context();
+        for (PropagationRecord propagation : propagations) {
+            propagation.apply(headers, context);
+        }
+        // still need to run in context
+        filter(chain, req, res);
     }
 
     private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {

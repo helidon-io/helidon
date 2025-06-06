@@ -78,8 +78,6 @@ final class Javadoc {
         javadoc = JAVADOC_LINKPLAIN.matcher(javadoc).replaceAll(it -> javadocLink(it.group(1)));
         // replace all {@value ...} with just the reference
         javadoc = JAVADOC_VALUE.matcher(javadoc).replaceAll(it -> javadocValue(it.group(1)));
-        // replace all {@see ...} with just the reference
-        javadoc = JAVADOC_SEE.matcher(javadoc).replaceAll(it -> javadocSee(it.group(1)));
 
         int count = 9;
         index = javadoc.indexOf(" @return");
@@ -93,7 +91,8 @@ final class Javadoc {
             } else {
                 // need to find the next @ not preceded by {
                 int endIndex = javadoc.length();
-                int nextIndex = index;
+                // and we need to start from the end of the current @return
+                int nextIndex = index + count;
                 while (true) {
                     int nextAt = javadoc.indexOf('@', nextIndex);
                     if (nextAt == -1 || nextAt == 0 || nextAt == javadoc.length() - 1) {
@@ -110,6 +109,9 @@ final class Javadoc {
                 javadoc = javadoc.substring(0, index) + javadoc.substring(endIndex);
             }
         }
+
+        // replace all {@see ...} with just the reference - after removing @return
+        javadoc = JAVADOC_SEE.matcher(javadoc).replaceAll(it -> javadocSee(it.group(1)));
 
         return javadoc.trim();
     }

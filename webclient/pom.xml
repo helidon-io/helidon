@@ -42,6 +42,7 @@
         <module>webclient</module>
         <module>websocket</module>
         <module>grpc</module>
+        <module>context</module>
     </modules>
 
     <profiles>
