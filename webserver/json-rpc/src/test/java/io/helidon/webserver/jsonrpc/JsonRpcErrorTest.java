@@ -95,6 +95,16 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
     }
 
     @Test
+    void testInvalidMethodWithErrorHandler() {
+        try (var res = client().post("/machine")
+                .contentType(APPLICATION_JSON)
+                .submit(MACHINE_START.replace("start", "expected"))) {
+            assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.entity().hasEntity(), is(false));        // error handled
+        }
+    }
+
+    @Test
     void testStartError() {
         try (var res = client().post("/machine")
                 .contentType(APPLICATION_JSON)

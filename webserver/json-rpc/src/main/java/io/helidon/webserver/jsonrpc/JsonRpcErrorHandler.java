@@ -16,19 +16,24 @@
 package io.helidon.webserver.jsonrpc;
 
 import io.helidon.webserver.ServerLifecycle;
+import io.helidon.webserver.http.ServerRequest;
+
+import jakarta.json.JsonObject;
 
 /**
- * A JSON-RPC handler that can process a request and produce a response.
+ * A JSON-RPC handler that can process invalid requests when registered.
  */
 @FunctionalInterface
-public interface JsonRpcHandler extends ServerLifecycle {
+public interface JsonRpcErrorHandler extends ServerLifecycle {
 
     /**
-     * Handler for a JSON-RPC call.
+     * Handler for a JSON-RPC erroneous request.
      *
-     * @param req the request
-     * @param res the response
+     * @param req the server request
+     * @param jsonObject an invalid request as a JSON object
+     * @return success or failure handling error. If value returned is true,
+     *         error will not be returned to client.
      * @throws Exception if an unexpected condition is found
      */
-    void handle(JsonRpcRequest req, JsonRpcResponse res) throws Exception;
+    boolean handle(ServerRequest req, JsonObject jsonObject) throws Exception;
 }

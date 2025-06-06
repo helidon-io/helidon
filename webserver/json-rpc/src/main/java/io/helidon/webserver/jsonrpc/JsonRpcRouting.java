@@ -31,7 +31,6 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonParsingException;
@@ -40,7 +39,6 @@ import static io.helidon.webserver.jsonrpc.JsonRpcError.INTERNAL_ERROR;
 import static io.helidon.webserver.jsonrpc.JsonRpcError.INVALID_REQUEST;
 import static io.helidon.webserver.jsonrpc.JsonRpcError.METHOD_NOT_FOUND;
 import static io.helidon.webserver.jsonrpc.JsonRpcError.PARSE_ERROR;
-import static io.helidon.webserver.jsonrpc.JsonUtil.jsonbToJsonp;
 
 /**
  * A routing class for JSON-RPC. This class provides a method to map
@@ -108,9 +106,13 @@ public class JsonRpcRouting implements Routing {
      */
     public void toHttpRouting(HttpRouting.Builder builder) {
         Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
+
         for (Map.Entry<String, JsonRpcHandlers> entry : rulesMap.entrySet()) {
             String pathPattern = entry.getKey();
-            Map<String, JsonRpcHandler> handlersMap = entry.getValue().handlersMap();
+            JsonRpcHandlers handlers = entry.getValue();
+            Map<String, JsonRpcHandler> handlersMap = handlers.handlersMap();
+            JsonRpcErrorHandler errorHandler = handlers.errorHandler();
+
             builder.post(pathPattern, (req, res) -> {
                 try {
                     // attempt to parse request as JSON
@@ -128,8 +130,14 @@ public class JsonRpcRouting implements Routing {
                         // if request fails verification, return JSON-RPC error
                         JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                         if (error != null) {
-                            JsonObject verifyError = jsonRpcError(error, jsonObject);
-                            res.status(Status.OK_200).send(verifyError);
+                            // if error handler succeeds don't report
+                            if (errorHandler != null && errorHandler.handle(req, jsonObject)) {
+                                res.status(Status.OK_200).send();
+                            } else {
+                                // otherwise return error
+                                JsonObject verifyError = jsonRpcError(error, jsonObject);
+                                res.status(Status.OK_200).send(verifyError);
+                            }
                             return;
                         }
 
@@ -190,9 +198,14 @@ public class JsonRpcRouting implements Routing {
                             // check if request passes validation before proceeding
                             JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                             if (error != null) {
+                                // if error handler succeeds don't report
+                                if (errorHandler != null && errorHandler.handle(req, jsonObject)) {
+                                    continue;
+                                }
+                                // otherwise collect error
                                 JsonObject verifyError = jsonRpcError(error, jsonObject);
                                 arrayBuilder.add(verifyError);
-                                continue;       // skip bad request
+                                continue;
                             }
 
                             // prepare and call method handler
@@ -257,15 +270,12 @@ public class JsonRpcRouting implements Routing {
     }
 
     private JsonObject jsonRpcError(JsonRpcError error, JsonObject jsonObject) {
-        JsonObjectBuilder errorBuilder = Json.createObjectBuilder()
-                .add("jsonrpc", "2.0");
-        if (jsonObject == null) {
-            errorBuilder.add("id", JsonValue.NULL);
-        } else if (jsonObject.containsKey("id")) {
-            errorBuilder.add("id", jsonObject.getInt("id"));
+        JsonRpcResponse res = new JsonRpcResponseImpl(JsonValue.NULL);
+        if (jsonObject != null && jsonObject.containsKey("id")) {
+            res.jsonRpcId(jsonObject.get("id"));
         }
-        errorBuilder.add("error", jsonbToJsonp(error));
-        return errorBuilder.build();
+        res.error(error);
+        return res.asJsonObject();
     }
 
     private void sendInternalError(ServerResponse res) {
