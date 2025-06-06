@@ -32,10 +32,10 @@ public interface JsonRpcResponse {
     /**
      * Set a JSON-RPC ID for this response.
      *
-     * @param id the ID
+     * @param jsonRpcId the ID
      * @return this response
      */
-    JsonRpcResponse jsonId(int id);
+    JsonRpcResponse jsonRpcId(JsonValue jsonRpcId);
 
     /**
      * Set a result for this response as a JSON value.
@@ -92,7 +92,7 @@ public interface JsonRpcResponse {
      *
      * @return the ID
      */
-    Optional<Integer> jsonId();
+    Optional<JsonValue> jsonRpcId();
 
     /**
      * Get the result set on this response.

@@ -31,20 +31,21 @@ import static io.helidon.webserver.jsonrpc.JsonUtil.jsonbToJsonp;
 
 abstract class JsonRpcResponseImpl implements JsonRpcResponse {
 
-    private Integer responseId;
+    private JsonValue jsonRpcId;
     private JsonValue result;
     private JsonRpcError error;
     private Status status = Status.OK_200;
 
     private final ServerResponse delegate;
 
-    JsonRpcResponseImpl(ServerResponse delegate) {
+    JsonRpcResponseImpl(JsonValue jsonRpcId, ServerResponse delegate) {
+        this.jsonRpcId = jsonRpcId;
         this.delegate = delegate;
     }
 
     @Override
-    public JsonRpcResponse jsonId(int id) {
-        this.responseId = id;
+    public JsonRpcResponse jsonRpcId(JsonValue jsonRpcId) {
+        this.jsonRpcId = jsonRpcId;
         return this;
     }
 
@@ -73,8 +74,8 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
-    public Optional<Integer> jsonId() {
-        return Optional.ofNullable(responseId);
+    public Optional<JsonValue> jsonRpcId() {
+        return Optional.ofNullable(jsonRpcId);
     }
 
     @Override
@@ -110,8 +111,8 @@ abstract class JsonRpcResponseImpl implements JsonRpcResponse {
     public JsonObject asJsonObject() {
         JsonObjectBuilder builder = Json.createObjectBuilder()
                 .add("jsonrpc", "2.0");
-        if (responseId != null) {
-            builder.add("id", responseId);
+        if (jsonRpcId != null) {
+            builder.add("id", jsonRpcId);
         }
         if (result != null) {
             builder.add("result", result);

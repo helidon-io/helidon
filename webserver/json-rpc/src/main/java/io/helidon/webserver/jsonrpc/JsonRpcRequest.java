@@ -19,6 +19,8 @@ import java.util.Optional;
 
 import io.helidon.webserver.http.HttpRequest;
 
+import jakarta.json.JsonValue;
+
 /**
  * A representation of a JSON-RPC request.
  */
@@ -43,7 +45,7 @@ public interface JsonRpcRequest extends HttpRequest {
      *
      * @return an optional request ID
      */
-    Optional<Integer> jsonId();
+    Optional<JsonValue> jsonRpcId();
 
     /**
      * The params associated with the request. If params were not present
