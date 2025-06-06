@@ -25,10 +25,12 @@ import java.util.Objects;
  */
 public class JsonRpcHandlers {
 
+    private final JsonRpcErrorHandler errorHandler;
     private final Map<String, JsonRpcHandler> handlers;
 
     private JsonRpcHandlers(Builder builder) {
         this.handlers = builder.handlers;
+        this.errorHandler = builder.errorHandler;
     }
 
     /**
@@ -56,8 +58,17 @@ public class JsonRpcHandlers {
      *
      * @return a map
      */
-    public Map<String, JsonRpcHandler> handlersMap() {
+    Map<String, JsonRpcHandler> handlersMap() {
         return handlers;
+    }
+
+    /**
+     * Get access to the error handler, if registered.
+     *
+     * @return the error handler or {@code null}
+     */
+    JsonRpcErrorHandler errorHandler() {
+        return errorHandler;
     }
 
     /**
@@ -65,6 +76,7 @@ public class JsonRpcHandlers {
      */
     public static class Builder implements io.helidon.common.Builder<JsonRpcHandlers.Builder, JsonRpcHandlers> {
 
+        private JsonRpcErrorHandler errorHandler;
         private final Map<String, JsonRpcHandler> handlers = new HashMap<>();
 
         private Builder() {
@@ -78,7 +90,7 @@ public class JsonRpcHandlers {
         /**
          * Add a new method and its handler.
          *
-         * @param method method name
+         * @param method  method name
          * @param handler the handler
          * @return this builder
          */
@@ -86,6 +98,17 @@ public class JsonRpcHandlers {
             Objects.requireNonNull(method);
             Objects.requireNonNull(handler);
             handlers.put(method, handler);
+            return this;
+        }
+
+        /**
+         * Register an error handler to process any erroneous requests.
+         *
+         * @param handler the error handler
+         * @return this builder
+         */
+        public Builder error(JsonRpcErrorHandler handler) {
+            errorHandler = handler;
             return this;
         }
     }

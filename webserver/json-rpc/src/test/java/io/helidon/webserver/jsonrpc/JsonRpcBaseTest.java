@@ -20,6 +20,7 @@ import java.time.Duration;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.Json;
@@ -125,6 +126,7 @@ class JsonRpcBaseTest {
                            JsonRpcHandlers.builder()
                                    .method("start", this::start)
                                    .method("stop", this::stop)
+                                   .error(this::error)
                                    .build());
         }
 
@@ -153,6 +155,15 @@ class JsonRpcBaseTest {
                                   .data(new ErrorData("Bad param"))
                                   .build());
                 res.status(Status.OK_200).send();
+            }
+        }
+
+        boolean error(ServerRequest req, JsonObject object) {
+            try {
+                String method = object.getString("method");
+                return "expected".equalsIgnoreCase(method);
+            } catch (Exception e) {
+                return false;       // not handled
             }
         }
     }
