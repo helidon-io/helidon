@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,16 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.parameters.Parameters;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.providers.common.OutboundConfig;
@@ -55,6 +58,9 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.webclient.api.HttpClientRequest;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
@@ -201,14 +207,21 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return false;
         }
 
-        return this.outboundConfig.findTarget(outboundEnv)
-                .propagate;
+        return this.outboundConfig.findTarget(outboundEnv).propagate;
     }
 
     @Override
     public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
                                                      SecurityEnvironment outboundEnv,
                                                      EndpointConfig outboundEndpointConfig) {
+        return switch (oidcConfig.outboundType()) {
+            case USER_JWT -> propagateAccessToken(providerRequest, outboundEnv);
+            case CLIENT_CREDENTIALS -> clientCredentials(providerRequest, outboundEnv);
+        };
+    }
+
+    private OutboundSecurityResponse propagateAccessToken(ProviderRequest providerRequest,
+                                                                 SecurityEnvironment outboundEnv) {
         Optional<Subject> user = providerRequest.securityContext().user();
 
         if (user.isPresent()) {
@@ -229,7 +242,48 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                 }
             }
         }
+        return OutboundSecurityResponse.empty();
+    }
 
+    private OutboundSecurityResponse clientCredentials(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {
+        OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
+        boolean enabled = target.propagate;
+        if (enabled) {
+            Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
+                    .add("grant_type", "client_credentials");
+
+            if (!oidcConfig.baseScopes().isEmpty()) {
+                formBuilder.add("scope", oidcConfig.baseScopes());
+            }
+
+            HttpClientRequest postRequest = oidcConfig.appWebClient()
+                    .post()
+                    .uri(oidcConfig.tokenEndpointUri());
+
+            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
+
+            try (var response = postRequest.submit(formBuilder.build())) {
+                if (response.status().family() == Status.Family.SUCCESSFUL) {
+                    JsonObject jsonObject = response.as(JsonObject.class);
+                    String accessToken = jsonObject.getString("access_token");
+
+                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                    target.tokenHandler.header(headers, accessToken);
+                    return OutboundSecurityResponse.withHeaders(headers);
+                } else {
+                    return OutboundSecurityResponse.builder()
+                            .status(SecurityResponse.SecurityStatus.FAILURE)
+                            .description("Could not obtain access token from the identity server")
+                            .build();
+                }
+            } catch (Exception e) {
+                return OutboundSecurityResponse.builder()
+                        .status(SecurityResponse.SecurityStatus.FAILURE)
+                        .description("An error occurred while obtaining access token from the identity server")
+                        .throwable(e)
+                        .build();
+            }
+        }
         return OutboundSecurityResponse.empty();
     }
 
@@ -283,7 +337,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                         .build();
             }
             if (propagate == null) {
-                propagate = (outboundConfig.targets().size() > 0);
+                propagate = !outboundConfig.targets().isEmpty();
             }
             return new OidcProvider(this, new OidcOutboundConfig(outboundConfig, defaultOutboundHandler));
         }
@@ -500,7 +554,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
 
         private boolean hasOutbound() {
-            return outboundConfig.targets().size() > 0;
+            return !outboundConfig.targets().isEmpty();
         }
 
         private OidcOutboundTarget findTarget(SecurityEnvironment env) {
