@@ -28,37 +28,36 @@ import io.helidon.webserver.http.HttpRequest;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 
 class JsonRpcRequestImpl implements JsonRpcRequest {
 
     private final HttpRequest delegate;
-    private final JsonObject json;
+    private final JsonObject request;
 
-    JsonRpcRequestImpl(HttpRequest delegate, JsonObject json) {
+    JsonRpcRequestImpl(HttpRequest delegate, JsonObject request) {
         this.delegate = delegate;
-        this.json = json;
+        this.request = request;
     }
 
     @Override
     public String version() {
-        return json.getString("jsonrpc");
+        return request.getString("jsonrpc");
     }
 
     @Override
     public String method() {
-        return json.getString("method");
+        return request.getString("method");
     }
 
     @Override
-    public Optional<Integer> jsonId() {
-        return json.containsKey("id")
-                ? Optional.of(json.getInt("id"))
-                : Optional.empty();
+    public Optional<JsonValue> jsonRpcId() {
+        return Optional.ofNullable(request.get("id"));
     }
 
     @Override
     public JsonRpcParams params() {
-        return new JsonRpcParamsImpl((JsonStructure) json.get("params"));
+        return new JsonRpcParamsImpl((JsonStructure) request.get("params"));
     }
 
     @Override
