@@ -19,6 +19,7 @@ package io.helidon.testing.junit5;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -386,6 +387,11 @@ public class TestJunitExtension implements Extension,
         for (Method declaredMethod : requiredTestClass.getDeclaredMethods()) {
             var annotation = declaredMethod.getAnnotation(TestRegistry.AfterShutdown.class);
             if (annotation != null) {
+                if (!Modifier.isStatic(declaredMethod.getModifiers())) {
+                    throw new TestException("Cannot invoke @TestRegistry.AfterShutdown annotated method "
+                                                    + declaredMethod.getName() + ", as it is not static");
+                }
+
                 try {
                     declaredMethod.setAccessible(true);
                     declaredMethod.invoke(null);
