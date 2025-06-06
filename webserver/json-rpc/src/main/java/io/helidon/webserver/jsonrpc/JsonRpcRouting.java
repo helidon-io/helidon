@@ -137,17 +137,17 @@ public class JsonRpcRouting implements Routing {
                         AtomicBoolean sendCalled = new AtomicBoolean();
                         JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
                         JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
-                        JsonRpcResponse jsonRes = new JsonRpcResponseImpl(res) {
+                        JsonValue jsonRpcId = jsonReq.jsonRpcId().orElse(null);
+                        JsonRpcResponse jsonRes = new JsonRpcResponseImpl(jsonRpcId, res) {
                             @Override
                             public void send() {
                                 try {
-                                    jsonReq.jsonId().ifPresentOrElse(id -> {
-                                        jsonId(id);
+                                    if (jsonRpcId().isPresent()) {
                                         res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
                                         res.status(status()).send(asJsonObject());
-                                    }, () -> {
+                                    } else {
                                         res.status(status()).send();        // notification
-                                    });
+                                    }
                                     sendCalled.set(true);
                                 } catch (Exception e) {
                                     sendInternalError(res);
@@ -198,16 +198,15 @@ public class JsonRpcRouting implements Routing {
                             // prepare and call method handler
                             JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
                             JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
-                            JsonRpcResponse jsonRes = new JsonRpcResponseImpl(res) {
+                            JsonValue jsonRpcId = jsonReq.jsonRpcId().orElse(null);
+                            JsonRpcResponse jsonRes = new JsonRpcResponseImpl(jsonRpcId, res) {
                                 @Override
                                 public void send() {
                                     try {
-                                        jsonReq.jsonId().ifPresent(id -> {
-                                            jsonId(id);
+                                        if (jsonRpcId().isPresent()) {
                                             res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
                                             arrayBuilder.add(asJsonObject());
-
-                                        });
+                                        }
                                     } catch (Exception e) {
                                         sendInternalError(res);
                                     }
