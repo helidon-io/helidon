@@ -169,9 +169,8 @@ stage_site(){
         -DgeneratePom="false" \
         -DgroupId="io.helidon" \
         -DartifactId="helidon-project" \
-        -DaltDeploymentRepository=":::file://${PWD}/staging" \
-        -Dversion="${FULL_VERSION}"
-
+        -Dversion="${FULL_VERSION}" \
+        -Durl="file://${PWD}/staging"
 }
 
 release_build(){
