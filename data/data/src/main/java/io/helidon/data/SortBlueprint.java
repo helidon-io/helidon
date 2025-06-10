@@ -33,7 +33,17 @@ interface SortBlueprint {
      *
      * @return {@link List} of order definitions
      */
+    @Option.Singular
     @Option.Default("UNSORTED")
     List<Order> orderBy();
+
+    /**
+     * Whether any order definitions are set.
+     *
+     * @return value of {@code true} when at least one order definition is set or {@code false} otherwise
+     */
+    default boolean isSorted() {
+        return !orderBy().isEmpty();
+    }
 
 }

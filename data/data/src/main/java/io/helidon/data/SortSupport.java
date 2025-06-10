@@ -79,14 +79,4 @@ class SortSupport {
                 .build();
     }
 
-    /**
-     * Whether any order definitions are set.
-     *
-     * @return value of {@code true} when at least one order definition is set or {@code false} otherwise
-     */
-    @Prototype.PrototypeMethod
-    public static boolean isSorted(Sort sort) {
-        return sort.orderBy().isEmpty();
-    }
-
 }
