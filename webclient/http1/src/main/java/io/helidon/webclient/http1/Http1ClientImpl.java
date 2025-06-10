@@ -72,6 +72,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         // this method is called from the "generic" HTTP client, that can support any version (that is on classpath).
         // usually HTTP/1.1 is either the only available, or a fallback if other versions cannot be used
         Http1ClientRequest request = new Http1ClientRequestImpl(this,
+                                                                clientRequest,
                                                                 clientRequest.method(),
                                                                 clientUri,
                                                                 clientRequest.sendExpectContinue().orElse(null),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new Http2ClientRequestImpl(this, method, clientUri, clientConfig.properties());
+        return new Http2ClientRequestImpl(this, null, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -87,6 +87,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         Http2ClientRequest request = new Http2ClientRequestImpl(this,
+                                                                clientRequest,
                                                                 clientRequest.method(),
                                                                 clientUri,
                                                                 clientRequest.properties());
