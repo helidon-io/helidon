@@ -48,6 +48,7 @@
         <module>upgrade</module>
         <module>webserver</module>
         <module>websocket</module>
+        <module>jsonrpc</module>
     </modules>
 
     <properties>
