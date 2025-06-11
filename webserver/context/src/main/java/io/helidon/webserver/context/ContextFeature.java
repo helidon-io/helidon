@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,14 +99,15 @@ public class ContextFeature implements Weighted, ServerFeature, RuntimeType.Api<
 
     @Override
     public void setup(ServerFeatureContext featureContext) {
-        double featureWeight = config.weight();
         // all sockets
         Set<String> sockets = config.sockets();
         featureContext.socket(WebServer.DEFAULT_SOCKET_NAME)
                 .httpRouting()
-                .addFeature(new ContextRoutingFeature(featureWeight));
+                .addFeature(new ContextRoutingFeature(config));
         for (String socket : sockets) {
-            featureContext.socket(socket).httpRouting().addFeature(new ContextRoutingFeature(featureWeight));
+            featureContext.socket(socket)
+                    .httpRouting()
+                    .addFeature(new ContextRoutingFeature(config));
         }
     }
     @Override

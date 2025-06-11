@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,6 +138,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private boolean isTypeParametersMutated;
         private boolean isUpperBoundsMutated;
         private boolean primitive = false;
+        private boolean vararg = false;
         private boolean wildcard = false;
         private String className;
         private String packageName = "";
@@ -163,6 +164,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             addEnclosingNames(prototype.enclosingNames());
             primitive(prototype.primitive());
             array(prototype.array());
+            vararg(prototype.vararg());
             generic(prototype.generic());
             wildcard(prototype.wildcard());
             if (!isTypeArgumentsMutated) {
@@ -203,6 +205,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
             primitive(builder.primitive());
             array(builder.array());
+            vararg(builder.vararg());
             generic(builder.generic());
             wildcard(builder.wildcard());
             if (isTypeArgumentsMutated) {
@@ -287,7 +290,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER enclosingNames(List<? extends String> enclosingNames) {
+        public BUILDER enclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             isEnclosingNamesMutated = true;
             this.enclosingNames.clear();
@@ -304,7 +307,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER addEnclosingNames(List<? extends String> enclosingNames) {
+        public BUILDER addEnclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             isEnclosingNamesMutated = true;
             this.enclosingNames.addAll(enclosingNames);
@@ -348,6 +351,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER array(boolean array) {
             this.array = array;
+            return self();
+        }
+
+        /**
+         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+         *
+         * @param vararg whether an array is declared as a vararg
+         * @return updated builder instance
+         * @see #vararg()
+         */
+        public BUILDER vararg(boolean vararg) {
+            this.vararg = vararg;
             return self();
         }
 
@@ -444,7 +460,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeParameters()
          */
-        public BUILDER typeParameters(List<? extends String> typeParameters) {
+        public BUILDER typeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             isTypeParametersMutated = true;
             this.typeParameters.clear();
@@ -461,7 +477,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeParameters()
          */
-        public BUILDER addTypeParameters(List<? extends String> typeParameters) {
+        public BUILDER addTypeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
@@ -680,6 +696,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+         *
+         * @return the vararg
+         */
+        public boolean vararg() {
+            return vararg;
+        }
+
+        /**
          * Indicates whether this type is using generics.
          *
          * @return the generic
@@ -777,6 +803,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean array;
             private final boolean generic;
             private final boolean primitive;
+            private final boolean vararg;
             private final boolean wildcard;
             private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
@@ -797,6 +824,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.enclosingNames = List.copyOf(builder.enclosingNames());
                 this.primitive = builder.primitive();
                 this.array = builder.array();
+                this.vararg = builder.vararg();
                 this.generic = builder.generic();
                 this.wildcard = builder.wildcard();
                 this.typeArguments = List.copyOf(builder.typeArguments());
@@ -863,6 +891,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public boolean array() {
                 return array;
+            }
+
+            @Override
+            public boolean vararg() {
+                return vararg;
             }
 
             @Override

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-project</artifactId>
@@ -72,6 +72,7 @@
         <module>mp-jaxrs-preserve-headers</module>
         <module>crac</module>
         <module>mp-metrics-gh-9995</module>
+        <module>context-http-propagation</module>
     </modules>
 
     <dependencyManagement>

@@ -60,7 +60,7 @@ Configuration example in `pom.xml`:
 
 <plugin>
     <groupId>io.helidon.service.registry</groupId>
-    <artifactId>helidon-service-inject-maven-plugin</artifactId>
+    <artifactId>helidon-service-maven-plugin</artifactId>
     <executions>
         <execution>
             <id>create-application</id>

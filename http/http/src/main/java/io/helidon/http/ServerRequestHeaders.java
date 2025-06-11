@@ -24,10 +24,12 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.service.registry.Service;
 
 /**
  * HTTP headers of a server request.
  */
+@Service.Describe(Service.PerRequest.class)
 public interface ServerRequestHeaders extends Headers {
     /**
      * Header value of the non compliant {@code Accept} header sent by

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
@@ -100,6 +101,22 @@ class Http1ClientTest {
         rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
         rules.put("/chunkresponse", Http1ClientTest::chunkResponseHandler);
         rules.put("/delayedEndpoint", Http1ClientTest::delayedHandler);
+    }
+
+    @Test
+    void testRequestHeadersUpdated() {
+        var client = WebClient.builder()
+                .baseUri(baseURI)
+                .build();
+
+        HttpClientRequest request = client.get("/test");
+
+        request.request(String.class);
+
+        // this header is computed by Helidon, and would not be present unless the bug 10175 was fixed
+        assertThat(request.headers().contentLength(), is(OptionalLong.of(0)));
+
+        client.closeResource();
     }
 
     @Test
