@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,17 @@ interface TypeNameBlueprint {
      */
     @Option.DefaultBoolean(false)
     boolean array();
+
+    /**
+     * If this is a representation of {@link io.helidon.common.types.TypeName#array()}, this method can identify that it
+     * was declared as a vararg.
+     * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+     *
+     * @return whether an array is declared as a vararg
+     */
+    @Option.DefaultBoolean(false)
+    @Option.Redundant
+    boolean vararg();
 
     /**
      * Indicates whether this type is using generics.

@@ -361,7 +361,7 @@ final class TypeNameSupport {
         var builder = TypeName.builder()
                 .generic(true)
                 .className(typeNames.substring(0, index));
-        String theOtherPart = typeNames.substring(index + 9);
+        String theOtherPart = typeNames.substring(index + 7);
         if (theOtherPart.contains(".")) {
             builder.addLowerBound(TypeName.create(theOtherPart));
         } else {
@@ -413,7 +413,11 @@ final class TypeNameSupport {
         }
 
         if (instance.array()) {
-            nameBuilder.append("[]");
+            if (instance.vararg()) {
+                nameBuilder.append("...");
+            } else {
+                nameBuilder.append("[]");
+            }
         }
 
         return nameBuilder.toString();

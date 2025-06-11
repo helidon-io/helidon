@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,27 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                                                TypeName processedType,
                                                                                Element v,
                                                                                Elements elements) {
+        return createTypedElementInfoFromElement(ctx, processedType, v, elements, false);
+    }
+    /**
+     * Creates an instance of a {@link io.helidon.common.types.TypedElementInfo} given its type and variable element from
+     * annotation processing. If the passed in element is not a {@link io.helidon.common.types.ElementKind#FIELD},
+     * {@link io.helidon.common.types.ElementKind#METHOD},
+     * {@link io.helidon.common.types.ElementKind#CONSTRUCTOR}, or {@link io.helidon.common.types.ElementKind#PARAMETER}
+     * then this method may return empty.
+     *
+     * @param ctx           annotation processing context
+     * @param processedType the type that is being processed, to avoid infinite loop when looking for inherited annotations
+     * @param v             the element (from annotation processing)
+     * @param elements      the elements
+     * @param varargType    whether the processed element is a known vararg (for method or constructor parameters)
+     * @return the created instance
+     */
+    public static Optional<TypedElementInfo> createTypedElementInfoFromElement(AptContext ctx,
+                                                                               TypeName processedType,
+                                                                               Element v,
+                                                                               Elements elements,
+                                                                               boolean varargType) {
         TypeName type = AptTypeFactory.createTypeName(v).orElse(null);
         TypeMirror typeMirror = null;
         String defaultValue = null;
@@ -187,16 +208,34 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         List<TypeName> typeParameters = new ArrayList<>();
 
         if (v instanceof ExecutableElement ee) {
+            boolean isVararg = ee.isVarArgs();
             typeMirror = Objects.requireNonNull(ee.getReturnType());
-            params = ee.getParameters()
-                    .stream()
-                    .map(it -> createTypedElementInfoFromElement(ctx, processedType, it, elements).orElseThrow(() -> {
-                        return new CodegenException("Failed to create element info for parameter: " + it + ", either it uses "
-                                                            + "invalid type, or it was removed by an element mapper. This would"
-                                                            + " result in an invalid TypeInfo model.",
-                                                    it);
-                    }))
-                    .toList();
+
+            int paramCount = ee.getParameters().size();
+            if (paramCount > 0) {
+                params = new ArrayList<>();
+            }
+            for (int i = 0; i < paramCount; i++) {
+                VariableElement variableElement = ee.getParameters().get(i);
+
+                boolean varargParam = isVararg && i == paramCount - 1;
+                // this is the last parameter
+
+                var parameter = createTypedElementInfoFromElement(ctx,
+                                                                  processedType,
+                                                                  variableElement,
+                                                                  elements,
+                                                                  varargParam)
+                        .orElseThrow(() -> new CodegenException("Failed to create element info for parameter: "
+                                                                        + variableElement + ", either it uses "
+                                                                        + "invalid type, or it was removed by an element mapper"
+                                                                        + ". This would"
+                                                                        + " result in an invalid TypeInfo model.",
+                                                                variableElement));
+
+                params.add(parameter);
+            }
+
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
                     : String.valueOf(annotationValue.accept(new ToAnnotationValueVisitor(elements)
@@ -248,6 +287,18 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                         createAnnotations(ctx, ((DeclaredType) typeMirror).asElement(), elements);
             }
         }
+
+        if (type == null) {
+            throw new CodegenException("Failed to create type for element: " + v + " in type " + processedType.fqName(),
+                                       v);
+        }
+
+        if (type.array() && varargType) {
+            type = TypeName.builder(type)
+                    .vararg(true)
+                    .build();
+        }
+
         String javadoc = ctx.aptEnv().getElementUtils().getDocComment(v);
         javadoc = javadoc == null || javadoc.isBlank() ? "" : javadoc;
 

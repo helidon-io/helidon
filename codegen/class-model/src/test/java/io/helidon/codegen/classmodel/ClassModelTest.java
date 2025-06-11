@@ -19,6 +19,7 @@ package io.helidon.codegen.classmodel;
 import java.io.IOException;
 import java.io.StringWriter;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,17 @@ class ClassModelTest {
             
               public void create() {
                 service(List.of("@default"), Optional.class)
+              }
+
+            }
+            """;
+
+    private static final String EXPECTED_VARARG = """
+            package io.helidon.codegen.classmodel;
+
+            public class Vararg {
+            
+              public void create(String... name) {
               }
 
             }
@@ -63,5 +75,47 @@ class ClassModelTest {
                 .write(sw, "  ");
 
         assertThat(sw.toString(), is(EXPECTED_AT_SIGN_IN_TEXT));
+    }
+
+    @Test
+    void testVarargExplicit() throws IOException {
+        var m = Method.builder()
+                .name("create")
+                .addParameter(p -> p.name("name")
+                        .type(String.class)
+                        .vararg(true))
+                .build();
+
+        var sw = new StringWriter();
+        ClassModel.builder()
+                .packageName("io.helidon.codegen.classmodel")
+                .name("Vararg")
+                .addMethod(m)
+                .build()
+                .write(sw, "  ");
+
+        assertThat(sw.toString(), is(EXPECTED_VARARG));
+    }
+
+    @Test
+    void testVarargTypeName() throws IOException {
+        var m = Method.builder()
+                .name("create")
+                .addParameter(p -> p.name("name")
+                        .type(TypeName.builder()
+                                      .type(String[].class)
+                                      .vararg(true)
+                                      .build()))
+                .build();
+
+        var sw = new StringWriter();
+        ClassModel.builder()
+                .packageName("io.helidon.codegen.classmodel")
+                .name("Vararg")
+                .addMethod(m)
+                .build()
+                .write(sw, "  ");
+
+        assertThat(sw.toString(), is(EXPECTED_VARARG));
     }
 }
