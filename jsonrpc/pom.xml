@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-    Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,8 +13,7 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
--->
+  -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -24,38 +22,32 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
     <packaging>pom</packaging>
 
+    <groupId>io.helidon.jsonrpc</groupId>
+    <artifactId>helidon-jsonrpc-project</artifactId>
+    <name>Helidon JSON-RPC Project</name>
+
+    <description>JSON-RPC support for Helidon</description>
+
     <modules>
-        <module>access-log</module>
-        <module>context</module>
-        <module>cors</module>
-        <module>graphql</module>
-        <module>grpc</module>
-        <module>http2</module>
-        <module>jsonrpc</module>
-        <module>observe</module>
-        <module>security</module>
-        <module>service-common</module>
-        <module>sse</module>
-        <module>static-content</module>
-        <module>testing</module>
-        <module>webserver</module>
-        <module>websocket</module>
-        <module>concurrency-limits</module>
+        <module>core</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
