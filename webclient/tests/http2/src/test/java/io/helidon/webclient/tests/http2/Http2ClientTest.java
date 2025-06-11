@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.util.OptionalLong;
 import java.util.function.Supplier;
 
 import io.helidon.common.configurable.Resource;
@@ -26,9 +27,12 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -118,6 +122,26 @@ class Http2ClientTest {
 
             assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
+    }
+
+    @Test
+    void testRequestHeadersUpdated() {
+        var client = WebClient.builder()
+                .baseUri("http://localhost:" + plainPort + "/")
+                .addProtocolConfig(Http2ClientProtocolConfig.builder()
+                                           .priorKnowledge(true)
+                                           .build())
+                .build();
+
+        HttpClientRequest request = client.get()
+                .protocolId("h2");
+
+        request.request(String.class);
+
+        // this header is computed by Helidon, and would not be present unless the bug 10175 was fixed
+        assertThat(request.headers().contentLength(), is(OptionalLong.of(0)));
+
+        client.closeResource();
     }
 
     @Test

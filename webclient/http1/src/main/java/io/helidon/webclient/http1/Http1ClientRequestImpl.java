@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
@@ -31,6 +32,7 @@ import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -38,27 +40,30 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
     private final Http1ClientImpl http1Client;
+    private final FullClientRequest<?> delegate;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(http1Client, method, clientUri, null, properties);
+        this(http1Client, null, method, clientUri, null, properties);
     }
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
-                               Method method,
-                               ClientUri clientUri,
-                               Boolean sendExpectContinue,
-                               Map<String, String> properties) {
+                           FullClientRequest<?> delegate,
+                           Method method,
+                           ClientUri clientUri,
+                           Boolean sendExpectContinue,
+                           Map<String, String> properties) {
         super(http1Client.clientConfig(),
-                http1Client.webClient().cookieManager(),
-                Http1Client.PROTOCOL_ID,
-                method,
-                clientUri,
-                sendExpectContinue,
-                properties);
+              http1Client.webClient().cookieManager(),
+              Http1Client.PROTOCOL_ID,
+              method,
+              clientUri,
+              sendExpectContinue,
+              properties);
         this.http1Client = http1Client;
+        this.delegate = delegate;
     }
 
     //Copy constructor for redirection purposes
@@ -67,10 +72,11 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                            ClientUri clientUri,
                            Map<String, String> properties) {
         this(request.http1Client,
-                method,
-                clientUri,
-                null,
-                properties);
+             null,
+             method,
+             clientUri,
+             null,
+             properties);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -248,6 +254,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                     return null;
                 });
 
+        if (delegate != null) {
+            ClientRequestHeaders delegateHeaders = delegate.headers();
+            this.headers().forEach(delegateHeaders::set);
+        }
         return new Http1ClientResponseImpl(clientConfig(),
                                            http1Client().protocolConfig(),
                                            serviceResponse.status(),
