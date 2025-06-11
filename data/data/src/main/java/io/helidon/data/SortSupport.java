@@ -39,20 +39,6 @@ class SortSupport {
                 .build();
     }
 
-    // Workaround: Blueprint codegen does not support varargs so create for single Order is required too
-    /**
-     * Create new instance of query result ordering.
-     *
-     * @param order order definition
-     * @return new query result ordering instance
-     */
-    @Prototype.FactoryMethod
-    static Sort create(Order order) {
-        return Sort.builder()
-                .orderBy(List.of(order))
-                .build();
-    }
-
     /**
      * Create new instance of query result ordering.
      *
