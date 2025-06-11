@@ -322,6 +322,7 @@ backend:
                   - "quickstart.adoc"
                   - "config.adoc"
                   - "health.adoc"
+                  - "logging.adoc"
                   - "metrics.adoc"
                   - "security-oidc.adoc"
                   - "tracing.adoc"
