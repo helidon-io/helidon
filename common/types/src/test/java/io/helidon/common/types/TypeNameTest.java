@@ -38,8 +38,64 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 class TypeNameTest {
+    @Test
+    void testBoxed() {
+        var boxed = TypeNameSupport.boxed(TypeNames.PRIMITIVE_BOOLEAN);
+
+        assertThat(boxed, is(TypeNames.BOXED_BOOLEAN));
+    }
+
+    @Test
+    void testFqName() {
+        var fqName = TypeNameSupport.fqName(TypeName.create(String[].class));
+        assertThat(fqName, is("java.lang.String[]"));
+    }
+
+    @Test
+    void testCreatePrimitive() {
+        var name = TypeNameSupport.create("boolean");
+
+        assertThat(name, is(TypeNames.PRIMITIVE_BOOLEAN));
+        assertThat(name.primitive(), is(true));
+    }
+
+    @Test
+    void testCreateSuper() {
+        var name = TypeNameSupport.create("java.util.List<? super java.lang.String>");
+
+        assertThat(name.genericTypeName(), is(TypeNames.LIST));
+
+        var list = name.typeArguments();
+        assertThat(list, not(empty()));
+        var typeArgument = list.getFirst();
+        assertThat("Type argument must be generic", typeArgument.generic(), is(true));
+        assertThat("Lower bounds should not be empty", typeArgument.lowerBounds(), not(empty()));
+        assertThat("Upper bounds should be empty", typeArgument.upperBounds(), empty());
+        assertThat("Type should be a question mark (? super java.lang.String)", typeArgument.className(), is("?"));
+        var lowerBound = typeArgument.lowerBounds().getFirst();
+        assertThat("Lower bound should be string", lowerBound, is(TypeNames.STRING));
+    }
+
+    @Test
+    void testCreateExtends() {
+        var name = TypeNameSupport.create("java.util.List<? extends java.lang.String>");
+
+        assertThat(name.genericTypeName(), is(TypeNames.LIST));
+
+        var list = name.typeArguments();
+        assertThat(list, not(empty()));
+        var typeArgument = list.getFirst();
+        assertThat("Type argument must be generic", typeArgument.generic(), is(true));
+        assertThat("Lower bounds should be empty", typeArgument.lowerBounds(), empty());
+        assertThat("Upper bounds should not be empty", typeArgument.upperBounds(), not(empty()));
+        assertThat("Type should be a question mark (? super java.lang.String)", typeArgument.className(), is("?"));
+        var upperBound = typeArgument.upperBounds().getFirst();
+        assertThat("Upper bound should be string", upperBound, is(TypeNames.STRING));
+    }
+
     @Test
     void testNested() {
         Class<?> type = TestType.class;
