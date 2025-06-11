@@ -235,8 +235,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected ResT toResponse(BufferData bufferData) {
-        bufferData.read();                  // compression
-        bufferData.readUnsignedInt32();     // length prefixed
         return responseMarshaller.parse(new InputStream() {
             @Override
             public int read() {

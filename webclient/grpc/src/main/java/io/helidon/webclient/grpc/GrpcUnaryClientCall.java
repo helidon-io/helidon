@@ -95,6 +95,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         // read response headers
         clientStream().readHeaders();
 
+        final GrpcDatagramReader datagramReader = new GrpcDatagramReader();
         while (isRemoteOpen()) {
             // trailers or eos received?
             if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
@@ -125,8 +126,17 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
                 }
 
-                responseListener().onMessage(toResponse(bufferData));
-                responseSent = true;
+                // Add data to the reader...
+                datagramReader.add(bufferData);
+
+                // ...and then send all complete GRPC datagrams to the responseListener:
+                BufferData data;
+                while ((data = datagramReader.extractNextDatagram()) != null) {
+                    responseListener().onMessage(toResponse(data));
+                    responseSent = true;
+                }
+                // If there's no any complete datagrams yet, then simply keep spinning this loop until
+                // enough data is received. The GrpcDatagramReader takes care of that.
             }
         }
     }

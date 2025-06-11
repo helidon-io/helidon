@@ -181,6 +181,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 } while (!headersRead);
 
                 // read data from stream
+                final GrpcDatagramReader datagramReader = new GrpcDatagramReader();
                 while (isRemoteOpen()) {
                     // drain queue
                     drainReceivingQueue();
@@ -205,7 +206,18 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         if (enableMetrics()) {
                             bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
                         }
-                        receivingQueue.add(bufferData);
+
+                        // Add data to the reader...
+                        datagramReader.add(bufferData);
+
+                        // ...and then add all complete GRPC datagrams to the receivingQueue:
+                        BufferData data;
+                        while ((data = datagramReader.extractNextDatagram()) != null) {
+                            receivingQueue.add(data);
+                        }
+                        // If there's no any complete datagrams yet, then simply keep spinning this loop until
+                        // enough data is received. The GrpcDatagramReader takes care of that.
+
                         socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                     }
                 }
