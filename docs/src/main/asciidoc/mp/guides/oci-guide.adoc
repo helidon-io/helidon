@@ -64,9 +64,13 @@ You can also use the Helidon CLI to generate the Helidon MP OCI project instead.
 
 The Helidon MP OCI project is pre-configured to integrate with several common OCI services but you must update its configuration with values specific to your application and OCI environment. To learn more about the components of Helidon MP OCI Starter Project, see ``/README.md`` and ``/server/README.md``, included in the starter project.
 
-The client service provides support for working with OpenAPI. For more information on Helidon OpenAPI support, see the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification]. 
+The project contains both server and client services that leverage OpenAPI to demonstrate an API-first development approach. Both services generate API source codes using the https://openapi-generator.tech/docs/generators/java-helidon-server/[OpenAPI java-helidon-server Generator] and https://openapi-generator.tech/docs/generators/java-helidon-client/[OpenAPI java-helidon-client Generator], along with the https://spec.openapis.org/oas/v3.0.0[OpenAPI 3.0 Specification]. 
 
-The server service allows you to build, configure and test the application locally.
+It should be noted that the project is limited to implementing the business logic of the generated Server API code.
+
+For more information on Helidon OpenAPI support, see the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI specification]. 
+
+The server service also allows you to build, configure and test the application locally.
 
 The Helidon MP OCI Starter Project also includes Helidon's built in liveness and readiness health checks which allow you to expose the project's health status to external tools. See xref:../health.adoc[MicroProfile Health] for general information on the Health Check feature and then read the **Health Checks** section in ``/server/README.md`` for how it's implemented in this project.
 
@@ -224,7 +228,7 @@ To learn how to enable OCI Logging integration, read the **Custom Logs Monitorin
 
 == Working with Other OCI Services
 
-While the Helidon MP OCI Starter Project focuses on the OCI Monitoring and OCI Logging services, you can use other OCI services with Helidon projects.
+While the Helidon MP OCI Starter Project focuses on the OCI Monitoring and OCI Logging services, you can extend the project to use other OCI services, as demonstrated by the examples below.
 
 === Streaming
 
