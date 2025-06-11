@@ -404,7 +404,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 entityProcessedRunnable.run();
                 finished = true;
             } else {
-                socket.log(LOGGER_RES_ENTITY, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
+                if (LOGGER_RES_ENTITY.isLoggable(TRACE)) {
+                    socket.log(LOGGER_RES_ENTITY,
+                               TRACE,
+                               "client read entity buffer %n%s",
+                               currentBuffer.debugDataHex(true));
+                }
             }
         }
     }
@@ -467,7 +472,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 entityProcessedRunnable.run();
                 finished = true;
             } else {
-                helidonSocket.log(LOGGER_RES_ENTITY, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
+                if (LOGGER_RES_ENTITY.isLoggable(TRACE)) {
+                    helidonSocket.log(LOGGER_RES_ENTITY,
+                                      TRACE,
+                                      "client read entity buffer %n%s",
+                                      currentBuffer.debugDataHex(true));
+                }
             }
         }
     }
