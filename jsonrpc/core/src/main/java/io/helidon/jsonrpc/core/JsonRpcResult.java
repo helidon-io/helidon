@@ -19,16 +19,15 @@ import java.util.Optional;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 
 /**
- * A representation of a JSON-RPC params.
+ * A representation of a JSON-RPC response result.
  */
-public interface JsonRpcParams {
+public interface JsonRpcResult {
 
     /**
-     * Access all request params as a single JSON object.
+     * Access a response result as a JSON object.
      *
      * @return a JSON object
      * @throws ClassCastException if not a JSON object
@@ -36,7 +35,7 @@ public interface JsonRpcParams {
     JsonObject asJsonObject();
 
     /**
-     * Access all request params as a single JSON array.
+     * Access a response result as a JSON array.
      *
      * @return a JSON array
      * @throws ClassCastException if not a JSON array
@@ -44,73 +43,74 @@ public interface JsonRpcParams {
     JsonArray asJsonArray();
 
     /**
-     * Access all request params as a single JSON structure.
+     * Access a response result as a JSON value.
      *
      * @return a JSON structure
      */
-    JsonStructure asJsonStructure();
+    JsonValue asJsonValue();
 
     /**
-     * Get a single param by name as a JSON value.
+     * Get a property value of a JSON object result.
      *
-     * @param name param name
-     * @return the param value
+     * @param name property name
+     * @return the property value
      * @throws ClassCastException       if not a JSON object
-     * @throws IllegalArgumentException if the param does not exist
+     * @throws IllegalArgumentException if the property does not exist
      */
     JsonValue get(String name);
 
     /**
-     * Get a single param by name as a string.
+     * Get a property value of a JSON object result as a string.
      *
-     * @param name param name
-     * @return the param value as a string
+     * @param name property name
+     * @return the property value as a string
      * @throws ClassCastException       if not a JSON object
-     * @throws IllegalArgumentException if the param does not exist
+     * @throws IllegalArgumentException if the property does not exist
      */
     String getString(String name);
 
     /**
-     * Get a single param by name as a JSON value, if present.
+     * Get a property value of a JSON object result as a string, if present.
      *
-     * @param name param name
-     * @return an optional param value
+     * @param name property name
+     * @return an optional property value
      * @throws ClassCastException if not a JSON object
      */
     Optional<JsonValue> optionalGet(String name);
 
     /**
-     * Get a single param by index as a JSON value.
+     * Get a JSON value by index from a JSON array.
      *
      * @param index the index
-     * @return the param value
+     * @return the JSON value
      * @throws ClassCastException        if not a JSON array
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     JsonValue get(int index);
 
     /**
-     * Get a single param by name as a string.
+     * Get property value as a string by index from a JSON array.
      *
      * @param index the index
-     * @return the param value as a string
+     * @return the property value as a string
      * @throws ClassCastException        if not a JSON array
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     String getString(int index);
 
     /**
-     * Get a single param by index as a JSON value, if present.
+     * Get property value as a string by index from a JSON array, if present.
      *
      * @param index the index
-     * @return an optional param value
+     * @return the optional property value as a string
      * @throws ClassCastException        if not a JSON array
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     Optional<JsonValue> optionalGet(int index);
 
     /**
-     * Map all request params to a bean class type using JSONB.
+     * Access a response result as a Java object. This method will attempt to
+     * bind the result using JSONB.
      *
      * @param type the bean class
      * @param <T>  the bean type

@@ -67,6 +67,11 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
+    public JsonObject asJsonObject() {
+        return request;
+    }
+
+    @Override
     public HttpPrologue prologue() {
         return delegate.prologue();
     }

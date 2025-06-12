@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webclient</groupId>
         <artifactId>helidon-webclient-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webclient-jsonrpc</artifactId>
@@ -35,7 +35,6 @@
         <dependency>
             <groupId>io.helidon.jsonrpc</groupId>
             <artifactId>helidon-jsonrpc-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.json</groupId>

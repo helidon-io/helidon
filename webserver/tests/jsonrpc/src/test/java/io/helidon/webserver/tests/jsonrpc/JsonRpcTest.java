@@ -23,7 +23,6 @@ import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
@@ -48,8 +47,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
             assertThat(res.result().isPresent(), is(true));
-            JsonObject result = res.result().get().asJsonObject();
-            assertThat(result.getString("status"), is("RUNNING"));
+            StartStopResult result = res.result().get().as(StartStopResult.class);
+            assertThat(result.status(), is("RUNNING"));
         }
     }
 
@@ -63,8 +62,8 @@ class JsonRpcTest extends JsonRpcBaseTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(2))));
             assertThat(res.result().isPresent(), is(true));
-            JsonObject result = res.result().get().asJsonObject();
-            assertThat(result.getString("status"), is("STOPPED"));
+            StartStopResult result = res.result().get().as(StartStopResult.class);
+            assertThat(result.status(), is("STOPPED"));
         }
     }
 
@@ -79,7 +78,7 @@ class JsonRpcTest extends JsonRpcBaseTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
             assertThat(res.result().isPresent(), is(true));
-            JsonValue result = res.result().get();
+            JsonValue result = res.result().get().asJsonValue();
             assertThat(result, is(Json.createValue(45)));
         }
     }

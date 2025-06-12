@@ -17,10 +17,9 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
-import io.helidon.http.ServerResponseHeaders;
-import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -28,7 +27,7 @@ import jakarta.json.JsonValue;
 /**
  * A representation of a JSON-RPC response.
  */
-public interface JsonRpcResponse {
+public interface JsonRpcResponse extends ServerResponse {
 
     /**
      * Set a JSON-RPC ID for this response.
@@ -117,30 +116,14 @@ public interface JsonRpcResponse {
     Status status();
 
     /**
-     * Response headers (mutable).
-     *
-     * @return the headers
-     */
-    ServerResponseHeaders headers();
-
-    /**
-     * Response trailers (mutable).
-     *
-     * @return the trailers
-     * @throws java.lang.IllegalStateException if client didn't ask for trailers with
-     * {@code TE: trailers} header in request or response doesn't contain trailer
-     * declaration headers {@code Trailer: <trailer-name>}
-     */
-    ServerResponseTrailers trailers();
-
-    /**
      * Send this response over the wire to the client. This method blocks
      * until the response is delivered.
      */
     void send();
 
     /**
-     * Get a complete response as a JSON object.
+     * Get a complete response as a JSON object. This method can be
+     * useful when running over other transports.
      *
      * @return a JSON object that represents the response
      */

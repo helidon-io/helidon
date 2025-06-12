@@ -20,6 +20,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
 import io.helidon.webclient.jsonrpc.JsonRpcClientBatchRequest;
@@ -59,10 +60,10 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
         try (var res = batch.submit()) {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.size(), is(2));
-            Optional<JsonValue> result0 = res.get(0).result();
+            Optional<JsonRpcResult> result0 = res.get(0).result();
             assertThat(result0.isPresent(), is(true));
             assertThat(result0.get().asJsonObject().getString("status"), is("RUNNING"));
-            Optional<JsonValue> result1 = res.get(1).result();
+            Optional<JsonRpcResult> result1 = res.get(1).result();
             assertThat(result1.isPresent(), is(true));
             assertThat(result1.get().asJsonObject().getString("status"), is("STOPPED"));
         }

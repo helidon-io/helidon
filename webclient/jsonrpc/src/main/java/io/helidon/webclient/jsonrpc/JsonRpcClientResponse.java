@@ -18,6 +18,7 @@ package io.helidon.webclient.jsonrpc;
 import java.util.Optional;
 
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.api.HttpClientResponse;
 
 import jakarta.json.JsonObject;
@@ -36,21 +37,22 @@ public interface JsonRpcClientResponse extends HttpClientResponse {
     Optional<JsonValue> rpcId();
 
     /**
-     * Get the result set on this response.
+     * Get the result in this response.
      *
-     * @return the result as a JSON value
+     * @return the optional response result
      */
-    Optional<JsonValue> result();
+    Optional<JsonRpcResult> result();
 
     /**
      * Get an error set on this response.
      *
-     * @return the error
+     * @return the optional error
      */
     Optional<JsonRpcError> error();
 
     /**
-     * Get a complete response as a JSON object.
+     * Get a complete response representation as a JSON object. This method
+     * can be useful when running over other transports.
      *
      * @return a JSON object that represents the response
      */

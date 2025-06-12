@@ -55,6 +55,9 @@ public class JsonRpcError {
     private final String message;
     private final JsonValue data;
 
+    /*
+     * Create an instance using the builder.
+     */
     protected JsonRpcError(Builder builder) {
         this.code = builder.code;
         this.message = builder.message;
