@@ -20,6 +20,7 @@ import java.util.Optional;
 import io.helidon.jsonrpc.core.JsonRpcParams;
 import io.helidon.webserver.http.HttpRequest;
 
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 /**
@@ -54,4 +55,12 @@ public interface JsonRpcRequest extends HttpRequest {
      * @return the params
      */
     JsonRpcParams params();
+
+    /**
+     * Get a complete request as a JSON object. This method can
+     * be useful when running over other transports.
+     *
+     * @return a JSON object that represents the request
+     */
+    JsonObject asJsonObject();
 }

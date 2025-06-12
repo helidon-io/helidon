@@ -21,50 +21,49 @@ import java.util.Optional;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
-import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 
 /**
- * An implementation of {@link io.helidon.jsonrpc.core.JsonRpcParams}.
+ * An implementation of a JSON-RPC response result.
  */
-public class JsonRpcParamsImpl implements JsonRpcParams {
+public class JsonRpcResultImpl implements JsonRpcResult {
 
-    private final JsonStructure params;
+    private final JsonValue result;
 
     /**
-     * Create an instance from a JSON structure.
+     * Create an instance from a JSON value.
      *
-     * @param params the structure
+     * @param result the value
      * @return a new instance of this class
      */
-    public static JsonRpcParamsImpl create(JsonStructure params) {
-        return new JsonRpcParamsImpl(params);
+    public static JsonRpcResultImpl create(JsonValue result) {
+        return new JsonRpcResultImpl(result);
     }
 
-    private JsonRpcParamsImpl(JsonStructure params) {
-        this.params = Objects.requireNonNull(params);
-    }
-
-    @Override
-    public JsonStructure asJsonStructure() {
-        return params;
+    private JsonRpcResultImpl(JsonValue result) {
+        this.result = Objects.requireNonNull(result);
     }
 
     @Override
     public JsonObject asJsonObject() {
-        return params.asJsonObject();
+        return result.asJsonObject();
     }
 
     @Override
     public JsonArray asJsonArray() {
-        return params.asJsonArray();
+        return result.asJsonArray();
+    }
+
+    @Override
+    public JsonValue asJsonValue() {
+        return result;
     }
 
     @Override
     public JsonValue get(String name) {
         JsonValue value = asJsonObject().get(name);
         if (value == null) {
-            throw new IllegalArgumentException("Unable to find param " + name);
+            throw new IllegalArgumentException("Unable to find property " + name);
         }
         return value;
     }
