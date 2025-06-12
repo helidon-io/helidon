@@ -40,9 +40,9 @@ public interface AnnotationProperty {
         Objects.requireNonNull(value);
 
         return switch (value) {
-            case AnnotationProperty ignored ->
+            case AnnotationProperty ap ->
                     throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
-                                                               + ", value: " + value);
+                                                               + ", value: " + value + ", inlined value: " + ap.value());
             case EnumValue ev -> new AnnotationPropertyImpl(value, ev);
             case Enum en -> new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
             default -> new AnnotationPropertyImpl(value);
