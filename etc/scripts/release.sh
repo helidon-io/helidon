@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,12 +85,6 @@ if [ -z "${COMMAND}" ] ; then
     exit 1
 fi
 
-# Hooks for version substitution work
-readonly PREPARE_HOOKS=( )
-
-# Hooks for deployment work
-readonly PERFORM_HOOKS=( )
-
 # Resolve FULL_VERSION
 if [ -z "${VERSION+x}" ]; then
 
@@ -129,22 +123,9 @@ update_version(){
             > ${pom}.tmp
         mv ${pom}.tmp ${pom}
     done
-
-    # Invoke prepare hook
-    if [ -n "${PREPARE_HOOKS}" ]; then
-        for prepare_hook in ${PREPARE_HOOKS} ; do
-            bash "${prepare_hook}"
-        done
-    fi
 }
 
-release_site(){
-    if [ -n "${STAGING_REPO_ID}" ] ; then
-        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
-    else
-        readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-    fi
-
+stage_site(){
     # Generate site
     mvn ${MAVEN_ARGS} site
 
@@ -162,9 +143,7 @@ release_site(){
         -DgroupId="io.helidon" \
         -DartifactId="helidon-project" \
         -Dversion="${FULL_VERSION}" \
-        -Durl="${MAVEN_REPO_URL}" \
-        -DrepositoryId="ossrh" \
-        -DretryFailedDeploymentCount="10"
+        -Durl="file://${PWD}/staging"
 }
 
 release_build(){
@@ -189,70 +168,37 @@ release_build(){
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
-    # Create the nexus staging repository
-    local STAGING_DESC="Helidon v${FULL_VERSION}"
-    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
-        -DstagingProfileId="6026dab46eed94" \
-        -DstagingDescription="${STAGING_DESC}"
-
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-        awk '{print $2" "$3}' | \
-        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-        head -1)
-    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
-
-    # Perform deployment
+    # Perform deployment to local file system
     mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,archetypes \
+      -Prelease,archetypes \
       -DskipTests \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DretryFailedDeploymentCount="10"
+      -DaltDeploymentRepository=":::file://${PWD}/staging"
 
-    # Invoke perform hooks
-    if [ -n "${PERFORM_HOOKS}" ]; then
-      for perform_hook in ${PERFORM_HOOKS} ; do
-        bash "${perform_hook}"
-      done
-    fi
-
-    # Release site (documentation, javadocs)
-    release_site
-
-    # Close the nexus staging repository
-    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DstagingDescription="${STAGING_DESC}"
+    # Stage site (documentation, javadocs) to local filesystem
+    stage_site
 
     git tag -f "${FULL_VERSION}"
     git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+
+    "${WS_DIR}/etc/scripts/upload.sh" upload_release \
+                --dir="staging" \
+                --description="Helidon v%{FULL_VERSION}"
 }
 
 deploy_snapshot(){
-
     # Make sure version ends in -SNAPSHOT
     if [[ ${MVN_VERSION} != *-SNAPSHOT ]]; then
         echo "Helidon version ${MVN_VERSION} is not a SNAPSHOT version. Failing snapshot release."
         exit 1
     fi
 
-    readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
-    echo "Deploying snapshot build ${MVN_VERSION} to ${NEXUS_SNAPSHOT_URL}"
-
-    # The nexus-staging-maven-plugin had issues deploying the module
-    # helidon-applications because the distributionManagement section is empty.
-    # So we deploy using the apache maven-deploy-plugin and altDeploymentRepository
-    # property. The deployAtEnd option requires version 3.0.0 of maven-deploy-plugin
-    # or newer to work correctly on multi-module systems
-    set -x
     mvn ${MAVEN_ARGS} -e clean deploy \
       -Parchetypes \
       -DskipTests \
-      -DaltDeploymentRepository="ossrh::${NEXUS_SNAPSHOT_URL}" \
-      -DdeployAtEnd=true \
-      -DretryFailedDeploymentCount="10"
+      -DaltDeploymentRepository=":::file://${PWD}/staging"
 
-    echo "Done. ${MVN_VERSION} deployed to ${NEXUS_SNAPSHOT_URL}"
+    "${WS_DIR}/etc/scripts/upload.sh" upload_snapshots \
+            --dir="staging"
 }
 
 # Invoke command
