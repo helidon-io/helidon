@@ -137,11 +137,7 @@ final class TypeNameSupport {
     @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String fqName(TypeName instance) {
         String name = calcName(instance, ".");
-        StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
-        if (instance.array()) {
-            nameBuilder.append("[]");
-        }
-        return nameBuilder.toString();
+        return instance.wildcard() ? "?" : name;
     }
 
     @Prototype.PrototypeMethod
@@ -412,14 +408,6 @@ final class TypeNameSupport {
             nameBuilder.append(">");
         }
 
-        if (instance.array()) {
-            if (instance.vararg()) {
-                nameBuilder.append("...");
-            } else {
-                nameBuilder.append("[]");
-            }
-        }
-
         return nameBuilder.toString();
     }
 
@@ -427,8 +415,20 @@ final class TypeNameSupport {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
         builder.className(componentType.getSimpleName());
-        builder.primitive(componentType.isPrimitive());
         builder.array(classType.isArray());
+
+        if (classType.isArray()) {
+            TypeName componentTypeName = TypeName.create(componentType);
+            builder.componentType(componentTypeName);
+            while (componentType.isArray()) {
+                //Search for a top most type of the array
+                //Example: boolean[][][] -> boolean
+                componentType = componentType.getComponentType();
+            }
+            builder.primitive(componentType.isPrimitive());
+        } else {
+            builder.primitive(componentType.isPrimitive());
+        }
 
         Class<?> enclosingClass = classType.getEnclosingClass();
         LinkedList<String> enclosingTypes = new LinkedList<>();
@@ -455,6 +455,7 @@ final class TypeNameSupport {
         @Override
         public void decorate(TypeName.BuilderBase<?, ?> target) {
             fixWildcards(target);
+            addArrayBracketsToTheName(target);
         }
 
         private void fixWildcards(TypeName.BuilderBase<?, ?> target) {
@@ -482,6 +483,42 @@ final class TypeNameSupport {
                 }
                 target.generic(true);
             }
+        }
+
+        private void addArrayBracketsToTheName(TypeName.BuilderBase<?, ?> target) {
+            target.className()
+                    //Strip all [] from the class name
+                    .map(name -> name.replaceAll("\\[]", ""))
+                    .map(name -> name.replaceAll("\\.\\.\\.", ""))
+                    //Add the right amount of [] based on the component types
+                    .map(name -> addArrayBrackets(target, name))
+                    //Add [] if this type name is an array
+                    .map(name -> addFinalArrayOrVarargMarks(target, name))
+                    .ifPresent(target::className);
+        }
+
+        private StringBuilder addArrayBrackets(TypeName.BuilderBase<?, ?> target, String name) {
+            StringBuilder nameBuilder = new StringBuilder(name);
+            Optional<TypeName> componentType = target.componentType();
+            while (componentType.isPresent()) {
+                TypeName current = componentType.get();
+                if (current.array()) {
+                    nameBuilder.append("[]");
+                    componentType = current.componentType();
+                } else {
+                    break;
+                }
+            }
+            return nameBuilder;
+        }
+
+        private String addFinalArrayOrVarargMarks(TypeName.BuilderBase<?, ?> target, StringBuilder nameBuilder) {
+            if (target.vararg()) {
+                nameBuilder.append("...");
+            } else if (target.array()) {
+                nameBuilder.append("[]");
+            }
+            return nameBuilder.toString();
         }
     }
 }
