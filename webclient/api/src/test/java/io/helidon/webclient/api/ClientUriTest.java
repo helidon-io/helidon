@@ -131,4 +131,30 @@ class ClientUriTest {
         assertThat(clientUri.query().get("filter"), is("a b c"));
         assertThat(clientUri.query().getRaw("filter"), is("a%20b%20c"));
     }
+
+    /**
+     * Verifies that {@link ClientUri#resolve(ClientUri)} retains query parameters but {@link ClientUri#resolve(URI)}
+     * doesn't (which is the same behaviour as {@link URI#resolve(URI)}).
+     */
+    @Test
+    void testResolveQueryParameter() {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/?k=v"));
+        URI uri = URI.create("https://www.example.com:80");
+        helper.resolve(uri);
+        assertThat(helper.authority(), is("www.example.com:80"));
+        assertThat(helper.host(), is("www.example.com"));
+        assertThat(helper.path(), is(UriPath.root()));
+        assertThat(helper.port(), is(80));
+        assertThat(helper.scheme(), is("https"));
+        assertThat("unexpected query parameter: 'k'", !helper.query().contains("k"));
+
+        helper = ClientUri.create(URI.create("http://localhost:8080/?k=v"));
+        helper.resolve(ClientUri.create(uri));
+        assertThat(helper.authority(), is("www.example.com:80"));
+        assertThat(helper.host(), is("www.example.com"));
+        assertThat(helper.path(), is(UriPath.root()));
+        assertThat(helper.port(), is(80));
+        assertThat(helper.scheme(), is("https"));
+        assertThat(helper.query().get("k"), is("v"));
+    }
 }
