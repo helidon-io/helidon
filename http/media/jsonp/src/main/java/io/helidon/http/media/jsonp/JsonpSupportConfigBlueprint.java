@@ -26,7 +26,7 @@ import jakarta.json.JsonWriterFactory;
  * Configuration of the {@link JsonpSupport}.
  */
 @Prototype.Blueprint(decorator = JsonpSupport.Decorator.class)
-interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport>{
+interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport> {
 
     /**
      * Name of the support. Default value is {@code jsonp}.
