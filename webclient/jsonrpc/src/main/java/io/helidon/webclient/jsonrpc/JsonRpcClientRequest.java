@@ -130,6 +130,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
 
     /**
      * Get a complete representation of this request as a JSON object.
+     * This method can be useful when running over other transports.
      *
      * @return this request as a JSON object
      */

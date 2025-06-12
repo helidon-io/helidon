@@ -29,7 +29,7 @@ import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
 /**
- * Provides JSONP <-> JSONB conversions. Not efficient, but simple and portable
+ * Provides JSONP to/from JSONB conversions. Not efficient, but simple and portable
  * for now. A more efficient implementation should avoid serialization.
  */
 public class JsonUtil {
@@ -57,9 +57,9 @@ public class JsonUtil {
      * Convert a JSON object into a JSONB object.
      *
      * @param object the JSON object
-     * @param type the JSONB type
+     * @param type   the JSONB type
+     * @param <T>    the type of the instance
      * @return the JSONB instance
-     * @param <T> the type of the instance
      */
     public static <T> T jsonpToJsonb(JsonObject object, Class<T> type) {
         String serialized = object.toString();
