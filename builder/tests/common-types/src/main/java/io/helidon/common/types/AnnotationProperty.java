@@ -35,6 +35,7 @@ public interface AnnotationProperty {
      * @return a new annotation property
      * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
 
@@ -44,6 +45,9 @@ public interface AnnotationProperty {
         }
         if (value instanceof EnumValue ev) {
             return new AnnotationPropertyImpl(value, ev);
+        }
+        if (value instanceof Enum en) {
+            return new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
         }
         return new AnnotationPropertyImpl(value);
     }

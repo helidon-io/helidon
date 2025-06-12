@@ -249,6 +249,12 @@ public final class AnnotationParameter extends CommonComponent {
             return super.type(type);
         }
 
+        /**
+         * Configure a constant value, to generate a reference to a constant, rather then explicit value.
+         *
+         * @param constantValue type and constant name
+         * @return updated builder
+         */
         public Builder constantValue(AnnotationProperty.ConstantValue constantValue) {
             this.constantValue = constantValue;
             return this;

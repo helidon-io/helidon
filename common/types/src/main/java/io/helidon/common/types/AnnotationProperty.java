@@ -35,17 +35,18 @@ public interface AnnotationProperty {
      * @return a new annotation property
      * @see io.helidon.common.types.Annotation.BuilderBase#putValue(String, Object)
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
 
-        if (value instanceof AnnotationProperty) {
-            throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
-                                                       + ", value: " + value);
-        }
-        if (value instanceof EnumValue ev) {
-            return new AnnotationPropertyImpl(value, ev);
-        }
-        return new AnnotationPropertyImpl(value);
+        return switch (value) {
+            case AnnotationProperty ignored ->
+                    throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
+                                                               + ", value: " + value);
+            case EnumValue ev -> new AnnotationPropertyImpl(value, ev);
+            case Enum en -> new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
+            default -> new AnnotationPropertyImpl(value);
+        };
     }
 
     /**
