@@ -43,6 +43,7 @@
         <module>websocket</module>
         <module>grpc</module>
         <module>context</module>
+        <module>jsonrpc</module>
     </modules>
 
     <profiles>
