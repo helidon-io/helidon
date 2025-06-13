@@ -26,6 +26,7 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.jsonrpc.core.JsonUtil;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -34,8 +35,9 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
-import static io.helidon.jsonrpc.core.JsonUtil.jsonbToJsonp;
-
+/**
+ * An implementation of JSON-RPC response.
+ */
 class JsonRpcResponseImpl implements JsonRpcResponse {
 
     private final ServerResponse delegate;
@@ -63,8 +65,17 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
     }
 
     @Override
-    public JsonRpcResponse error(JsonRpcError error) {
-        this.error = error;
+    public JsonRpcResponse error(int code, String message) {
+        Objects.requireNonNull(message, "message is null");
+        error = JsonRpcErrorImpl.create(code, message);
+        return this;
+    }
+
+    @Override
+    public JsonRpcResponse error(int code, String message, JsonValue data) {
+        Objects.requireNonNull(message, "message is null");
+        Objects.requireNonNull(data, "data is null");
+        error = JsonRpcErrorImpl.create(code, message, data);
         return this;
     }
 
@@ -116,7 +127,7 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
         if (result != null) {
             builder.add("result", result);
         } else if (error != null) {
-            builder.add("error", jsonbToJsonp(error));
+            builder.add("error", error.asJsonObject());
         }
         return builder.build();
     }

@@ -65,7 +65,7 @@ public interface JsonRpcParams {
      *
      * @param name param name
      * @return the param value as a string
-     * @throws ClassCastException       if not a JSON object
+     * @throws ClassCastException       if not a JSON object or value not a string
      * @throws IllegalArgumentException if the param does not exist
      */
     String getString(String name);
@@ -80,7 +80,7 @@ public interface JsonRpcParams {
     Optional<JsonValue> optionalGet(String name);
 
     /**
-     * Get a single param by index as a JSON value.
+     * Get a single array param by index as a JSON value.
      *
      * @param index the index
      * @return the param value
@@ -90,17 +90,17 @@ public interface JsonRpcParams {
     JsonValue get(int index);
 
     /**
-     * Get a single param by name as a string.
+     * Get a single array param by index as a string.
      *
      * @param index the index
      * @return the param value as a string
-     * @throws ClassCastException        if not a JSON array
+     * @throws ClassCastException        if not a JSON array or value not a string
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     String getString(int index);
 
     /**
-     * Get a single param by index as a JSON value, if present.
+     * Get a single array param by index as a JSON value, if present.
      *
      * @param index the index
      * @return an optional param value

@@ -18,6 +18,7 @@ package io.helidon.jsonrpc.core;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import io.helidon.common.LazyValue;
 
@@ -46,6 +47,7 @@ public class JsonUtil {
      * @return the JSON value
      */
     public static JsonObject jsonbToJsonp(Object object) {
+        Objects.requireNonNull(object, "json object is null");
         String serialized = JSONB.get().toJson(object);
         InputStream stream = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8));
         try (JsonReader reader = Json.createReader(stream)) {
@@ -62,6 +64,8 @@ public class JsonUtil {
      * @return the JSONB instance
      */
     public static <T> T jsonpToJsonb(JsonObject object, Class<T> type) {
+        Objects.requireNonNull(object, "json object is null");
+        Objects.requireNonNull(type, "type is null");
         String serialized = object.toString();
         return JSONB.get().fromJson(serialized, type);
     }
