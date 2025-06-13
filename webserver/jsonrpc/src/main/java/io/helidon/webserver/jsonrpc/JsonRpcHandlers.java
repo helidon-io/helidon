@@ -20,8 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Aggregates zero or more JSON-RPC handlers in a map using method
- * names as keys.
+ * Aggregates zero or more JSON-RPC handlers based on JSON-RPC method names.
  */
 public class JsonRpcHandlers {
 
@@ -56,7 +55,7 @@ public class JsonRpcHandlers {
     /**
      * Return a map of method names to handles.
      *
-     * @return a map
+     * @return a map of method names to handlers
      */
     Map<String, JsonRpcHandler> handlersMap() {
         return handlers;

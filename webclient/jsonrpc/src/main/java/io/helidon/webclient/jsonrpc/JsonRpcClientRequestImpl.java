@@ -50,6 +50,9 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
+/**
+ * An implementation of JSON-RPC client request.
+ */
 class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
 
     private final Http1ClientRequest delegate;

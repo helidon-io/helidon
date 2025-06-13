@@ -36,6 +36,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 
+/**
+ * A representation of JSON-RPC client batch response.
+ */
 class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
     private static final JsonArray EMPTY_JSON_ARRAY = Json.createArrayBuilder().build();
 

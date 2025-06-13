@@ -32,7 +32,7 @@ public interface JsonRpcClient extends RuntimeType.Api<JsonRpcClientConfig> {
     String PROTOCOL_ID = "jsonrpc";
 
     /**
-     * Protocol to use to obtain an instance of JSON-RPC specific client from
+     * Protocol to use to get an instance of JSON-RPC specific client from
      * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
      */
     Protocol<JsonRpcClient, JsonRpcClientProtocolConfig> PROTOCOL = JsonRpcProtocolProvider::new;

@@ -31,7 +31,7 @@ public interface JsonRpcRules {
     JsonRpcRules register(String pathPattern, JsonRpcHandlers handlers);
 
     /**
-     * Register a single JSON-RPC handler for a method and path pattern.
+     * Register a single JSON-RPC handler given a method and path pattern.
      *
      * @param pathPattern the path pattern
      * @param method the method name

@@ -24,6 +24,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
@@ -47,25 +48,21 @@ import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
  */
 public class JsonRpcRouting implements Routing {
 
-    static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcError.builder()
-            .code(INVALID_REQUEST)
-            .message("The JSON sent is not a valid Request object")
-            .build();
+    static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcErrorImpl.create(
+            INVALID_REQUEST,
+            "The JSON sent is not a valid Request object");
 
-    static final JsonRpcError METHOD_NOT_FOUND_ERROR = JsonRpcError.builder()
-            .code(METHOD_NOT_FOUND)
-            .message("The method does not exist or is not available")
-            .build();
+    static final JsonRpcError METHOD_NOT_FOUND_ERROR = JsonRpcErrorImpl.create(
+            METHOD_NOT_FOUND,
+            "The method does not exist or is not available");
 
-    static final JsonRpcError INTERNAL_ERROR_ERROR = JsonRpcError.builder()
-            .code(INTERNAL_ERROR)
-            .message("Internal JSON-RPC error")
-            .build();
+    static final JsonRpcError INTERNAL_ERROR_ERROR = JsonRpcErrorImpl.create(
+            INTERNAL_ERROR,
+            "Internal JSON-RPC error");
 
-    static final JsonRpcError PARSE_ERROR_ERROR = JsonRpcError.builder()
-            .code(PARSE_ERROR)
-            .message("Invalid JSON was received by the server")
-            .build();
+    static final JsonRpcError PARSE_ERROR_ERROR = JsonRpcErrorImpl.create(
+            PARSE_ERROR,
+            "Invalid JSON was received by the server");
 
     private final JsonRpcRulesImpl rules;
 
@@ -74,7 +71,7 @@ public class JsonRpcRouting implements Routing {
     }
 
     /**
-     * Returns a builder for this class.
+     * Return a builder for this class.
      *
      * @return a new builder
      */
@@ -88,7 +85,7 @@ public class JsonRpcRouting implements Routing {
     }
 
     /**
-     * Converts this instance to an {@link io.helidon.webserver.http.HttpRouting.Builder}
+     * Convert this instance to an {@link io.helidon.webserver.http.HttpRouting.Builder}
      * that can be registered in the Webserver.
      *
      * @return an instance of HttpRouting
@@ -100,7 +97,7 @@ public class JsonRpcRouting implements Routing {
     }
 
     /**
-     * Populates an {@link io.helidon.webserver.http.HttpRouting.Builder} with
+     * Populate an {@link io.helidon.webserver.http.HttpRouting.Builder} with
      * all the routes for this JSON-RPC routing instance.
      *
      * @param builder an HTTP routing builder
@@ -275,7 +272,11 @@ public class JsonRpcRouting implements Routing {
         if (jsonObject != null && jsonObject.containsKey("id")) {
             rpcRes.rpcId(jsonObject.get("id"));
         }
-        rpcRes.error(error);
+        if (error.data().isEmpty()) {
+            rpcRes.error(error.code(), error.message());
+        } else {
+            rpcRes.error(error.code(), error.message(), error.data().get());
+        }
         return rpcRes.asJsonObject();
     }
 
@@ -330,7 +331,7 @@ public class JsonRpcRouting implements Routing {
          * {@link io.helidon.webserver.jsonrpc.JsonRpcService}.
          *
          * @param pathPattern the path pattern
-         * @param handlers the handlers
+         * @param handlers    the handlers
          * @return this builder
          */
         public Builder register(String pathPattern, JsonRpcHandlers handlers) {
@@ -342,8 +343,8 @@ public class JsonRpcRouting implements Routing {
          * Register a single JSON-RPC handler for a method and path pattern.
          *
          * @param pathPattern the path pattern
-         * @param method the method name
-         * @param handler the handler
+         * @param method      the method name
+         * @param handler     the handler
          * @return this builder
          */
         public Builder register(String pathPattern, String method, JsonRpcHandler handler) {

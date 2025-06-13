@@ -18,6 +18,9 @@ package io.helidon.webserver.jsonrpc;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * An implementation of JSON-RPC rules.
+ */
 class JsonRpcRulesImpl implements JsonRpcRules {
 
     private final Map<String, JsonRpcHandlers> rules = new HashMap<>();

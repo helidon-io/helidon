@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -24,6 +25,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.jsonrpc.core.JsonRpcError;
+import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.jsonrpc.core.JsonRpcResultImpl;
 import io.helidon.webclient.api.ClientUri;
@@ -33,6 +35,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
+/**
+ * An implementation of JSON-RPC client response.
+ */
 class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     private static final JsonObject EMPTY_JSON_OBJECT = Json.createObjectBuilder().build();
 
@@ -44,7 +49,7 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     }
 
     JsonRpcClientResponseImpl(HttpClientResponse delegate, JsonObject jsonObject) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "delegate is null");
         this.jsonObject = jsonObject;
     }
 
@@ -64,13 +69,7 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     public Optional<JsonRpcError> error() {
         try {
             JsonObject error = asJsonObject().getJsonObject("error");
-            JsonRpcError.Builder builder = JsonRpcError.builder();
-            builder.code(error.getInt("code"));
-            builder.message(error.getString("message"));
-            if (error.containsKey("data")) {
-                builder.data(error.get("data"));
-            }
-            return Optional.of(builder.build());
+            return Optional.of(JsonRpcErrorImpl.create(error));
         } catch (ClassCastException e) {
             return Optional.empty();
         }

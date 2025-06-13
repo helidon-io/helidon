@@ -19,6 +19,9 @@ import java.util.Objects;
 
 import io.helidon.webclient.http1.Http1Client;
 
+/**
+ * An implementation of JSON-RPC client.
+ */
 class JsonRpcClientImpl implements JsonRpcClient {
 
     private final Http1Client http1Client;
