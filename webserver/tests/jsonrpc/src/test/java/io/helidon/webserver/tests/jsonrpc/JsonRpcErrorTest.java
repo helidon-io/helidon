@@ -116,7 +116,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
             assertThat(object.get("id"), is(Json.createValue(1)));
             JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(error.getJsonObject("data").getString("reason"), is("Bad param"));
+            assertThat(error.getString("message"), is("Bad param"));
         }
     }
 
@@ -130,7 +130,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
             assertThat(object.get("id"), is(Json.createValue(2)));
             JsonObject error = object.getJsonObject("error");
             assertThat(error.getInt("code"), is(JsonRpcError.INVALID_PARAMS));
-            assertThat(error.getJsonObject("data").getString("reason"), is("Bad param"));
+            assertThat(error.getString("message"), is("Bad param"));
         }
     }
 }

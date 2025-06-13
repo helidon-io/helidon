@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.Preview;
+import io.helidon.common.features.api.Features;
 
 /**
  * Helidon WebServer JSON-RPC Support.
  */
-@Preview
-@Feature(value = "JSON-RPC",
-         description = "WebServer JSON-RPC Support",
-         in = HelidonFlavor.SE,
-         path = {"WebServer", "JSON-RPC"}
-)
-@SuppressWarnings({ "requires-automatic"})
+@Features.Incubating
 module io.helidon.webserver.jsonrpc {
 
     requires io.helidon.builder.api;
     requires io.helidon.common.config;
-
-    requires static io.helidon.common.features.api;
     requires io.helidon.webserver;
     requires io.helidon.jsonrpc.core;
     requires jakarta.json;
     requires jakarta.json.bind;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.webserver.jsonrpc;
 }

@@ -109,9 +109,6 @@ class JsonRpcBaseTest {
     public record StartStopResult(String status) {
     }
 
-    public record ErrorData(String reason) {
-    }
-
     static class JsonRpcService1 implements JsonRpcService {
 
         @Override
@@ -127,28 +124,26 @@ class JsonRpcBaseTest {
         void start(JsonRpcRequest req, JsonRpcResponse res) throws Exception {
             StartStopParams params = req.params().as(StartStopParams.class);
             if (params.when().equals("NOW")) {
-                res.result(new StartStopResult("RUNNING"));
-                res.status(Status.OK_200).send();
+                res.result(new StartStopResult("RUNNING"))
+                        .status(Status.OK_200)
+                        .send();
             } else {
-                res.error(JsonRpcError.builder()
-                                  .code(JsonRpcError.INVALID_PARAMS)
-                                  .data(new ErrorData("Bad param"))
-                                  .build());
-                res.status(Status.OK_200).send();
+                res.error(JsonRpcError.INVALID_PARAMS, "Bad param")
+                        .status(Status.OK_200)
+                        .send();
             }
         }
 
         void stop(JsonRpcRequest req, JsonRpcResponse res) throws Exception {
             StartStopParams params = req.params().as(StartStopParams.class);
             if (params.when().equals("NOW")) {
-                res.result(new StartStopResult("STOPPED"));
-                res.status(Status.OK_200).send();
+                res.result(new StartStopResult("STOPPED"))
+                        .status(Status.OK_200)
+                        .send();
             } else {
-                res.error(JsonRpcError.builder()
-                                  .code(JsonRpcError.INVALID_PARAMS)
-                                  .data(new ErrorData("Bad param"))
-                                  .build());
-                res.status(Status.OK_200).send();
+                res.error(JsonRpcError.INVALID_PARAMS, "Bad param")
+                        .status(Status.OK_200)
+                        .send();
             }
         }
 

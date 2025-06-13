@@ -129,18 +129,18 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     JsonRpcClientResponse submit();
 
     /**
-     * Get a complete representation of this request as a JSON object.
-     * This method can be useful when running over other transports.
-     *
-     * @return this request as a JSON object
-     */
-    JsonObject asJsonObject();
-
-    /**
      * Add this request to the ongoing batch.
      *
      * @return the batch
      * @throws java.lang.IllegalStateException if not part of a batch
      */
     JsonRpcClientBatchRequest addToBatch();
+
+    /**
+     * Get a complete representation of this request as a JSON object.
+     * This method can be useful when running over other transports.
+     *
+     * @return this request as a JSON object
+     */
+    JsonObject asJsonObject();
 }
