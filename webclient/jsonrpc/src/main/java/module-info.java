@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+
 /**
  * Helidon WebClient JSON-RPC Support.
  */
+@Features.Incubating
 module io.helidon.webclient.jsonrpc {
 
     requires jakarta.json;
     requires jakarta.json.bind;
     requires io.helidon.jsonrpc.core;
+    requires io.helidon.builder.api;
+    requires io.helidon.webclient;
 
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.webclient;
-    requires java.net.http;
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.webclient.jsonrpc;
 }

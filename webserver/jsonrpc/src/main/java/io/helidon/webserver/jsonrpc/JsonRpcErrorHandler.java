@@ -21,7 +21,7 @@ import io.helidon.webserver.http.ServerRequest;
 import jakarta.json.JsonObject;
 
 /**
- * A JSON-RPC handler that can process invalid requests when registered.
+ * A JSON-RPC handler that can process invalid requests if registered.
  */
 @FunctionalInterface
 public interface JsonRpcErrorHandler extends ServerLifecycle {
@@ -30,9 +30,9 @@ public interface JsonRpcErrorHandler extends ServerLifecycle {
      * Handler for a JSON-RPC erroneous request.
      *
      * @param req the server request
-     * @param jsonObject an invalid request as a JSON object
-     * @return success or failure handling error. If the value returned is true,
-     *         the error will not be returned to a client.
+     * @param jsonObject an invalid JSON-RPC request as a JSON object
+     * @return success or failure handling error. If the value returned is {@code true},
+     *         the error will not be reported to a client.
      * @throws Exception if an unexpected condition is found
      */
     boolean handle(ServerRequest req, JsonObject jsonObject) throws Exception;

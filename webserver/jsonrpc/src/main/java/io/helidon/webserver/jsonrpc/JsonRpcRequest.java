@@ -29,7 +29,7 @@ import jakarta.json.JsonValue;
 public interface JsonRpcRequest extends HttpRequest {
 
     /**
-     * The request version. Must be "2.0".
+     * The request version. Always "2.0".
      *
      * @return the request version
      */
@@ -50,15 +50,15 @@ public interface JsonRpcRequest extends HttpRequest {
     Optional<JsonValue> rpcId();
 
     /**
-     * The params associated with the request.
+     * The params associated with the request. If omitted in the request, then
+     * internally initialized using {@link JsonValue#EMPTY_JSON_OBJECT}.
      *
      * @return the params
      */
     JsonRpcParams params();
 
     /**
-     * Get a complete request as a JSON object. This method can
-     * be useful when running over other transports.
+     * Get a complete request as a JSON object.
      *
      * @return a JSON object that represents the request
      */

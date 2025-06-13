@@ -28,6 +28,9 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 
+/**
+ * An implementation of a JSON-RPC client batch request.
+ */
 class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
 
     private final Http1Client http1Client;

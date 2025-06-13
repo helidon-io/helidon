@@ -50,7 +50,7 @@ public interface JsonRpcResult {
     JsonValue asJsonValue();
 
     /**
-     * Get a property value of a JSON object result.
+     * Get a JSON object property value as a JSON value.
      *
      * @param name property name
      * @return the property value
@@ -60,26 +60,26 @@ public interface JsonRpcResult {
     JsonValue get(String name);
 
     /**
-     * Get a property value of a JSON object result as a string.
+     * Get a JSON object property value as a string.
      *
      * @param name property name
      * @return the property value as a string
-     * @throws ClassCastException       if not a JSON object
+     * @throws ClassCastException       if not a JSON object or value not a string
      * @throws IllegalArgumentException if the property does not exist
      */
     String getString(String name);
 
     /**
-     * Get a property value of a JSON object result as a string, if present.
+     * Get a JSON object property value as a string, if present.
      *
      * @param name property name
      * @return an optional property value
-     * @throws ClassCastException if not a JSON object
+     * @throws ClassCastException if not a JSON object or value not a string
      */
     Optional<JsonValue> optionalGet(String name);
 
     /**
-     * Get a JSON value by index from a JSON array.
+     * Get a JSON array value by index as a JSON value.
      *
      * @param index the index
      * @return the JSON value
@@ -89,28 +89,28 @@ public interface JsonRpcResult {
     JsonValue get(int index);
 
     /**
-     * Get property value as a string by index from a JSON array.
+     * Get a JSON array value by index as a string.
      *
      * @param index the index
      * @return the property value as a string
-     * @throws ClassCastException        if not a JSON array
+     * @throws ClassCastException        if not a JSON array or value not a string
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     String getString(int index);
 
     /**
-     * Get property value as a string by index from a JSON array, if present.
+     * Get a JSON array value by index as a string, if present.
      *
      * @param index the index
      * @return the optional property value as a string
-     * @throws ClassCastException        if not a JSON array
+     * @throws ClassCastException        if not a JSON array or value not a string
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
     Optional<JsonValue> optionalGet(int index);
 
     /**
-     * Access a response result as a Java object. This method will attempt to
-     * bind the result using JSONB.
+     * Access a response result as a Java object. This method will bind the result
+     * using JSONB.
      *
      * @param type the bean class
      * @param <T>  the bean type

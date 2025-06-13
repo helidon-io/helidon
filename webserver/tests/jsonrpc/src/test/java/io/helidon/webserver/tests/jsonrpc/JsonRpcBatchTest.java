@@ -28,7 +28,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
