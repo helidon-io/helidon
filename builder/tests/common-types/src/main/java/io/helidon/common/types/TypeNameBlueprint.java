@@ -18,6 +18,7 @@ package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
@@ -88,7 +89,7 @@ interface TypeNameBlueprint {
     List<String> enclosingNames();
 
     /**
-     * Functions the same as {@link Class#isPrimitive()}.
+     * Functions similar as {@link Class#isPrimitive()}.
      *
      * @return true if this type represents a primitive type
      */
@@ -180,6 +181,14 @@ interface TypeNameBlueprint {
     @Option.Singular
     @Option.Redundant
     List<TypeName> upperBounds();
+
+    /**
+     * Component type of array.
+     *
+     * @return component type of array
+     */
+    @Option.Redundant
+    Optional<TypeName> componentType();
 
     /**
      * Indicates whether this type is a {@code java.util.List}.

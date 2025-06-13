@@ -238,14 +238,14 @@ class TypeNameTest {
         assertThat(create(float[].class).toString(), is("float[]"));
         assertThat(create(double[].class).toString(), is("double[]"));
 
-        assertThat(create(boolean[].class).className(), is("boolean"));
-        assertThat(create(byte[].class).className(), is("byte"));
-        assertThat(create(short[].class).className(), is("short"));
-        assertThat(create(int[].class).className(), is("int"));
-        assertThat(create(long[].class).className(), is("long"));
-        assertThat(create(char[].class).className(), is("char"));
-        assertThat(create(float[].class).className(), is("float"));
-        assertThat(create(double[].class).className(), is("double"));
+        assertThat(create(boolean[].class).className(), is("boolean[]"));
+        assertThat(create(byte[].class).className(), is("byte[]"));
+        assertThat(create(short[].class).className(), is("short[]"));
+        assertThat(create(int[].class).className(), is("int[]"));
+        assertThat(create(long[].class).className(), is("long[]"));
+        assertThat(create(char[].class).className(), is("char[]"));
+        assertThat(create(float[].class).className(), is("float[]"));
+        assertThat(create(double[].class).className(), is("double[]"));
 
         assertThat(create(boolean[].class).primitive(), is(true));
         assertThat(create(byte[].class).primitive(), is(true));
@@ -275,7 +275,7 @@ class TypeNameTest {
         assertThat(create(Method.class).toString(), is("java.lang.reflect.Method"));
 
         assertThat(create(Boolean[].class).toString(), is("java.lang.Boolean[]"));
-        assertThat(create(Boolean[].class).name(), is("java.lang.Boolean"));
+        assertThat(create(Boolean[].class).name(), is("java.lang.Boolean[]"));
         assertThat(create(Boolean[].class).resolvedName(), is("java.lang.Boolean[]"));
         assertThat(create(Long[].class).toString(), is("java.lang.Long[]"));
         assertThat(create(Object[].class).toString(), is("java.lang.Object[]"));
@@ -288,11 +288,11 @@ class TypeNameTest {
         assertThat(create(Void[].class).packageName(), is("java.lang"));
         assertThat(create(Method[].class).packageName(), is("java.lang.reflect"));
 
-        assertThat(create(Boolean[].class).className(), is("Boolean"));
-        assertThat(create(Long[].class).className(), is("Long"));
-        assertThat(create(Object[].class).className(), is("Object"));
-        assertThat(create(Void[].class).className(), is("Void"));
-        assertThat(create(Method[].class).className(), is("Method"));
+        assertThat(create(Boolean[].class).className(), is("Boolean[]"));
+        assertThat(create(Long[].class).className(), is("Long[]"));
+        assertThat(create(Object[].class).className(), is("Object[]"));
+        assertThat(create(Void[].class).className(), is("Void[]"));
+        assertThat(create(Method[].class).className(), is("Method[]"));
 
         assertThat(create(Boolean[].class).primitive(), is(false));
         assertThat(create(Long[].class).primitive(), is(false));
@@ -448,24 +448,24 @@ class TypeNameTest {
     @Test
     void builderOfType() {
         TypeName primitiveTypeName = TypeName.builder().type(boolean[].class).build();
-        assertThat(primitiveTypeName.name(), equalTo("boolean"));
+        assertThat(primitiveTypeName.name(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.resolvedName(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.generic(), is(false));
         assertThat(primitiveTypeName.array(), is(true));
         assertThat(primitiveTypeName.primitive(), is(true));
         assertThat(primitiveTypeName.packageName(), equalTo("java.lang"));
-        assertThat(primitiveTypeName.className(), equalTo("boolean"));
+        assertThat(primitiveTypeName.className(), equalTo("boolean[]"));
 
         TypeName objTypeName = TypeName.builder().type(Boolean[].class).build();
-        assertThat(primitiveTypeName.name(), equalTo("boolean"));
-        assertThat(primitiveTypeName.resolvedName(), equalTo("boolean[]"));
-        assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
+        assertThat(objTypeName.name(), equalTo("java.lang.Boolean[]"));
+        assertThat(objTypeName.resolvedName(), equalTo("java.lang.Boolean[]"));
+        assertThat(objTypeName.declaredName(), equalTo("java.lang.Boolean[]"));
         assertThat(objTypeName.generic(), is(false));
         assertThat(objTypeName.array(), is(true));
         assertThat(objTypeName.primitive(), is(false));
         assertThat(objTypeName.packageName(), equalTo("java.lang"));
-        assertThat(objTypeName.className(), equalTo("Boolean"));
+        assertThat(objTypeName.className(), equalTo("Boolean[]"));
     }
 
     @Test
@@ -556,6 +556,22 @@ class TypeNameTest {
         assertThat(t.className(), is("BuilderBase"));
         assertThat(t.enclosingNames(), hasItems("ServiceRegistryConfig"));
         assertThat(t.typeArguments(), hasItems(TypeNames.WILDCARD, TypeNames.WILDCARD));
+    }
+
+    @Test
+    void testJavaClassSimilarMethods() {
+        TypeName primitiveTypeName = TypeName.builder().type(boolean[].class).build();
+        assertThat(primitiveTypeName.name(), equalTo(boolean[].class.getTypeName()));
+        assertThat(primitiveTypeName.array(), is(boolean[].class.isArray()));
+        assertThat(primitiveTypeName.packageName(), equalTo(boolean[].class.getPackageName()));
+        assertThat(primitiveTypeName.className(), equalTo(boolean[].class.getSimpleName()));
+
+        TypeName objTypeName = TypeName.builder().type(Boolean[].class).build();
+        assertThat(objTypeName.name(), equalTo(Boolean[].class.getTypeName()));
+        assertThat(objTypeName.array(), is(Boolean[].class.isArray()));
+        assertThat(objTypeName.primitive(), is(Boolean[].class.isPrimitive()));
+        assertThat(objTypeName.packageName(), equalTo(Boolean[].class.getPackageName()));
+        assertThat(objTypeName.className(), equalTo(Boolean[].class.getSimpleName()));
     }
 
     private static Stream<EqualsData> equalsAndCompareSource() {
