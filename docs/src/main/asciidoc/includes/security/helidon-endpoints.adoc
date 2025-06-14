@@ -66,7 +66,7 @@ security:
 
 <1> Attribute based access control provider that checks roles and scopes
 <2> The provider(s) used in your application, such as `oidc`
-<3> Default configuration for all configured paths
+<3> Default configuration for paths configured below in `paths` section
 <4> Protection of `/metrics` and all nested paths with `admin` role required
 <5> Protection of `/health` and all nested paths with `monitor` role required
 <6> Protection of `/openapi` and all nested paths with `openapi` scope required
