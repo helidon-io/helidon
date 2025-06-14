@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -694,5 +694,29 @@ final class AnnotationSupport {
                                                    + " of type " + value.getClass().getName()
                                                    + " cannot be converted to Enum of type "
                                                    + type.getName());
+    }
+
+    static class AnnotationDecorator implements Prototype.BuilderDecorator<Annotation.BuilderBase<?, ?>> {
+        @SuppressWarnings("removal")
+        @Override
+        public void decorate(Annotation.BuilderBase<?, ?> target) {
+            // reconcile values and properties
+            Map<String, Object> values = target.values();
+            Map<String, AnnotationProperty> properties = target.properties();
+
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof AnnotationProperty ap) {
+                    properties.putIfAbsent(entry.getKey(), ap);
+                } else {
+                    properties.putIfAbsent(entry.getKey(), AnnotationProperty.create(value));
+                }
+            }
+
+            // AnnotationProperty always wins over value, because that is the new API
+            for (Map.Entry<String, AnnotationProperty> entry : properties.entrySet()) {
+                values.put(entry.getKey(), entry.getValue().value());
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
@@ -35,6 +36,28 @@ Test that annotations are correctly written.
  */
 class AnnotationTest {
     private static final TypeName ANNOTATION_TYPE = TypeName.create(Test.class);
+
+    @Test
+    void testAnnotationWithConstant() {
+        var annotation = Annotation.builder()
+                .typeName(ANNOTATION_TYPE)
+                .putProperty("value", AnnotationProperty.create("someName",
+                                                                TypeName.create(AnnotationTest.class),
+                                                                "VALUE"))
+                .build();
+
+        Field field = Field.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(String.class)
+                .name("name")
+                .addAnnotation(annotation)
+                .build();
+        String text = write(field);
+
+        assertThat(text, is("""
+                                    @Test(io.helidon.codegen.classmodel.AnnotationTest.VALUE)
+                                    private String name;"""));
+    }
 
     @Test
     void testPrintEnumValue() {

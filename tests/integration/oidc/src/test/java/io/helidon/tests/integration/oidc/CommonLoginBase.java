@@ -22,6 +22,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.jersey.connector.HelidonConnectorProvider;
 import io.helidon.jersey.connector.HelidonProperties;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -58,12 +59,15 @@ import static org.hamcrest.Matchers.empty;
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 class CommonLoginBase {
+    static {
+        LogConfig.initClass();
+    }
 
     static final JsonBuilderFactory JSON_OBJECT_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
     static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
 
     @Container
-    static final KeycloakContainer KEYCLOAK_CONTAINER = new KeycloakContainer()
+    static final KeycloakContainer KEYCLOAK_CONTAINER = new KeycloakContainer("quay.io/keycloak/keycloak:19.0.3")
             .withRealmImportFiles("/test-realm.json", "/test2-realm.json")
             // this enables KeycloakContainer to be reused across tests
             .withReuse(true);
@@ -125,6 +129,10 @@ class CommonLoginBase {
                 .property(ClientProperties.FOLLOW_REDIRECTS, false)
                 .header("Connection", "close")
                 .post(form)) {
+            if (response.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
+                String sss = response.readEntity(String.class);
+                System.out.println();
+            }
             assertThat(response.getStatus(), is(Response.Status.FOUND.getStatusCode()));
             redirectHelidonUrl = response.getStringHeaders().getFirst(HttpHeaders.LOCATION);
         }

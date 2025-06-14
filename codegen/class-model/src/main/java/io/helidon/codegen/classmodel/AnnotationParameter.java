@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
@@ -34,12 +35,14 @@ public final class AnnotationParameter extends CommonComponent {
 
     private final Set<TypeName> importedTypes;
     private final Object objectValue;
+    private final AnnotationProperty.ConstantValue constantValue;
 
     private AnnotationParameter(Builder builder) {
         super(builder);
 
         this.objectValue = builder.value;
-        this.importedTypes = resolveImports(builder.value);
+        this.constantValue = builder.constantValue;
+        this.importedTypes = resolveImports(builder.value, constantValue);
     }
 
     /**
@@ -76,15 +79,20 @@ public final class AnnotationParameter extends CommonComponent {
         return objectValue;
     }
 
-    private static Set<TypeName> resolveImports(Object value) {
+    private Set<TypeName> resolveImports(Object value, AnnotationProperty.ConstantValue constantValue) {
         Set<TypeName> imports = new HashSet<>();
 
-        resolveImports(imports, value);
+        resolveImports(imports, value, constantValue);
 
         return imports;
     }
 
-    private static void resolveImports(Set<TypeName> imports, Object value) {
+    private void resolveImports(Set<TypeName> imports, Object value, AnnotationProperty.ConstantValue constantValue) {
+        if (constantValue != null) {
+            // we only care about the constant value, as other stuff is ignored during code generation
+            imports.add(constantValue.type());
+            return;
+        }
         if (value.getClass().isEnum()) {
             imports.add(TypeName.create(value.getClass()));
             return;
@@ -94,9 +102,9 @@ public final class AnnotationParameter extends CommonComponent {
         case EnumValue ev -> imports.add(ev.type());
         case Annotation an -> {
             imports.add(an.typeName());
-            an.values()
+            an.properties()
                     .values()
-                    .forEach(nestedValue -> resolveImports(imports, nestedValue));
+                    .forEach(nestedValue -> resolveImports(imports, nestedValue, nestedValue.constantValue().orElse(null)));
         }
         default -> {
         }
@@ -104,7 +112,12 @@ public final class AnnotationParameter extends CommonComponent {
     }
 
     // takes the annotation value objects and converts it to its string representation (as seen in class source)
-    private static String resolveValueToString(ImportOrganizer imports, Type type, Object value) {
+    private String resolveValueToString(ImportOrganizer imports, Type type, Object value) {
+        if (constantValue != null) {
+            return imports.typeName(Type.fromTypeName(constantValue.type()), true)
+                    + "." + constantValue.name();
+        }
+
         Class<?> valueClass = value.getClass();
         if (valueClass.isEnum()) {
             return imports.typeName(Type.fromTypeName(TypeName.create(valueClass)), true)
@@ -142,7 +155,7 @@ public final class AnnotationParameter extends CommonComponent {
 
     }
 
-    private static String nestedListValue(ImportOrganizer imports, List<?> list) {
+    private String nestedListValue(ImportOrganizer imports, List<?> list) {
         if (list.isEmpty()) {
             return "{}";
         }
@@ -161,11 +174,11 @@ public final class AnnotationParameter extends CommonComponent {
         return result.toString();
     }
 
-    private static String nestedAnnotationValue(ImportOrganizer imports, Annotation annotation) {
+    private String nestedAnnotationValue(ImportOrganizer imports, Annotation annotation) {
         StringBuilder sb = new StringBuilder("@");
         sb.append(imports.typeName(Type.fromTypeName(annotation.typeName()), true));
 
-        Map<String, Object> values = annotation.values();
+        Map<String, AnnotationProperty> values = annotation.properties();
         if (values.isEmpty()) {
             return sb.toString();
         }
@@ -192,6 +205,7 @@ public final class AnnotationParameter extends CommonComponent {
     public static final class Builder extends CommonComponent.Builder<Builder, AnnotationParameter> {
 
         private Object value;
+        private AnnotationProperty.ConstantValue constantValue;
 
         private Builder() {
         }
@@ -235,5 +249,15 @@ public final class AnnotationParameter extends CommonComponent {
             return super.type(type);
         }
 
+        /**
+         * Configure a constant value, to generate a reference to a constant, rather then explicit value.
+         *
+         * @param constantValue type and constant name
+         * @return updated builder
+         */
+        public Builder constantValue(AnnotationProperty.ConstantValue constantValue) {
+            this.constantValue = constantValue;
+            return this;
+        }
     }
 }
