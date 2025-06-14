@@ -230,5 +230,16 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-30694</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against ChatGPT rendering of SVG images  not the openai4j API
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: openai4j-0.23.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/dev\.ai4j/openai4j@.*$</packageUrl>
+   <cve>CVE-2025-43714</cve>
+</suppress>
+
 
 </suppressions>
