@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>weld-core-impl</artifactId>
+    <name>Helidon Weld SE Core</name>
 
     <properties>
         <spotbugs.skip>true</spotbugs.skip>

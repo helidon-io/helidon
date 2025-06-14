@@ -52,7 +52,8 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.HELIDON_GPG_PASSPHRASE }}
           GPG_PRIVATE_KEY: ${{ secrets.HELIDON_GPG_PRIVATE_KEY }}
           GPG_PUBLIC_KEY: ${{ secrets.HELIDON_GPG_PUBLIC_KEY }}
-          MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           RELEASE_WORKFLOW: "true"
         run: |
           git config user.email "helidon-robot_ww@oracle.com"
@@ -62,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: io-helidon-artifacts-${{ github.ref_name }}
-          path: parent/target/nexus-staging/
+          path: staging
           retention-days: 90
