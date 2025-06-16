@@ -20,9 +20,8 @@
 module io.helidon.webserver.testing.junit5.jsonrpc {
 
     requires io.helidon.webclient.jsonrpc;
-
-    requires transitive io.helidon.webserver.testing.junit5;
     requires io.helidon.webserver.jsonrpc;
+    requires transitive io.helidon.webserver.testing.junit5;
 
     exports io.helidon.webserver.testing.junit5.jsonrpc;
 
