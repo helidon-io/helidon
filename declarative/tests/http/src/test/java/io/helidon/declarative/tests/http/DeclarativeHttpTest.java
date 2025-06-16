@@ -32,8 +32,10 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,6 +56,11 @@ class DeclarativeHttpTest {
         this.serverUri = serverUri;
     }
 
+    @BeforeEach
+    void beforeEach() {
+        SomeEntryPointInterceptor.reset();
+    }
+
     @Test
     void testRootRoute() {
         var response = client.get("/greet").request(JsonObject.class);
@@ -61,6 +68,9 @@ class DeclarativeHttpTest {
         assertThat(response.status(), is(Status.OK_200));
         JsonObject json = response.entity();
         assertThat(json.getString("message"), is("Hello World!"));
+
+        assertThat(SomeEntryPointInterceptor.executions(),
+                   hasItems("io.helidon.declarative.tests.http.GreetEndpoint.getDefaultMessageHandler()"));
     }
 
     @Test
@@ -89,6 +99,9 @@ class DeclarativeHttpTest {
         assertThat(response.status(), is(Status.BAD_REQUEST_400));
         JsonObject entity = response.entity();
         assertThat(entity.getString("error"), is("No greeting provided"));
+
+        assertThat(SomeEntryPointInterceptor.executions(),
+                   hasItems("io.helidon.declarative.tests.http.GreetEndpoint.updateGreetingHandler(jakarta.json.JsonObject)"));
     }
 
     @Test
