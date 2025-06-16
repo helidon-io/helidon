@@ -56,7 +56,7 @@ import jakarta.json.JsonValue;
 class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
 
     private final Http1ClientRequest delegate;
-    private final JsonRpcClientBatchRequest batch;
+    private final JsonRpcClientBatchRequestImpl batch;
 
     private JsonValue rpcId;
     private String rpcMethod;
@@ -67,7 +67,7 @@ class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
         this(http1Client, rpcMethod, null);
     }
 
-    JsonRpcClientRequestImpl(Http1Client http1Client, String rpcMethod, JsonRpcClientBatchRequest batch) {
+    JsonRpcClientRequestImpl(Http1Client http1Client, String rpcMethod, JsonRpcClientBatchRequestImpl batch) {
         Objects.requireNonNull(http1Client, "delegate is null");
         this.delegate = http1Client.post();
         this.rpcMethod = rpcMethod;

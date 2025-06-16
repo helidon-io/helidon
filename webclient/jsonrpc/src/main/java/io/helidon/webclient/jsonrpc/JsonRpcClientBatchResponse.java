@@ -23,7 +23,7 @@ import io.helidon.webclient.api.HttpClientResponse;
 public interface JsonRpcClientBatchResponse extends Iterable<JsonRpcClientResponse>, HttpClientResponse {
 
     /**
-     * Number of request responses in this batch.
+     * Number of responses in this batch.
      *
      * @return the size
      */

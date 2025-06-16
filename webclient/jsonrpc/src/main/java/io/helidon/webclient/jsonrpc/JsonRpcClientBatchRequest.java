@@ -23,21 +23,14 @@ import jakarta.json.JsonArray;
 public interface JsonRpcClientBatchRequest {
 
     /**
-     * Create a new {@link io.helidon.webclient.jsonrpc.JsonRpcClientRequest} given
-     * a JSON-RPC method and add it to this batch.
+     * Start creation of a new {@link io.helidon.webclient.jsonrpc.JsonRpcClientRequest}
+     * given a JSON-RPC method. To add a request to the batch, call
+     * {@link io.helidon.webclient.jsonrpc.JsonRpcClientRequest#addToBatch()}.
      *
      * @param method the method
      * @return a new JSON-RPC request
      */
     JsonRpcClientRequest rpcMethod(String method);
-
-    /**
-     * Add a JSON-RPC request to this batch.
-     *
-     * @param request the request to add
-     * @return this batch request
-     */
-    JsonRpcClientBatchRequest add(JsonRpcClientRequest request);
 
     /**
      * Submit this request batch and get a response batch.

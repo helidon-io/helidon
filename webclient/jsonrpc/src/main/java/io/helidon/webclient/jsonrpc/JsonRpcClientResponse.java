@@ -51,8 +51,7 @@ public interface JsonRpcClientResponse extends HttpClientResponse {
     Optional<JsonRpcError> error();
 
     /**
-     * Get a complete response representation as a JSON object. This method
-     * can be useful when running over other transports.
+     * Get a complete response representation as a JSON object.
      *
      * @return a JSON object that represents the response
      */
