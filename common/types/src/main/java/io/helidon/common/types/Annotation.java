@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,28 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     }
 
     /**
+     * Creates an instance for an annotation with a value.
+     *
+     * @param annoTypeName the annotation type name
+     * @param value        the annotation value
+     * @return the new instance
+     */
+    static Annotation create(TypeName annoTypeName, String value) {
+        return AnnotationSupport.create(annoTypeName, value);
+    }
+
+    /**
+     * Creates an instance for annotation with zero or more values.
+     *
+     * @param annoTypeName the annotation type name
+     * @param values       the annotation values
+     * @return the new instance
+     */
+    static Annotation create(TypeName annoTypeName, Map<String, ?> values) {
+        return AnnotationSupport.create(annoTypeName, values);
+    }
+
+    /**
      * Creates an instance for an annotation with no value.
      *
      * @param annoType the annotation type
@@ -126,28 +148,6 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     }
 
     /**
-     * Creates an instance for an annotation with a value.
-     *
-     * @param annoTypeName the annotation type name
-     * @param value the annotation value
-     * @return the new instance
-     */
-    static Annotation create(TypeName annoTypeName, String value) {
-        return AnnotationSupport.create(annoTypeName, value);
-    }
-
-    /**
-     * Creates an instance for annotation with zero or more values.
-     *
-     * @param annoTypeName the annotation type name
-     * @param values the annotation values
-     * @return the new instance
-     */
-    static Annotation create(TypeName annoTypeName, Map<String, ?> values) {
-        return AnnotationSupport.create(annoTypeName, values);
-    }
-
-    /**
      * Fluent API builder base for {@link Annotation}.
      *
      * @param <BUILDER> type of the builder extending this abstract builder
@@ -156,6 +156,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     abstract class BuilderBase<BUILDER extends Annotation.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> metaAnnotations = new ArrayList<>();
+        private final Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
         private final Map<String, Object> values = new LinkedHashMap<>();
         private boolean isMetaAnnotationsMutated;
         private TypeName typeName;
@@ -175,6 +176,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         public BUILDER from(Annotation prototype) {
             typeName(prototype.typeName());
             addValues(prototype.values());
+            addProperties(prototype.properties());
             if (!isMetaAnnotationsMutated) {
                 metaAnnotations.clear();
             }
@@ -191,6 +193,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         public BUILDER from(Annotation.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
             addValues(builder.values);
+            addProperties(builder.properties);
             if (isMetaAnnotationsMutated) {
                 if (builder.isMetaAnnotationsMutated) {
                     addMetaAnnotations(builder.metaAnnotations);
@@ -274,7 +277,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #values()
          */
-        public BUILDER values(Map<? extends String, ?> values) {
+        public BUILDER values(Map<String, ?> values) {
             Objects.requireNonNull(values);
             this.values.clear();
             this.values.putAll(values);
@@ -288,7 +291,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #values()
          */
-        public BUILDER addValues(Map<? extends String, ?> values) {
+        public BUILDER addValues(Map<String, ?> values) {
             Objects.requireNonNull(values);
             this.values.putAll(values);
             return self();
@@ -306,6 +309,48 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
             this.values.put(key, value);
+            return self();
+        }
+
+        /**
+         * This method replaces all values with the new ones.
+         *
+         * @param properties properties
+         * @return updated builder instance
+         * @see #properties()
+         */
+        public BUILDER properties(Map<String, ? extends AnnotationProperty> properties) {
+            Objects.requireNonNull(properties);
+            this.properties.clear();
+            this.properties.putAll(properties);
+            return self();
+        }
+
+        /**
+         * This method keeps existing values, then puts all new values into the map.
+         *
+         * @param properties properties
+         * @return updated builder instance
+         * @see #properties()
+         */
+        public BUILDER addProperties(Map<String, ? extends AnnotationProperty> properties) {
+            Objects.requireNonNull(properties);
+            this.properties.putAll(properties);
+            return self();
+        }
+
+        /**
+         * This method adds a new value to the map, or replaces it if the key already exists.
+         *
+         * @param key key to add or replace
+         * @param property new value for the key
+         * @return updated builder instance
+         * @see #properties()
+         */
+        public BUILDER putProperty(String key, AnnotationProperty property) {
+            Objects.requireNonNull(key);
+            Objects.requireNonNull(property);
+            this.properties.put(key, property);
             return self();
         }
 
@@ -380,9 +425,20 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * Get a key-value of all the annotation properties.
          *
          * @return the values
+         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
          */
+        @Deprecated(since = "4.3.0", forRemoval = true)
         public Map<String, Object> values() {
             return values;
+        }
+
+        /**
+         * List of properties defined on this annotation.
+         *
+         * @return the properties
+         */
+        public Map<String, AnnotationProperty> properties() {
+            return properties;
         }
 
         /**
@@ -398,7 +454,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         public String toString() {
             return "AnnotationBuilder{"
                     + "typeName=" + typeName + ","
-                    + "values=" + values
+                    + "properties=" + properties
                     + "}";
         }
 
@@ -406,6 +462,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
+            new AnnotationSupport.AnnotationDecorator().decorate(this);
         }
 
         /**
@@ -425,6 +482,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         protected static class AnnotationImpl implements Annotation {
 
             private final List<Annotation> metaAnnotations;
+            private final Map<String, AnnotationProperty> properties;
             private final Map<String, Object> values;
             private final TypeName typeName;
 
@@ -436,6 +494,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             protected AnnotationImpl(Annotation.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
+                this.properties = Collections.unmodifiableMap(new LinkedHashMap<>(builder.properties()));
                 this.metaAnnotations = List.copyOf(builder.metaAnnotations());
             }
 
@@ -455,6 +514,11 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             }
 
             @Override
+            public Map<String, AnnotationProperty> properties() {
+                return properties;
+            }
+
+            @Override
             public List<Annotation> metaAnnotations() {
                 return metaAnnotations;
             }
@@ -463,7 +527,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             public String toString() {
                 return "Annotation{"
                         + "typeName=" + typeName + ","
-                        + "values=" + values
+                        + "properties=" + properties
                         + "}";
             }
 
@@ -476,12 +540,12 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
                     return false;
                 }
                 return Objects.equals(typeName, other.typeName())
-                    && Objects.equals(values, other.values());
+                    && Objects.equals(properties, other.properties());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(typeName, values);
+                return Objects.hash(typeName, properties);
             }
 
         }

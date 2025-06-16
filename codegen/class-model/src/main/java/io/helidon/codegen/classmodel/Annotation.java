@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -196,13 +197,29 @@ public final class Annotation extends CommonComponent {
         public Builder addParameter(String name, Object value) {
             Objects.requireNonNull(value);
 
+            return addParameter(name, AnnotationProperty.create(value));
+        }
+
+        /**
+         * Adds annotation parameter.
+         *
+         * @param name  annotation parameter name
+         * @param property annotation property
+         * @return updated builder instance
+         */
+        public Builder addParameter(String name, AnnotationProperty property) {
+            Objects.requireNonNull(property);
+
+            Object value = property.value();
             Class<?> paramType = value instanceof TypeName
                     ? Class.class
                     : value.getClass();
 
             return addParameter(builder -> builder.name(name)
                     .type(paramType)
-                    .value(value));
+                    .value(value)
+                    .update(it -> property.constantValue().ifPresent(it::constantValue))
+            );
         }
 
         /**
@@ -244,7 +261,7 @@ public final class Annotation extends CommonComponent {
         Builder from(io.helidon.common.types.Annotation annotation) {
             this.commonAnntation = annotation;
             type(annotation.typeName());
-            annotation.values()
+            annotation.properties()
                     .forEach(this::addParameter);
             return this;
         }

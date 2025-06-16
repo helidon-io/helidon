@@ -53,7 +53,7 @@ import io.helidon.builder.api.Prototype;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
@@ -75,9 +75,20 @@ interface AnnotationBlueprint {
      * Get a key-value of all the annotation properties.
      *
      * @return key-value pairs of all the properties present
+     * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
      */
     @Option.Singular
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Option.Redundant
     Map<String, Object> values();
+
+    /**
+     * List of properties defined on this annotation.
+     *
+     * @return properties
+     */
+    @Option.Singular("property")
+    Map<String, AnnotationProperty> properties();
 
     /**
      * A list of inherited annotations (from the whole hierarchy).
@@ -105,6 +116,25 @@ interface AnnotationBlueprint {
      */
     default Optional<String> getValue(String property) {
         return AnnotationSupport.asString(typeName(), values(), property);
+    }
+
+    /**
+     * Annotation property for the {@value #VALUE_PROPERTY} property.
+     *
+     * @return annotation property
+     */
+    default Optional<AnnotationProperty> property() {
+        return property(VALUE_PROPERTY);
+    }
+
+    /**
+     * Annotation property for the defined name.
+     *
+     * @param property property name
+     * @return annotation property
+     */
+    default Optional<AnnotationProperty> property(String property) {
+        return Optional.ofNullable(properties().get(property));
     }
 
     /**

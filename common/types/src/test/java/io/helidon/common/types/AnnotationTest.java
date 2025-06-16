@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,20 @@ class AnnotationTest {
                    containsString(Test.class.getName()));
         assertThat(val4.toString(),
                    containsString("{a=1}"));
+    }
+
+    @Test
+    void testConstantValue() {
+        Annotation annotation = Annotation.builder()
+                .type(Target.class)
+                .putValue("value", AnnotationProperty.create("name", TypeName.create(AnnotationTest.class), "CONSTANT_NAME"))
+                .build();
+
+        String toString = annotation.toString();
+        assertThat(toString,
+                   containsString("java.lang.annotation.Target"));
+        assertThat(toString,
+                   containsString("value=" + AnnotationTest.class.getName() + ".CONSTANT_NAME"));
     }
 
 }
