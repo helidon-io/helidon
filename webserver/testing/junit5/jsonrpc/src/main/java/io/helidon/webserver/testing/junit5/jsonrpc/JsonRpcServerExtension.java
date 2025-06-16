@@ -16,14 +16,8 @@
 
 package io.helidon.webserver.testing.junit5.jsonrpc;
 
-import java.util.Optional;
-
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
-import io.helidon.webserver.ListenerConfig;
-import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.jsonrpc.JsonRpcRouting;
 import io.helidon.webserver.testing.junit5.Junit5Util;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
@@ -37,14 +31,6 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  * {@link io.helidon.webclient.jsonrpc.JsonRpcClient} in Helidon integration tests.
  */
 public class JsonRpcServerExtension implements ServerJunitExtension {
-
-    @Override
-    public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
-        if (JsonRpcRouting.Builder.class.equals(type)) {
-            return Optional.of(new RoutingParamHandler());
-        }
-        return Optional.empty();
-    }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
@@ -65,24 +51,5 @@ public class JsonRpcServerExtension implements ServerJunitExtension {
                     .build();
         }
         throw new ParameterResolutionException("JSON-RPC extension only supports JsonRpcClient parameter type");
-    }
-
-    private static final class RoutingParamHandler implements ParamHandler<JsonRpcRouting.Builder> {
-        @Override
-        public JsonRpcRouting.Builder get(String socketName,
-                                     WebServerConfig.Builder serverBuilder,
-                                     ListenerConfig.Builder listenerBuilder,
-                                     Router.RouterBuilder<?> routerBuilder) {
-            return JsonRpcRouting.builder();
-        }
-
-        @Override
-        public void handle(String socketName,
-                           WebServerConfig.Builder serverBuilder,
-                           ListenerConfig.Builder listenerBuilder,
-                           Router.RouterBuilder<?> routerBuilder,
-                           JsonRpcRouting.Builder value) {
-            routerBuilder.addRouting(value);
-        }
     }
 }
