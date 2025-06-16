@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,26 @@
 import io.helidon.common.features.api.HelidonFlavor;
 
 import static io.helidon.common.features.api.Features.*;
-/**
- * JSON-P media support.
- */
-@Name("JSONP")
-@Description("JSON-P media support")
-@Flavor(HelidonFlavor.SE)
-@Path({"Media", "JSON-P"})
-module io.helidon.http.media.jsonp {
 
+
+/**
+ * Gson media support.
+ */
+@Name("Gson")
+@Description("Gson media support")
+@Path({"Media", "Gson"})
+@Flavor(HelidonFlavor.SE)
+module io.helidon.http.media.gson {
+
+    requires com.google.gson;
     requires io.helidon.http.media;
 
     requires static io.helidon.common.features.api;
 
-    requires transitive jakarta.json;
+    exports io.helidon.http.media.gson;
 
-    exports io.helidon.http.media.jsonp;
+    provides io.helidon.http.media.spi.MediaSupportProvider
+            with io.helidon.http.media.gson.GsonMediaSupportProvider;
 
-    provides io.helidon.http.media.spi.MediaSupportProvider with io.helidon.http.media.jsonp.JsonpMediaSupportProvider;
-
+    opens io.helidon.http.media.gson to com.google.gson;
 }
