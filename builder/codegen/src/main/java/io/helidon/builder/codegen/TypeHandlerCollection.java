@@ -208,15 +208,28 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
             // types we support in config can be simplified,
             // this also supports comma separated lists for string based types
+
             method.addContent(configGet(configured))
                     .addContent(".asList(")
                     .addContent(actualType.genericTypeName())
                     .addContent(".class")
                     .addContent(")");
             configMapper.ifPresent(method::addContent);
-            method.addContent(".ifPresent(this::")
-                    .addContent(setterName())
-                    .addContentLine(");");
+
+            if (actualType().typeArguments().isEmpty()) {
+                method.addContent(".ifPresent(this::")
+                        .addContent(setterName())
+                        .addContentLine(");");
+            } else {
+                method.addContent(".ifPresent(it -> this.")
+                        .addContent(setterName())
+                        .addContent("((")
+                        .addContent(collectionType)
+                        .addContentLine(")it));");
+                // maybe we should add @SuppressWarnings("unchecked")
+            }
+
+
         } else {
             method.addContent(configGet(configured)
                                       + ".asNodeList()"
