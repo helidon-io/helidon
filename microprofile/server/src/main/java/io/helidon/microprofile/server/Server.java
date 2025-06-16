@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public interface Server {
 
     /**
      * Start this server (can only be used once).
-     * This is a blocking call.
+     * Method blocks until the operation is done.
      *
      * @return Server instance, started
      */
@@ -96,7 +96,7 @@ public interface Server {
 
     /**
      * Stop this server immediately (can only be used on a started server).
-     * This is a blocking call.
+     * Method blocks until the operation is done.
      *
      * @return Server instance, stopped
      */
