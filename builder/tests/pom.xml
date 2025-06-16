@@ -47,6 +47,7 @@
         <module>common-types</module>
         <module>builder</module>
         <module>codegen</module>
+        <module>wildcard</module>
     </modules>
 
 </project>
