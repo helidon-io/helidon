@@ -87,6 +87,15 @@ public interface JsonRpcClient extends RuntimeType.Api<JsonRpcClientConfig> {
     JsonRpcClientRequest rpcMethod(String method);
 
     /**
+     * Create a JSON-RPC batch request.
+     *
+     * @return new batch request
+     */
+    default JsonRpcClientBatchRequest batch() {
+        return batch("/");
+    }
+
+    /**
      * Create a JSON-RPC batch request and set the path related to the base URI.
      *
      * @param path the path

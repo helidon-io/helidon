@@ -53,7 +53,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
                 .addToBatch()
                 .rpcMethod("stop")
                 .rpcId(2)
-                .param("when","NOW")
+                .param("when", "NOW")
                 .addToBatch();
 
         try (var res = batch.submit()) {

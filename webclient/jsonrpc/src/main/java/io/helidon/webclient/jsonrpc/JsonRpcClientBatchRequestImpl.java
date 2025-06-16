@@ -47,11 +47,6 @@ class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
         return new JsonRpcClientRequestImpl(http1Client, rpcMethod, this);
     }
 
-    @Override
-    public JsonRpcClientBatchRequest add(JsonRpcClientRequest request) {
-        requests.add(request);
-        return this;
-    }
 
     @Override
     public JsonRpcClientBatchResponse submit() {
@@ -66,5 +61,9 @@ class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
         requests.forEach(request -> arrayBuilder.add(request.asJsonObject()));
         return  arrayBuilder.build();
+    }
+
+    void add(JsonRpcClientRequest request) {
+        requests.add(request);
     }
 }
