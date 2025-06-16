@@ -27,10 +27,13 @@ import jakarta.json.JsonValue;
 public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest> {
 
     /**
-     * Set a JSON-RPC method on this request.
+     * Set a JSON-RPC method on this request. Normally this is done using either via
+     * {@link JsonRpcClient} or {@link io.helidon.webclient.jsonrpc.JsonRpcClientBatchRequest}.
      *
      * @param rpcMethod the JSON-RPC method
      * @return this request
+     * @see JsonRpcClient#rpcMethod(String)
+     * @see io.helidon.webclient.jsonrpc.JsonRpcClientBatchRequest#rpcMethod(String)
      */
     JsonRpcClientRequest rpcMethod(String rpcMethod);
 
@@ -43,7 +46,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     JsonRpcClientRequest rpcId(JsonValue value);
 
     /**
-     * Set a JSON-RPC ID on this request.
+     * Set an int JSON-RPC ID on this request.
      *
      * @param value the ID as an int
      * @return this request
@@ -53,7 +56,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     }
 
     /**
-     * Set a JSON-RPC ID on this request.
+     * Set a string JSON-RPC ID on this request.
      *
      * @param value the ID as a string
      * @return this request
@@ -72,7 +75,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     JsonRpcClientRequest param(String name, JsonValue value);
 
     /**
-     * Set a named param on this request.
+     * Set a named param of type string on this request.
      *
      * @param name the name
      * @param value the value as a string
@@ -83,7 +86,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     }
 
     /**
-     * Set a named param on this request.
+     * Set a named param of type int on this request.
      *
      * @param name the name
      * @param value the value as an int
@@ -94,7 +97,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     }
 
     /**
-     * Set array param value on this request.
+     * Add an array param value on this request.
      *
      * @param value the value as JSON value
      * @return this request
@@ -102,7 +105,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     JsonRpcClientRequest addParam(JsonValue value);
 
     /**
-     * Set array param value on this request.
+     * Add an array param value of type int to this request.
      *
      * @param value the value as int value
      * @return this request
@@ -112,7 +115,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     }
 
     /**
-     * Set array param value on this request.
+     * Add an array param value of type string to this request.
      *
      * @param value the value as a string
      * @return this request
@@ -129,7 +132,7 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
     JsonRpcClientResponse submit();
 
     /**
-     * Add this request to the ongoing batch.
+     * Add this request to the current batch.
      *
      * @return the batch
      * @throws java.lang.IllegalStateException if not part of a batch
@@ -138,7 +141,6 @@ public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest
 
     /**
      * Get a complete representation of this request as a JSON object.
-     * This method can be useful when running over other transports.
      *
      * @return this request as a JSON object
      */
