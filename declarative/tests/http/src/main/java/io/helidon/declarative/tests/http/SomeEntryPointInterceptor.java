@@ -16,6 +16,11 @@
 
 package io.helidon.declarative.tests.http;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import io.helidon.common.Weight;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
@@ -24,16 +29,24 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 @Weight(1000)
 class SomeEntryPointInterceptor implements Interception.EntryPointInterceptor {
+    private static final Queue<String> EXECUTIONS = new ArrayBlockingQueue<>(100);
+
     @Override
     public <T> T proceed(InterceptionContext invocationContext, Interception.Interceptor.Chain<T> chain, Object... args)
             throws Exception {
         String definition = invocationContext.serviceInfo().serviceType().fqName()
                 + "." + invocationContext.elementInfo().signature().text();
-        System.out.println("Pre entry-point: " + definition);
-        try {
-            return chain.proceed(args);
-        } finally {
-            System.out.println("Post entry-point: " + definition);
-        }
+
+        EXECUTIONS.add(definition);
+
+        return chain.proceed(args);
+    }
+
+    static void reset() {
+        EXECUTIONS.clear();
+    }
+
+    static List<String> executions() {
+       return new ArrayList<>(EXECUTIONS);
     }
 }
