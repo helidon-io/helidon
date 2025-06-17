@@ -48,6 +48,7 @@
         <module>builder</module>
         <module>codegen</module>
         <module>wildcard</module>
+        <module>inheritance</module>
     </modules>
 
 </project>

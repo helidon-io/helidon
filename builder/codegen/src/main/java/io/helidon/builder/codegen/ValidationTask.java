@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,21 @@ abstract class ValidationTask {
                                            TypeInfo validatedType,
                                            TypeName implementedInterface,
                                            String message) {
-        if (validatedType.interfaceTypeInfo()
-                .stream()
-                .noneMatch(it -> it.typeName().equals(implementedInterface))) {
+        boolean doesImplement = doesImplement(validatedType, implementedInterface);
+        if (!doesImplement) {
             errors.fatal(validatedType.typeName(), message);
         }
+    }
+
+    private static boolean doesImplement(TypeInfo validatedType, TypeName implementedInterface) {
+        if (validatedType.interfaceTypeInfo()
+                .stream()
+                .anyMatch(it -> it.typeName().equals(implementedInterface))) {
+            return true;
+        }
+        return validatedType.superTypeInfo()
+                .map(it -> doesImplement(it, implementedInterface))
+                .orElse(false);
     }
 
     private static void validateFactoryMethod(Errors.Collector errors,
