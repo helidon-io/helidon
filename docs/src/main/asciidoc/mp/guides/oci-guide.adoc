@@ -74,9 +74,7 @@ The server service also allows you to build, configure and test the application 
 
 The Helidon MP OCI Starter Project also includes Helidon's built in liveness and readiness health checks which allow you to expose the project's health status to external tools. See xref:../health.adoc[MicroProfile Health] for general information on the Health Check feature and then read the **Health Checks** section in ``/server/README.md`` for how it's implemented in this project.
 
-.Click here to view the structure of the Helidon MP OCI Project.
-[%collapsible]
-====
+.The structure of the Helidon MP OCI Project
 ----
 ├── README.md
 ├── client
@@ -130,7 +128,6 @@ The Helidon MP OCI Starter Project also includes Helidon's built in liveness and
     ├── README.md
     └── api.yaml
 ----
-====
 
 == Running the Application Locally
 
