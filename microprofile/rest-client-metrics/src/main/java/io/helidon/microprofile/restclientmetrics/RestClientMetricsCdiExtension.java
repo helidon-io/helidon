@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
-import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
@@ -51,6 +50,7 @@ import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.ClientRequestContext;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -60,6 +60,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -78,6 +79,8 @@ public class RestClientMetricsCdiExtension implements Extension {
                                                                           POST.class,
                                                                           PUT.class,
                                                                           DELETE.class);
+
+    private static final Set<Class<? extends Annotation>> METRICS_ANNOTATIONS = Set.of(Timed.class, Counted.class);
 
     private final Set<Class<?>> candidateRestClientTypes = new HashSet<>();
 
@@ -103,11 +106,14 @@ public class RestClientMetricsCdiExtension implements Extension {
             POST.class,
             PUT.class,
             DELETE.class,
-            PATCH.class}) ProcessAnnotatedType<?> pat) {
+            PATCH.class,
+            RegisterRestClient.class,
+            Path.class}) ProcessAnnotatedType<?> pat) {
         if (pat.getAnnotatedType().getJavaClass().isInterface()) {
             /*
             All REST client declarations are interfaces, so at least this annotated type has a chance of being a REST client.
-            At this stage in processing simply record all classes with at least one method bearing a REST annotation.
+            At this stage in processing simply record all types bearing @RegisterRestClient or @Path or with at least one method
+            bearing a REST annotation.
              */
             Class<?> javaType = pat.getAnnotatedType().getJavaClass();
             candidateRestClientTypes.add(javaType);
@@ -120,15 +126,14 @@ public class RestClientMetricsCdiExtension implements Extension {
     void prepareMetricRegistrations(@Observes AfterBeanDiscovery abd) {
         // For each identified candidate REST client type determine what metric registration(s) are needed for its methods
         // and prepare the pre-invoke and post-invoke operations as needed for each to update the metrics needed for each method.
-        // We do not actually register the metrics yet; instead we want until the REST client infrastructure informs us type
+        // We do not actually register the metrics yet; instead we wait until the REST client infrastructure informs us type
         // by type that an interface is being used as a REST client interface.
 
         candidateRestClientTypes.forEach(type -> {
 
-            LOGGER.log(DEBUG, "Analyzing candidate REST client interface " + type.getCanonicalName());
+            LOGGER.log(DEBUG, "Analyzing REST client interface " + type.getCanonicalName());
 
-            // Earlier we collected all interfaces with REST annotations. For each of those compute the type closure and, for the
-            // type itself and all types in its closure:
+            // Earlier we collected all interfaces with REST annotations. For each of those all types in its closure:
             //   * capture any type-level REST annotations - these will apply to all REST methods on the interface being processed
             //   * for each REST method on the interface or on a type in its type closure use the method-level REST annotations
             //     and any type-level REST annotations to prepare metric registrations.
@@ -141,7 +146,7 @@ public class RestClientMetricsCdiExtension implements Extension {
                             .map(t -> (Class<?>) t)
                             .filter(candidateRestClientTypes::contains)
                             .flatMap(t -> StreamSupport.stream(abd.getAnnotatedTypes(t).spliterator(), false))
-                            .flatMap(at -> Stream.of(Timed.class, Counted.class)
+                            .flatMap(at -> METRICS_ANNOTATIONS.stream()
                                     .map(at::getAnnotation)
                                     .filter(Objects::nonNull))
                             .collect(Collectors.toSet());
@@ -173,8 +178,7 @@ public class RestClientMetricsCdiExtension implements Extension {
                                                                      annotatedMethod.getJavaMember(),
                                                                      k -> new HashSet<>());
                                                      Set<Registration> registrationsFromMethod =
-                                                             Stream.of(Timed.class,
-                                                                       Counted.class)
+                                                             METRICS_ANNOTATIONS.stream()
                                                                      .map(annotatedMethod::getAnnotation)
                                                                      .filter(Objects::nonNull)
                                                                      .map(anno -> Registration.create(
@@ -228,6 +232,17 @@ public class RestClientMetricsCdiExtension implements Extension {
             deferredRestClients.add(restClient);
             return;
         }
+
+        // User code can invoke REST clients based on an interface that is not known to CDI and, therefore, not known to
+        // this extension. Yet our REST client listener is still invoked for such REST clients. Create metric registrations
+        // for such an interface just in time.
+        if (!registrations.containsKey(restClient)) {
+            LOGGER.log(DEBUG, "REST client %s has been registered but was not discovered as a bean;  "
+                               + "adding just-in-time metrics registrations",
+                       restClient.getCanonicalName());
+            addRegistrationsForType(restClient);
+        }
+
         registrations.get(restClient).forEach((method, regs) -> {
             List<Metric> metricsRegisteredForRestClient = LOGGER.isLoggable(DEBUG) ? new ArrayList<>() : null;
             regs.forEach(registration -> {
@@ -268,6 +283,76 @@ public class RestClientMetricsCdiExtension implements Extension {
         return metricsUpdateWorkByMethod;
     }
 
+    Set<Class<?>> typeClosure(Class<?> type) {
+        Set<Class<?>> result = new HashSet<>();
+        typeClosure(result, type);
+        return result;
+    }
+
+    void typeClosure(Set<Class<?>> result, Class<?> type) {
+        if (type == null || result.contains(type)) {
+            return;
+        }
+        result.add(type);
+        typeClosure(result, type.getSuperclass());
+        for (Class<?> c : type.getInterfaces()) {
+            typeClosure(result, c);
+        }
+    }
+
+    private void addRegistrationsForType(Class<?> type) {
+
+        LOGGER.log(DEBUG, "Checking for just-in-time registrations for type " + type);
+
+        Set<Class<?>> typeClosure = typeClosure(type);
+
+        Set<Annotation> typeLevelMetricAnnotationsOverTypeClosure =
+                typeClosure.stream()
+                        .flatMap(t -> METRICS_ANNOTATIONS.stream()
+                                .map(t::getAnnotation)
+                                .filter(Objects::nonNull))
+                        .collect(Collectors.toSet());
+
+        Map<Method, Set<Registration>> registrationsByMethodForType = new HashMap<>();
+
+        typeClosure.stream()
+                .flatMap(t -> Arrays.stream(t.getDeclaredMethods()))
+                .filter(RestClientMetricsCdiExtension::hasRestAnnotation)
+                .forEach(annotatedMethod -> {
+                    Set<Registration> registrationsForMethod =
+                            registrationsByMethodForType.computeIfAbsent(annotatedMethod, k -> new HashSet<>());
+                    Set<Registration> registrationsFromMethod =
+                            METRICS_ANNOTATIONS.stream()
+                                    .map(annotatedMethod::getAnnotation)
+                                    .filter(Objects::nonNull)
+                                    .map(anno -> Registration.create(
+                                            type,
+                                            annotatedMethod,
+                                            anno,
+                                            false))
+                                    .collect(Collectors.toSet());
+
+                    registrationsForMethod.addAll(registrationsFromMethod);
+
+                    LOGGER.log(DEBUG,
+                               String.format("Adding metric registrations for annotations on method %s.%s: %s",
+                                             annotatedMethod.getDeclaringClass().getCanonicalName(),
+                                             annotatedMethod.getName(),
+                                             registrationsFromMethod));
+
+                    // Add registrations needed for this method based on type-level annotations.
+
+                    var registrationsFromTypeLevelAnnotations =
+                            typeLevelMetricAnnotationsOverTypeClosure.stream()
+                                    .map(anno -> Registration.create(type, annotatedMethod, anno, true));
+
+                    registrationsForMethod.addAll(registrationsFromMethod);
+                });
+
+        registrations.put(type, registrationsByMethodForType);
+
+    }
+
     private static Tag[] tags(Annotation metricAnnotation) {
         return switch (metricAnnotation) {
             case Counted counted -> tags(counted.tags());
@@ -302,10 +387,16 @@ public class RestClientMetricsCdiExtension implements Extension {
                 .anyMatch(anno -> REST_METHOD_ANNOTATIONS.contains(anno.annotationType()));
     }
 
+    private static boolean hasRestAnnotation(Method m) {
+        return Arrays.stream(m.getAnnotations())
+                .anyMatch(anno -> REST_METHOD_ANNOTATIONS.contains(anno.annotationType()));
+    }
+
     private static String chooseMetricName(Class<?> type,
-                                           AnnotatedMethod<?> method,
+                                           Method method,
                                            Annotation metricAnnotation,
                                            boolean isTypeLevel) {
+
         boolean isAbsolute = switch (metricAnnotation) {
             case Timed timed -> timed.absolute();
             case Counted counted -> counted.absolute();
@@ -316,7 +407,7 @@ public class RestClientMetricsCdiExtension implements Extension {
             case Counted counted -> counted.name();
             default -> "";
         };
-        AnnotatedType<?> declaringType = method.getDeclaringType();
+        Class<?> declaringClass = method.getDeclaringClass();
 
         // The following code mimics the structure of the Annotated Naming Convention tables in the MP Metrics spec document.
         return !isTypeLevel
@@ -324,14 +415,14 @@ public class RestClientMetricsCdiExtension implements Extension {
                 isAbsolute
                         ? (
                         specifiedName.isEmpty()
-                                ? method.getJavaMember().getName()
+                                ? method.getName()
                                 : specifiedName)
                         : // Non-absolute name at the method level always has the canonical class name as its prefix.
-                                declaringType.getJavaClass().getCanonicalName()
+                                declaringClass.getCanonicalName()
                                         + "."
                                         + (
                                         specifiedName.isEmpty()
-                                                ? method.getJavaMember().getName()
+                                                ? method.getName()
                                                 : specifiedName)
 
                 : // Annotation is at the type level. Choose the prefix; the metric name always ends with the method name.
@@ -341,9 +432,9 @@ public class RestClientMetricsCdiExtension implements Extension {
                                         specifiedName.isEmpty() ? type.getSimpleName()
                                                 : specifiedName)
                                         : (
-                                                specifiedName.isEmpty() ? declaringType.getJavaClass().getCanonicalName()
-                                                        : declaringType.getJavaClass().getPackageName() + "." + specifiedName))
-                                + "." + method.getJavaMember().getName();
+                                                specifiedName.isEmpty() ? declaringClass.getCanonicalName()
+                                                        : declaringClass.getPackageName() + "." + specifiedName))
+                                + "." + method.getName();
     }
 
     /**
@@ -391,7 +482,7 @@ public class RestClientMetricsCdiExtension implements Extension {
     }
 
     /**
-     * A future group of metric registrations to be performed if and when the corresponding REST client interface is reated.
+     * A future group of metric registrations to be performed if and when the corresponding REST client interface is created.
      *
      * @param metricName       metric name
      * @param metricAnnotation metric annotation which gave rise to this registration
@@ -404,7 +495,7 @@ public class RestClientMetricsCdiExtension implements Extension {
                                 Function<MetricRegistry, ? extends Metric> registrationOp) {
 
         static Registration create(Class<?> declaringType,
-                                   AnnotatedMethod<?> method,
+                                   Method method,
                                    Annotation metricAnnotation,
                                    boolean isTypeLevel) {
             Metadata metadata = Metadata.builder()
@@ -416,23 +507,33 @@ public class RestClientMetricsCdiExtension implements Extension {
                                     : "counter")
                                              + declaringType.getSimpleName()
                                              + "."
-                                             + method.getJavaMember().getName())
+                                             + method.getName())
                     .build();
 
             Tag[] tagsFromAnnotation = RestClientMetricsCdiExtension.tags(metricAnnotation);
             return switch (metricAnnotation) {
                 case Timed timed -> new Registration(metadata.getName(),
-                                                      tagsFromAnnotation,
-                                                      metadata,
-                                                      timed,
-                                                      mr -> mr.timer(metadata, tagsFromAnnotation));
+                                                     tagsFromAnnotation,
+                                                     metadata,
+                                                     timed,
+                                                     mr -> mr.timer(metadata, tagsFromAnnotation));
                 case Counted counted -> new Registration(metadata.getName(),
-                                                        tagsFromAnnotation,
-                                                        metadata,
-                                                        counted,
-                                                        mr -> mr.counter(metadata, tagsFromAnnotation));
+                                                         tagsFromAnnotation,
+                                                         metadata,
+                                                         counted,
+                                                         mr -> mr.counter(metadata, tagsFromAnnotation));
                 default -> null;
             };
+        }
+
+        static Registration create(Class<?> declaringType,
+                                   AnnotatedMethod<?> method,
+                                   Annotation metricAnnotation,
+                                   boolean isTypeLevel) {
+            return create(declaringType,
+                          method.getJavaMember(),
+                          metricAnnotation,
+                          isTypeLevel);
         }
 
         @Override
