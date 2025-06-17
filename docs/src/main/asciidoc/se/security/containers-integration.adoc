@@ -66,13 +66,18 @@ include::{sourcedir}/se/security/ContainersIntegrationSnippets.java[tag=snippet_
 security:
   web-server: # <1>
       defaults:
+        # defaults for paths configured in the section below
         authenticate: true
       paths:
         - path: "/service1/*"
           methods: ["get"]
           roles-allowed: ["user"]
+          # "authenticate: true" is implicit, as it is configured in defaults above
 ----
 <1> Configuration of integration with web server
+
+Note: `defaults` section in configuration is related to paths on WebServer configured below in `paths` section, it will not
+apply to any other path on the webserver.
 
 include::{rootdir}/includes/security/helidon-endpoints.adoc[]
 
