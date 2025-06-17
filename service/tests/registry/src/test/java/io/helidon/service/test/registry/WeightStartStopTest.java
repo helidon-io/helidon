@@ -16,27 +16,27 @@
 
 package io.helidon.service.test.registry;
 
-import io.helidon.service.registry.ServiceRegistryConfig;
-import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.service.test.registry.StartStopFixture;
-
-import org.junit.jupiter.api.Test;
-
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
-class StartStopTest {
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
+import org.junit.jupiter.api.Test;
+
+class WeightStartStopTest {
 
     @Test
     void test() {
         var config = ServiceRegistryConfig.create();
         var manager = ServiceRegistryManager.start(config);
-        var services = manager.registry().all(StartStopFixture.class);
+        var services = manager.registry().all(WeightStartStopFixture.class);
         assertThat(services, hasSize(3));
+        var state = manager.registry().get(WeightStartStopFixture.State.class);
+        assertThat(state.startUpSequence, contains("Service1", "Service2", "Service3"));
+        assertThat(state.shutDownSequence, hasSize(0));
 
         manager.shutdown();
 
-        assertThat(StartStopFixture.startUpQueue, contains("Service1", "Service2", "Service3"));
-        assertThat(StartStopFixture.shutDownQueue, contains("Service3", "Service2", "Service1"));
+        assertThat(state.shutDownSequence, contains("Service3", "Service2", "Service1"));
     }
 }
