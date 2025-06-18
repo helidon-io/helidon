@@ -64,6 +64,13 @@ public class RestClientMetricsClientListener implements RestClientListener {
                             .build();
                 });
 
+        /*
+        In some cases, the system will invoke REST client listeners before CDI has completed its startup. The REST client metrics
+         CDI extension registers the meters to be updated for each REST client method, so this listener has nothing to do if
+         it runs before CDI has initialized the extension. That said, it needs to keep retrying to locate the CDI extension
+         because the extension might (should) become available later. The code below uses a utility method to access this
+         lazy value to allow that retry behavior.
+         */
         private final LazyValue<RestClientMetricsCdiExtension> ext =
                 LazyValue.create(() -> CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class));
 
@@ -79,7 +86,7 @@ public class RestClientMetricsClientListener implements RestClientListener {
                 // register metrics (and create metric-related work for the filter to do) only upon first
                 // discovering a given service interface.
                 if (restClientsDiscovered.add(serviceInterface)) {
-                    ext.get().registerMetricsForRestClient(serviceInterface);
+                    Utils.optOf(ext).ifPresent(ext -> ext.registerMetricsForRestClient(serviceInterface));
                 }
                 builder.register(restClientMetricsFilter, Priorities.USER - 100);
             }

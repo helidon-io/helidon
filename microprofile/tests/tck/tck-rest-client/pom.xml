@@ -43,11 +43,11 @@
             Adding the REST client metrics support is not required for the REST client TCK to work,
             but it exercises the metrics support in a very broad set of use cases.
         -->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.microprofile.rest-client-metrics</groupId>-->
-<!--            <artifactId>helidon-microprofile-rest-client-metrics</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+            <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
