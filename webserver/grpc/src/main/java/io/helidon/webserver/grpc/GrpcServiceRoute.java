@@ -32,6 +32,17 @@ import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
 
+    private static final Descriptors.FileDescriptor EMPTY_PROTO;
+    static {
+        try {
+            EMPTY_PROTO = Descriptors.FileDescriptor.buildFrom(
+                    DescriptorProtos.FileDescriptorProto.getDefaultInstance(),
+                    new Descriptors.FileDescriptor[] {});
+        } catch (Descriptors.DescriptorValidationException e) {
+            throw new Error("Unable to create an empty proto file descriptor", e);
+        }
+    }
+
     private final String serviceName;
     private final List<GrpcRouteHandler<?, ?>> routes;
     private final Descriptors.FileDescriptor proto;
@@ -43,9 +54,15 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     private GrpcServiceRoute(String serviceName, List<GrpcRouteHandler<?, ?>> routes) {
+        this(serviceName, routes, null);
+    }
+
+    private GrpcServiceRoute(String serviceName,
+                             List<GrpcRouteHandler<?, ?>> routes,
+                             Descriptors.FileDescriptor proto) {
         this.serviceName = serviceName;
         this.routes = routes;
-        this.proto = emptyProto();
+        this.proto = proto == null ? EMPTY_PROTO : proto;
     }
 
     @Override
@@ -81,9 +98,7 @@ class GrpcServiceRoute extends GrpcRoute {
     static GrpcRoute create(BindableService service, WeightedBag<ServerInterceptor> interceptors) {
         ServerServiceDefinition definition = service.bindService();
         String serviceName = definition.getServiceDescriptor().getName();
-        List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
-        service.bindService().getMethods().forEach(
-                method -> routes.add(GrpcRouteHandler.bindableMethod(service, method, interceptors)));
+        List<GrpcRouteHandler<?, ?>> routes = buildRoutes(service, interceptors);
         return new GrpcServiceRoute(serviceName, routes);
     }
 
@@ -96,7 +111,11 @@ class GrpcServiceRoute extends GrpcRoute {
      * @return the route
      */
     static GrpcRoute create(GrpcServiceDescriptor service, WeightedBag<ServerInterceptor> interceptors) {
-        return create(BindableServiceImpl.create(service), interceptors);
+        BindableService bindableService = BindableServiceImpl.create(service);
+        ServerServiceDefinition definition = bindableService.bindService();
+        String serviceName = definition.getServiceDescriptor().getName();
+        List<GrpcRouteHandler<?, ?>> routes = buildRoutes(bindableService, interceptors);
+        return new GrpcServiceRoute(serviceName, routes, service.proto());
     }
 
     @Override
@@ -121,13 +140,13 @@ class GrpcServiceRoute extends GrpcRoute {
         return PathMatchers.MatchResult.notAccepted();
     }
 
-    private Descriptors.FileDescriptor emptyProto() {
-        try {
-            DescriptorProtos.FileDescriptorProto proto = DescriptorProtos.FileDescriptorProto.getDefaultInstance();
-            return Descriptors.FileDescriptor.buildFrom(proto, new Descriptors.FileDescriptor[] {});
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    static List<GrpcRouteHandler<?, ?>> buildRoutes(BindableService service, WeightedBag<ServerInterceptor> interceptors) {
+        List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
+        service.bindService()
+                .getMethods()
+                .forEach(method ->
+                                 routes.add(GrpcRouteHandler.bindableMethod(service, method, interceptors)));
+        return routes;
     }
 
     static class Routing implements GrpcService.Routing {
