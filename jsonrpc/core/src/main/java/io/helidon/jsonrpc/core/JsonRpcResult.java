@@ -27,6 +27,16 @@ import jakarta.json.JsonValue;
 public interface JsonRpcResult {
 
     /**
+     * Create an instance from a JSON value.
+     *
+     * @param result the value
+     * @return a new instance of this class
+     */
+    static JsonRpcResult create(JsonValue result) {
+        return new JsonRpcResultImpl(result);
+    }
+
+    /**
      * Access a response result as a JSON object.
      *
      * @return a JSON object
@@ -76,7 +86,7 @@ public interface JsonRpcResult {
      * @return an optional property value
      * @throws ClassCastException if not a JSON object or value not a string
      */
-    Optional<JsonValue> optionalGet(String name);
+    Optional<JsonValue> find(String name);
 
     /**
      * Get a JSON array value by index as a JSON value.
@@ -106,7 +116,7 @@ public interface JsonRpcResult {
      * @throws ClassCastException        if not a JSON array or value not a string
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
-    Optional<JsonValue> optionalGet(int index);
+    Optional<JsonValue> find(int index);
 
     /**
      * Access a response result as a Java object. This method will bind the result

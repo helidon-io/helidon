@@ -25,7 +25,6 @@ import io.helidon.http.Header;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.jsonrpc.core.JsonRpcParams;
-import io.helidon.jsonrpc.core.JsonRpcParamsImpl;
 import io.helidon.webserver.http.HttpRequest;
 
 import jakarta.json.JsonObject;
@@ -66,7 +65,7 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
         if (value == null) {
             value = JsonValue.EMPTY_JSON_OBJECT;
         }
-        return JsonRpcParamsImpl.create((JsonStructure) value);
+        return JsonRpcParams.create((JsonStructure) value);
     }
 
     @Override
