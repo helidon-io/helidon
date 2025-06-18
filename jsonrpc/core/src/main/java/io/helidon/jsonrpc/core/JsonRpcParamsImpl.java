@@ -27,21 +27,11 @@ import jakarta.json.JsonValue;
 /**
  * An implementation of {@link io.helidon.jsonrpc.core.JsonRpcParams}.
  */
-public class JsonRpcParamsImpl implements JsonRpcParams {
+class JsonRpcParamsImpl implements JsonRpcParams {
 
     private final JsonStructure params;
 
-    /**
-     * Create an instance from a JSON structure.
-     *
-     * @param params the structure
-     * @return a new instance of this class
-     */
-    public static JsonRpcParamsImpl create(JsonStructure params) {
-        return new JsonRpcParamsImpl(params);
-    }
-
-    private JsonRpcParamsImpl(JsonStructure params) {
+    JsonRpcParamsImpl(JsonStructure params) {
         this.params = Objects.requireNonNull(params);
     }
 
@@ -75,7 +65,7 @@ public class JsonRpcParamsImpl implements JsonRpcParams {
     }
 
     @Override
-    public Optional<JsonValue> optionalGet(String name) {
+    public Optional<JsonValue> find(String name) {
         return Optional.ofNullable(asJsonObject().get(name));
     }
 
@@ -90,7 +80,7 @@ public class JsonRpcParamsImpl implements JsonRpcParams {
     }
 
     @Override
-    public Optional<JsonValue> optionalGet(int index) {
+    public Optional<JsonValue> find(int index) {
         JsonArray array = asJsonArray();
         if (index >= 0 && index < array.size()) {
             return Optional.of(array.get(index));

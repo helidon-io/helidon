@@ -28,6 +28,16 @@ import jakarta.json.JsonValue;
 public interface JsonRpcParams {
 
     /**
+     * Create an instance from a JSON structure.
+     *
+     * @param params the structure
+     * @return a new instance of this class
+     */
+    static JsonRpcParams create(JsonStructure params) {
+        return new JsonRpcParamsImpl(params);
+    }
+
+    /**
      * Access all request params as a single JSON object.
      *
      * @return a JSON object
@@ -77,7 +87,7 @@ public interface JsonRpcParams {
      * @return an optional param value
      * @throws ClassCastException if not a JSON object
      */
-    Optional<JsonValue> optionalGet(String name);
+    Optional<JsonValue> find(String name);
 
     /**
      * Get a single array param by index as a JSON value.
@@ -107,7 +117,7 @@ public interface JsonRpcParams {
      * @throws ClassCastException        if not a JSON array
      * @throws IndexOutOfBoundsException if index is out of bounds
      */
-    Optional<JsonValue> optionalGet(int index);
+    Optional<JsonValue> find(int index);
 
     /**
      * Map all request params to a bean class type using JSONB.

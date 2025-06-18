@@ -19,59 +19,17 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
 /**
  * An implementation of a JSON-RPC error.
  */
-public class JsonRpcErrorImpl implements JsonRpcError {
+class JsonRpcErrorImpl implements JsonRpcError {
 
     private final JsonObject error;
 
-    /**
-     * Create an instance from a JSON object.
-     *
-     * @param error the object
-     * @return a new instance of this class
-     */
-    public static JsonRpcErrorImpl create(JsonObject error) {
-        return new JsonRpcErrorImpl(error);
-    }
-
-    /**
-     * Create an instance from a code and a message.
-     *
-     * @param code    the error code
-     * @param message the message
-     * @return a new instance of this class
-     */
-    public static JsonRpcErrorImpl create(int code, String message) {
-        return create(code, message, null);
-    }
-
-    /**
-     * Create an instance from a code, a message and data.
-     *
-     * @param code    the error code
-     * @param message the message
-     * @param data    the associated data or {@code null}
-     * @return a new instance of this class
-     */
-    public static JsonRpcErrorImpl create(int code, String message, JsonValue data) {
-        Objects.requireNonNull(message, "message is null");
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        builder.add("code", code);
-        builder.add("message", message);
-        if (data != null) {
-            builder.add("data", data);
-        }
-        return new JsonRpcErrorImpl(builder.build());
-    }
-
-    private JsonRpcErrorImpl(JsonObject error) {
+    JsonRpcErrorImpl(JsonObject error) {
         this.error = Objects.requireNonNull(error);
     }
 

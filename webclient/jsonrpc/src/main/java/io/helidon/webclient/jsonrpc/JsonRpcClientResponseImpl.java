@@ -25,9 +25,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.jsonrpc.core.JsonRpcError;
-import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.jsonrpc.core.JsonRpcResult;
-import io.helidon.jsonrpc.core.JsonRpcResultImpl;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 
@@ -62,14 +60,14 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     @Override
     public Optional<JsonRpcResult> result() {
         JsonValue result = asJsonObject().get("result");
-        return result == null ? Optional.empty() : Optional.of(JsonRpcResultImpl.create(result));
+        return result == null ? Optional.empty() : Optional.of(JsonRpcResult.create(result));
     }
 
     @Override
     public Optional<JsonRpcError> error() {
         try {
             JsonObject error = asJsonObject().getJsonObject("error");
-            return Optional.of(JsonRpcErrorImpl.create(error));
+            return Optional.of(JsonRpcError.create(error));
         } catch (ClassCastException e) {
             return Optional.empty();
         }

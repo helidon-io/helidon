@@ -28,6 +28,10 @@
     <artifactId>helidon-jsonrpc-core</artifactId>
     <name>Helidon JSON-RPC Core</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
