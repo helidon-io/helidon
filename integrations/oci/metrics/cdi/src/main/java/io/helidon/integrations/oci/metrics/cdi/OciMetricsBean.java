@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Singleton;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -65,8 +66,13 @@ public class OciMetricsBean extends OciMetricsSupportFactory {
 
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Config rootConfig, Monitoring monitoringClient) {
-        registerOciMetrics(rootConfig, monitoringClient);
+                            Config rootConfig, BeanManager beanManager) {
+
+        var instance = beanManager.createInstance().select(Monitoring.class);
+        if (instance.isUnsatisfied()) {
+            return;
+        }
+        registerOciMetrics(rootConfig, instance.get());
     }
 
     // For testing
