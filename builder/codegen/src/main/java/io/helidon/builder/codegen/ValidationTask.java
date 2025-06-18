@@ -39,8 +39,8 @@ abstract class ValidationTask {
                                            TypeInfo validatedType,
                                            TypeName implementedInterface,
                                            String message) {
-        boolean doesImplement = doesImplement(validatedType, implementedInterface);
-        if (!doesImplement) {
+
+        if (!doesImplement(validatedType, implementedInterface)) {
             errors.fatal(validatedType.typeName(), message);
         }
     }
