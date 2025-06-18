@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
@@ -133,90 +135,10 @@ public class RestClientMetricsCdiExtension implements Extension {
 
             LOGGER.log(DEBUG, "Analyzing REST client interface " + type.getCanonicalName());
 
-            // Earlier we collected all interfaces with REST annotations. For each of those all types in its closure:
-            //   * capture any type-level REST annotations - these will apply to all REST methods on the interface being processed
-            //   * for each REST method on the interface or on a type in its type closure use the method-level REST annotations
-            //     and any type-level REST annotations to prepare metric registrations.
-
-            Set<Annotation> typeLevelMetricAnnotationsOverTypeClosure =
-                    StreamSupport.stream(abd.getAnnotatedTypes(type).spliterator(), false)
-                            .flatMap(at -> at.getTypeClosure()
-                                    .stream()) // The CDI-provided type closure includes the type itself.
-                            .filter(t -> t instanceof Class<?>)
-                            .map(t -> (Class<?>) t)
-                            .filter(candidateRestClientTypes::contains)
-                            .flatMap(t -> StreamSupport.stream(abd.getAnnotatedTypes(t).spliterator(), false))
-                            .flatMap(at -> METRICS_ANNOTATIONS.stream()
-                                    .map(at::getAnnotation)
-                                    .filter(Objects::nonNull))
-                            .collect(Collectors.toSet());
-
-            Map<Method, Set<Registration>> registrationsByMethodForType = new HashMap<>();
-
             // We need to get the AnnotatedType for the type of interest, but without knowing the ID with which it was added
             // to CDI we cannot retrieve just that one directly. Instead retrieve all annotated types for the type (most likely
             // there will be just one).
-            StreamSupport.stream(abd.getAnnotatedTypes(type).spliterator(), false)
-                    .flatMap(at -> at.getTypeClosure().stream()) // The CDI-provided type closure includes the type itself.
-                    .filter(t -> t instanceof Class<?>)
-                    .map(t -> (Class<?>) t)
-                    .filter(candidateRestClientTypes::contains)
-                    .forEach(typeInClosure -> StreamSupport.stream(abd.getAnnotatedTypes(typeInClosure).spliterator(),
-                                                                   false)
-                            .forEach(annotatedTypeInClosure -> {
-                                         LOGGER.log(DEBUG,
-                                                    "Examining type " + annotatedTypeInClosure.getJavaClass()
-                                                            .getCanonicalName());
-
-                                         annotatedTypeInClosure.getMethods().stream()
-                                                 .filter(RestClientMetricsCdiExtension::hasRestAnnotation)
-                                                 .forEach(annotatedMethod -> {
-                                                     // Record registrations needed for this method based on
-                                                     // annotations on it or the types in this type's closure.
-                                                     Set<Registration> registrationsForMethod =
-                                                             registrationsByMethodForType.computeIfAbsent(
-                                                                     annotatedMethod.getJavaMember(),
-                                                                     k -> new HashSet<>());
-                                                     Set<Registration> registrationsFromMethod =
-                                                             METRICS_ANNOTATIONS.stream()
-                                                                     .map(annotatedMethod::getAnnotation)
-                                                                     .filter(Objects::nonNull)
-                                                                     .map(anno -> Registration.create(
-                                                                             annotatedTypeInClosure.getJavaClass(),
-                                                                             annotatedMethod,
-                                                                             anno,
-                                                                             false))
-                                                                     .collect(Collectors.toSet());
-
-                                                     registrationsForMethod.addAll(registrationsFromMethod);
-
-                                                     LOGGER.log(DEBUG,
-                                                                "Adding metric registrations for annotations "
-                                                                        + "on method " + annotatedMethod.getJavaMember()
-                                                                        .getDeclaringClass().getCanonicalName()
-                                                                        + "." + annotatedMethod.getJavaMember()
-                                                                        .getName() + ":" + registrationsFromMethod);
-
-                                                     // Record registrations needed for this method based on
-                                                     // type-level annotations.
-
-                                                     var registrationsFromTypeLevelAnnotations =
-                                                             typeLevelMetricAnnotationsOverTypeClosure.stream()
-                                                                     .map(anno -> Registration.create(
-                                                                             annotatedTypeInClosure.getJavaClass(),
-                                                                             annotatedMethod,
-                                                                             anno,
-                                                                             true))
-                                                                     .collect(Collectors.toSet());
-
-                                                     registrationsForMethod.addAll(registrationsFromTypeLevelAnnotations);
-                                                     LOGGER.log(DEBUG,
-                                                                "Adding metric registrations for type-level "
-                                                                        + "annotations " + registrationsFromTypeLevelAnnotations);
-                                                 });
-                                         registrations.put(type, registrationsByMethodForType);
-                                     }
-                            ));
+            addRegistrations(abd, type);
         });
     }
 
@@ -240,7 +162,7 @@ public class RestClientMetricsCdiExtension implements Extension {
             LOGGER.log(DEBUG, "REST client %s has been registered but was not discovered as a bean;  "
                                + "adding just-in-time metrics registrations",
                        restClient.getCanonicalName());
-            addRegistrationsForType(restClient);
+            addRegistrations(restClient);
         }
 
         registrations.get(restClient).forEach((method, regs) -> {
@@ -300,57 +222,142 @@ public class RestClientMetricsCdiExtension implements Extension {
         }
     }
 
-    private void addRegistrationsForType(Class<?> type) {
+    private void addRegistrations(Class<?> type) {
+        this.<Class<?>, Method>addRegistrations(type,
+                              typeClosure(type),
+                              Class::getAnnotation,
+                              Method::getAnnotation,
+                              Function.identity(),
+                              Function.identity(),
+                              (Class<?> c) -> List.of(c.getMethods()),
+                              (Method m) -> List.of(m.getAnnotations())
+                              );
 
-        LOGGER.log(DEBUG, "Checking for just-in-time registrations for type " + type);
+    }
 
-        Set<Class<?>> typeClosure = typeClosure(type);
+    private void addRegistrations(AfterBeanDiscovery abd, Class<?> type) {
+
+        // Earlier we collected all interfaces with REST annotations. For each of the types in its closure:
+        //   * Capture any type-level REST annotations - these will apply to all REST methods on or inherited by the
+        //     interface being processed.
+        //   * For each REST method on the interface or on a type in its type closure use the method-level REST annotations
+        //     and any type-level REST annotations to prepare metric registrations.
+
+        // We do not know the ID with which each annotated type was registered with CDI. So we ask CDI for all annotated types
+        // that match the Java type of interest.
+
+        this.addRegistrations(type,
+                              StreamSupport.stream(abd.getAnnotatedTypes(type).spliterator(), false)
+                                      .flatMap(at -> at.getTypeClosure().stream())
+                                      .filter(t -> t instanceof Class<?>)
+                                      .map(t -> (Class<?>) t)
+                                      .filter(candidateRestClientTypes::contains)
+                                      .flatMap(t -> StreamSupport.stream(abd.getAnnotatedTypes(t).spliterator(), false))
+                                      .collect(Collectors.toSet()),
+                              AnnotatedType::getAnnotation,
+                              (AnnotatedMethod<?> am, Class<? extends Annotation> annoClass) -> am.getAnnotation(annoClass),
+                              AnnotatedType::getJavaClass,
+                              AnnotatedMethod::getJavaMember,
+                              (AnnotatedType at) -> at.getMethods(),
+                              AnnotatedMethod::getAnnotations);
+
+    }
+
+    /**
+     * Computes and adds metrics registrations for the methods on or inherited by the specified type.
+     * <p>
+     * The same logic applies whether we are processing CDI-discovered types or just-in-time discovered Java types. But
+     * the two APIs are not the same, so this method accepts several functions specific to the API the caller uses.
+     *
+     * @param type Java type of interest
+     * @param typeClosure type closure expressed in the calling API's TYPE
+     * @param annotationFromType function to retrieve a given annotation from the API's TYPE
+     * @param annotationFromMethod function to retrieve a given annotation from the API's METHOD
+     * @param typeToClass converts the API's TYPE to the underlying Java Class
+     * @param methodToMethod converts the API's METHOD to the underlying Java Method
+     * @param methodsForType function to returns METHOD instances for a given TYPE instance
+     * @param annotationsForMethod function to return all annotations from a given METHOD instance
+     * @param <TYPE> the "type type" for the calling API
+     * @param <METHOD> the method type for the calling API
+     */
+    @SuppressWarnings("checkstyle:parameternumber")
+    private <TYPE, METHOD> void addRegistrations(Class<?> type,
+                                                 Iterable<TYPE> typeClosure,
+                                                 BiFunction<TYPE, Class<? extends Annotation>, Annotation> annotationFromType,
+                                                 BiFunction<METHOD, Class<? extends Annotation>, Annotation> annotationFromMethod,
+                                                 Function<TYPE, Class<?>> typeToClass,
+                                                 Function<METHOD, Method> methodToMethod,
+                                                 Function<TYPE, Collection<METHOD>> methodsForType,
+                                                 Function<METHOD, Collection<Annotation>> annotationsForMethod) {
+
+        LOGGER.log(DEBUG, "Analyzing REST client interface " + type.getCanonicalName());
 
         Set<Annotation> typeLevelMetricAnnotationsOverTypeClosure =
-                typeClosure.stream()
+                StreamSupport.stream(typeClosure.spliterator(), false)
                         .flatMap(t -> METRICS_ANNOTATIONS.stream()
-                                .map(t::getAnnotation)
+                                .map(annoType -> annotationFromType.apply(t, annoType))
                                 .filter(Objects::nonNull))
                         .collect(Collectors.toSet());
 
         Map<Method, Set<Registration>> registrationsByMethodForType = new HashMap<>();
 
-        typeClosure.stream()
-                .flatMap(t -> Arrays.stream(t.getDeclaredMethods()))
-                .filter(RestClientMetricsCdiExtension::hasRestAnnotation)
-                .forEach(annotatedMethod -> {
-                    Set<Registration> registrationsForMethod =
-                            registrationsByMethodForType.computeIfAbsent(annotatedMethod, k -> new HashSet<>());
-                    Set<Registration> registrationsFromMethod =
-                            METRICS_ANNOTATIONS.stream()
-                                    .map(annotatedMethod::getAnnotation)
-                                    .filter(Objects::nonNull)
-                                    .map(anno -> Registration.create(
-                                            type,
-                                            annotatedMethod,
-                                            anno,
-                                            false))
-                                    .collect(Collectors.toSet());
-
-                    registrationsForMethod.addAll(registrationsFromMethod);
-
+        StreamSupport.stream(typeClosure.spliterator(), false)
+                .forEach(typeInClosure -> {
                     LOGGER.log(DEBUG,
-                               String.format("Adding metric registrations for annotations on method %s.%s: %s",
-                                             annotatedMethod.getDeclaringClass().getCanonicalName(),
-                                             annotatedMethod.getName(),
-                                             registrationsFromMethod));
+                               "Examining type " + typeToClass.apply(typeInClosure));
+                    methodsForType.apply(typeInClosure).stream()
+                            .filter(m -> RestClientMetricsCdiExtension.hasRestAnnotation(annotationsForMethod.apply(m)))
+                            .forEach(m -> {
+                                Collection<Annotation> annotationsForThisMethod = annotationsForMethod.apply(m);
+                                if (RestClientMetricsCdiExtension.hasRestAnnotation(annotationsForThisMethod)) {
+                                    Method javaMethod = methodToMethod.apply(m);
+                                    Set<Registration> registrationsForMethod = registrationsByMethodForType.computeIfAbsent(
+                                            javaMethod,
+                                            k -> new HashSet<>());
 
-                    // Add registrations needed for this method based on type-level annotations.
+                                    Set<Registration> registrationsFromMethod =
+                                            METRICS_ANNOTATIONS.stream()
+                                                    .map(metricAnnoType -> annotationFromMethod.apply(m, metricAnnoType))
+                                                    .filter(Objects::nonNull)
+                                                    .map(metricAnno -> Registration.create(
+                                                            type,
+                                                            javaMethod,
+                                                            metricAnno,
+                                                            false))
+                                                    .collect(Collectors.toSet());
 
-                    var registrationsFromTypeLevelAnnotations =
-                            typeLevelMetricAnnotationsOverTypeClosure.stream()
-                                    .map(anno -> Registration.create(type, annotatedMethod, anno, true));
+                                    registrationsForMethod.addAll(registrationsFromMethod);
 
-                    registrationsForMethod.addAll(registrationsFromMethod);
+                                    LOGGER.log(DEBUG,
+                                               "Adding metric registrations for annotations "
+                                                       + "on method " + javaMethod
+                                                       .getDeclaringClass().getCanonicalName()
+                                                       + "." + javaMethod.getName()
+                                                       + ":" + registrationsFromMethod);
+
+
+                                    // Record registrations needed for this method based on
+                                    // type-level annotations.
+
+                                    var registrationsFromTypeLevelAnnotations =
+                                            typeLevelMetricAnnotationsOverTypeClosure.stream()
+                                                    .map(anno -> Registration.create(
+                                                            type,
+                                                            javaMethod,
+                                                            anno,
+                                                            true))
+                                            .collect(Collectors.toSet());
+
+                                    registrationsForMethod.addAll(registrationsFromTypeLevelAnnotations);
+                                    LOGGER.log(DEBUG,
+                                               "Adding metric registrations for type-level annotations"
+                                                       + registrationsFromTypeLevelAnnotations);
+                                }
+
+                            });
+                    registrations.put(type, registrationsByMethodForType);
+
                 });
-
-        registrations.put(type, registrationsByMethodForType);
-
     }
 
     private static Tag[] tags(Annotation metricAnnotation) {
@@ -382,13 +389,8 @@ public class RestClientMetricsCdiExtension implements Extension {
                 .toArray(Tag[]::new);
     }
 
-    private static boolean hasRestAnnotation(AnnotatedMethod<?> am) {
-        return am.getAnnotations().stream()
-                .anyMatch(anno -> REST_METHOD_ANNOTATIONS.contains(anno.annotationType()));
-    }
-
-    private static boolean hasRestAnnotation(Method m) {
-        return Arrays.stream(m.getAnnotations())
+    private static boolean hasRestAnnotation(Collection<Annotation> annotations) {
+        return annotations.stream()
                 .anyMatch(anno -> REST_METHOD_ANNOTATIONS.contains(anno.annotationType()));
     }
 
@@ -524,16 +526,6 @@ public class RestClientMetricsCdiExtension implements Extension {
                                                          mr -> mr.counter(metadata, tagsFromAnnotation));
                 default -> null;
             };
-        }
-
-        static Registration create(Class<?> declaringType,
-                                   AnnotatedMethod<?> method,
-                                   Annotation metricAnnotation,
-                                   boolean isTypeLevel) {
-            return create(declaringType,
-                          method.getJavaMember(),
-                          metricAnnotation,
-                          isTypeLevel);
         }
 
         @Override
