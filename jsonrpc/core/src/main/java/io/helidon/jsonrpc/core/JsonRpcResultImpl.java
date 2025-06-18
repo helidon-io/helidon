@@ -26,21 +26,11 @@ import jakarta.json.JsonValue;
 /**
  * An implementation of a JSON-RPC response result.
  */
-public class JsonRpcResultImpl implements JsonRpcResult {
+class JsonRpcResultImpl implements JsonRpcResult {
 
     private final JsonValue result;
 
-    /**
-     * Create an instance from a JSON value.
-     *
-     * @param result the value
-     * @return a new instance of this class
-     */
-    public static JsonRpcResultImpl create(JsonValue result) {
-        return new JsonRpcResultImpl(result);
-    }
-
-    private JsonRpcResultImpl(JsonValue result) {
+    JsonRpcResultImpl(JsonValue result) {
         this.result = Objects.requireNonNull(result);
     }
 
@@ -74,7 +64,7 @@ public class JsonRpcResultImpl implements JsonRpcResult {
     }
 
     @Override
-    public Optional<JsonValue> optionalGet(String name) {
+    public Optional<JsonValue> find(String name) {
         return Optional.ofNullable(asJsonObject().get(name));
     }
 
@@ -89,7 +79,7 @@ public class JsonRpcResultImpl implements JsonRpcResult {
     }
 
     @Override
-    public Optional<JsonValue> optionalGet(int index) {
+    public Optional<JsonValue> find(int index) {
         JsonArray array = asJsonArray();
         if (index >= 0 && index < array.size()) {
             return Optional.of(array.get(index));

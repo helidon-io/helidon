@@ -18,6 +18,7 @@ package io.helidon.jsonrpc.core;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.LazyValue;
@@ -25,6 +26,7 @@ import io.helidon.common.LazyValue;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -35,7 +37,10 @@ import jakarta.json.bind.JsonbBuilder;
  */
 public class JsonUtil {
 
-    private static final LazyValue<Jsonb> JSONB = LazyValue.create(JsonbBuilder::create);
+    private static final LazyValue<Jsonb> JSONB_BUILDER = LazyValue.create(JsonbBuilder::create);
+
+    private static final LazyValue<JsonReaderFactory> JSON_READER_FACTORY
+            = LazyValue.create(() -> Json.createReaderFactory(Map.of()));
 
     private JsonUtil() {
     }
@@ -48,9 +53,9 @@ public class JsonUtil {
      */
     public static JsonObject jsonbToJsonp(Object object) {
         Objects.requireNonNull(object, "json object is null");
-        String serialized = JSONB.get().toJson(object);
+        String serialized = JSONB_BUILDER.get().toJson(object);
         InputStream stream = new ByteArrayInputStream(serialized.getBytes(StandardCharsets.UTF_8));
-        try (JsonReader reader = Json.createReader(stream)) {
+        try (JsonReader reader = JSON_READER_FACTORY.get().createReader(stream)) {
             return reader.readValue().asJsonObject();
         }
     }
@@ -67,6 +72,6 @@ public class JsonUtil {
         Objects.requireNonNull(object, "json object is null");
         Objects.requireNonNull(type, "type is null");
         String serialized = object.toString();
-        return JSONB.get().fromJson(serialized, type);
+        return JSONB_BUILDER.get().fromJson(serialized, type);
     }
 }

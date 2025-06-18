@@ -15,7 +15,7 @@
  */
 
 /**
- * Helidon JSON-RPC core package.
+ * Helidon JSON-RPC core module.
  */
 module io.helidon.jsonrpc.core {
 

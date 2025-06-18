@@ -27,6 +27,10 @@
     <artifactId>helidon-webclient-jsonrpc</artifactId>
     <name>Helidon WebClient JSON-RPC</name>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -134,11 +138,6 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

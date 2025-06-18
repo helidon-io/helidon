@@ -16,9 +16,12 @@
 
 package io.helidon.jsonrpc.core;
 
+import java.util.Objects;
 import java.util.Optional;
 
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
 
 /**
@@ -50,6 +53,49 @@ public interface JsonRpcError {
      * Internal JSON-RPC error.
      */
     int INTERNAL_ERROR = -32603;
+
+    /**
+     * Create an instance from a JSON object.
+     *
+     * @param error the object
+     * @return a new instance of this class
+     */
+    static JsonRpcError create(JsonObject error) {
+        return new JsonRpcErrorImpl(error);
+    }
+
+    /**
+     * Create an instance from a code and a message.
+     *
+     * @param code    the error code
+     * @param message the message
+     * @return a new instance of this class
+     */
+    static JsonRpcError create(int code, String message) {
+        Objects.requireNonNull(message, "message is null");
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("code", code);
+        builder.add("message", message);
+        return new JsonRpcErrorImpl(builder.build());
+    }
+
+    /**
+     * Create an instance from a code, a message and data.
+     *
+     * @param code    the error code
+     * @param message the message
+     * @param data    the associated data
+     * @return a new instance of this class
+     */
+    static JsonRpcError create(int code, String message, JsonValue data) {
+        Objects.requireNonNull(message, "message is null");
+        Objects.requireNonNull(data, "data is null");
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("code", code);
+        builder.add("message", message);
+        builder.add("data", data);
+        return new JsonRpcErrorImpl(builder.build());
+    }
 
     /**
      * Get the code for this error.

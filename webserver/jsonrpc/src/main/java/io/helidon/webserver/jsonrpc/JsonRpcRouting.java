@@ -24,7 +24,6 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
-import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
@@ -48,19 +47,19 @@ import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
  */
 public class JsonRpcRouting implements Routing {
 
-    static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcErrorImpl.create(
+    static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcError.create(
             INVALID_REQUEST,
             "The JSON sent is not a valid Request object");
 
-    static final JsonRpcError METHOD_NOT_FOUND_ERROR = JsonRpcErrorImpl.create(
+    static final JsonRpcError METHOD_NOT_FOUND_ERROR = JsonRpcError.create(
             METHOD_NOT_FOUND,
             "The method does not exist or is not available");
 
-    static final JsonRpcError INTERNAL_ERROR_ERROR = JsonRpcErrorImpl.create(
+    static final JsonRpcError INTERNAL_ERROR_ERROR = JsonRpcError.create(
             INTERNAL_ERROR,
             "Internal JSON-RPC error");
 
-    static final JsonRpcError PARSE_ERROR_ERROR = JsonRpcErrorImpl.create(
+    static final JsonRpcError PARSE_ERROR_ERROR = JsonRpcError.create(
             PARSE_ERROR,
             "Invalid JSON was received by the server");
 

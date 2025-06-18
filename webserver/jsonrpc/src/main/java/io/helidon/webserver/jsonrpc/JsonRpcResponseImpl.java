@@ -26,7 +26,6 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
-import io.helidon.jsonrpc.core.JsonRpcErrorImpl;
 import io.helidon.jsonrpc.core.JsonUtil;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -67,7 +66,7 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
     @Override
     public JsonRpcResponse error(int code, String message) {
         Objects.requireNonNull(message, "message is null");
-        error = JsonRpcErrorImpl.create(code, message);
+        error = JsonRpcError.create(code, message);
         return this;
     }
 
@@ -75,7 +74,7 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
     public JsonRpcResponse error(int code, String message, JsonValue data) {
         Objects.requireNonNull(message, "message is null");
         Objects.requireNonNull(data, "data is null");
-        error = JsonRpcErrorImpl.create(code, message, data);
+        error = JsonRpcError.create(code, message, data);
         return this;
     }
 
