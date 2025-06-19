@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,10 +77,16 @@ class JacksonWriter<T> implements EntityWriter<T> {
 
     private void write(GenericType<T> type, T object, Writer out) {
         try {
+            // even though the javadoc claims they do not close the writer, it is actually closed
             writer(type).writeValue(out, object);
-            out.flush();
         } catch (IOException e) {
             throw new JacksonRuntimeException("Failed to serialize to JSON: " + type, e);
+        }
+
+        try {
+            out.flush();
+        } catch (IOException ignored) {
+            // ignore failure, the stream is most likely closed, so it was flushed
         }
     }
 
