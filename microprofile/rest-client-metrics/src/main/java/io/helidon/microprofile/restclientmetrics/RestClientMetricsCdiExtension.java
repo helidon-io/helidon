@@ -222,6 +222,11 @@ public class RestClientMetricsCdiExtension implements Extension {
         }
     }
 
+    /**
+     * Adds meter registrations for types that are REST clients but were not discovered by CDI processing ahead of time.
+     *
+     * @param type the Java type now known to be a REST client
+     */
     private void addRegistrations(Class<?> type) {
         this.<Class<?>, Method>addRegistrations(type,
                               typeClosure(type),
@@ -232,9 +237,15 @@ public class RestClientMetricsCdiExtension implements Extension {
                               (Class<?> c) -> List.of(c.getMethods()),
                               (Method m) -> List.of(m.getAnnotations())
                               );
-
     }
 
+    /**
+     * Adds meter registrations for types recognized as REST clients which were discovered by CDI observer methods.
+     *
+     * @param abd the {@link jakarta.enterprise.inject.spi.AfterBeanDiscovery} object that knows about all discovered types
+     * @param type the Java type corresponding to the {@link jakarta.enterprise.inject.spi.AnnotatedType} discovered to be a
+     *             REST client by virtual of annotations
+     */
     private void addRegistrations(AfterBeanDiscovery abd, Class<?> type) {
 
         // Earlier we collected all interfaces with REST annotations. For each of the types in its closure:
