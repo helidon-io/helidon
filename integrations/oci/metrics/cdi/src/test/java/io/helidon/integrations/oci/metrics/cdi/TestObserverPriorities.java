@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Arrays;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
-import com.oracle.bmc.monitoring.Monitoring;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -39,7 +38,7 @@ class TestObserverPriorities {
         Method ourObserverMethod = OciMetricsBean.class.getDeclaredMethod("registerOciMetrics",
                                                                           Object.class,
                                                                           Config.class,
-                                                                          Monitoring.class);
+                                                                          BeanManager.class);
         Class<?> metricsCdiExtension = Class.forName("io.helidon.microprofile.metrics.MetricsCdiExtension");
         Method metricsCdiExtensionRegisteringMethod = metricsCdiExtension.getDeclaredMethod("registerService",
                                                                                                   Object.class,

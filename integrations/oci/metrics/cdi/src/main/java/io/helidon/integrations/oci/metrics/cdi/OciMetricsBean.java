@@ -66,7 +66,8 @@ public class OciMetricsBean extends OciMetricsSupportFactory {
 
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Config rootConfig, BeanManager beanManager) {
+                            Config rootConfig,
+                            BeanManager beanManager) {
 
         var instance = beanManager.createInstance().select(Monitoring.class);
         if (instance.isUnsatisfied()) {
