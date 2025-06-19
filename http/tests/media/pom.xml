@@ -34,5 +34,6 @@
         <module>jsonb</module>
         <module>jsonp</module>
         <module>multipart</module>
+        <module>jackson</module>
     </modules>
 </project>
