@@ -232,6 +232,11 @@ public final class TypeArgument extends Type implements TypeName {
     }
 
     @Override
+    public Optional<TypeName> componentType() {
+        return Optional.empty();
+    }
+
+    @Override
     public String toString() {
         if (bounds.isEmpty()) {
             return "Token: " + token.className();
