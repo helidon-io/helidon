@@ -458,9 +458,9 @@ class TypeNameTest {
         assertThat(primitiveTypeName.className(), equalTo("boolean"));
 
         TypeName objTypeName = TypeName.builder().type(Boolean[].class).build();
-        assertThat(primitiveTypeName.name(), equalTo("boolean"));
-        assertThat(primitiveTypeName.resolvedName(), equalTo("boolean[]"));
-        assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
+        assertThat(objTypeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(objTypeName.resolvedName(), equalTo("java.lang.Boolean[]"));
+        assertThat(objTypeName.declaredName(), equalTo("java.lang.Boolean[]"));
         assertThat(objTypeName.generic(), is(false));
         assertThat(objTypeName.array(), is(true));
         assertThat(objTypeName.primitive(), is(false));
@@ -556,6 +556,47 @@ class TypeNameTest {
         assertThat(t.className(), is("BuilderBase"));
         assertThat(t.enclosingNames(), hasItems("ServiceRegistryConfig"));
         assertThat(t.typeArguments(), hasItems(TypeNames.WILDCARD, TypeNames.WILDCARD));
+    }
+    
+    @Test
+    void testMultipleDimensionArray() {
+        TypeName typeName = TypeName.create(Boolean[][][].class);
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
+    }
+
+    @Test
+    void testMultipleDimensionArrayFromString() {
+        TypeName typeName = TypeName.create("java.lang.Boolean[][][]");
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.vararg(), is(false));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
+
+        typeName = TypeName.create("java.lang.Boolean[][]...");
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][]..."));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.vararg(), is(true));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
     }
 
     private static Stream<EqualsData> equalsAndCompareSource() {

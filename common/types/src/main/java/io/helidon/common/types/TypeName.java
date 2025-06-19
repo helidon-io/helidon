@@ -142,6 +142,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private boolean wildcard = false;
         private String className;
         private String packageName = "";
+        private TypeName componentType;
 
         /**
          * Protected to support extensibility.
@@ -183,6 +184,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 upperBounds.clear();
             }
             addUpperBounds(prototype.upperBounds());
+            componentType(prototype.componentType());
             return self();
         }
 
@@ -240,6 +242,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 upperBounds.clear();
                 addUpperBounds(builder.upperBounds);
             }
+            builder.componentType().ifPresent(this::componentType);
             return self();
         }
 
@@ -331,7 +334,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isPrimitive()}.
+         * Functions similar to {@link Class#isPrimitive()}.
          *
          * @param primitive true if this type represents a primitive type
          * @return updated builder instance
@@ -649,6 +652,45 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Clear the existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER clearComponentType() {
+            this.componentType = null;
+            return self();
+        }
+
+        /**
+         * Component type of array.
+         *
+         * @param componentType component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER componentType(TypeName componentType) {
+            Objects.requireNonNull(componentType);
+            this.componentType = componentType;
+            return self();
+        }
+
+        /**
+         * Component type of array.
+         *
+         * @param consumer component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER componentType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.componentType(builder.build());
+            return self();
+        }
+
+        /**
          * Functions the same as {@link Class#getPackageName()}.
          *
          * @return the package name
@@ -678,7 +720,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isPrimitive()}.
+         * Functions similar to {@link Class#isPrimitive()}.
          *
          * @return the primitive
          */
@@ -778,6 +820,15 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Component type of array.
+         *
+         * @return the component type
+         */
+        public Optional<TypeName> componentType() {
+            return Optional.ofNullable(componentType);
+        }
+
+        /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
@@ -796,6 +847,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Component type of array.
+         *
+         * @param componentType component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        BUILDER componentType(Optional<? extends TypeName> componentType) {
+            Objects.requireNonNull(componentType);
+            this.componentType = componentType.map(TypeName.class::cast).orElse(this.componentType);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypeNameImpl implements TypeName {
@@ -810,6 +874,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final List<TypeName> upperBounds;
             private final List<String> enclosingNames;
             private final List<String> typeParameters;
+            private final Optional<TypeName> componentType;
             private final String className;
             private final String packageName;
 
@@ -831,6 +896,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.typeParameters = List.copyOf(builder.typeParameters());
                 this.lowerBounds = List.copyOf(builder.lowerBounds());
                 this.upperBounds = List.copyOf(builder.upperBounds());
+                this.componentType = builder.componentType();
             }
 
             @Override
@@ -861,6 +927,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public String fqName() {
                 return TypeNameSupport.fqName(this);
+            }
+
+            @Override
+            public String declaredName() {
+                return TypeNameSupport.declaredName(this);
             }
 
             @Override
@@ -926,6 +997,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public List<TypeName> upperBounds() {
                 return upperBounds;
+            }
+
+            @Override
+            public Optional<TypeName> componentType() {
+                return componentType;
             }
 
             @Override

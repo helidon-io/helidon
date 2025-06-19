@@ -139,7 +139,18 @@ final class TypeNameSupport {
         String name = calcName(instance, ".");
         StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
         if (instance.array()) {
-            nameBuilder.append("[]");
+            addArrayBrackets(instance, nameBuilder, false);
+        }
+        return nameBuilder.toString();
+    }
+
+    @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
+    static String declaredName(TypeName instance) {
+        String name = name(instance);
+        StringBuilder nameBuilder = new StringBuilder(name);
+        if (instance.array()) {
+            addArrayBrackets(instance, nameBuilder, false);
         }
         return nameBuilder.toString();
     }
@@ -254,6 +265,20 @@ final class TypeNameSupport {
                         .wildcard(true)
                         .build();
             }
+        }
+        if (typeName.endsWith("[]")) {
+            TypeName componentType = create(typeName.substring(0, typeName.length() - 2));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .build();
+        } else if (typeName.endsWith("...")) {
+            TypeName componentType = create(typeName.substring(0, typeName.length() - 3));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .vararg(true)
+                    .build();
         }
 
         // handle primitives from their names
@@ -413,22 +438,48 @@ final class TypeNameSupport {
         }
 
         if (instance.array()) {
-            if (instance.vararg()) {
-                nameBuilder.append("...");
-            } else {
-                nameBuilder.append("[]");
-            }
+            addArrayBrackets(instance, nameBuilder, true);
         }
 
         return nameBuilder.toString();
+    }
+
+    private static void addArrayBrackets(TypeName target, StringBuilder nameBuilder, boolean allowVarArgs) {
+        Optional<TypeName> componentType = target.componentType();
+        while (componentType.isPresent()) {
+            TypeName current = componentType.get();
+            if (current.array()) {
+                nameBuilder.append("[]");
+                componentType = current.componentType();
+            } else {
+                break;
+            }
+        }
+        if (allowVarArgs && target.vararg()) {
+            nameBuilder.append("...");
+        } else if (target.array()) {
+            nameBuilder.append("[]");
+        }
     }
 
     private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
         builder.className(componentType.getSimpleName());
-        builder.primitive(componentType.isPrimitive());
         builder.array(classType.isArray());
+
+        if (classType.isArray()) {
+            TypeName componentTypeName = TypeName.create(componentType);
+            builder.componentType(componentTypeName);
+            while (componentType.isArray()) {
+                //Search for a top most type of the array
+                //Example: boolean[][][] -> boolean
+                componentType = componentType.getComponentType();
+            }
+            builder.primitive(componentType.isPrimitive());
+        } else {
+            builder.primitive(componentType.isPrimitive());
+        }
 
         Class<?> enclosingClass = classType.getEnclosingClass();
         LinkedList<String> enclosingTypes = new LinkedList<>();
@@ -455,6 +506,7 @@ final class TypeNameSupport {
         @Override
         public void decorate(TypeName.BuilderBase<?, ?> target) {
             fixWildcards(target);
+            removeArrayAndVarArg(target);
         }
 
         private void fixWildcards(TypeName.BuilderBase<?, ?> target) {
@@ -482,6 +534,14 @@ final class TypeNameSupport {
                 }
                 target.generic(true);
             }
+        }
+
+        private void removeArrayAndVarArg(TypeName.BuilderBase<?, ?> target) {
+            target.className()
+                    //Strip all [] from the class name
+                    .map(name -> name.replaceAll("\\[]", ""))
+                    .map(name -> name.replaceAll("\\.\\.\\.", ""))
+                    .ifPresent(target::className);
         }
     }
 }
