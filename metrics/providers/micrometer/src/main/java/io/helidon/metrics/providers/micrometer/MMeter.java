@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import io.micrometer.core.instrument.Timer;
  * Adapter to Micrometer meter for Helidon metrics.
  */
 class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
-
-    private static final String DEFAULT_SCOPE = "application";
 
     private final M delegate;
     private final Meter.Id id;
@@ -277,51 +275,6 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
     }
 
-    static class Id implements Meter.Id {
-
-        private final io.micrometer.core.instrument.Meter.Id delegate;
-
-        private Id(io.micrometer.core.instrument.Meter.Id delegate) {
-            this.delegate = delegate;
-        }
-
-        static Id create(io.micrometer.core.instrument.Meter.Id id) {
-            return new Id(id);
-        }
-
-        @Override
-        public String name() {
-            return delegate.getName();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("ID[name=%s,tagsMap=[%s]]", delegate.getName(), delegate.getTags());
-        }
-
-        @Override
-        public Iterable<Tag> tags() {
-            return MTag.neutralTags(delegate.getTags());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Id id = (Id) o;
-            return Objects.equals(delegate, id.delegate);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(delegate);
-        }
-    }
-
     static class PlainId implements Meter.Id {
 
         private final String name;
@@ -383,8 +336,5 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return Objects.hash(name, tags);
         }
 
-        private static Tag tag(io.micrometer.core.instrument.Tag tag) {
-            return Tag.create(tag.getKey(), tag.getValue());
-        }
     }
 }
