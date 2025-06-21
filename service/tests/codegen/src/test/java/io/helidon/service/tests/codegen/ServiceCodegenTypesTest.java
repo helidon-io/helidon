@@ -66,6 +66,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressWarnings("deprecation")
 class ServiceCodegenTypesTest {
     @SuppressWarnings("removal")
     @Test
@@ -115,6 +116,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PER_LOOKUP", Service.PerLookup.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PER_INSTANCE", Service.PerInstance.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_RUN_LEVEL", Service.RunLevel.class);
+        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_ENTRY_POINT", Service.EntryPoint.class);
         checkField(toCheck, checked, fields, "SERVICE_INJECTION_POINT_FACTORY", Service.InjectionPointFactory.class);
         checkField(toCheck, checked, fields, "SERVICE_SCOPE_HANDLER", Service.ScopeHandler.class);
         checkField(toCheck, checked, fields, "SERVICE_SERVICES_FACTORY", Service.ServicesFactory.class);
