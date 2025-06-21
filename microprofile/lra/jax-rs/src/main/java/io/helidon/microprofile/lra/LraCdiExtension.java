@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +70,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
@@ -94,7 +96,8 @@ public class LraCdiExtension implements Extension {
 
     private final Set<Class<?>> beanTypesWithCdiLRAMethods = new HashSet<>();
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
-    private final Indexer indexer;
+    // Do not clear indexes. #index requires a strong reference to these.
+    private final List<IndexView> indexes = new LinkedList<>();
     private final ClassLoader classLoader;
     private IndexView index;
 
@@ -103,7 +106,6 @@ public class LraCdiExtension implements Extension {
      * Initialize MicroProfile Long Running Actions CDI extension.
      */
     public LraCdiExtension() {
-        indexer = new Indexer();
         classLoader = Thread.currentThread().getContextClassLoader();
         // Needs to be always indexed
         Set.of(LRA.class,
@@ -119,7 +121,9 @@ public class LraCdiExtension implements Extension {
         try {
             indexFiles = findIndexFiles("META-INF/jandex.idx");
             if (!indexFiles.isEmpty()) {
-                index = CompositeIndex.create(indexer.complete(), existingIndexFileReader(indexFiles));
+                indexes.add(existingIndexFileReader(indexFiles));
+                index = CompositeIndex.create(indexes);
+                logIndexedClasses(index);
             } else {
                 index = null;
             }
@@ -137,7 +141,8 @@ public class LraCdiExtension implements Extension {
                     LRA.class,
                     AfterLRA.class, Compensate.class, Complete.class, Forget.class, Status.class
             }) ProcessAnnotatedType<?> pat) {
-        // compile time bilt index
+        // compile time built index
+        // If META-INF/jandex.idx exists we don't explore more
         if (index != null) return;
         // create runtime index when pre-built index is not available
         runtimeIndex(DotName.createSimple(pat.getAnnotatedType().getJavaClass().getName()));
@@ -227,7 +232,8 @@ public class LraCdiExtension implements Extension {
 
         if (index == null) {
             // compile time built index
-            index = indexer.complete();
+            index = CompositeIndex.create(indexes);
+            logIndexedClasses(index);
         }
 
         // ------------- Validate LRA participant methods -------------
@@ -255,13 +261,16 @@ public class LraCdiExtension implements Extension {
     void runtimeIndex(DotName fqdn) {
         if (fqdn == null) return;
         LOGGER.fine("Indexing " + fqdn);
-        ClassInfo classInfo;
         try {
-            classInfo = indexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
+            Indexer newIndexer = new Indexer();
+            newIndexer.index(classLoader.getResourceAsStream(fqdn.toString().replace('.', '/') + ".class"));
+            Index index = newIndexer.complete();
+            indexes.add(index);
+            ClassInfo classInfo = index.getClassByName(fqdn);
             // look also for extended classes
             runtimeIndex(classInfo.superName());
             // and implemented interfaces
-            classInfo.interfaceNames().forEach(this::runtimeIndex);
+            classInfo.interfaceNames().forEach(dotName -> runtimeIndex(dotName));
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Unable to index referenced class.", e);
         }
@@ -312,5 +321,14 @@ public class LraCdiExtension implements Extension {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return (T) instance;
+    }
+
+    private void logIndexedClasses(IndexView index) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine(index.getKnownClasses().size() + " indexed classes.");
+            index.getKnownClasses().forEach(classInfo -> {
+                LOGGER.fine("Indexed class - " + classInfo.name().toString());
+            });
+        }
     }
 }
