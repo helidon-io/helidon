@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.microprofile.restclientmetrics;
 
 import java.lang.reflect.Method;
+
+import io.helidon.common.LazyValue;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.spi.CDI;
@@ -40,10 +42,17 @@ class RestClientMetricsFilter implements ClientRequestFilter, ClientResponseFilt
 
     private static final String INVOKED_METHOD = "org.eclipse.microprofile.rest.client.invokedMethod";
 
-    private final RestClientMetricsCdiExtension ext;
+    /*
+    In some cases, the system will invoke REST client filters before CDI has completed its startup. The REST client metrics
+     CDI extension registers the meters to be updated for each REST client method, so this filter has nothing to do if
+     it runs before CDI has initialized the extension. That said, it needs to keep retrying to locate the CDI extension
+     because the extension might (should) become available later. The code below uses a utility method to access this
+     lazy value to allow that retry behavior.
+     */
+    private final LazyValue<RestClientMetricsCdiExtension> ext =
+            LazyValue.create(() -> CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class));;
 
     private RestClientMetricsFilter() {
-        ext = CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class);
     }
 
     static RestClientMetricsFilter create() {
@@ -54,7 +63,7 @@ class RestClientMetricsFilter implements ClientRequestFilter, ClientResponseFilt
     public void filter(ClientRequestContext requestContext) {
         Method javaMethod = (Method) requestContext.getProperty(INVOKED_METHOD);
         if (javaMethod != null) {
-            ext.doPreWork(javaMethod, requestContext);
+            Utils.optOf(ext).ifPresent(e -> e.doPreWork(javaMethod, requestContext));
         }
     }
 
@@ -62,7 +71,7 @@ class RestClientMetricsFilter implements ClientRequestFilter, ClientResponseFilt
     public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) {
         Method javaMethod = (Method) requestContext.getProperty(INVOKED_METHOD);
         if (javaMethod != null) {
-            ext.doPostWork(javaMethod, requestContext);
+            Utils.optOf(ext).ifPresent(e -> e.doPostWork(javaMethod, requestContext));
         }
     }
 }

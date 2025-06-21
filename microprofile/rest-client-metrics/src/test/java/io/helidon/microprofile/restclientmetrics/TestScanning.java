@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.inject.spi.CDI;
@@ -38,6 +38,7 @@ import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,8 @@ import static org.hamcrest.Matchers.nullValue;
 @HelidonTest
 @AddBean(TestScanning.ServiceClient.class)
 @AddBean(TestScanning.ServiceClientParent.class)
+@AddBean(TestScanning.ExplicitlyRegisteredServiceClientWithOnlyInheritedRestMethods.class)
+@AddBean(TestScanning.ServiceClientWithPathAndWithOnlyInheritedRestMethods.class)
 @AddBean(TestService.class)
 class TestScanning {
 
@@ -67,6 +70,13 @@ class TestScanning {
         serviceClient = RestClientBuilder.newBuilder()
                 .baseUri(webTarget.getUri())
                 .build(ServiceClient.class);
+        RestClientBuilder.newBuilder()
+                .baseUri(webTarget.getUri())
+                .build(ExplicitlyRegisteredServiceClientWithOnlyInheritedRestMethods.class);
+        RestClientBuilder.newBuilder()
+                .baseUri(webTarget.getUri())
+                .build(ServiceClientWithPathAndWithOnlyInheritedRestMethods.class);
+
     }
 
     @Test
@@ -246,6 +256,21 @@ class TestScanning {
                    notNullValue());
     }
 
+    @Test
+    void checkInheritanceOnlyRestClient() {
+        var inheritanceOnlyRestClient = RestClientBuilder.newBuilder()
+                .baseUri(webTarget.getUri())
+                .build(ServiceClientWithOnlyInheritedRestClientAnnotations.class);
+
+        MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class).get();
+
+        // parentGet method
+        Timer parentGetMethodTimer = metricRegistry.getTimer(new MetricID(JustInTimeParent.class.getCanonicalName()
+                                                                          + ".parentGet"));
+        assertThat("Relative automatically named timer for inherited parentGet method", parentGetMethodTimer, notNullValue());
+
+    }
+
     @Timed(name = "parentLevelRel")
     @Counted(name = "parentLevelAbs", absolute = true)
     interface ServiceClientParent {
@@ -294,6 +319,31 @@ class TestScanning {
         @HEAD
         @Path("/unannotatedRestMethod")
         void unannotatedRestMethod();
+    }
+
+    // Make sure REST client metrics properly handles an explicitly-registered interface with only inherited REST methods.
+    @RegisterRestClient
+    interface ExplicitlyRegisteredServiceClientWithOnlyInheritedRestMethods extends ServiceClientParent {
+    }
+
+    // Make sure REST client metrics properly handles an interface with only @Path and only inherited REST methods.
+    @Path("/restClientWithPathButNoneOfItsOwnRestMethods")
+    interface ServiceClientWithPathAndWithOnlyInheritedRestMethods extends ServiceClientParent {
+    }
+
+    // Parent to interface with none of its own REST client-related annotations.
+    @Counted(name = "typeLevelRel")
+    @Timed(name = "typeLevelAbs", absolute = true)
+    interface JustInTimeParent {
+
+        @Timed
+        @GET
+        @Path("/parentGet")
+        String parentGet();
+    }
+
+    // Interface with REST client-related annotations only through inheritance. Discovered only upon explicit use.
+    interface ServiceClientWithOnlyInheritedRestClientAnnotations extends JustInTimeParent {
     }
 
     private record TimerInfo(Timer timer, MetricID metricId, long beforeCount) {
