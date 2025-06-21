@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,21 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonbSupport implements MediaSupport {
     private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
+    private static final String DEFAULT_JSON_B_NAME = "jsonb";
 
     private static final Jsonb JSON_B = JsonbBuilder.create();
 
-    private final JsonbReader reader = new JsonbReader(JSON_B);
-    private final JsonbWriter writer = new JsonbWriter(JSON_B);
+    private final JsonbReader reader;
+    private final JsonbWriter writer;
 
     private final String name;
 
-    private JsonbSupport(String name) {
+    private JsonbSupport(JsonbReader reader, JsonbWriter writer, String name) {
+        this.reader = reader;
+        this.writer = writer;
         this.name = name;
     }
 
@@ -59,7 +63,7 @@ public class JsonbSupport implements MediaSupport {
      * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
-        return create(config, "jsonb");
+        return create(config, DEFAULT_JSON_B_NAME);
     }
 
     /**
@@ -74,7 +78,34 @@ public class JsonbSupport implements MediaSupport {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
 
-        return new JsonbSupport(name);
+        return create(JSON_B, name);
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param jsonb must not be {@code null}
+     * @return a new {@link JsonbSupport}
+     */
+    public static MediaSupport create(Jsonb jsonb) {
+        return create(jsonb, DEFAULT_JSON_B_NAME);
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param jsonb must not be {@code null}
+     * @param name name of the jsonb support to create
+     *
+     * @return a new {@link JsonbSupport}
+     */
+    public static MediaSupport create(Jsonb jsonb, String name) {
+        Objects.requireNonNull(jsonb);
+        Objects.requireNonNull(name);
+
+        JsonbReader reader = new JsonbReader(jsonb);
+        JsonbWriter writer = new JsonbWriter(jsonb);
+        return new JsonbSupport(reader, writer, name);
     }
 
     @Override
