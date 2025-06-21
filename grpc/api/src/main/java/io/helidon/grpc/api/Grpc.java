@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,19 @@ public interface Grpc {
          * @return the service version
          */
         int version() default 0;
+    }
+
+    /**
+     * An annotation to mark a method as returning a proto file description
+     * used by the gRPC reflection service. Annotated method must return
+     * {@code com.google.protobuf.Descriptors.FileDescriptor} and expect
+     * no parameters.
+     */
+    @Target({ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Inherited
+    @interface Proto {
     }
 
     /**

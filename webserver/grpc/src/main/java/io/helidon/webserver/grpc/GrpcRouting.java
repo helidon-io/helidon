@@ -197,8 +197,10 @@ public class GrpcRouting implements Routing {
                 routeInterceptors.merge(serviceInterceptors);
                 routeInterceptors.merge(interceptors);
             } else {
-                routeInterceptors = interceptors;
+                routeInterceptors = interceptors.copyMe();
             }
+            // always add a context setting interceptor
+            routeInterceptors.add(ContextSettingServerInterceptor.create());
 
             routes.add(GrpcServiceRoute.create(service, routeInterceptors));
             return this;

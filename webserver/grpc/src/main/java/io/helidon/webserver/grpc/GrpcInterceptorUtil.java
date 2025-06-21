@@ -35,9 +35,6 @@ class GrpcInterceptorUtil {
     static <ReqT, RespT> ServerCallHandler<ReqT, RespT> interceptHandler(ServerCallHandler<ReqT, RespT> handler,
                                                                          WeightedBag<ServerInterceptor> interceptors,
                                                                          GrpcServiceDescriptor serviceDescriptor) {
-        // always add a context setting interceptor
-        interceptors.add(ContextSettingServerInterceptor.create());
-
         // remove duplicates and set proper ordering
         for (ServerInterceptor interceptor : interceptors.stream()
                 .distinct()
@@ -45,7 +42,6 @@ class GrpcInterceptorUtil {
                 .reversed()) {
             handler = new InterceptingCallHandler<>(serviceDescriptor, interceptor, handler);
         }
-
         return handler;
     }
 
@@ -61,14 +57,14 @@ class GrpcInterceptorUtil {
      * @param <RespT> the response type
      */
     static final class InterceptingCallHandler<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
-        private final GrpcServiceDescriptor serviceDefinition;
+        private final GrpcServiceDescriptor serviceDescriptor;
         private final ServerInterceptor interceptor;
         private final ServerCallHandler<ReqT, RespT> callHandler;
 
-        private InterceptingCallHandler(GrpcServiceDescriptor serviceDefinition,
+        private InterceptingCallHandler(GrpcServiceDescriptor serviceDescriptor,
                                         ServerInterceptor interceptor,
                                         ServerCallHandler<ReqT, RespT> callHandler) {
-            this.serviceDefinition = serviceDefinition;
+            this.serviceDescriptor = serviceDescriptor;
             this.interceptor = interceptor;
             this.callHandler = callHandler;
         }
@@ -77,8 +73,8 @@ class GrpcInterceptorUtil {
         public ServerCall.Listener<ReqT> startCall(
                 ServerCall<ReqT, RespT> call,
                 Metadata headers) {
-            if (serviceDefinition != null && interceptor instanceof GrpcServiceDescriptor.Aware aware) {
-                aware.setServiceDescriptor(serviceDefinition);
+            if (serviceDescriptor != null && interceptor instanceof GrpcServiceDescriptor.Aware aware) {
+                aware.setServiceDescriptor(serviceDescriptor);
             }
             return interceptor.interceptCall(call, headers, callHandler);
         }

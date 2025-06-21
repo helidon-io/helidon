@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
+import com.google.protobuf.Descriptors;
 import io.grpc.ServerInterceptor;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -126,6 +128,24 @@ public class GrpcServiceBuilder
 
         GrpcServiceDescriptor.Builder builder = GrpcServiceDescriptor.builder(serviceClass(), name)
                 .marshallerSupplier(getMarshallerSupplier());
+
+        // find protobuf file descriptor if available, used for gRPC reflection
+        Optional<AnnotatedMethod> protoMethod = methodList
+                .filter(am -> am.isAnnotationPresent(Grpc.Proto.class))
+                .hasParameterCount(0)
+                .hasReturnType(Descriptors.FileDescriptor.class)
+                .stream()
+                .findFirst();
+        protoMethod.ifPresent(am -> {
+            try {
+                // invoke proto method
+                Descriptors.FileDescriptor proto = (Descriptors.FileDescriptor)
+                        am.method().invoke(instanceSupplier().get());
+                builder.proto(proto);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to access protobuf file descriptor.", e);
+            }
+        });
 
         addServiceMethods(builder, methodList, beanManager);
         configureServiceInterceptors(builder, beanManager);
