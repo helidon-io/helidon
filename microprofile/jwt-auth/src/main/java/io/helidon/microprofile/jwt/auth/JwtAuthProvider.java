@@ -309,7 +309,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                         } else {
-                            return AuthenticationResponse.failed(errors.toString());
+                            return AuthenticationResponse.failed(validate.toString());
                         }
                     } else {
                         return AuthenticationResponse.failed(errors.toString());
