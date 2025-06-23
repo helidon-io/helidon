@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.Metadata;
@@ -46,12 +48,8 @@ class GrpcInterceptorUtil {
     }
 
     /**
-     * A {@link ServerCallHandler} that wraps a {@link ServerCallHandler} with
-     * a {@link ServerInterceptor}.
-     * <p>
-     * If the wrapped {@link ServerInterceptor} implements {@link GrpcServiceDescriptor.Aware}
-     * then the {@link GrpcServiceDescriptor.Aware#setServiceDescriptor(GrpcServiceDescriptor)}
-     * method will be called before interception.
+     * A server call handler that sets a Helidon context and, if available, the
+     * current service descriptor in it before calling the next interceptor.
      *
      * @param <ReqT>  the request type
      * @param <RespT> the response type
@@ -73,10 +71,11 @@ class GrpcInterceptorUtil {
         public ServerCall.Listener<ReqT> startCall(
                 ServerCall<ReqT, RespT> call,
                 Metadata headers) {
-            if (serviceDescriptor != null && interceptor instanceof GrpcServiceDescriptor.Aware aware) {
-                aware.setServiceDescriptor(serviceDescriptor);
+            Context context = Contexts.context().orElse(Context.create());
+            if (serviceDescriptor != null) {
+                context.register(GrpcServiceDescriptor.class, serviceDescriptor);
             }
-            return interceptor.interceptCall(call, headers, callHandler);
+            return Contexts.runInContext(context, () -> interceptor.interceptCall(call, headers, callHandler));
         }
     }
 }
