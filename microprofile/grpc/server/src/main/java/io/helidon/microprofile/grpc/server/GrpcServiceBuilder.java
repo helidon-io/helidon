@@ -17,6 +17,8 @@
 package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,7 +62,7 @@ public class GrpcServiceBuilder
     private final BeanManager beanManager;
 
     /**
-     * Create a new introspection modeller for a given gRPC service class.
+     * Create a new introspection modeler for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instanceSupplier the target instanceSupplier to call gRPC handler methods on
@@ -132,18 +134,27 @@ public class GrpcServiceBuilder
         // find protobuf file descriptor if available, used for gRPC reflection
         Optional<AnnotatedMethod> protoMethod = methodList
                 .filter(am -> am.isAnnotationPresent(Grpc.Proto.class))
-                .hasParameterCount(0)
-                .hasReturnType(Descriptors.FileDescriptor.class)
                 .stream()
                 .findFirst();
         protoMethod.ifPresent(am -> {
+            // check that method signature is valid
+            Method method = am.method();
+            int mods = method.getModifiers();
+            if (Modifier.isStatic(mods)
+                    || !Modifier.isPublic(mods)
+                    || am.returnType() != Descriptors.FileDescriptor.class
+                    || method.getParameterCount() > 0) {
+                throw new IllegalArgumentException("Method annotated with @Grpc.Proto must be public, "
+                        + "non-static, return MethodDescriptor and have no args");
+            }
+
+            // invoke proto method
             try {
-                // invoke proto method
                 Descriptors.FileDescriptor proto = (Descriptors.FileDescriptor)
-                        am.method().invoke(instanceSupplier().get());
+                        method.invoke(instanceSupplier().get());
                 builder.proto(proto);
             } catch (Exception e) {
-                throw new RuntimeException("Unable to access protobuf file descriptor.", e);
+                throw new IllegalStateException("Unable to access protobuf file descriptor", e);
             }
         });
 
