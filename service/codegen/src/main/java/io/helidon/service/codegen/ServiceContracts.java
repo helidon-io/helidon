@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,14 @@ public class ServiceContracts {
         // it is implemented
         TypeInfo typeInfo = implementedFactory.get();
         TypeName contract = resolveOptional(typeInfo, requiredTypeArgument(typeInfo), factoryInterface);
+
+        if (contract.packageName().isEmpty()) {
+            // we implement a factory of a generated type, "guess" the package
+            contract = TypeName.builder(contract)
+                    .packageName(serviceInfo.typeName().packageName())
+                    .build();
+        }
+
         Set<ResolvedType> contracts = new HashSet<>();
         contracts.add(ResolvedType.create(contract));
 
@@ -186,7 +194,7 @@ public class ServiceContracts {
                      new HashSet<>(),
                      contractInfo);
         return FactoryAnalysis.create(typeInfo.typeName(),
-                                      contract,
+                                      contractInfo.typeName(),
                                       contractInfo,
                                       contracts);
     }
