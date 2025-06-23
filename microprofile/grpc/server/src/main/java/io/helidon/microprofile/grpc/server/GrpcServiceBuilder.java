@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,6 +42,7 @@ import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
+import com.google.protobuf.Descriptors;
 import io.grpc.ServerInterceptor;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -58,7 +62,7 @@ public class GrpcServiceBuilder
     private final BeanManager beanManager;
 
     /**
-     * Create a new introspection modeller for a given gRPC service class.
+     * Create a new introspection modeler for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
      * @param instanceSupplier the target instanceSupplier to call gRPC handler methods on
@@ -126,6 +130,33 @@ public class GrpcServiceBuilder
 
         GrpcServiceDescriptor.Builder builder = GrpcServiceDescriptor.builder(serviceClass(), name)
                 .marshallerSupplier(getMarshallerSupplier());
+
+        // find protobuf file descriptor if available, used for gRPC reflection
+        Optional<AnnotatedMethod> protoMethod = methodList
+                .filter(am -> am.isAnnotationPresent(Grpc.Proto.class))
+                .stream()
+                .findFirst();
+        protoMethod.ifPresent(am -> {
+            // check that method signature is valid
+            Method method = am.method();
+            int mods = method.getModifiers();
+            if (Modifier.isStatic(mods)
+                    || !Modifier.isPublic(mods)
+                    || am.returnType() != Descriptors.FileDescriptor.class
+                    || method.getParameterCount() > 0) {
+                throw new IllegalArgumentException("Method annotated with @Grpc.Proto must be public, "
+                        + "non-static, return MethodDescriptor and have no args");
+            }
+
+            // invoke proto method
+            try {
+                Descriptors.FileDescriptor proto = (Descriptors.FileDescriptor)
+                        method.invoke(instanceSupplier().get());
+                builder.proto(proto);
+            } catch (Exception e) {
+                throw new IllegalStateException("Unable to access protobuf file descriptor", e);
+            }
+        });
 
         addServiceMethods(builder, methodList, beanManager);
         configureServiceInterceptors(builder, beanManager);

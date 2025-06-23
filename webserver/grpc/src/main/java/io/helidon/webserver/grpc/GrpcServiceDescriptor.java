@@ -437,7 +437,11 @@ public class GrpcServiceDescriptor {
      * Allows users to specify that they would like to have access to a
      * {@link GrpcServiceDescriptor} within their {@link io.grpc.ServerInterceptor}
      * implementation.
+     *
+     * @deprecated Use the Helidon context to pass a descriptor instead
+     * @see ContextSettingServerInterceptor
      */
+    @Deprecated(since = "4.3.0", forRemoval = true)
     public interface Aware {
         /**
          * Set service descriptor.

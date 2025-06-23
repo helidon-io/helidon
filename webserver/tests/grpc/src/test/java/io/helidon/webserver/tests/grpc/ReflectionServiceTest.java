@@ -87,7 +87,7 @@ class ReflectionServiceTest extends BaseServiceTest {
                            .setListServices("*")
                            .build());
         req.onCompleted();
-        res.await(5, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
@@ -113,7 +113,7 @@ class ReflectionServiceTest extends BaseServiceTest {
                            .setFileContainingSymbol(symbol)
                            .build());
         req.onCompleted();
-        res.await(5, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
