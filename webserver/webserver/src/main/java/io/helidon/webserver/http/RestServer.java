@@ -23,16 +23,14 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Optional;
 
-import io.helidon.http.HeaderName;
 import io.helidon.service.registry.Service;
 
 /**
  * APIs to define a declarative server endpoint.
  *
  * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
+ *         and full removal. We welcome feedback for incubating features.
  */
 @Deprecated
 public final class RestServer {
@@ -101,11 +99,12 @@ public final class RestServer {
         String name();
 
         /**
-         * A producer type, must be a {@link io.helidon.service.registry.ServiceRegistry} service.
+         * A named producer function. A named service implementing {@link io.helidon.http.Http.HeaderFunction}
+         * must exist in the registry that will be used to compute the header.
          *
-         * @return producer to get header value from
+         * @return name of a header function service to get header value from
          */
-        Class<? extends HeaderProducer> producerClass();
+        String function();
     }
 
     /**
@@ -120,20 +119,6 @@ public final class RestServer {
          * @return headers
          */
         ComputedHeader[] value();
-    }
-
-    /**
-     * Header producer, to use with {@link io.helidon.webserver.http.RestServer.ComputedHeader#producerClass()}.
-     */
-    @Service.Contract
-    public interface HeaderProducer {
-        /**
-         * Produce an instance of a named header.
-         *
-         * @param name name to create
-         * @return value for the header
-         */
-        Optional<String> produceHeader(HeaderName name);
     }
 
     /**

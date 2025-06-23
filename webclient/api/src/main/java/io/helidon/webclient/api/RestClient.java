@@ -26,7 +26,6 @@ import java.util.Optional;
 
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.HeaderName;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Service;
 
@@ -169,11 +168,12 @@ public final class RestClient {
         String name();
 
         /**
-         * A producer type, must be a {@link io.helidon.service.registry.ServiceRegistry} service.
+         * A named producer function. A named service implementing {@link io.helidon.http.Http.HeaderFunction}
+         * must exist in the registry that will be used to compute the header.
          *
-         * @return producer to get header value from
+         * @return name of a header function service to get header value from
          */
-        Class<? extends HeaderProducer> producerClass();
+        String function();
     }
 
     /**
@@ -188,20 +188,6 @@ public final class RestClient {
          * @return headers
          */
         ComputedHeader[] value();
-    }
-
-    /**
-     * Header producer, to use with {@link io.helidon.webclient.api.RestClient.ComputedHeader#producerClass()}.
-     */
-    @Service.Contract
-    public interface HeaderProducer {
-        /**
-         * Produce an instance of a named header.
-         *
-         * @param name name to create
-         * @return value for the header
-         */
-        Optional<String> produceHeader(HeaderName name);
     }
 
     /**

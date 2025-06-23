@@ -238,6 +238,7 @@
         <module>service</module>
         <module>metadata</module>
         <module>testing</module>
+        <module>declarative</module>
     </modules>
 
     <build>

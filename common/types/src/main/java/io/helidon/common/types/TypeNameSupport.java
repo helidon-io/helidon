@@ -240,6 +240,13 @@ final class TypeNameSupport {
      */
     @Prototype.FactoryMethod
     static TypeName create(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return TypeStash.stash(clazz);
+        }
+        return doCreate(type);
+    }
+
+    static TypeName doCreate(Type type) {
         return TypeName.builder()
                 .type(type)
                 .build();
@@ -254,9 +261,13 @@ final class TypeNameSupport {
     @Prototype.FactoryMethod
     static TypeName create(String typeName) {
         Objects.requireNonNull(typeName);
+        return TypeStash.stash(typeName);
+    }
+
+    static TypeName doCreate(String typeName) {
         if (typeName.startsWith("?")) {
             if (typeName.startsWith("? extends ")) {
-                return TypeName.builder(create(typeName.substring(10).trim()))
+                return TypeName.builder(doCreate(typeName.substring(10).trim()))
                         .wildcard(true)
                         .build();
             } else {
@@ -267,13 +278,13 @@ final class TypeNameSupport {
             }
         }
         if (typeName.endsWith("[]")) {
-            TypeName componentType = create(typeName.substring(0, typeName.length() - 2));
+            TypeName componentType = doCreate(typeName.substring(0, typeName.length() - 2));
             return TypeName.builder(componentType)
                     .componentType(componentType)
                     .array(true)
                     .build();
         } else if (typeName.endsWith("...")) {
-            TypeName componentType = create(typeName.substring(0, typeName.length() - 3));
+            TypeName componentType = doCreate(typeName.substring(0, typeName.length() - 3));
             return TypeName.builder(componentType)
                     .componentType(componentType)
                     .array(true)
