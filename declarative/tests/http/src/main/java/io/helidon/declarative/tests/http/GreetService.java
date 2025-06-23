@@ -26,8 +26,9 @@ import io.helidon.webserver.http.RestServer;
 
 import jakarta.json.JsonObject;
 
+@SuppressWarnings("deprecation")
 @Http.Path("/greet")
-interface GreetEndpointApi {
+interface GreetService {
     /**
      * Return a worldly greeting message.
      */

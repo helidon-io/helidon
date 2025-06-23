@@ -81,6 +81,7 @@ class DeclarativeCodegenHttpTypesTest {
         checkField(toCheck, checked, fields, "HTTP_QUERY_PARAM_ANNOTATION", Http.QueryParam.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_PARAM_ANNOTATION", Http.HeaderParam.class);
         checkField(toCheck, checked, fields, "HTTP_ENTITY_ANNOTATION", Http.Entity.class);
+        checkField(toCheck, checked, fields, "HTTP_HEADER_FUNCTION", Http.HeaderFunction.class);
         checkField(toCheck, checked, fields, "HTTP_MEDIA_TYPE", HttpMediaType.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",

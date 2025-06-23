@@ -56,7 +56,8 @@ import jakarta.json.JsonObject;
 @RestServer.Listener("@default")
 @RestServer.Endpoint
 @Service.Singleton
-class GreetEndpoint implements GreetEndpointApi {
+@SuppressWarnings("deprecation")
+class GreetServiceEndpoint implements GreetService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final AtomicInteger RETRY_CALLS = new AtomicInteger();
@@ -68,7 +69,7 @@ class GreetEndpoint implements GreetEndpointApi {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     @Service.Inject
-    GreetEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting) {
+    GreetServiceEndpoint(@Configuration.Value("app.greeting") @Default.Value("Ciao") String greeting) {
         this.greeting.set(greeting);
     }
 
@@ -89,7 +90,7 @@ class GreetEndpoint implements GreetEndpointApi {
 
     @Ft.Retry(name = "named")
     @RestServer.Header(name = "X-Header", value = "X-Value")
-    @RestServer.ComputedHeader(name = "X-Computed", producerClass = ServerHeaderProducer.class)
+    @RestServer.ComputedHeader(name = ServerHeaderFunction.HEADER_NAME, function = ServerHeaderFunction.SERVICE_NAME)
     @Override
     public String retriable() {
         int i = RETRY_CALLS.incrementAndGet();
@@ -176,7 +177,7 @@ class GreetEndpoint implements GreetEndpointApi {
      * Return a worldly greeting message.
      */
     @Http.GET
-    @Http.Produces("text/plain")
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
     String getDefaultMessageHandlerPlain(Context context) {
         return stringResponse("World");
     }

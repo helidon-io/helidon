@@ -18,16 +18,27 @@ package io.helidon.declarative.tests.http;
 
 import java.util.Optional;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Http;
 import io.helidon.service.registry.Service;
-import io.helidon.webclient.api.RestClient;
 
+@SuppressWarnings("deprecation")
 @Service.Singleton
-class ClientHeaderProducer implements RestClient.HeaderProducer {
+@Service.Named(ClientHeaderFunction.SERVICE_NAME)
+class ClientHeaderFunction implements Http.HeaderFunction {
+    static final String HEADER_NAME = "X-Computed";
+    static final String SERVICE_NAME = "greet-client-header";
+
+    private static final HeaderName EXPECTED = HeaderNames.create(HEADER_NAME);
+    private static final Header VALUE = HeaderValues.create(EXPECTED, "Computed-Value");
+
     @Override
-    public Optional<String> produceHeader(HeaderName name) {
-        if ("X-Computed".equals(name.defaultCase())) {
-            return Optional.of("Computed-Value");
+    public Optional<Header> apply(HeaderName name) {
+        if (EXPECTED.equals(name)) {
+            return Optional.of(VALUE);
         }
         return Optional.empty();
     }

@@ -16,13 +16,33 @@
 
 package io.helidon.declarative.codegen.model.http;
 
-import io.helidon.common.types.TypeName;
-
 /**
  * Definition of a computed header, defined by an annotation.
- *
- * @param name     name of the header
- * @param producer producer class, must be available through service registry
  */
-public record ComputedHeader(String name, TypeName producer) {
+public interface ComputedHeader {
+    /**
+     * Create a new computed header instance.
+     *
+     * @param headerName  header name
+     * @param serviceName service name (named service in service registry)
+     * @return a new computed header
+     */
+    static ComputedHeader create(String headerName, String serviceName) {
+        return new ComputedHeaderImpl(headerName, serviceName);
+    }
+
+    /**
+     * Name of the header.
+     *
+     * @return header name
+     */
+    String headerName();
+
+    /**
+     * Name of the service.
+     *
+     * @return service name
+     */
+    String serviceName();
+
 }

@@ -16,21 +16,23 @@
 
 package io.helidon.declarative.tests.http;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
 import io.helidon.webclient.api.RestClient;
 
 /**
  * API for typed client for the Greet endpoint HTTP API.
  */
+@SuppressWarnings("deprecation")
 @RestClient.Endpoint
-public interface GreetEndpointClient extends GreetEndpointApi {
+public interface GreetServiceClient extends GreetService {
     /**
      * Return a worldly greeting message.
      *
      * @return greeting
      */
     @Http.GET
-    @Http.Produces("text/plain")
-    @RestClient.ComputedHeader(name = "X-Computed", producerClass = ClientHeaderProducer.class)
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+    @RestClient.ComputedHeader(name = ClientHeaderFunction.HEADER_NAME, function = ClientHeaderFunction.SERVICE_NAME)
     String getDefaultMessageHandlerPlain();
 }

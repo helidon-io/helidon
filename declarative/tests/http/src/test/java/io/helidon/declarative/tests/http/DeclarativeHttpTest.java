@@ -40,6 +40,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@SuppressWarnings("deprecation")
 @ServerTest
 class DeclarativeHttpTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
@@ -70,7 +71,7 @@ class DeclarativeHttpTest {
         assertThat(json.getString("message"), is("Hello World!"));
 
         assertThat(SomeEntryPointInterceptor.executions(),
-                   hasItems("io.helidon.declarative.tests.http.GreetEndpoint.getDefaultMessageHandler()"));
+                   hasItems(GreetServiceEndpoint.class.getName() + ".getDefaultMessageHandler()"));
     }
 
     @Test
@@ -101,13 +102,13 @@ class DeclarativeHttpTest {
         assertThat(entity.getString("error"), is("No greeting provided"));
 
         assertThat(SomeEntryPointInterceptor.executions(),
-                   hasItems("io.helidon.declarative.tests.http.GreetEndpoint.updateGreetingHandler(jakarta.json.JsonObject)"));
+                   hasItems(GreetServiceEndpoint.class.getName() + ".updateGreetingHandler(jakarta.json.JsonObject)"));
     }
 
     @Test
     void testTypedClient() {
-        GreetEndpointClient typedClient = registry.get(Lookup.builder()
-                                                               .addContract(GreetEndpointClient.class)
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                               .addContract(GreetServiceClient.class)
                                                                .addQualifier(Qualifier.create(RestClient.Client.class))
                                                                .build());
 

@@ -374,7 +374,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
 
         int methodIndex = 0;
 
-        Map<TypeName, String> headerProducerFields = headerProducers(fieldHandler, endpoint);
+        Map<String, String> headerProducerFields = headerProducers(fieldHandler, endpoint);
         for (RestMethod restMethod : endpoint.methods()) {
             addEndpointMethod(fieldHandler,
                               endpointTypeName,
@@ -420,7 +420,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                    ClassModel.Builder classModel,
                                    boolean singleton,
                                    RestMethod restMethod,
-                                   Map<TypeName, String> headerProducers,
+                                   Map<String, String> headerProducers,
                                    int methodIndex) {
 
         classModel.addMethod(method -> method
@@ -452,7 +452,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     boolean singleton,
                                     Method.Builder method,
                                     RestMethod restMethod,
-                                    Map<TypeName, String> headerProducers,
+                                    Map<String, String> headerProducers,
                                     int methodIndex) {
         // parameters
         for (RestMethodParameter parameter : restMethod.parameters()) {
@@ -535,14 +535,12 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContentLine(");");
         }
         for (ComputedHeader computedHeader : restMethod.computedHeaders()) {
-            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
+            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.headerName());
 
-            method.addContent(headerProducers.get(computedHeader.producer()))
-                    .addContent(".produceHeader(")
+            method.addContent(headerProducers.get(computedHeader.serviceName()))
+                    .addContent(".apply(")
                     .addContent(headerNameConstant)
-                    .addContent(").ifPresent(declarative__it -> helidonDeclarative__server_res.header(")
-                    .addContent(headerNameConstant)
-                    .addContentLine(", declarative__it));");
+                    .addContent(").ifPresent(declarative__it -> helidonDeclarative__server_res.header(declarative__it));");
         }
 
         method.addContent(RESPONSE_PARAM_NAME)

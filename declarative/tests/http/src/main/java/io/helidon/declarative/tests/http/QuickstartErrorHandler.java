@@ -30,6 +30,7 @@ import jakarta.json.JsonObject;
  * Example of an HTTP error handler to have an easy approach to returning well-formatted error messages
  * for business exceptions.
  */
+@SuppressWarnings("deprecation")
 @Service.Singleton
 class QuickstartErrorHandler implements ErrorHandlerProvider<QuickstartException> {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());

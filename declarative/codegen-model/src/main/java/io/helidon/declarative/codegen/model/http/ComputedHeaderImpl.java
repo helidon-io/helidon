@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.http;
+package io.helidon.declarative.codegen.model.http;
 
-import java.util.Optional;
-
-import io.helidon.http.HeaderName;
-import io.helidon.service.registry.Service;
-import io.helidon.webserver.http.RestServer;
-
-@Service.Singleton
-class ServerHeaderProducer implements RestServer.HeaderProducer {
-    @Override
-    public Optional<String> produceHeader(HeaderName name) {
-        return Optional.of("Server-Produced");
-    }
+record ComputedHeaderImpl(String headerName, String serviceName) implements ComputedHeader {
 }

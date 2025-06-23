@@ -37,6 +37,7 @@ import io.helidon.declarative.codegen.model.http.HttpMethod;
 import io.helidon.declarative.codegen.model.http.RestEndpoint;
 import io.helidon.declarative.codegen.model.http.RestMethod;
 import io.helidon.service.codegen.FieldHandler;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_CONSUMES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_ANNOTATION;
@@ -160,16 +161,16 @@ public abstract class RestExtensionBase {
                 .flatMap(List::stream)
                 .forEach(headerAnnotation -> {
                     found.set(true);
-                    String name = headerAnnotation.stringValue("name").orElseThrow();
-                    TypeName producer = headerAnnotation.typeValue("producerClass").orElseThrow();
-                    builder.addComputedHeader(new ComputedHeader(name, producer));
+                    String headerName = headerAnnotation.stringValue("name").orElseThrow();
+                    String serviceName = headerAnnotation.stringValue("function").orElseThrow();
+                    builder.addComputedHeader(ComputedHeader.create(headerName, serviceName));
                 });
         if (!found.get()) {
             Annotations.findFirst(singleAnnotationType, annotations)
                     .ifPresent(headerAnnotation -> {
-                        String name = headerAnnotation.stringValue("name").orElseThrow();
-                        TypeName producer = headerAnnotation.typeValue("producerClass").orElseThrow();
-                        builder.addComputedHeader(new ComputedHeader(name, producer));
+                        String headerName = headerAnnotation.stringValue("name").orElseThrow();
+                        String serviceName = headerAnnotation.stringValue("function").orElseThrow();
+                        builder.addComputedHeader(ComputedHeader.create(headerName, serviceName));
                     });
         }
     }
@@ -190,20 +191,21 @@ public abstract class RestExtensionBase {
      * Find all header producers and create appropriate fields, parameters, and assignments for them.
      *
      * @param fieldHandler field handler for the current generated type
-     * @param endpoint rest endpoint to analyze
-     * @return map of types of handlers to field names that will store them
+     * @param endpoint     rest endpoint to analyze
+     * @return map of names (as in named services) to field names
      */
-    protected Map<TypeName, String> headerProducers(FieldHandler fieldHandler, RestEndpoint endpoint) {
-        Map<TypeName, String> result = new HashMap<>();
+    protected Map<String, String> headerProducers(FieldHandler fieldHandler, RestEndpoint endpoint) {
+        Map<String, String> result = new HashMap<>();
 
         // now for each method
         for (RestMethod method : endpoint.methods()) {
             method.computedHeaders()
                     .stream()
-                    .map(ComputedHeader::producer)
                     .forEach(it -> {
-                        String fieldName = ensureHeaderProducerField(fieldHandler, it);
-                        result.put(it, fieldName);
+                        String serviceName = it.serviceName();
+                        String fieldName = ensureHeaderProducerField(fieldHandler, serviceName);
+
+                        result.put(serviceName, fieldName);
                     });
         }
         return result;
@@ -213,7 +215,7 @@ public abstract class RestExtensionBase {
      * Find an annotation with the provided "meta-annotation".
      *
      * @param metaAnnotation type of the meta annotation we are looking for
-     * @param annotations set of annotations on the element
+     * @param annotations    set of annotations on the element
      * @return the meta annotation instance, or empty optional if not found
      */
     protected Optional<Annotation> findMetaAnnotated(TypeName metaAnnotation,
@@ -229,16 +231,20 @@ public abstract class RestExtensionBase {
         return Optional.empty();
     }
 
-    private String ensureHeaderProducerField(FieldHandler fieldHandler, TypeName producer) {
-        return fieldHandler.field(producer,
+    private String ensureHeaderProducerField(FieldHandler fieldHandler, String serviceName) {
+        return fieldHandler.field(HttpTypes.HTTP_HEADER_FUNCTION,
                                   "headerProducer_",
                                   AccessModifier.PRIVATE,
-                                  producer,
+                                  HttpTypes.HTTP_HEADER_FUNCTION.fqName() + "." + serviceName,
                                   field -> {
                                   },
                                   (constructor, fieldName) -> constructor
                                           .addParameter(param -> param
-                                                  .type(producer)
+                                                  .type(HttpTypes.HTTP_HEADER_FUNCTION)
+                                                  .addAnnotation(Annotation.builder()
+                                                                         .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED)
+                                                                         .value(serviceName)
+                                                                         .build())
                                                   .name(fieldName))
                                           .addContent("this.")
                                           .addContent(fieldName)

@@ -26,5 +26,5 @@ io:
     declarative:
       tests:
         http:
-          GreetEndpointClient:
+          GreetServiceClient:
             uri: "http://localhost:${test.server.port}"

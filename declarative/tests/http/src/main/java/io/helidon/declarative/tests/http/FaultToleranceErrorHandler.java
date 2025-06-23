@@ -28,6 +28,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 
+@SuppressWarnings("deprecation")
 @Service.Singleton
 class FaultToleranceErrorHandler implements ErrorHandlerProvider<FaultToleranceException> {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());

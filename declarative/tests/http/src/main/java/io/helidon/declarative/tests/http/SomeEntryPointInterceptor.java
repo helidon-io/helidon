@@ -26,6 +26,7 @@ import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
 
+@SuppressWarnings("deprecation")
 @Service.Singleton
 @Weight(1000)
 class SomeEntryPointInterceptor implements Interception.EntryPointInterceptor {

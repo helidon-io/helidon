@@ -79,6 +79,10 @@ public final class HttpTypes {
      */
     public static final TypeName HTTP_ENTITY_ANNOTATION = TypeName.create("io.helidon.http.Http.Entity");
     /**
+     * HTTP Header function.
+     */
+    public static final TypeName HTTP_HEADER_FUNCTION = TypeName.create("io.helidon.http.Http.HeaderFunction");
+    /**
      * HTTP media type.
      */
     public static final TypeName HTTP_MEDIA_TYPE = TypeName.create("io.helidon.http.HttpMediaType");

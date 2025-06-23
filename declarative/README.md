@@ -44,29 +44,30 @@ A few codegen features that are available:
 
 For each Helidon feature, we need a namespace class to contain the annotations and APIs
 
-| Feature         | Class                                | Notes                                                     |
-|-----------------|--------------------------------------|-----------------------------------------------------------|
-| HTTP            | `Http`, `RestServer`, `RestClient`   | `WebServer` cannot be freed, `HttpClient` cannot be freed |
-| Config          | `Configuration`                      | `Config` cannot be freed                                  |
-| Metrics         | `Metrics`                            | TODO: contains a bunch of static methods                  |
-| Fault Tolerance | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
-| GRPC            | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
-| WebSocket       | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
-| Security        | `Secured`                            | `Security` cannot be freed (big API)                      |
-| Messaging       | `Messages`                           | `Messaging` cannot be freed                               |
-| Scheduling      | `Scheduling`                         | Deprecate methods and current types for removal           |
-| Health          | `Health`                             | OK                                                        |
-| OpenAPI         | `OpenApi`                            | OK                                                        |
-| Builders        | `Prototype`, `Option`, `RuntimeType` | OK (maybe just use `Builder`?)                            |
-| Tracing         | `Tracing`                            | OK                                                        |
-| CORS            | `Cors`                               | OK                                                        |
-| MCP protocol    | `McpServer`                          | OK                                                        |
-| DbClient        | N/A                                  | `DbClient` cannot be freed, maybe combine with Data?      |
-| GraphQL         | `GraphQlServer`, `GraphQlClient`     | OK                                                        |
-| Data            | `Data`                               | OK                                                        |
-| Logging         | N/A                                  | Not sure we need, `Logging` is free                       |
-| LRA             | `LRA`                                | `Lra` cannot be freed                                     |
-| Transactions    | `Tx`                                 | `Transaction` is the interface                            |
+| Feature          | Class                                | Notes                                                     |
+|------------------|--------------------------------------|-----------------------------------------------------------|
+| HTTP             | `Http`, `RestServer`, `RestClient`   | `WebServer` cannot be freed, `HttpClient` cannot be freed |
+| Config           | `Configuration`                      | `Config` cannot be freed                                  |
+| Metrics          | `Metrics`                            | TODO: contains a bunch of static methods                  |
+| Fault Tolerance  | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
+| GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
+| WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
+| Security         | `Secured`                            | `Security` cannot be freed (big API)                      |
+| Messaging        | `Messages`                           | `Messaging` cannot be freed                               |
+| Scheduling       | `Scheduling`                         | Deprecate methods and current types for removal           |
+| Health           | `Health`                             | OK                                                        |
+| OpenAPI          | `OpenApi`                            | OK                                                        |
+| Builders         | `Prototype`, `Option`, `RuntimeType` | OK (maybe just use `Builder`?)                            |
+| Tracing          | `Tracing`                            | OK                                                        |
+| CORS             | `Cors`                               | OK                                                        |
+| MCP protocol     | `McpServer`                          | OK                                                        |
+| DbClient         | N/A                                  | `DbClient` cannot be freed, maybe combine with Data?      |
+| GraphQL          | `GraphQlServer`, `GraphQlClient`     | OK                                                        |
+| Data             | `Data`                               | OK                                                        |
+| Logging          | N/A                                  | Not sure we need, `Logging` is free                       |
+| LRA              | `LRA`                                | `Lra` cannot be freed                                     |
+| Transactions     | `Tx`                                 | `Transaction` is the interface                            |
+| Service Registry | `Service`, `Interception`            | OK                                                        |
 
 ## Integrations
 

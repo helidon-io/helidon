@@ -19,8 +19,8 @@ package io.helidon.common.types;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/*
-A cache of type names, to avoid duplication of non-generic instances in memory
+/**
+ * A cache of type names, to avoid duplication of non-generic instances in memory.
  */
 final class TypeStash {
     // in a simple registry example, we had over 820 calls to TypeName.create()
@@ -35,10 +35,23 @@ final class TypeStash {
     private TypeStash() {
     }
 
+    /**
+     * Stash a class. This method can directly cache the result, as it is guaranteed to be generics free.
+     *
+     * @param clazz class to stash
+     * @return type name either cached, or added to the cache
+     */
     static TypeName stash(Class<?> clazz) {
         return CLASS_TYPE_STASH.computeIfAbsent(clazz, TypeNameSupport::doCreate);
     }
 
+    /**
+     * Stash a class or a generic declaration.
+     * If this is a class, it will be cached, if not, a new instance would be created.
+     *
+     * @param className class name, expected to be fully qualified class name, or a generic declaration
+     * @return type name either cached, or a new one depending on the content provided
+     */
     static TypeName stash(String className) {
         if (className.indexOf('<') > 0 || className.indexOf('?') > 0 || className.indexOf('.') == -1) {
             // avoid generics

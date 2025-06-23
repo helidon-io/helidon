@@ -291,7 +291,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                 .type(REST_CLIENT_ERROR_HANDLING)
                 .name("errorHandling"));
 
-        Map<TypeName, String> headerProducerFields = headerProducers(fieldHandler, endpoint);
+        Map<String, String> headerProducerFields = headerProducers(fieldHandler, endpoint);
 
         for (RestMethod method : endpoint.methods()) {
             generateMethod(fieldHandler,
@@ -308,7 +308,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
     private void generateMethod(FieldHandler fieldHandler,
                                 ClassModel.Builder classModel,
                                 RestMethod method,
-                                Map<TypeName, String> headerProducers) {
+                                Map<String, String> headerProducers) {
 
         classModel.addMethod(restMethod -> restMethod
                 .addAnnotation(Annotations.OVERRIDE)
@@ -327,7 +327,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
     private void generateMethodParamsAndBody(FieldHandler fieldHandler,
                                              Method.Builder it,
                                              RestMethod method,
-                                             Map<TypeName, String> headerProducers) {
+                                             Map<String, String> headerProducers) {
         method.parameters()
                 .forEach(param -> it.addParameter(newParam -> newParam
                         .name(param.name())
@@ -407,14 +407,12 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContentLine(");");
         }
         for (ComputedHeader computedHeader : method.computedHeaders()) {
-            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
+            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.headerName());
 
-            it.addContent(headerProducers.get(computedHeader.producer()))
-                    .addContent(".produceHeader(")
+            it.addContent(headerProducers.get(computedHeader.serviceName()))
+                    .addContent(".apply(")
                     .addContent(headerNameConstant)
-                    .addContent(").ifPresent(declarative__it -> declarative__builder.header(")
-                    .addContent(headerNameConstant)
-                    .addContentLine(", declarative__it));");
+                    .addContent(").ifPresent(declarative__it -> declarative__builder.header(declarative__it));");
         }
         for (RestMethodParameter headerParameter : method.headerParameters()) {
             it.addContent("declarative__builder.header(")
