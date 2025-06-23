@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.Metadata;
@@ -35,9 +37,6 @@ class GrpcInterceptorUtil {
     static <ReqT, RespT> ServerCallHandler<ReqT, RespT> interceptHandler(ServerCallHandler<ReqT, RespT> handler,
                                                                          WeightedBag<ServerInterceptor> interceptors,
                                                                          GrpcServiceDescriptor serviceDescriptor) {
-        // always add a context setting interceptor
-        interceptors.add(ContextSettingServerInterceptor.create());
-
         // remove duplicates and set proper ordering
         for (ServerInterceptor interceptor : interceptors.stream()
                 .distinct()
@@ -45,30 +44,25 @@ class GrpcInterceptorUtil {
                 .reversed()) {
             handler = new InterceptingCallHandler<>(serviceDescriptor, interceptor, handler);
         }
-
         return handler;
     }
 
     /**
-     * A {@link ServerCallHandler} that wraps a {@link ServerCallHandler} with
-     * a {@link ServerInterceptor}.
-     * <p>
-     * If the wrapped {@link ServerInterceptor} implements {@link GrpcServiceDescriptor.Aware}
-     * then the {@link GrpcServiceDescriptor.Aware#setServiceDescriptor(GrpcServiceDescriptor)}
-     * method will be called before interception.
+     * A server call handler that sets a Helidon context and, if available, the
+     * current service descriptor in it before calling the next interceptor.
      *
      * @param <ReqT>  the request type
      * @param <RespT> the response type
      */
     static final class InterceptingCallHandler<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
-        private final GrpcServiceDescriptor serviceDefinition;
+        private final GrpcServiceDescriptor serviceDescriptor;
         private final ServerInterceptor interceptor;
         private final ServerCallHandler<ReqT, RespT> callHandler;
 
-        private InterceptingCallHandler(GrpcServiceDescriptor serviceDefinition,
+        private InterceptingCallHandler(GrpcServiceDescriptor serviceDescriptor,
                                         ServerInterceptor interceptor,
                                         ServerCallHandler<ReqT, RespT> callHandler) {
-            this.serviceDefinition = serviceDefinition;
+            this.serviceDescriptor = serviceDescriptor;
             this.interceptor = interceptor;
             this.callHandler = callHandler;
         }
@@ -77,10 +71,11 @@ class GrpcInterceptorUtil {
         public ServerCall.Listener<ReqT> startCall(
                 ServerCall<ReqT, RespT> call,
                 Metadata headers) {
-            if (serviceDefinition != null && interceptor instanceof GrpcServiceDescriptor.Aware aware) {
-                aware.setServiceDescriptor(serviceDefinition);
+            Context context = Contexts.context().orElse(Context.create());
+            if (serviceDescriptor != null) {
+                context.register(GrpcServiceDescriptor.class, serviceDescriptor);
             }
-            return interceptor.interceptCall(call, headers, callHandler);
+            return Contexts.runInContext(context, () -> interceptor.interceptCall(call, headers, callHandler));
         }
     }
 }

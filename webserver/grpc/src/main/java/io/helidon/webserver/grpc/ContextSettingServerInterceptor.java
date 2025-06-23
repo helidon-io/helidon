@@ -34,26 +34,18 @@ import io.grpc.ServerInterceptor;
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 
 /**
- * A {@link ServerInterceptor} that sets values into the gRPC call context.
+ * A {@link io.grpc.ServerInterceptor} that sets values into the gRPC call context.
  */
 @Weight(InterceptorWeights.CONTEXT)
-class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceDescriptor.Aware {
+class ContextSettingServerInterceptor implements ServerInterceptor {
 
-    /**
-     * The {@link GrpcServiceDescriptor} for the service being intercepted.
-     */
-    private GrpcServiceDescriptor serviceDescriptor;
+    private static final ContextSettingServerInterceptor INSTANCE = new ContextSettingServerInterceptor();
 
     private ContextSettingServerInterceptor() {
     }
 
-    /**
-     * Create a {@link ContextSettingServerInterceptor}.
-     *
-     * @return a {@link ContextSettingServerInterceptor} instance.
-     */
-    static ContextSettingServerInterceptor create() {
-        return new ContextSettingServerInterceptor();
+    static ContextSettingServerInterceptor instance() {
+        return INSTANCE;
     }
 
     @Override
@@ -69,33 +61,34 @@ class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceD
         context = context.withValue(ContextKeys.HELIDON_CONTEXT,
                 helidonContext.orElseGet(io.helidon.common.context.Context::create));
 
-        if (serviceDescriptor != null) {
-            // method info
-            String fullMethodName = call.getMethodDescriptor().getFullMethodName();
-            String methodName = extractMethodName(fullMethodName);
-            GrpcMethodDescriptor<ReqT, ResT> methodDescriptor =
-                    (GrpcMethodDescriptor<ReqT, ResT>) serviceDescriptor.method(methodName);
+        if (helidonContext.isPresent()) {
+            GrpcServiceDescriptor serviceDescriptor = helidonContext.get()
+                    .get(GrpcServiceDescriptor.class, GrpcServiceDescriptor.class)
+                    .orElse(null);
 
-            // apply context keys from the service followed by the method for overrides
-            Map<Context.Key<?>, Object> contextMap = new HashMap<>();
-            contextMap.putAll(serviceDescriptor.context());
-            contextMap.putAll(methodDescriptor.context());
-            contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
+            if (serviceDescriptor != null) {
+                // method info
+                String fullMethodName = call.getMethodDescriptor().getFullMethodName();
+                String methodName = extractMethodName(fullMethodName);
+                GrpcMethodDescriptor<ReqT, ResT> methodDescriptor =
+                        (GrpcMethodDescriptor<ReqT, ResT>) serviceDescriptor.method(methodName);
 
-            // set up context from gRPC API
-            for (Map.Entry<Context.Key<?>, Object> entry : contextMap.entrySet()) {
-                Context.Key<Object> key = (Context.Key<Object>) entry.getKey();
-                context = context.withValue(key, entry.getValue());
+                // apply context keys from the service followed by the method for overrides
+                Map<Context.Key<?>, Object> contextMap = new HashMap<>();
+                contextMap.putAll(serviceDescriptor.context());
+                contextMap.putAll(methodDescriptor.context());
+                contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
+
+                // set up context from gRPC API
+                for (Map.Entry<Context.Key<?>, Object> entry : contextMap.entrySet()) {
+                    Context.Key<Object> key = (Context.Key<Object>) entry.getKey();
+                    context = context.withValue(key, entry.getValue());
+                }
             }
         }
 
         // intercept with new context
         return Contexts.interceptCall(context, call, headers, next);
-    }
-
-    @Override
-    public void setServiceDescriptor(GrpcServiceDescriptor descriptor) {
-        this.serviceDescriptor = descriptor;
     }
 
     @Override
