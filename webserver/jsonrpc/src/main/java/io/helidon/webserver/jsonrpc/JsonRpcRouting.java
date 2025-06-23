@@ -102,11 +102,9 @@ public class JsonRpcRouting implements Routing {
      * @param builder an HTTP routing builder
      */
     public void toHttpRouting(HttpRouting.Builder builder) {
-        Map<String, JsonRpcHandlers> rulesMap = rules.rulesMap();
-
-        for (Map.Entry<String, JsonRpcHandlers> entry : rulesMap.entrySet()) {
-            String pathPattern = entry.getKey();
-            JsonRpcHandlers handlers = entry.getValue();
+        for (JsonRpcRulesImpl.Rule rule : rules) {
+            String pathPattern = rule.pathPattern();
+            JsonRpcHandlers handlers = rule.handlers();
             Map<String, JsonRpcHandler> handlersMap = handlers.handlersMap();
             JsonRpcErrorHandler errorHandler = handlers.errorHandler();
 

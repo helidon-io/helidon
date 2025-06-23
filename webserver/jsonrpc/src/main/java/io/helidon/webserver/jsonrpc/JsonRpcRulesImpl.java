@@ -15,30 +15,35 @@
  */
 package io.helidon.webserver.jsonrpc;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * An implementation of JSON-RPC rules.
  */
-class JsonRpcRulesImpl implements JsonRpcRules {
+class JsonRpcRulesImpl implements JsonRpcRules, Iterable<JsonRpcRulesImpl.Rule> {
 
-    private final Map<String, JsonRpcHandlers> rules = new HashMap<>();
+    private final List<Rule> rules = new ArrayList<>();
+
+    record Rule(String pathPattern, JsonRpcHandlers handlers) {
+    }
 
     @Override
     public JsonRpcRules register(String pathPattern, JsonRpcHandlers handlers) {
-        rules.put(pathPattern, handlers);
+        rules.add(new Rule(pathPattern, handlers));
         return this;
     }
 
     @Override
     public JsonRpcRules register(String pathPattern, String method, JsonRpcHandler handler) {
         JsonRpcHandlers handlers = JsonRpcHandlers.create(method, handler);
-        rules.put(pathPattern, handlers);
+        rules.add(new Rule(pathPattern, handlers));
         return this;
     }
 
-    Map<String, JsonRpcHandlers> rulesMap() {
-        return rules;
+    @Override
+    public Iterator<Rule> iterator() {
+        return rules.iterator();
     }
 }
