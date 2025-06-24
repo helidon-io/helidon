@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.scheduling;
 
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.builder.api.Prototype;
@@ -31,4 +32,11 @@ interface TaskConfigBlueprint {
      */
     ScheduledExecutorService executor();
 
+
+    /**
+     * Identification of the started task. This can be used to later look up the instance, for example to cancel it.
+     *
+     * @return task id, if not provided, a unique id will be generated
+     */
+    Optional<String> id();
 }
