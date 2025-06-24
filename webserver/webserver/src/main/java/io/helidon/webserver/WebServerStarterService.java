@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.Default;
 import io.helidon.common.config.Configuration;
 import io.helidon.service.registry.Service;
 
@@ -28,7 +29,7 @@ class WebServerStarterService {
     private final LoomServer server;
     private final boolean ignoreIncubating;
 
-    WebServerStarterService(LoomServer server, @Configuration.Value("declarative.ignore-incubating") boolean ignoreIncubating) {
+    WebServerStarterService(LoomServer server, @Default.Boolean(false) @Configuration.Value("declarative.ignore-incubating") boolean ignoreIncubating) {
         this.server = server;
         this.ignoreIncubating = ignoreIncubating;
     }
