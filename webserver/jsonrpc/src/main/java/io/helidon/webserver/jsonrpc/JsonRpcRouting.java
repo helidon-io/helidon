@@ -106,7 +106,7 @@ public class JsonRpcRouting implements Routing {
             String pathPattern = rule.pathPattern();
             JsonRpcHandlers handlers = rule.handlers();
             Map<String, JsonRpcHandler> handlersMap = handlers.handlersMap();
-            JsonRpcErrorHandler errorHandler = handlers.errorHandler();
+            JsonRpcErrorHandler errorHandler = handlers.errorHandler().orElse(null);
 
             builder.post(pathPattern, (req, res) -> {
                 try {

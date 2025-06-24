@@ -21,7 +21,7 @@ import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
-import io.helidon.webserver.Router;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.jsonrpc.JsonRpcHandlers;
 import io.helidon.webserver.jsonrpc.JsonRpcRequest;
@@ -29,7 +29,7 @@ import io.helidon.webserver.jsonrpc.JsonRpcResponse;
 import io.helidon.webserver.jsonrpc.JsonRpcRouting;
 import io.helidon.webserver.jsonrpc.JsonRpcRules;
 import io.helidon.webserver.jsonrpc.JsonRpcService;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -68,8 +68,8 @@ class JsonRpcBaseTest {
         return jsonRpcClient;
     }
 
-    @SetUpRoute
-    static void routing(Router.RouterBuilder<?> router) {
+    @SetUpServer
+    static void setUpServer(WebServerConfig.Builder builder) {
         JsonRpcRouting routing = JsonRpcRouting.builder()
                 // register a single method under "/calculator"
                 .register("/calculator", "add", JsonRpcBaseTest::addNumbers)
@@ -77,7 +77,7 @@ class JsonRpcBaseTest {
                 .service(new JsonRpcService1())
                 .register("/notifier", "ping", JsonRpcBaseTest::ping)
                 .build();
-        router.addRouting(routing.toHttpRouting());
+        builder.addRouting(routing.toHttpRouting());
     }
 
     // -- Calculator ----------------------------------------------------------
@@ -117,7 +117,7 @@ class JsonRpcBaseTest {
                            JsonRpcHandlers.builder()
                                    .method("start", this::start)
                                    .method("stop", this::stop)
-                                   .error(this::error)
+                                   .errorHandler(this::error)
                                    .build());
         }
 

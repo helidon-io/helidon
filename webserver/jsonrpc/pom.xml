@@ -45,10 +45,6 @@
             <artifactId>jakarta.json.bind-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
             <artifactId>helidon-logging-jul</artifactId>
             <groupId>io.helidon.logging</groupId>
         </dependency>
