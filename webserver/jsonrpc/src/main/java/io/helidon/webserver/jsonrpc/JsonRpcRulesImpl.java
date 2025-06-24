@@ -40,19 +40,37 @@ class JsonRpcRulesImpl implements JsonRpcRules, Iterable<JsonRpcRulesImpl.Rule> 
             rules.add(new Rule(pathPattern, handlers));
         } else {
             Rule rule = rules.get(k);
-            rules.set(k, new Rule(rule.pathPattern, rule.handlers.merge(handlers)));
+            rules.set(k, new Rule(rule.pathPattern, merge(rule.handlers, handlers)));
         }
         return this;
     }
 
     @Override
     public JsonRpcRules register(String pathPattern, String method, JsonRpcHandler handler) {
-        JsonRpcHandlers handlers = JsonRpcHandlers.create(method, handler);
-        return register(pathPattern, handlers);
+        JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
+        builder.putMethod(method, handler);
+        return register(pathPattern, builder.build());
     }
 
     @Override
     public Iterator<Rule> iterator() {
         return rules.iterator();
+    }
+
+    /**
+     * Merges two JSON-RPC handlers instances, left and right, with the right
+     * taking precedence over the left.
+     *
+     * @param left the left
+     * @param right the right
+     * @return newly created handlers instances
+     */
+    private static JsonRpcHandlers merge(JsonRpcHandlers left, JsonRpcHandlers right) {
+        JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
+        left.errorHandler().ifPresent(builder::errorHandler);
+        right.errorHandler().ifPresent(builder::errorHandler);      // overrides
+        builder.handlersMap(left.handlersMap());
+        builder.handlersMap(right.handlersMap());                   // overrides
+        return builder.build();
     }
 }

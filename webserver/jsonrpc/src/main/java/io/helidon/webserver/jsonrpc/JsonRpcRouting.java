@@ -253,12 +253,13 @@ public class JsonRpcRouting implements Routing {
             if (!"2.0".equals(version)) {
                 return INVALID_REQUEST_ERROR;
             }
-            String method = object.getString("method");
-            JsonRpcHandler handler = handlersMap.get(method);
-            if (handler == null) {
-                return METHOD_NOT_FOUND_ERROR;
+            if (object.containsKey("method")) {
+                String method = object.getString("method");
+                if (handlersMap.get(method) != null) {
+                    return null;                // method found
+                }
             }
-            return null;
+            return METHOD_NOT_FOUND_ERROR;
         } catch (ClassCastException e) {
             return INVALID_REQUEST_ERROR;       // malformed
         }
@@ -345,7 +346,9 @@ public class JsonRpcRouting implements Routing {
          * @return this builder
          */
         public Builder register(String pathPattern, String method, JsonRpcHandler handler) {
-            register(pathPattern, JsonRpcHandlers.create(method, handler));
+            JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
+            builder.putMethod(method, handler);
+            register(pathPattern, builder.build());
             return this;
         }
     }

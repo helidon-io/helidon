@@ -115,8 +115,8 @@ class JsonRpcBaseTest {
         public void routing(JsonRpcRules rules) {
             rules.register("/machine",
                            JsonRpcHandlers.builder()
-                                   .method("start", this::start)
-                                   .method("stop", this::stop)
+                                   .putMethod("start", this::start)
+                                   .putMethod("stop", this::stop)
                                    .errorHandler(this::error)
                                    .build());
         }
