@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Features;
-
 /**
  * Helidon WebClient JSON-RPC Support.
  */
-@Features.Incubating
 module io.helidon.webclient.jsonrpc {
 
     requires jakarta.json;
