@@ -16,8 +16,10 @@
 package io.helidon.webserver.jsonrpc;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An implementation of JSON-RPC rules.
@@ -25,21 +27,28 @@ import java.util.List;
 class JsonRpcRulesImpl implements JsonRpcRules, Iterable<JsonRpcRulesImpl.Rule> {
 
     private final List<Rule> rules = new ArrayList<>();
+    private final Map<String, Integer> indexes = new HashMap<>();
 
     record Rule(String pathPattern, JsonRpcHandlers handlers) {
     }
 
     @Override
     public JsonRpcRules register(String pathPattern, JsonRpcHandlers handlers) {
-        rules.add(new Rule(pathPattern, handlers));
+        Integer k = indexes.get(pathPattern);
+        if (k == null) {
+            indexes.put(pathPattern, indexes.size());
+            rules.add(new Rule(pathPattern, handlers));
+        } else {
+            Rule rule = rules.get(k);
+            rules.set(k, new Rule(rule.pathPattern, rule.handlers.merge(handlers)));
+        }
         return this;
     }
 
     @Override
     public JsonRpcRules register(String pathPattern, String method, JsonRpcHandler handler) {
         JsonRpcHandlers handlers = JsonRpcHandlers.create(method, handler);
-        rules.add(new Rule(pathPattern, handlers));
-        return this;
+        return register(pathPattern, handlers);
     }
 
     @Override

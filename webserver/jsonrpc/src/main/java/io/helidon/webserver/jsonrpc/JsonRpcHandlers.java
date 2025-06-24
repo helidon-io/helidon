@@ -18,6 +18,7 @@ package io.helidon.webserver.jsonrpc;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Aggregates zero or more JSON-RPC handlers based on JSON-RPC method names.
@@ -66,8 +67,28 @@ public class JsonRpcHandlers {
      *
      * @return the error handler or {@code null}
      */
-    JsonRpcErrorHandler errorHandler() {
-        return errorHandler;
+    Optional<JsonRpcErrorHandler> errorHandler() {
+        return Optional.ofNullable(errorHandler);
+    }
+
+    /**
+     * Merge these JSON-RPC handlers with another instance. The error and method
+     * handlers in {@code other} shall take precedence over those in this instance.
+     * Returns a new instance since this class is immutable.
+     *
+     * @param other the other instance
+     * @return newly created JSON-RPC handler
+     */
+    JsonRpcHandlers merge(JsonRpcHandlers other) {
+        JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
+        if (other.errorHandler != null) {
+            builder.errorHandler(other.errorHandler);   // other overrides
+        } else if (errorHandler != null) {
+            builder.errorHandler(errorHandler);
+        }
+        handlers.forEach(builder::method);
+        other.handlers.forEach(builder::method);        // other overrides
+        return builder.build();
     }
 
     /**
@@ -106,7 +127,8 @@ public class JsonRpcHandlers {
          * @param handler the error handler
          * @return this builder
          */
-        public Builder error(JsonRpcErrorHandler handler) {
+        public Builder errorHandler(JsonRpcErrorHandler handler) {
+            Objects.requireNonNull(handler);
             errorHandler = handler;
             return this;
         }
