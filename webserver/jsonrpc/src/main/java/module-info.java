@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Features;
-
 /**
  * Helidon WebServer JSON-RPC Support.
  */
-@Features.Incubating
 module io.helidon.webserver.jsonrpc {
 
     requires io.helidon.builder.api;

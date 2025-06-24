@@ -16,6 +16,7 @@
 package io.helidon.webserver.tests.jsonrpc;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
@@ -147,12 +148,22 @@ class JsonRpcBaseTest {
             }
         }
 
-        boolean error(ServerRequest req, JsonObject object) {
+        Optional<JsonRpcError> error(ServerRequest req, JsonObject object) {
             try {
+                String version = object.getString("jsonrpc");
+                if (!"2.0".equals(version)) {
+                    return Optional.of(JsonRpcError.create(JsonRpcError.INVALID_REQUEST,
+                                                           "Version is not valid"));
+                }
                 String method = object.getString("method");
-                return "expected".equalsIgnoreCase(method);
+                if (!"expected".equalsIgnoreCase(method)) {
+                    return Optional.of(JsonRpcError.create(JsonRpcError.METHOD_NOT_FOUND,
+                                                           "Method not found"));
+                }
+                return Optional.empty();
             } catch (Exception e) {
-                return false;       // not handled
+                return Optional.of(JsonRpcError.create(JsonRpcError.INVALID_REQUEST,
+                                                       "Invalid JSON-RPC request"));
             }
         }
     }

@@ -18,6 +18,7 @@ package io.helidon.webserver.jsonrpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -125,9 +126,14 @@ public class JsonRpcRouting implements Routing {
                         // if request fails verification, return JSON-RPC error
                         JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                         if (error != null) {
-                            // if error handler succeeds don't report
-                            if (errorHandler != null && errorHandler.handle(req, jsonObject)) {
-                                res.status(Status.OK_200).send();
+                            // Use error if returned by error handler
+                            if (errorHandler != null) {
+                                Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
+                                if (userError.isPresent()) {
+                                    res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject));
+                                } else {
+                                    res.status(Status.OK_200).send();
+                                }
                             } else {
                                 // otherwise return error
                                 JsonObject verifyError = jsonRpcError(error, res, jsonObject);
@@ -161,7 +167,6 @@ public class JsonRpcRouting implements Routing {
                         // invoke single handler
                         try {
                             handler.handle(jsonReq, jsonRes);
-
                             // if send() not called, return empty HTTP response
                             if (!sendCalled.get()) {
                                 res.status(jsonRes.status()).send();
@@ -170,9 +175,8 @@ public class JsonRpcRouting implements Routing {
                             sendInternalError(res);
                         }
                     } else if (jsonRequest instanceof JsonArray jsonArray) {
-                        int size = jsonArray.size();
-
                         // we must receive at least one request
+                        int size = jsonArray.size();
                         if (size == 0) {
                             sendInvalidRequest(res);
                             return;
@@ -193,13 +197,14 @@ public class JsonRpcRouting implements Routing {
                             // check if request passes validation before proceeding
                             JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                             if (error != null) {
-                                // if error handler succeeds don't report
-                                if (errorHandler != null && errorHandler.handle(req, jsonObject)) {
-                                    continue;
+                                // Use error if returned by error handler
+                                if (errorHandler != null) {
+                                    Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
+                                    userError.ifPresent(e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject)));
+                                } else {
+                                    JsonObject verifyError = jsonRpcError(error, res, jsonObject);
+                                    arrayBuilder.add(verifyError);
                                 }
-                                // otherwise collect error
-                                JsonObject verifyError = jsonRpcError(error, res, jsonObject);
-                                arrayBuilder.add(verifyError);
                                 continue;
                             }
 
