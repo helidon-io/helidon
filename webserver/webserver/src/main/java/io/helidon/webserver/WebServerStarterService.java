@@ -29,7 +29,9 @@ class WebServerStarterService {
     private final LoomServer server;
     private final boolean ignoreIncubating;
 
-    WebServerStarterService(LoomServer server, @Default.Boolean(false) @Configuration.Value("declarative.ignore-incubating") boolean ignoreIncubating) {
+    WebServerStarterService(LoomServer server,
+                            @Default.Boolean(false) @Configuration.Value("declarative.ignore-incubating")
+                            boolean ignoreIncubating) {
         this.server = server;
         this.ignoreIncubating = ignoreIncubating;
     }
