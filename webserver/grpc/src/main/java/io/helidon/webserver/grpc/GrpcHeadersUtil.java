@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,19 @@ class GrpcHeadersUtil {
     private GrpcHeadersUtil() {
     }
 
-    static void updateHeaders(WritableHeaders<?> writable, Metadata headers) {
+    static void updateHeaders(WritableHeaders<?> headers, Metadata metadata) {
         Base64.Encoder encoder = Base64.getEncoder();
-        headers.keys().forEach(name -> {
+        metadata.keys().forEach(name -> {
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
-                byte[] binary = headers.get(Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER));
-                writable.add(HeaderNames.create(name, new String(encoder.encode(binary), US_ASCII)));
+                Metadata.Key<byte[]> key = Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER);
+                byte[] binary = metadata.get(key);
+                headers.add(HeaderNames.create(name, new String(encoder.encode(binary), US_ASCII)));
             } else {
-                String ascii = headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER));
-                writable.add(HeaderNames.create(name, ascii));
+                Metadata.Key<String> key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
+                Iterable<String> ascii = metadata.getAll(key);
+                if (ascii != null) {
+                    ascii.forEach(v -> headers.add(HeaderNames.create(name), v));
+                }
             }
         });
     }
@@ -50,10 +54,11 @@ class GrpcHeadersUtil {
         headers.httpHeaders().forEach(header -> {
             String name = header.name();
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
-                metadata.put(Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER),
-                             decoder.decode(name.getBytes(US_ASCII)));
+                Metadata.Key<byte[]> key = Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER);
+                metadata.put(key, decoder.decode(header.valueBytes()));
             } else {
-                metadata.put(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER), name);
+                Metadata.Key<String> key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
+                header.allValues().forEach(value -> metadata.put(key, value));
             }
         });
         return metadata;
