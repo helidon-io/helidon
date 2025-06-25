@@ -87,8 +87,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
