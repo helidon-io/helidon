@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -182,12 +183,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         headers.add(Http2Headers.SCHEME_NAME, "http");
         headers.add(GRPC_CONTENT_TYPE);
         headers.add(GRPC_ACCEPT_ENCODING);
+        GrpcHeadersUtil.updateHeaders(headers, metadata);
         clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
     abstract void startStreamingThreads();
 
-    /**
+    /**4
      * Unary blocking calls that use stubs provide their own executor which needs
      * to be used at least once to unblock the calling thread and complete the
      * gRPC invocation. This method submits an empty task for that purpose. There

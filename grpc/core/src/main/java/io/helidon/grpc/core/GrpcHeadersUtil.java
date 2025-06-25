@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.grpc;
+package io.helidon.grpc.core;
 
 import java.util.Base64;
 
@@ -26,12 +26,21 @@ import io.grpc.Metadata;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-class GrpcHeadersUtil {
+/**
+ * Utility class to map HTTP/2 headers to Metadata.
+ */
+public class GrpcHeadersUtil {
 
     private GrpcHeadersUtil() {
     }
 
-    static void updateHeaders(WritableHeaders<?> headers, Metadata metadata) {
+    /**
+     * Updates headers with metadata.
+     *
+     * @param headers the headers to update
+     * @param metadata the metadata
+     */
+    public static void updateHeaders(WritableHeaders<?> headers, Metadata metadata) {
         Base64.Encoder encoder = Base64.getEncoder();
         metadata.keys().forEach(name -> {
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
@@ -48,7 +57,13 @@ class GrpcHeadersUtil {
         });
     }
 
-    static Metadata toMetadata(Http2Headers headers) {
+    /**
+     * Converts a set of HTTP/2 headers into a Metadata instance.
+     *
+     * @param headers the headers to convert
+     * @return the new metadata
+     */
+    public static Metadata toMetadata(Http2Headers headers) {
         Base64.Decoder decoder = Base64.getDecoder();
         Metadata metadata = new Metadata();
         headers.httpHeaders().forEach(header -> {
