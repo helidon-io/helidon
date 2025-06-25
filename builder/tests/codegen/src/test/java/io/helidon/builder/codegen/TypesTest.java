@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.BuilderSupport;
 import io.helidon.builder.api.Description;
 import io.helidon.builder.api.GeneratedBuilder;
 import io.helidon.builder.api.Option;
@@ -133,6 +134,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_TYPE", Option.Type.class);
         checkField(toCheck, checked, fields, "OPTION_DECORATOR", Option.Decorator.class);
         checkField(toCheck, checked, fields, "OPTION_REGISTRY_SERVICE", Option.RegistryService.class);
+        checkField(toCheck, checked, fields, "BUILDER_SUPPORT", BuilderSupport.class);
 
         checkField(toCheck, checked, fields, "SERVICES", Services.class);
 

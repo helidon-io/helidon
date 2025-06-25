@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.service.registry.ServiceRegistry;
  * Methods used from generated code in builders when
  * {@link io.helidon.builder.api.Prototype.Configured} is used.
  */
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
     private ConfigBuilderSupport() {
     }
@@ -115,7 +116,9 @@ public final class ConfigBuilderSupport {
      * @param <S>                  type of the expected service
      * @param <T>                  type of the configured service provider that creates instances of S
      * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
+     * @deprecated use {@link #discoverServices(Config, String, Class, Class, boolean, java.util.List)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.3.0")
     public static <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
     discoverServices(Config config,
                      String configKey,
@@ -132,6 +135,41 @@ public final class ConfigBuilderSupport {
                                              allFromServiceLoader,
                                              existingInstances);
     }
+
+    /**
+     * Discover services from configuration.
+     * If already configured instances contain a service of the same type and name that would be added from
+     * configuration, the configuration would be ignored (e.g. the user must make a choice whether to configure, or
+     * set using an API).
+     *
+     * @param config               configuration located at the parent node of the service providers
+     * @param configKey            configuration key of the provider list
+     *                             (either a list node, or object, where each child is one service)
+     * @param providerType         type of the service provider interface, used to lookup from {@link java.util.ServiceLoader}
+     * @param configType           type of the configured service
+     * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
+     *                             node
+     * @param existingInstances    already configured instances
+     * @param <S>                  type of the expected service
+     * @param <T>                  type of the configured service provider that creates instances of S
+     * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
+     */
+    public static <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
+    discoverServices(Config config,
+                     String configKey,
+                     Class<T> providerType,
+                     Class<S> configType,
+                     boolean allFromServiceLoader,
+                     List<S> existingInstances) {
+        return ProvidedUtil.discoverServices(config,
+                                             configKey,
+                                             HelidonServiceLoader.create(providerType),
+                                             providerType,
+                                             configType,
+                                             allFromServiceLoader,
+                                             existingInstances);
+    }
+
 
     /**
      * Discover service from configuration. If an instance is already configured using a builder, it will not be
@@ -151,8 +189,9 @@ public final class ConfigBuilderSupport {
      * @param <T>                  type of the configured service provider that creates instances of S
      * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
      *         is found
+     * @deprecated use {@link #discoverService(Config, String, Class, Class, boolean, java.util.Optional)}
      */
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    @Deprecated(forRemoval = true, since = "4.3.0")
     public static <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
     discoverService(Config config,
                     String configKey,
@@ -164,6 +203,40 @@ public final class ConfigBuilderSupport {
         return ProvidedUtil.discoverService(config,
                                             configKey,
                                             serviceLoader,
+                                            providerType,
+                                            configType,
+                                            allFromServiceLoader,
+                                            existingValue);
+    }
+
+    /**
+     * Discover service from configuration. If an instance is already configured using a builder, it will not be
+     * discovered from configuration (e.g. the user must make a choice whether to configure, or set using API).
+     *
+     * @param config               configuration located at the parent node of the service providers
+     * @param configKey            configuration key of the provider list
+     *                             (either a list node, or object, where each child is one service - this method requires
+     *                             *                             zero to one configured services)
+     * @param providerType         type of the service provider interface, used to lookup from {@link java.util.ServiceLoader}
+     * @param configType           type of the configured service
+     * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
+     *                             node
+     * @param existingValue        value already configured, if the name is same as discovered from configuration
+     * @param <S>                  type of the expected service
+     * @param <T>                  type of the configured service provider that creates instances of S
+     * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
+     *         is found
+     */
+    public static <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
+    discoverService(Config config,
+                    String configKey,
+                    Class<T> providerType,
+                    Class<S> configType,
+                    boolean allFromServiceLoader,
+                    Optional<S> existingValue) {
+        return ProvidedUtil.discoverService(config,
+                                            configKey,
+                                            HelidonServiceLoader.create(providerType),
                                             providerType,
                                             configType,
                                             allFromServiceLoader,
