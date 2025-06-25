@@ -176,20 +176,25 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         startStreamingThreads();
 
         // send HEADERS frame
-        WritableHeaders<?> headers = WritableHeaders.create();
-        headers.add(Http2Headers.AUTHORITY_NAME, clientUri.authority());
-        headers.add(Http2Headers.METHOD_NAME, "POST");
-        headers.add(Http2Headers.PATH_NAME, "/" + methodDescriptor.getFullMethodName());
-        headers.add(Http2Headers.SCHEME_NAME, "http");
-        headers.add(GRPC_CONTENT_TYPE);
-        headers.add(GRPC_ACCEPT_ENCODING);
-        GrpcHeadersUtil.updateHeaders(headers, metadata);
+        WritableHeaders<?> headers = setupHeaders(metadata, clientUri.authority(), methodDescriptor.getFullMethodName());
         clientStream.writeHeaders(Http2Headers.create(headers), false);
+    }
+
+    static WritableHeaders<?> setupHeaders(Metadata metadata, String authority, String methodName) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        GrpcHeadersUtil.updateHeaders(headers, metadata);
+        headers.set(Http2Headers.AUTHORITY_NAME, authority);
+        headers.set(Http2Headers.METHOD_NAME, "POST");
+        headers.set(Http2Headers.PATH_NAME, "/" + methodName);
+        headers.set(Http2Headers.SCHEME_NAME, "http");
+        headers.set(GRPC_CONTENT_TYPE);
+        headers.set(GRPC_ACCEPT_ENCODING);
+        return headers;
     }
 
     abstract void startStreamingThreads();
 
-    /**4
+    /**
      * Unary blocking calls that use stubs provide their own executor which needs
      * to be used at least once to unblock the calling thread and complete the
      * gRPC invocation. This method submits an empty task for that purpose. There
