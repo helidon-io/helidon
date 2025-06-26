@@ -16,6 +16,7 @@
 package io.helidon.jsonrpc.core;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -24,10 +25,12 @@ import java.util.Objects;
 import io.helidon.common.LazyValue;
 
 import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
-import jakarta.json.JsonValue;
+import jakarta.json.JsonWriter;
+import jakarta.json.JsonWriterFactory;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
@@ -37,16 +40,24 @@ import jakarta.json.bind.JsonbBuilder;
  */
 public class JsonUtil {
 
-    private static final LazyValue<Jsonb> JSONB_BUILDER = LazyValue.create(JsonbBuilder::create);
+    /**
+     * Global JSON builder factory used by JSON-RPC implementation.
+     */
+    public static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
 
-    private static final LazyValue<JsonReaderFactory> JSON_READER_FACTORY
+    static final LazyValue<Jsonb> JSONB_BUILDER = LazyValue.create(JsonbBuilder::create);
+
+    static final LazyValue<JsonReaderFactory> JSON_READER_FACTORY
             = LazyValue.create(() -> Json.createReaderFactory(Map.of()));
+
+    static final LazyValue<JsonWriterFactory> JSON_WRITER_FACTORY
+            = LazyValue.create(() -> Json.createWriterFactory(Map.of()));
 
     private JsonUtil() {
     }
 
     /**
-     * Convert a JSONB object into a {@link JsonValue}.
+     * Convert a JSONB instance into a JSONP instance.
      *
      * @param object the object
      * @return the JSON value
@@ -61,7 +72,7 @@ public class JsonUtil {
     }
 
     /**
-     * Convert a JSON object into a JSONB object.
+     * Convert a JSONP instance into a JSONB instance.
      *
      * @param object the JSON object
      * @param type   the JSONB type
@@ -71,7 +82,11 @@ public class JsonUtil {
     public static <T> T jsonpToJsonb(JsonObject object, Class<T> type) {
         Objects.requireNonNull(object, "json object is null");
         Objects.requireNonNull(type, "type is null");
-        String serialized = object.toString();
-        return JSONB_BUILDER.get().fromJson(serialized, type);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (JsonWriter writer = JSON_WRITER_FACTORY.get().createWriter(os, StandardCharsets.UTF_8)) {
+            writer.writeObject(object);
+        }
+        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+        return JSONB_BUILDER.get().fromJson(is, type);
     }
 }

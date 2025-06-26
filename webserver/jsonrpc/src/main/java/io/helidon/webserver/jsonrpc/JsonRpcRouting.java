@@ -29,7 +29,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -41,6 +40,7 @@ import static io.helidon.jsonrpc.core.JsonRpcError.INTERNAL_ERROR;
 import static io.helidon.jsonrpc.core.JsonRpcError.INVALID_REQUEST;
 import static io.helidon.jsonrpc.core.JsonRpcError.METHOD_NOT_FOUND;
 import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * A routing class for JSON-RPC. This class provides a method to map
@@ -183,7 +183,7 @@ public class JsonRpcRouting implements Routing {
                         }
 
                         // process batch requests
-                        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+                        JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
                         for (int i = 0; i < size; i++) {
                             JsonValue jsonValue = jsonArray.get(i);
 

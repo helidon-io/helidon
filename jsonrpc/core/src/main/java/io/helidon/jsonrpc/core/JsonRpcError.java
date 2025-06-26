@@ -19,10 +19,11 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * A representation of a JSON-RPC error.
@@ -73,7 +74,7 @@ public interface JsonRpcError {
      */
     static JsonRpcError create(int code, String message) {
         Objects.requireNonNull(message, "message is null");
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder();
         builder.add("code", code);
         builder.add("message", message);
         return new JsonRpcErrorImpl(builder.build());
@@ -90,7 +91,7 @@ public interface JsonRpcError {
     static JsonRpcError create(int code, String message, JsonValue data) {
         Objects.requireNonNull(message, "message is null");
         Objects.requireNonNull(data, "data is null");
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder();
         builder.add("code", code);
         builder.add("message", message);
         builder.add("data", data);

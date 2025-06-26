@@ -25,7 +25,5 @@ module io.helidon.webclient.jsonrpc {
     requires io.helidon.builder.api;
     requires io.helidon.webclient;
 
-    requires static io.helidon.common.features.api;
-
     exports io.helidon.webclient.jsonrpc;
 }

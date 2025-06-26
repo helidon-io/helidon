@@ -29,10 +29,11 @@ import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonUtil;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of JSON-RPC response.
@@ -118,7 +119,7 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
 
     @Override
     public JsonObject asJsonObject() {
-        JsonObjectBuilder builder = Json.createObjectBuilder()
+        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder()
                 .add("jsonrpc", "2.0");
         if (rpcId != null) {
             builder.add("id", rpcId);

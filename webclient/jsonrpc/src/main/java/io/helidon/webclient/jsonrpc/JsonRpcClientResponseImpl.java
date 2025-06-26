@@ -29,15 +29,16 @@ import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of JSON-RPC client response.
  */
 class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
-    private static final JsonObject EMPTY_JSON_OBJECT = Json.createObjectBuilder().build();
+    private static final JsonObject EMPTY_JSON_OBJECT = JSON_BUILDER_FACTORY.createObjectBuilder().build();
 
     private final HttpClientResponse delegate;
     private JsonObject jsonObject;
