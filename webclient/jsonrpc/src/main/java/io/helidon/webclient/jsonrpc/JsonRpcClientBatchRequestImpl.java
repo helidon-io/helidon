@@ -24,9 +24,10 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 
-import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of a JSON-RPC client batch request.
@@ -58,7 +59,7 @@ class JsonRpcClientBatchRequestImpl implements JsonRpcClientBatchRequest {
 
     @Override
     public JsonArray asJsonArray() {
-        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
         requests.forEach(request -> arrayBuilder.add(request.asJsonObject()));
         return  arrayBuilder.build();
     }

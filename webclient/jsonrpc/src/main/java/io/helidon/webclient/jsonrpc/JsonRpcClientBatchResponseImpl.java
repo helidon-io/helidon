@@ -32,15 +32,16 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.spi.Source;
 
-import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * A representation of JSON-RPC client batch response.
  */
 class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
-    private static final JsonArray EMPTY_JSON_ARRAY = Json.createArrayBuilder().build();
+    private static final JsonArray EMPTY_JSON_ARRAY = JSON_BUILDER_FACTORY.createArrayBuilder().build();
 
     private final HttpClientResponse delegate;
     private JsonArray jsonArray;

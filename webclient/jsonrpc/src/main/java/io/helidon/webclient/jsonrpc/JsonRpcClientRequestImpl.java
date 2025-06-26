@@ -44,11 +44,12 @@ import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 
-import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
+
+import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
  * An implementation of JSON-RPC client request.
@@ -112,26 +113,26 @@ class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
 
     @Override
     public JsonObject asJsonObject() {
-        JsonObjectBuilder builder = Json.createObjectBuilder()
+        JsonObjectBuilder builder = JSON_BUILDER_FACTORY.createObjectBuilder()
                 .add("jsonrpc", "2.0");
         if (rpcId != null) {
             builder.add("id", rpcId);
         }
         builder.add("method", rpcMethod);
         if (namedParams != null) {
-            JsonObjectBuilder namedBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder namedBuilder = JSON_BUILDER_FACTORY.createObjectBuilder();
             for (Map.Entry<String, JsonValue> entry : namedParams.entrySet()) {
                 namedBuilder.add(entry.getKey(), entry.getValue());
             }
             builder.add("params", namedBuilder.build());
         } else if (arrayParams != null) {
-            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+            JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
             for (JsonValue value : arrayParams) {
                 arrayBuilder.add(value);
             }
             builder.add("params", arrayBuilder.build());
         } else {
-            builder.add("params", Json.createObjectBuilder().build());
+            builder.add("params", JSON_BUILDER_FACTORY.createObjectBuilder().build());
         }
         return builder.build();
     }
