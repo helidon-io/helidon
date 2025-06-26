@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import java.util.Set;
 import java.util.SortedMap;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -105,15 +106,30 @@ public class TestRestServiceInheritance {
                                      "io.helidon.microprofile.metrics.TestRestServiceInheritance$ConcreteService"),
                              new Tag("method", "getFromBase")));
         assertThat("Timer from base", getFromBaseTimer, notNullValue());
-        assertThat("Timer from base count", getFromBaseTimer.getCount(), is(1L));
+
+        /*
+        The Helidon code which updates the REST request metrics runs in a filter after chain.proceed()...therefore, after the
+        response has been sent. That means it is possible, given thread scheduling, for this test code to receive the response
+        and check the metric in the registry before the filter has updated the metric. So retry a reasonable amount.
+         */
+        MatcherWithRetry.assertThatWithRetry("Timer from base: count",
+                                             getFromBaseTimer::getCount,
+                                             is(1L),
+                                             20,
+                                             100);
 
         Timer getFromConcreteTimer = metricRegistry.getTimer(
                 new MetricID("REST.request",
                              new Tag("class",
                                      "io.helidon.microprofile.metrics.TestRestServiceInheritance$ConcreteService"),
                              new Tag("method", "getFromConcrete")));
-        assertThat("Timer from base", getFromConcreteTimer, notNullValue());
-        assertThat("Timer from base count", getFromConcreteTimer.getCount(), is(1L));
+        assertThat("Timer from concrete subclass", getFromConcreteTimer, notNullValue());
+        MatcherWithRetry.assertThatWithRetry("Timer from base: count",
+                                             getFromConcreteTimer::getCount,
+                                             is(1L),
+                                             20,
+                                             100);
+        assertThat("Timer from concrete subclass: count", getFromConcreteTimer.getCount(), is(1L));
 
     }
 }
