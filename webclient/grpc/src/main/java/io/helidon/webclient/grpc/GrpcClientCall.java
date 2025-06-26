@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
@@ -109,7 +110,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 try {
                     startWriteBarrier.await();
                     socket().log(LOGGER, DEBUG, "[Heartbeat thread] started with period " + period);
-
                     while (isRemoteOpen()) {
                         Thread.sleep(period);
                         if (sendingQueue.isEmpty()) {
@@ -182,7 +182,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
                 // read data from stream
                 while (isRemoteOpen()) {
-                    // drain queue
                     drainReceivingQueue();
 
                     // trailers or eos received?
@@ -190,8 +189,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
                         break;
                     }
-
-                    // attempt to read and queue
+                    // attempt to read HTTP/2 frame
                     Http2FrameData frameData;
                     try {
                         frameData = clientStream().readOne(pollWaitTime());
@@ -199,15 +197,45 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         handleStreamTimeout(e);
                         continue;
                     }
-                    if (frameData != null) {
-                        BufferData bufferData = frameData.data();
-                        // update bytes received excluding prefix
-                        if (enableMetrics()) {
-                            bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
-                        }
-                        receivingQueue.add(bufferData);
-                        socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
+                    // no data then continue
+                    if (frameData == null) {
+                        continue;
                     }
+
+                    // read more HTTP/2 frames if long gRPC frame
+                    BufferData bufferData = frameData.data();
+                    bufferData.read();                                      // skip compression
+                    long grpcLength = bufferData.readUnsignedInt32();       // length prefixed
+                    bufferData.rewind();
+                    if (grpcLength > bufferData.available() - DATA_PREFIX_LENGTH) {
+                        CompositeBufferData compositeBuffer = BufferData.createComposite(bufferData);
+
+                        // read the rest of gRPC frame
+                        do {
+                            try {
+                                frameData = clientStream().readOne(pollWaitTime());
+                            } catch (StreamTimeoutException e) {
+                                handleStreamTimeout(e);
+                                continue;
+                            }
+                            if (frameData == null) {
+                                continue;
+                            }
+                            bufferData = frameData.data();
+                            compositeBuffer.add(bufferData);
+                            grpcLength -= bufferData.available();
+                        } while (grpcLength > 0);
+
+                        // switch to composite buffer
+                        bufferData = compositeBuffer;
+                    }
+
+                    // update bytes received excluding prefix
+                    if (enableMetrics()) {
+                        bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
+                    }
+                    receivingQueue.add(bufferData);
+                    socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                 }
 
                 socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
