@@ -26,8 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.CompositeBufferData;
-import io.helidon.http.http2.Http2FrameData;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
@@ -189,45 +187,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
                         break;
                     }
-                    // attempt to read HTTP/2 frame
-                    Http2FrameData frameData;
-                    try {
-                        frameData = clientStream().readOne(pollWaitTime());
-                    } catch (StreamTimeoutException e) {
-                        handleStreamTimeout(e);
+
+                    // read complete gRPC data
+                    BufferData bufferData = readGrpcFrame();
+                    if (bufferData == null) {
                         continue;
-                    }
-                    // no data then continue
-                    if (frameData == null) {
-                        continue;
-                    }
-
-                    // read more HTTP/2 frames if long gRPC frame
-                    BufferData bufferData = frameData.data();
-                    bufferData.read();                                      // skip compression
-                    long grpcLength = bufferData.readUnsignedInt32();       // length prefixed
-                    bufferData.rewind();
-                    if (grpcLength > bufferData.available() - DATA_PREFIX_LENGTH) {
-                        CompositeBufferData compositeBuffer = BufferData.createComposite(bufferData);
-
-                        // read the rest of gRPC frame
-                        do {
-                            try {
-                                frameData = clientStream().readOne(pollWaitTime());
-                            } catch (StreamTimeoutException e) {
-                                handleStreamTimeout(e);
-                                continue;
-                            }
-                            if (frameData == null) {
-                                continue;
-                            }
-                            bufferData = frameData.data();
-                            compositeBuffer.add(bufferData);
-                            grpcLength -= bufferData.available();
-                        } while (grpcLength > 0);
-
-                        // switch to composite buffer
-                        bufferData = compositeBuffer;
                     }
 
                     // update bytes received excluding prefix
@@ -277,13 +241,5 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             ResT res = toResponse(receivingQueue.remove());
             responseListener().onMessage(res);
         }
-    }
-
-    private void handleStreamTimeout(StreamTimeoutException e) {
-        if (abortPollTimeExpired()) {
-            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
-            throw e;
-        }
-        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 }
