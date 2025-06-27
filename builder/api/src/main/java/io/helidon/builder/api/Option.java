@@ -146,6 +146,8 @@ public final class Option {
          * When set to {@code true}, all services discovered by the service loader will be added (even if no configuration
          * node exists for them). When set to {@code false}, only services that have a configuration node will be added.
          * This can be overridden by {@code discover-services} configuration option under this option's key.
+         * In case the option is not {@link io.helidon.builder.api.Option.Configured}, this is always considered true,
+         * as otherwise this annotation would not make any sense (i.e. it would never provide a value).
          *
          * @return whether to discover services by default for a provider
          */

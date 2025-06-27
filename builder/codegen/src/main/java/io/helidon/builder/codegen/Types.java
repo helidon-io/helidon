@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ final class Types {
 
     static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
             "io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder");
+    static final TypeName BUILDER_SUPPORT = TypeName.create("io.helidon.builder.api.BuilderSupport");
     static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
 
     static final TypeName REGISTRY_BUILDER_SUPPORT = TypeName.create("io.helidon.service.registry.RegistryBuilderSupport");

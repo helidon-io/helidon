@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -38,12 +37,12 @@ import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.builder.codegen.Types.BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.CONFIG_BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.REGISTRY_BUILDER_SUPPORT;
 import static io.helidon.codegen.CodegenUtil.capitalize;
@@ -624,8 +623,7 @@ final class GenerateAbstractBuilder {
                                                          property,
                                                          propertyConfigured,
                                                          configuredOption,
-                                                         providerType,
-                                                         defaultDiscoverServices);
+                                                         providerType);
                     } else {
                         serviceLoaderPropertyDiscovery(preBuildBuilder,
                                                        property,
@@ -655,16 +653,8 @@ final class GenerateAbstractBuilder {
                                                        AnnotationDataOption configuredOption,
                                                        TypeName providerType,
                                                        boolean defaultDiscoverServices) {
-        preBuildBuilder.addContentLine("{");
-        preBuildBuilder.addContent("var serviceLoader = ")
-                .addContent(HelidonServiceLoader.class)
-                .addContent(".create(")
-                .addContent(ServiceLoader.class)
-                .addContent(".load(")
-                .addContent(providerType.genericTypeName())
-                .addContentLine(".class));");
+        TypeName typeName = property.typeHandler().declaredType();
         if (propertyConfigured) {
-            TypeName typeName = property.typeHandler().declaredType();
             if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
                         .addContent(capitalize(property.name()))
@@ -672,7 +662,7 @@ final class GenerateAbstractBuilder {
                         .addContent(CONFIG_BUILDER_SUPPORT)
                         .addContent(".discoverServices(config, \"")
                         .addContent(configuredOption.configKey())
-                        .addContent("\", serviceLoader, ")
+                        .addContent("\", ")
                         .addContent(providerType.genericTypeName())
                         .addContent(".class, ")
                         .addContent(property.typeHandler().actualType().genericTypeName())
@@ -686,7 +676,7 @@ final class GenerateAbstractBuilder {
                         .addContent(CONFIG_BUILDER_SUPPORT)
                         .addContent(".discoverService(config, \"")
                         .addContent(configuredOption.configKey())
-                        .addContent("\", serviceLoader, ")
+                        .addContent("\", ")
                         .addContent(providerType)
                         .addContent(".class, ")
                         .addContent(property.typeHandler().actualType().genericTypeName())
@@ -701,11 +691,34 @@ final class GenerateAbstractBuilder {
                         .addContentLine(");");
             }
         } else {
-            if (defaultDiscoverServices) {
-                preBuildBuilder.addContentLine("this." + property.name() + "(serviceLoader.asList());");
+            if (typeName.isList() || typeName.isSet()) {
+                preBuildBuilder.addContent("this.add")
+                        .addContent(capitalize(property.name()))
+                        .addContent("(")
+                        .addContent(BUILDER_SUPPORT)
+                        .addContent(".discoverServices(")
+                        .addContent(providerType.genericTypeName())
+                        .addContent(".class, ")
+                        .addContent(property.name())
+                        .addContent("DiscoverServices, ")
+                        .addContent(property.name())
+                        .addContentLine("));");
+            } else {
+                preBuildBuilder
+                        .addContent(BUILDER_SUPPORT)
+                        .addContent(".discoverService(")
+                        .addContent(providerType)
+                        .addContent(".class, ")
+                        .addContent(property.name())
+                        .addContent("DiscoverServices, ")
+                        .addContent(Optional.class)
+                        .addContent(".ofNullable(")
+                        .addContent(property.name())
+                        .addContent(")).ifPresent(this::")
+                        .addContent(property.setterName())
+                        .addContentLine(");");
             }
         }
-        preBuildBuilder.addContentLine("}");
     }
 
     private static void serviceRegistryProperty(Method.Builder preBuildBuilder,
@@ -754,10 +767,9 @@ final class GenerateAbstractBuilder {
                                                          PrototypeProperty property,
                                                          boolean propertyConfigured,
                                                          AnnotationDataOption configuredOption,
-                                                         TypeName providerType,
-                                                         boolean defaultDiscoverServices) {
+                                                         TypeName providerType) {
+        TypeName typeName = property.typeHandler().declaredType();
         if (propertyConfigured) {
-            TypeName typeName = property.typeHandler().declaredType();
             if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
                         .addContent(capitalize(property.name()))
@@ -811,10 +823,42 @@ final class GenerateAbstractBuilder {
                         .decreaseContentPadding();
             }
         } else {
-            if (defaultDiscoverServices) {
-                preBuildBuilder.addContent("this." + property.name() + "(registry.all(")
-                        .addContent(providerType.genericTypeName())
-                        .addContentLine(".class));");
+            if (typeName.isList()) {
+                preBuildBuilder
+                        .addContent("this.add")
+                        .addContent(capitalize(property.name()))
+                        .addContent("(")
+                        .addContent(REGISTRY_BUILDER_SUPPORT)
+                        .addContent(".serviceList(registry, ")
+                        .addContentCreate(property.typeHandler().actualType())
+                        .addContent(", ")
+                        .addContent(property.name())
+                        .addContentLine("DiscoverServices));");
+            } else if (typeName.isSet()) {
+                preBuildBuilder
+                        .addContent("this.add")
+                        .addContent(capitalize(property.name()))
+                        .addContent("(")
+                        .addContent(REGISTRY_BUILDER_SUPPORT)
+                        .addContent(".serviceSet(registry, ")
+                        .addContentCreate(property.typeHandler().actualType())
+                        .addContent(", ")
+                        .addContent(property.name())
+                        .addContentLine("DiscoverServices));");
+            } else {
+                preBuildBuilder
+                        .addContent(REGISTRY_BUILDER_SUPPORT)
+                        .addContent(".service(registry, ")
+                        .addContentCreate(property.typeHandler().actualType())
+                        .addContent(", ")
+                        .addContent(Optional.class)
+                        .addContent(".ofNullable(")
+                        .addContent(property.name())
+                        .addContent("), ")
+                        .addContent(property.name())
+                        .addContent("DiscoverServices).ifPresent(this::")
+                        .addContent(property.setterName())
+                        .addContentLine(");");
             }
         }
     }

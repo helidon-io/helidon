@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,13 @@ interface WithProviderBlueprint {
     @Option.Configured
     @Option.Provider(ProviderNoImpls.class)
     Optional<ProviderNoImpls.SomeService> optionalNoImplDiscover();
+
+    @Option.Access("")
+    @Option.Provider(ProviderNoImpls.SomeService.class)
+    List<ProviderNoImpls.SomeService> listNoImplDiscoverNoConfig();
+
+    @Option.Provider(ProviderNoImpls.SomeService.class)
+    Optional<ProviderNoImpls.SomeService> noImplDiscoverNoConfig();
 
     @Option.Configured
     @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)
