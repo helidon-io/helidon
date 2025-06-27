@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires microprofile.config.api;
     requires oci.java.sdk.common;
     requires oci.java.sdk.addons.oke.workload.identity;
+    requires io.helidon.service.registry;
 
     exports io.helidon.integrations.oci.sdk.cdi;
 

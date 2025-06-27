@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.helidon.service.registry.GlobalServiceRegistry;
 
 import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import com.oracle.bmc.Service;
@@ -901,6 +903,12 @@ public final class OciExtension implements Extension {
     private static void installConfigFile(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // Supplier<ConfigFile>
         if (isUnsatisfied(bm, SUPPLIER_CONFIGFILE_TYPE, qualifiers)) {
+            var existing = GlobalServiceRegistry.registry()
+                    .lookupServices(io.helidon.service.registry.Lookup.create(ConfigFile.class));
+            if (!existing.isEmpty()) {
+                // the config file will be available through CDI bridge, no need to install it
+                return;
+            }
             event.addBean()
                 .types(SUPPLIER_CONFIGFILE_TYPE)
                 .qualifiers(qualifiers)
@@ -1166,6 +1174,12 @@ public final class OciExtension implements Extension {
     private static void installBasicAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
         // AbstractAuthenticationDetailsProvider, BasicAuthenticationDetailsProvider
         if (isUnsatisfied(bm, BasicAuthenticationDetailsProvider.class, qualifiers)) {
+            var existing = GlobalServiceRegistry.registry()
+                    .lookupServices(io.helidon.service.registry.Lookup.create(BasicAuthenticationDetailsProvider.class));
+            if (!existing.isEmpty()) {
+                // the provider will be available through CDI bridge, no need to install it
+                return;
+            }
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class, BasicAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)

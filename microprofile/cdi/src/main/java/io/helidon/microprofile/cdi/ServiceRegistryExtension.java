@@ -739,6 +739,7 @@ class ServiceRegistryExtension implements Extension {
         private final Type theType;
         private final double weight;
         private final TypeName scope;
+        private final boolean isSupplier;
 
         CdiBeanDescriptor(BeanManager bm,
                           CdiBean cdiBean,
@@ -750,8 +751,17 @@ class ServiceRegistryExtension implements Extension {
             this.theType = contract;
             this.serviceType = TypeName.create(bean.getBeanClass());
             this.weight = Weights.find(bean.getBeanClass(), WEIGHT);
-            this.contracts = Set.of(ResolvedType.create(contract));
+            ResolvedType contractType = ResolvedType.create(contract);
+            boolean supplier;
+            if (contractType.type().isSupplier()) {
+                contractType = ResolvedType.create(contractType.type().typeArguments().getFirst());
+                supplier = true;
+            } else {
+                supplier = false;
+            }
+            this.contracts = Set.of(contractType);
             this.qualifiers = findRegistryQualifiers(cdiBean.annotated().getAnnotations());
+            this.isSupplier = supplier;
         }
 
         @Override
@@ -776,7 +786,11 @@ class ServiceRegistryExtension implements Extension {
 
         @Override
         public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
-            return bm.getReference(bean, theType, bm.createCreationalContext(bean));
+            var result = bm.getReference(bean, theType, bm.createCreationalContext(bean));
+            if (isSupplier) {
+                return ((Supplier<?>) result).get();
+            }
+            return result;
         }
 
         @Override

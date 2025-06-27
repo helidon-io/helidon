@@ -15,9 +15,7 @@
  */
 package io.helidon.integrations.oci.metrics.cdi;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -42,15 +40,11 @@ import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
-
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
-import jakarta.enterprise.inject.spi.InjectionPoint;
-import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.AfterEach;
@@ -164,21 +158,6 @@ class OciMetricsCdiExtensionTest {
     // Use this to replace OciExtension, but will only process OCI Monitoring annotation. If the Monitoring
     // annotation is found, a Mocked Monitoring object will be injected as a bean
     static public class MockOciMonitoringExtension implements Extension {
-        boolean monitoringFound;
-        Set<Annotation> monitoringQualifiers;
-
-        void processInjectionPoint(@Observes final ProcessInjectionPoint<?, ?> event) {
-            if (event != null) {
-                InjectionPoint ip = event.getInjectionPoint();
-                Class<?> c = (Class<?>) ip.getAnnotated().getBaseType();
-                final Set<Annotation> existingQualifiers = ip.getQualifiers();
-                if (c == Monitoring.class && existingQualifiers != null && !existingQualifiers.isEmpty()) {
-                    monitoringFound = true;
-                    monitoringQualifiers = existingQualifiers;
-                }
-            }
-        }
-
         Monitoring getMockedMonitoring() {
             // Use Proxy to mock only getEndPoint() and postMetricDataDetails() methods of the Monitoring interface,
             // as those are the only ones needed by the test
@@ -212,19 +191,13 @@ class OciMetricsCdiExtensionTest {
         }
 
         void afterBeanDiscovery(@Observes AfterBeanDiscovery event) {
-            if (monitoringFound) {
-                BeanConfigurator<Object> beanConfigurator = event.addBean()
-                        .types(Monitoring.class)
-                        .scope(ApplicationScoped.class)
-                        .addQualifiers(monitoringQualifiers);
-                beanConfigurator = monitoringQualifiers != null ? beanConfigurator.addQualifiers(monitoringQualifiers) :
-                        beanConfigurator.addQualifier(Default.Literal.INSTANCE);
-                // Add the mocked Monitoring as a bean
-                beanConfigurator.produceWith(obj -> getMockedMonitoring());
-            } else {
-                throw new IllegalStateException("Monitoring was never injected. Check if OciMetricsBean.registerOciMetrics() "
-                                                            + "has changed and does not inject Monitoring anymore.");
-            }
+            BeanConfigurator<Object> beanConfigurator = event.addBean()
+                    .types(Monitoring.class)
+                    .scope(ApplicationScoped.class)
+                    .addQualifier(Default.Literal.INSTANCE);
+
+            // Add the mocked Monitoring as a bean
+            beanConfigurator.produceWith(obj -> getMockedMonitoring());
         }
     }
 
