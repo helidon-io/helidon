@@ -19,15 +19,12 @@ package io.helidon.webclient.grpc;
 import java.time.Duration;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.http2.Http2FrameData;
-import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * An implementation of a unary gRPC call. Expects:
@@ -102,22 +99,9 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 break;
             }
 
-            // attempt to read and queue
-            Http2FrameData frameData;
-            try {
-                frameData = clientStream().readOne(pollWaitTime());
-            } catch (StreamTimeoutException e) {
-                // abort or retry based on config settings
-                if (abortPollTimeExpired()) {
-                    socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
-                    responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
-                    break;
-                }
-                socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
-                continue;
-            }
-            if (frameData != null) {
-                BufferData bufferData = frameData.data();
+            // read single gRPC frame
+            BufferData bufferData = readGrpcFrame();
+            if (bufferData != null) {
                 socket().log(LOGGER, DEBUG, "response received");
 
                 // update bytes received excluding prefix
