@@ -207,7 +207,10 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addContent(configVariable)
                 .addContent(".get(\"")
                 .addContent(configKey)
-                .addContentLine("\"))");
+                .addContentLine("\"))")
+                .addContent(".id(\"")
+                .addContent(scheduled.id())
+                .addContentLine("\")");
 
         if (scheduled.hasParameter()) {
             postConstruct
@@ -270,6 +273,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
     }
 
     private void processCron(List<Scheduled> allScheduled,
+                             TypeName enclosingType,
                              TypedElementInfo element) {
 
         // there can be a method argument, but it must be of correct type
@@ -286,6 +290,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         // add for processing
         allScheduled.add(new Cron(element.elementName(),
                                   hasInvocationArgument,
+                                  toId(enclosingType, element),
                                   expression,
                                   concurrent,
                                   configKey));
@@ -311,10 +316,30 @@ class SchedulingExtension implements RegistryCodegenExtension {
         // add for processing
         allScheduled.add(new FixedRate(element.elementName(),
                                        hasInvocationArgument,
+                                       toId(enclosingType, element),
                                        rate,
                                        delayBy,
                                        delayType,
                                        configKey));
+    }
+
+    private String toId(TypeName enclosingType, TypedElementInfo element) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(enclosingType.fqName())
+                .append(".")
+                .append(element.elementName())
+                .append("(");
+
+        if (!element.parameterArguments().isEmpty()) {
+            // we can use just the class name, as there are only two options for declarative
+            // FixedRateInvocation or CronInvocation, package not needed
+            sb.append(element.parameterArguments().getFirst()
+                              .typeName()
+                              .className());
+        }
+
+        sb.append(")");
+        return sb.toString();
     }
 
     private boolean checkAndHasArgument(TypedElementInfo element, TypeName annotationType, TypeName invocationArgumentType) {
@@ -367,7 +392,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         for (TypedElementInfo element : elements) {
             TypeName enclosingType = enclosingType(element);
             var allScheduled = scheduledByType.computeIfAbsent(enclosingType, k -> new ArrayList<>());
-            processCron(allScheduled, element);
+            processCron(allScheduled, enclosingType, element);
         }
 
     }
@@ -380,10 +405,13 @@ class SchedulingExtension implements RegistryCodegenExtension {
         void createScheduledContent(ContentBuilder<?> content);
 
         Optional<String> configKey();
+
+        String id();
     }
 
     private record Cron(String methodName,
                         boolean hasParameter,
+                        String id,
                         String expression,
                         boolean concurrent,
                         Optional<String> configKey)
@@ -410,6 +438,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
     private record FixedRate(String methodName,
                              boolean hasParameter,
+                             String id,
                              String rate,
                              String delayBy,
                              String delayType,
