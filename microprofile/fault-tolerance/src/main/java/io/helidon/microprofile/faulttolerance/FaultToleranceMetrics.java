@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -36,16 +34,11 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
-import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
-
 /**
  * Utility class to register and fetch FT metrics.
  */
 class FaultToleranceMetrics {
 
-    static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
-
-    private static final ReentrantLock LOCK = new ReentrantLock();
     private static LazyValue<MetricRegistry> metricRegistry = metricRegistryLazyValue();
 
     private FaultToleranceMetrics() {
@@ -148,66 +141,6 @@ class FaultToleranceMetrics {
             return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
         }
 
-        @SuppressWarnings("unchecked")
-        static <T extends Metric> T getMetric(Method method, String name) {
-            MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
-                    method.getDeclaringClass().getName(),
-                    method.getName(), name));
-            return (T) getMetricRegistry().getMetrics().get(metricID);
-        }
-
-        static Counter getCounter(Method method, String name) {
-            return getMetric(method, name);
-        }
-
-        static Histogram getHistogram(Method method, String name) {
-            return getMetric(method, name);
-        }
-
-        @SuppressWarnings("unchecked")
-        static <T extends Number> Gauge<T> getGauge(Method method, String name) {
-            return getMetric(method, name);
-        }
-
-        static long getCounter(Object bean, String methodName, String name,
-                               Class<?>... params) throws Exception {
-            Method method = findMethod(getRealClass(bean), methodName, params);
-            return getCounter(method, name).getCount();
-        }
-
-        static Histogram getHistogram(Object bean, String methodName, String name,
-                                      Class<?>... params) throws Exception {
-            Method method = findMethod(getRealClass(bean), methodName, params);
-            return getHistogram(method, name);
-        }
-
-        static <T extends Number> Gauge<T> getGauge(Object bean, String methodName, String name,
-                                     Class<?>... params) throws Exception {
-            Method method = findMethod(getRealClass(bean), methodName, params);
-            return getGauge(method, name);
-        }
-
-        /**
-         * Attempts to find a method even if not accessible.
-         *
-         * @param beanClass bean class.
-         * @param methodName name of method.
-         * @param params param types.
-         * @return method found.
-         * @throws NoSuchMethodException if not found.
-         */
-        private static Method findMethod(Class<?> beanClass, String methodName,
-                                         Class<?>... params) throws NoSuchMethodException {
-            try {
-                Method method = beanClass.getDeclaredMethod(methodName, params);
-                method.setAccessible(true);
-                return method;
-            } catch (Exception e) {
-                return beanClass.getMethod(methodName, params);
-            }
-        }
-
-        @SuppressWarnings("unchecked")
         protected <T extends Number> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
             Gauge<T> gauge = getGauge(tags);
             if (gauge == null) {
@@ -296,10 +229,6 @@ class FaultToleranceMetrics {
         static Counter get(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
-
-        static Counter register(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
     }
 
     // -- Retries -------------------------------------------------------------
@@ -371,10 +300,6 @@ class FaultToleranceMetrics {
         static Counter get(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
-
-        static Counter register(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
     }
 
     /**
@@ -408,10 +333,6 @@ class FaultToleranceMetrics {
         }
 
         static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
-
-        static Counter register(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
     }
@@ -468,10 +389,6 @@ class FaultToleranceMetrics {
         static Counter get(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
-
-        static Counter register(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
     }
 
     /**
@@ -505,10 +422,6 @@ class FaultToleranceMetrics {
         }
 
         static Histogram get(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
-        }
-
-        static Histogram register(Tag... tags) {
             return INSTANCE.registerHistogram(tags);
         }
     }
@@ -549,31 +462,6 @@ class FaultToleranceMetrics {
         }
     }
 
-    /**
-     * Class for "ft.circuitbreaker.calls.total" counters.
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends Number> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        LOCK.lock();
-        try {
-            MetricID metricID = new MetricID(String.format(METRIC_NAME_TEMPLATE,
-                    method.getDeclaringClass().getName(),
-                    method.getName(),
-                    metricName));
-            Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
-            if (existing == null) {
-                getMetricRegistry().gauge(Metadata.builder()
-                        .withName(metricID.getName())
-                        .withDescription(description)
-                        .withUnit(MetricUnits.NANOSECONDS).build(),
-                        gauge::getValue);
-            }
-            return existing;
-        } finally {
-            LOCK.unlock();
-        }
-    }
-
     static class CircuitBreakerCallsTotal extends FaultToleranceMetric {
 
         static final CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
@@ -603,10 +491,6 @@ class FaultToleranceMetrics {
         }
 
         static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
-
-        static Counter register(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
     }
@@ -743,10 +627,6 @@ class FaultToleranceMetrics {
         static Counter get(Tag... tags) {
             return INSTANCE.registerCounter(tags);
         }
-
-        static Counter register(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
-        }
     }
 
     /**
@@ -860,10 +740,6 @@ class FaultToleranceMetrics {
         static Histogram get(Tag... tags) {
             return INSTANCE.registerHistogram(tags);
         }
-
-        static Histogram register(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
-        }
     }
 
     /**
@@ -897,10 +773,6 @@ class FaultToleranceMetrics {
         }
 
         static Histogram get(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
-        }
-
-        static Histogram register(Tag... tags) {
             return INSTANCE.registerHistogram(tags);
         }
     }
