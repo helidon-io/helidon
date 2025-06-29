@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,6 +259,7 @@ public class FaultToleranceExtension implements Extension {
      * @param object The object.
      * @return Its class.
      */
+    // used only in tests
     static Class<?> getRealClass(Object object) {
         Class<?> result = object.getClass();
         while (result.isSynthetic()) {
