@@ -90,7 +90,18 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
  * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-class ServiceRegistryExtension implements Extension {
+public class ServiceRegistryExtension implements Extension {
+
+    /**
+     * Creates a new {@link ServiceRegistryExtension}.
+     *
+     * @deprecated For CDI use only.
+     */
+    @Deprecated
+    public ServiceRegistryExtension() {
+        super();
+    }
+
     /*
     - we add all Helidon Service Registry qualifiers as CDI qualifiers (registerTypes)
     - we add ServiceRegistry itself as a bean (afterBeanDiscovery)
@@ -100,6 +111,7 @@ class ServiceRegistryExtension implements Extension {
 
     private static final TypeName CDI_NAMED_TYPE = TypeName.create(Named.class);
     private static final System.Logger LOGGER = System.getLogger(ServiceRegistryExtension.class.getName());
+    private static final int SYNTHETIC_BEAN_PRIORITY = 0;
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
 
@@ -239,6 +251,8 @@ class ServiceRegistryExtension implements Extension {
                 .beanClass(beanClass)
                 .types(typeClosure)
                 .id("service-registry-" + serviceType.fqName() + idSuffix)
+                .alternative(true)
+                .priority(SYNTHETIC_BEAN_PRIORITY)
                 .scope(cdiScope);
     }
 
