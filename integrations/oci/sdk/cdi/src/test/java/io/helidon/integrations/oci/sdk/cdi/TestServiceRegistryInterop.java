@@ -27,6 +27,7 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import jakarta.enterprise.inject.spi.BeanContainer;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.integrations.oci.sdk.cdi.Utils.configFileExists;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class TestServiceRegistryInterop {
 
     @Inject
-    private BasicAuthenticationDetailsProvider adp;
+    private Provider<BasicAuthenticationDetailsProvider> adp;
 
     @Inject
     private BeanContainer bc;
@@ -65,7 +66,7 @@ class TestServiceRegistryInterop {
 
         // Prove that contextual reference acquisition nevertheless works properly (likely because the
         // ServiceRegistryExtension-contributed Bean is an enabled alternative).
-        assertThat(this.adp, not(nullValue()));
+        assertThat(this.adp.get(), not(nullValue()));
 
     }
 
