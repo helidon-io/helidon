@@ -43,6 +43,7 @@
         <module>websocket</module>
         <module>grpc</module>
         <module>context</module>
+        <module>grpc-tracing</module>
     </modules>
 
     <profiles>
