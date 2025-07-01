@@ -16,11 +16,14 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.grpc.spi.GrpcClientService;
+import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 
 /**
  * Configuration of a grpc client.
@@ -54,5 +57,15 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
+
+    /**
+     * gRPC client services.
+     *
+     * @return services to use with this gRPC client
+     */
+    @Option.Singular
+    @Option.Configured
+    @Option.Provider(GrpcClientServiceProvider.class)
+    List<GrpcClientService> grpcServices();
 }
 

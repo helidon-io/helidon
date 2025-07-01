@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.webclient.grpc.tracing;
 
-import io.helidon.grpc.core.WeightedBag;
-import io.helidon.webclient.grpc.spi.GrpcChannelInterceptor;
+package io.helidon.webclient.grpc.spi;
 
-import io.grpc.ClientInterceptor;
+import io.helidon.common.config.ConfiguredProvider;
 
 /**
- * Channel interceptor for tracing.
+ * Java service loader interface for gRPC client services.
  */
-public class GrpcChannelTracingInterceptor implements GrpcChannelInterceptor {
-
-    @Override
-    public WeightedBag<ClientInterceptor> interceptors() {
-        WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
-        interceptors.add(new GrpcClientTracingInterceptor(), 1000.0);
-        return interceptors;
-    }
+public interface GrpcClientServiceProvider extends ConfiguredProvider<GrpcClientService> {
 }

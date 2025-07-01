@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon WebClient gRPC API.
+ * Helidon gRPC client SPI.
  */
 package io.helidon.webclient.grpc.spi;

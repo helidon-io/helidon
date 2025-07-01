@@ -29,8 +29,8 @@ module io.helidon.webclient.grpc.tracing {
 
     exports io.helidon.webclient.grpc.tracing;
 
-    uses io.helidon.webclient.grpc.spi.GrpcChannelInterceptor;
+    uses io.helidon.webclient.grpc.spi.GrpcClientService;
 
-    provides io.helidon.webclient.grpc.spi.GrpcChannelInterceptor
-            with io.helidon.webclient.grpc.tracing.GrpcChannelTracingInterceptor;
+    provides io.helidon.webclient.grpc.spi.GrpcClientServiceProvider
+            with io.helidon.webclient.grpc.tracing.GrpcClientTracingProvider;
 }

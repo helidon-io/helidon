@@ -17,11 +17,10 @@
 package io.helidon.webclient.grpc;
 
 import java.util.List;
-import java.util.ServiceLoader;
 
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webclient.grpc.spi.GrpcChannelInterceptor;
+import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.Channel;
@@ -87,10 +86,10 @@ class GrpcClientImpl implements GrpcClient {
         for (ClientInterceptor interceptor : interceptors) {
             weightedBag.add(interceptor);
         }
-        ServiceLoader<GrpcChannelInterceptor> serviceLoader = ServiceLoader.load(GrpcChannelInterceptor.class);
-        serviceLoader.forEach(interceptor -> {
-            weightedBag.merge(interceptor.interceptors());
-        });
+        List<GrpcClientService> grpcServices = clientConfig.grpcServices();
+        for (GrpcClientService service : grpcServices) {
+            weightedBag.merge(service.interceptors());
+        }
         return weightedBag;
     }
 }

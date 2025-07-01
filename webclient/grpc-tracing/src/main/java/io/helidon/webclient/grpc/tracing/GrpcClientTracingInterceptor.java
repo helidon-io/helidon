@@ -40,17 +40,17 @@ public class GrpcClientTracingInterceptor implements ClientInterceptor {
     private static final Logger LOGGER = System.getLogger(GrpcClientTracingInterceptor.class.getName());
 
     @Override
-    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
-                                                               CallOptions callOptions,
-                                                               Channel channel) {
-
-        return new ForwardingClientCall.SimpleForwardingClientCall<>(channel.newCall(method, callOptions)) {
+    public <ReqT, ResT> ClientCall<ReqT, ResT> interceptCall(MethodDescriptor<ReqT, ResT> method,
+                                                             CallOptions callOptions,
+                                                             Channel channel) {
+        ClientCall<ReqT, ResT> call = channel.newCall(method, callOptions);
+        return new ForwardingClientCall.SimpleForwardingClientCall<>(call) {
 
             private Span outgoingClientSpan;
             private Scope outgoingClientScope;
 
             @Override
-            public void start(Listener<RespT> responseListener, Metadata headers) {
+            public void start(Listener<ResT> responseListener, Metadata headers) {
                 LOGGER.log(Level.DEBUG, "Call start; metadata: {0}", headers);
                 // Start a new span for the outgoing gRPC client call.
                 var outgoingClientSpanBuilder = Tracer.global()
@@ -65,7 +65,6 @@ public class GrpcClientTracingInterceptor implements ClientInterceptor {
                     outgoingClientScope = outgoingClientSpan.activate();
 
                     super.start(responseListener, headers);
-
                 } catch (Exception e) {
                     closeScopeIfActive();
                     endSpanIfPresent(e);

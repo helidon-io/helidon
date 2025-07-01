@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.webclient.grpc.spi;
 
 import io.helidon.common.config.NamedService;
@@ -21,11 +22,10 @@ import io.helidon.grpc.core.WeightedBag;
 import io.grpc.ClientInterceptor;
 
 /**
- * An interceptor for a gRPC channel that can return a weighted bag of
- * {@link io.grpc.ClientInterceptor}s.
+ * Extension that can modify gRPC client behavior.
  */
 @FunctionalInterface
-public interface GrpcChannelInterceptor extends NamedService {
+public interface GrpcClientService extends NamedService {
 
     @Override
     default String name() {
@@ -34,14 +34,13 @@ public interface GrpcChannelInterceptor extends NamedService {
 
     @Override
     default String type() {
-        return "grpc-channel-interceptor";
+        return "grpc-client-service";
     }
 
     /**
-     * Adds additional client interceptors to a client gRPC call.
+     * Insert a list of client interceptors for a client gRPC call.
      *
      * @return weighted bag of interceptors
      */
     WeightedBag<ClientInterceptor> interceptors();
 }
-
