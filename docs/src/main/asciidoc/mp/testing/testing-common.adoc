@@ -47,9 +47,8 @@ It can be changed via:
 
 - `@AddConfig(key = "mp.config.profile", value = "otherProfile")`
 - `@Configuration(profile = "otherProfile")`
+- Using `mp.config.profile` property and `@Config(useExisting = true)`
 ====
-
-CAUTION: It's not possible to change the test profile via `mp.config.profile` system property.
 
 === CDI Container Setup
 
