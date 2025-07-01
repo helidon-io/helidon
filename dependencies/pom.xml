@@ -46,7 +46,7 @@
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>4.0.4</version.lib.eclipselink>
+        <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
