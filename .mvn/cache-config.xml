@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -117,6 +117,9 @@
             <moduleSets>
                 <moduleSet name="core">
                     <includes>
+                        <include>codegen/**</include>
+                        <include>http/**</include>
+                        <include>builder/**</include>
                         <include>webserver/**</include>
                         <include>webclient/**</include>
                         <include>common/**</include>
@@ -133,6 +136,17 @@
                     <includes>
                         <include>**/*</include>
                     </includes>
+                    <excludes>
+                        <exclude>codegen/**</exclude>
+                        <exclude>http/**</exclude>
+                        <exclude>builder/**</exclude>
+                        <exclude>webserver/**</exclude>
+                        <exclude>webclient/**</exclude>
+                        <exclude>common/**</exclude>
+                        <exclude>config/**</exclude>
+                        <exclude>security/**</exclude>
+                        <exclude>integrations/**</exclude>
+                    </excludes>
                 </moduleSet>
             </moduleSets>
         </reactorRule>

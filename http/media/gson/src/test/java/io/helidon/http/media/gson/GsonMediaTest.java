@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.jackson;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
+package io.helidon.http.media.gson;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
@@ -33,29 +25,34 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
-
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.is;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
+
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*
 When adding/updating tests in this class, consider if it should be done
  in the following tests a well:
+    - JacksonMediaTest
     - JsonbMediaTest
     - JsonpMediaTest
-    - GsonMediaTest
  */
-class JacksonMediaTest {
+class GsonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
     private final MediaSupport support;
 
-    JacksonMediaTest() {
-        this.support = JacksonSupport.create(Config.empty());
+    GsonMediaTest() {
+        this.support = GsonSupport.create(Config.empty());
         support.init(MediaContext.create());
     }
 
