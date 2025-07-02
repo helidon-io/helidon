@@ -22,4 +22,3 @@ grpc-client:
     heartbeat-period: PT10S
   grpc-services:
     tracing:
-      enabled: true     # default

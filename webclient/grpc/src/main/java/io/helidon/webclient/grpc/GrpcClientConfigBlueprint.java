@@ -59,13 +59,14 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
     boolean enableMetrics();
 
     /**
-     * gRPC client services.
+     * gRPC client services. A gRPC service needs to be explicitly added to
+     * be enabled given that {@code discoveredServices} is {@code false}.
      *
      * @return services to use with this gRPC client
      */
     @Option.Singular
     @Option.Configured
-    @Option.Provider(GrpcClientServiceProvider.class)
+    @Option.Provider(value = GrpcClientServiceProvider.class, discoverServices = false)
     List<GrpcClientService> grpcServices();
 }
 

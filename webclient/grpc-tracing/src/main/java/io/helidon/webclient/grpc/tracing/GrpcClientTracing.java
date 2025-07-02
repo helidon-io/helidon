@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.grpc.tracing;
 
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
@@ -26,16 +27,15 @@ import io.grpc.ClientInterceptor;
  */
 public class GrpcClientTracing implements GrpcClientService {
 
-    private final boolean enabled;
+    private final Config config;
 
     /**
-     * Create an instance from config. This gRPC client service is enabled
-     * by default.
+     * Create an instance from config.
      *
      * @param config the config
      */
     public GrpcClientTracing(Config config) {
-        enabled = config.get("enabled").asBoolean().orElse(true);
+        this.config = config;
     }
 
     /**
@@ -56,9 +56,7 @@ public class GrpcClientTracing implements GrpcClientService {
     @Override
     public WeightedBag<ClientInterceptor> interceptors() {
         WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
-        if (enabled) {
-            interceptors.add(new GrpcClientTracingInterceptor(), 1000.0);
-        }
+        interceptors.add(new GrpcClientTracingInterceptor(), Weighted.DEFAULT_WEIGHT + 1000.0);
         return interceptors;
     }
 }

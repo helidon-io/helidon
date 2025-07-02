@@ -16,8 +16,6 @@
 
 package io.helidon.webclient.grpc.tracing;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
@@ -29,7 +27,6 @@ import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
  *         Use {@link io.helidon.webclient.grpc.tracing.GrpcClientTracing} instead.
  */
 @Deprecated
-@Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class GrpcClientTracingProvider implements GrpcClientServiceProvider {
 
     /**
