@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ When adding/updating tests in this class, consider if it should be done
  in the following tests a well:
     - JacksonMediaTest
     - JsonpMediaTest
+    - GsonMediaTest
  */
 class JsonbMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");

@@ -49,6 +49,7 @@ When adding/updating tests in this class, consider if it should be done
  in the following tests a well:
     - JsonbMediaTest
     - JsonpMediaTest
+    - GsonMediaTest
  */
 class JacksonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
