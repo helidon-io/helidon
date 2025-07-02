@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
@@ -46,7 +47,7 @@ import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
  * A routing class for JSON-RPC. This class provides a method to map
  * JSON-RPC routes to HTTP routes for registration in the Webserver.
  */
-public class JsonRpcRouting implements Routing {
+public class JsonRpcRouting implements Routing, Consumer<HttpRouting.Builder> {
 
     static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcError.create(
             INVALID_REQUEST,
@@ -85,24 +86,13 @@ public class JsonRpcRouting implements Routing {
     }
 
     /**
-     * Convert this instance to an {@link io.helidon.webserver.http.HttpRouting.Builder}
-     * that can be registered in the Webserver.
-     *
-     * @return an instance of HttpRouting
-     */
-    public HttpRouting.Builder toHttpRouting() {
-        HttpRouting.Builder builder = HttpRouting.builder();
-        toHttpRouting(builder);
-        return builder;
-    }
-
-    /**
      * Populate an {@link io.helidon.webserver.http.HttpRouting.Builder} with
      * all the routes for this JSON-RPC routing instance.
      *
      * @param builder an HTTP routing builder
      */
-    public void toHttpRouting(HttpRouting.Builder builder) {
+    @Override
+    public void accept(HttpRouting.Builder builder) {
         for (JsonRpcRulesImpl.Rule rule : rules) {
             String pathPattern = rule.pathPattern();
             JsonRpcHandlers handlers = rule.handlers();

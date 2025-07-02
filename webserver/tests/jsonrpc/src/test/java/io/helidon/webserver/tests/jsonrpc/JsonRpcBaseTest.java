@@ -71,14 +71,14 @@ class JsonRpcBaseTest {
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder builder) {
-        JsonRpcRouting routing = JsonRpcRouting.builder()
+        JsonRpcRouting jsonRpcRouting = JsonRpcRouting.builder()
                 // register a single method under "/calculator"
                 .register("/calculator", "add", JsonRpcBaseTest::addNumbers)
                 // register a service under "/machine"
                 .service(new JsonRpcService1())
                 .register("/notifier", "ping", JsonRpcBaseTest::ping)
                 .build();
-        builder.addRouting(routing.toHttpRouting());
+        builder.routing(jsonRpcRouting);
     }
 
     // -- Calculator ----------------------------------------------------------
