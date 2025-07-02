@@ -30,12 +30,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
@@ -56,6 +58,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
+import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
@@ -64,6 +67,7 @@ import io.grpc.MethodDescriptor;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * Base class for gRPC client calls.
@@ -195,6 +199,58 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     abstract void startStreamingThreads();
 
     /**
+     * Read a single gRPC frame, possibly assembled from multiple HTTP/2 frames.
+     *
+     * @return data for gRPC frame or {@code null}
+     */
+    protected BufferData readGrpcFrame() {
+        // attempt to read HTTP/2 frame
+        Http2FrameData frameData;
+        try {
+            frameData = clientStream.readOne(pollWaitTime());
+        } catch (StreamTimeoutException e) {
+            handleStreamTimeout(e);
+            return null;
+        }
+        if (frameData == null) {
+            return null;
+        }
+
+        // read more HTTP/2 frames if long gRPC frame
+        BufferData bufferData = frameData.data();
+        bufferData.read();                                      // skip compression
+        long grpcLength = bufferData.readUnsignedInt32();       // length prefixed
+        grpcLength -= bufferData.available();
+
+        if (grpcLength > 0) {
+            // collect frames in composite buffer
+            CompositeBufferData compositeBuffer = BufferData.createComposite(bufferData);
+            do {
+                try {
+                    frameData = clientStream.readOne(pollWaitTime());
+                } catch (StreamTimeoutException e) {
+                    handleStreamTimeout(e);
+                    continue;
+                }
+                if (frameData == null) {
+                    continue;
+                }
+
+                bufferData = frameData.data();
+                compositeBuffer.add(bufferData);
+                grpcLength -= bufferData.available();
+            } while (grpcLength > 0);
+
+            // switch to composite buffer
+            bufferData = compositeBuffer;
+        }
+
+        // rewind and return
+        bufferData.rewind();
+        return bufferData;
+    }
+
+    /**
      * Unary blocking calls that use stubs provide their own executor which needs
      * to be used at least once to unblock the calling thread and complete the
      * gRPC invocation. This method submits an empty task for that purpose. There
@@ -324,6 +380,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private ClientUri nextClientUri() {
         return clientUriSupplier == null ? grpcClient.prototype().baseUri().orElseThrow()
                 : clientUriSupplier.next();
+    }
+
+    protected void handleStreamTimeout(StreamTimeoutException e) {
+        if (abortPollTimeExpired()) {
+            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
+            throw e;
+        }
+        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 
     protected void initMetrics() {

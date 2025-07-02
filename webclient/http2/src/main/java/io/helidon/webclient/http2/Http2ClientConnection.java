@@ -375,6 +375,17 @@ public class Http2ClientConnection {
                     http2GoAway.lastStreamId());
             return false;
         case SETTINGS:
+            Http2Flag.SettingsFlags flags = frameHeader.flags(Http2FrameTypes.SETTINGS);
+
+            // if ack flag set, empty frame and no processing
+            if (flags.ack()) {
+                if (frameHeader.length() > 0) {
+                    throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                             "Settings with ACK should not have payload.");
+                }
+                return true;
+            }
+
             serverSettings = Http2Settings.create(data);
             recvListener.frameHeader(ctx, streamId, frameHeader);
             recvListener.frame(ctx, streamId, serverSettings);
