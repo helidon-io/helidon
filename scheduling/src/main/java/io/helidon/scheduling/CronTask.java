@@ -66,7 +66,8 @@ class CronTask implements Cron {
         CronParser parser = new CronParser(cronDefinition);
         cron = parser.parse(config.expression());
         executionTime = ExecutionTime.forCron(cron);
-        ScheduledTasks.register(this);
+
+        config.taskManager().register(this);
         scheduleNext();
     }
 
@@ -127,7 +128,7 @@ class CronTask implements Cron {
             stopped = true;
             if (future != null) {
                 future.cancel(false);
-                ScheduledTasks.remove(this);
+                config.taskManager().remove(this);
             }
         } finally {
             scheduleNextLock.unlock();

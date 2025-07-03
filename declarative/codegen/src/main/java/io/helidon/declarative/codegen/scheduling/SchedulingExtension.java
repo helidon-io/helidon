@@ -53,6 +53,7 @@ import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_INV
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE_ANNOTATION;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE_INVOCATION;
+import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.TASK_MANAGER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
 class SchedulingExtension implements RegistryCodegenExtension {
@@ -162,7 +163,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .name("postConstruct")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        postConstruct.addContentLine("var config = configSupplier.get();")
+        postConstruct.addContentLine("var taskManager = taskManagerSupplier.get();")
+                .addContentLine("var config = configSupplier.get();")
                 .addContent("var classConfig = config.get(\"")
                 .addContent(serviceType.fqName())
                 .addContentLine("\");")
@@ -203,6 +205,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         }
         postConstruct.increaseContentPadding()
                 .increaseContentPadding()
+                .addContentLine(".taskManager(taskManager)")
                 .addContent(".config(")
                 .addContent(configVariable)
                 .addContent(".get(\"")
@@ -236,12 +239,20 @@ class SchedulingExtension implements RegistryCodegenExtension {
         TypeName serviceSupplierType = TypeName.builder(TypeNames.SUPPLIER)
                 .addTypeArgument(serviceType)
                 .build();
+        TypeName taskManagerSupplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(TASK_MANAGER)
+                .build();
 
         classModel.addField(service -> service
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
                         .type(serviceSupplierType)
                         .name("serviceSupplier"))
+                .addField(taskManagerSupplier -> taskManagerSupplier
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .name("taskManagerSupplier")
+                        .type(taskManagerSupplierType))
                 .addField(configSupplier -> configSupplier
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
@@ -263,12 +274,16 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addParameter(configSupplier -> configSupplier
                         .name("configSupplier")
                         .type(configSupplierType)
-                        .name("configSupplier")
+                )
+                .addParameter(taskManagerSupplier -> taskManagerSupplier
+                        .name("taskManagerSupplier")
+                        .type(taskManagerSupplierType)
                 )
                 .addParameter(service -> service
                         .type(serviceSupplierType)
                         .name("serviceSupplier"))
                 .addContentLine("this.configSupplier = configSupplier;")
+                .addContentLine("this.taskManagerSupplier = taskManagerSupplier;")
                 .addContent("this.serviceSupplier = serviceSupplier;"));
     }
 

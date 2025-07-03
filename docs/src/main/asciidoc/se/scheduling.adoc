@@ -34,6 +34,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 - <<Cron, Cron>>
 - <<Fixed rate, Fixed Rate>>
+- <<Task Management, Task Management>>
 - <<Examples, Examples>>
 - <<Reference, Reference>>
 
@@ -105,10 +106,17 @@ Scheduling is configurable with xref:../se/config/introduction.adoc[Helidon Conf
 include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_4, indent=0]
 ----
 
+== Task Management
+
+A `io.helidon.scheduling.TaskManager` can be used to manage tasks that are started within Helidon.
+When using imperative programming model, you can either provide a custom implementation of this interface to task builder (method `taskManager`), or you can use the "default" one that can be obtained by invoking `io.helidon.service.registry.Services.get(TaskManager.class)`.
+When using the default `TaskManager` from `io.helidon.service.registry.Services`, there is no need to explicitly register it with the task builders.
+
+When using declarative programming model, the `TaskManager` can be injected. It is a `Singleton` service that will be used by all scheduled tasks in the current application.
 
 == Examples
 
-=== Fixed rate
+=== Fixed Rate Example
 For simple fixed rate invocation use .
 
 [source,java]

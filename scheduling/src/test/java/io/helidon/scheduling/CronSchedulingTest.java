@@ -24,11 +24,12 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -38,19 +39,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 @SuppressWarnings("removal")
+@Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
 public class CronSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 
-    @BeforeAll
-    static void beforeAll() {
-        ScheduledTasks.clear();
+    private final TaskManager taskManager;
+
+    CronSchedulingTest(TaskManager taskManager) {
+        this.taskManager = taskManager;
     }
 
     @AfterAll
     static void afterAll() {
-        assertThat(ScheduledTasks.tasks(), empty());
+        assertThat(Services.get(TaskManager.class).tasks(), empty());
     }
 
     @Test
@@ -65,7 +68,7 @@ public class CronSchedulingTest {
                         .sleep(200, TimeUnit.MILLISECONDS)
                         .end())
                 .build();
-        assertThat(ScheduledTasks.tasks(), hasItem(cron));
+        assertThat(taskManager.tasks(), hasItem(cron));
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
         cron.close();
         executorService.shutdownNow();
@@ -87,7 +90,7 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
-        assertThat(ScheduledTasks.tasks(), hasItem(cron));
+        assertThat(taskManager.tasks(), hasItem(cron));
         cron.close();
         executorService.shutdownNow();
         meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
@@ -109,7 +112,7 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(3, 20, TimeUnit.SECONDS);
-        assertThat(ScheduledTasks.tasks(), hasItem(cron));
+        assertThat(taskManager.tasks(), hasItem(cron));
         cron.close();
         executorService.shutdownNow();
         // every 1 sec + 2 secs sleeping
@@ -134,7 +137,7 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(3, 20, TimeUnit.SECONDS);
-        assertThat(ScheduledTasks.tasks(), hasItem(cron));
+        assertThat(taskManager.tasks(), hasItem(cron));
         cron.close();
         executorService.shutdownNow();
         // every 1 sec + 2 secs sleeping

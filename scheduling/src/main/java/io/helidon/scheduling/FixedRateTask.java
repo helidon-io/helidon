@@ -57,7 +57,7 @@ class FixedRateTask implements FixedRate {
                                                                               TimeUnit.MILLISECONDS);
         };
 
-        ScheduledTasks.register(this);
+        config.taskManager().register(this);
     }
 
     @Override
@@ -82,7 +82,7 @@ class FixedRateTask implements FixedRate {
     @Override
     public void close() {
         future.cancel(false);
-        ScheduledTasks.remove(this);
+        config.taskManager().remove(this);
     }
 
     @Override
