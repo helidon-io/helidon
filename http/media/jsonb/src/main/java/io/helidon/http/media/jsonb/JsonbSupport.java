@@ -56,7 +56,7 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     private final JsonbSupportConfig jsonbSupportConfig;
     private final String name;
 
-    public JsonbSupport(JsonbSupportConfig jsonbSupportConfig) {
+    private JsonbSupport(JsonbSupportConfig jsonbSupportConfig) {
         this.jsonbSupportConfig = jsonbSupportConfig;
         this.reader = new JsonbReader(jsonbSupportConfig.jsonb());
         this.writer = new JsonbWriter(jsonbSupportConfig.jsonb());
@@ -91,6 +91,7 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     /**
      * Creates a new {@link JsonbSupport}.
      *
+     * @param jsonb jsonb instance
      * @return a new instance
      */
     public static MediaSupport create(Jsonb jsonb) {
