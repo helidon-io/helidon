@@ -225,10 +225,10 @@ class JsonbMediaTest {
         assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         InputStream is =
-                new ByteArrayInputStream("{\"title\": \"Some Test\", \"unknown\": \"value\"}".getBytes(StandardCharsets.UTF_8));
+                new ByteArrayInputStream("{\"Title\": \"Some Test\", \"unknown\": \"value\"}".getBytes(StandardCharsets.UTF_8));
         JsonbException jsonbException = assertThrows(JsonbException.class,
                                                      () -> res.supplier().get().read(BOOK_TYPE, is, requestHeaders));
-        assertThat(jsonbException.getMessage(), startsWith("Json property unknown can not be mapped"));
+        assertThat(jsonbException.getMessage(), startsWith("Json property unknown"));
     }
 
     public static class Book {

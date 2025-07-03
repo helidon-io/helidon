@@ -15,8 +15,8 @@
 #
 
 properties:
-  jsonb.fail-on-unknown-properties2: true
-  some-invalid-value: test
+  jsonb.property-naming-strategy: "UPPER_CAMEL_CASE"
+  some-invalid-value: "test"
 
 boolean-properties:
   jsonb.fail-on-unknown-properties: true
