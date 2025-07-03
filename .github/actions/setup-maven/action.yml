@@ -1,0 +1,24 @@
+name: Set up Maven
+description: Install and cache the Maven version used by Helidon CI
+runs:
+  using: composite
+  steps:
+    - name: Cache Maven installation
+      uses: actions/cache@v4.2.0
+      with:
+        path: .tools/apache-maven-*/**
+        enableCrossOsArchive: true
+        key: tools-maven-${{ hashFiles('.tools/apache-maven-*/**') }}
+        restore-keys: |
+          tools-maven-
+    - name: Install Maven
+      shell: bash
+      run: |
+        if [ -z "${MVN_VERSION}" ]; then echo "MVN_VERSION not set"; exit 1; fi
+        if [ ! -d ".tools/apache-maven-${MVN_VERSION}/bin" ]; then
+          mkdir -p .tools
+          curl -fL -o "apache-maven-${MVN_VERSION}-bin.zip" \
+            "https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.zip"
+          unzip -q "apache-maven-${MVN_VERSION}-bin.zip" -d .tools
+        fi
+        echo "${GITHUB_WORKSPACE}/.tools/apache-maven-${MVN_VERSION}/bin" >> "${GITHUB_PATH}"

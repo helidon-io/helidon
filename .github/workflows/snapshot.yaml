@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 env:
+  MVN_VERSION: 3.9.9
   JAVA_VERSION: '17'
   JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
@@ -32,6 +33,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Build and deploy
         env:
           MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}

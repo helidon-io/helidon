@@ -16,6 +16,7 @@ on:
   workflow_call:
 
 env:
+  MVN_VERSION: 3.9.9
   JAVA_VERSION: '17'
   JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
@@ -39,6 +40,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Copyright
         run: etc/scripts/copyright.sh
   checkstyle:
@@ -53,6 +55,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
   spotbugs:
@@ -67,6 +70,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
   build:
@@ -84,6 +88,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Maven build
         run: etc/scripts/github-build.sh
       - name: Archive Test results
@@ -106,6 +111,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Docs
         run: etc/scripts/site.sh
   tck:
@@ -123,6 +129,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Maven build
         run: etc/scripts/github-tck.sh
   examples:
@@ -141,6 +148,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline -T4 install
@@ -161,6 +169,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
   packaging:
@@ -187,6 +196,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache-jdk: true
           cache: maven
+      - uses: ./.github/actions/setup-maven
       - name: Build Helidon
         run: etc/scripts/github-compile.sh
       - name: JAR packaging
