@@ -100,7 +100,7 @@
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.kafka>3.8.1</version.lib.kafka>
+        <version.lib.kafka>3.9.1</version.lib.kafka>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
