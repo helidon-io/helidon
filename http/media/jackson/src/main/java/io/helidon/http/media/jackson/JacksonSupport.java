@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@
 
 package io.helidon.http.media.jackson;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
@@ -29,8 +36,16 @@ import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamReadFeature;
+import com.fasterxml.jackson.core.StreamWriteFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.cfg.EnumFeature;
+import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -42,18 +57,21 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JacksonSupport implements MediaSupport {
+@RuntimeType.PrototypedBy(JacksonSupportConfig.class)
+public class JacksonSupport implements MediaSupport, RuntimeType.Api<JacksonSupportConfig> {
     private final ObjectMapper objectMapper;
     private final JacksonReader reader;
     private final JacksonWriter writer;
 
     private final String name;
+    private final JacksonSupportConfig jacksonSupportConfig;
 
-    private JacksonSupport(ObjectMapper objectMapper, JacksonReader reader, JacksonWriter writer, String name) {
-        this.objectMapper = objectMapper;
-        this.reader = reader;
-        this.writer = writer;
-        this.name = name;
+    private JacksonSupport(JacksonSupportConfig jacksonSupportConfig) {
+        this.jacksonSupportConfig = jacksonSupportConfig;
+        this.objectMapper = jacksonSupportConfig.objectMapper();
+        this.reader = new JacksonReader(objectMapper);
+        this.writer = new JacksonWriter(objectMapper);
+        this.name = jacksonSupportConfig.name();
     }
 
     /**
@@ -77,14 +95,10 @@ public class JacksonSupport implements MediaSupport {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
 
-        ObjectMapper objectMapper = JsonMapper.builder()
-                .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
-                .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
-                .build()
-                .registerModule(new ParameterNamesModule())
-                .registerModule(new Jdk8Module())
-                .registerModule(new JavaTimeModule());
-        return create(objectMapper, name);
+        return builder()
+                .name(name)
+                .config(config)
+                .build();
     }
 
     /**
@@ -108,10 +122,50 @@ public class JacksonSupport implements MediaSupport {
     public static MediaSupport create(ObjectMapper objectMapper, String name) {
         Objects.requireNonNull(objectMapper);
         Objects.requireNonNull(name);
+        return builder()
+                .name(name)
+                .objectMapper(objectMapper)
+                .build();
+    }
 
-        JacksonReader reader = new JacksonReader(objectMapper);
-        JacksonWriter writer = new JacksonWriter(objectMapper);
-        return new JacksonSupport(objectMapper, reader, writer, name);
+    /**
+     * Creates a new {@link JacksonSupport} based on the {@link JacksonSupportConfig}.
+     *
+     * @param jsonbSupportConfig must not be {@code null}
+     * @return a new {@link JacksonSupport}
+     */
+    public static JacksonSupport create(JacksonSupportConfig jsonbSupportConfig) {
+        Objects.requireNonNull(jsonbSupportConfig);
+        return new JacksonSupport(jsonbSupportConfig);
+    }
+
+    /**
+     * Creates a new customized {@link JacksonSupport}.
+     *
+     * @param consumer config builder consumer
+     * @return a new {@link JacksonSupport}
+     */
+    public static JacksonSupport create(Consumer<JacksonSupportConfig.Builder> consumer) {
+        return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a new builder.
+     *
+     * @return a new builder instance
+     */
+    public static JacksonSupportConfig.Builder builder() {
+        return JacksonSupportConfig.builder();
+    }
+
+    private static ObjectMapper createDefaultObjectMapper() {
+        return JsonMapper.builder()
+                .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
+                .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
+                .build()
+                .registerModule(new ParameterNamesModule())
+                .registerModule(new Jdk8Module())
+                .registerModule(new JavaTimeModule());
     }
 
     @Override
@@ -206,5 +260,94 @@ public class JacksonSupport implements MediaSupport {
 
     <T> EntityWriter<T> writer() {
         return writer;
+    }
+
+    @Override
+    public JacksonSupportConfig prototype() {
+        return jacksonSupportConfig;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<JacksonSupportConfig.BuilderBase<?, ?>> {
+
+        @Override
+        public void decorate(JacksonSupportConfig.BuilderBase<?, ?> target) {
+            if (target.objectMapper().isEmpty()) {
+                if (target.properties().isEmpty()) {
+                    target.objectMapper(createDefaultObjectMapper());
+                } else {
+                    JsonMapper.Builder builder = JsonMapper.builder()
+                            .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
+                            .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER);
+                    configureJsonMapper(builder, target.properties());
+                    ObjectMapper objectMapper = builder.build()
+                            .registerModule(new ParameterNamesModule())
+                            .registerModule(new Jdk8Module())
+                            .registerModule(new JavaTimeModule());
+                    target.objectMapper(objectMapper);
+                }
+            }
+        }
+
+        private void configureJsonMapper(JsonMapper.Builder jsonMapper, Map<String, Boolean> properties) {
+            configure(StreamReadFeature.values(), properties, jsonMapper::configure);
+            configure(StreamWriteFeature.values(), properties, jsonMapper::configure);
+            configure(DeserializationFeature.values(), properties, jsonMapper::configure);
+            configure(SerializationFeature.values(), properties, jsonMapper::configure);
+            configure(JsonNodeFeature.values(), properties, jsonMapper::configure);
+
+            Stream.of(StreamReadFeature.values())
+                    .forEach(srf -> {
+                        Optional.ofNullable(properties.get(srf.name()))
+                                .ifPresent(value -> jsonMapper.configure(srf, value));
+                    });
+            Stream.of(StreamWriteFeature.values())
+                    .forEach(swf -> {
+                        Optional.ofNullable(properties.get(swf.name()))
+                                .ifPresent(value -> jsonMapper.configure(swf, value));
+                    });
+            Stream.of(DeserializationFeature.values())
+                    .forEach(df -> {
+                        Optional.ofNullable(properties.get(df.name()))
+                                .ifPresent(value -> jsonMapper.configure(df, value));
+                    });
+            Stream.of(SerializationFeature.values())
+                    .forEach(sf -> {
+                        Optional.ofNullable(properties.get(sf.name()))
+                                .ifPresent(value -> jsonMapper.configure(sf, value));
+                    });
+            Stream.of(JsonParser.Feature.values())
+                    .forEach(jpf -> {
+                        Optional.ofNullable(properties.get(jpf.name()))
+                                .ifPresent(value -> jsonMapper.configure(jpf, value));
+                    });
+            Stream.of(MapperFeature.values())
+                    .forEach(mf -> {
+                        Optional.ofNullable(properties.get(mf.name()))
+                                .ifPresent(value -> jsonMapper.configure(mf, value));
+                    });
+            Stream.of(JsonGenerator.Feature.values())
+                    .forEach(jgf -> {
+                        Optional.ofNullable(properties.get(jgf.name()))
+                                .ifPresent(value -> jsonMapper.configure(jgf, value));
+                    });
+            Stream.of(EnumFeature.values())
+                    .forEach(ef -> {
+                        Optional.ofNullable(properties.get(ef.name()))
+                                .ifPresent(value -> jsonMapper.configure(ef, value));
+                    });
+            Stream.of(JsonNodeFeature.values())
+                    .forEach(jnf -> {
+                        Optional.ofNullable(properties.get(jnf.name()))
+                                .ifPresent(value -> jsonMapper.configure(jnf, value));
+                    });
+        }
+
+        private static <T extends Enum<?>> void configure(T[] values,
+                                                          Map<String, Boolean> properties,
+                                                          BiConsumer<T, Boolean> consumer) {
+            Stream.of(values)
+                    .forEach(enumValue -> Optional.ofNullable(properties.get(enumValue.name()))
+                            .ifPresent(value -> consumer.accept(enumValue, value)));
+        }
     }
 }
