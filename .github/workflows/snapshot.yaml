@@ -23,8 +23,9 @@ on:
       - 'helidon-*.x'
 
 env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRO: 'oracle'
+  MVN_VERSION: 3.9.9
+  JAVA_VERSION: 21
+  JAVA_DISTRO: oracle
   MVN_ARGS: |
     -B -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
