@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.microprofile.metrics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,12 +93,6 @@ class MetricStore {
                                scope,
                                doRemove);
 
-    }
-
-    static Tag[] tags(Iterable<Map.Entry<String, String>> entries) {
-        List<Tag> result = new ArrayList<>();
-        entries.forEach(entry -> result.add(new Tag(entry.getKey(), entry.getValue())));
-        return result.toArray(new Tag[0]);
     }
 
     void update(MetricsConfig metricsConfig) {
@@ -264,17 +257,6 @@ class MetricStore {
         return new TreeMap<>(collected);
     }
 
-    MetricsForMetadata metadataWithIDs(String metricName) {
-        return readAccess(() -> {
-                              Metadata metadata = allMetadata.get(metricName);
-                              List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-                              return (metadata == null || metricIDs == null || metricIDs.isEmpty())
-                                      ? null
-                                      : new MetricsForMetadata(metadata, metricIDs);
-                          }
-        );
-    }
-
     HelidonMetric<?> metric(MetricID metricID) {
         return allMetrics.get(metricID);
     }
@@ -289,43 +271,6 @@ class MetricStore {
 
     Map<MetricID, HelidonMetric<?>> metrics() {
         return allMetrics;
-    }
-
-    /**
-     * Returns the metric ID and metric matching the specified name which either has no tags or was the first metric with that
-     * name registered.
-     *
-     * @param metricName metric name to find
-     * @return matching metric; null if no metric is registered with the specified name
-     */
-    MetricInstance untaggedOrFirstMetricInstance(String metricName) {
-        return readAccess(() -> {
-            List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-            if (metricIDs == null || metricIDs.isEmpty()) {
-                return null;
-            }
-            MetricID metricID = null;
-            for (MetricID candidate : metricIDs) {
-                if (metricID == null || candidate.getTags().isEmpty()) {
-                    metricID = candidate;
-                }
-            }
-            return new MetricInstance(metricID, allMetrics.get(metricID));
-        });
-    }
-
-    List<MetricInstance> metricsWithIDs(String metricName) {
-        return readAccess(() -> {
-            List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-            if (metricIDs == null) {
-                return Collections.emptyList();
-            }
-            List<MetricInstance> result = new ArrayList<>();
-            for (MetricID metricID : metricIDs) {
-                result.add(new MetricInstance(metricID, allMetrics.get(metricID)));
-            }
-            return result;
-        });
     }
 
     List<MetricID> metricIDs(String metricName) {
