@@ -126,7 +126,7 @@ public final class AnnotationParameter extends CommonComponent {
         if (type != null && type.fqTypeName().equals(String.class.getName())) {
             String stringValue = value.toString();
             if (!stringValue.startsWith("\"") && !stringValue.endsWith("\"")) {
-                return "\"" + stringValue + "\"";
+                return quoteString(stringValue);
             }
             return stringValue;
         }
@@ -140,7 +140,7 @@ public final class AnnotationParameter extends CommonComponent {
             case TypeName typeName -> imports.typeName(Type.fromTypeName(typeName), true) + ".class";
             case EnumValue enumValue -> imports.typeName(Type.fromTypeName(enumValue.type()), true)
                     + "." + enumValue.name();
-            case Character character -> "'" + character + "'";
+            case Character character -> "'" + escapeCharacter(character) + "'";
             case Long longValue -> longValue + "L";
             case Float floatValue -> floatValue + "F";
             case Double doubleValue -> doubleValue + "D";
@@ -149,10 +149,24 @@ public final class AnnotationParameter extends CommonComponent {
             case Class<?> clazz -> imports.typeName(Type.fromTypeName(TypeName.create(clazz)), true) + ".class";
             case Annotation annotation -> nestedAnnotationValue(imports, annotation);
             case List<?> list -> nestedListValue(imports, list);
-            case String str -> str.startsWith("\"") && str.endsWith("\"") ? str : "\"" + str + "\"";
+            case String str -> str.startsWith("\"") && str.endsWith("\"") ? str : quoteString(str);
             default -> value.toString();
         };
 
+    }
+
+    private String quoteString(String stringValue) {
+        return "\"" + stringValue.replaceAll("\"", "\\\\\"") + "\"";
+    }
+
+    private String escapeCharacter(Character character) {
+        return switch (character) {
+            case '\'' -> "\\'";
+            case '\t' -> "\\t";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            default -> String.valueOf(character);
+        };
     }
 
     private String nestedListValue(ImportOrganizer imports, List<?> list) {
@@ -185,12 +199,12 @@ public final class AnnotationParameter extends CommonComponent {
 
         sb.append("(");
         if (values.size() == 1 && values.containsKey("value")) {
-            sb.append(resolveValueToString(imports, null, values.get("value")));
+            sb.append(resolveValueToString(imports, null, values.get("value").value()));
         } else {
             values.forEach((key, value) -> {
                 sb.append(key)
                         .append(" = ")
-                        .append(resolveValueToString(imports, null, value))
+                        .append(resolveValueToString(imports, null, value.value()))
                         .append(", ");
             });
             sb.delete(sb.length() - 2, sb.length());
