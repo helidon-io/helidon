@@ -23,6 +23,7 @@ import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
 final class AnnotationParser {
+    private static final System.Logger LOGGER = System.getLogger(AnnotationParser.class.getName());
     private static final String CLASS_PREFIX = "class::";
     private static final String ENUM_PREFIX = "enum::";
 
@@ -173,9 +174,19 @@ final class AnnotationParser {
                 default -> Integer.parseInt(value);
             };
         } catch (Exception e) {
+            // this may be an older approach, for backward compatibility, assume enum
+            int dot = value.lastIndexOf('.');
+            if (dot > 0) {
+                LOGGER.log(System.Logger.Level.WARNING, "Unquoted annotation value found, assuming enum."
+                        + " Please prefix the value with 'enum::', this will be removed in future versions. "
+                        + " Value: " + value);
+                // backward compatibility, assume enum
+                return EnumValue.create(TypeName.create(value.substring(0, dot)), value.substring(dot + 1));
+            }
             throw new IllegalArgumentException("Invalid annotation value specified. Unquoted value must be one of: "
                                                        + "true, false, integer, or a number suffixed by D, L, F, B, or S "
-                                                       + "(double, long, float, byte, short): " + value);
+                                                       + "(double, long, float, byte, short), or prefixed with class:: "
+                                                       + "or enum::, but was: " + value);
         }
     }
 
@@ -268,7 +279,8 @@ final class AnnotationParser {
         for (int i = index; i < valueString.length(); i++) {
             char current = valueString.charAt(i);
             switch (current) {
-            case ',', ' ', '}', '\n', '\r', '\t': return i;
+            case ',', ' ', '}', '\n', '\r', '\t':
+                return i;
             default:
             }
         }
