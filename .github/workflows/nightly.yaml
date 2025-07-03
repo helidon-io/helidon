@@ -20,6 +20,7 @@ on:
     - cron: '0 10 * * 0-6'
 
 env:
+  MVN_VERSION: 3.9.9
   MVN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60

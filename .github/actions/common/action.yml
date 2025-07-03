@@ -54,6 +54,9 @@ inputs:
   setup-latest-java:
     description: Whether to setup latest stable java version
     default: 'false'
+  setup-maven:
+    description: Wheter to setup Maven
+    default: 'true'
 runs:
   using: "composite"
   steps:
@@ -81,6 +84,25 @@ runs:
         echo C:\Program Files\Git\usr\bin>>"%GITHUB_PATH%"
         git config --global core.autocrlf false
         git config --global core.eol lf
+    - if: ${{ inputs.setup-maven == 'true' }}
+      name: Cache Maven Installation
+      uses: actions/cache@v4.2.0
+      with:
+        path: .tools/apache-maven-*/**
+        enableCrossOsArchive: true
+        key: tools-maven-${{ hashFiles('.tools/apache-maven-*/**') }}
+        restore-keys: |
+          tools-maven-
+    - if: ${{ inputs.setup-maven == 'true' && runner.os != 'Windows' }}
+      name: Set up Maven
+      shell: bash
+      run: |
+        if [ -z "${MVN_VERSION}" ] ; then echo "MVN_VERSION not set"; exit 1 ; fi
+        if [ ! -d .tools/apache-maven-${MVN_VERSION}/bin ] ; then
+          curl -O https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.zip
+          unzip apache-maven-${MVN_VERSION}-bin.zip -d .tools
+        fi
+        echo ${PWD}/.tools/apache-maven-${MVN_VERSION}/bin >> "${GITHUB_PATH}"
     - name: Set up GraalVM
       if: ${{ inputs.native-image == 'true' }}
       uses: graalvm/setup-graalvm@v1.2.4
