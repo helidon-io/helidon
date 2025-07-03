@@ -56,7 +56,7 @@ public class GrpcClientTracing implements GrpcClientService {
     @Override
     public WeightedBag<ClientInterceptor> interceptors() {
         WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
-        interceptors.add(new GrpcClientTracingInterceptor(), Weighted.DEFAULT_WEIGHT + 1000.0);
+        interceptors.add(new GrpcClientTracingInterceptor(), Weighted.DEFAULT_WEIGHT + 100);
         return interceptors;
     }
 }

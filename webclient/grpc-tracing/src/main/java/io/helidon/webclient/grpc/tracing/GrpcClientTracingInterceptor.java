@@ -36,7 +36,7 @@ import io.grpc.MethodDescriptor;
 /**
  * A gRPC channel interceptor for tracing.
  */
-public class GrpcClientTracingInterceptor implements ClientInterceptor {
+class GrpcClientTracingInterceptor implements ClientInterceptor {
     private static final Logger LOGGER = System.getLogger(GrpcClientTracingInterceptor.class.getName());
 
     @Override
