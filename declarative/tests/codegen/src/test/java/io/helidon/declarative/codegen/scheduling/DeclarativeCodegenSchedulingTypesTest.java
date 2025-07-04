@@ -30,6 +30,7 @@ import io.helidon.scheduling.FixedRate;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
+import io.helidon.scheduling.TaskManager;
 
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,7 @@ class DeclarativeCodegenSchedulingTypesTest {
         }
 
         checkField(toCheck, checked, fields, "TASK", Task.class);
+        checkField(toCheck, checked, fields, "TASK_MANAGER", TaskManager.class);
         checkField(toCheck, checked, fields, "FIXED_RATE", FixedRate.class);
         checkField(toCheck, checked, fields, "FIXED_RATE_ANNOTATION", Scheduling.FixedRate.class);
         checkField(toCheck, checked, fields, "FIXED_RATE_INVOCATION", FixedRateInvocation.class);

@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,7 @@ class CronTask implements Cron {
     private final com.cronutils.model.Cron cron;
     private final ReentrantLock scheduleNextLock = new ReentrantLock();
     private final CronConfig config;
+    private final String taskId;
 
     private ZonedDateTime lastNext = null;
 
@@ -58,12 +60,14 @@ class CronTask implements Cron {
         this.executorService = config.executor();
         this.concurrentExecution = config.concurrentExecution();
         this.actualTask = config.task();
+        this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
 
         CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
         CronParser parser = new CronParser(cronDefinition);
         cron = parser.parse(config.expression());
         executionTime = ExecutionTime.forCron(cron);
 
+        config.taskManager().register(this);
         scheduleNext();
     }
 
@@ -124,10 +128,21 @@ class CronTask implements Cron {
             stopped = true;
             if (future != null) {
                 future.cancel(false);
+                config.taskManager().remove(this);
             }
         } finally {
             scheduleNextLock.unlock();
         }
+    }
+
+    @Override
+    public String id() {
+        return taskId;
+    }
+
+    @Override
+    public String toString() {
+        return description() + "(" + taskId + ")";
     }
 
     private void scheduleNext() {

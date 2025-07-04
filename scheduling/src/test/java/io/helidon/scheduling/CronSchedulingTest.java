@@ -24,27 +24,43 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 @SuppressWarnings("removal")
+@Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
 public class CronSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 
+    private final TaskManager taskManager;
+
+    CronSchedulingTest(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
+
+    @AfterAll
+    static void afterAll() {
+        assertThat(Services.get(TaskManager.class).tasks(), empty());
+    }
+
     @Test
     void cronTestDeprecated() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Scheduling.cronBuilder()
+        var cron = Scheduling.cronBuilder()
                 .executor(executorService)
                 .expression("0/2 * * * * ? *")
                 .task(cronInvocation -> meter
@@ -52,8 +68,9 @@ public class CronSchedulingTest {
                         .sleep(200, TimeUnit.MILLISECONDS)
                         .end())
                 .build();
-
+        assertThat(taskManager.tasks(), hasItem(cron));
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
+        cron.close();
         executorService.shutdownNow();
         meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
@@ -62,7 +79,8 @@ public class CronSchedulingTest {
     void cronTest() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Cron.builder()
+        Cron cron = Cron.builder()
+                .id("cronTestDeprecated")
                 .executor(executorService)
                 .expression("0/2 * * * * ? *")
                 .task(cronInvocation -> meter
@@ -72,6 +90,8 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
+        assertThat(taskManager.tasks(), hasItem(cron));
+        cron.close();
         executorService.shutdownNow();
         meter.assertAverageDuration(Duration.ofSeconds(2), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
@@ -80,7 +100,7 @@ public class CronSchedulingTest {
     void cronConcurrencyDisabledDeprecated() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Scheduling.cronBuilder()
+        var cron = Scheduling.cronBuilder()
                 .executor(executorService)
                 .concurrentExecution(false)
                 //every 1 sec
@@ -92,6 +112,8 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(3, 20, TimeUnit.SECONDS);
+        assertThat(taskManager.tasks(), hasItem(cron));
+        cron.close();
         executorService.shutdownNow();
         // every 1 sec + 2 secs sleeping
         meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
@@ -102,7 +124,8 @@ public class CronSchedulingTest {
     void cronConcurrencyDisabled() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
         IntervalMeter meter = new IntervalMeter();
-        Cron.builder()
+        var cron = Cron.builder()
+                .id("cronConcurrencyDisabled")
                 .executor(executorService)
                 .concurrentExecution(false)
                 //every 1 sec
@@ -114,6 +137,8 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(3, 20, TimeUnit.SECONDS);
+        assertThat(taskManager.tasks(), hasItem(cron));
+        cron.close();
         executorService.shutdownNow();
         // every 1 sec + 2 secs sleeping
         meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
@@ -124,8 +149,9 @@ public class CronSchedulingTest {
     void cronConcurrencyEnabledDeprecated() {
         IntervalMeter meter = new IntervalMeter();
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
+        Task cron = null;
         try {
-            Scheduling.cronBuilder()
+            cron = Scheduling.cronBuilder()
                     .executor(executorService)
                     //every 1 sec
                     .expression("* * * * * ? *")
@@ -137,6 +163,9 @@ public class CronSchedulingTest {
 
             meter.awaitTill(3, 20, TimeUnit.SECONDS);
         } finally {
+            if (cron != null) {
+                cron.close();
+            }
             executorService.shutdownNow();
         }
         // every 1 sec + 2 secs sleeping
@@ -147,8 +176,9 @@ public class CronSchedulingTest {
     void cronConcurrencyEnabled() {
         IntervalMeter meter = new IntervalMeter();
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
+        Task cron = null;
         try {
-            Cron.builder()
+            cron = Cron.builder()
                     .executor(executorService)
                     //every 1 sec
                     .expression("* * * * * ? *")
@@ -160,6 +190,9 @@ public class CronSchedulingTest {
 
             meter.awaitTill(3, 20, TimeUnit.SECONDS);
         } finally {
+            if (cron != null) {
+                cron.close();
+            }
             executorService.shutdownNow();
         }
         // every 1 sec + 2 secs sleeping
@@ -180,6 +213,7 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
+        task.close();
         task.executor().shutdown();
         meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
         threadNames.stream()
@@ -202,6 +236,7 @@ public class CronSchedulingTest {
                 .build();
 
         meter.awaitTill(2, 20, TimeUnit.SECONDS);
+        task.close();
         task.executor().shutdown();
         meter.assertAverageDuration(Duration.ofSeconds(3), Duration.ofMillis(ERROR_MARGIN_MILLIS));
         threadNames.stream()

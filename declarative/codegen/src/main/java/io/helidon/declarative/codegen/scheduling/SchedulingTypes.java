@@ -20,6 +20,7 @@ import io.helidon.common.types.TypeName;
 
 final class SchedulingTypes {
     static final TypeName TASK = TypeName.create("io.helidon.scheduling.Task");
+    static final TypeName TASK_MANAGER = TypeName.create("io.helidon.scheduling.TaskManager");
     static final TypeName FIXED_RATE = TypeName.create("io.helidon.scheduling.FixedRate");
     static final TypeName FIXED_RATE_ANNOTATION = TypeName.create("io.helidon.scheduling.Scheduling.FixedRate");
     static final TypeName FIXED_RATE_INVOCATION = TypeName.create("io.helidon.scheduling.FixedRateInvocation");
