@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
 #
 
 grpc-client:
-  poll-wait-time: PT30S
-  abort-poll-time-expired: true
-  init-buffer-size: 10000
-  heartbeat-period: PT10S
+  protocol-config:
+    poll-wait-time: PT30S
+    abort-poll-time-expired: true
+    init-buffer-size: 10000
+    heartbeat-period: PT10S
+  grpc-services:
+    tracing:

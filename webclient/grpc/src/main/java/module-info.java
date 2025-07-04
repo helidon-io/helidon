@@ -39,6 +39,7 @@ module io.helidon.webclient.grpc {
     requires io.helidon.grpc.core;
 
     exports io.helidon.webclient.grpc;
+    exports io.helidon.webclient.grpc.spi;
 
     provides io.helidon.webclient.spi.ClientProtocolProvider
             with io.helidon.webclient.grpc.GrpcProtocolProvider;

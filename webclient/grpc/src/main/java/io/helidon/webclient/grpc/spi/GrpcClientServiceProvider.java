@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
+package io.helidon.webclient.grpc.spi;
+
+import io.helidon.common.config.ConfiguredProvider;
+
 /**
- * Helidon WebClient gRPC Support.
+ * Java service loader interface for gRPC client services.
  */
-package io.helidon.webclient.grpc;
+public interface GrpcClientServiceProvider extends ConfiguredProvider<GrpcClientService> {
+}
