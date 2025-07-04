@@ -49,6 +49,14 @@ public final class Contexts {
     }
 
     /**
+     * Removes all of the elements from the global context.
+     */
+    public static void clearGlobalContext() {
+        clear();
+        GLOBAL_CONTEXT.get().clear();
+    }
+
+    /**
      * Get context registry associated with current thread.
      *
      * @return context that is associated with current thread or empty if none is

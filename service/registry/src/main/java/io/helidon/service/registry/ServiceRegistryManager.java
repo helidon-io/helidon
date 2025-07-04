@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -224,6 +225,7 @@ public final class ServiceRegistryManager {
             registry.shutdown();
             registry = null;
         } finally {
+            Contexts.clearGlobalContext();
             lock.unlock();
         }
     }
