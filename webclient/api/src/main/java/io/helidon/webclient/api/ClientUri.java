@@ -186,6 +186,8 @@ public class ClientUri implements UriInfo {
         }
         if (uri.getHost() != null) {
             uriBuilder.host(uri.getHost());
+        } else if (uri.getAuthority() != null) {
+            throw new IllegalArgumentException("Invalid authority: " + uri.getAuthority());
         }
         if (uri.getPort() != -1) {
             uriBuilder.port(uri.getPort());
