@@ -113,7 +113,7 @@ runs:
         set-java-home: 'false'
     - name: Set up JDK
       if: ${{ inputs.setup-latest-java == 'false' }}
-      uses: actions/setup-java@v4.1.0
+      uses: actions/setup-java@v4.7.1
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
@@ -127,7 +127,7 @@ runs:
         version: stable
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4.2.3
       with:
         # See https://github.com/actions/toolkit/issues/713
         # Include must not match top level directories
@@ -141,7 +141,7 @@ runs:
           local-maven-
     - name: Cache local Maven repository (read-only)
       if: ${{ inputs.maven-cache == 'read-only' }}
-      uses: actions/cache/restore@v4.2.0
+      uses: actions/cache/restore@v4.2.3
       with:
         path: |
           .m2/repository/**/*.*
@@ -152,7 +152,7 @@ runs:
           local-maven-
     - name: Build cache (read-write)
       if: ${{ inputs.build-cache == 'read-write' }}
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4.2.3
       with:
         path: |
           ./**/target/**
@@ -173,7 +173,7 @@ runs:
         key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
-      uses: actions/cache/restore@v4.2.0
+      uses: actions/cache/restore@v4.2.3
       with:
         path: |
           ./**/target/**
