@@ -38,6 +38,7 @@
         <module>websocket</module>
         <module>http2</module>
         <module>grpc</module>
+        <module>jsonrpc</module>
     </modules>
 
 </project>
