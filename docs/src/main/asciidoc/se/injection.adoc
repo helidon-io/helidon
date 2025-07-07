@@ -877,18 +877,17 @@ is the annotation used for specifying the steps in which certain services should
 It always starts from the lowest number to the highest.
 It is possible to have one or more services in each run level.
 When more than one service is defined to a specific run level, the order of creation is defined by
-link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
+link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`] from highest weight to lowest.
 
-To start, add the
-link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
-on the service.
 
+When the service manager shuts down it destroys services in the opposite order, from highest run-level value to lowest and, within a single run level, from lowest weight to highest.
+
+We can also add methods which are executed after service construction and before service destruction, respectively.
 [source,java]
 ----
 include::{sourcedir}/se/inject/RunLevelExample.java[tag=snippet_1, indent=0]
 ----
 
-For better understanding, we can also add helpful method, which get executed post service construction.
 
 The easiest way for us to use these annotations, is to use `start` method on the
 link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`].
@@ -903,4 +902,6 @@ Once executed, we get the following output:
 ----
 level1 created
 level2 created
+level2 destroyed
+level1 destroyed
 ----
