@@ -493,4 +493,38 @@ public final class Option {
          */
         Class<? extends Prototype.OptionDecorator<?, ?>> value();
     }
+
+    /**
+     * Marker of how {@link java.util.Map} keys and values should be constructed.
+     * If used, it will use {@code io.helidon.common.config.Config#traverse} method to depth-first traversal of the node
+     * and its subtree.
+     * <p>
+     * For example:
+     * <pre>{@code
+     * test-map:
+     *    key: "test-value1"
+     *    test-key:
+     *       second-part: "test-value2"
+     *       third-part: "test-value3"
+     * }</pre>
+     * <p>
+     * Will be handled as:
+     * <pre>{@code
+     * key: "key" value: "test-value1"
+     * key: "test-key.second-part" value: "test-value2"
+     * key: "test-key.third-part" value: "test-value3"
+     * }</pre>
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface TraverseConfig {
+
+        /**
+         * Whether to use traverse method to handle map key and value.
+         *
+         * @return true to enable traverse and false to disable
+         */
+        boolean value() default true;
+
+    }
 }

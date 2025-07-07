@@ -87,6 +87,7 @@ final class Types {
     static final TypeName OPTION_DEPRECATED = TypeName.create("io.helidon.builder.api.Option.Deprecated");
     static final TypeName OPTION_TYPE = TypeName.create("io.helidon.builder.api.Option.Type");
     static final TypeName OPTION_DECORATOR = TypeName.create("io.helidon.builder.api.Option.Decorator");
+    static final TypeName OPTION_TRAVERSE_CONFIG = TypeName.create("io.helidon.builder.api.Option.TraverseConfig");
 
     static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
             "io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder");

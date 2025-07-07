@@ -167,8 +167,7 @@ class SeConfig implements Config {
                         .filter(predicate)
                         .map(node -> traverseSubNodes(node, predicate))
                         .reduce(Stream.empty(), Stream::concat))
-                .orElseThrow(MissingValueException.createSupplier(key()));
-
+                .orElseGet(Stream::of);
     }
 
     @Override

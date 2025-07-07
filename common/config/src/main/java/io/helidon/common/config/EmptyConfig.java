@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
@@ -214,6 +215,11 @@ final class EmptyConfig {
         @Override
         public boolean exists() {
             return false;
+        }
+
+        @Override
+        public Stream<? extends Config> traverse() {
+            return Stream.empty();
         }
 
         @Override
