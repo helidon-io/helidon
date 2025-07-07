@@ -33,6 +33,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class HeaderValueIterableTest {
     private static final String[] ordinalNumbers = {"First", "Second", "Third"};
+    private static final String[] emptyStringIterable = {""};
 
     @ParameterizedTest
     @MethodSource("IterableObjects")
@@ -60,6 +61,16 @@ class HeaderValueIterableTest {
         assertThat(ordinalsList, is(headerValueIterable.allValues()));
     }
 
+    // This will test that empty string value is still allowed
+    @ParameterizedTest
+    @MethodSource("EmptyStringIterableObjects")
+    void testEmptyStringIterableHeaderValues(Iterable<String> ordinals) {
+        Header header = HeaderValues.create("EmptyString", ordinals);
+        assertThat(header.name().toLowerCase(), is("emptystring"));
+        assertThat(header.valueCount(), is(emptyStringIterable.length));
+        assertThat(header.allValues().getFirst(), is(""));
+    }
+
     // This will allow testing of a Collection and non-Collection type Iterable
     private static Stream<Arguments> IterableObjects() {
         return Stream.of(
@@ -67,6 +78,15 @@ class HeaderValueIterableTest {
                 arguments(Arrays.asList(ordinalNumbers)),
                 // non-Collection type iterable
                 arguments(new CustomStringIterable(ordinalNumbers))
+        );
+    }
+
+    private static Stream<Arguments> EmptyStringIterableObjects() {
+        return Stream.of(
+                // Collection type iterable
+                arguments(Arrays.asList(emptyStringIterable)),
+                // non-Collection type iterable
+                arguments(new CustomStringIterable(emptyStringIterable))
         );
     }
 

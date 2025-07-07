@@ -353,7 +353,7 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header, must contain at least one value (which may be an empty String)
+     * @param values Iterable<String> type values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
@@ -370,7 +370,7 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header, must contain at least one value (which may be an empty String)
+     * @param values Iterable<String> type values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
