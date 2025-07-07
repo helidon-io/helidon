@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,34 +20,35 @@ import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.grpc.GrpcClientProtocolConfig;
+import io.helidon.webclient.grpc.GrpcClientConfig;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests gRPC client config protocol settings.
+ * Tests gRPC client config settings.
  */
-class GrpcConfigProtocolTest {
+class GrpcConfigTest {
 
     @Test
     void testDefaults() {
-        GrpcClientProtocolConfig config = GrpcClientProtocolConfig.create();
-        assertThat(config.pollWaitTime(), is(Duration.ofSeconds(10)));
-        assertThat(config.abortPollTimeExpired(), is(false));
-        assertThat(config.initBufferSize(), is(2048));
-        assertThat(config.heartbeatPeriod(), is(Duration.ofSeconds(0)));
+        GrpcClientConfig config = GrpcClientConfig.create();
+        assertThat(config.protocolConfig().pollWaitTime(), is(Duration.ofSeconds(10)));
+        assertThat(config.protocolConfig().abortPollTimeExpired(), is(false));
+        assertThat(config.protocolConfig().initBufferSize(), is(2048));
+        assertThat(config.protocolConfig().heartbeatPeriod(), is(Duration.ofSeconds(0)));
     }
 
     @Test
     void testApplicationConfig() {
-        GrpcClientProtocolConfig config = GrpcClientProtocolConfig.create(
+        GrpcClientConfig config = GrpcClientConfig.create(
                 Config.create(ConfigSources.classpath("application.yaml"))
-                        .get("grpc-client.protocol-config"));
-        assertThat(config.pollWaitTime(), is(Duration.ofSeconds(30)));
-        assertThat(config.abortPollTimeExpired(), is(true));
-        assertThat(config.initBufferSize(), is(10000));
-        assertThat(config.heartbeatPeriod(), is(Duration.ofSeconds(10)));
+                        .get("grpc-client"));
+        assertThat(config.protocolConfig().pollWaitTime(), is(Duration.ofSeconds(30)));
+        assertThat(config.protocolConfig().abortPollTimeExpired(), is(true));
+        assertThat(config.protocolConfig().initBufferSize(), is(10000));
+        assertThat(config.protocolConfig().heartbeatPeriod(), is(Duration.ofSeconds(10)));
     }
 }

@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon WebClient gRPC Support.
+ * Helidon WebClient gRPC tracing support.
  */
-package io.helidon.webclient.grpc;
+package io.helidon.webclient.grpc.tracing;

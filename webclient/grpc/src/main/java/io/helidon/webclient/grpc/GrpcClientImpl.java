@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.List;
+
+import io.helidon.grpc.core.WeightedBag;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.Channel;
@@ -24,6 +28,9 @@ import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors;
 
 class GrpcClientImpl implements GrpcClient {
+
+    private static final ClientInterceptor[] NO_INTERCEPTORS = new ClientInterceptor[]{};
+
     private final WebClient webClient;
     private final Http2Client http2Client;
     private final GrpcClientConfig clientConfig;
@@ -54,16 +61,35 @@ class GrpcClientImpl implements GrpcClient {
 
     @Override
     public Channel channel() {
-        return new GrpcChannel(this);
+        return channel(NO_INTERCEPTORS);
     }
 
     @Override
     public Channel channel(ClientInterceptor... interceptors) {
-        return ClientInterceptors.intercept(channel(), interceptors);
+        Channel channel = new GrpcChannel(this);
+        WeightedBag<ClientInterceptor> weightedBag = allInterceptors(interceptors);
+        if (!weightedBag.isEmpty()) {
+            List<ClientInterceptor> orderedInterceptors = weightedBag.stream().toList().reversed();
+            channel = ClientInterceptors.intercept(channel, orderedInterceptors);
+        }
+        return channel;
+
     }
 
     @Override
     public GrpcClientConfig clientConfig() {
         return clientConfig;
+    }
+
+    private WeightedBag<ClientInterceptor> allInterceptors(ClientInterceptor... interceptors) {
+        WeightedBag<ClientInterceptor> weightedBag = WeightedBag.create();
+        for (ClientInterceptor interceptor : interceptors) {
+            weightedBag.add(interceptor);
+        }
+        List<GrpcClientService> grpcServices = clientConfig.grpcServices();
+        for (GrpcClientService service : grpcServices) {
+            weightedBag.merge(service.interceptors());
+        }
+        return weightedBag;
     }
 }
