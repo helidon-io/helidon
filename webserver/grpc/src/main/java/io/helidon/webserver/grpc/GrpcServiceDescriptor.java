@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -441,7 +441,7 @@ public class GrpcServiceDescriptor {
      * @deprecated Use the Helidon context to pass a descriptor instead
      * @see ContextSettingServerInterceptor
      */
-    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Deprecated(since = "4.2.4", forRemoval = true)
     public interface Aware {
         /**
          * Set service descriptor.
