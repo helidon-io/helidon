@@ -96,6 +96,53 @@ public final class Services {
     }
 
     /**
+     * Set a qualified instance.
+     * <p>
+     * Rules are the same as for {@link #set(Class, Object[])}.
+     *
+     * @param contract   contract to set
+     * @param instance   instance to use
+     * @param qualifiers qualifier(s) to qualify the instance
+     * @param <T>        type of the service
+     */
+    public static <T> void setQualified(Class<T> contract, T instance, Qualifier... qualifiers) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(qualifiers);
+
+        if (qualifiers.length == 0) {
+            Services.set(contract, instance);
+            return;
+        }
+
+        for (Qualifier qualifier : qualifiers) {
+            Objects.requireNonNull(qualifier, "All qualifiers must be non-null");
+        }
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        if (registry instanceof CoreServiceRegistry csr) {
+            csr.setQualified(contract, instance, Set.of(qualifiers));
+        }
+    }
+
+    /**
+     * Set a named instance.
+     * <p>
+     * Rules are the same as for {@link #set(Class, Object[])}.
+     *
+     * @param contract contract to set
+     * @param instance instance to use
+     * @param name     name qualifier to qualify the instance
+     * @param <T>      type of the service
+     */
+    public static <T> void setNamed(Class<T> contract, T instance, String name) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(name);
+
+        setQualified(contract, instance, Qualifier.createNamed(name));
+    }
+
+    /**
      * Add an explicit instance for the specified service contract.
      * <p>
      * This method has similar contract to {@link #set(Class, Object[])} except it adds the implementation,
