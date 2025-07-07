@@ -44,7 +44,8 @@ interface TaskConfigBlueprint {
     /**
      * Identification of the started task. This can be used to later look up the instance, for example to cancel it.
      *
-     * @return task id, if not provided, a unique id will be generated
+     * @return task id, if not provided via configuration or builder, the configured task will generate a unique ID
      */
+    @Option.Configured
     Optional<String> id();
 }

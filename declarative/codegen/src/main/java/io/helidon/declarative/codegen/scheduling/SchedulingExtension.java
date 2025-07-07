@@ -206,14 +206,15 @@ class SchedulingExtension implements RegistryCodegenExtension {
         postConstruct.increaseContentPadding()
                 .increaseContentPadding()
                 .addContentLine(".taskManager(taskManager)")
+                // ID must be configured before reading config, as config may modify it
+                .addContent(".id(\"")
+                .addContent(scheduled.id())
+                .addContentLine("\")")
                 .addContent(".config(")
                 .addContent(configVariable)
                 .addContent(".get(\"")
                 .addContent(configKey)
-                .addContentLine("\"))")
-                .addContent(".id(\"")
-                .addContent(scheduled.id())
-                .addContentLine("\")");
+                .addContentLine("\"))");
 
         if (scheduled.hasParameter()) {
             postConstruct

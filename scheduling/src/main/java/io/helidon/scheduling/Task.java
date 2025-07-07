@@ -49,6 +49,7 @@ public interface Task {
      * @return task ID
      */
     default String id() {
-        return description();
+        // we need a unique id in this VM, this is implemented by Helidon tasks
+        return String.valueOf(System.identityHashCode(this));
     }
 }
