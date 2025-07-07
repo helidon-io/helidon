@@ -19,6 +19,7 @@ package io.helidon.service.registry;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 
@@ -100,10 +101,10 @@ public final class Services {
      * This method has similar contract to {@link #set(Class, Object[])} except it adds the implementation,
      * where the {@code set} method replaces all implementations.
      *
-     * @param contract  contract to bind the instance under
-     * @param weight weight of the instance (use {@link io.helidon.common.Weighted#DEFAULT_WEIGHT} for default)
+     * @param contract contract to bind the instance under
+     * @param weight   weight of the instance (use {@link io.helidon.common.Weighted#DEFAULT_WEIGHT} for default)
      * @param instance instance to add
-     * @param <T>       type of the contract
+     * @param <T>      type of the contract
      * @throws io.helidon.service.registry.ServiceRegistryException in case the service contract was already used and cannot be
      *                                                              re-bound
      * @throws java.lang.NullPointerException                       if either of the parameters is null
@@ -140,7 +141,6 @@ public final class Services {
         }
     }
 
-
     /**
      * Get the first instance of the contract, expecting the contract is available.
      *
@@ -154,6 +154,44 @@ public final class Services {
     public static <T> T get(Class<T> contract) {
         Objects.requireNonNull(contract);
         return GlobalServiceRegistry.registry().get(contract);
+    }
+
+    /**
+     * Get the first named service instance matching the contract with the expectation that there is a match available.
+     *
+     * @param contract contract to look-up
+     * @param name     name qualifier of the instance to get
+     * @param <T>      type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> T getNamed(Class<T> contract, String name) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(name);
+
+        return get(contract, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Get the first service instance matching the contract and qualifiers with the expectation that there is a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> T get(Class<T> contract, Qualifier... qualifiers) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(qualifiers);
+
+        return GlobalServiceRegistry.registry()
+                .get(Lookup.builder()
+                             .addContract(contract)
+                             .qualifiers(Set.of(qualifiers))
+                             .build());
     }
 
     /**
@@ -171,6 +209,54 @@ public final class Services {
         return GlobalServiceRegistry.registry().get(contract);
     }
 
+    /**
+     * Get the first named service instance matching the contract with the expectation that there is a match available.
+     *
+     * @param contract contract to look-up
+     * @param name     name qualifier of the instance to get
+     * @param <T>      type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> T getNamed(TypeName contract, String name) {
+        return get(contract, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Get the first service instance matching the contract and qualifiers with the expectation that there is a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract (we will "blindly" cast the result to the expected type, make sure you use the right
+     *                   one)
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> T get(TypeName contract, Qualifier... qualifiers) {
+        return GlobalServiceRegistry.registry()
+                .get(Lookup.builder()
+                             .addContract(contract)
+                             .qualifiers(Set.of(qualifiers))
+                             .build());
+    }
+
+    /**
+     * Get all service instances matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    public static <T> List<T> all(Class<T> contract, Qualifier... qualifiers) {
+        return GlobalServiceRegistry.registry()
+                .all(Lookup.builder()
+                             .addContract(contract)
+                             .qualifiers(Set.of(qualifiers))
+                             .build());
+    }
 
     /**
      * Get all instances of the contract.
@@ -183,6 +269,22 @@ public final class Services {
     public static <T> List<T> all(Class<T> contract) {
         Objects.requireNonNull(contract);
         return GlobalServiceRegistry.registry().all(contract);
+    }
+
+    /**
+     * Get all service instances matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    public static <T> List<T> all(TypeName contract, Qualifier... qualifiers) {
+        return GlobalServiceRegistry.registry()
+                .all(Lookup.builder()
+                             .addContract(contract)
+                             .qualifiers(Set.of(qualifiers))
+                             .build());
     }
 
     /**
@@ -212,6 +314,38 @@ public final class Services {
     }
 
     /**
+     * Get the first named service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract contract to look-up
+     * @param name     name qualifier of the instance to get
+     * @param <T>      type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> Optional<T> firstNamed(Class<T> contract, String name) {
+        return first(contract, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return the best service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> Optional<T> first(Class<T> contract, Qualifier... qualifiers) {
+        return GlobalServiceRegistry.registry()
+                .first(Lookup.builder()
+                               .addContract(contract)
+                               .qualifiers(Set.of(qualifiers))
+                               .build());
+    }
+
+    /**
      * Get first instance of the contract from the registry, all an empty optional if none exist.
      *
      * @param contract contract to find
@@ -223,4 +357,37 @@ public final class Services {
         Objects.requireNonNull(contract);
         return GlobalServiceRegistry.registry().first(contract);
     }
+
+    /**
+     * Get the first named service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract contract to look-up
+     * @param name     name qualifier of the instance to get
+     * @param <T>      type of the contract
+     * @return the best service instance matching the contract
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> Optional<T> firstNamed(TypeName contract, String name) {
+        return first(contract, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return the best service instance matching the contract, or an empty {@link java.util.Optional} if none match
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    public static <T> Optional<T> first(TypeName contract, Qualifier... qualifiers) {
+        return GlobalServiceRegistry.registry()
+                .first(Lookup.builder()
+                               .addContract(contract)
+                               .qualifiers(Set.of(qualifiers))
+                               .build());
+    }
+
 }
