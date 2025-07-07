@@ -136,17 +136,6 @@
                     <includes>
                         <include>**/*</include>
                     </includes>
-                    <excludes>
-                        <exclude>codegen/**</exclude>
-                        <exclude>http/**</exclude>
-                        <exclude>builder/**</exclude>
-                        <exclude>webserver/**</exclude>
-                        <exclude>webclient/**</exclude>
-                        <exclude>common/**</exclude>
-                        <exclude>config/**</exclude>
-                        <exclude>security/**</exclude>
-                        <exclude>integrations/**</exclude>
-                    </excludes>
                 </moduleSet>
             </moduleSets>
         </reactorRule>
