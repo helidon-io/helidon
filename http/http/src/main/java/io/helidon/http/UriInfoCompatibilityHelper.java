@@ -54,7 +54,7 @@ final class UriInfoCompatibilityHelper {
             return ctx.uriInfo(InetSocketAddress.createUnresolved(remoteMatcher.group(1),
                                                                   remotePort.isEmpty() ? 0 : Integer.parseInt(remotePort)),
                                InetSocketAddress.createUnresolved(localMatcher.group(1),
-                                                                  localPort.isEmpty() ? 0 : Integer.parseInt(remotePort)),
+                                                                  localPort.isEmpty() ? 0 : Integer.parseInt(localPort)),
                                requestPath, headers, query, isSecure);
         }
 
