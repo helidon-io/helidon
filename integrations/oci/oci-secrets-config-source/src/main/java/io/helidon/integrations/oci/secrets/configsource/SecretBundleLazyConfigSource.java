@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,9 @@ public final class SecretBundleLazyConfigSource
             if (LOGGER.isLoggable(DEBUG)) {
                 LOGGER.log(DEBUG, "Getting SecretBundle with name " + secretName);
             }
-            return s.getSecretBundleByName(request(vaultOcid, secretName)).getSecretBundle().getSecretBundleContent();
+            return s.getSecretBundleByName(secretBundleByNameRequest(vaultOcid, secretName))
+                    .getSecretBundle()
+                    .getSecretBundleContent();
         } catch (BmcException e) {
             if (e.getStatusCode() == 404) {
                 return null;
@@ -148,10 +150,11 @@ public final class SecretBundleLazyConfigSource
         return Optional.empty();
     }
 
-    static GetSecretBundleByNameRequest request(String vaultOcid, String secretName) {
+    static GetSecretBundleByNameRequest secretBundleByNameRequest(String vaultOcid, String secretName) {
         return GetSecretBundleByNameRequest.builder()
             .vaultId(vaultOcid)
             .secretName(secretName)
+            .stage(GetSecretBundleByNameRequest.Stage.Current)
             .build();
     }
 
