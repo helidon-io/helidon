@@ -96,7 +96,7 @@
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
-        <version.lib.kafka>3.8.1</version.lib.kafka>
+        <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.langchain4j>0.36.2</version.lib.langchain4j>
