@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Features.*;
+import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * JSON-B media support.
  */
-@Name("JSONB")
-@Description("JSON-B media support")
-@Flavor(HelidonFlavor.SE)
-@Path({"Media", "JSON-B"})
+@Feature(value = "JSONB",
+         description = "JSON-B media support",
+         in = HelidonFlavor.SE,
+         path = {"Media", "JSON-B"}
+)
 module io.helidon.http.media.jsonb {
 
     requires io.helidon.http.media;

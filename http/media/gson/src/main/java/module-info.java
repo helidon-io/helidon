@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-
-import static io.helidon.common.features.api.Features.*;
-
 
 /**
  * Gson media support.
  */
-@Name("Gson")
-@Description("Gson media support")
-@Path({"Media", "Gson"})
-@Flavor(HelidonFlavor.SE)
+@Feature(value = "Gson",
+         description = "Gson media support",
+         in = HelidonFlavor.SE,
+         path = {"Media", "Gson"}
+)
 module io.helidon.http.media.gson {
 
     requires com.google.gson;

@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.helidon.common.features.api.HelidonFlavor;
 
-import static io.helidon.common.features.api.Features.*;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Jackson media support.
  */
-@Name("Jackson")
-@Description("Jackson media support")
-@Flavor(HelidonFlavor.SE)
-@Path({"Media", "Jackson"})
+@Feature(value = "Jackson",
+         description = "Jackson media support",
+         in = HelidonFlavor.SE,
+         path = {"Media", "Jackson"}
+)
 module io.helidon.http.media.jackson {
 
     requires com.fasterxml.jackson.core;

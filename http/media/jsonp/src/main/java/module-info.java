@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
-import static io.helidon.common.features.api.Features.*;
 /**
  * JSON-P media support.
  */
-@Name("JSONP")
-@Description("JSON-P media support")
-@Flavor(HelidonFlavor.SE)
-@Path({"Media", "JSON-P"})
+@Feature(value = "JSONP",
+         description = "JSON-P media support",
+         in = HelidonFlavor.SE,
+         path = {"Media", "JSON-P"}
+)
 module io.helidon.http.media.jsonp {
 
     requires io.helidon.http.media;
