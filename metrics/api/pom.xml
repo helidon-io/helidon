@@ -46,6 +46,10 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

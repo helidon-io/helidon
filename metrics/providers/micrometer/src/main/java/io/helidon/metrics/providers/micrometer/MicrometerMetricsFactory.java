@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -160,7 +161,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry != null
                 ? globalMeterRegistry
-                : globalRegistry(MetricsConfig.create(Config.global().get(MetricsConfig.METRICS_CONFIG_KEY)));
+                : globalRegistry(MetricsConfig.create(Services.get(Config.class).get(MetricsConfig.METRICS_CONFIG_KEY)));
     }
 
     @Override
