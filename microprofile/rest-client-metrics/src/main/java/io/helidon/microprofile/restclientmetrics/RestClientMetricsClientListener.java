@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,10 @@ public class RestClientMetricsClientListener implements RestClientListener {
 
     /*
     The listener can be instantiated multiple times, so we delegate the real work to a singleton.
+    The listener is an instance field instead of static so tests that create multiple containers in the
+    same JVM do not incorrectly all refer to only the first REST client metrics CDI extension.
      */
-    private static final LazyValue<Listener> LISTENER = LazyValue.create(Listener::new);
+    private final LazyValue<Listener> listener = LazyValue.create(Listener::new);
 
     /**
      * For service discovery.
@@ -44,7 +46,7 @@ public class RestClientMetricsClientListener implements RestClientListener {
 
     @Override
     public void onNewClient(Class<?> serviceInterface, RestClientBuilder builder) {
-        LISTENER.get().onNewClient(serviceInterface, builder);
+        listener.get().onNewClient(serviceInterface, builder);
     }
 
     private static class Listener {
@@ -62,6 +64,13 @@ public class RestClientMetricsClientListener implements RestClientListener {
                             .build();
                 });
 
+        /*
+        In some cases, the system will invoke REST client listeners before CDI has completed its startup. The REST client metrics
+        CDI extension registers the meters to be updated for each REST client method, so this listener has nothing to do if
+        it runs before CDI has initialized the extension. That said, it needs to keep retrying to locate the CDI extension
+        because the extension might (should) become available later. The code below uses a utility method to access this
+        lazy value to allow that retry behavior.
+         */
         private final LazyValue<RestClientMetricsCdiExtension> ext =
                 LazyValue.create(() -> CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class));
 
@@ -77,7 +86,7 @@ public class RestClientMetricsClientListener implements RestClientListener {
                 // register metrics (and create metric-related work for the filter to do) only upon first
                 // discovering a given service interface.
                 if (restClientsDiscovered.add(serviceInterface)) {
-                    ext.get().registerMetricsForRestClient(serviceInterface);
+                    Utils.optOf(ext).ifPresent(ext -> ext.registerMetricsForRestClient(serviceInterface));
                 }
                 builder.register(restClientMetricsFilter, Priorities.USER - 100);
             }
