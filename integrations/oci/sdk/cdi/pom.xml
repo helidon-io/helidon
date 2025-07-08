@@ -130,6 +130,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
