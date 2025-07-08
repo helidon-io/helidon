@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -653,5 +653,21 @@ public interface BufferData {
         byte[] bytes = new byte[available()];
         read(bytes);
         return bytes;
+    }
+
+    /**
+     * Converts this buffer into an {@link java.io.InputStream} that reads
+     * all available bytes from the buffer. This method never resets
+     * or rewinds the buffer.
+     *
+     * @return an input stream backed by this buffer
+     */
+    default InputStream asInputStream() {
+        return new InputStream() {
+            @Override
+            public int read() {
+                return BufferData.this.available() > 0 ? BufferData.this.read() : -1;
+            }
+        };
     }
 }

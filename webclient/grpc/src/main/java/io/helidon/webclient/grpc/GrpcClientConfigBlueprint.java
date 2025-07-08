@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.grpc.spi.GrpcClientService;
+import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 
 /**
  * Configuration of a grpc client.
@@ -45,5 +48,25 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
      * @return a supplier for zero or more client URIs
      */
     Optional<ClientUriSupplier> clientUriSupplier();
+
+    /**
+     * Whether to collect metrics for gRPC client calls.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
+
+    /**
+     * gRPC client services. A gRPC service needs to be explicitly added to
+     * be enabled given that {@code discoveredServices} is {@code false}.
+     *
+     * @return services to use with this gRPC client
+     */
+    @Option.Singular
+    @Option.Configured
+    @Option.Provider(value = GrpcClientServiceProvider.class, discoverServices = false)
+    List<GrpcClientService> grpcServices();
 }
 

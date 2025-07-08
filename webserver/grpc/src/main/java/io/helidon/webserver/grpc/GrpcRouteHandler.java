@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -25,6 +26,7 @@ import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
@@ -34,41 +36,71 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
     private final MethodDescriptor<ReqT, ResT> method;
     private final PathMatcher pathMatcher;
     private final ServerCallHandler<ReqT, ResT> callHandler;
+    private final Descriptors.FileDescriptor proto;
 
     private GrpcRouteHandler(MethodDescriptor<ReqT, ResT> method,
                              PathMatcher pathMatcher,
-                             ServerCallHandler<ReqT, ResT> callHandler) {
+                             ServerCallHandler<ReqT, ResT> callHandler,
+                             Descriptors.FileDescriptor proto) {
         this.method = method;
         this.pathMatcher = pathMatcher;
         this.callHandler = callHandler;
+        this.proto = proto;
+    }
+
+    @Override
+    String serviceName() {
+        return method.getServiceName();
+    }
+
+    /**
+     * Provides access to proto file descriptor.
+     *
+     * @return descriptor or {@code null} if not defined.
+     */
+    @Override
+    public Descriptors.FileDescriptor proto() {
+        return proto;
     }
 
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> unary(Descriptors.FileDescriptor proto,
                                                            String serviceName,
                                                            String methodName,
-                                                           ServerCalls.UnaryMethod<ReqT, ResT> method) {
-        return grpc(proto, serviceName, methodName, ServerCalls.asyncUnaryCall(method));
+                                                           ServerCalls.UnaryMethod<ReqT, ResT> method,
+                                                           WeightedBag<ServerInterceptor> interceptors) {
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                ServerCalls.asyncUnaryCall(method), interceptors);
+        return grpc(proto, serviceName, methodName, callHandler);
     }
 
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> bidi(Descriptors.FileDescriptor proto,
                                                           String serviceName,
                                                           String methodName,
-                                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-        return grpc(proto, serviceName, methodName, ServerCalls.asyncBidiStreamingCall(method));
+                                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method,
+                                                          WeightedBag<ServerInterceptor> interceptors) {
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                ServerCalls.asyncBidiStreamingCall(method), interceptors);
+        return grpc(proto, serviceName, methodName, callHandler);
     }
 
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> serverStream(Descriptors.FileDescriptor proto,
                                                                   String serviceName,
                                                                   String methodName,
-                                                                  ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-        return grpc(proto, serviceName, methodName, ServerCalls.asyncServerStreamingCall(method));
+                                                                  ServerCalls.ServerStreamingMethod<ReqT, ResT> method,
+                                                                  WeightedBag<ServerInterceptor> interceptors) {
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                ServerCalls.asyncServerStreamingCall(method), interceptors);
+        return grpc(proto, serviceName, methodName, callHandler);
     }
 
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> clientStream(Descriptors.FileDescriptor proto,
                                                                   String serviceName,
                                                                   String methodName,
-                                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-        return grpc(proto, serviceName, methodName, ServerCalls.asyncClientStreamingCall(method));
+                                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method,
+                                                                  WeightedBag<ServerInterceptor> interceptors) {
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                ServerCalls.asyncClientStreamingCall(method), interceptors);
+        return grpc(proto, serviceName, methodName, callHandler);
     }
 
     /**
@@ -77,25 +109,35 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
      * @param definition the {@link ServerMethodDefinition} representing the method to execute
      * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
      * containing the service definition
+     * @param interceptors the interceptors
      * @param <ReqT> the request type
      * @param <ResT> the response type
      * @return a {@link GrpcRouteHandler gRPC route} created
      * from the {@link ServerMethodDefinition}
      */
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
-                                                                      Descriptors.FileDescriptor proto) {
-        return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
+                                                                      Descriptors.FileDescriptor proto,
+                                                                      WeightedBag<ServerInterceptor> interceptors) {
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                definition.getServerCallHandler(), interceptors);
+        return grpc(definition.getMethodDescriptor(), callHandler, proto);
     }
 
     @SuppressWarnings("unchecked")
     public static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> bindableMethod(BindableService service,
-                                                                           ServerMethodDefinition<?, ?> method) {
+                                                                           ServerMethodDefinition<?, ?> method,
+                                                                           WeightedBag<ServerInterceptor> interceptors) {
         ServerServiceDefinition definition = service.bindService();
         String path = definition.getServiceDescriptor().getName() + "/"
                 + method.getMethodDescriptor().getBareMethodName();
+        ServerCallHandler<ReqT, ResT> callHandler = GrpcInterceptorUtil.interceptHandler(
+                (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler(),
+                interceptors,
+                service instanceof BindableServiceImpl svc ? svc.serviceDescriptor() : null);
         return new GrpcRouteHandler<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
                                       PathMatchers.exact(path),
-                                      (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler());
+                                      callHandler,
+                                      null);
     }
 
     @Override
@@ -119,14 +161,15 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                                   String serviceName,
                                                                   String methodName,
                                                                   ServerCallHandler<ReqT, ResT> callHandler) {
-        Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
+        String simpleName = getSimpleName(serviceName);
+        Descriptors.ServiceDescriptor svc = proto.findServiceByName(simpleName);
         if (svc == null) {
-            throw new IllegalArgumentException("Unable to find gRPC service '" + serviceName + "'");
+            throw new IllegalArgumentException("Unable to find gRPC service '" + simpleName + "'");
         }
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
         if (mtd == null) {
             throw new IllegalArgumentException("Unable to find gRPC method '" + methodName
-                    + "' in service '" + serviceName + "'");
+                    + "' in service '" + simpleName + "'");
         }
         String path = svc.getFullName() + "/" + methodName;
 
@@ -142,11 +185,11 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
         MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responseType);
 
         MethodDescriptor.Builder<ReqT, ResT> grpcDesc = MethodDescriptor.<ReqT, ResT>newBuilder()
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(serviceName, methodName))
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(simpleName, methodName))
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new GrpcRouteHandler<>(grpcDesc.build(), PathMatchers.exact(path), callHandler);
+        return new GrpcRouteHandler<>(grpcDesc.build(), PathMatchers.exact(path), callHandler, proto);
     }
 
 
@@ -165,7 +208,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
     private static <ResT, ReqT> GrpcRouteHandler<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
                                                                   ServerCallHandler<ReqT, ResT> callHandler,
                                                                   Descriptors.FileDescriptor proto) {
-        return new GrpcRouteHandler<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler);
+        return new GrpcRouteHandler<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler, proto);
     }
 
     private static String getClassName(Descriptors.Descriptor descriptor) {
@@ -227,5 +270,10 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
             return MethodDescriptor.MethodType.SERVER_STREAMING;
         }
         return MethodDescriptor.MethodType.UNARY;
+    }
+
+    private static String getSimpleName(String fullName) {
+        int k = fullName.lastIndexOf('.');
+        return k < 0 ? fullName : fullName.substring(k + 1);
     }
 }

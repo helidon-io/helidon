@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
@@ -26,11 +27,38 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**
+     * Protocol configuration name.
+     *
+     * @return name of this configuration
+     */
+    @Option.Default(GrpcProtocolProvider.CONFIG_NAME)
+    String name();
+
+    /**
      * Protocol configuration type.
      *
      * @return type of this configuration
      */
-    default String type() {
-        return GrpcProtocolProvider.CONFIG_NAME;
-    }
+    @Option.Default(GrpcProtocolProvider.CONFIG_NAME)
+    String type();
+
+    /**
+     * Whether to collect metrics for gRPC server calls.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
+
+    /**
+     * Whether to support compression if requested by a client. If explicitly
+     * disabled, no compression will be ever be used by the server even if a
+     * client-compatible compressor is found.
+     *
+     * @return true if compression is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enableCompression();
 }

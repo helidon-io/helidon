@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,11 @@ module io.helidon.webclient.grpc {
     requires transitive io.helidon.webclient.http2;
     requires transitive io.helidon.webclient;
 
+    requires io.helidon.metrics.api;
     requires io.helidon.grpc.core;
 
     exports io.helidon.webclient.grpc;
+    exports io.helidon.webclient.grpc.spi;
 
     provides io.helidon.webclient.spi.ClientProtocolProvider
             with io.helidon.webclient.grpc.GrpcProtocolProvider;

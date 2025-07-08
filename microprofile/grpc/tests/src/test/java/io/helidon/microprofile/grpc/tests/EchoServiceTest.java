@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.microprofile.grpc.tests.test.Echo;
 import io.helidon.microprofile.grpc.tests.test.EchoServiceGrpc;
 import io.helidon.tracing.Tracer;
 
+import com.google.protobuf.Descriptors;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -84,6 +85,16 @@ class EchoServiceTest extends BaseServiceTest {
     @EchoInterceptorBinding
     @Grpc.GrpcInterceptors(EchoInterceptor1.class)
     public static class EchoService {
+
+        /**
+         * Implement this method to add support for the gRPC reflection service.
+         *
+         * @return the proto file descriptor
+         */
+        @Grpc.Proto
+        public Descriptors.FileDescriptor proto() {
+            return Echo.getDescriptor();
+        }
 
         /**
          * Echo the message back to the caller.

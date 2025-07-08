@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.Route;
 
-abstract class GrpcRoute implements Route {
+abstract class GrpcRoute implements Route, GrpcProto {
 
     /**
      * Finds a match for an HTTP prologue.
@@ -37,4 +37,11 @@ abstract class GrpcRoute implements Route {
      * @return the handler
      */
     abstract GrpcRouteHandler<?, ?> handler(HttpPrologue grpcPrologue);
+
+    /**
+     * Obtains the name of service from route.
+     *
+     * @return the service name
+     */
+    abstract String serviceName();
 }

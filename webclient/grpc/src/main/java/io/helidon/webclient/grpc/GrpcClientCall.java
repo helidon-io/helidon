@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.http2.Http2FrameData;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
@@ -94,7 +93,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         // serialize and queue message for writing
         byte[] serialized = serializeMessage(message);
         BufferData messageData = BufferData.createReadOnly(serialized, 0, serialized.length);
-        BufferData headerData = BufferData.create(5);
+        BufferData headerData = BufferData.create(DATA_PREFIX_LENGTH);
         headerData.writeInt8(0);                                // no compression
         headerData.writeUnsignedInt32(messageData.available());         // length prefixed
         sendingQueue.add(BufferData.create(headerData, messageData));
@@ -109,7 +108,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 try {
                     startWriteBarrier.await();
                     socket().log(LOGGER, DEBUG, "[Heartbeat thread] started with period " + period);
-
                     while (isRemoteOpen()) {
                         Thread.sleep(period);
                         if (sendingQueue.isEmpty()) {
@@ -148,6 +146,10 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         endOfStream = (sendingQueue.peek() == EMPTY_BUFFER_DATA);
                         boolean lastEndOfStream = endOfStream;
                         socket().log(LOGGER, DEBUG, "[Writing thread] writing bufferData %b", lastEndOfStream);
+                        // update bytes sent
+                        if (enableMetrics()) {
+                            bytesSent().addAndGet(bufferData.available());
+                        }
                         clientStream().writeData(bufferData, endOfStream);
                     }
                 }
@@ -178,7 +180,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
                 // read data from stream
                 while (isRemoteOpen()) {
-                    // drain queue
                     drainReceivingQueue();
 
                     // trailers or eos received?
@@ -187,18 +188,18 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         break;
                     }
 
-                    // attempt to read and queue
-                    Http2FrameData frameData;
-                    try {
-                        frameData = clientStream().readOne(pollWaitTime());
-                    } catch (StreamTimeoutException e) {
-                        handleStreamTimeout(e);
+                    // read complete gRPC data
+                    BufferData bufferData = readGrpcFrame();
+                    if (bufferData == null) {
                         continue;
                     }
-                    if (frameData != null) {
-                        receivingQueue.add(frameData.data());
-                        socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
+
+                    // update bytes received excluding prefix
+                    if (enableMetrics()) {
+                        bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
                     }
+                    receivingQueue.add(bufferData);
+                    socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                 }
 
                 socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
@@ -222,6 +223,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         clientStream().cancel();
         connection().close();
         unblockUnaryExecutor();
+
+        // update metrics
+        if (enableMetrics()) {
+            MethodMetrics methodMetrics = methodMetrics();
+            methodMetrics.callDuration().record(
+                    Duration.ofMillis(System.currentTimeMillis() - startMillis()));
+            methodMetrics.recvMessageSize().record(bytesRcvd().get());
+            methodMetrics.sentMessageSize().record(bytesSent().get());
+        }
     }
 
     private void drainReceivingQueue() {
@@ -231,13 +241,5 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             ResT res = toResponse(receivingQueue.remove());
             responseListener().onMessage(res);
         }
-    }
-
-    private void handleStreamTimeout(StreamTimeoutException e) {
-        if (abortPollTimeExpired()) {
-            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
-            throw e;
-        }
-        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 }
