@@ -26,10 +26,10 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.Services;
 
 /**
  * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
@@ -40,8 +40,8 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  * resulting metrics factory as the most recent.
  * <p>
  * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
- * {@link io.helidon.common.config.Config} parameter creates and saves a metrics factory using the
- * {@link io.helidon.common.config.GlobalConfig}.
+ * {@link io.helidon.common.config.Config} parameter creates and saves a metrics factory using the current
+ * {@link io.helidon.common.config.Config}.
  * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
@@ -156,9 +156,10 @@ class MetricsFactoryManager {
     }
 
     private static Config externalMetricsConfig() {
-        Config serverFeaturesMetricsConfig = GlobalConfig.config().get("server.features.observe.observers.metrics");
+        Config currentConfig = Services.get(Config.class);
+        Config serverFeaturesMetricsConfig = currentConfig.get("server.features.observe.observers.metrics");
         if (!serverFeaturesMetricsConfig.exists()) {
-            serverFeaturesMetricsConfig = GlobalConfig.config().get("metrics");
+            serverFeaturesMetricsConfig = currentConfig.get("metrics");
         }
         return serverFeaturesMetricsConfig;
     }

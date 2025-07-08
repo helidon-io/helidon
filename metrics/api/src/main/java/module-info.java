@@ -32,6 +32,7 @@ import io.helidon.common.features.api.HelidonFlavor;
     requires transitive io.helidon.common.config;
 
     requires io.helidon.builder.api;
+    requires io.helidon.service.registry;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.metrics.api;

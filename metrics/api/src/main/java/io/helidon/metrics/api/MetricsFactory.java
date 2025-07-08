@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public interface MetricsFactory {
     /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
      * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
-     * {@link io.helidon.common.config.GlobalConfig}.
+     * current config.
      *
      * @return current or new metrics factory
      */
@@ -96,7 +96,7 @@ public interface MetricsFactory {
      * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
      * {@link MetricsConfig} instance derived from the root {@link io.helidon.common.config.Config} most recently passed to
      * {@link #getInstance(io.helidon.common.config.Config)}, or if none then the config from
-     * {@link io.helidon.common.config.GlobalConfig}.
+     * current {@link io.helidon.common.config.Config}.
      *
      * @return the global meter registry
      */

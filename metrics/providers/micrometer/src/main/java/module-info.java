@@ -28,6 +28,7 @@ module io.helidon.metrics.providers.micrometer {
     requires simpleclient.common;
     requires simpleclient.tracer.common;
     requires simpleclient;
+    requires io.helidon.service.registry;
 
     exports io.helidon.metrics.providers.micrometer.spi;
 
