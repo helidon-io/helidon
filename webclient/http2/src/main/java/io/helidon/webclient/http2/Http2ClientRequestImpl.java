@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
@@ -36,8 +37,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     private int requestPrefetch = 0;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private boolean outputStreamRedirect = false;
+    private final FullClientRequest<?> delegate;
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
+                           FullClientRequest<?> delegate,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
@@ -51,13 +54,14 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         this.priorKnowledge = protocolConfig.priorKnowledge();
+        this.delegate = delegate;
     }
 
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.http2Client, method, clientUri, properties);
+        this(request.http2Client, request.delegate, method, clientUri, properties);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -182,6 +186,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                     serviceResponse.whenComplete().completeExceptionally(throwable);
                     return null;
                 });
+
+        if (delegate != null) {
+            ClientRequestHeaders delegateHeaders = delegate.headers();
+            this.headers().forEach(delegateHeaders::set);
+        }
 
         // if this was an HTTP/1.1 response, do something different (just re-use response)
         return new Http2ClientResponseImpl(clientConfig(),

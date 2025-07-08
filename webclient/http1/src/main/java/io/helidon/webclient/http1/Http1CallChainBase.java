@@ -56,7 +56,17 @@ import static java.lang.System.Logger.Level.TRACE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 abstract class Http1CallChainBase implements WebClientService.Chain {
-    private static final System.Logger LOGGER = System.getLogger(Http1CallChainBase.class.getName());
+    private static final String CLASS_NAME = Http1CallChainBase.class.getName();
+    /*
+    Specify more fine-grained log levels, to allow printing only what needed
+     */
+    protected static final System.Logger LOGGER_REQ_ENTITY = System.getLogger(CLASS_NAME + ".req.entity");
+    protected static final System.Logger LOGGER_REQ_PROLOGUE = System.getLogger(CLASS_NAME + ".req.prologue");
+    protected static final System.Logger LOGGER_REQ_HEADERS = System.getLogger(CLASS_NAME + ".req.headers");
+    protected static final System.Logger LOGGER_RES_STATUS = System.getLogger(CLASS_NAME + ".res.status");
+    protected static final System.Logger LOGGER_RES_HEADERS = System.getLogger(CLASS_NAME + ".res.headers");
+    private static final System.Logger LOGGER_RES_ENTITY = System.getLogger(CLASS_NAME + ".res.entity");
+
     private static final Supplier<IllegalArgumentException> INVALID_SIZE_EXCEPTION_SUPPLIER =
             () -> new IllegalArgumentException("Chunk size is invalid");
 
@@ -88,7 +98,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         this.whenComplete = whenComplete;
     }
 
-    static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
+    static void writeHeaders(ClientConnection connection, Headers headers, BufferData bufferData, boolean validate) {
         for (Header header : headers) {
             if (validate) {
                 header.validate();
@@ -97,6 +107,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         bufferData.write(Bytes.CR_BYTE);
         bufferData.write(Bytes.LF_BYTE);
+
+        connection.helidonSocket().log(LOGGER_REQ_HEADERS, TRACE, "client sent headers %n%s", headers);
     }
 
     static WebClientServiceResponse createServiceResponse(HttpClientConfig clientConfig,
@@ -143,7 +155,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         ClientRequestHeaders headers = serviceRequest.headers();
 
         writeBuffer.clear();
-        prologue(writeBuffer, serviceRequest, uri);
+        prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
         headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
@@ -156,7 +168,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                 DataReader reader,
                                                 BufferData writeBuffer);
 
-    void prologue(BufferData nonEntityData, WebClientServiceRequest request, ClientUri uri) {
+    void prologue(ClientConnection effectiveConnection,
+                  BufferData nonEntityData,
+                  WebClientServiceRequest request,
+                  ClientUri uri) {
         if (request.method() == Method.CONNECT) {
             // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
             nonEntityData.writeAscii(request.method().text()
@@ -180,6 +195,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                     + requestUri
                     + uri.pathWithQueryAndFragment()
                     + " HTTP/1.1\r\n");
+        }
+
+        if (LOGGER_REQ_PROLOGUE.isLoggable(TRACE)) {
+            effectiveConnection.helidonSocket().log(LOGGER_REQ_PROLOGUE,
+                                           TRACE,
+                                           "client sent prologue %n%s",
+                                           nonEntityData.debugDataHex());
         }
     }
 
@@ -226,9 +248,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             }
             throw e;
         }
-        connection.helidonSocket().log(LOGGER, TRACE, "client received status %n%s", responseStatus);
+        connection.helidonSocket().log(LOGGER_RES_STATUS, TRACE, "client received status %n%s", responseStatus);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
-        connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
+        connection.helidonSocket().log(LOGGER_RES_HEADERS, TRACE, "client received headers %n%s", responseHeaders);
 
         return createServiceResponse(clientConfig,
                                      serviceRequest,
@@ -382,7 +404,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 entityProcessedRunnable.run();
                 finished = true;
             } else {
-                socket.log(LOGGER, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
+                if (LOGGER_RES_ENTITY.isLoggable(TRACE)) {
+                    socket.log(LOGGER_RES_ENTITY,
+                               TRACE,
+                               "client read entity buffer %n%s",
+                               currentBuffer.debugDataHex(true));
+                }
             }
         }
     }
@@ -445,7 +472,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 entityProcessedRunnable.run();
                 finished = true;
             } else {
-                helidonSocket.log(LOGGER, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
+                if (LOGGER_RES_ENTITY.isLoggable(TRACE)) {
+                    helidonSocket.log(LOGGER_RES_ENTITY,
+                                      TRACE,
+                                      "client read entity buffer %n%s",
+                                      currentBuffer.debugDataHex(true));
+                }
             }
         }
     }
@@ -519,7 +551,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                     // No trailers, skip second CRLF
                     reader.skip(2);
                 }
-                helidonSocket.log(LOGGER, TRACE, "read last (empty) chunk");
+                helidonSocket.log(LOGGER_RES_ENTITY, TRACE, "read last (empty) chunk");
                 finished = true;
                 currentBuffer = null;
                 entityProcessedRunnable.run();
@@ -528,8 +560,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
             BufferData chunk = reader.readBuffer(length);
 
-            if (LOGGER.isLoggable(TRACE)) {
-                helidonSocket.log(LOGGER, TRACE, "client read chunk\n%s", chunk.debugDataHex(true));
+            if (LOGGER_RES_ENTITY.isLoggable(TRACE)) {
+                helidonSocket.log(LOGGER_RES_ENTITY, TRACE, "client read chunk\n%s", chunk.debugDataHex(true));
             }
 
             reader.skip(2); // trailing CRLF after each chunk
