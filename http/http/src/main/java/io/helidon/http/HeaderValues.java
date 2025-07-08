@@ -359,7 +359,6 @@ public final class HeaderValues {
      * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(HeaderName name, Iterable<String> values) {
-        System.out.println("Header.create(HeaderName name, Iterable<String> values)");
         if (!values.iterator().hasNext()) {
             throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
         }

@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -42,23 +41,6 @@ class HeaderValueIterableTest {
         assertThat(header.name().toLowerCase(), is("ordinals"));
         assertThat(header.valueCount(), is(ordinalNumbers.length));
         assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("IterableObjects")
-    void testAddValueOnHeaderValueIterable(Iterable<String> ordinals) {
-        HeaderValueIterable headerValueIterable =  new HeaderValueIterable(
-                HeaderNames.create("Ordinals"), true, false, ordinals);
-        headerValueIterable.addValue("Fourth");
-        assertThat(headerValueIterable.valueCount(), is(ordinalNumbers.length + 1));
-
-        // Convert Iterable `ordinals` to a List so we can compare with result of header.allValues()
-        List<String> ordinalsList = convertIterableStringToList(ordinals);
-        // This will be not equal because "Fourth" was added
-        assertThat(ordinalsList, not(headerValueIterable.allValues()));
-
-        ordinalsList.add("Fourth");
-        assertThat(ordinalsList, is(headerValueIterable.allValues()));
     }
 
     // This will test that empty string value is still allowed

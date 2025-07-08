@@ -16,28 +16,18 @@
 
 package io.helidon.http;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
-class HeaderValueIterable extends HeaderWritableValueBase {
+class HeaderValueIterable extends HeaderValueBase {
     private final Iterable<String> originalValues;
-    private List<String> values;
+    private int valueCount;
 
     HeaderValueIterable(HeaderName name, boolean changing, boolean sensitive, Iterable<String> values) {
         super(name, changing, sensitive, values.iterator().next());
 
         this.originalValues = values;
-    }
-
-    @Override
-    public HeaderWriteable addValue(String value) {
-        if (values == null) {
-            values = new ArrayList<>(getIterableSize() + 1);
-            originalValues.forEach(values::add);
-        }
-        values.add(value);
-        return this;
     }
 
     private int getIterableSize() {
@@ -55,18 +45,14 @@ class HeaderValueIterable extends HeaderWritableValueBase {
 
     @Override
     public List<String> allValues() {
-        if (values == null) {
-            values = new ArrayList<>(getIterableSize());
-            originalValues.forEach(values::add);
-        }
-        return values;
+        return StreamSupport.stream(originalValues.spliterator(), false).toList();
     }
 
     @Override
     public int valueCount() {
-        if (values == null) {
-            return getIterableSize();
+        if (valueCount == 0) {
+            valueCount = getIterableSize();
         }
-        return values.size();
+        return valueCount;
     }
 }
