@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ class GrpcConfigProtocolTest {
     @Test
     void testApplicationConfig() {
         GrpcClientProtocolConfig config = GrpcClientProtocolConfig.create(
-                Config.create(ConfigSources.classpath("application.yaml")).get("grpc-client"));
+                Config.create(ConfigSources.classpath("application.yaml"))
+                        .get("grpc-client.protocol-config"));
         assertThat(config.pollWaitTime(), is(Duration.ofSeconds(30)));
         assertThat(config.abortPollTimeExpired(), is(true));
         assertThat(config.initBufferSize(), is(10000));

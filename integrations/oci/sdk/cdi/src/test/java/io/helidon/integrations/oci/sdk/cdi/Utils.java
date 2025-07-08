@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,23 @@
 
 package io.helidon.integrations.oci.sdk.cdi;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import com.oracle.bmc.ConfigFileReader;
+
 class Utils {
+
+    static final boolean configFileExists() throws IOException {
+        try {
+            return
+                ConfigFileReader.parse(System.getProperty("oci.config.file", "~/.oci/config"),
+                                       System.getProperty("oci.auth.profile")) != null;
+        } catch (final FileNotFoundException ignored) {
+            return false;
+        }
+    }
 
     static final boolean imdsAvailable() {
         try {

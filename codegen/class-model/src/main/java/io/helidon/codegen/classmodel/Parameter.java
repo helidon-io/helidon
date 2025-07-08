@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,15 @@ public final class Parameter extends AnnotatedComponent {
 
         @Override
         public Builder type(TypeName type) {
-            return super.type(type);
+            if (type.vararg()) {
+                vararg(true);
+                return super.type(TypeName.builder(type)
+                                          .array(false)
+                                          .vararg(false)
+                                          .build());
+            } else {
+                return super.type(type);
+            }
         }
 
         @Override

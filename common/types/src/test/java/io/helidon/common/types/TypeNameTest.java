@@ -38,8 +38,64 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 class TypeNameTest {
+    @Test
+    void testBoxed() {
+        var boxed = TypeNameSupport.boxed(TypeNames.PRIMITIVE_BOOLEAN);
+
+        assertThat(boxed, is(TypeNames.BOXED_BOOLEAN));
+    }
+
+    @Test
+    void testFqName() {
+        var fqName = TypeNameSupport.fqName(TypeName.create(String[].class));
+        assertThat(fqName, is("java.lang.String[]"));
+    }
+
+    @Test
+    void testCreatePrimitive() {
+        var name = TypeNameSupport.create("boolean");
+
+        assertThat(name, is(TypeNames.PRIMITIVE_BOOLEAN));
+        assertThat(name.primitive(), is(true));
+    }
+
+    @Test
+    void testCreateSuper() {
+        var name = TypeNameSupport.create("java.util.List<? super java.lang.String>");
+
+        assertThat(name.genericTypeName(), is(TypeNames.LIST));
+
+        var list = name.typeArguments();
+        assertThat(list, not(empty()));
+        var typeArgument = list.getFirst();
+        assertThat("Type argument must be generic", typeArgument.generic(), is(true));
+        assertThat("Lower bounds should not be empty", typeArgument.lowerBounds(), not(empty()));
+        assertThat("Upper bounds should be empty", typeArgument.upperBounds(), empty());
+        assertThat("Type should be a question mark (? super java.lang.String)", typeArgument.className(), is("?"));
+        var lowerBound = typeArgument.lowerBounds().getFirst();
+        assertThat("Lower bound should be string", lowerBound, is(TypeNames.STRING));
+    }
+
+    @Test
+    void testCreateExtends() {
+        var name = TypeNameSupport.create("java.util.List<? extends java.lang.String>");
+
+        assertThat(name.genericTypeName(), is(TypeNames.LIST));
+
+        var list = name.typeArguments();
+        assertThat(list, not(empty()));
+        var typeArgument = list.getFirst();
+        assertThat("Type argument must be generic", typeArgument.generic(), is(true));
+        assertThat("Lower bounds should be empty", typeArgument.lowerBounds(), empty());
+        assertThat("Upper bounds should not be empty", typeArgument.upperBounds(), not(empty()));
+        assertThat("Type should be a question mark (? super java.lang.String)", typeArgument.className(), is("?"));
+        var upperBound = typeArgument.upperBounds().getFirst();
+        assertThat("Upper bound should be string", upperBound, is(TypeNames.STRING));
+    }
+
     @Test
     void testNested() {
         Class<?> type = TestType.class;
@@ -402,9 +458,9 @@ class TypeNameTest {
         assertThat(primitiveTypeName.className(), equalTo("boolean"));
 
         TypeName objTypeName = TypeName.builder().type(Boolean[].class).build();
-        assertThat(primitiveTypeName.name(), equalTo("boolean"));
-        assertThat(primitiveTypeName.resolvedName(), equalTo("boolean[]"));
-        assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
+        assertThat(objTypeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(objTypeName.resolvedName(), equalTo("java.lang.Boolean[]"));
+        assertThat(objTypeName.declaredName(), equalTo("java.lang.Boolean[]"));
         assertThat(objTypeName.generic(), is(false));
         assertThat(objTypeName.array(), is(true));
         assertThat(objTypeName.primitive(), is(false));
@@ -500,6 +556,47 @@ class TypeNameTest {
         assertThat(t.className(), is("BuilderBase"));
         assertThat(t.enclosingNames(), hasItems("ServiceRegistryConfig"));
         assertThat(t.typeArguments(), hasItems(TypeNames.WILDCARD, TypeNames.WILDCARD));
+    }
+    
+    @Test
+    void testMultipleDimensionArray() {
+        TypeName typeName = TypeName.create(Boolean[][][].class);
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
+    }
+
+    @Test
+    void testMultipleDimensionArrayFromString() {
+        TypeName typeName = TypeName.create("java.lang.Boolean[][][]");
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.vararg(), is(false));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
+
+        typeName = TypeName.create("java.lang.Boolean[][]...");
+
+        assertThat(typeName.name(), equalTo("java.lang.Boolean"));
+        assertThat(typeName.resolvedName(), equalTo("java.lang.Boolean[][]..."));
+        assertThat(typeName.declaredName(), equalTo("java.lang.Boolean[][][]"));
+        assertThat(typeName.generic(), is(false));
+        assertThat(typeName.array(), is(true));
+        assertThat(typeName.vararg(), is(true));
+        assertThat(typeName.primitive(), is(false));
+        assertThat(typeName.packageName(), equalTo("java.lang"));
+        assertThat(typeName.className(), equalTo("Boolean"));
     }
 
     private static Stream<EqualsData> equalsAndCompareSource() {

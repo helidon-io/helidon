@@ -86,10 +86,6 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

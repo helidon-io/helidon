@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -60,33 +61,39 @@ public final class Annotation extends CommonComponent {
 
     /**
      * Parse new Annotation object out of the String.
+     * <p>
+     * This method works as expected for the following types:
+     * <ul>
+     *     <li>java.lang.String - expecting a quoted value, escapes of inner quotes is possible</li>
+     *     <li>boolean - if the value is not quoted and is equal either to {code true} or {@code false}</li>
+     *     <li>integer - if the value is not quoted and is a number</li>
+     *     <li>double - if the value is not quoted, and ends with {@code D} (capital letter d)</li>
+     *     <li>long - if the value is not quoted and ends with {@code L} (capital letter l)</li>
+     *     <li>float - if the value is not quoted and ends with {@code F} (capital letter f)</li>
+     *     <li>char - if the value is in single quotes {@code '}</li>
+     *     <li>arrays - if the value is surrounded by curly braces {@code {}} it is an array</li>
+     *     <li>annotations - if the value starts with at sign ({@code @})</li>
+     * </ul>
+     *
+     * The following types have special handling and require explicit configuration:
+     * <ul>
+     *     <li>byte - unquoted value ending with {@code B}, such as {@code 49B}</li>
+     *     <li>short - unquoted value ending with {@code S}, such as {@code 49S}</li>
+     *     <li>class - unquoted value, in format {@code class::fq-name}, such as {@code class::java.lang.String}</li>
+     *     <li>enum - unquoted value, in format {@code enum::fq-name.NAME}, such as
+     *      {@code enum::java.lang.annotation.ElementType.CONSTRUCTOR}</li>
+     * </ul>
+     *
+     * If the annotation only has a single value and the property name is {@code value}, the property name can be omitted
+     * (same as when declaring the annotation in Java).
+     * <p>
+     * If the annotation does not need to declare any value, braces can be omitted (same as when declaring the annotation in Java)
      *
      * @param annotationDefinition annotation definition
      * @return new annotation instance
      */
     public static Annotation parse(String annotationDefinition) {
-        int annotationBodyStart = annotationDefinition.indexOf("(");
-        int annotationBodyEnd = annotationDefinition.indexOf(")");
-        String annotationName = annotationBodyStart > 0
-                ? annotationDefinition.substring(0, annotationBodyStart)
-                : annotationDefinition;
-        Annotation.Builder builder = Annotation.builder()
-                .type(annotationName);
-        if (annotationBodyStart > 0) {
-            String[] valuePairs = annotationDefinition.substring(annotationBodyStart + 1, annotationBodyEnd).split(",");
-            for (String valuePair : valuePairs) {
-                String[] keyValue = valuePair.split("=");
-                if (keyValue.length == 1 && valuePairs.length != 1) {
-                    throw new IllegalStateException("Invalid custom annotation specified: " + annotationDefinition);
-                }
-                String key = keyValue[0].trim();
-                String value = keyValue[1].trim();
-                builder.addParameter(paramBuilder -> paramBuilder.name(key)
-                        .type(value.startsWith("\"") ? String.class : Object.class)
-                        .value(value));
-            }
-        }
-        return builder.build();
+        return AnnotationParser.parse(annotationDefinition);
     }
 
     /**
@@ -112,7 +119,12 @@ public final class Annotation extends CommonComponent {
                 .typeName(type().genericTypeName());
 
         for (AnnotationParameter parameter : parameters) {
-            builder.putValue(parameter.name(), parameter.value());
+            var value = parameter.value();
+            if (value instanceof Annotation annot) {
+                builder.putValue(parameter.name(), annot.toTypesAnnotation());
+            } else {
+                builder.putValue(parameter.name(), parameter.value());
+            }
         }
 
         return builder.build();
@@ -196,13 +208,29 @@ public final class Annotation extends CommonComponent {
         public Builder addParameter(String name, Object value) {
             Objects.requireNonNull(value);
 
+            return addParameter(name, AnnotationProperty.create(value));
+        }
+
+        /**
+         * Adds annotation parameter.
+         *
+         * @param name  annotation parameter name
+         * @param property annotation property
+         * @return updated builder instance
+         */
+        public Builder addParameter(String name, AnnotationProperty property) {
+            Objects.requireNonNull(property);
+
+            Object value = property.value();
             Class<?> paramType = value instanceof TypeName
                     ? Class.class
                     : value.getClass();
 
             return addParameter(builder -> builder.name(name)
                     .type(paramType)
-                    .value(value));
+                    .value(value)
+                    .update(it -> property.constantValue().ifPresent(it::constantValue))
+            );
         }
 
         /**
@@ -244,7 +272,7 @@ public final class Annotation extends CommonComponent {
         Builder from(io.helidon.common.types.Annotation annotation) {
             this.commonAnntation = annotation;
             type(annotation.typeName());
-            annotation.values()
+            annotation.properties()
                     .forEach(this::addParameter);
             return this;
         }

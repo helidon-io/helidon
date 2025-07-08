@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.scheduling;
 
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 @Prototype.Blueprint(decorator = TaskConfigDecorator.class)
@@ -31,4 +33,19 @@ interface TaskConfigBlueprint {
      */
     ScheduledExecutorService executor();
 
+    /**
+     * Task manager that will manage the created task.
+     *
+     * @return task manager, by default taken from the global service registry
+     */
+    @Option.RegistryService
+    TaskManager taskManager();
+
+    /**
+     * Identification of the started task. This can be used to later look up the instance, for example to cancel it.
+     *
+     * @return task id, if not provided via configuration or builder, the configured task will generate a unique ID
+     */
+    @Option.Configured
+    Optional<String> id();
 }

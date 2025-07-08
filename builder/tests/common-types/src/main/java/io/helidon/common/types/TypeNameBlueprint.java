@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
@@ -49,7 +50,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Implement("java.lang.Comparable<TypeName>")
 interface TypeNameBlueprint {
     /**
-     * Functions the same as {@link Class#getPackageName()}.
+     * Functions similar to {@link Class#getPackageName()}.
      *
      * @return the package name, never null
      */
@@ -57,7 +58,7 @@ interface TypeNameBlueprint {
     String packageName();
 
     /**
-     * Functions the same as {@link Class#getSimpleName()}.
+     * Functions similar to {@link Class#getSimpleName()}.
      *
      * @return the simple class name
      */
@@ -88,7 +89,7 @@ interface TypeNameBlueprint {
     List<String> enclosingNames();
 
     /**
-     * Functions the same as {@link Class#isPrimitive()}.
+     * Functions similar to {@link Class#isPrimitive()}.
      *
      * @return true if this type represents a primitive type
      */
@@ -96,12 +97,23 @@ interface TypeNameBlueprint {
     boolean primitive();
 
     /**
-     * Functions the same as {@link Class#isArray()}.
+     * Functions similar to {@link Class#isArray()}.
      *
      * @return true if this type represents a primitive array []
      */
     @Option.DefaultBoolean(false)
     boolean array();
+
+    /**
+     * If this is a representation of {@link io.helidon.common.types.TypeName#array()}, this method can identify that it
+     * was declared as a vararg.
+     * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+     *
+     * @return whether an array is declared as a vararg
+     */
+    @Option.DefaultBoolean(false)
+    @Option.Redundant
+    boolean vararg();
 
     /**
      * Indicates whether this type is using generics.
@@ -169,6 +181,13 @@ interface TypeNameBlueprint {
     @Option.Singular
     @Option.Redundant
     List<TypeName> upperBounds();
+
+    /**
+     * Component type of array.
+     *
+     * @return component type of array
+     */
+    Optional<TypeName> componentType();
 
     /**
      * Indicates whether this type is a {@code java.util.List}.
@@ -242,7 +261,8 @@ interface TypeNameBlueprint {
      * @return same as getName() unless the type is an array, and then will add "[]" to the return
      */
     default String declaredName() {
-        return array() ? (name() + "[]") : name();
+        // implemented by a custom method
+        return className();
     }
 
     /**

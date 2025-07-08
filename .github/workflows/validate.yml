@@ -29,6 +29,7 @@ on:
         default: ''
 
 env:
+  MVN_VERSION: 3.9.9
   JAVA_VERSION: 21
   GRAALVM_VERSION: 21.0.3
   JAVA_DISTRO: oracle
@@ -88,6 +89,7 @@ jobs:
           build-cache: read-write
           maven-cache: read-write
           run: |
+            mvn --version
             mvn ${MVN_ARGS} build-cache:go-offline
             mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \

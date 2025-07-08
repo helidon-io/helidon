@@ -139,7 +139,18 @@ final class TypeNameSupport {
         String name = calcName(instance, ".");
         StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
         if (instance.array()) {
-            nameBuilder.append("[]");
+            addArrayBrackets(instance, nameBuilder, false);
+        }
+        return nameBuilder.toString();
+    }
+
+    @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
+    static String declaredName(TypeName instance) {
+        String name = name(instance);
+        StringBuilder nameBuilder = new StringBuilder(name);
+        if (instance.array()) {
+            addArrayBrackets(instance, nameBuilder, false);
         }
         return nameBuilder.toString();
     }
@@ -229,6 +240,13 @@ final class TypeNameSupport {
      */
     @Prototype.FactoryMethod
     static TypeName create(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return TypeStash.stash(clazz);
+        }
+        return doCreate(type);
+    }
+
+    static TypeName doCreate(Type type) {
         return TypeName.builder()
                 .type(type)
                 .build();
@@ -243,9 +261,13 @@ final class TypeNameSupport {
     @Prototype.FactoryMethod
     static TypeName create(String typeName) {
         Objects.requireNonNull(typeName);
+        return TypeStash.stash(typeName);
+    }
+
+    static TypeName doCreate(String typeName) {
         if (typeName.startsWith("?")) {
             if (typeName.startsWith("? extends ")) {
-                return TypeName.builder(create(typeName.substring(10).trim()))
+                return TypeName.builder(doCreate(typeName.substring(10).trim()))
                         .wildcard(true)
                         .build();
             } else {
@@ -254,6 +276,20 @@ final class TypeNameSupport {
                         .wildcard(true)
                         .build();
             }
+        }
+        if (typeName.endsWith("[]")) {
+            TypeName componentType = doCreate(typeName.substring(0, typeName.length() - 2));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .build();
+        } else if (typeName.endsWith("...")) {
+            TypeName componentType = doCreate(typeName.substring(0, typeName.length() - 3));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .vararg(true)
+                    .build();
         }
 
         // handle primitives from their names
@@ -273,10 +309,18 @@ final class TypeNameSupport {
             Stream.of(genericSection.split(","))
                     .map(String::trim) // remove possible spaces
                     .map(it -> {
-                        if (it.contains(".")) {
-                            return TypeName.create(it);
+                        if (it.contains(" extends ")) {
+                            // T extends io.helidon.webserver.spi.ServerFeature
+                            return createExtends(it);
+                        } else if (it.contains(" super ")) {
+                            // T super java.lang.String
+                            return createSuper(it);
                         } else {
-                            return TypeName.createFromGenericDeclaration(it);
+                            if (it.contains(".")) {
+                                return TypeName.create(it);
+                            } else {
+                                return TypeName.createFromGenericDeclaration(it);
+                            }
                         }
                     })
                     .forEach(builder::addTypeArgument);
@@ -330,6 +374,38 @@ final class TypeNameSupport {
                 .build();
     }
 
+    private static TypeName createExtends(String typeNames) {
+        // T extends io.helidon.webserver.spi.ServerFeature
+        int index = typeNames.indexOf(" extends ");
+
+        var builder = TypeName.builder()
+                .generic(true)
+                .className(typeNames.substring(0, index));
+        String theOtherPart = typeNames.substring(index + 9);
+        if (theOtherPart.contains(".")) {
+            builder.addUpperBound(TypeName.create(theOtherPart));
+        } else {
+            builder.addUpperBound(TypeName.createFromGenericDeclaration(theOtherPart));
+        }
+        return builder.build();
+    }
+
+    private static TypeName createSuper(String typeNames) {
+        // T super io.helidon.webserver.spi.ServerFeature
+        int index = typeNames.indexOf(" super ");
+
+        var builder = TypeName.builder()
+                .generic(true)
+                .className(typeNames.substring(0, index));
+        String theOtherPart = typeNames.substring(index + 7);
+        if (theOtherPart.contains(".")) {
+            builder.addLowerBound(TypeName.create(theOtherPart));
+        } else {
+            builder.addLowerBound(TypeName.createFromGenericDeclaration(theOtherPart));
+        }
+        return builder.build();
+    }
+
     private static String resolveGenericName(TypeName instance) {
         // ?, ? super Something; ? extends Something
         String prefix = instance.wildcard() ? "?" : instance.className();
@@ -373,18 +449,48 @@ final class TypeNameSupport {
         }
 
         if (instance.array()) {
-            nameBuilder.append("[]");
+            addArrayBrackets(instance, nameBuilder, true);
         }
 
         return nameBuilder.toString();
+    }
+
+    private static void addArrayBrackets(TypeName target, StringBuilder nameBuilder, boolean allowVarArgs) {
+        Optional<TypeName> componentType = target.componentType();
+        while (componentType.isPresent()) {
+            TypeName current = componentType.get();
+            if (current.array()) {
+                nameBuilder.append("[]");
+                componentType = current.componentType();
+            } else {
+                break;
+            }
+        }
+        if (allowVarArgs && target.vararg()) {
+            nameBuilder.append("...");
+        } else if (target.array()) {
+            nameBuilder.append("[]");
+        }
     }
 
     private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
         builder.className(componentType.getSimpleName());
-        builder.primitive(componentType.isPrimitive());
         builder.array(classType.isArray());
+
+        if (classType.isArray()) {
+            TypeName componentTypeName = TypeName.create(componentType);
+            builder.componentType(componentTypeName);
+            while (componentType.isArray()) {
+                //Search for a top most type of the array
+                //Example: boolean[][][] -> boolean
+                componentType = componentType.getComponentType();
+            }
+            builder.primitive(componentType.isPrimitive());
+        } else {
+            builder.primitive(componentType.isPrimitive());
+        }
 
         Class<?> enclosingClass = classType.getEnclosingClass();
         LinkedList<String> enclosingTypes = new LinkedList<>();
@@ -411,6 +517,7 @@ final class TypeNameSupport {
         @Override
         public void decorate(TypeName.BuilderBase<?, ?> target) {
             fixWildcards(target);
+            removeArrayAndVarArg(target);
         }
 
         private void fixWildcards(TypeName.BuilderBase<?, ?> target) {
@@ -438,6 +545,15 @@ final class TypeNameSupport {
                 }
                 target.generic(true);
             }
+        }
+
+        private void removeArrayAndVarArg(TypeName.BuilderBase<?, ?> target) {
+            target.className()
+                    //Strip all [] from the class name
+                    .map(name -> name.replaceAll("\\[]", ""))
+                    //Strip all ... from the class name
+                    .map(name -> name.replaceAll("\\.\\.\\.", ""))
+                    .ifPresent(target::className);
         }
     }
 }

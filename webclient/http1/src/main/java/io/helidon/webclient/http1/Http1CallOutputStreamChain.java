@@ -48,7 +48,6 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 import static java.lang.System.Logger.Level.TRACE;
 
 class Http1CallOutputStreamChain extends Http1CallChainBase {
-    private static final System.Logger LOGGER = System.getLogger(Http1CallOutputStreamChain.class.getName());
     private final Http1ClientImpl http1Client;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler osHandler;
@@ -123,9 +122,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             }
             throw e;
         }
-        connection.helidonSocket().log(LOGGER, TRACE, "client received status %n%s", responseStatus);
+        connection.helidonSocket().log(LOGGER_RES_STATUS, TRACE, "client received status %n%s", responseStatus);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
-        connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
+        connection.helidonSocket().log(LOGGER_RES_HEADERS, TRACE, "client received headers %n%s", responseHeaders);
 
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
@@ -276,8 +275,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     sendPrologueAndHeader();
                 }
                 BufferData terminating = BufferData.create(TERMINATING_CHUNK);
-                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    ctx.log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", terminating.debugDataHex());
+                if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
+                    ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data%n%s", terminating.debugDataHex());
                 }
                 writer.write(terminating);
             } else {
@@ -335,8 +334,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             toWrite.write(Bytes.CR_BYTE);
             toWrite.write(Bytes.LF_BYTE);
 
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", toWrite.debugDataHex());
+            if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data:%n%s", toWrite.debugDataHex());
             }
             writer.write(toWrite);
         }
@@ -348,8 +347,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                               + ", but you are writing additional " + (bytesWritten - contentLength) + " "
                                               + "bytes");
             }
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
+            if (LOGGER_REQ_ENTITY.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
             }
             writer.write(buffer);
         }
@@ -381,11 +380,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             // which in turn can result in a delay when TCP_NO_DELAY is false
             BufferData buffer = BufferData.growing(512);
             buffer.write(prologue);
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                ctx.log(LOGGER, System.Logger.Level.TRACE, "send prologue: %n%s", prologue.debugDataHex());
-                ctx.log(LOGGER, System.Logger.Level.TRACE, "send headers:%n%s", headers);
+            if (LOGGER_REQ_PROLOGUE.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER_REQ_PROLOGUE, System.Logger.Level.TRACE, "send prologue: %n%s", prologue.debugDataHex());
             }
-            writeHeaders(headers, buffer, protocolConfig.validateRequestHeaders());
+            if (LOGGER_REQ_HEADERS.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER_REQ_HEADERS, System.Logger.Level.TRACE, "send headers:%n%s", headers);
+            }
+
+            writeHeaders(connection, headers, buffer, protocolConfig.validateRequestHeaders());
             writer.write(buffer);
 
             whenSent.complete(request);
@@ -397,7 +399,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-                    connection.helidonSocket().log(LOGGER, TRACE, "recv status: %n%s", responseStatus);
+                    connection.helidonSocket().log(LOGGER_RES_STATUS, TRACE, "recv status: %n%s", responseStatus);
                 } catch (UncheckedIOException ignored) {
                     // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
                     // we treat this as receiving 100-Continue
@@ -420,7 +422,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
                                                                                         protocolConfig.maxHeaderSize(),
                                                                                         protocolConfig.validateResponseHeaders());
-                    connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
+                    connection.helidonSocket().log(LOGGER_RES_HEADERS,
+                                                   TRACE,
+                                                   "client received headers %n%s",
+                                                   responseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         // redirect as needed

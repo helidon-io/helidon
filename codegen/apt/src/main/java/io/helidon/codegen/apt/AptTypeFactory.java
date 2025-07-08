@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,7 +145,9 @@ public final class AptTypeFactory {
         }
 
         if (typeMirror instanceof ArrayType arrayType) {
-            return Optional.of(TypeName.builder(createTypeName(inProgress, arrayType.getComponentType()).orElseThrow())
+            TypeName typeName = createTypeName(inProgress, arrayType.getComponentType()).orElseThrow();
+            return Optional.of(TypeName.builder(typeName)
+                                       .componentType(typeName)
                                        .array(true)
                                        .build());
         }

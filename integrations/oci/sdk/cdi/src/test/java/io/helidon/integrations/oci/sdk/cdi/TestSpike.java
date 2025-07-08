@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddExtension;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddExtension;
+import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.ailanguage.AIServiceLanguage;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsync;
 import com.oracle.bmc.ailanguage.AIServiceLanguageAsyncClient;
@@ -44,6 +42,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.oci.sdk.cdi.Utils.configFileExists;
 import static io.helidon.integrations.oci.sdk.cdi.Utils.imdsAvailable;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -97,21 +96,6 @@ class TestSpike {
         ExampleBean.customizeBuilderCalled = false;
     }
 
-
-    /*
-     * Static methods.
-     */
-
-
-    private static final boolean configFileExists() throws IOException {
-        try {
-            return
-                ConfigFileReader.parse(System.getProperty("oci.config.file", "~/.oci/config"),
-                                       System.getProperty("oci.auth.profile")) != null;
-        } catch (final FileNotFoundException ignored) {
-            return false;
-        }
-    }
 
     /*
      * Inner and nested classes.

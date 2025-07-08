@@ -22,6 +22,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Optional;
 
 import io.helidon.service.registry.Service;
 
@@ -224,5 +225,19 @@ public final class Http {
          * @return consumed media types, such as {@code application/json}
          */
         String[] value();
+    }
+
+    /**
+     * Header producer, to use with rest client and rest server annotations.
+     */
+    @Service.Contract
+    public interface HeaderFunction {
+        /**
+         * Produce an instance of a named header.
+         *
+         * @param name name to create
+         * @return value for the header
+         */
+        Optional<Header> apply(HeaderName name);
     }
 }

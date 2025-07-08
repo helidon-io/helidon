@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,8 @@ public class CoordinatorAppService {
     }
 
     private void whenApplicationTerminates(@Observes @Priority(PLATFORM_BEFORE - 10) @BeforeDestroyed(ApplicationScoped.class) final Object event) {
-        coordinatorService.get().shutdown();
+        if (coordinatorService.isLoaded()) {
+            coordinatorService.get().shutdown();
+        }
     }
 }

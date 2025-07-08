@@ -46,7 +46,7 @@
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>4.0.4</version.lib.eclipselink>
+        <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
@@ -97,7 +97,7 @@
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
-        <version.lib.kafka>3.8.1</version.lib.kafka>
+        <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.langchain4j>0.36.2</version.lib.langchain4j>
@@ -133,7 +133,7 @@
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.118.Final</version.lib.netty>
-        <version.lib.oci>3.66.0</version.lib.oci>
+        <version.lib.oci>3.67.0</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.

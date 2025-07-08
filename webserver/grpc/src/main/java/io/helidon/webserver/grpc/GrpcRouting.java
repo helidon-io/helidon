@@ -133,6 +133,8 @@ public class GrpcRouting implements Routing {
         private final Map<String, GrpcServiceDescriptor> services = new LinkedHashMap<>();
 
         private Builder() {
+            // always add the context setting interceptor
+            interceptors.add(ContextSettingServerInterceptor.instance());
         }
 
         @Override
@@ -189,7 +191,7 @@ public class GrpcRouting implements Routing {
             }
             services.put(name, service);
 
-            // compute final bag of interceptors for this route
+            // compute a final bag of interceptors for this route
             WeightedBag<ServerInterceptor> routeInterceptors;
             WeightedBag<ServerInterceptor> serviceInterceptors = service.interceptors();
             if (!serviceInterceptors.isEmpty()) {

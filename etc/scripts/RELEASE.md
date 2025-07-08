@@ -7,18 +7,18 @@ number when copy/pasting.
 
 ## Overview
 
-The Helidon release pipeline is triggered when a change is pushed to
-a branch that starts with `release-`. The release pipeline performs
-a Maven release to the Nexus staging repository. It does not currently
-do a GitHub release, so you must do that manually using a script. Here
-is the overall flow:
+The Helidon release workflow is triggered when a change is pushed to
+a branch that starts with `release-`. The release workflow performs
+a Maven release to the [Central Publishing Portal](https://central.sonatype.org/publish/publish-portal-guide/).
+It does not currently do a GitHub release, so you must do that manually
+using a script. Here is the overall flow:
 
 1. Create a local release branch
 2. Update CHANGELOG and verify version is correct
-3. Push release branch to upstream, release pipeline runs
-4. Verify bits in Nexus staging repository and then release them
+3. Push release branch to upstream, release workflow runs
+4. Verify bits in Central Deployment repository and then publish them
 5. Create GitHub release
-6. Increment version in master and update changelog
+6. Increment version in main and update changelog
 
 ## Steps in detail
 
@@ -44,25 +44,23 @@ export VERSION="0.7.0"
       3. Add release to dictionary at bottom of CHANGELOG
    3. Commit changes locally
 
-3. Push local release branch to upstream. This will trigger a release build in Wercker.
+3. Push local release branch to upstream. This will trigger a release workflow.
 
     ```
     git push origin release-${VERSION}
     ```
 
-4. Wait for build pipeline in Wercker to complete
+4. Wait for release build to complete:
 
-   https://app.wercker.com/Helidon/helidon/runs
+   https://github.com/helidon-io/helidon/actions/workflows/release.yaml
 
-5. Check nexus staging repository
-    1. In browser go to: https://oss.sonatype.org/#view-repositories and login
-       as helidonrobot.
-    2. On left click "Staging Repositories"
-    3. Scroll down list of repositories and find `iohelidon-`. It should be Status closed.
+5. Check Central Portal for deployment
+    1. In browser go to: https://central.sonatype.com/publishing and login as helidonrobot.
+    2. Click on Deployments tab and you should see the Deployment listed (io-helidon-x.y.z)
+    3. Status should be "Validated". You can explore the Deployment Info to see staged artifacts
     
 6. Test staged bits    
-    1. Do quick smoke test by trying an archetype that is in the staging
-       repo (see staging repository profile at end of this document)
+    1. Do quick smoke test by trying an archetype that is in the staging repo (see staging repository profile at end of this document)
     
         ```shell
         mvn -U archetype:generate -DinteractiveMode=false \
@@ -72,25 +70,17 @@ export VERSION="0.7.0"
             -DgroupId=io.helidon.examples \
             -DartifactId=quickstart-se \
             -Dpackage=io.helidon.examples.quickstart.se \
-            -Possrh-staging
+            -Pcentral.manual.testing
         
         cd quickstart-se
         
-        mvn package -Possrh-staging
+        mvn package -Pcentral.manual.testing
         ```
-        
-    2. Do full smoke test using test script (this requires staging profile to be configured):
-       ```shell
-       smoketest.sh --giturl=https://github.com/oracle/helidon.git --version=${VERSION} --clean --staged full
-       ```
-    3. The smoketest script will leave its work in `/var/tmp/helidon-smoke.XXXX`.
-       Go there, into the quickstarts and test the native builds and Docker builds.
-       For Docker builds you'll need to update the pom to include the staging repositories.
+    2.  Download artifact bundle from GitHub Release workflow run (io-helidon-artifacts-x.y.z) and do any additional testing on the bundle such as virus scans.
        
-7. Release repository: Select repository then click Release (up at the top)
-   1. In the description you can put something like "Helidon 0.7.0 Release"
-   2. It might take a while (possibly hours) before the release appears in Maven Central
-   3. To check on progress look at https://repo1.maven.org/maven2/io/helidon/helidon-bom/
+7. Release publishing: In the portal UI select the deployment then click Publish
+   1. It might take a while (possibly an hour) before the release appears in Maven Central
+   2. To check on progress look at https://repo1.maven.org/maven2/io/helidon/helidon-bom/
        
 8. Create GitHub release
    1. Create a fragment of the change log that you want used for the release
@@ -106,7 +96,7 @@ export VERSION="0.7.0"
    4. Go to https://github.com/oracle/helidon/releases and verify release looks like
       you expect. You can edit it if you need to.
 
-9. Update version and CHANGELOG in master
+9. Update version and CHANGELOG in main
    1. Create post release branch: `git checkout -b post-release-${VERSION}`
    2. Copy CHANGELOG from your release branch. Add empty Unrelease section.
    3. Update SNAPSHOT version number. Remember to use your version number!
@@ -114,50 +104,57 @@ export VERSION="0.7.0"
       etc/scripts/release.sh --version=0.7.1-SNAPSHOT update_version
       ```
       If you perfromed a Milestone release you will likely leave the 
-      SNAPSHOT version in master alone.
+      SNAPSHOT version in main alone.
    4. Add and commit changes then push
       ```shell
       git push origin post-release-${VERSION}
       ```
-   5. Create PR and merge into master
+   5. Create PR and merge into main
 
 10. Now go to helidon-site and look at the RELEASE.md there to release the website with updated docs
 
 # Staging Repository Profile
 
-To pull artifacts from the sonatype staging repository add this profile to your `settings.xml`:
+To pull artifacts from the Central Portal staging repository add this to your `settings.xml`:
+
+The BEARER_TOKEN must be that for the user that uploaded the release -- typically helidonrobot.
+For general information concerning BEARER_TOKEN see 
+* https://central.sonatype.org/publish/generate-portal-token/
+* https://central.sonatype.org/publish/publish-portal-api/#authentication-authorization
+* https://central.sonatype.org/publish/publish-portal-api/#manually-testing-a-deployment-bundle
 
 ```xml
+  <servers>
+   <server>
+      <id>central.manual.testing</id>
+      <configuration>
+         <httpHeaders>
+            <property>
+               <name>Authorization</name>
+               <value>Bearer ${BEARER_TOKEN}</value>
+            </property>
+         </httpHeaders>
+      </configuration>
+   </server>
+</servers>
+
+<profiles>
 <profile>
-     <id>ossrh-staging</id>
-     <activation>
-         <activeByDefault>false</activeByDefault>
-     </activation>
-     <repositories>
-         <repository>
-             <id>ossrh-staging</id>
-             <name>OSS Sonatype Staging</name>
-             <url>https://oss.sonatype.org/content/groups/staging/</url>
-             <snapshots>
-                 <enabled>false</enabled>
-             </snapshots>
-             <releases>
-                 <enabled>true</enabled>
-             </releases>
-         </repository>
-     </repositories>
-     <pluginRepositories>
-         <pluginRepository>
-             <id>ossrh-staging</id>
-             <name>OSS Sonatype Staging</name>
-             <url>https://oss.sonatype.org/content/groups/staging/</url>
-             <snapshots>
-                 <enabled>false</enabled>
-             </snapshots>
-             <releases>
-                 <enabled>true</enabled>
-             </releases>
-         </pluginRepository>
-     </pluginRepositories>
- </profile>
+   <id>central.manual.testing</id>
+   <repositories>
+      <repository>
+         <id>central.manual.testing</id>
+         <name>Central Testing repository</name>
+         <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+      </repository>
+   </repositories>
+   <pluginRepositories>
+      <pluginRepository>
+         <id>central.manual.testing</id>
+         <name>Central Testing repository</name>
+         <url>https://central.sonatype.com/api/v1/publisher/deployments/download</url>
+      </pluginRepository>
+   </pluginRepositories>
+</profile>
+</profiles>
 ```

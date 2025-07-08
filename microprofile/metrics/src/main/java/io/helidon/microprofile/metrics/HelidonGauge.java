@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -129,27 +128,6 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
     @Override
     public Class<?> delegateType() {
         return io.helidon.metrics.api.Gauge.class;
-    }
-
-    static class FunctionBased<N extends Number, T> extends HelidonGauge<N> {
-
-        private final T target;
-        private final Function<T, N> function;
-
-        private FunctionBased(String scope,
-                              Metadata metadata,
-                              T target,
-                              Function<T, N> function,
-                              io.helidon.metrics.api.Gauge<N> delegate) {
-            super(scope, metadata, delegate);
-            this.target = target;
-            this.function = function;
-        }
-
-        @Override
-        public N getValue() {
-            return function.apply(target);
-        }
     }
 
     static class DoubleFunctionBased<T> extends HelidonGauge<Double> {

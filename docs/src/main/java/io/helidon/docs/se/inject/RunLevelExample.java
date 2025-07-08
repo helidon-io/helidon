@@ -32,6 +32,10 @@ class RunLevelExample {
         void onCreate() {
             System.out.println("level1 created");
         }
+
+        @Service.PreDestroy
+        void onDestroy() {
+            System.out.println("level1 destroyed"); }
     }
 
     @Service.RunLevel(2)
@@ -42,6 +46,10 @@ class RunLevelExample {
         void onCreate() {
             System.out.println("level2 created");
         }
+
+        @Service.PreDestroy
+        void onDestroy() {
+            System.out.println("level2 destroyed"); }
     }
     // end::snippet_1[]
 

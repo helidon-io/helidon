@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
 public class FixedRateSchedulingTest {
 

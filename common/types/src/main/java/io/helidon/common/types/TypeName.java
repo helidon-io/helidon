@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,9 +138,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private boolean isTypeParametersMutated;
         private boolean isUpperBoundsMutated;
         private boolean primitive = false;
+        private boolean vararg = false;
         private boolean wildcard = false;
         private String className;
         private String packageName = "";
+        private TypeName componentType;
 
         /**
          * Protected to support extensibility.
@@ -163,6 +165,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             addEnclosingNames(prototype.enclosingNames());
             primitive(prototype.primitive());
             array(prototype.array());
+            vararg(prototype.vararg());
             generic(prototype.generic());
             wildcard(prototype.wildcard());
             if (!isTypeArgumentsMutated) {
@@ -181,6 +184,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 upperBounds.clear();
             }
             addUpperBounds(prototype.upperBounds());
+            componentType(prototype.componentType());
             return self();
         }
 
@@ -203,6 +207,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
             primitive(builder.primitive());
             array(builder.array());
+            vararg(builder.vararg());
             generic(builder.generic());
             wildcard(builder.wildcard());
             if (isTypeArgumentsMutated) {
@@ -237,6 +242,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 upperBounds.clear();
                 addUpperBounds(builder.upperBounds);
             }
+            builder.componentType().ifPresent(this::componentType);
             return self();
         }
 
@@ -287,7 +293,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER enclosingNames(List<? extends String> enclosingNames) {
+        public BUILDER enclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             isEnclosingNamesMutated = true;
             this.enclosingNames.clear();
@@ -304,7 +310,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER addEnclosingNames(List<? extends String> enclosingNames) {
+        public BUILDER addEnclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             isEnclosingNamesMutated = true;
             this.enclosingNames.addAll(enclosingNames);
@@ -328,7 +334,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isPrimitive()}.
+         * Functions similar to {@link Class#isPrimitive()}.
          *
          * @param primitive true if this type represents a primitive type
          * @return updated builder instance
@@ -348,6 +354,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER array(boolean array) {
             this.array = array;
+            return self();
+        }
+
+        /**
+         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+         *
+         * @param vararg whether an array is declared as a vararg
+         * @return updated builder instance
+         * @see #vararg()
+         */
+        public BUILDER vararg(boolean vararg) {
+            this.vararg = vararg;
             return self();
         }
 
@@ -444,7 +463,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeParameters()
          */
-        public BUILDER typeParameters(List<? extends String> typeParameters) {
+        public BUILDER typeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             isTypeParametersMutated = true;
             this.typeParameters.clear();
@@ -461,7 +480,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeParameters()
          */
-        public BUILDER addTypeParameters(List<? extends String> typeParameters) {
+        public BUILDER addTypeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
@@ -633,6 +652,45 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Clear the existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER clearComponentType() {
+            this.componentType = null;
+            return self();
+        }
+
+        /**
+         * Component type of array.
+         *
+         * @param componentType component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER componentType(TypeName componentType) {
+            Objects.requireNonNull(componentType);
+            this.componentType = componentType;
+            return self();
+        }
+
+        /**
+         * Component type of array.
+         *
+         * @param consumer component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER componentType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.componentType(builder.build());
+            return self();
+        }
+
+        /**
          * Functions the same as {@link Class#getPackageName()}.
          *
          * @return the package name
@@ -662,7 +720,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isPrimitive()}.
+         * Functions similar to {@link Class#isPrimitive()}.
          *
          * @return the primitive
          */
@@ -677,6 +735,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public boolean array() {
             return array;
+        }
+
+        /**
+         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+         *
+         * @return the vararg
+         */
+        public boolean vararg() {
+            return vararg;
         }
 
         /**
@@ -752,6 +820,15 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Component type of array.
+         *
+         * @return the component type
+         */
+        public Optional<TypeName> componentType() {
+            return Optional.ofNullable(componentType);
+        }
+
+        /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
@@ -770,6 +847,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Component type of array.
+         *
+         * @param componentType component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        BUILDER componentType(Optional<? extends TypeName> componentType) {
+            Objects.requireNonNull(componentType);
+            this.componentType = componentType.map(TypeName.class::cast).orElse(this.componentType);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypeNameImpl implements TypeName {
@@ -777,12 +867,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean array;
             private final boolean generic;
             private final boolean primitive;
+            private final boolean vararg;
             private final boolean wildcard;
             private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
             private final List<TypeName> upperBounds;
             private final List<String> enclosingNames;
             private final List<String> typeParameters;
+            private final Optional<TypeName> componentType;
             private final String className;
             private final String packageName;
 
@@ -797,12 +889,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.enclosingNames = List.copyOf(builder.enclosingNames());
                 this.primitive = builder.primitive();
                 this.array = builder.array();
+                this.vararg = builder.vararg();
                 this.generic = builder.generic();
                 this.wildcard = builder.wildcard();
                 this.typeArguments = List.copyOf(builder.typeArguments());
                 this.typeParameters = List.copyOf(builder.typeParameters());
                 this.lowerBounds = List.copyOf(builder.lowerBounds());
                 this.upperBounds = List.copyOf(builder.upperBounds());
+                this.componentType = builder.componentType();
             }
 
             @Override
@@ -836,6 +930,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
+            public String declaredName() {
+                return TypeNameSupport.declaredName(this);
+            }
+
+            @Override
             public String resolvedName() {
                 return TypeNameSupport.resolvedName(this);
             }
@@ -866,6 +965,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
+            public boolean vararg() {
+                return vararg;
+            }
+
+            @Override
             public boolean generic() {
                 return generic;
             }
@@ -893,6 +997,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public List<TypeName> upperBounds() {
                 return upperBounds;
+            }
+
+            @Override
+            public Optional<TypeName> componentType() {
+                return componentType;
             }
 
             @Override

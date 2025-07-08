@@ -73,7 +73,7 @@ public interface RequestedUriDiscoveryContext {
      * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      * @deprecated Use
-     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.InetSocketAddress, java.net.InetSocketAddress, String,
+     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.SocketAddress, java.net.SocketAddress, String,
      *         ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
      */
     @Deprecated(forRemoval = true, since = "4.2.1")
@@ -449,7 +449,7 @@ public interface RequestedUriDiscoveryContext {
                 String path = null;
 
                 List<String> xForwardedFors = headers.values(HeaderNames.X_FORWARDED_FOR);
-                boolean areProxiesTrusted = true;
+                boolean areProxiesTrusted = !xForwardedFors.isEmpty();
                 if (!xForwardedFors.isEmpty()) {
                     // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
                     // is not a proxy and we do not need to check its trustworthiness.

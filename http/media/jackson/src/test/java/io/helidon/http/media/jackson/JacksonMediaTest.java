@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
@@ -39,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*
@@ -46,6 +49,7 @@ When adding/updating tests in this class, consider if it should be done
  in the following tests a well:
     - JsonbMediaTest
     - JsonpMediaTest
+    - GsonMediaTest
  */
 class JacksonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
@@ -208,6 +212,26 @@ class JacksonMediaTest {
 
         assertThat(books, hasItems(new Book("čř"), new Book("šň")));
     }
+
+    @Test
+    void testReadServerUtf8() {
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.accept(HttpMediaTypes.JSON_UTF_8);
+
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers, responseHeaders);
+
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        res.supplier()
+                .get()
+                .write(BOOK_TYPE, new Book("čr"), bos, headers, responseHeaders);
+
+        assertThat(bos.size(), not(0));
+    }
+
 
     public static class Book {
         private String title;
