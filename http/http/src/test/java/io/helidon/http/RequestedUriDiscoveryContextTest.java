@@ -31,6 +31,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -110,4 +112,45 @@ public class RequestedUriDiscoveryContextTest {
 
         assertEquals(expected, uriInfo.toString());
     }
+
+    @ParameterizedTest
+    @MethodSource("forwardedData")
+    void testForwardedFor(String forwardForValues, String expected) throws UnknownHostException {
+        var headers = WritableHeaders.create()
+                .add(HeaderNames.HOST, "serverinstance")
+                .add(HeaderNames.X_FORWARDED_HOST, "serverpublic")
+                .add(HeaderNames.X_FORWARDED_PORT, 8080)
+                .add(HeaderNames.X_FORWARDED_PROTO, "http");
+        if (forwardForValues != null) {
+            headers.add(HeaderNames.X_FORWARDED_FOR, forwardForValues);
+        }
+
+        var uriInfo = RequestedUriDiscoveryContext.builder()
+                .enabled(true)
+                .addDiscoveryType(RequestedUriDiscoveryContext.RequestedUriDiscoveryType.X_FORWARDED)
+                .trustedProxies(AllowList.builder().addAllowed("trustedproxy").build())
+                .build()
+                .uriInfo("trustedproxy/1.2.3.4:443",   // actual host which sent us the request
+                         "localhost/127.0.0.1:443",                 // receiving address
+                         "/path",
+                         ServerRequestHeaders.create(headers),
+                         UriQuery.create(URI.create("http://localhost:8080/path")),
+                         true);
+
+        assertThat("Requested URI with " + (forwardForValues == null ? "no " : "") + "X_FORWARDED_FOR",
+                   uriInfo.toString(),
+                   is(expected));
+    }
+
+    static Stream<Arguments> forwardedData() {
+        return Stream.of(
+                // With no X_FORWARDED_FOR header, the server should ignore the other X_FORWARDED_* headers
+                // and report the most recent proxy as the "client."
+                Arguments.arguments(null,
+                                    "UriInfo{scheme=https,host=serverinstance,port=443,path=/path,query=,fragment=}"),
+                // With X_FORWARDED_FOR present, the server should process the various X_FORWARDED_* headers.
+                Arguments.arguments("randomclient,trustedproxy",
+                                     "UriInfo{scheme=http,host=serverpublic,port=8080,path=/path,query=,fragment=}"));
+    }
+
 }
