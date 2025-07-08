@@ -55,8 +55,7 @@ import io.helidon.webclient.api.ReleasableResource;
 import static java.lang.System.Logger.Level.DEBUG;
 
 /**
- * Represents an HTTP2 client stream. This class is not intended to be used by
- * applications, it is only public internally within Helidon.
+ * Represents an HTTP/2 client stream.
  */
 public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
