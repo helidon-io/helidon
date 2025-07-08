@@ -34,6 +34,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Client URI Suppliers, Client URI Suppliers>>
 ** <<Client Interceptors, Client Interceptors>>
 ** <<Metrics, Metrics>>
+** <<Tracing, Tracing>>
 - <<Configuration, Configuration>>
 
 == Overview
@@ -244,10 +245,45 @@ NOTE: Metrics are only available for gRPC clients running in a server environmen
 
 For more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
+== Tracing
+
+Tracing in the gRPC client is implemented as a so-called gRPC client service.
+To enable tracing support, you need to list tracing as an available service
+either programmatically or via config, and
+include the following dependency in your project:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-grpc-tracing</artifactId>
+</dependency>
+----
+
+Tracing support is loaded via the gRPC client service SPI and made available to
+clients. Using config, we can list it as an available gRPC service as follows:
+
+[source,yaml]
+----
+grpc-client:
+  grpc-services:
+    tracing:
+----
+
+At the time of writing, no additional configuration is necessary under the
+`tracing:` section.
+Finally, a gRPC client instance can be created that is configured with
+tracing support enabled as follows:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_12, indent=0]
+----
+
 == Configuration
 
 TLS can be configured externally, just like it is done when using the
-WebClient to access an HTTP endpoint. For more information see
+WebClient to access an HTTP endpoint. For more information, see
 https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient[Configuring the WebClient].
 
 There are a few configuration options (see table below) that are specific to a `GrpcClient` and
