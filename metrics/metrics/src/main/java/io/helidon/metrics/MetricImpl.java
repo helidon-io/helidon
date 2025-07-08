@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -375,7 +375,7 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                            boolean withHelpType, long count, long sum, DisplayableLabeledSnapshot snap,
                                            boolean isStrictExemplars) {
         PrometheusName name = PrometheusName.create(this, metricID);
-        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, sum, snap, isStrictExemplars);
+        appendPrometheusHistogramElements(sb, name, getUnits(), withHelpType, count, Long.toString(sum), snap, isStrictExemplars);
     }
 
     void appendPrometheusHistogramElements(StringBuilder sb,
@@ -390,19 +390,19 @@ abstract class MetricImpl extends AbstractMetric implements HelidonMetric {
                                           TimeUnits.PROMETHEUS_TIMER_CONVERSION_TIME_UNITS,
                                           withHelpType,
                                           count,
-                                          elapsedTime.toSeconds(),
+                                          Double.toString(elapsedTime.toNanos() / 1_000_000_000d),
                                           snap,
                                           isStrictExemplars);
     }
 
-    void appendPrometheusHistogramElements(StringBuilder sb,
-                                           PrometheusName name,
-                                           Units units,
-                                           boolean withHelpType,
-                                           long count,
-                                           long sum,
-                                           DisplayableLabeledSnapshot snap,
-                                           boolean isStrictExemplars) {
+    private void appendPrometheusHistogramElements(StringBuilder sb,
+                                                   PrometheusName name,
+                                                   Units units,
+                                                   boolean withHelpType,
+                                                   long count,
+                                                   String sum,
+                                                   DisplayableLabeledSnapshot snap,
+                                                   boolean isStrictExemplars) {
 
         // # TYPE application:file_sizes_mean_bytes gauge
         // application:file_sizes_mean_bytes 4738.231
