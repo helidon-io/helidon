@@ -156,8 +156,8 @@ class ScopedRegistryImpl implements ScopedRegistry {
     private static Comparator<? super Activator<?>> shutdownComparator() {
         return Comparator
                 .<Activator<?>>comparingDouble(it -> it.descriptor().runLevel().orElse(Service.RunLevel.NORMAL))
-                .thenComparing(it -> it.descriptor().weight())
-                .reversed();
+                .reversed()
+                .thenComparing(it -> it.descriptor().weight());
     }
 
     private void checkActive() {

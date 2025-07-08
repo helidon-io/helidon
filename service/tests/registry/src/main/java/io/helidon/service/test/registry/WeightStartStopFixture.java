@@ -19,53 +19,79 @@ package io.helidon.service.test.registry;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import io.helidon.common.Weight;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Service.PostConstruct;
 import io.helidon.service.registry.Service.PreDestroy;
 
-interface StartStopFixture {
-    Queue<String> startUpQueue = new ArrayBlockingQueue<>(3);
-    Queue<String> shutDownQueue = new ArrayBlockingQueue<>(3);
+interface WeightStartStopFixture {
 
     @Service.Singleton
-    @Service.RunLevel(Service.RunLevel.STARTUP)
-    static class Service1 implements StartStopFixture {
+    static class State {
+        final Queue<String> startUpSequence = new ArrayBlockingQueue<>(3);
+        final Queue<String> shutDownSequence = new ArrayBlockingQueue<>(3);
+    }
+
+    @Service.Singleton
+    @Weight(3)
+    static class Service1 implements WeightStartStopFixture {
+        final State state;
+
+        @Service.Inject
+        Service1(State state) {
+            this.state = state;
+        }
+
         @PostConstruct
         void startUp() {
-            startUpQueue.add(getClass().getSimpleName());
+            state.startUpSequence.add(getClass().getSimpleName());
         }
 
         @PreDestroy
         void shutDown() {
-            shutDownQueue.add(getClass().getSimpleName());
+            state.shutDownSequence.add(getClass().getSimpleName());
         }
     }
 
     @Service.Singleton
-    @Service.RunLevel(Service.RunLevel.STARTUP + 1)
-    static class Service2 implements StartStopFixture {
+    @Weight(2)
+    static class Service2 implements WeightStartStopFixture {
+        final State state;
+
+        @Service.Inject
+        Service2(State state) {
+            this.state = state;
+        }
+
         @PostConstruct
         void startUp() {
-            startUpQueue.add(getClass().getSimpleName());
+            state.startUpSequence.add(getClass().getSimpleName());
         }
 
         @PreDestroy
         void shutDown() {
-            shutDownQueue.add(getClass().getSimpleName());
+            state.shutDownSequence.add(getClass().getSimpleName());
         }
     }
 
     @Service.Singleton
-    @Service.RunLevel(Service.RunLevel.STARTUP + 2)
-    static class Service3 implements StartStopFixture {
+    @Weight(1)
+    static class Service3 implements WeightStartStopFixture {
+        final State state;
+
+        @Service.Inject
+        Service3(State state) {
+            this.state = state;
+        }
+
         @PostConstruct
         void startUp() {
-            startUpQueue.add(getClass().getSimpleName());
+            state.startUpSequence.add(getClass().getSimpleName());
         }
 
         @PreDestroy
         void shutDown() {
-            shutDownQueue.add(getClass().getSimpleName());
+            state.shutDownSequence.add(getClass().getSimpleName());
         }
     }
 
