@@ -22,7 +22,6 @@ import java.util.stream.StreamSupport;
 
 class HeaderValueIterable extends HeaderValueBase {
     private final Iterable<String> originalValues;
-    private int valueCount;
 
     HeaderValueIterable(HeaderName name, boolean changing, boolean sensitive, Iterable<String> values) {
         super(name, changing, sensitive, values.iterator().next());
@@ -50,9 +49,6 @@ class HeaderValueIterable extends HeaderValueBase {
 
     @Override
     public int valueCount() {
-        if (valueCount == 0) {
-            valueCount = getIterableSize();
-        }
-        return valueCount;
+        return getIterableSize();
     }
 }

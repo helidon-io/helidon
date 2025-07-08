@@ -31,15 +31,40 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class HeaderValueIterableTest {
-    private static final String[] ordinalNumbers = {"First", "Second", "Third"};
-    private static final String[] emptyStringIterable = {""};
+    private static final List<String> ordinalNumbers = Arrays.asList("First", "Second", "Third");
+    private static final String FourthOrdinal = "Fourth";
+    private static final List<String> emptyStringIterable = Arrays.asList("");
+
+   @ParameterizedTest
+   @MethodSource("IterableObjects")
+   void testIterableHeaderValues(Iterable<String> ordinals) {
+       Header header = HeaderValues.create("Ordinals", ordinals);
+       assertThat(header.name().toLowerCase(), is("ordinals"));
+       assertThat(header.valueCount(), is(ordinalNumbers.size()));
+       assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
+   }
 
     @ParameterizedTest
-    @MethodSource("IterableObjects")
-    void testIterableHeaderValues(Iterable<String> ordinals) {
-        Header header = HeaderValues.create("Ordinals", ordinals);
-        assertThat(header.name().toLowerCase(), is("ordinals"));
-        assertThat(header.valueCount(), is(ordinalNumbers.length));
+    @MethodSource("MutableIterableObjects")
+    void testMutatingIterableHeaderValues(Object mutableIterableObjects) {
+        Iterable<String> ordinals;
+
+        // Initialize the Iterable
+        ordinals = mutableIterableObjects instanceof List
+                ? (List<String>) mutableIterableObjects
+                : (CustomStringIterable) mutableIterableObjects;
+        Header header = HeaderValues.create("MutatingOrdinals", ordinals);
+        assertThat(header.name().toLowerCase(), is("mutatingordinals"));
+        assertThat(header.valueCount(), is(ordinalNumbers.size()));
+        assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
+
+        // Mutate the underlying Iterable by adding another element
+        if (mutableIterableObjects instanceof List) {
+            ((List<String>) mutableIterableObjects).add(FourthOrdinal);
+        } else {
+            ((CustomStringIterable) mutableIterableObjects).add(FourthOrdinal);
+        }
+        assertThat(header.valueCount(), is(ordinalNumbers.size() + 1));
         assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
     }
 
@@ -49,7 +74,7 @@ class HeaderValueIterableTest {
     void testEmptyStringIterableHeaderValues(Iterable<String> ordinals) {
         Header header = HeaderValues.create("EmptyString", ordinals);
         assertThat(header.name().toLowerCase(), is("emptystring"));
-        assertThat(header.valueCount(), is(emptyStringIterable.length));
+        assertThat(header.valueCount(), is(emptyStringIterable.size()));
         assertThat(header.allValues().getFirst(), is(""));
     }
 
@@ -57,7 +82,17 @@ class HeaderValueIterableTest {
     private static Stream<Arguments> IterableObjects() {
         return Stream.of(
                 // Collection type iterable
-                arguments(Arrays.asList(ordinalNumbers)),
+                arguments(ordinalNumbers),
+                // non-Collection type iterable
+                arguments(new CustomStringIterable(ordinalNumbers))
+        );
+    }
+
+    // This will allow testing of a Collection and non-Collection type Iterable
+    private static Stream<Arguments> MutableIterableObjects() {
+        return Stream.of(
+                // Collection type iterable
+                arguments(new ArrayList<>(ordinalNumbers)),
                 // non-Collection type iterable
                 arguments(new CustomStringIterable(ordinalNumbers))
         );
@@ -66,7 +101,7 @@ class HeaderValueIterableTest {
     private static Stream<Arguments> EmptyStringIterableObjects() {
         return Stream.of(
                 // Collection type iterable
-                arguments(Arrays.asList(emptyStringIterable)),
+                arguments(emptyStringIterable),
                 // non-Collection type iterable
                 arguments(new CustomStringIterable(emptyStringIterable))
         );
@@ -80,10 +115,15 @@ class HeaderValueIterableTest {
 
     // Custom non-Collection type Iterable
     static class CustomStringIterable implements Iterable<String> {
-        private final String[] data;
+        private List<String> data;
 
-        public CustomStringIterable(String[] data) {
-            this.data = data;
+        public CustomStringIterable(List<String> data) {
+            // Create a mutable List so we can add elements
+            this.data = new ArrayList<>(data);
+        }
+
+        public boolean add(String element) {
+            return data.add(element);
         }
 
         @Override
@@ -97,7 +137,7 @@ class HeaderValueIterableTest {
 
             @Override
             public boolean hasNext() {
-                return currentIndex < data.length;
+                return currentIndex < data.size();
             }
 
             @Override
@@ -105,7 +145,7 @@ class HeaderValueIterableTest {
                 if (!hasNext()) {
                     throw new java.util.NoSuchElementException();
                 }
-                return data[currentIndex++];
+                return data.get(currentIndex++);
             }
 
             @Override
