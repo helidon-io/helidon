@@ -29,7 +29,9 @@ final class FixedRateDecorator extends TaskConfigDecorator<FixedRateConfig.Build
 
         // new values are set using the option decorators below, now we can just re-set the deprecated values
         target.initialDelay(target.delayBy().toMillis());
-        target.delay(target.interval().map(Duration::toMillis).orElse(1000L));
+        target.interval()
+                .map(Duration::toMillis)
+                .ifPresent(target::delay);
         target.timeUnit(TimeUnit.MILLISECONDS);
     }
 

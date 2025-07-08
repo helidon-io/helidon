@@ -53,6 +53,7 @@ import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_INV
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE_ANNOTATION;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.FIXED_RATE_INVOCATION;
+import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.TASK_MANAGER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
 class SchedulingExtension implements RegistryCodegenExtension {
@@ -162,7 +163,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .name("postConstruct")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        postConstruct.addContentLine("var config = configSupplier.get();")
+        postConstruct.addContentLine("var taskManager = taskManagerSupplier.get();")
+                .addContentLine("var config = configSupplier.get();")
                 .addContent("var classConfig = config.get(\"")
                 .addContent(serviceType.fqName())
                 .addContentLine("\");")
@@ -203,6 +205,11 @@ class SchedulingExtension implements RegistryCodegenExtension {
         }
         postConstruct.increaseContentPadding()
                 .increaseContentPadding()
+                .addContentLine(".taskManager(taskManager)")
+                // ID must be configured before reading config, as config may modify it
+                .addContent(".id(\"")
+                .addContent(scheduled.id())
+                .addContentLine("\")")
                 .addContent(".config(")
                 .addContent(configVariable)
                 .addContent(".get(\"")
@@ -233,12 +240,20 @@ class SchedulingExtension implements RegistryCodegenExtension {
         TypeName serviceSupplierType = TypeName.builder(TypeNames.SUPPLIER)
                 .addTypeArgument(serviceType)
                 .build();
+        TypeName taskManagerSupplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(TASK_MANAGER)
+                .build();
 
         classModel.addField(service -> service
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
                         .type(serviceSupplierType)
                         .name("serviceSupplier"))
+                .addField(taskManagerSupplier -> taskManagerSupplier
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .name("taskManagerSupplier")
+                        .type(taskManagerSupplierType))
                 .addField(configSupplier -> configSupplier
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
@@ -260,16 +275,21 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addParameter(configSupplier -> configSupplier
                         .name("configSupplier")
                         .type(configSupplierType)
-                        .name("configSupplier")
+                )
+                .addParameter(taskManagerSupplier -> taskManagerSupplier
+                        .name("taskManagerSupplier")
+                        .type(taskManagerSupplierType)
                 )
                 .addParameter(service -> service
                         .type(serviceSupplierType)
                         .name("serviceSupplier"))
                 .addContentLine("this.configSupplier = configSupplier;")
+                .addContentLine("this.taskManagerSupplier = taskManagerSupplier;")
                 .addContent("this.serviceSupplier = serviceSupplier;"));
     }
 
     private void processCron(List<Scheduled> allScheduled,
+                             TypeName enclosingType,
                              TypedElementInfo element) {
 
         // there can be a method argument, but it must be of correct type
@@ -286,6 +306,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         // add for processing
         allScheduled.add(new Cron(element.elementName(),
                                   hasInvocationArgument,
+                                  toId(enclosingType, element),
                                   expression,
                                   concurrent,
                                   configKey));
@@ -311,10 +332,30 @@ class SchedulingExtension implements RegistryCodegenExtension {
         // add for processing
         allScheduled.add(new FixedRate(element.elementName(),
                                        hasInvocationArgument,
+                                       toId(enclosingType, element),
                                        rate,
                                        delayBy,
                                        delayType,
                                        configKey));
+    }
+
+    private String toId(TypeName enclosingType, TypedElementInfo element) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(enclosingType.fqName())
+                .append(".")
+                .append(element.elementName())
+                .append("(");
+
+        if (!element.parameterArguments().isEmpty()) {
+            // we can use just the class name, as there are only two options for declarative
+            // FixedRateInvocation or CronInvocation, package not needed
+            sb.append(element.parameterArguments().getFirst()
+                              .typeName()
+                              .className());
+        }
+
+        sb.append(")");
+        return sb.toString();
     }
 
     private boolean checkAndHasArgument(TypedElementInfo element, TypeName annotationType, TypeName invocationArgumentType) {
@@ -367,7 +408,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         for (TypedElementInfo element : elements) {
             TypeName enclosingType = enclosingType(element);
             var allScheduled = scheduledByType.computeIfAbsent(enclosingType, k -> new ArrayList<>());
-            processCron(allScheduled, element);
+            processCron(allScheduled, enclosingType, element);
         }
 
     }
@@ -380,10 +421,13 @@ class SchedulingExtension implements RegistryCodegenExtension {
         void createScheduledContent(ContentBuilder<?> content);
 
         Optional<String> configKey();
+
+        String id();
     }
 
     private record Cron(String methodName,
                         boolean hasParameter,
+                        String id,
                         String expression,
                         boolean concurrent,
                         Optional<String> configKey)
@@ -410,6 +454,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
     private record FixedRate(String methodName,
                              boolean hasParameter,
+                             String id,
                              String rate,
                              String delayBy,
                              String delayType,

@@ -22,9 +22,8 @@ import java.util.concurrent.ScheduledExecutorService;
  * {@link io.helidon.scheduling.Scheduling Scheduled} task.
  */
 public interface Task {
-
     /**
-     * Human readable description of the task invocation interval.
+     * Human-readable description of the task invocation interval.
      *
      * @return interval description
      */
@@ -41,5 +40,16 @@ public interface Task {
      * Close the created task. This will cancel the scheduled future.
      */
     default void close() {
+    }
+
+    /**
+     * ID used to identify this task.
+     * It should be unique, as it is used to identify a single task, for example to cancel it.
+     *
+     * @return task ID
+     */
+    default String id() {
+        // we need a unique id in this VM, this is implemented by Helidon tasks
+        return String.valueOf(System.identityHashCode(this));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Scheduling module for Helidon reactive implementation.
  */
-@Feature(value = "Scheduling",
-         description = "Scheduling of periodical tasks",
-         in = HelidonFlavor.SE,
-         path = "Scheduling"
-)
+@Features.Name("Scheduling")
+@Features.Description("Scheduling of periodical tasks")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("Scheduling")
 module io.helidon.scheduling {
 
     requires com.cronutils;
@@ -33,6 +32,7 @@ module io.helidon.scheduling {
     requires io.helidon.builder.api;
 
     requires static io.helidon.common.features.api;
+    requires io.helidon.service.registry;
 
     exports io.helidon.scheduling;
 

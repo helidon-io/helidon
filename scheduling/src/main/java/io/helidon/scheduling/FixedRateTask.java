@@ -18,6 +18,7 @@ package io.helidon.scheduling;
 
 import java.lang.System.Logger.Level;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ class FixedRateTask implements FixedRate {
     private final ScheduledConsumer<FixedRateInvocation> actualTask;
     private final ScheduledFuture<?> future;
     private final FixedRateConfig config;
+    private final String taskId;
 
     FixedRateTask(FixedRateConfig config) {
         this.config = config;
@@ -41,8 +43,8 @@ class FixedRateTask implements FixedRate {
         this.initialDelay = config.delayBy();
         this.interval = config.interval();
         this.actualTask = config.task();
-
         this.executorService = config.executor();
+        this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
 
         this.future = switch (config.delayType()) {
             case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run,
@@ -54,6 +56,8 @@ class FixedRateTask implements FixedRate {
                                                                               interval.toMillis(),
                                                                               TimeUnit.MILLISECONDS);
         };
+
+        config.taskManager().register(this);
     }
 
     @Override
@@ -78,6 +82,17 @@ class FixedRateTask implements FixedRate {
     @Override
     public void close() {
         future.cancel(false);
+        config.taskManager().remove(this);
+    }
+
+    @Override
+    public String id() {
+        return taskId;
+    }
+
+    @Override
+    public String toString() {
+        return description() + "(" + taskId + ")";
     }
 
     void run() {
