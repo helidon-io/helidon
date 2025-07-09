@@ -279,7 +279,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 clientUri.scheme(),
                 clientUri.host(),
                 clientUri.port(),
-                clientConfig.readTimeout().orElse(Duration.ZERO),
                 clientConfig.tls(),
                 DefaultDnsResolver.create(),
                 DnsAddressLookup.defaultLookup(),

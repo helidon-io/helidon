@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.api;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,7 +151,6 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             ConnectionKey connectionKey = new ConnectionKey(resolvedUri.scheme(),
                                                             resolvedUri.host(),
                                                             resolvedUri.port(),
-                                                            clientConfig().readTimeout().orElse(Duration.ZERO),
                                                             tls(),
                                                             clientConfig().dnsResolver(),
                                                             clientConfig().dnsAddressLookup(),

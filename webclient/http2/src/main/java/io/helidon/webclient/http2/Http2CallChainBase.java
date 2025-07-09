@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webclient.http2;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -267,7 +266,6 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return new ConnectionKey(uri.scheme(),
                                  uri.host(),
                                  uri.port(),
-                                 clientConfig.readTimeout().orElse(Duration.ZERO),
                                  "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
                                  clientConfig.dnsResolver(),
                                  clientConfig.dnsAddressLookup(),

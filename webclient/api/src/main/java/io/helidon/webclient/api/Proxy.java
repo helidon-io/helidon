@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
@@ -459,8 +458,6 @@ public class Proxy {
                                                                     new ConnectionKey("http",
                                                                                       proxyAddress.getHostName(),
                                                                                       proxyAddress.getPort(),
-                                                                                      clientConfig.readTimeout()
-                                                                                              .orElse(Duration.ZERO),
                                                                                       NO_TLS,
                                                                                       clientConfig.dnsResolver(),
                                                                                       clientConfig.dnsAddressLookup(),
