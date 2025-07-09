@@ -450,7 +450,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
      * @param checkAudience whether the audience claim will be checked ({@code true}) or not ({@code false})
      * @return updated builder instance
      */
-    @ConfiguredOption("false")
+    @ConfiguredOption("true")
     public B checkAudience(boolean checkAudience) {
         this.checkAudience = checkAudience;
         return identity();
