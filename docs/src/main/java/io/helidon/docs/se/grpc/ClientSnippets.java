@@ -203,5 +203,25 @@ class ClientSnippets {
                 .enableMetrics(true)        // enables metrics
                 .build();
         // end::snippet_11[]
+
+    }
+
+    void snippets4() {
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+
+        // tag::snippet_12[]
+        Config config = Config.create().get("grpc-client");
+        GrpcClient grpcClient = GrpcClient.builder()
+                .config(config)     // with tracing
+                .tls(clientTls)
+                .baseUri("https://localhost:8080")
+                .build();
+        // end::snippet_12[]
     }
 }
