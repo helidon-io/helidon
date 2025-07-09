@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright (c) 2019, 2025 Oracle and/or its affiliates.
@@ -95,7 +94,6 @@
         <version.lib.jersey>3.1.10</version.lib.jersey>
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
@@ -968,37 +966,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
-            <!-- Langchain4j integration -->
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-cohere</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-ollama</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-open-ai</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-oracle</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-core</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
@@ -1264,21 +1231,6 @@
 
             <!-- Section 4: Testing -->
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${version.lib.hamcrest}</version>
@@ -1287,16 +1239,6 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-testkit</artifactId>
-                <version>${version.lib.junit-platform-testkit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${version.lib.testcontainers}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1389,6 +1331,13 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.lib.junit}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -1458,6 +1407,13 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
                 <version>${version.lib.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${version.lib.langchain4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
