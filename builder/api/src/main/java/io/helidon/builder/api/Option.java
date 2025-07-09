@@ -495,9 +495,9 @@ public final class Option {
     }
 
     /**
-     * Marker of how {@link java.util.Map} keys and values should be constructed.
-     * If used, it will use {@code io.helidon.common.config.Config#traverse} method to depth-first traversal of the node
-     * and its subtree.
+     * Definition of how {@link java.util.Map} keys and values should be constructed.
+     * If used, it will use the {@code io.helidon.common.config.Config#traverse} method to perform a depth-first traversal
+     * of the node and its subtrees.
      * <p>
      * For example:
      * <pre>{@code
