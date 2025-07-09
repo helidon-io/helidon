@@ -36,6 +36,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 ** <<Configuring the gRPC Server, Configuring the gRPC Server>>
 ** <<Configuring the gRPC Reflection Service, Configuring the gRPC Reflection Service>>
+** <<Configuring Compression, Configuring Compression>>
 - <<Examples, Examples>>
 
 == Overview
@@ -245,7 +246,9 @@ server:
 The configuration above shall enable metrics on the Webserver's default port 8080. For
 more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
+
 == Configuration
+
 Configure the gRPC server using the Helidon configuration framework, either programmatically
 or via a configuration file.
 
@@ -302,6 +305,26 @@ For security reasons, the gRPC reflection service is
 _disabled by default_; if enabled, it is recommended to disable
 the feature for production to avoid any unwanted requests. For more information about
 gRPC reflection, see https://grpc.io/docs/guides/reflection/[gRPC Reflection].
+
+=== Configuring Compression
+
+gRPC compression is normally driven by client requests, and it can be asymmetric, whereby
+the server may use a different type of compression than the client. In some scenarios, such
+as when debugging or measuring performance, it may be beneficial to disable compression on
+the server side. As always, this can be done programmatically or via config.
+
+[source,yaml]
+----
+server:
+  port: 8080
+  host: 0.0.0.0
+  protocols:
+    grpc:
+      enable-compression: false
+----
+
+Compression is always _enabled_ by default in Helidon, but can be disabled
+as shown above.
 
 == Examples
 
