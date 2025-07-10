@@ -18,15 +18,19 @@ package io.helidon.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -45,27 +49,22 @@ class HeaderValueIterableTest {
    }
 
     @ParameterizedTest
-    @MethodSource("MutableIterableObjects")
-    void testMutatingIterableHeaderValues(Object mutableIterableObjects) {
-        Iterable<String> ordinals;
+    @MethodSource("IterableObjects")
+    void testAddValueOnHeaderValueIterable(Iterable<String> ordinals) {
+        Header header = HeaderValues.create("Ordinals", ordinals);
+        HeaderValueList headerValueList = (HeaderValueList) header;
+        headerValueList.addValue(FourthOrdinal);
+        assertThat(headerValueList.valueCount(), is(ordinalNumbers.size() + 1));
 
-        // Initialize the Iterable
-        ordinals = mutableIterableObjects instanceof List
-                ? (List<String>) mutableIterableObjects
-                : (CustomStringIterable) mutableIterableObjects;
-        Header header = HeaderValues.create("MutatingOrdinals", ordinals);
-        assertThat(header.name().toLowerCase(), is("mutatingordinals"));
-        assertThat(header.valueCount(), is(ordinalNumbers.size()));
-        assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
+        // Convert Iterable `ordinals` to a List so we can compare with result of header.allValues()
+        List<String> ordinalsList = convertIterableStringToList(ordinals);
+        // This will be not equal because "Fourth" was added
+        assertThat(ordinalsList, not(headerValueList.allValues()));
 
-        // Mutate the underlying Iterable by adding another element
-        if (mutableIterableObjects instanceof List) {
-            ((List<String>) mutableIterableObjects).add(FourthOrdinal);
-        } else {
-            ((CustomStringIterable) mutableIterableObjects).add(FourthOrdinal);
-        }
-        assertThat(header.valueCount(), is(ordinalNumbers.size() + 1));
-        assertThat(convertIterableStringToList(ordinals), is(header.allValues()));
+        // ordinalsList.add("Fourth");
+        List<String> ordinalsListWithFourth = new ArrayList<>(ordinalsList);
+        ordinalsListWithFourth.add("Fourth");
+        assertThat(ordinalsListWithFourth, is(headerValueList.allValues()));
     }
 
     // This will test that empty string value is still allowed
@@ -83,6 +82,7 @@ class HeaderValueIterableTest {
         return Stream.of(
                 // Collection type iterable
                 arguments(ordinalNumbers),
+                arguments(new HashSet<>(ordinalNumbers)),
                 // non-Collection type iterable
                 arguments(new CustomStringIterable(ordinalNumbers))
         );
@@ -108,22 +108,18 @@ class HeaderValueIterableTest {
     }
 
     private static List<String> convertIterableStringToList(Iterable<String> iterableString) {
-        List<String> iterableStringList = new ArrayList<>();
-        iterableString.forEach(iterableStringList::add);
-        return iterableStringList;
+        if (iterableString instanceof List) {
+            return (List<String>) iterableString;
+        }
+        return StreamSupport.stream(iterableString.spliterator(), false).toList();
     }
 
     // Custom non-Collection type Iterable
     static class CustomStringIterable implements Iterable<String> {
-        private List<String> data;
+        private final List<String> data;
 
         public CustomStringIterable(List<String> data) {
-            // Create a mutable List so we can add elements
-            this.data = new ArrayList<>(data);
-        }
-
-        public boolean add(String element) {
-            return data.add(element);
+            this.data = data;
         }
 
         @Override

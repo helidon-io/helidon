@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.buffers.LazyString;
 
@@ -362,7 +363,10 @@ public final class HeaderValues {
         if (!values.iterator().hasNext()) {
             throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
         }
-        return new HeaderValueIterable(name, false, false, values);
+        return new HeaderValueList(name, false, false,
+                                   values instanceof Collection
+                                           ? (Collection<String>) values
+                                           : StreamSupport.stream(values.spliterator(), false).toList());
     }
 
     /**
