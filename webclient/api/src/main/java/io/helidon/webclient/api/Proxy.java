@@ -455,13 +455,13 @@ public class Proxy {
 
         WebClientConfig clientConfig = webClient.prototype();
         TcpClientConnection connection = TcpClientConnection.create(webClient,
-                                                                    new ConnectionKey("http",
-                                                                                      proxyAddress.getHostName(),
-                                                                                      proxyAddress.getPort(),
-                                                                                      NO_TLS,
-                                                                                      clientConfig.dnsResolver(),
-                                                                                      clientConfig.dnsAddressLookup(),
-                                                                                      NO_PROXY),
+                                                                    ConnectionKey.create("http",
+                                                                                         proxyAddress.getHostName(),
+                                                                                         proxyAddress.getPort(),
+                                                                                         NO_TLS,
+                                                                                         clientConfig.dnsResolver(),
+                                                                                         clientConfig.dnsAddressLookup(),
+                                                                                         NO_PROXY),
                                                                     List.of(),
                                                                     it -> false,
                                                                     it -> {

@@ -263,13 +263,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
     private ConnectionKey connectionKey(WebClientServiceRequest serviceRequest) {
         ClientUri uri = serviceRequest.uri();
-        return new ConnectionKey(uri.scheme(),
-                                 uri.host(),
-                                 uri.port(),
-                                 "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
-                                 clientConfig.dnsResolver(),
-                                 clientConfig.dnsAddressLookup(),
-                                 clientRequest.proxy());
+        return ConnectionKey.create(uri.scheme(),
+                                    uri.host(),
+                                    uri.port(),
+                                    "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
+                                    clientConfig.dnsResolver(),
+                                    clientConfig.dnsAddressLookup(),
+                                    clientRequest.proxy());
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

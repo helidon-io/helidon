@@ -165,13 +165,13 @@ class Http1ConnectionCache extends ClientConnectionCache {
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
         return TcpClientConnection.create(webClient,
-                                          new ConnectionKey(uri.scheme(),
-                                                            uri.host(),
-                                                            uri.port(),
-                                                            tls,
-                                                            clientConfig.dnsResolver(),
-                                                            clientConfig.dnsAddressLookup(),
-                                                            proxy),
+                                          ConnectionKey.create(uri.scheme(),
+                                                               uri.host(),
+                                                               uri.port(),
+                                                               tls,
+                                                               clientConfig.dnsResolver(),
+                                                               clientConfig.dnsAddressLookup(),
+                                                               proxy),
                                           ALPN_ID,
                                           conn -> false, // always close connection
                                           conn -> {
