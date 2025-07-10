@@ -44,7 +44,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
 
     @Test
     void testSimpleBatch() {
-        JsonRpcClientBatchRequest batch = jsonRpcClient().batch("/machine");
+        JsonRpcClientBatchRequest batch = jsonRpcClient().batch("/rpc/machine");
 
         batch.rpcMethod("start")
                 .rpcId(1)
@@ -70,7 +70,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
 
     @Test
     void testEmptyBatch() {
-        JsonRpcClientBatchRequest batch = jsonRpcClient().batch("/machine");
+        JsonRpcClientBatchRequest batch = jsonRpcClient().batch("/rpc/machine");
         try (var res = batch.submit()) {
             assertThat(res.status(), is(Status.OK_200));
             JsonObject object = res.entity().as(JsonObject.class);      // not array
@@ -81,7 +81,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
 
     @Test
     void testParseError() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(JSON_RPC_BATCH.replace("[", "("))) {
             assertThat(res.status(), is(Status.OK_200));
@@ -93,7 +93,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
 
     @Test
     void testMethodError() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(JSON_RPC_BATCH.replace("stop", "foo"))) {
             assertThat(res.status(), is(Status.OK_200));
@@ -108,7 +108,7 @@ class JsonRpcBatchTest extends JsonRpcBaseTest {
 
     @Test
     void testBadBatch() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit("[1, 2, 3]")) {
             assertThat(res.status(), is(Status.OK_200));

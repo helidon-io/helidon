@@ -42,7 +42,7 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .rpcId(1)
                 .param("when","NOW")
                 .param("duration", "PT0S")
-                .path("/machine")
+                .path("/rpc/machine")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
@@ -57,7 +57,7 @@ class JsonRpcTest extends JsonRpcBaseTest {
         try (var res = jsonRpcClient().rpcMethod("stop")
                 .rpcId(2)
                 .param("when","NOW")
-                .path("/machine")
+                .path("/rpc/machine")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(2))));
@@ -73,7 +73,7 @@ class JsonRpcTest extends JsonRpcBaseTest {
                 .rpcId(1)
                 .addParam(20)
                 .addParam(25)
-                .path("/calculator")
+                .path("/rpc/calculator")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.rpcId(), is(Optional.of(Json.createValue(1))));
@@ -86,7 +86,7 @@ class JsonRpcTest extends JsonRpcBaseTest {
     @Test
     void testNotification() {
         try (var res = jsonRpcClient().rpcMethod("ping")
-                .path("/notifier")
+                .path("/rpc/notifier")
                 .submit()) {
             assertThat(res.status(), is(Status.OK_200));
             assertThat(res.result().isEmpty(), is(true));

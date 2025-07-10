@@ -22,7 +22,7 @@ import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
-import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.jsonrpc.JsonRpcHandlers;
 import io.helidon.webserver.jsonrpc.JsonRpcRequest;
@@ -30,7 +30,7 @@ import io.helidon.webserver.jsonrpc.JsonRpcResponse;
 import io.helidon.webserver.jsonrpc.JsonRpcRouting;
 import io.helidon.webserver.jsonrpc.JsonRpcRules;
 import io.helidon.webserver.jsonrpc.JsonRpcService;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -69,8 +69,8 @@ class JsonRpcBaseTest {
         return jsonRpcClient;
     }
 
-    @SetUpServer
-    static void setUpServer(WebServerConfig.Builder builder) {
+    @SetUpRoute
+    static void routing(HttpRouting.Builder builder) {
         JsonRpcRouting jsonRpcRouting = JsonRpcRouting.builder()
                 // register a single method under "/calculator"
                 .register("/calculator", "add", JsonRpcBaseTest::addNumbers)
@@ -78,7 +78,8 @@ class JsonRpcBaseTest {
                 .service(new JsonRpcService1())
                 .register("/notifier", "ping", JsonRpcBaseTest::ping)
                 .build();
-        builder.routing(jsonRpcRouting);
+
+        builder.register("/rpc", jsonRpcRouting);
     }
 
     // -- Calculator ----------------------------------------------------------

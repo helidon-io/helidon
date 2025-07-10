@@ -20,14 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.JsonArray;
@@ -44,10 +43,11 @@ import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
 import static io.helidon.jsonrpc.core.JsonUtil.JSON_BUILDER_FACTORY;
 
 /**
- * A routing class for JSON-RPC. This class provides a method to map
- * JSON-RPC routes to HTTP routes for registration in the Webserver.
+ * JSON-RPC routing is an HTTP Service, as it is based on HTTP protocol.
+ * <p>
+ * Simply register it with HTTP routing under a desired path.
  */
-public class JsonRpcRouting implements Routing, Consumer<HttpRouting.Builder> {
+public class JsonRpcRouting implements HttpService {
 
     static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcError.create(
             INVALID_REQUEST,
@@ -81,25 +81,14 @@ public class JsonRpcRouting implements Routing, Consumer<HttpRouting.Builder> {
     }
 
     @Override
-    public Class<? extends Routing> routingType() {
-        return JsonRpcRouting.class;
-    }
-
-    /**
-     * Populate an {@link io.helidon.webserver.http.HttpRouting.Builder} with
-     * all the routes for this JSON-RPC routing instance.
-     *
-     * @param builder an HTTP routing builder
-     */
-    @Override
-    public void accept(HttpRouting.Builder builder) {
+    public void routing(HttpRules httpRules) {
         for (JsonRpcRulesImpl.Rule rule : rules) {
             String pathPattern = rule.pathPattern();
             JsonRpcHandlers handlers = rule.handlers();
             Map<String, JsonRpcHandler> handlersMap = handlers.handlersMap();
             JsonRpcErrorHandler errorHandler = handlers.errorHandler().orElse(null);
 
-            builder.post(pathPattern, (req, res) -> {
+            httpRules.post(pathPattern, (req, res) -> {
                 try {
                     // attempt to parse request as JSON
                     JsonStructure jsonRequest;

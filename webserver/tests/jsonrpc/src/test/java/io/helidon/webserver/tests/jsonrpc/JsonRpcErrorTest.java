@@ -46,7 +46,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testBadJson() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit("Not an object or array")) {
             assertThat(res.status(), is(Status.OK_200));
@@ -59,7 +59,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testBadJsonRequest() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(JSON_RPC_START_BAD_JSON)) {
             assertThat(res.status(), is(Status.OK_200));
@@ -72,7 +72,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testInvalidVersion() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(MACHINE_START.replace("2.0", "5.0"))) {
             assertThat(res.status(), is(Status.OK_200));
@@ -85,7 +85,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testInvalidMethod() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(MACHINE_START.replace("start", "badMethod"))) {
             assertThat(res.status(), is(Status.OK_200));
@@ -98,7 +98,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testInvalidMethodWithErrorHandler() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(MACHINE_START.replace("start", "expected"))) {
             assertThat(res.status(), is(Status.OK_200));
@@ -108,7 +108,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testStartError() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(MACHINE_START.replace("NOW", "LATER"))) {
             assertThat(res.status().code(), is(200));
@@ -122,7 +122,7 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
 
     @Test
     void testStopError() {
-        try (var res = client().post("/machine")
+        try (var res = client().post("/rpc/machine")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .submit(MACHINE_STOP.replace("NOW", "LATER"))) {
             assertThat(res.status().code(), is(200));
