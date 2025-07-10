@@ -33,8 +33,8 @@ public final class ConnectionKey {
     private final DnsResolver dnsResolver;
     private final DnsAddressLookup dnsAddressLookup;
     private final Proxy proxy;
+    private final Duration readTimeout;
 
-    private Duration readTimeout;
 
     /**
      * Create new instance.
@@ -69,22 +69,6 @@ public final class ConnectionKey {
         this.proxy = proxy;
     }
 
-    private ConnectionKey(String scheme,
-                          String host,
-                          int port,
-                          Tls tls,
-                          DnsResolver dnsResolver,
-                          DnsAddressLookup dnsAddressLookup,
-                          Proxy proxy) {
-        this.scheme = scheme;
-        this.host = host;
-        this.port = port;
-        this.tls = tls;
-        this.dnsResolver = dnsResolver;
-        this.dnsAddressLookup = dnsAddressLookup;
-        this.proxy = proxy;
-    }
-
     /**
      * Create new instance of the {@link ConnectionKey}.
      *
@@ -104,7 +88,7 @@ public final class ConnectionKey {
                                        DnsResolver dnsResolver,
                                        DnsAddressLookup dnsAddressLookup,
                                        Proxy proxy) {
-        return new ConnectionKey(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
+        return new ConnectionKey(scheme, host, port, Duration.ZERO, tls, dnsResolver, dnsAddressLookup, proxy);
     }
 
     /**
