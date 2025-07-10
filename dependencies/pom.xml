@@ -87,7 +87,7 @@
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>2.4.3.Final</version.lib.jandex>
+        <version.lib.jandex>3.0.8</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
@@ -148,7 +148,7 @@
         <version.lib.postgresql>42.4.4</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>2.0.9</version.lib.slf4j>
-        <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi>2.1.24</version.lib.smallrye-openapi>
         <version.lib.smallrye-openapi-ui>3.13.0</version.lib.smallrye-openapi-ui>
         <version.lib.snakeyaml>2.4</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
