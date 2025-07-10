@@ -71,12 +71,12 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
     }
 
     /**
-     * Creates a new named {@link JsonpSupport}.
+     * Creates a new {@link JsonpSupport}.
      *
      * @return a new {@link JsonpSupport}
      */
     public static MediaSupport create() {
-        return builder().name("jsonp").build();
+        return builder().build();
     }
 
     /**

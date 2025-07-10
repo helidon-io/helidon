@@ -77,6 +77,15 @@ public class JacksonSupport implements MediaSupport, RuntimeType.Api<JacksonSupp
     /**
      * Creates a new {@link JacksonSupport}.
      *
+     * @return a new {@link JacksonSupport}
+     */
+    public static MediaSupport create() {
+        return builder().build();
+    }
+
+    /**
+     * Creates a new {@link JacksonSupport}.
+     *
      * @param config must not be {@code null}
      * @return a new {@link JacksonSupport}
      */

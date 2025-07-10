@@ -66,6 +66,15 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     /**
      * Creates a new {@link JsonbSupport}.
      *
+     * @return a new {@link JsonbSupport}
+     */
+    public static MediaSupport create() {
+        return builder().build();
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
      * @param config must not be {@code null}
      * @return a new {@link JsonbSupport}
      */
