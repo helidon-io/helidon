@@ -94,7 +94,7 @@ record AnnotationDataOption(Javadoc javadoc,
         String singularName;
         boolean equalityRedundant;
         boolean toStringRedundant;
-        boolean traverseConfig = false;
+        boolean traverseConfig;
 
         if (element.hasAnnotation(OPTION_CONFIGURED)) {
             Annotation annotation = element.annotation(OPTION_CONFIGURED);
@@ -170,7 +170,7 @@ record AnnotationDataOption(Javadoc javadoc,
         TypeName decorator = optionDecorator(element);
         traverseConfig = element.findAnnotation(OPTION_TRAVERSE_CONFIG)
                 .flatMap(Annotation::booleanValue)
-                .orElse(false);
+                .orElseGet(() -> traverseByDefault(handler));
 
         // default/is required only based on annotations
         return new AnnotationDataOption(javadoc,
@@ -375,6 +375,16 @@ record AnnotationDataOption(Javadoc javadoc,
         }
 
         return result.toString();
+    }
+
+    private static boolean traverseByDefault(TypeHandler handler) {
+        TypeName typeName = handler.declaredType();
+        if (typeName.isMap()) {
+            TypeName valueTypeName = typeName.typeArguments().get(1);
+            return handler.toPrimitive(valueTypeName).primitive();
+        } else {
+            return false;
+        }
     }
 
     record AllowedValue(String value, String description) {
