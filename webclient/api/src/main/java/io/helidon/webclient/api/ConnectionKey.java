@@ -37,6 +37,8 @@ public final class ConnectionKey {
     private Duration readTimeout;
 
     /**
+     * Create new instance.
+     *
      * @param scheme           uri address scheme
      * @param host             uri address host
      * @param port             uri address port
@@ -46,7 +48,7 @@ public final class ConnectionKey {
      * @param dnsAddressLookup DNS address lookup strategy
      * @param proxy            Proxy server to use for outgoing requests
      * @deprecated readTimeout is deprecated to be part of the connection key.
-     * Use {@link #ConnectionKey(String, String, int, Tls, DnsResolver, DnsAddressLookup, Proxy)} instead.
+     * Use {@link #create(String, String, int, Tls, DnsResolver, DnsAddressLookup, Proxy)} instead.
      */
     @Deprecated(forRemoval = true, since = "4.2.4")
     public ConnectionKey(String scheme,
@@ -67,7 +69,25 @@ public final class ConnectionKey {
         this.proxy = proxy;
     }
 
+    private ConnectionKey(String scheme,
+                          String host,
+                          int port,
+                          Tls tls,
+                          DnsResolver dnsResolver,
+                          DnsAddressLookup dnsAddressLookup,
+                          Proxy proxy) {
+        this.scheme = scheme;
+        this.host = host;
+        this.port = port;
+        this.tls = tls;
+        this.dnsResolver = dnsResolver;
+        this.dnsAddressLookup = dnsAddressLookup;
+        this.proxy = proxy;
+    }
+
     /**
+     * Create new instance of the {@link ConnectionKey}.
+     *
      * @param scheme           uri address scheme
      * @param host             uri address host
      * @param port             uri address port
@@ -76,20 +96,14 @@ public final class ConnectionKey {
      * @param dnsAddressLookup DNS address lookup strategy
      * @param proxy            Proxy server to use for outgoing requests
      */
-    public ConnectionKey(String scheme,
-                         String host,
-                         int port,
-                         Tls tls,
-                         DnsResolver dnsResolver,
-                         DnsAddressLookup dnsAddressLookup,
-                         Proxy proxy) {
-        this.scheme = scheme;
-        this.host = host;
-        this.port = port;
-        this.tls = tls;
-        this.dnsResolver = dnsResolver;
-        this.dnsAddressLookup = dnsAddressLookup;
-        this.proxy = proxy;
+    public static ConnectionKey create(String scheme,
+                                       String host,
+                                       int port,
+                                       Tls tls,
+                                       DnsResolver dnsResolver,
+                                       DnsAddressLookup dnsAddressLookup,
+                                       Proxy proxy) {
+        return new ConnectionKey(scheme, host, port, tls, dnsResolver, dnsAddressLookup, proxy);
     }
 
     /**
