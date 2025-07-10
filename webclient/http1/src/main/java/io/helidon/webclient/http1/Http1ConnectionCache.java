@@ -122,14 +122,13 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
-        ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
-                                                        uri.host(),
-                                                        uri.port(),
-                                                        clientConfig.readTimeout().orElse(requestReadTimeout),
-                                                        tls,
-                                                        clientConfig.dnsResolver(),
-                                                        clientConfig.dnsAddressLookup(),
-                                                        proxy);
+        ConnectionKey connectionKey = ConnectionKey.create(uri.scheme(),
+                                                           uri.host(),
+                                                           uri.port(),
+                                                           tls,
+                                                           clientConfig.dnsResolver(),
+                                                           clientConfig.dnsAddressLookup(),
+                                                           proxy);
 
         LinkedBlockingDeque<TcpClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
@@ -166,14 +165,13 @@ class Http1ConnectionCache extends ClientConnectionCache {
         Http1ClientConfig clientConfig = http1Client.clientConfig();
 
         return TcpClientConnection.create(webClient,
-                                          new ConnectionKey(uri.scheme(),
-                                                            uri.host(),
-                                                            uri.port(),
-                                                            clientConfig.readTimeout().orElse(Duration.ZERO),
-                                                            tls,
-                                                            clientConfig.dnsResolver(),
-                                                            clientConfig.dnsAddressLookup(),
-                                                            proxy),
+                                          ConnectionKey.create(uri.scheme(),
+                                                               uri.host(),
+                                                               uri.port(),
+                                                               tls,
+                                                               clientConfig.dnsResolver(),
+                                                               clientConfig.dnsAddressLookup(),
+                                                               proxy),
                                           ALPN_ID,
                                           conn -> false, // always close connection
                                           conn -> {
