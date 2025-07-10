@@ -496,8 +496,13 @@ public final class Option {
 
     /**
      * Definition of how {@link java.util.Map} keys and values should be constructed.
-     * If used, it will use the {@code io.helidon.common.config.Config#traverse} method to perform a depth-first traversal
-     * of the node and its subtrees.
+     * <p>
+     * If this annotation is not used, traversed is automatically applied on String and primitive/boxed types.
+     * In all other cases, non-traverse approach is applied.
+     * <p>
+     * If this annotation is used, it will use the {@code io.helidon.common.config.Config#traverse} method
+     * to perform a depth-first traversal of the node and its subtrees.
+     * Note: this annotation takes effect only when used in combination with {@link Configured}.
      * <p>
      * For example:
      * <pre>{@code

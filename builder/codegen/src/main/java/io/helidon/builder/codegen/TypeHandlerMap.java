@@ -124,7 +124,7 @@ class TypeHandlerMap extends TypeHandler {
         if (TypeNames.STRING.equals(keyTypeName) && TypeNames.STRING.equals(valueTypeName)) {
             // the special case of Map<String, String>
             method.addContentLine(configGet(configured) + ".detach().asMap().ifPresent(this::" + name() + ");");
-        } else if (toPrimitive(valueTypeName).primitive() || configured.traverseConfig()){
+        } else if (configured.traverseConfig()){
             method.addContent(configGet(configured) + ".detach().traverse().filter(")
                     .addContent(Types.COMMON_CONFIG)
                     .addContent("::hasValue).forEach(node -> "
