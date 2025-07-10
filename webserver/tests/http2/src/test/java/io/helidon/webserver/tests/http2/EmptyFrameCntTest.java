@@ -93,13 +93,13 @@ class EmptyFrameCntTest {
     @Test
     void emptyDataFramesAttack() throws InterruptedException, ExecutionException, TimeoutException {
         ClientUri clientUri = ClientUri.create(URI.create("http://localhost:" + server.port()));
-        ConnectionKey connectionKey = new ConnectionKey(clientUri.scheme(),
-                                                        clientUri.host(),
-                                                        clientUri.port(),
-                                                        Tls.builder().enabled(false).build(),
-                                                        DefaultDnsResolver.create(),
-                                                        DnsAddressLookup.defaultLookup(),
-                                                        Proxy.noProxy());
+        ConnectionKey connectionKey = ConnectionKey.create(clientUri.scheme(),
+                                                           clientUri.host(),
+                                                           clientUri.port(),
+                                                           Tls.builder().enabled(false).build(),
+                                                           DefaultDnsResolver.create(),
+                                                           DnsAddressLookup.defaultLookup(),
+                                                           Proxy.noProxy());
 
         TcpClientConnection conn = TcpClientConnection.create(WebClient.builder()
                                                                       .baseUri(clientUri)

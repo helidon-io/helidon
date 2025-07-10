@@ -78,13 +78,13 @@ public class Http2TestConnection implements AutoCloseable {
 
     Http2TestConnection(URI uri) {
         clientUri = ClientUri.create(uri);
-        ConnectionKey connectionKey = new ConnectionKey(clientUri.scheme(),
-                                                        clientUri.host(),
-                                                        clientUri.port(),
-                                                        Tls.builder().enabled(false).build(),
-                                                        DefaultDnsResolver.create(),
-                                                        DnsAddressLookup.defaultLookup(),
-                                                        Proxy.noProxy());
+        ConnectionKey connectionKey = ConnectionKey.create(clientUri.scheme(),
+                                                           clientUri.host(),
+                                                           clientUri.port(),
+                                                           Tls.builder().enabled(false).build(),
+                                                           DefaultDnsResolver.create(),
+                                                           DnsAddressLookup.defaultLookup(),
+                                                           Proxy.noProxy());
 
         conn = TcpClientConnection.create(WebClient.builder()
                                                   .baseUri(clientUri)

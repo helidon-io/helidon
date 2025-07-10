@@ -275,7 +275,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected ClientConnection clientConnection(ClientUri clientUri) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
-        ConnectionKey connectionKey = new ConnectionKey(
+        ConnectionKey connectionKey = ConnectionKey.create(
                 clientUri.scheme(),
                 clientUri.host(),
                 clientUri.port(),

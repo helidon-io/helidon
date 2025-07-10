@@ -95,6 +95,7 @@ public final class ConnectionKey {
      * @param dnsResolver      DNS resolver to be used
      * @param dnsAddressLookup DNS address lookup strategy
      * @param proxy            Proxy server to use for outgoing requests
+     * @return new instance
      */
     public static ConnectionKey create(String scheme,
                                        String host,

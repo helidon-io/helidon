@@ -67,13 +67,13 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        ConnectionKey ck = new ConnectionKey(clientUri.scheme(),
-                                             clientUri.host(),
-                                             clientUri.port(),
-                                             clientRequest.tls(),
-                                             clientConfig.dnsResolver(),
-                                             clientConfig.dnsAddressLookup(),
-                                             clientRequest.proxy());
+        ConnectionKey ck = ConnectionKey.create(clientUri.scheme(),
+                                                clientUri.host(),
+                                                clientUri.port(),
+                                                clientRequest.tls(),
+                                                clientConfig.dnsResolver(),
+                                                clientConfig.dnsAddressLookup(),
+                                                clientRequest.proxy());
         if (connectionCache.supports(ck)) {
             return SupportLevel.SUPPORTED;
         }
