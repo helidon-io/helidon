@@ -303,52 +303,11 @@ public class JacksonSupport implements MediaSupport, RuntimeType.Api<JacksonSupp
             configure(DeserializationFeature.values(), properties, jsonMapper::configure);
             configure(SerializationFeature.values(), properties, jsonMapper::configure);
             configure(JsonNodeFeature.values(), properties, jsonMapper::configure);
-
-            Stream.of(StreamReadFeature.values())
-                    .forEach(srf -> {
-                        Optional.ofNullable(properties.get(srf.name()))
-                                .ifPresent(value -> jsonMapper.configure(srf, value));
-                    });
-            Stream.of(StreamWriteFeature.values())
-                    .forEach(swf -> {
-                        Optional.ofNullable(properties.get(swf.name()))
-                                .ifPresent(value -> jsonMapper.configure(swf, value));
-                    });
-            Stream.of(DeserializationFeature.values())
-                    .forEach(df -> {
-                        Optional.ofNullable(properties.get(df.name()))
-                                .ifPresent(value -> jsonMapper.configure(df, value));
-                    });
-            Stream.of(SerializationFeature.values())
-                    .forEach(sf -> {
-                        Optional.ofNullable(properties.get(sf.name()))
-                                .ifPresent(value -> jsonMapper.configure(sf, value));
-                    });
-            Stream.of(JsonParser.Feature.values())
-                    .forEach(jpf -> {
-                        Optional.ofNullable(properties.get(jpf.name()))
-                                .ifPresent(value -> jsonMapper.configure(jpf, value));
-                    });
-            Stream.of(MapperFeature.values())
-                    .forEach(mf -> {
-                        Optional.ofNullable(properties.get(mf.name()))
-                                .ifPresent(value -> jsonMapper.configure(mf, value));
-                    });
-            Stream.of(JsonGenerator.Feature.values())
-                    .forEach(jgf -> {
-                        Optional.ofNullable(properties.get(jgf.name()))
-                                .ifPresent(value -> jsonMapper.configure(jgf, value));
-                    });
-            Stream.of(EnumFeature.values())
-                    .forEach(ef -> {
-                        Optional.ofNullable(properties.get(ef.name()))
-                                .ifPresent(value -> jsonMapper.configure(ef, value));
-                    });
-            Stream.of(JsonNodeFeature.values())
-                    .forEach(jnf -> {
-                        Optional.ofNullable(properties.get(jnf.name()))
-                                .ifPresent(value -> jsonMapper.configure(jnf, value));
-                    });
+            configure(JsonParser.Feature.values(), properties, jsonMapper::configure);
+            configure(MapperFeature.values(), properties, jsonMapper::configure);
+            configure(JsonGenerator.Feature.values(), properties, jsonMapper::configure);
+            configure(EnumFeature.values(), properties, jsonMapper::configure);
+            configure(JsonNodeFeature.values(), properties, jsonMapper::configure);
         }
 
         private static <T extends Enum<?>> void configure(T[] values,
