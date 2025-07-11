@@ -64,10 +64,6 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
         this.writer = new GsonWriter(gson);
     }
 
-    public static GsonSupportConfig.Builder builder() {
-        return GsonSupportConfig.builder();
-    }
-
     /**
      * Creates a new {@link GsonSupport}.
      *
@@ -122,12 +118,33 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
                 .build();
     }
 
+    /**
+     * Creates a new {@link GsonSupport} based on the {@link GsonSupportConfig}.
+     *
+     * @param config must not be {@code null}
+     * @return a new {@link GsonSupport}
+     */
     public static GsonSupport create(GsonSupportConfig config) {
         return new GsonSupport(config);
     }
 
+    /**
+     * Creates a new customized {@link GsonSupport}.
+     *
+     * @param consumer config builder consumer
+     * @return a new {@link GsonSupport}
+     */
     public static GsonSupport create(Consumer<GsonSupportConfig.Builder> consumer) {
         return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a new builder.
+     *
+     * @return a new builder instance
+     */
+    public static GsonSupportConfig.Builder builder() {
+        return GsonSupportConfig.builder();
     }
 
     @Override
