@@ -14,44 +14,44 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.jackson;
+package io.helidon.http.media.gson;
 
 import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 /**
- * Configuration of the {@link JacksonSupport}.
+ * Configuration of the {@link GsonSupport}.
  */
-@Prototype.Blueprint(decorator = JacksonSupport.Decorator.class)
+@Prototype.Blueprint(decorator = GsonSupport.Decorator.class)
 @Prototype.Configured
-interface JacksonSupportConfigBlueprint extends Prototype.Factory<JacksonSupport> {
+interface GsonSupportConfigBlueprint extends Prototype.Factory<GsonSupport> {
 
     /**
-     * Name of the support. Default value is {@code jackson}.
+     * Name of the support. Default value is {@code gson}.
      *
      * @return name of the support
      */
-    @Option.Default("jackson")
+    @Option.Default("gson")
     @Option.Configured
     String name();
 
     /**
-     * Jackson {@link com.fasterxml.jackson.databind.ObjectMapper} instance.
+     * {@link Gson} instance.
      *
-     * @return jackson object mapper instance
+     * @return gson instance
      */
-    ObjectMapper objectMapper();
+    Gson gson();
 
     /**
-     * Jackson configuration properties.
-     * Properties are being ignored if specific {@link JacksonSupport} is set.
+     * Gson configuration properties.
+     * Properties are being ignored if specific {@link Gson} is set.
      * Only {@code boolean} configuration values are supported.
      *
-     * @return jackson config properties
+     * @return gson config properties
      */
     @Option.Singular("property")
     @Option.Configured
