@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.api;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -149,14 +148,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
         if ("https".equals(resolvedUri.scheme()) && tls().enabled() && !tcpProtocols.isEmpty()) {
             // use ALPN
-            ConnectionKey connectionKey = new ConnectionKey(resolvedUri.scheme(),
-                                                            resolvedUri.host(),
-                                                            resolvedUri.port(),
-                                                            clientConfig().readTimeout().orElse(Duration.ZERO),
-                                                            tls(),
-                                                            clientConfig().dnsResolver(),
-                                                            clientConfig().dnsAddressLookup(),
-                                                            proxy());
+            ConnectionKey connectionKey = ConnectionKey.create(resolvedUri.scheme(),
+                                                               resolvedUri.host(),
+                                                               resolvedUri.port(),
+                                                               tls(),
+                                                               clientConfig().dnsResolver(),
+                                                               clientConfig().dnsAddressLookup(),
+                                                               proxy());
 
             // this is a temporary connection, used to determine which protocol is supported, next
             // call to the same remote location will be obtained from cache

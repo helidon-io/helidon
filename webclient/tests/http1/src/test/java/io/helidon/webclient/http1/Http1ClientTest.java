@@ -518,7 +518,7 @@ class Http1ClientTest {
     }
 
     private static void delayedHandler(ServerRequest req, ServerResponse res) throws IOException, InterruptedException {
-        TimeUnit.MILLISECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(1);
         customHandler(req, res, false);
     }
 
