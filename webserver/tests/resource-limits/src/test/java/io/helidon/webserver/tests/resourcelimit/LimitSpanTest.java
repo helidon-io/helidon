@@ -112,7 +112,7 @@ class LimitSpanTest {
         firstRequestReceivedByServer.await();
 
         try (HttpClientResponse secondResponse = webClient.get("/span")
-                .header(HeaderNames.TRACEPARENT, traceParentHeaderValue)
+                .header(HeaderNames.create("traceparent"), traceParentHeaderValue)
                 .request()) {
             // Second request should be queued and, therefore, trigger a limit span.
             assertThat("First request response status", client.receive(), containsString("200 OK"));
