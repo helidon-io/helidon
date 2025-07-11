@@ -87,7 +87,6 @@ enum HeaderNameEnum implements HeaderName {
     SET_COOKIE(Strings.SET_COOKIE_NAME),
     SET_COOKIE2(Strings.SET_COOKIE2_NAME),
     STRICT_TRANSPORT_SECURITY(Strings.STRICT_TRANSPORT_SECURITY_NAME),
-    TRACEPARENT(Strings.TRACEPARENT_NAME),
     TRAILER(Strings.TRAILER_NAME),
     TRANSFER_ENCODING(Strings.TRANSFER_ENCODING_NAME),
     TSV(Strings.TSV_NAME),
@@ -216,7 +215,6 @@ enum HeaderNameEnum implements HeaderName {
         static final String SET_COOKIE_NAME = "Set-Cookie";
         static final String SET_COOKIE2_NAME = "Set-Cookie2";
         static final String STRICT_TRANSPORT_SECURITY_NAME = "Strict-Transport-Security";
-        static final String TRACEPARENT_NAME = "Traceparent";
         static final String TRAILER_NAME = "Trailer";
         static final String TRANSFER_ENCODING_NAME = "Transfer-Encoding";
         static final String TSV_NAME = "TSV";

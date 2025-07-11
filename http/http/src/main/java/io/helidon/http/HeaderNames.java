@@ -662,16 +662,6 @@ public final class HeaderNames {
     public static final HeaderName STRICT_TRANSPORT_SECURITY = HeaderNameEnum.STRICT_TRANSPORT_SECURITY;
     /**
      * The {@value} header name.
-     * The Traceparent indicates the parent span, if any, propagated with the request.
-     */
-    public static final String TRACEPARENT_NAME = Strings.TRACEPARENT_NAME;
-    /**
-     * The {@value #TRACEPARENT_NAME} header name.
-     * The Traceparent indicates the parent span, if any, propagated with the request.
-     */
-    public static final HeaderName TRACEPARENT = HeaderNameEnum.TRACEPARENT;
-    /**
-     * The {@value} header name.
      * The Trailer general field value indicates that the given set of} header fields is present in the trailer of
      * a message encoded with chunked transfer coding.
      */
