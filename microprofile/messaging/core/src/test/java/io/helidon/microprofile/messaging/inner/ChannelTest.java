@@ -29,8 +29,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.platform.commons.util.ClassFilter;
-import org.junit.platform.commons.util.ReflectionUtils;
+import org.junit.platform.commons.support.ReflectionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,10 +41,11 @@ class ChannelTest extends AbstractCDITest {
     }
 
     static Stream<CdiTestCase> testCaseSource() {
-        return ReflectionUtils
+        return ReflectionSupport
                 .findAllClassesInPackage(
                         ChannelTest.class.getPackage().getName(),
-                        ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
+                        c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class)),
+                        name -> true)
                 .stream()
                 .map(CdiTestCase::from);
     }
