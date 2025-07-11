@@ -46,6 +46,11 @@
             <artifactId>jakarta.json.bind-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

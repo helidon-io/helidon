@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
- * Helidon WebServer JSON-RPC Support.
+ * Helidon JSON-RPC server support. See
+ * <a href="https://www.jsonrpc.org/specification">JSON-RPC 2.0 Specification</a>.
  */
+@Features.Name("JSON-RPC Server")
+@Features.Description("Support for the JSON-RPC protocol in Webserver")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Preview
 module io.helidon.webserver.jsonrpc {
 
     requires io.helidon.builder.api;
@@ -25,6 +33,7 @@ module io.helidon.webserver.jsonrpc {
     requires io.helidon.jsonrpc.core;
     requires jakarta.json;
     requires jakarta.json.bind;
+    requires io.helidon.common.features.api;
 
     exports io.helidon.webserver.jsonrpc;
 }

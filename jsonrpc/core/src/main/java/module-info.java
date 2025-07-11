@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
- * Helidon JSON-RPC core module.
+ * Helidon JSON-RPC core support. See
+ * <a href="https://www.jsonrpc.org/specification">JSON-RPC 2.0 Specification</a>.
  */
+@Features.Name("JSON-RPC Core")
+@Features.Description("Support for the JSON-RPC core")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Preview
 module io.helidon.jsonrpc.core {
 
     requires io.helidon.common;
     requires jakarta.json;
     requires jakarta.json.bind;
+    requires io.helidon.common.features.api;
 
     exports io.helidon.jsonrpc.core;
 }
