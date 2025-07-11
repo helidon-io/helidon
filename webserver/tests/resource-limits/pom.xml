@@ -66,6 +66,46 @@
             <artifactId>helidon-webserver-observe-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-extension-trace-propagators</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.opentelemetry</groupId>-->
+<!--            <artifactId>opentelemetry-sdk-testing</artifactId>-->
+<!--        </dependency>-->
+        <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
@@ -91,4 +131,46 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/*LimitSpanTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>span-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
+                                <otel.sdk.disabled>false</otel.sdk.disabled>
+                                <otel.traces.exporter>in-memory</otel.traces.exporter>
+                                <io.helidon.webserver.tests.resourcelimit.TestSpanExporter.test.retryCount>10</io.helidon.webserver.tests.resourcelimit.TestSpanExporter.test.retryCount>
+                                <io.helidon.webserver.tests.resourcelimit.TestSpanExporter.test.retryDelayMs>1000</io.helidon.webserver.tests.resourcelimit.TestSpanExporter.test.retryDelayMs>
+
+                                <!-- The default for the following is 5000 ms. Reducing it speeds up tests significantly. -->
+                                <otel.bsp.schedule.delay>100</otel.bsp.schedule.delay>
+
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/*LimitSpanTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+        </plugins>
+    </build>
 </project>

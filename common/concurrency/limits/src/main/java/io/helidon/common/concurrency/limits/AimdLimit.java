@@ -16,12 +16,14 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListener;
 import io.helidon.common.config.Config;
 
 /**
@@ -50,9 +52,11 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     private final AimdLimitConfig config;
     private final AimdLimitImpl aimdLimitImpl;
 
+    private String originName;
+
     private AimdLimit(AimdLimitConfig config) {
         this.config = config;
-        this.aimdLimitImpl = new AimdLimitImpl(config);
+        this.aimdLimitImpl = new AimdLimitImpl(config, originName);
     }
 
     /**
@@ -110,17 +114,32 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public <T> T invoke(Callable<T> callable) throws Exception {
-        return aimdLimitImpl.invoke(callable);
+        return invoke(callable, List.of());
+    }
+
+    @Override
+    public <T> T invoke(Callable<T> callable, Iterable<LimitAlgorithmListener> listeners) throws Exception {
+        return aimdLimitImpl.invoke(callable, listeners);
     }
 
     @Override
     public void invoke(Runnable runnable) throws Exception {
-        aimdLimitImpl.invoke(runnable);
+        invoke(runnable, List.of());
+    }
+
+    @Override
+    public void invoke(Runnable runnable, Iterable<LimitAlgorithmListener> listeners) throws Exception {
+        aimdLimitImpl.invoke(runnable, listeners);
     }
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
-        return aimdLimitImpl.tryAcquire(wait);
+        return tryAcquire(wait, List.of());
+    }
+
+    @Override
+    public Optional<Token> tryAcquire(boolean wait, Iterable<LimitAlgorithmListener> listeners) {
+        return aimdLimitImpl.tryAcquire(wait, listeners);
     }
 
     @SuppressWarnings("removal")
@@ -151,6 +170,7 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public void init(String socketName) {
+        originName = socketName;
         aimdLimitImpl.initMetrics(socketName, config);
     }
 }

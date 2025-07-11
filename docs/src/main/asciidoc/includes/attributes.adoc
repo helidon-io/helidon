@@ -198,6 +198,7 @@ endif::[]
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :uri-javadoc-base-url: {javadoc-base-url}/io.helidon.common.uri
 :common-javadoc-base-url: {javadoc-base-url}/io.helidon.common
+:concurrency-limits-javadoc-base-url: {javadoc-base-url}/io.helidon.common.concurrency.limits
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
 :config-etcd-javadoc-base-url: {javadoc-base-url}/io.helidon.config.etcd
 :config-git-javadoc-base-url: {javadoc-base-url}/io.helidon.config.git

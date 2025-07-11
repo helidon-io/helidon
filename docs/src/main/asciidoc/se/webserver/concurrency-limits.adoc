@@ -239,3 +239,10 @@ server:
 <1> Turns on tracing to add a span for queued wait time.
 
 Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the xref:{tracing-page}[Helidon tracing] documentation for more information.
+
+== Custom Listeners for Concurrency Limit Operations
+Helidon itself supports metrics and tracing for concurrency limit operations. Applications can also register their own logic which Helidon invokes at key points as it enforces concurrency limits.
+
+Implement the link:{webserver-javadoc-base-url}/io/helidon/webserver/http/spi/HttpLimitListenerProvider.html[`HttpLimitListenerProvider`] interface so it provides listeners that respond as you need as limits are applied to HTTP requests.
+
+See also the Javadoc for link:{concurrency-limits-javadoc-base-url}/io/helidon/common/concurrency/limits/spi/LimitAlgorithmListener.html[`LimitAlgorithmListener`] for details on how and when Helidon invokes the listeners.

@@ -54,6 +54,7 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
@@ -61,6 +62,7 @@ import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.spi.HttpLimitListenerProvider;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
@@ -95,6 +97,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
+
+    private final List<HttpLimitListenerProvider> httpLimitListenerProviders;
 
     // overall connection
     private int requestId;
@@ -132,6 +136,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
         this.lastRequestTimestamp = DateTime.timestamp();
+        this.httpLimitListenerProviders = Services.all(HttpLimitListenerProvider.class);
     }
 
     @Override
@@ -207,7 +212,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(httpLimitListenerProviders
+                        .stream()
+                        .map(f -> f.create(prologue, headers))
+                        .toList());
+
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()

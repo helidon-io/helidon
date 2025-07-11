@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@
 module io.helidon.webserver.concurrency.limits {
     requires io.helidon.common;
     requires io.helidon.http;
+    requires io.helidon.service.registry;
+    requires io.helidon.tracing;
     requires io.helidon.webserver;
 
     requires transitive io.helidon.builder.api;
