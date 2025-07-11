@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
+
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListener;
 
 /**
  * Concurrency limit algorithm.
@@ -62,6 +64,29 @@ public interface LimitAlgorithm {
     }
 
     /**
+     * Invoke a callable within the limits of this limiter, notifying provided listeners of the queueing and processing progress
+     * of the work.
+     * <p>
+     * {@link io.helidon.common.concurrency.limits.Limit} implementors notes:
+     * <ul>
+     *     <li>Be sure to override the default implementation which ignores listeners.</li>
+     *     <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
+     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
+     * or throw the exception after ignoring the timing for future decisions.</li>
+     * </ul>
+     *
+     * @param callable    callable to execute within the limit
+     * @param listeners   listeners to notify of queueing and processing progress
+     * @param <T>         the callable return type]
+     * @return result of the callable
+     * @throws LimitException      in case the limiter did not have an available permit
+     * @throws java.lang.Exception in case the task failed with an exception
+     */
+    default <T> T invoke(Callable<T> callable, Iterable<LimitAlgorithmListener> listeners) throws LimitException, Exception {
+        return invoke(callable);
+    }
+
+    /**
      * Invoke a runnable within the limits of this limiter.
      * <p>
      * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
@@ -92,6 +117,27 @@ public interface LimitAlgorithm {
     }
 
     /**
+     * Invoke a runnable within the limits of this limiter, notifying provided listeners of the queueing and processing progress
+     * of the work.
+     * <p>
+     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
+     * <ul>
+     *     <li>Be sure to override the default implementation which ignores listeners.</li>
+     *     <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
+     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
+     * or throw the exception after ignoring the timing for future decisions.</li>
+     * </ul>
+     *
+     * @param runnable    runnable to execute within the limit
+     * @param listeners   listeners to notify of queueing and processing progress
+     * @throws LimitException      in case the limiter did not have an available permit
+     * @throws java.lang.Exception in case the task failed with an exception
+     */
+    default void invoke(Runnable runnable, Iterable<LimitAlgorithmListener> listeners) throws LimitException, Exception {
+        invoke(runnable);
+    }
+
+    /**
      * Try to acquire a token, waiting for available permits for the configured amount of time, if queuing is enabled.
      * <p>
      * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
@@ -102,6 +148,21 @@ public interface LimitAlgorithm {
      */
     default Optional<Token> tryAcquire() {
         return tryAcquire(true);
+    }
+
+    /**
+     * Try to acquire a token, waiting for available permits for the configured amount of time if queuing is enabled,
+     * notifying provided listeners of the queueing and processing progress of the work.
+     * <p>
+     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
+     * operations to release the token.
+     * If the response is empty, the limit does not have an available token.
+     *
+     * @param listeners   listeners to notify of queueing and processing progress
+     * @return acquired token, or empty if there is no available token
+     */
+    default Optional<Token> tryAcquire(Iterable<LimitAlgorithmListener> listeners) {
+        return tryAcquire(true, listeners);
     }
 
     /**
@@ -116,6 +177,29 @@ public interface LimitAlgorithm {
      * @return acquired token, or empty if there is no available token
      */
     Optional<Token> tryAcquire(boolean wait);
+
+    /**
+     * Try to acquire a token, waiting for available permits for the configured amount of time, if
+     * {@code wait} is enabled, returning immediately otherwise; the limit algorithm notifies registered listeners as it
+     * manages the queueing and execution of the work.
+     * <p>
+     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
+     * <ul>
+     *     <li>Be sure to override the default implementation which ignores listeners.</li>
+     * </ul>
+     * <p>
+     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
+     * operations to release the token.
+     * If the response is empty, the limit does not have an available token.
+     *
+     * @param wait      whether to wait in the queue (if one is configured/available in the limit), or to return immediately
+     * @param listeners listeners to notify of processing
+     *
+     * @return acquired token, or empty if there is no available token
+     */
+    default Optional<Token> tryAcquire(boolean wait, Iterable<LimitAlgorithmListener> listeners) {
+        return tryAcquire(wait);
+    }
 
     /**
      * When a token is retrieved from {@link #tryAcquire()}, one of its methods must be called when the task

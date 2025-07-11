@@ -16,11 +16,14 @@
 package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
+
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListener;
 
 class LimitHandlers {
 
@@ -76,17 +79,25 @@ class LimitHandlers {
         private final Semaphore semaphore;
         private final int queueLength;
         private final long timeoutMillis;
-        private final Supplier<Token> tokenSupplier;
+        private final Function<Iterable<LimitAlgorithmListener>, Token> tokenFactory;
 
-        QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout, Supplier<Token> tokenSupplier) {
+        QueuedSemaphoreHandler(Semaphore semaphore,
+                               int queueLength,
+                               Duration queueTimeout,
+                               Function<Iterable<LimitAlgorithmListener>, Token> tokenFactory) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
             this.timeoutMillis = queueTimeout.toMillis();
-            this.tokenSupplier = tokenSupplier;
+            this.tokenFactory = tokenFactory;
         }
 
         @Override
         public Optional<Token> tryAcquire(boolean wait) {
+            return tryAcquire(wait, List.of());
+        }
+
+        @Override
+        public Optional<Token> tryAcquire(boolean wait, Iterable<LimitAlgorithmListener> listeners) {
             if (queueLength > 0 && semaphore.getQueueLength() >= queueLength) {
                 // this is an estimate - we do not promise to be precise here
                 return Optional.empty();
@@ -103,7 +114,7 @@ class LimitHandlers {
             } catch (InterruptedException e) {
                 return Optional.empty();
             }
-            return Optional.of(tokenSupplier.get());
+            return Optional.of(tokenFactory.apply(listeners));
         }
 
         @Override
