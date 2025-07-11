@@ -737,75 +737,90 @@ final class GenerateAbstractBuilder {
     private static void serviceRegistryProperty(Method.Builder preBuildBuilder,
                                                 PrototypeProperty property) {
         TypeName typeName = property.typeHandler().declaredType();
-        if (typeName.isList()) {
+
+        // Example: .of("bean-name") or .of()
+        var namedQualifierFromAnnotation = property.qualifiers()
+                .stream()
+                .filter(a -> a.typeName().equals(TypeName.create("io.helidon.service.registry.Service.Named")))
+                .flatMap(annotation -> annotation.stringValue().stream())
+                .map(s -> '"' + s + '"')
+                .collect(Collectors.joining(", ", ".of(", ")"));
+
+        // Example: Optional<String> regionQualifiers =
+        preBuildBuilder
+                .addContent("List<String> ")
+                .addContent(property.name())
+                .addContent("Qualifiers = ");
+
+        if (property.configuredOption().configured()) {
+            /* Configured named qualifier wins over annotation
+            Example:
+            List<String> regionQualifiers = config.get("region.service-registry.named")
+                    .asList(String.class)
+                    .orElse(List.of("bean-name"));
+            */
             preBuildBuilder
-                    .addContent("this.add")
-                    .addContent(capitalize(property.name()))
-                    .addContent("(")
-                    .addContent(REGISTRY_BUILDER_SUPPORT)
-                    .addContent(".serviceList(registry, ")
-                    .addContentCreate(property.typeHandler().actualType())
-                    .addContent(", ")
-                    .addContent(property.name())
-                    .addContentLine("DiscoverServices));");
-        } else if (typeName.isSet()) {
-            preBuildBuilder
-                    .addContent("this.add")
-                    .addContent(capitalize(property.name()))
-                    .addContent("(")
-                    .addContent(REGISTRY_BUILDER_SUPPORT)
-                    .addContent(".serviceSet(registry, ")
-                    .addContentCreate(property.typeHandler().actualType())
-                    .addContent(", ")
-                    .addContent(property.name())
-                    .addContentLine("DiscoverServices));");
+                    .addContent("config.get(")
+                    .addContentLiteral(property.configuredOption().configKey() + "." + SERVICE_REGISTRY_CONFIG_KEY + ".named")
+                    .addContentLine(")")
+                    .increaseContentPadding()
+                    .addContentLine(".asList(String.class)")
+                    .addContent(".orElse(")
+                    .addContent(LIST).addContent(namedQualifierFromAnnotation).addContentLine(");")
+                    .decreaseContentPadding();
         } else {
-
-            // Example: .of("@default") or .empty()
-            var namedQualifierFromAnnotation = property.qualifiers()
-                    .stream()
-                    .filter(a -> a.typeName().fqName().equals("io.helidon.service.registry.Service.Named"))
-                    .flatMap(annotation -> annotation.stringValue().stream())
-                    .findFirst()
-                    .map(s -> ".of(\"" + s + "\")")
-                    .orElse(".empty()");
-
+            /* Example:
+            Optional<String> regionQualifier = Optional.of("bean-name");
+            */
             preBuildBuilder
-                    .addContent("Optional<String> ")
-                    .addContent(property.name())
-                    .addContent("Qualifier = ");
+                    .addContent(LIST)
+                    .addContent(namedQualifierFromAnnotation)
+                    .addContentLine(";");
+        }
 
-            if (property.configuredOption().configured()) {
-                /* Configured named qualifier wins over annotation
-                Example:
-                Optional<String> regionQualifier = config.get("region.service-registry.named")
-                        .asString().asOptional()
-                        .or(() -> Optional.of("@default"));
-                */
-                preBuildBuilder
-                        .addContent("config.get(")
-                        .addContentLiteral(property.configuredOption().configKey() + "." + SERVICE_REGISTRY_CONFIG_KEY + ".named")
-                        .addContentLine(")")
-                        .increaseContentPadding()
-                        .addContentLine(".asString().asOptional()")
-                        .addContent(".or(() -> ")
-                        .addContent(TypeNames.OPTIONAL).addContent(namedQualifierFromAnnotation)
-                        .addContentLine(");")
-                        .decreaseContentPadding();
-            } else {
-                /* Example:
-                Optional<String> regionQualifier = Optional.of("@default");
-                */
-                preBuildBuilder
-                        .addContent(TypeNames.OPTIONAL)
-                        .addContent(namedQualifierFromAnnotation)
-                        .addContentLine(";");
-            }
+        if (typeName.isList()) {
 
             /*
-            RegistryBuilderSupport.service(registry, TypeName.create("com.oracle.bmc.Region"), regionQualifiers,
-            Optional.ofNullable(region), regionDiscoverServices)
-            .ifPresent(this::region);
+            this.addRegion(RegistryBuilderSupport.serviceList(registry,
+                                           TypeName.create("com.oracle.bmc.Region"),
+                                           regionQualifiers,
+                                           Optional.ofNullable(region),
+                                           regionDiscoverServices));
+            */
+            preBuildBuilder
+                    .addContent("this.add").addContent(capitalize(property.name())).addContent("(")
+                    .addContent(REGISTRY_BUILDER_SUPPORT)
+                    .addContent(".serviceList(registry, ")
+                    .addContentCreate(property.typeHandler().actualType()).addContent(", ")
+                    .addContent(property.name()).addContent(", ")
+                    .addContent(property.name()).addContent("DiscoverServices, ")
+                    .addContent(property.name()).addContentLine("Qualifiers));");
+
+        } else if (typeName.isSet()) {
+             /*
+            this.addRegion(RegistryBuilderSupport.serviceSet(registry,
+                                           TypeName.create("com.oracle.bmc.Region"),
+                                           regionQualifiers,
+                                           Optional.ofNullable(region),
+                                           regionDiscoverServices));
+            */
+            preBuildBuilder
+                    .addContent("this.add").addContent(capitalize(property.name())).addContent("(")
+                    .addContent(REGISTRY_BUILDER_SUPPORT)
+                    .addContent(".serviceSet(registry, ")
+                    .addContentCreate(property.typeHandler().actualType()).addContent(", ")
+                    .addContent(property.name()).addContent(", ")
+                    .addContent(property.name()).addContent("DiscoverServices, ")
+                    .addContent(property.name()).addContentLine("Qualifiers));");
+        } else {
+
+            /*
+            RegistryBuilderSupport.service(registry,
+                                           TypeName.create("com.oracle.bmc.Region"),
+                                           regionQualifiers,
+                                           Optional.ofNullable(region),
+                                           regionDiscoverServices)
+                                  .ifPresent(this::region);
             */
             preBuildBuilder
                     .addContent(REGISTRY_BUILDER_SUPPORT)
@@ -819,7 +834,7 @@ final class GenerateAbstractBuilder {
                     .addContent(property.name())
                     .addContent("DiscoverServices, ")
                     .addContent(property.name())
-                    .addContentLine("Qualifier)")
+                    .addContentLine("Qualifiers)")
                     .increaseContentPadding()
                     .addContent(".ifPresent(this::")
                     .addContent(property.setterName())

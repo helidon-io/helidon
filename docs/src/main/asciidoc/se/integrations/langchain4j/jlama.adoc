@@ -19,7 +19,7 @@
 = LangChain4J Jlama Provider
 :description: LangChain4J Jlama
 :keywords: helidon, AI, LangChain4J, LC4J, Jlama
-:feature-name: LangChain4J Integration
+:feature-name: LangChain4J Jlama
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -63,6 +63,7 @@ langchain4j:
   jlama:
     chat-model:
       enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -97,6 +98,7 @@ langchain4j:
   jlama:
     embedding-model:
       enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -129,6 +131,7 @@ langchain4j:
   jlama:
     language-model:
       enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -164,6 +167,7 @@ langchain4j:
   jlama:
     streaming-chat-model:
       enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.

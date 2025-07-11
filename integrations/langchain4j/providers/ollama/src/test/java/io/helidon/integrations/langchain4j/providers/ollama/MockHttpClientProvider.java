@@ -35,7 +35,7 @@ public class MockHttpClientProvider implements Supplier<HttpClientBuilder> {
 
     @Override
     public HttpClientBuilder get() {
-        var builderMock = Mockito.spy(HttpClientBuilder.class);
+        var builderMock = Mockito.mock(HttpClientBuilder.class);
         var clientMock = Mockito.mock(HttpClient.class);
         var responseMock = Mockito.mock(SuccessfulHttpResponse.class);
 

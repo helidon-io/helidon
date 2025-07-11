@@ -60,6 +60,48 @@ public class RegistryBuilderSupport {
     /**
      * Discover services from the registry.
      *
+     * @param registry        service registry to use, if provided explicitly
+     * @param contract        contract that is requested
+     * @param existingValue   an optional existing value, to be used if already present
+     * @param useRegistry     whether to use the service registry at all
+     * @param namedQualifiers an optional qualifier name to filter the services
+     * @param <T>             type of the contract
+     * @return a list of contract implementation from the registry
+     */
+    public static <T> List<T> serviceList(Optional<ServiceRegistry> registry,
+                                          TypeName contract,
+                                          List<T> existingValue,
+                                          boolean useRegistry,
+                                          List<String> namedQualifiers) {
+
+        if (!existingValue.isEmpty() || !useRegistry) {
+            return existingValue;
+        }
+
+        if (namedQualifiers.isEmpty()) {
+            return registry.orElseGet(GlobalServiceRegistry::registry).all(contract);
+        }
+
+        var lookups = namedQualifiers.stream()
+                .map(Qualifier::createNamed)
+                .map(qualifier -> Lookup.builder()
+                        .addContract(contract)
+                        .addQualifier(qualifier)
+                        .build())
+                .toList();
+
+        List<T> result = new ArrayList<>();
+
+        for (Lookup lookup : lookups) {
+            result.addAll(registry.orElseGet(GlobalServiceRegistry::registry).all(lookup));
+        }
+
+        return List.copyOf(result);
+    }
+
+    /**
+     * Discover services from the registry.
+     *
      * @param registry    service registry to use, if provided explicitly
      * @param contract    contract that is requested
      * @param useRegistry whether to use the service registry at all
@@ -78,6 +120,48 @@ public class RegistryBuilderSupport {
             result.addAll(registry.get().all(contract));
         } else {
             result.addAll(Services.all(contract));
+        }
+
+        return Set.copyOf(result);
+    }
+
+    /**
+     * Discover services from the registry.
+     *
+     * @param registry    service registry to use, if provided explicitly
+     * @param contract    contract that is requested
+     * @param existingValue   an optional existing value, to be used if already present
+     * @param useRegistry whether to use the service registry at all
+     * @param namedQualifiers an optional qualifier name to filter the services
+     * @param <T>         type of the contract
+     * @return a set of contract implementation
+     */
+    public static <T> Set<T> serviceSet(Optional<ServiceRegistry> registry,
+                                        TypeName contract,
+                                        Set<T> existingValue,
+                                        boolean useRegistry,
+                                        List<String> namedQualifiers) {
+
+        if (!existingValue.isEmpty() || !useRegistry) {
+            return existingValue;
+        }
+
+        if (namedQualifiers.isEmpty()) {
+            return Set.copyOf(registry.orElseGet(GlobalServiceRegistry::registry).all(contract));
+        }
+
+        var lookups = namedQualifiers.stream()
+                .map(Qualifier::createNamed)
+                .map(qualifier -> Lookup.builder()
+                        .addContract(contract)
+                        .addQualifier(qualifier)
+                        .build())
+                .toList();
+
+        Set<T> result = new HashSet<>();
+
+        for (Lookup lookup : lookups) {
+            result.addAll(registry.orElseGet(GlobalServiceRegistry::registry).all(lookup));
         }
 
         return Set.copyOf(result);
@@ -113,33 +197,39 @@ public class RegistryBuilderSupport {
      * and the current configuration. Allows for combining explicitly configured values
      * with discovered values from a registry.
      *
-     * @param <T>           the type of the service contract
-     * @param registry      an optional service registry to use, if explicitly provided
-     * @param contract      the contract that is requested
-     * @param existingValue an optional existing value, to be used if already present
-     * @param useRegistry   a flag indicating whether to use the service registry
-     * @param namedQualifier an optional qualifier name to filter the services
+     * @param <T>             the type of the service contract
+     * @param registry        an optional service registry to use, if explicitly provided
+     * @param contract        the contract that is requested
+     * @param existingValue   an optional existing value, to be used if already present
+     * @param useRegistry     a flag indicating whether to use the service registry
+     * @param namedQualifiers an optional qualifier name to filter the services
      * @return an optional containing the matching service, if found
      */
     public static <T> Optional<T> service(Optional<ServiceRegistry> registry,
                                           TypeName contract,
                                           Optional<T> existingValue,
                                           boolean useRegistry,
-                                          Optional<String> namedQualifier) {
+                                          List<String> namedQualifiers) {
         if (existingValue.isPresent() || !useRegistry) {
             return existingValue;
         }
 
-        var lookup = Lookup.builder()
-                .addContract(contract)
-                .update(builder -> namedQualifier.map(Qualifier::createNamed)
-                        .ifPresent(builder::addQualifier))
-                .build();
-
-        if (registry.isPresent()) {
-            return registry.get().first(lookup);
-        } else {
-            return GlobalServiceRegistry.registry().first(lookup);
+        if (namedQualifiers.isEmpty()) {
+            return registry.orElseGet(GlobalServiceRegistry::registry).first(contract);
         }
+
+        var lookups = namedQualifiers.stream()
+                .map(Qualifier::createNamed)
+                .map(qualifier -> Lookup.builder()
+                        .addContract(contract)
+                        .addQualifier(qualifier)
+                        .build())
+                .toList();
+
+        for (Lookup lookup : lookups) {
+            return registry.orElseGet(GlobalServiceRegistry::registry).first(lookup);
+        }
+
+        return Optional.empty();
     }
 }
