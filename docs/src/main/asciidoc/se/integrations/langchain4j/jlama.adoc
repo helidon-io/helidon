@@ -1,0 +1,199 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J Jlama Provider
+:description: LangChain4J Jlama
+:keywords: helidon, AI, LangChain4J, LC4J, Jlama
+:feature-name: LangChain4J Jlama
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<JlamaChatModel, JlamaChatModel>>
+** <<JlamaEmbeddingModel, JlamaEmbeddingModel>>
+** <<JlamaLanguageModel, JlamaLanguageModel>>
+** <<JlamaStreamingChatModel, JlamaStreamingChatModel>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+This module adds support for selected https://github.com/tjake/Jlama[Jlama] models.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
+</dependency>
+----
+
+== Components
+
+=== JlamaChatModel
+
+To automatically create and add `JlamaChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  jlama:
+    chat-model:
+      enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`model-name` |string |The model name to use.
+|`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.
+|`model-cache-path` | Path | Path to a directory where the model will be cached once downloaded.
+|`working-directory` | Path | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.
+|`auth-token`| string | Token to use when fetching private models from https://huggingface.co/[Hugging Face]
+|`max-tokens`| integer | Maximum number of tokens to generate.
+|`thread-count` | integer | Number of threads to use.
+|`quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.
+
+|===
+
+=== JlamaEmbeddingModel
+
+To automatically create and add `JlamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  jlama:
+    embedding-model:
+      enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`model-name` |string |The model name to use.
+|`model-cache-path` | Path | Path to a directory where the model will be cached once downloaded.
+|`working-directory` | Path | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.
+|`auth-token`| string | Token to use when fetching private models from https://huggingface.co/[Hugging Face]
+|`thread-count` | integer | Number of threads to use.
+|`pooling-type` | enum | Method of embedding pooling.
+
+|===
+
+
+=== JlamaLanguageModel
+
+To automatically create and add `JlamaLanguageModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  jlama:
+    language-model:
+      enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`model-name` |string |The model name to use.
+|`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.
+|`model-cache-path` | Path | Path to a directory where the model will be cached once downloaded.
+|`working-directory` | Path | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.
+|`auth-token`| string | Token to use when fetching private models from https://huggingface.co/[Hugging Face]
+|`max-tokens`| integer | Maximum number of tokens to generate.
+|`thread-count` | integer | Number of threads to use.
+|`quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.
+
+|===
+
+
+=== JlamaStreamingChatModel
+
+To automatically create and add `JlamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  jlama:
+    streaming-chat-model:
+      enabled: true
+      model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`model-name` |string |The model name to use.
+|`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.
+|`model-cache-path` | Path | Path to a directory where the model will be cached once downloaded.
+|`working-directory` | Path | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.
+|`auth-token`| string | Token to use when fetching private models from https://huggingface.co/[Hugging Face]
+|`max-tokens`| integer | Maximum number of tokens to generate.
+|`thread-count` | integer | Number of threads to use.
+|`quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.
+
+|===
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4J Integration]
+* https://docs.langchain4j.dev/integrations/language-models/jlama/[LangChain4J Jlama Documentation]
+* https://github.com/tjake/Jlama[Jlama Website]

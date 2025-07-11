@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Provides integration with Oracle models.
  */
-@Feature(value = "Langchain4j Oracle",
-         description = "Langchain4j Oracle Provider Integration",
-         in = {HelidonFlavor.SE, HelidonFlavor.MP},
-         path = {"Langchain4j", "Oracle"}
-)
-@Preview
+@Features.Name("Langchain4j Oracle")
+@Features.Description("Langchain4j Oracle Provider Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Langchain4j", "Oracle"})
+@Features.Preview
 module io.helidon.integrations.langchain4j.providers.oracle {
     requires static io.helidon.common.features.api;
 

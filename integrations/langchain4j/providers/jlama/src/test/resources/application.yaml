@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2025 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+langchain4j.jlama:
+  chat-model:
+    enabled: true
+    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    temperature: 0.1
+    working-quantized-type: BF16
+    model-cache-path: /test/cache
+    working-directory: /tmp/test/dir
+    auth-token: test-token
+    max-tokens: 20
+    thread-count: 5
+    quantize-model-at-runtime: true
+  language-model:
+    enabled: true
+    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    temperature: 0.1
+    working-quantized-type: BF16
+    model-cache-path: /test/cache
+    working-directory: /tmp/test/dir
+    auth-token: test-token
+    max-tokens: 20
+    thread-count: 5
+    quantize-model-at-runtime: true
+  streaming-chat-model:
+    enabled: true
+    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    temperature: 0.1
+    working-quantized-type: BF16
+    model-cache-path: /test/cache
+    working-directory: /tmp/test/dir
+    auth-token: test-token
+    max-tokens: 20
+    thread-count: 5
+    quantize-model-at-runtime: true
+  embedding-model:
+    enabled: true
+    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    model-cache-path: /test/cache
+    working-directory: /tmp/test/dir
+    auth-token: test-token
+    thread-count: 5
+    quantize-model-at-runtime: true
+    pooling-type: MODEL

@@ -17,10 +17,14 @@
 package io.helidon.integrations.langchain4j.openai;
 
 import java.time.Duration;
+import java.util.Optional;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +33,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+@Testing.Test
 class ChatModelConfigTest {
 
     @Test
@@ -85,10 +90,37 @@ class ChatModelConfigTest {
         assertThat(config.logRequests().get(), is(true));
         assertThat(config.logResponses().isPresent(), is(true));
         assertThat(config.logResponses().get(), is(true));
-        assertThat(config.tokenizer().isPresent(), is(false));
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
-        assertThat(config.proxy().isPresent(), is(false));
+    }
+
+    @Test
+    void testNamedClient(ServiceRegistry registry) {
+
+        var yaml = """
+                langchain4j.open-ai:
+                  chat-model:
+                    http-client-builder.service-registry.named: "namedHttpClient"
+                """;
+
+        var config = OpenAiChatModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
+                                .get(OpenAiChatModelConfig.CONFIG_ROOT))
+                .build();
+
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()), is(Optional.of("namedHttpClient")));
+    }
+
+    @Test
+    void testDefaultClient(ServiceRegistry registry) {
+
+        var config = OpenAiChatModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(Config.empty())
+                .build();
+
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()), is(Optional.of("defaultHttpClient")));
     }
 }
