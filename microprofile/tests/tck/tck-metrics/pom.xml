@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.2.4</version>
     </parent>
     <artifactId>tck-metrics</artifactId>
     <name>Helidon Microprofile Tests TCK Metrics</name>
