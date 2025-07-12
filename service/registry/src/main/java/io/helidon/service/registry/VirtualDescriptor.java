@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
     private final TypeName descriptorType;
     private final double weight;
     private final Object instance;
+    private final Set<Qualifier> qualifiers;
 
     VirtualDescriptor(TypeName contract) {
         // explicit instances configured through config have a very high weight, to be used first
@@ -47,6 +48,18 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
                 .build();
         this.weight = weight;
         this.instance = instance;
+        this.qualifiers = Set.of();
+    }
+
+    VirtualDescriptor(TypeName contract, double weight, Object instance, Set<Qualifier> qualifiers) {
+        this.contracts = Set.of(ResolvedType.create(contract));
+        this.serviceType = contract;
+        this.descriptorType = TypeName.builder(TYPE)
+                .className(TYPE.className() + "_" + contract.className() + "__VirtualDescriptor")
+                .build();
+        this.weight = weight;
+        this.instance = instance;
+        this.qualifiers = qualifiers;
     }
 
     @Override
@@ -67,6 +80,11 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
     @Override
     public double weight() {
         return weight;
+    }
+
+    @Override
+    public Set<Qualifier> qualifiers() {
+        return qualifiers;
     }
 
     @Override

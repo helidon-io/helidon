@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.common.Weighted;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -189,6 +190,39 @@ public class LateBindingTest {
                                                       () -> Services.add(LateBindingTypes.ServiceProvider.class,
                                                                          Weighted.DEFAULT_WEIGHT,
                                                                          new LateBindingTypes.ServiceProvider("custom")));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testLateBindingContractNamed() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry registry = manager.registry();
+        GlobalServiceRegistry.registry(registry);
+        try {
+            Services.setNamed(LateBindingTypes.Contract.class, new LateBindingTypes.ServiceProvider("named"), "named");
+
+            LateBindingTypes.Contract contract = registry.getNamed(LateBindingTypes.Contract.class, "named");
+            assertThat(contract.message(), is("named"));
+            contract = Services.getNamed(LateBindingTypes.Contract.class, "named");
+            assertThat(contract.message(), is("named"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testLateBindingContractQualified() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry registry = manager.registry();
+        GlobalServiceRegistry.registry(registry);
+        try {
+            Services.setQualified(LateBindingTypes.Contract.class, new LateBindingTypes.ServiceProvider("named"),
+                                  Qualifier.createNamed("named"));
+
+            LateBindingTypes.Contract contract = registry.getNamed(LateBindingTypes.Contract.class, "named");
+            assertThat(contract.message(), is("named"));
         } finally {
             manager.shutdown();
         }
