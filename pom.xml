@@ -97,7 +97,7 @@
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
-        <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
+        <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
         <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
