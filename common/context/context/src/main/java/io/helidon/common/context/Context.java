@@ -163,6 +163,11 @@ public interface Context {
     String id();
 
     /**
+     * Removes all of the elements from this context.
+     */
+    void clear();
+
+    /**
      * Fluent API builder for {@link Context}.
      */
     class Builder implements io.helidon.common.Builder<Builder, Context> {

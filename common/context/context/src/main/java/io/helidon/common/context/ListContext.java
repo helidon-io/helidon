@@ -61,6 +61,11 @@ class ListContext implements Context {
     }
 
     @Override
+    public void clear() {
+        classifiers.clear();
+    }
+
+    @Override
     public <T> Optional<T> get(Class<T> type) {
         T result = registry.get(type);
         if (result == null) {
