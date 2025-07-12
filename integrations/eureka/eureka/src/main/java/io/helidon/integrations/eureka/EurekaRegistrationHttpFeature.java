@@ -277,7 +277,8 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
     // DELETE {baseUri}/v2/apps/{appName}/{id}
     private boolean cancel(Http1Client client, String appName, String id) {
         try (var response = client
-             .delete("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
+             .delete()
+             .path("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
              .request()) {
             if (response.status().family() == SUCCESSFUL) {
                 if (LOGGER.isLoggable(DEBUG)) {
@@ -358,7 +359,8 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                                           String status,
                                           Long lastDirtyTimestamp) {
         var request = this.client // volatile read
-            .put("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
+            .put()
+            .path("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
             .accept(APPLICATION_JSON);
         if (status != null) {
             request.queryParam("status", status);

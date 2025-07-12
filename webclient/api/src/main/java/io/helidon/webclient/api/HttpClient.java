@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for post method with a path.
+     * Shortcut for post method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -78,7 +78,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for put method with a path.
+     * Shortcut for put method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -97,7 +97,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for delete method with a path.
+     * Shortcut for delete method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -116,7 +116,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for head method with a path.
+     * Shortcut for head method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -135,7 +135,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for options method with a path.
+     * Shortcut for options method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -154,7 +154,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for trace method with a path.
+     * Shortcut for trace method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
@@ -173,7 +173,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     }
 
     /**
-     * Shortcut for patch method with a path.
+     * Shortcut for patch method with a path. A properly encoded URI is expected to be provided.
      *
      * @param uri path to resolve against base URI, or full URI
      * @return a new request (not thread safe)
