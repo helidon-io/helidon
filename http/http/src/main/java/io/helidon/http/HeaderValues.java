@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.buffers.LazyString;
 
@@ -346,6 +347,38 @@ public final class HeaderValues {
      * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(String name, Collection<String> values) {
+        return create(HeaderNames.create(name), values);
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param name   name of the header
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty String)
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     */
+    public static Header create(HeaderName name, Iterable<String> values) {
+        if (!values.iterator().hasNext()) {
+            throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
+        }
+        return new HeaderValueList(name, false, false,
+                                   values instanceof Collection
+                                           ? (Collection<String>) values
+                                           : StreamSupport.stream(values.spliterator(), false).toList());
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param name   name of the header
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty String)
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     */
+    public static Header create(String name, Iterable<String> values) {
         return create(HeaderNames.create(name), values);
     }
 
