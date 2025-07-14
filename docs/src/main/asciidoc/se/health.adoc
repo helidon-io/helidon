@@ -263,44 +263,7 @@ The following table provides a summary of the Health Check API classes.
 checks
 |=======
 
-[[built-in-health-checks-table]]
-=== Built-In Health Checks
-
-You can use Helidon-provided health checks to report various
-common health check statuses:
-
-// Had to move the anchor to the heading above because the rendered page did not define the ID
-// correctly on the table so the link did not work. The link itself looks OK; just no ID generated on the page.
-//[[built-in-health-checks-table]]
-[cols="1,1,3,15,3"]
-|=======
-|Built-in health check |Health check name |JavaDoc |Config properties (within `server.features.observe.observers.health`) |Default config value
-
-|deadlock detection &dagger;
-|`deadlock`
-| link:{health-javadoc-base-url}/io/helidon/health/checks/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
-| n/a
-| n/a
-
-|available disk space &dagger;
-|`diskSpace`
-| link:{health-javadoc-base-url}/io/helidon/health/checks/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
-|`helidon.health.diskSpace.thresholdPercent` +
-+
-`helidon.health.diskSpace.path`
-| `99.999` +
-+
-`/`
-|available heap memory
-| `heapMemory`
-| link:{health-javadoc-base-url}/io/helidon/health/checks/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
-|`helidon.health.heapMemory.thresholdPercent`
-|`98`
-|=======
-&dagger; Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
-
-Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically.
-If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
+include::{rootdir}/includes/health.adoc[tag=built-in-health-checks-section]
 
 The following code adds only selected built-in health checks to your application:
 
@@ -430,10 +393,10 @@ TIP: Create log messages in your health check implementation when setting a
 
 Built-in health checks can be configured using the config property keys
 described in this
-<<built-in-health-checks-table,table>>. Further, you can suppress one or more of the built-in
-health checks by setting the configuration item
-`helidon.health.exclude` to a comma-separated list of the health check names
-(from this <<built-in-health-checks-table,table>>) you want to exclude.
+<<built-in-health-checks-table,table>>.
+
+include::{rootdir}/includes/health.adoc[tag=configuring-built-in-health-checks]
+The same table lists the name names for the built-in health checks.
 
 == Examples
 
