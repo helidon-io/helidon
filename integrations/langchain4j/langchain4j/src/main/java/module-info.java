@@ -18,6 +18,7 @@ import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
+import io.helidon.integrations.langchain4j.TokenStreamToStreamAdapter;
 
 /**
  * Langchain4j main integration module and API.
@@ -39,4 +40,6 @@ module io.helidon.integrations.langchain4j {
     requires langchain4j;
 
     exports io.helidon.integrations.langchain4j;
+
+    provides dev.langchain4j.spi.services.TokenStreamAdapter with TokenStreamToStreamAdapter;
 }
