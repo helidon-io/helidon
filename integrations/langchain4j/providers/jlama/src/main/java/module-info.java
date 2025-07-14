@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Langchain4j", "Jlama"})
 @Features.Preview
-module io.helidon.integrations.langchain4j.providers.ollama {
+module io.helidon.integrations.langchain4j.providers.jlama {
     requires static io.helidon.common.features.api;
 
     requires langchain4j.jlama;
