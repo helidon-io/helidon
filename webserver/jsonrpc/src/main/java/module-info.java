@@ -21,10 +21,12 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Helidon JSON-RPC server support. See
  * <a href="https://www.jsonrpc.org/specification">JSON-RPC 2.0 Specification</a>.
  */
-@Features.Name("JSON-RPC Server")
+@Features.Name("JSON-RPC")
 @Features.Description("Support for the JSON-RPC protocol in Webserver")
 @Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebServer", "JSON-RPC"})
 @Features.Preview
+@Features.Since("4.3.0")
 module io.helidon.webserver.jsonrpc {
 
     requires io.helidon.builder.api;

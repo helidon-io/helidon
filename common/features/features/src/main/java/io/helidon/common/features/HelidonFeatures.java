@@ -243,7 +243,7 @@ public final class HelidonFeatures {
                         .forEach(it -> INCUBATING.log(Level.INFO,
                                                       "\tIncubating feature: "
                                                               + it.name()
-                                                              + " since " + it.since()
+                                                              + it.since().map(since -> " since " + since).orElse("")
                                                               + " ("
                                                               + it.stringPath()
                                                               + ")"));
@@ -261,7 +261,7 @@ public final class HelidonFeatures {
                                                               + it.stringPath()
                                                               + ")"));
             }
-            if (!allDeprecated.isEmpty()) {
+            if (!allPreview.isEmpty()) {
                 PREVIEW.log(Level.INFO,
                             "You are using preview features. These APIs are production ready, yet may change more "
                                     + "frequently. Please follow Helidon release changelog!");
@@ -269,7 +269,7 @@ public final class HelidonFeatures {
                         .forEach(it -> PREVIEW.log(Level.INFO,
                                                    "\tPreview feature: "
                                                            + it.name()
-                                                           + " since " + it.since()
+                                                           + it.since().map(since -> " since " + since).orElse("")
                                                            + " ("
                                                            + it.stringPath()
                                                            + ")"));
