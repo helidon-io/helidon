@@ -42,8 +42,8 @@
             <artifactId>helidon-security-abac-policy-el</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.el</artifactId>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
