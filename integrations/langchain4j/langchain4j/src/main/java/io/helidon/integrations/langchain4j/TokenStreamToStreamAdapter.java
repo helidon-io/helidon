@@ -44,6 +44,12 @@ import dev.langchain4j.spi.services.TokenStreamAdapter;
 public class TokenStreamToStreamAdapter implements TokenStreamAdapter {
     private static final Class<?>[] SINGLE_STRING_ARRAY = new Class[] {String.class};
 
+    /**
+     * Constructs a new instance of {@code TokenStreamToStreamAdapter}.
+     */
+    public TokenStreamToStreamAdapter() {
+    }
+
     @Override
     public boolean canAdaptTokenStreamTo(Type type) {
         return type instanceof ParameterizedType t
@@ -71,7 +77,7 @@ public class TokenStreamToStreamAdapter implements TokenStreamAdapter {
                     } else if (o == CompleteSignal.class) {
                         return null;
                     } else if (o instanceof Throwable t) {
-                        throw new RuntimeException(t);
+                        throw new TokenStreamException(t);
                     } else {
                         throw new IllegalStateException("Unexpected object type: " + o);
                     }
