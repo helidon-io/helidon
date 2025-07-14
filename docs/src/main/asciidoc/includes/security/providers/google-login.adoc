@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,11 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 :keywords: helidon, security, google
 :feature-name: Google Login Security Provider
 
-Authenticates a token from request against Google identity provider
+[.line-through]#Authenticates a token from request against Google identity provider#
+
+This provider is deprecated and will be removed in a future version of Helidon.
+Please use our OpenID Connect security provider instead.
+
 
 ==== Setup
 
