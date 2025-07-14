@@ -18,10 +18,10 @@ package io.helidon.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -36,8 +36,11 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class HeaderValueIterableTest {
     private static final List<String> ordinalNumbers = Arrays.asList("First", "Second", "Third");
-    private static final String FourthOrdinal = "Fourth";
+    private static final Set<String> ordinalNumbersSet = new HashSet<>(ordinalNumbers);
+    private static final CustomIterableString ordinalNumbersCustomIterable = new CustomIterableString(ordinalNumbers);
     private static final List<String> emptyStringIterable = Arrays.asList("");
+    private static final CustomIterableString emptyCustomIterable = new CustomIterableString(emptyStringIterable);
+    private static final String FourthOrdinal = "Fourth";
 
    @ParameterizedTest
    @MethodSource("IterableObjects")
@@ -61,7 +64,6 @@ class HeaderValueIterableTest {
         // This will be not equal because "Fourth" was added
         assertThat(ordinalsList, not(headerValueList.allValues()));
 
-        // ordinalsList.add("Fourth");
         List<String> ordinalsListWithFourth = new ArrayList<>(ordinalsList);
         ordinalsListWithFourth.add("Fourth");
         assertThat(ordinalsListWithFourth, is(headerValueList.allValues()));
@@ -82,28 +84,19 @@ class HeaderValueIterableTest {
         return Stream.of(
                 // Collection type iterable
                 arguments(ordinalNumbers),
-                arguments(new HashSet<>(ordinalNumbers)),
+                arguments(ordinalNumbersSet),
                 // non-Collection type iterable
-                arguments(new CustomStringIterable(ordinalNumbers))
+                arguments(ordinalNumbersCustomIterable)
         );
     }
 
-    // This will allow testing of a Collection and non-Collection type Iterable
-    private static Stream<Arguments> MutableIterableObjects() {
-        return Stream.of(
-                // Collection type iterable
-                arguments(new ArrayList<>(ordinalNumbers)),
-                // non-Collection type iterable
-                arguments(new CustomStringIterable(ordinalNumbers))
-        );
-    }
-
+    // This will test empty value iterables will still work
     private static Stream<Arguments> EmptyStringIterableObjects() {
         return Stream.of(
                 // Collection type iterable
                 arguments(emptyStringIterable),
                 // non-Collection type iterable
-                arguments(new CustomStringIterable(emptyStringIterable))
+                arguments(emptyCustomIterable)
         );
     }
 
@@ -115,10 +108,10 @@ class HeaderValueIterableTest {
     }
 
     // Custom non-Collection type Iterable
-    static class CustomStringIterable implements Iterable<String> {
+    static class CustomIterableString implements Iterable<String> {
         private final List<String> data;
 
-        public CustomStringIterable(List<String> data) {
+        public CustomIterableString(List<String> data) {
             this.data = data;
         }
 
