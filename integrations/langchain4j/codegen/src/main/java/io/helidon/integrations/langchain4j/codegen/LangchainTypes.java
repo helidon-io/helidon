@@ -16,8 +16,6 @@
 
 package io.helidon.integrations.langchain4j.codegen;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
@@ -66,13 +64,13 @@ final class LangchainTypes {
     static final TypeName SVC_QUALIFIER = TypeName.create("io.helidon.service.registry.Qualifier");
     static final TypeName COMMON_WEIGHT = TypeName.create("io.helidon.common.Weight");
     static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
-    static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create(Prototype.RegistrySupport.class);
+    static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
     static final Annotation BLDR_REGISTRY_SUPPORT_ANNOTATION = Annotation.create(BLDR_PROTOTYPE_REGISTRY_SUPPORT);
-    static final TypeName OPT_SINGULAR = TypeName.create(Option.Singular.class);
-    static final TypeName OPT_CONFIGURED = TypeName.create(Option.Configured.class);
-    static final TypeName OPT_REGISTRY_SERVICE = TypeName.create(Option.RegistryService.class);
+    static final TypeName OPT_SINGULAR = TypeName.create("io.helidon.builder.api.Option.Singular");
+    static final TypeName OPT_CONFIGURED = TypeName.create("io.helidon.builder.api.Option.Configured");
+    static final TypeName OPT_REGISTRY_SERVICE = TypeName.create("io.helidon.builder.api.Option.RegistryService");
     static final Annotation BLDR_SINGULAR_ANNOTATION = Annotation.create(OPT_SINGULAR);
-    static final TypeName BLDR_PROTOTYPE_CONFIGURED = TypeName.create(Prototype.Configured.class);
+    static final TypeName BLDR_PROTOTYPE_CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
 
     private LangchainTypes() {
     }

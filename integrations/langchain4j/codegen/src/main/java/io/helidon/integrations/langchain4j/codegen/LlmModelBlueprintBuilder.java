@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.api.Option;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Javadoc;
@@ -76,7 +75,7 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
     void addEnableProperty() {
         var methodBuilder = Method.builder()
                 .name("enabled")
-                .addAnnotation(Annotation.create(Option.Configured.class))
+                .addAnnotation(Annotation.create(LangchainTypes.OPT_CONFIGURED))
                 .returnType(TypeNames.PRIMITIVE_BOOLEAN)
                 .javadoc(Javadoc.builder()
                                  .add("If set to {@code false} (default), " + this.namePrefix + " will not be "
