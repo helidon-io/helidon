@@ -57,6 +57,18 @@
         <dependency>
             <groupId>org.mousio</groupId>
             <artifactId>etcd4j</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <!-- for dependency convergence with handlebars -->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${version.lib.commons-text}</version>
         </dependency>
         <!-- etcd v3 -->
         <dependency>
