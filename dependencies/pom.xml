@@ -96,7 +96,8 @@
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.10</version.lib.jersey>
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
-        <version.lib.junit>5.13.3</version.lib.junit>
+        <version.lib.junit>5.9.3</version.lib.junit>
+        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
@@ -1224,6 +1225,21 @@
 
             <!-- Section 4: Testing -->
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.lib.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${version.lib.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${version.lib.junit}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${version.lib.hamcrest}</version>
@@ -1232,6 +1248,11 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-testkit</artifactId>
+                <version>${version.lib.junit-platform-testkit}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1329,13 +1350,6 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
-            <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${version.lib.junit}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <!-- Force upgrade. Used by grpc -->
             <dependency>
                 <groupId>com.google.protobuf</groupId>
