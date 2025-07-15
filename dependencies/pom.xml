@@ -47,7 +47,9 @@
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
+        <!-- el-impl has been replaced by expressly. But we still manage version to not break existing application poms -->
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
+        <version.lib.expressly>5.0.0</version.lib.expressly>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.7.2</version.lib.google-api-client>
@@ -336,9 +338,16 @@
             </dependency>
             <dependency>
                 <!-- contains the API as well -->
+                <!-- Has been replaced by expressly. We manage version to not break existing application poms -->
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.el</artifactId>
                 <version>${version.lib.el-impl}</version>
+            </dependency>
+            <dependency>
+                <!-- Jakarta EL implementation -->
+                <groupId>org.glassfish.expressly</groupId>
+                <artifactId>expressly</artifactId>
+                <version>${version.lib.expressly}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
