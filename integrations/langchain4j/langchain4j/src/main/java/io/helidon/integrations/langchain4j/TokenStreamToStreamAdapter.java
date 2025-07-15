@@ -20,7 +20,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
 import dev.langchain4j.service.TokenStream;
@@ -59,7 +60,7 @@ public class TokenStreamToStreamAdapter implements TokenStreamAdapter {
 
     @Override
     public Object adapt(TokenStream tokenStream) {
-        ArrayBlockingQueue<Object> queue = new ArrayBlockingQueue<>(10);
+        BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
         tokenStream.onPartialResponse(e -> blockingNonNullPut(e, queue))
                 .onCompleteResponse(ignored -> blockingNonNullPut(CompleteSignal.class, queue))
                 .onError(t -> blockingNonNullPut(t, queue))
@@ -85,7 +86,7 @@ public class TokenStreamToStreamAdapter implements TokenStreamAdapter {
                 .takeWhile(Objects::nonNull);
     }
 
-    private static void blockingNonNullPut(Object o, ArrayBlockingQueue<Object> queue) {
+    private static void blockingNonNullPut(Object o, BlockingQueue<Object> queue) {
         try {
             if (o != null) {
                 queue.put(o);

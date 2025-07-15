@@ -40,7 +40,7 @@ class JlamaTest {
                                                          .get(JlamaChatModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("TinyLlama/TinyLlama-1.1B-Chat-v0.6"));
+        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
         assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
@@ -57,7 +57,7 @@ class JlamaTest {
                                                          .get(JlamaStreamingChatModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("TinyLlama/TinyLlama-1.1B-Chat-v0.6"));
+        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
         assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
@@ -74,7 +74,7 @@ class JlamaTest {
                                                          .get(JlamaLanguageModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("TinyLlama/TinyLlama-1.1B-Chat-v0.6"));
+        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
         assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
@@ -91,7 +91,7 @@ class JlamaTest {
                                                          .get(JlamaEmbeddingModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("TinyLlama/TinyLlama-1.1B-Chat-v0.6"));
+        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
         assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
         assertThat(config.workingDirectory().map(Path::toString), is(Optional.of("/tmp/test/dir")));
         assertThat(config.authToken(), is(Optional.of("test-token")));

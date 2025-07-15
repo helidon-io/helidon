@@ -51,7 +51,7 @@
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.7.2</version.lib.google-api-client>
-        <!-- For dependency convergence. ggogle-http-client version should match what is used by google-api-client -->
+        <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.25.5</version.lib.google-protobuf>
@@ -952,6 +952,13 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
+            <!-- Langchain4j integration -->
+            <!-- Replace with community bom when issue #282 is fixed -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-oci-genai</artifactId>
+                <version>${version.lib.langchain4j-community}</version>
+            </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
@@ -1410,13 +1417,6 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-bom</artifactId>
                 <version>${version.lib.langchain4j}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-community-bom</artifactId>
-                <version>${version.lib.langchain4j-community}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

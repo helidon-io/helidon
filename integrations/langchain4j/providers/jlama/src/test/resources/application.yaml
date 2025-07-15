@@ -17,7 +17,7 @@
 langchain4j.jlama:
   chat-model:
     enabled: true
-    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    model-name: tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4
     temperature: 0.1
     working-quantized-type: BF16
     model-cache-path: /test/cache
@@ -28,7 +28,7 @@ langchain4j.jlama:
     quantize-model-at-runtime: true
   language-model:
     enabled: true
-    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    model-name: tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4
     temperature: 0.1
     working-quantized-type: BF16
     model-cache-path: /test/cache
@@ -39,7 +39,7 @@ langchain4j.jlama:
     quantize-model-at-runtime: true
   streaming-chat-model:
     enabled: true
-    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    model-name: tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4
     temperature: 0.1
     working-quantized-type: BF16
     model-cache-path: /test/cache
@@ -50,7 +50,7 @@ langchain4j.jlama:
     quantize-model-at-runtime: true
   embedding-model:
     enabled: true
-    model-name: TinyLlama/TinyLlama-1.1B-Chat-v0.6
+    model-name: tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4
     model-cache-path: /test/cache
     working-directory: /tmp/test/dir
     auth-token: test-token
