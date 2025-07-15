@@ -30,7 +30,6 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.classmodel.Returns;
 import io.helidon.codegen.spi.CodegenExtension;
-import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
@@ -56,7 +55,6 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUA
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_SERVICES_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 
-@Weight(Weighted.DEFAULT_WEIGHT)
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
     private static final double DEFAULT_FACTORY_WEIGHT = Weighted.DEFAULT_WEIGHT - 2;

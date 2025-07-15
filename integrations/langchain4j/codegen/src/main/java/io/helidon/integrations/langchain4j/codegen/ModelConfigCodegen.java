@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.spi.CodegenExtension;
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -40,7 +38,6 @@ import static java.util.function.Predicate.not;
  * The {@code ModelConfigCodegen} class is responsible for generating
  * configuration blueprints for lc4j models by introspecting their builders.
  */
-@Weight(Weighted.DEFAULT_WEIGHT - 12)
 class ModelConfigCodegen implements CodegenExtension {
     static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
     static final Set<TypeName> GENERATED_CLASSES = new HashSet<>();

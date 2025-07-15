@@ -45,6 +45,7 @@ import io.helidon.common.types.TypeNames;
 import static io.helidon.builder.codegen.Types.BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.CONFIG_BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.REGISTRY_BUILDER_SUPPORT;
+import static io.helidon.builder.codegen.Types.SERVICE_NAMED;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.MAP;
@@ -741,7 +742,7 @@ final class GenerateAbstractBuilder {
         // Example: .of("bean-name") or .empty()
         var namedQualifierFromAnnotation = property.qualifiers()
                 .stream()
-                .filter(a -> a.typeName().equals(TypeName.create("io.helidon.service.registry.Service.Named")))
+                .filter(a -> a.typeName().equals(SERVICE_NAMED))
                 .flatMap(annotation -> annotation.stringValue().stream())
                 .map(s -> ".of(\"" + s + "\")")
                 .findFirst()
@@ -767,7 +768,9 @@ final class GenerateAbstractBuilder {
                     .increaseContentPadding()
                     .addContentLine(".asString()")
                     .addContent(".or(() -> ")
-                    .addContent(OPTIONAL).addContent(namedQualifierFromAnnotation).addContentLine(");")
+                    .addContent(OPTIONAL)
+                    .addContent(namedQualifierFromAnnotation)
+                    .addContentLine(");")
                     .decreaseContentPadding();
         } else {
             /* Example:
@@ -790,10 +793,16 @@ final class GenerateAbstractBuilder {
             */
             preBuildBuilder
                     .addContent("this.add")
-                    .addContent(capitalize(property.name())).addContent("(").addContent(REGISTRY_BUILDER_SUPPORT)
-                    .addContent(".serviceList(registry, ").addContentCreate(property.typeHandler().actualType()).addContent(", ")
-                    .addContent(property.name()).addContent("DiscoverServices, ")
-                    .addContent(property.name()).addContentLine("Qualifier));");
+                    .addContent(capitalize(property.name()))
+                    .addContent("(")
+                    .addContent(REGISTRY_BUILDER_SUPPORT)
+                    .addContent(".serviceList(registry, ")
+                    .addContentCreate(property.typeHandler().actualType())
+                    .addContent(", ")
+                    .addContent(property.name())
+                    .addContent("DiscoverServices, ")
+                    .addContent(property.name())
+                    .addContentLine("Qualifier));");
 
         } else if (typeName.isSet()) {
              /*
@@ -804,11 +813,17 @@ final class GenerateAbstractBuilder {
                                            regionDiscoverServices));
             */
             preBuildBuilder
-                    .addContent("this.add").addContent(capitalize(property.name())).addContent("(")
+                    .addContent("this.add")
+                    .addContent(capitalize(property.name()))
+                    .addContent("(")
                     .addContent(REGISTRY_BUILDER_SUPPORT)
-                    .addContent(".serviceSet(registry, ").addContentCreate(property.typeHandler().actualType()).addContent(", ")
-                    .addContent(property.name()).addContent("DiscoverServices, ")
-                    .addContent(property.name()).addContentLine("Qualifier));");
+                    .addContent(".serviceSet(registry, ")
+                    .addContentCreate(property.typeHandler().actualType())
+                    .addContent(", ")
+                    .addContent(property.name())
+                    .addContent("DiscoverServices, ")
+                    .addContent(property.name())
+                    .addContentLine("Qualifier));");
         } else {
 
             /*

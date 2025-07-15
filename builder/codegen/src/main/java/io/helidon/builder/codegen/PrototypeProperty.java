@@ -107,7 +107,7 @@ record PrototypeProperty(MethodSignature signature,
         boolean registryService = element.hasAnnotation(Types.OPTION_REGISTRY_SERVICE);
         var qualifiers = element.annotations()
                 .stream()
-                .filter(a -> a.hasMetaAnnotation(TypeName.create("io.helidon.service.registry.Service.Qualifier")))
+                .filter(a -> a.hasMetaAnnotation(Types.SERVICE_QUALIFIER))
                 .toList();
 
         return new PrototypeProperty(

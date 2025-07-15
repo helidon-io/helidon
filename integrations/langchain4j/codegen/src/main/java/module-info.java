@@ -25,6 +25,7 @@ module io.helidon.integrations.langchain4j.codegen {
     requires io.helidon.service.codegen;
     requires io.helidon.common.types;
     requires io.helidon.codegen.classmodel;
+    requires io.helidon.common;
 
     exports io.helidon.integrations.langchain4j.codegen;
 

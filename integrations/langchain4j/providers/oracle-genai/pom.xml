@@ -152,7 +152,7 @@
                         </path>
                         <path>
                             <groupId>io.helidon.common.features</groupId>
-                            <artifactId>helidon-common-features-processor</artifactId>
+                            <artifactId>helidon-common-features-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -190,7 +190,7 @@
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-processor</artifactId>
+                        <artifactId>helidon-common-features-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
