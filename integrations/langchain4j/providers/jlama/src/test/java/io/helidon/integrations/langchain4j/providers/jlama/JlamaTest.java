@@ -34,18 +34,23 @@ import static org.hamcrest.Matchers.notNullValue;
 @Testing.Test
 class JlamaTest {
 
+    private static final String TEST_MODEL_NAME = "tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4";
+    private static final String TEST_MODEL_CACHE_PATH = Path.of("/test/cache").toString();
+    private static final String TEST_WORKING_DIR = Path.of("/tmp/test/dir").toString();
+    private static final String TEST_AUTH_TOKEN = "test-token";
+
     @Test
     void testChatModelRoot() {
         var config = JlamaChatModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
                                                          .get(JlamaChatModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
+        assertThat(config.modelName(), is(TEST_MODEL_NAME));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
-        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
-        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of("/tmp/test/dir")));
-        assertThat(config.authToken(), is(Optional.of("test-token")));
+        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of(TEST_MODEL_CACHE_PATH)));
+        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of(TEST_WORKING_DIR)));
+        assertThat(config.authToken(), is(Optional.of(TEST_AUTH_TOKEN)));
         assertThat(config.maxTokens(), is(Optional.of(20)));
         assertThat(config.threadCount(), is(Optional.of(5)));
         assertThat(config.quantizeModelAtRuntime(), is(Optional.of(true)));
@@ -57,12 +62,12 @@ class JlamaTest {
                                                          .get(JlamaStreamingChatModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
+        assertThat(config.modelName(), is(TEST_MODEL_NAME));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
-        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
-        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of("/tmp/test/dir")));
-        assertThat(config.authToken(), is(Optional.of("test-token")));
+        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of(TEST_MODEL_CACHE_PATH)));
+        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of(TEST_WORKING_DIR)));
+        assertThat(config.authToken(), is(Optional.of(TEST_AUTH_TOKEN)));
         assertThat(config.maxTokens(), is(Optional.of(20)));
         assertThat(config.threadCount(), is(Optional.of(5)));
         assertThat(config.quantizeModelAtRuntime(), is(Optional.of(true)));
@@ -74,12 +79,12 @@ class JlamaTest {
                                                          .get(JlamaLanguageModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
+        assertThat(config.modelName(), is(TEST_MODEL_NAME));
         assertThat(config.temperature(), is(Optional.of(0.1F)));
         assertThat(config.workingQuantizedType(), is(Optional.of(DType.BF16)));
-        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
-        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of("/tmp/test/dir")));
-        assertThat(config.authToken(), is(Optional.of("test-token")));
+        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of(TEST_MODEL_CACHE_PATH)));
+        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of(TEST_WORKING_DIR)));
+        assertThat(config.authToken(), is(Optional.of(TEST_AUTH_TOKEN)));
         assertThat(config.maxTokens(), is(Optional.of(20)));
         assertThat(config.threadCount(), is(Optional.of(5)));
         assertThat(config.quantizeModelAtRuntime(), is(Optional.of(true)));
@@ -91,10 +96,10 @@ class JlamaTest {
                                                          .get(JlamaEmbeddingModelConfig.CONFIG_ROOT));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.modelName(), is("tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-Q4"));
-        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of("/test/cache")));
-        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of("/tmp/test/dir")));
-        assertThat(config.authToken(), is(Optional.of("test-token")));
+        assertThat(config.modelName(), is(TEST_MODEL_NAME));
+        assertThat(config.modelCachePath().map(Path::toString), is(Optional.of(TEST_MODEL_CACHE_PATH)));
+        assertThat(config.workingDirectory().map(Path::toString), is(Optional.of(TEST_WORKING_DIR)));
+        assertThat(config.authToken(), is(Optional.of(TEST_AUTH_TOKEN)));
         assertThat(config.threadCount(), is(Optional.of(5)));
         assertThat(config.quantizeModelAtRuntime(), is(Optional.of(true)));
         assertThat(config.poolingType(), is(Optional.of(Generator.PoolingType.MODEL)));
