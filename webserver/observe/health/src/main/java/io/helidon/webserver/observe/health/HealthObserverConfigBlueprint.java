@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,4 +84,14 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      * @return configuration
      */
     Optional<Config> config();
+
+    /**
+     * Health check names to exclude in computing the overall health of the server.
+     *
+     * @return health check names to exclude
+     */
+    @Option.Configured
+    @Option.Singular("excluded")
+    List<String> exclude();
+
 }
