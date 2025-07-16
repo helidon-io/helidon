@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common.processor</groupId>
         <artifactId>helidon-common-processor-project</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-common-processor</artifactId>
