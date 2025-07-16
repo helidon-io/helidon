@@ -1,0 +1,144 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JSON-RPC Client
+:description: Helidon JSON-RPC Client
+:keywords: helidon, json-rpc, jsonrpc, client, java, se
+:feature-name: WebClient/JSON-RPC
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+** <<Simple Requests, Simple Requests>>
+** <<Batch Requests, Batch Requests>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+
+== Overview
+
+
+The Helidon JSON-RPC client API is part of the WebClient API, and can be used to
+create link:https://www.jsonrpc.org/specification[JSON-RPC 2.0] client
+applications. It offers built-in support to invoke JSON-RPC server methods with
+minimal effort, including handling of JSON parameters
+and processing of JSON responses.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-jsonrpc</artifactId>
+</dependency>
+----
+
+== Usage
+
+=== Simple Requests
+
+An instance of `JsonRpcClient` can be obtained from a configured `WebClient`
+instance as shown next:
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_1, indent=0]
+----
+
+The `WebClient` instance is configured with a base URI and the `JsonRpcClient`
+instance is created from it passing the `JsonRpcClient.PROTOCOL` selector.
+
+To create a request, simply pass the method name, the ID and some
+parameters using the fluent API provided. Parameters must be JSON values, but
+simple Java types such as `String` and `int` are supported and mapped
+to the corresponding JSON types automatically.
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_2, indent=0]
+----
+
+A `JsonRpcClientResponse` is a subtype of `HttpClientResponse`, so any methods
+available in the latter apply to the former. Thus, we can easily verify the
+HTTP status and then inspect if any JSON-RPC result has been returned as
+follows:
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_3, indent=0]
+----
+
+NOTE: If the JSON-RPC response contains an error, it will also contain
+an error code which is independent of the HTTP status code returned.
+
+Every JSON-RPC response will contain either a result or an error, and that is
+the reason why `res.result()` returns an optional value. The last step
+shows how the result is mapped to a `StartStopResult` instance using JSON-B.
+See xref:{rootdir}/se/jsonrpc/server.adoc[JSON-RPC Server] for more
+information on these types.
+
+=== Batch Requests
+
+The JSON-RPC client API also supports batching, whereby multiple method
+invocations can be aggregated and sent as a single unit for processing.
+The response to a batch request will include an entry for each of the
+invocations in the request; invocations are executed in order and can
+independently succeed or fail.
+
+Here is an example that constructs a batch request to start and then
+stop a machine:
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_4, indent=0]
+----
+
+The response of type `JsonClientBatchResponse` shall include an entry
+for each of the invocations in the request. In this example, we can test
+that the response returned HTTP status 200 and has a size of 2, and
+then verify the results by binding them to `StartStopResult` instances
+using JSON-B.
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_5, indent=0]
+----
+
+As explained above, optional values are returned when trying to get a
+result since every individual batch response may include a result
+or an error.
+
+== Configuration
+
+At the time of writing, there is no configuration that is specific to the
+JSON-RPC client API other than what is already provided by the WebClient API
+itself. Note that the type `JsonRpcClientConfig` &mdash;that can be used to create
+a `JsonRpcClient` instance&mdash; extends `HttpClientConfig`, so HTTP configuration
+applies to JSON-RPC clients as well.
+
+== Examples
+
+The code snippets in this document are part of the JSON-RPC example available
+here:
+
+* link:{helidon-github-examples-url}/webserver/jsonrpc[JSON-RPC Machine Example]

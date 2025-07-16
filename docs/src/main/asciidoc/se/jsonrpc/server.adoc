@@ -1,0 +1,117 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JSON-RPC Server
+:description: Helidon JSON-RPC Server
+:keywords: helidon, json-rpc, jsonrpc, java, se
+:feature-name: WebServer/JSON-RPC
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+** <<Service Implementation, Service Implementation>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+
+== Overview
+
+The Helidon WebServer provides a framework for creating
+link:https://www.jsonrpc.org/specification[JSON-RPC 2.0] applications.
+The JSON-RPC protocol is a stateless and lightweight protocol based on JSON
+that runs on top of HTTP/1.1. It offers the ability to invoke remote
+methods passing parameters and getting results as JSON values.
+
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-jsonrpc</artifactId>
+</dependency>
+----
+
+== Usage
+
+=== Service Implementation
+
+JSON-RPC routing is multi-leveled: first-level routing is similar to HTTP
+using path expressions, and second-level routing is based on method names
+in JSON payloads. After routing, a JSON-RPC method handler is invoked
+and given access to any parameters with the option of responding either
+with a result or an error.
+
+Setting the Helidon WebServer to accept JSON-RPC requests starts by
+building a `JsonRpcRouting` instance that includes individual method
+routes or a group of routes aggregated by a _service_.
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ServerSnippets.java[tag=snippet_1, indent=0]
+----
+
+In the example above, the `JsonRpcRouting` instance is created from a single
+JSON-RPC service `MachineService` and registered in the WebServer under the
+`/rpc` path. The `MachineService` class must extend `JsonRpcService` and override
+the `routing(JsonRpcRules)` method to add mappings for each of the JSON-RPC
+method names supported by the application. This is very similar to the way
+an `HttpService` is defined except for the multi-leveled mapping that includes
+paths and JSON-RPC method names as shown next.
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ServerSnippets.java[tag=snippet_2, indent=0]
+----
+
+This JSON-RPC service registers handlers for method names `start` and `stop`
+under the path `/machine`, thus JSON-RPC clients shall use the `/rpc/machine`
+URI to send requests &mdash;see `JsonRpcRouting` instance creation above.
+
+The logic for the two methods `start` and `stop` is very similar. First, they
+inspect parameters, then they decide to return either a
+result or an error, and finally they call `send()` on the response. Parameters,
+as well as results, can be either JSON-P instances or JSON-B objects. In this
+example, we defined some simple records to bind and serialize data using JSON-B.
+
+[source,java]
+----
+include::{sourcedir}/se/jsonrpc/ServerSnippets.java[tag=snippet_3, indent=0]
+----
+
+NOTE: These record types used during serialization must be public for the
+JSON-B implementation (Eclipse Yasson in our example) to have access to
+them.
+
+== Configuration
+
+At the time of writing, there is no configuration that is specific to the
+JSON-RPC feature other than what is already provided by the WebServer
+itself.
+
+== Examples
+
+The code snippets in this document are part of the JSON-RPC example available
+here:
+
+* link:{helidon-github-examples-url}/webserver/jsonrpc[JSON-RPC Machine Example]
