@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 
 /**
  * Unit test for {@link Contexts}.
@@ -225,5 +226,27 @@ class ContextsTest {
         Contexts.clear();
 
         assertThat(Contexts.context(), is(Optional.empty()));
+    }
+
+    @Test
+    void testUnregister() {
+        Context topLevel = Contexts.globalContext();
+        Context mine = Context.builder()
+                .parent(topLevel)
+                .id("unit-test-testUnregister")
+                .build();
+
+        MyType registered = new MyType();
+        mine.register(registered);
+        MyType actual = mine.get(MyType.class).get();
+
+        assertThat(actual, sameInstance(registered));
+
+        mine.unregister(registered);
+
+        assertThat(mine.get(MyType.class), is(Optional.empty()));
+    }
+
+    private static class MyType {
     }
 }

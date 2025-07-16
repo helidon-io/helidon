@@ -221,6 +221,11 @@ public final class ServiceRegistryManager {
                 return;
             }
 
+            ServiceRegistry global = GlobalServiceRegistry.registry();
+            if (global == registry) {
+                // this is the same instance, if we shut it down, global would stop working
+                GlobalServiceRegistry.unset(registry);
+            }
             registry.shutdown();
             registry = null;
         } finally {

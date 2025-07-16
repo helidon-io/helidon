@@ -28,7 +28,8 @@ import io.helidon.common.context.Contexts;
  * Application wide service registry backed by {@link io.helidon.common.context.Context}.
  */
 public final class GlobalServiceRegistry {
-
+    private static final String GLOBAL_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
+    private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
 
     private GlobalServiceRegistry() {
@@ -110,11 +111,20 @@ public final class GlobalServiceRegistry {
     public static ServiceRegistry registry(ServiceRegistry newGlobalRegistry) {
         RW_LOCK.writeLock().lock();
         try {
-            context().register("helidon-registry", newGlobalRegistry);
+            context().register(GLOBAL_REGISTRY_CLASSIFIER, newGlobalRegistry);
         } finally {
             RW_LOCK.writeLock().unlock();
         }
         return newGlobalRegistry;
+    }
+
+    static void unset(ServiceRegistry registry) {
+        RW_LOCK.writeLock().lock();
+        try {
+            context().unregister(GLOBAL_REGISTRY_CLASSIFIER, registry);
+        } finally {
+            RW_LOCK.writeLock().unlock();
+        }
     }
 
     private static Context context() {
@@ -123,14 +133,14 @@ public final class GlobalServiceRegistry {
         // this is the context we expect to get (and set global instances)
         return Contexts.context()
                 .orElse(globalContext)
-                .get("helidon-registry-static-context", Context.class)
+                .get(GLOBAL_CONTEXT_CLASSIFIER, Context.class)
                 .orElse(globalContext);
     }
 
     private static Optional<ServiceRegistry> current() {
         RW_LOCK.readLock().lock();
         try {
-            return context().get("helidon-registry", ServiceRegistry.class);
+            return context().get(GLOBAL_REGISTRY_CLASSIFIER, ServiceRegistry.class);
         } finally {
             RW_LOCK.readLock().unlock();
         }

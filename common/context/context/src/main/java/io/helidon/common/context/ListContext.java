@@ -56,6 +56,11 @@ class ListContext implements Context {
     }
 
     @Override
+    public <T> void unregister(T instance) {
+        registry.unregister(instance);
+    }
+
+    @Override
     public <T> void supply(Class<T> type, Supplier<T> supplier) {
         registry.supply(type, supplier);
     }
@@ -79,6 +84,13 @@ class ListContext implements Context {
         Objects.requireNonNull(classifier, "Parameter 'classifier' is null!");
         ClassifiedRegistry cr = classifiers.computeIfAbsent(classifier, k -> new ClassifiedRegistry());
         cr.register(instance);
+    }
+
+    @Override
+    public <T> void unregister(Object classifier, T instance) {
+        Objects.requireNonNull(classifier, "Parameter 'classifier' is null!");
+        ClassifiedRegistry cr = classifiers.computeIfAbsent(classifier, k -> new ClassifiedRegistry());
+        cr.unregister(instance);
     }
 
     @Override
@@ -124,7 +136,7 @@ class ListContext implements Context {
 
         // we actually want to do an instance equality
         @SuppressWarnings("ObjectEquality")
-        private void registerItem(RegisteredItem<?> item) {
+        private void registerItem(RegisteredItem<?> item, boolean register) {
             Lock l = lock.writeLock();
             try {
                 Class<?> c = item.getType();
@@ -136,7 +148,9 @@ class ListContext implements Context {
                         break;
                     }
                 }
-                content.add(item);
+                if (register) {
+                    content.add(item);
+                }
             } finally {
                 l.unlock();
             }
@@ -144,13 +158,18 @@ class ListContext implements Context {
 
         <T> void register(T instance) {
             Objects.requireNonNull(instance, "Parameter 'instance' is null!");
-            registerItem(new RegisteredInstance<>(instance));
+            registerItem(new RegisteredInstance<>(instance), true);
+        }
+
+        void unregister(Object instance) {
+            Objects.requireNonNull(instance, "Parameter 'instance' is null!");
+            registerItem(new RegisteredInstance<>(instance), false);
         }
 
         <T> void supply(Class<T> type, Supplier<T> supplier) {
             Objects.requireNonNull(type, "Parameter 'type' is null!");
             Objects.requireNonNull(supplier, "Parameter 'supplier' is null!");
-            registerItem(new RegisteredSupplier<>(type, supplier));
+            registerItem(new RegisteredSupplier<>(type, supplier), true);
         }
 
         <T> T get(Class<T> type) {
