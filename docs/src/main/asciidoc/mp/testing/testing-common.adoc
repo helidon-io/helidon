@@ -39,6 +39,17 @@ include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Enable the test class
 
+[NOTE]
+====
+By default, a MicroProfile Config profile named "test" is defined.
+
+It can be changed via:
+
+- `@AddConfig(key = "mp.config.profile", value = "otherProfile")`
+- `@Configuration(profile = "otherProfile")`
+- Using `mp.config.profile` property and `@Config(useExisting = true)`
+====
+
 === CDI Container Setup
 
 By default, CDI discovery is enabled:
