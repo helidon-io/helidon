@@ -91,7 +91,7 @@ public final class Main {
         LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        Config config = Config.global();
 
         HealthObserver health = HealthObserver.builder()
                 .useSystemServices(false)

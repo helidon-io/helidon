@@ -406,11 +406,8 @@ public interface Config extends io.helidon.common.config.Config {
      * global config registered in not an instance of this type.
      *
      * @return global config instance, creates one if not yet registered
-     * @deprecated either use {@link io.helidon.service.registry.Services#get(Class)} instead for static access,
-     *  inject an instance into your service when creating a service, or use your service registry instance
      */
     @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.2.0")
     static Config global() {
         if (io.helidon.common.config.GlobalConfig.configured()) {
             io.helidon.common.config.Config global = io.helidon.common.config.GlobalConfig.config();

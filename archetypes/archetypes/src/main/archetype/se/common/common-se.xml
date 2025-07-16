@@ -113,9 +113,8 @@
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // initialize global config from default configuration
-        Config config = Config.create();
-        Config.global(config);
+        // initialize config from default configuration
+        Config config = Config.global();
 
         {{#Main-main}}
         {{.}}
