@@ -264,13 +264,17 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
 
         private void finishSpan(boolean ok) {
             spanLock.lock();
-            if (scope != null) {
-                scope.close();
-                scope = null;
-                if (!ok) {
-                    span.status(Span.Status.ERROR);
+            try {
+                if (scope != null) {
+                    scope.close();
+                    scope = null;
+                    if (!ok) {
+                        span.status(Span.Status.ERROR);
+                    }
+                    span.end();
                 }
-                span.end();
+            } finally {
+                spanLock.unlock();
             }
         }
     }
