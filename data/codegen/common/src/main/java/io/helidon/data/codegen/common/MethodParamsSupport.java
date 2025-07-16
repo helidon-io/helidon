@@ -37,7 +37,7 @@ class MethodParamsSupport {
      */
     @Prototype.PrototypeMethod
     static boolean dynamic(MethodParams methodParams) {
-        return methodParams.sort().isPresent();
+        return methodParams.order().isPresent();
     }
 
     /**
@@ -49,7 +49,7 @@ class MethodParamsSupport {
     @Prototype.PrototypeMethod
     static Set<PersistenceGenerator.DynamicQueryParts> dynamicParts(MethodParams methodParams) {
         Set<PersistenceGenerator.DynamicQueryParts> dynamicParts = new HashSet<>(PersistenceGenerator.DynamicQueryParts.LENGTH);
-        if (methodParams.sort().isPresent()) {
+        if (methodParams.order().isPresent()) {
             dynamicParts.add(PersistenceGenerator.DynamicQueryParts.ORDER);
         }
         return Collections.unmodifiableSet(dynamicParts);

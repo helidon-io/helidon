@@ -15,6 +15,29 @@
  */
 
 /**
- * Data repository.
+ * Helidon Data Repository.
+ * <p>
+ * The Helidon Data Repository provides unified API to work with database queries.
+ * Data repository queries are an abstraction on top of Object–Relational Mapping (ORM).
+ * They allow compile time translation of interfaces with query definitions into implementing
+ * classes.
+ * <p>
+ * Data repository queries are methods of interfaces that extend {@link io.helidon.data.Data.GenericRepository}.
+ * Data repository queries can be implemented in three ways:
+ * <ul>
+ *     <li>using method annotated with {@link io.helidon.data.Data.Query}</li>
+ *     <li>using method name as query definition</li>
+ *     <li>extending existing {@link io.helidon.data.Data.GenericRepository} child interfaces
+ *         with common sets of query methods:
+ *         <ul>
+ *             <li>{@link io.helidon.data.Data.BasicRepository} to implement basic set of entity operations</li>
+ *             <li>{@link io.helidon.data.Data.CrudRepository} to implement entity CRUD operations</li>
+ *             <li>{@link io.helidon.data.Data.PageableRepository} to implement pageable
+ *                 {@link io.helidon.data.Data.BasicRepository#findAll()} queries</li>
+ *             <li>{@link io.helidon.data.Data.SessionRepository} to get access to persistence provider's session,
+ *                  e.g. {@code jakarta.persistence.EntityManager}</li>
+ *         </ul>
+ *     </li>
+ * </ul>
  */
 package io.helidon.data;

@@ -19,19 +19,28 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Order definition of the query result ordering.
+ * Single rule of the dynamic ordering of the query result.
+ * <p>
+ * {@link Order} class is the single item of the {@link java.util.List} stored in {@link Sort}.
+ * It represents single ordering rule. E.g. in JPQL query
+ * {@code SELECT t FROM Type t WHERE t.name = :name ORDER BY t.name DESC, t.id} this is the
+ * {@code t.name DESC} and {@code t.id} as two separate {@link Order} instances.
  */
 @Prototype.Blueprint
 @Prototype.CustomMethods(OrderSupport.class)
 interface OrderBlueprint {
 
     /**
-     * Query result ordering with no ordering set (unsorted).
+     * Query result ordering with no rules set (unsorted).
      */
     Order[] UNSORTED = new Order[] {};
 
     /**
      * Entity property used for ordering.
+     * <p>
+     * E.g. this is the path expression in Jakarta Persistence API. In following JPQL query:
+     * {@code SELECT t FROM Type t WHERE t.name = :name ORDER BY t.name} the entity property
+     * is the {@code t.name} path expression after {@code ORDER} BY keyword.
      *
      * @return entity property
      */
@@ -47,12 +56,12 @@ interface OrderBlueprint {
     OrderDirection direction();
 
     /**
-     * Whether ordering is case-insensitive.
-     * Default value is {@code false}.
+     * Whether ordering is case-sensitive.
+     * Default value is {@code true}.
      *
-     * @return value of {@code true} when ordering is case-insensitive or {@code false} otherwise
+     * @return value of {@code true} when ordering is case-sensitive or {@code false} otherwise
      */
-    @Option.Default("false")
-    boolean ignoreCase();
+    @Option.Default("true")
+    boolean caseSensitive();
 
 }

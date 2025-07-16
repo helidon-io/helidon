@@ -31,7 +31,7 @@ interface MethodParamsBlueprint {
      *
      * @return the ordering parameter info
      */
-    Optional<TypedElementInfo> sort();
+    Optional<TypedElementInfo> order();
 
     /**
      * Pageable query result parameter.
@@ -46,6 +46,6 @@ interface MethodParamsBlueprint {
      * @return the common method parameters
      */
     @Option.Singular
-    List<TypedElementInfo> params();
+    List<TypedElementInfo> parameters();
 
 }

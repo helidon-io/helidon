@@ -15,6 +15,6 @@
  */
 
 /**
- * Transaction API.
+ * Helidon Transactions.
  */
 package io.helidon.transaction;

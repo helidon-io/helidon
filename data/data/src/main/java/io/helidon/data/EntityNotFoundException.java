@@ -16,24 +16,26 @@
 package io.helidon.data;
 
 /**
- * Thrown when requested persistence entity does not exist.
+ * Thrown when requested persistence entity cannot be found.
  */
 public class EntityNotFoundException extends DataException {
 
     /**
-     * Create new exception for a message.
+     * Creates a new {@link EntityNotFoundException} with the supplied detail message.
      *
-     * @param message descriptive message
+     * @param message descriptive message, shall not be {@code null}
+     * @throws NullPointerException when {@code message} is {@code null}
      */
     public EntityNotFoundException(String message) {
         super(message);
     }
 
     /**
-     * Create new exception for a message and a cause.
+     * Creates a new {@link EntityNotFoundException} with the supplied detail message and cause.
      *
-     * @param message descriptive message
-     * @param cause   original throwable causing this exception
+     * @param message descriptive message, shall not be {@code null}
+     * @param cause   original throwable causing this exception, shall not be {@code null}
+     * @throws NullPointerException when {@code message} or {@code cause} is {@code null}
      */
     public EntityNotFoundException(String message, Throwable cause) {
         super(message, cause);

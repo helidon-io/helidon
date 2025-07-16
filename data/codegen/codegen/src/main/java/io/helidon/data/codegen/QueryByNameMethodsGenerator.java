@@ -405,7 +405,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
         TypedElementInfo pageRequest = pageRequestRequired(methodParams, methodInfo);
         PersistenceGenerator.Query countQuery = queryBuilder.buildCountQuery(
                 dataQuery,
-                methodParams.params().stream()
+                methodParams.parameters().stream()
                         .map(QueryByNameMethodsGenerator::paramElementName)
                         .collect(Collectors.toList()));
         returnStatement(builder,
@@ -1287,7 +1287,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
         } else {
             PersistenceGenerator.Query query = queryBuilder().buildQuery(
                     dataQuery,
-                    methodParams.params().stream()
+                    methodParams.parameters().stream()
                             .map(QueryByNameMethodsGenerator::paramElementName)
                             .collect(Collectors.toList()));
             if (query.isDml()) {

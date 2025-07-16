@@ -21,19 +21,21 @@ package io.helidon.data;
 public class EntityExistsException extends DataException {
 
     /**
-     * Create new exception for a message.
+     * Creates a new {@link EntityExistsException} with the supplied detail message.
      *
-     * @param message descriptive message
+     * @param message descriptive message, shall not be {@code null}
+     * @throws NullPointerException when {@code message} is {@code null}
      */
     public EntityExistsException(String message) {
         super(message);
     }
 
     /**
-     * Create new exception for a message and a cause.
+     * Creates a new {@link EntityExistsException} with the supplied detail message and cause.
      *
-     * @param message descriptive message
-     * @param cause   original throwable causing this exception
+     * @param message descriptive message, shall not be {@code null}
+     * @param cause   original throwable causing this exception, shall not be {@code null}
+     * @throws NullPointerException when {@code message} or {@code cause} is {@code null}
      */
     public EntityExistsException(String message, Throwable cause) {
         super(message, cause);

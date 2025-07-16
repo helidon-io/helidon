@@ -17,7 +17,8 @@
 import io.helidon.common.features.api.Features;
 
 /**
- * Helidon Data Repository Runtime.
+ * Helidon Data Repository API.
+ * @see io.helidon.data
  */
 @Features.Name("Data")
 @Features.Since("4.3.0")

@@ -37,16 +37,18 @@ public final class Tx {
 
     /**
      * Transaction type.
-     * Indicates whether method is to be executed within a transaction context where the values provide the following
-     * corresponding behavior.
+     * <p>
+     * An {@code enum} describing the possible ways in which transactional support must be applied to transactional method executions.
      */
     public enum Type {
         /**
+         * Indicates that a transaction must already be in effect when a method executes.
          * If called outside a transaction context, the {@link TxException} must be thrown.
          * If called inside a transaction context, method execution will then continue under that context.
          */
         MANDATORY,
         /**
+         * Indicates that a new transaction will be started when a method executes.
          * If called outside a transaction context, the interceptor must begin a new transaction. The managed bean
          * method execution must then continue inside this transaction context, and the transaction must be completed
          * by the interceptor.
@@ -56,11 +58,13 @@ public final class Tx {
          */
         NEW,
         /**
+         * Indicates that no transaction must be in effect when a method executes.
          * If called outside a transaction context, method execution must then continue outside a transaction context.
          * If called inside a transaction context, the {@link TxException} must be thrown.
          */
         NEVER,
         /**
+         * Indicates that transaction will be in effect when a method executes.
          * If called outside a transaction context, the interceptor must begin a new transaction. The managed bean
          * method execution must then continue inside this transaction context, and the transaction must be completed
          * by the interceptor.
@@ -68,11 +72,13 @@ public final class Tx {
          */
         REQUIRED,
         /**
+         * Indicates that transaction may optionally be in effect when a method executes.
          * If called outside a transaction context, method execution must then continue outside a transaction context.
          * If called inside a transaction context, the method execution must then continue inside this transaction context.
          */
         SUPPORTED,
         /**
+         * Indicates that no transaction will be in effect when a method executes.
          * If called outside a transaction context, method execution must then continue outside a transaction context.
          * If called inside a transaction context, the current transaction context must be suspended. The method execution
          * must then continue outside a transaction context, and the previously suspended transaction must be resumed
@@ -82,8 +88,19 @@ public final class Tx {
     }
 
     /**
-     * {@link Type} annotation.
-     * Defines transaction type of the annotated method.
+     * Transaction {@link Type} annotation.
+     * <p>
+     * Defines transaction type of the annotated method. This annotation is applied on set of annotations used to mark
+     * methods to be executed in managed transaction of selected {@link Type}.
+     * <p>
+     * Those method annotations are:<ul>
+     *     <li>{@link Mandatory}</li>
+     *     <li>{@link New}</li>
+     *     <li>{@link Never}</li>
+     *     <li>{@link Required}</li>
+     *     <li>{@link Supported}</li>
+     *     <li>{@link Unsupported}</li>
+     * </ul>
      */
     @Target(ElementType.ANNOTATION_TYPE)
     public @interface TransactionType {
@@ -96,7 +113,7 @@ public final class Tx {
     }
 
     /**
-     * Defines {@link Type#MANDATORY} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#MANDATORY} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.MANDATORY)
@@ -105,7 +122,7 @@ public final class Tx {
     public @interface Mandatory { }
 
     /**
-     * Defines {@link Type#NEW} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#NEW} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.NEW)
@@ -114,7 +131,7 @@ public final class Tx {
     public @interface New { }
 
     /**
-     * Defines {@link Type#NEVER} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#NEVER} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.NEVER)
@@ -123,7 +140,7 @@ public final class Tx {
     public @interface Never { }
 
     /**
-     * Defines {@link Type#REQUIRED} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#REQUIRED} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.REQUIRED)
@@ -132,7 +149,7 @@ public final class Tx {
     public @interface Required { }
 
     /**
-     * Defines {@link Type#SUPPORTED} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#SUPPORTED} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.SUPPORTED)
@@ -141,7 +158,7 @@ public final class Tx {
     public @interface Supported { }
 
     /**
-     * Defines {@link Type#UNSUPPORTED} transaction type of the annotated method.
+     * Annotated method will be executed with managed transaction of {@link Type#UNSUPPORTED} type.
      */
     @Interception.Intercepted
     @TransactionType(Type.UNSUPPORTED)
@@ -150,10 +167,10 @@ public final class Tx {
     public @interface Unsupported { }
 
     /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task computes and returns result.
+     * Execute provided {@code task} with managed transaction of {@link Type#REQUIRED} type.
+     * Task computes and returns result according to {@link Callable} contract.
      *
-     * @param task task to run in transaction
+     * @param task task to run in transaction, shall not be {@code null}
      * @param <T>  the result type of the task
      * @return computed task result
      * @throws TxException when result computation failed
@@ -163,11 +180,11 @@ public final class Tx {
     }
 
     /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task computes and returns result.
+     * Execute provided {@code task} with managed transaction of provided {@code type}.
+     * Task computes and returns result according to {@link Callable} contract.
      *
-     * @param type transaction type
-     * @param task task to run in transaction
+     * @param type transaction type, shall not be {@code null}
+     * @param task task to run in transaction, shall not be {@code null}
      * @param <T>  the result type of the task
      * @return computed task result
      * @throws TxException when result computation failed
@@ -178,10 +195,10 @@ public final class Tx {
     }
 
     /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
+     * Execute provided {@code task} with managed transaction of {@link Type#REQUIRED} type.
+     * Task does not return any result according to {@link Functions.CheckedRunnable} contract.
      *
-     * @param task task to run in transaction
+     * @param task task to run in transaction, shall not be {@code null}
      * @throws TxException when task computation failed
      */
     public static void transaction(Functions.CheckedRunnable<Exception> task) {
@@ -189,11 +206,11 @@ public final class Tx {
     }
 
     /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
+     * Execute provided {@code task} with managed transaction of provided {@code type}.
+     * Task does not return any result according to {@link Functions.CheckedRunnable} contract.
      *
-     * @param type transaction type
-     * @param task task to run in transaction
+     * @param type transaction type, shall not be {@code null}
+     * @param task task to run in transaction, shall not be {@code null}
      * @throws TxException when task computation failed
      */
     public static void transaction(Type type, Functions.CheckedRunnable<Exception> task) {
@@ -203,101 +220,6 @@ public final class Tx {
                                  task.run();
                                  return null;
                              });
-    }
-
-/* Removed: need to decide whether this is needed at all
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * /
-    public static <T> T transaction(Function<Transaction, T> task) {
-        return transaction(Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * /
-    public static <T> T transaction(Type type, Function<Transaction, T> task) {
-        return Services.get(TxSupport.class)
-                .transaction(type, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param task task to run in transaction
-     * /
-    public static void transaction(Consumer<Transaction> task) {
-        transaction(Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * /
-    public static void transaction(Type type, Consumer<Transaction> task) {
-        Services.get(TxSupport.class)
-                .transaction(type,
-                             t -> {
-                                 task.accept(t);
-                                 return null;
-                             });
-    }
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @return transaction handler
-     * /
-    public static Transaction transaction() {
-        return transaction(Type.REQUIRED);
-    }
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @param type transaction type
-     * @return transaction handler
-     * /
-    public static Transaction transaction(Type type) {
-        return Services.get(TxSupport.class)
-                .transaction(type);
-    }
-
-*/
-
-    /**
-     * The {@link Transaction} interface defines methods that allow user code to manage transaction boundaries.
-     */
-    public interface Transaction {
-
-        /**
-         * Complete current transaction.
-         */
-        void commit();
-
-        /**
-         * Roll back current transaction.
-         */
-        void rollback();
-
     }
 
 }

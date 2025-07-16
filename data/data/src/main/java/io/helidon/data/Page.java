@@ -18,14 +18,21 @@ package io.helidon.data;
 import java.util.List;
 
 /**
- * Query result as page with total size of the result.
+ * Pageable query result as pages with total size of the result.
+ * <p>
+ * Page number and number of records returned on each page depends on values of the
+ * {@link #request()} used to return current page.
+ * <p>
+ * Returned value of {@link #totalSize()} and {@link #totalPages()} requires another query
+ * to be executed while reading data from the database, so retrieving result as {@link Slice}
+ * should be faster than using {@link Page}.
  *
  * @param <T> query result type (entity or entity attribute)
  */
 public interface Page<T> extends Slice<T> {
 
     /**
-     * Create query result as page with total size of the result.
+     * Create pageable query result as page with total size of the result.
      *
      * @param request   pageable query result request
      * @param content   page content as {@link java.util.List}

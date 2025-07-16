@@ -21,6 +21,12 @@ import io.helidon.transaction.Tx;
 
 /**
  * Implemented by each transaction handling support.
+ * <p>
+ * It is Helidon Service interface with {@code io.helidon.common.Weight} specified.
+ * Default {@code JTA} implementation module with {@code io.helidon.common.Weighted.DEFAULT_WEIGHT}
+ * weight and {@code "jta"} {@link #type()} is available as part of Helidon Transaction modules set.
+ * Helidon Data Jakarta Persistence module provides its own {@code RESOURCE-LOCAL} implementation
+ * with {@code "resource-local"} {@link #type()} as a fallback option when JTA is not present.
  */
 public interface TxSupport {
 
@@ -36,11 +42,12 @@ public interface TxSupport {
      * Execute provided task as database transaction.
      * Transaction is handled automatically. Task computes and returns result.
      *
-     * @param type transaction type
-     * @param task task to run in transaction
+     * @param type transaction type, shall not be {@code null}
+     * @param task task to run in transaction, shall not be {@code null}
      * @param <T>  the result type of the task
      * @return computed task result
      * @throws io.helidon.transaction.TxException when result computation failed
      */
     <T> T transaction(Tx.Type type, Callable<T> task);
+
 }
