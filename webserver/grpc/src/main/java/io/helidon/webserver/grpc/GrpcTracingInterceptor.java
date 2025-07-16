@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.ContextKeys;
@@ -30,6 +32,7 @@ import io.helidon.grpc.core.GrpcTracingContext;
 import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -207,10 +210,13 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
             extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
 
         private final Span span;
+        private Scope scope;
+        private final Lock spanLock = new ReentrantLock();
 
         private TracingListener(ServerCall.Listener<ReqT> delegate, Span span) {
             super(delegate);
             this.span = span;
+            scope = span.activate();
         }
 
         @Override
@@ -238,12 +244,13 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
             try {
                 delegate().onCancel();
             } finally {
-                span.end();
+                finishSpan(false);
             }
         }
 
         @Override
         public void onComplete() {
+
             if (verbose) {
                 span.addEvent("Call completed");
             }
@@ -251,6 +258,18 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
             try {
                 delegate().onComplete();
             } finally {
+               finishSpan(true);
+            }
+        }
+
+        private void finishSpan(boolean ok) {
+            spanLock.lock();
+            if (scope != null) {
+                scope.close();
+                scope = null;
+                if (!ok) {
+                    span.status(Span.Status.ERROR);
+                }
                 span.end();
             }
         }
