@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.codegen.tests</groupId>
         <artifactId>helidon-codegen-tests-project</artifactId>
-        <version>4.2.4-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
