@@ -157,7 +157,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
         } else {
-            uri(URI.create(UriEncoding.encodeUri(uri)));
+            uri(URI.create(uri));
         }
 
         return identity();
