@@ -17,6 +17,7 @@
 langchain4j.ollama:
   # ChatModel
   chat-model:
+    enabled: true
     model-name: model-name
     base-url: base-url
     temperature: 36.6

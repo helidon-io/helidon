@@ -53,7 +53,7 @@
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.7.2</version.lib.google-api-client>
-        <!-- For dependency convergence. ggogle-http-client version should match what is used by google-api-client -->
+        <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.25.5</version.lib.google-protobuf>
@@ -90,6 +90,7 @@
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
+        <version.lib.javassist>3.30.2-GA</version.lib.javassist>
         <version.lib.jaxb-core>4.0.3</version.lib.jaxb-core>
         <version.lib.jaxb-impl>4.0.3</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.3.0.Final</version.lib.jboss.classfilewriter>
@@ -102,8 +103,8 @@
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>0.36.2</version.lib.langchain4j>
-        <version.lib.langchain4j.oracle>0.1.0</version.lib.langchain4j.oracle>
+        <version.lib.langchain4j>1.1.0</version.lib.langchain4j>
+        <version.lib.langchain4j-community>1.1.0-beta7</version.lib.langchain4j-community>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
@@ -528,6 +529,11 @@
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
                 <version>${version.lib.bytebuddy}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${version.lib.javassist}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.websocket</groupId>
@@ -957,35 +963,11 @@
                 <version>${version.lib.kafka}</version>
             </dependency>
             <!-- Langchain4j integration -->
+            <!-- Replace with community bom when issue #282 is fixed -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-cohere</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-ollama</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-open-ai</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-oracle</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j</artifactId>
-                <version>${version.lib.langchain4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-core</artifactId>
-                <version>${version.lib.langchain4j}</version>
+                <artifactId>langchain4j-community-oci-genai</artifactId>
+                <version>${version.lib.langchain4j-community}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -1455,6 +1437,14 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
                 <version>${version.lib.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Langchain4j integration -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${version.lib.langchain4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

@@ -36,7 +36,9 @@
     <modules>
         <module>open-ai</module>
         <module>oracle</module>
+        <module>oracle-genai</module>
         <module>ollama</module>
+        <module>jlama</module>
         <module>cohere</module>
     </modules>
 </project>

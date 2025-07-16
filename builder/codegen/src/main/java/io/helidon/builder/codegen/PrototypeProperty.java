@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,7 +41,8 @@ record PrototypeProperty(MethodSignature signature,
                          boolean equality, // part of equals and hash code
                          boolean toStringValue, // part of toString
                          boolean confidential, // if part of toString, do not print the actual value,
-                         boolean registryService
+                         boolean registryService,
+                         List<Annotation> qualifiers
 ) {
     // cannot be identifiers - such as field name or method name
     private static final Set<String> RESERVED_WORDS = Set.of(
@@ -103,6 +105,10 @@ record PrototypeProperty(MethodSignature signature,
                 .map(Boolean::parseBoolean)
                 .orElse(false);
         boolean registryService = element.hasAnnotation(Types.OPTION_REGISTRY_SERVICE);
+        var qualifiers = element.annotations()
+                .stream()
+                .filter(a -> a.hasMetaAnnotation(Types.SERVICE_QUALIFIER))
+                .toList();
 
         return new PrototypeProperty(
                 MethodSignature.create(element),
@@ -112,7 +118,8 @@ record PrototypeProperty(MethodSignature signature,
                 equality,
                 toStringValue,
                 confidential,
-                registryService
+                registryService,
+                qualifiers
         );
     }
 

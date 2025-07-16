@@ -40,6 +40,7 @@ import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.RegistryBuilderSupport;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 
@@ -137,6 +138,8 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "BUILDER_SUPPORT", BuilderSupport.class);
 
         checkField(toCheck, checked, fields, "SERVICES", Services.class);
+        checkField(toCheck, checked, fields, "SERVICE_NAMED", Service.Named.class);
+        checkField(toCheck, checked, fields, "SERVICE_QUALIFIER", Service.Qualifier.class);
 
         checkField(toCheck, checked, fields, "CONFIG_BUILDER_SUPPORT", ConfigBuilderSupport.class);
         checkField(toCheck, checked, fields, "CONFIG_CONFIGURED_BUILDER", ConfigBuilderSupport.ConfiguredBuilder.class);

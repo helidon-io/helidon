@@ -1,0 +1,193 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J Model Provider Generator
+:description: LangChain4J Model Provider Generator
+:keywords: helidon, AI, LangChain4J, LC4J, Codegen
+:feature-name: LangChain4J Codegen
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Lc4j Provider, Lc4j Provider>>
+* <<Configuration, Configuration>>
+* <<Injectable Properties, Injectable Properties>>
+* <<Default Injectable Properties, Default Injectable Properties>>
+
+== Overview
+
+The number of available AI providers and their models in the LangChain4j project is impressive and is growing every day.
+To maintain binding with all of them in Helidon is very challenging, and it may happen that the provider
+you are looking for is not one of those we are providing out of the box.
+But you can generate integration yourself the same way we are generating official LangChain4j binding modules,
+in build time, with our codegen tooling.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+Extra dependency for LangChain4j provider you want to generate binding for, here we are using Google AI Gemini LangChain4j provider as an example:
+[source,xml]
+----
+<dependency>
+    <groupId>dev.langchain4j</groupId>
+    <artifactId>langchain4j-google-ai-gemini</artifactId>
+    <version>1.1.0-rc1</version>
+</dependency>
+----
+
+You also need to extend the list of annotation processors with **builder** codegen:
+[source,xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+            <path>
+                <groupId>io.helidon.integrations.langchain4j</groupId>
+                <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+            <path>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+            <!-- Builder codegen is needed too -->
+            <path>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+        </annotationProcessorPaths>
+    </configuration>
+</plugin>
+----
+
+== Lc4j Provider
+
+For instructing Helidon code generator what it should generate, you need to create a special Lc4jProvider interface,
+as it is used for code generation, it can be package private. Name of the provider interface needs to comply with convention and end with `Lc4jProvider`, prefix is by default used for deriving a config key and prefixes for generated classes. Interface needs to be annotated with `@AiProvider.ModelConfig` annotation, which takes
+as an argument LangChain4j model class we want to generate binding for. `@AiProvider.ModelConfig` is repeatable and
+you can configure multiple models for the same provider interface.
+
+Example of custom generating LangChain4j GoogleAiGeminiChatModel integration:
+
+[source,java]
+----
+import io.helidon.builder.api.Option;
+import io.helidon.integrations.langchain4j.AiProvider;
+
+import dev.langchain4j.model.googleai.GeminiSafetySetting;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+
+@AiProvider.ModelConfig(GoogleAiGeminiChatModel.class) // <1>
+interface GoogleAiGeminiLc4jProvider { // <2>
+
+    @Option.Configured
+    @Option.RegistryService //<3>
+    List<GeminiSafetySetting> safetySettings();
+}
+----
+<1> Provide actual LangChain4j model we want to generate binding for.
+<2> Name of the provider needs comply with convention and end with `Lc4jProvider`, prefix is used for deriving a config key
+<3> Some properties can be too complex for configuration, we can supply them via injection instead
+
+
+You may notice that the **safetySettings** property is manually configured in the provider interface,
+you can do that for the properties that are too complex for setting via configuration. By adding annotation
+`@Option.RegistryService` you make it injectable from Helidon's service registry.
+
+== Configuration
+
+LangChain4j provider config key is by default derived from the provider interface name, example:
+`NameOfTheProviderLc4jProvider` -> `name-of-the-provider`.
+
+[source,yaml]
+----
+langchain4j:
+  google-ai-gemini: # <1>
+    chat-model:
+      enabled: true
+      model-name: gemini-2.5-flash
+      api-key: ${GEMINI_AI_KEY}
+----
+<1> Config key derived from `GoogleAiGeminiLc4jProvider` interface name
+
+== Injectable Properties
+
+Injectable properties can be specified in the Lc4j Provider, when such property exists no properties with the same
+name are code generated. `@Option.RegistryService` annotation enables the property to be injectable.
+By default, beans of the same type are being looked up, when property has the type `java.util.List` all
+the beans of its generic type are injected.
+
+[source,java]
+----
+@Option.Configured
+@Option.RegistryService
+List<GeminiSafetySetting> safetySettings();
+----
+
+It is possible to configure named qualifiers for injected beans, config property `service-registry.named` prefixed
+with the key of desired property is used as named qualifier for lookup when such property exists.
+
+[source,yaml]
+----
+langchain4j:
+  google-ai-gemini:
+    chat-model:
+      enabled: true
+      model-name: gemini-2.5-flash
+      api-key: ${GEMINI_AI_KEY}
+      safety-settings:
+        service-registry.named: custom-named-settings <1>
+----
+<1> Named qualifier can be a string value used for looking up desired beans
+
+Example of setting up a bean for injectable property `safety-settings`:
+
+[source,java]
+----
+@Service.Singleton
+@Service.Named("custom-named-setting")
+public class CustomNamedSafetySettingFactory implements Supplier<GeminiSafetySetting> {
+    @Override
+    public GeminiSafetySetting get() {
+        return new GeminiSafetySetting(HARM_CATEGORY_HATE_SPEECH, BLOCK_MEDIUM_AND_ABOVE);
+    }
+}
+----
+
+=== Default Injectable Properties
+Some properties usual for LangChain4j models are injectable by default to allow easy customization.
+
+Types of properties injectable by default:
+
+- `dev.langchain4j.model.chat.request.ChatRequestParameters` default parameters for all the models
+- `dev.langchain4j.http.client.HttpClientBuilder` Custom http client
+- `dev.langchain4j.model.chat.listener.ChatModelListener` Chat model listener for observability

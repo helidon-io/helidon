@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.service.registry;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,7 +23,7 @@ import java.util.Set;
 import io.helidon.common.types.TypeName;
 
 /**
- * Methods used from generated code in builders when service registry (without Config) is used.
+ * Methods used from generated code in builders when the service registry (without Config) is used.
  */
 public class RegistryBuilderSupport {
     private RegistryBuilderSupport() {
@@ -43,18 +41,29 @@ public class RegistryBuilderSupport {
     public static <T> List<T> serviceList(Optional<ServiceRegistry> registry,
                                           TypeName contract,
                                           boolean useRegistry) {
+        return serviceList(registry, contract, useRegistry, Optional.empty());
+    }
+
+    /**
+     * Discover services from the registry.
+     *
+     * @param registry        service registry to use, if provided explicitly
+     * @param contract        contract that is requested
+     * @param useRegistry     whether to use the service registry at all
+     * @param namedQualifier an optional qualifier name to filter the services
+     * @param <T>             type of the contract
+     * @return a list of contract implementation from the registry
+     */
+    public static <T> List<T> serviceList(Optional<ServiceRegistry> registry,
+                                          TypeName contract,
+                                          boolean useRegistry,
+                                          Optional<String> namedQualifier) {
+
         if (!useRegistry) {
             return List.of();
         }
 
-        List<T> result = new ArrayList<>();
-        if (registry.isPresent()) {
-            result.addAll(registry.get().all(contract));
-        } else {
-            result.addAll(Services.all(contract));
-        }
-
-        return List.copyOf(result);
+        return lookupAll(registry, contract, namedQualifier);
     }
 
     /**
@@ -69,18 +78,28 @@ public class RegistryBuilderSupport {
     public static <T> Set<T> serviceSet(Optional<ServiceRegistry> registry,
                                         TypeName contract,
                                         boolean useRegistry) {
+        return serviceSet(registry, contract, useRegistry, Optional.empty());
+    }
+
+    /**
+     * Discover services from the registry.
+     *
+     * @param registry       service registry to use, if provided explicitly
+     * @param contract       contract that is requested
+     * @param useRegistry    whether to use the service registry at all
+     * @param namedQualifier an optional qualifier name to filter the services
+     * @param <T>            type of the contract
+     * @return a set of contract implementation
+     */
+    public static <T> Set<T> serviceSet(Optional<ServiceRegistry> registry,
+                                        TypeName contract,
+                                        boolean useRegistry,
+                                        Optional<String> namedQualifier) {
         if (!useRegistry) {
             return Set.of();
         }
 
-        Set<T> result = new HashSet<>();
-        if (registry.isPresent()) {
-            result.addAll(registry.get().all(contract));
-        } else {
-            result.addAll(Services.all(contract));
-        }
-
-        return Set.copyOf(result);
+        return Set.copyOf(lookupAll(registry, contract, namedQualifier));
     }
 
     /**
@@ -97,14 +116,60 @@ public class RegistryBuilderSupport {
                                           TypeName contract,
                                           Optional<T> existingValue,
                                           boolean useRegistry) {
+        return service(registry, contract, existingValue, useRegistry, Optional.empty());
+    }
+
+    /**
+     * Retrieves the first matching service based on the provided contract, qualifiers,
+     * and the current configuration. Allows for combining explicitly configured values
+     * with discovered values from a registry.
+     *
+     * @param <T>            the type of the service contract
+     * @param registry       an optional service registry to use, if explicitly provided
+     * @param contract       the contract that is requested
+     * @param existingValue  an optional existing value, to be used if already present
+     * @param useRegistry    a flag indicating whether to use the service registry
+     * @param namedQualifier an optional qualifier name to filter the services
+     * @return an optional containing the matching service, if found
+     */
+    public static <T> Optional<T> service(Optional<ServiceRegistry> registry,
+                                          TypeName contract,
+                                          Optional<T> existingValue,
+                                          boolean useRegistry,
+                                          Optional<String> namedQualifier) {
         if (existingValue.isPresent() || !useRegistry) {
             return existingValue;
         }
 
-        if (registry.isPresent()) {
-            return (registry.get().first(contract));
-        } else {
-            return Services.first(contract);
+        if (namedQualifier.isEmpty()) {
+            return registry.orElseGet(GlobalServiceRegistry::registry).first(contract);
         }
+
+        return namedQualifier
+                .map(Qualifier::createNamed)
+                .map(qualifier -> Lookup.builder()
+                        .addContract(contract)
+                        .addQualifier(qualifier)
+                        .build())
+                .flatMap(l -> registry.orElseGet(GlobalServiceRegistry::registry).first(l)
+                );
+    }
+
+    private static <T> List<T> lookupAll(Optional<ServiceRegistry> registry,
+                                         TypeName contract,
+                                         Optional<String> namedQualifier) {
+
+        if (namedQualifier.isEmpty()) {
+            return registry.orElseGet(GlobalServiceRegistry::registry).all(contract);
+        }
+
+        return namedQualifier
+                .map(Qualifier::createNamed)
+                .map(qualifier -> Lookup.builder()
+                        .addContract(contract)
+                        .addQualifier(qualifier)
+                        .build())
+                .map(value -> registry.orElseGet(GlobalServiceRegistry::registry).<T>all(value))
+                .orElseGet(List::of);
     }
 }

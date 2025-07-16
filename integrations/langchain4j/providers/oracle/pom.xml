@@ -57,10 +57,6 @@
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-oracle</artifactId>
         </dependency>
         <dependency>
@@ -72,6 +68,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-core</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.testing</groupId>
@@ -96,6 +97,11 @@
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -134,7 +140,12 @@
                         </path>
                         <path>
                             <groupId>io.helidon.common.features</groupId>
-                            <artifactId>helidon-common-features-processor</artifactId>
+                            <artifactId>helidon-common-features-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.integrations.langchain4j</groupId>
+                            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -167,10 +178,26 @@
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-processor</artifactId>
+                        <artifactId>helidon-common-features-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <!-- Used by codegen -->
+                            <ignoredDependencies>
+                                <ignoredDependency>dev.langchain4j:langchain4j-core</ignoredDependency>
+                            </ignoredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,16 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      */
     default T addContentLine(String line) {
         return addContent(line).addContent("\n");
+    }
+
+    /**
+     * Adds the provided literal as content, enclosed in double quotes.
+     *
+     * @param literal the literal string to be added as content
+     * @return updated builder instance
+     */
+    default T addContentLiteral(String literal) {
+        return addContent("\"" + literal + "\"");
     }
 
     /**
