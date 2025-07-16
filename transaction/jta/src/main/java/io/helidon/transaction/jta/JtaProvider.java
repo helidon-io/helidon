@@ -21,11 +21,15 @@ import jakarta.transaction.UserTransaction;
 
 /**
  * Jakarta Transaction service provider.
+ * <p>
+ * Implemented by specific Jakarta Transaction implementation provider
+ * as Helidon {@code io.helidon.service.registry.Service.Singleton}.
  */
 public interface JtaProvider {
 
     /**
      * Returns {@link TransactionManager} instance.
+     * Returned value shall not be {@code null}.
      *
      * @return the {@link TransactionManager} instance
      */
@@ -33,6 +37,7 @@ public interface JtaProvider {
 
     /**
      * Returns {@link UserTransaction} instance.
+     * Returned value shall not be {@code null}.
      *
      * @return the {@link UserTransaction} instance
      */
@@ -40,6 +45,7 @@ public interface JtaProvider {
 
     /**
      * Returns {@link TransactionSynchronizationRegistry} instance.
+     * Returned value shall not be {@code null}.
      *
      * @return the {@link TransactionSynchronizationRegistry} instance
      */

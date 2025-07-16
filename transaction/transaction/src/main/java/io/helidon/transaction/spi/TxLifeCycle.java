@@ -28,6 +28,10 @@ package io.helidon.transaction.spi;
  *     <li><i>begin</i> when transaction was started</li>
  *     <li><i>commit/rollback</i> when transaction was finished</li>
  * </ul>
+ * Each transaction must handle <i>suspend</i> and <i>resume</i> events to modify
+ * it's internal state appropriately.
+ * Supplied {@code txIdentity} values are managed by {@link TxSupport} implementation class
+ * and serve as unique transaction identifiers.
  */
 public interface TxLifeCycle {
 

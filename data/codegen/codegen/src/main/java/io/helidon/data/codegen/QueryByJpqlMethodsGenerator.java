@@ -250,8 +250,8 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
      * @return {@link List} of {@link PersistenceGenerator.QueryBuilder.MethodParameter}
      */
     private List<PersistenceGenerator.QueryBuilder.MethodParameter> params(MethodParams methodParams) {
-        List<PersistenceGenerator.QueryBuilder.MethodParameter> params = new ArrayList<>(methodParams.params().size());
-        methodParams.params()
+        List<PersistenceGenerator.QueryBuilder.MethodParameter> params = new ArrayList<>(methodParams.parameters().size());
+        methodParams.parameters()
                 .forEach(param -> params.add(
                         PersistenceGenerator.QueryBuilder.MethodParameter.create(param.elementName(),
                                                                                  param.elementName())));

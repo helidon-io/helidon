@@ -154,7 +154,7 @@ class MethodNameParserImpl implements MethodNameParser {
                             .result(ProjectionResult.Stream);
                     break;
                 case MethodName.Update:
-                    throw new UnsupportedOperationException("Update is not implemented yet");
+                    throw new UnsupportedOperationException("Update statement is not supported");
                     // Update should be implemented here
                         /*
                         projectionBuilder.action(Projection.Action.Update)

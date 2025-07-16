@@ -15,30 +15,33 @@
  */
 package io.helidon.transaction;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Objects;
 
 /**
- * Transaction {@link RuntimeException}.
+ * A {@link RuntimeException} that indicates that task with managed transaction has failed.
  */
 public class TxException extends RuntimeException {
 
     /**
      * Create new exception for a message.
      *
-     * @param message descriptive message
+     * @param message descriptive message, shall not be {@code null}
+     * @throws NullPointerException when {@code message} is {@code null}
      */
     public TxException(String message) {
-        super(requireNonNull(message));
+        super(Objects.requireNonNull(message, "Missing TxException message"));
     }
 
     /**
      * Create new exception for a message and a cause.
      *
-     * @param message descriptive message
-     * @param cause   original throwable causing this exception
+     * @param message descriptive message, shall not be {@code null}
+     * @param cause   original throwable causing this exception, shall not be {@code null}
+     * @throws NullPointerException when {@code message} or {@code cause} is {@code null}
      */
     public TxException(String message, Throwable cause) {
-        super(requireNonNull(message), requireNonNull(cause));
+        super(Objects.requireNonNull(message, "Missing TxException message"),
+              Objects.requireNonNull(cause, "Missing TxException cause"));
     }
 
 }

@@ -16,6 +16,7 @@
 package io.helidon.data.jakarta.persistence;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import io.helidon.common.Weight;
@@ -55,6 +56,8 @@ class LocalTxSupport implements TxSupport {
 
     @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
+        Objects.requireNonNull(type, "Missing transaction type");
+        Objects.requireNonNull(task, "Missing task to run in transaction");
         start();
         try {
             return switch (type) {

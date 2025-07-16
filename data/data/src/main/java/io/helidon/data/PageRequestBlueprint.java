@@ -18,7 +18,14 @@ package io.helidon.data;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Pageable query result request.
+ * Request pageable query result as page with page number and size.
+ * <p>
+ * {@link PageRequest} argument of the repository interface query method sets
+ * parameters of the page (represented by {@link Slice} or {@link Page} interfaces)
+ * to be returned by the query.
+ * <p>
+ * Repository interface method must always be of {@link Slice} or {@link Page} type when
+ * it contains {@link PageRequest} argument.
  */
 @Prototype.Blueprint
 @Prototype.CustomMethods(PageRequestSupport.class)
@@ -26,15 +33,17 @@ interface PageRequestBlueprint {
 
     /**
      * Page number.
-     * <p>Page number starts from 0.
+     * <p>
+     * Page number starts from {@code 0}.
      *
      * @return page number
      */
     int page();
 
     /**
-     * Requested page size.
-     * <p>Valid {@code size} values are:<ul>
+     * Page size.
+     * <p>
+     * Valid {@code size} values are:<ul>
      * <li>{@code -1} when no pagination is defined</li>
      * <li>{@code size > 0} for requested page size</li></ul>
      *

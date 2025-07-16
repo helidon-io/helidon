@@ -17,6 +17,7 @@ package io.helidon.transaction.jta;
 
 import java.lang.System.Logger.Level;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import io.helidon.common.Weight;
@@ -63,6 +64,8 @@ class JtaTxSupport implements TxSupport {
 
     @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
+        Objects.requireNonNull(type, "Missing transaction type");
+        Objects.requireNonNull(task, "Missing task to run in transaction");
         start();
         try {
             return switch (type) {
@@ -78,20 +81,6 @@ class JtaTxSupport implements TxSupport {
             end();
         }
     }
-
-/* Removed: need to decide whether this is needed at all
-
-    @Override
-    public <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task) {
-        return null;
-    }
-
-    @Override
-    public Tx.Transaction transaction(Tx.Type type) {
-        return null;
-    }
-
-*/
 
     /**
      * Transaction handler for {@link Tx.Mandatory}.

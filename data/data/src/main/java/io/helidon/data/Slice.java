@@ -19,14 +19,20 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Query result as page without total size of the result.
+ * Pageable query result as pages without total size of the result.
+ * <p>
+ * Page number and number of records returned on each page depends on values of the
+ * {@link #request()} used to return current page.
+ * <p>
+ * {@link Slice} does not contain value of total size of the result across all pages,
+ * so it's performance should be better than {@link Page}.
  *
  * @param <T> query result type (entity or entity attribute)
  */
 public interface Slice<T> extends Iterable<T> {
 
     /**
-     * Create query result as page without total size of the result.
+     * Create pageable query result as page without total size of the result.
      *
      * @param request pageable query result request
      * @param content page content as {@link List<T>}
@@ -54,7 +60,7 @@ public interface Slice<T> extends Iterable<T> {
     List<T> list();
 
     /**
-     * Query page request of current page.
+     * Pageable query result request of current page.
      * Never returns {@code null}.
      *
      * @return current page request

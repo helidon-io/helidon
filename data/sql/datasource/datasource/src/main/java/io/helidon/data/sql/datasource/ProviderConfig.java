@@ -16,7 +16,6 @@
 package io.helidon.data.sql.datasource;
 
 import io.helidon.common.config.NamedService;
-// DataSourceProviderConfig
 
 /**
  * Provider specific configuration.
