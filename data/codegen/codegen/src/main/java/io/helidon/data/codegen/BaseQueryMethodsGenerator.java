@@ -58,11 +58,11 @@ abstract class BaseQueryMethodsGenerator extends BaseRepositoryMethodsGenerator 
     @Override
     protected void processParam(MethodParams.Builder builder, TypedElementInfo paramInfo) {
         if (paramInfo.typeName().equals(DataCodegenTypes.SORT)) {
-            builder.sort(paramInfo);
+            builder.order(paramInfo);
         } else if (paramInfo.typeName().equals(DataCodegenTypes.PAGE_REQUEST)) {
             builder.pageRequest(paramInfo);
         } else {
-            builder.addParam(paramInfo);
+            builder.addParameter(paramInfo);
         }
     }
 

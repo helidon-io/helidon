@@ -170,6 +170,8 @@ public interface TypeRepository extends Data.PageableRepository<Type, Integer> {
 
     Stream<Type> sortedStreamByNameNotFalse(Sort sort, String name);
 
+    List<Type> sortedListByNameOrderByNameDescId(String name);
+
     List<Type> sortedListByNameOrderByName(Sort sort, String name);
 
     Page<Type> pageListByNameOrderByName(PageRequest pageRequest, Sort sort, String name);

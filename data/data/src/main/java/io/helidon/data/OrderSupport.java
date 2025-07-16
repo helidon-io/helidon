@@ -26,7 +26,7 @@ class OrderSupport {
 
     /**
      * Create new instance of order definition with default direction and case-sensitivity.
-     * Default direction is {@link OrderDirection#ASC} and default value of {@link Order#ignoreCase()} is {@code false}.
+     * Default direction is {@link OrderDirection#ASC} and default value of {@link Order#caseSensitive()} is {@code true}.
      *
      * @param property entity property
      * @return new order definition instance
@@ -40,7 +40,7 @@ class OrderSupport {
 
     /**
      * Create new instance of order definition with default case-sensitivity.
-     * Default value of {@link Order#ignoreCase()} is {@code false}.
+     * Default value of {@link Order#caseSensitive()} is {@code true}.
      *
      * @param property  entity property
      * @param direction direction of the ordering
@@ -59,15 +59,15 @@ class OrderSupport {
      *
      * @param property   entity property
      * @param direction  direction of the ordering
-     * @param ignoreCase value of {@code true} for case-insensitive or {@code false} for case-sensitive ordering
+     * @param caseSensitive value of {@code true} for case-sensitive or {@code false} for case-sensitive ordering
      * @return new order definition instance
      */
     @Prototype.FactoryMethod
-    static Order create(String property, OrderDirection direction, boolean ignoreCase) {
+    static Order create(String property, OrderDirection direction, boolean caseSensitive) {
         return Order.builder()
                 .property(property)
                 .direction(direction)
-                .ignoreCase(ignoreCase)
+                .caseSensitive(caseSensitive)
                 .build();
     }
 

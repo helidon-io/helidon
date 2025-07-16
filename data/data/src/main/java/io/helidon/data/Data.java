@@ -51,7 +51,8 @@ public final class Data {
      * <p>
      * This is an optional repository annotation.
      * <p>
-     * When used, the persistence unit name will be used to lookup appropriate instance to handle this repository.
+     * When used, the persistence unit name will be used to lookup appropriate instance of configured
+     * {@code data.persistence-units} to handle this repository.
      * This is useful when multiple databases are used from a single application.
      */
     @Target(ElementType.TYPE)
@@ -116,7 +117,11 @@ public final class Data {
     }
 
     /**
-     * Data support specific query language definition.
+     * User supplied query.
+     * <p>
+     * Used in repository methods with query defined by annotation. This is the annotation to define the query.
+     * Query language depends on {@code data.persistence-units.provider-type}, e.g. it's JPQL for {@code jakarta}
+     * provider type.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.SOURCE)
@@ -132,8 +137,8 @@ public final class Data {
     /**
      * Data repository interface for basic entity operations.
      *
-     * @param <E>  type of the entity
-     * @param <ID> type of the ID
+     * @param <E>  the entity type
+     * @param <ID> the identifier type
      */
     public interface BasicRepository<E, ID> extends GenericRepository<E, ID> {
 
@@ -149,10 +154,8 @@ public final class Data {
         <T extends E> T save(T entity);
 
         /**
-         * Persists all provided entities.
-         * Implementations of this method may always execute {@code insert} without detecting whether the entity was already saved
-         * or
-         * not.
+         * Saves all provided entities.
+         * This method will update existing record or insert a new record if record does not exist in the database.
          *
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
@@ -175,13 +178,15 @@ public final class Data {
          * Check whether entity with given ID (primary key) exists.
          *
          * @param id the ID of the entity to search for, shall not be {@code null}
-         * @return value of {2ode true} if an entity with the given ID exists or {@code false} otherwise
+         * @return value of {@code true} if an entity with the given ID exists or {@code false} otherwise
          * @throws io.helidon.data.DataException if the ID is {@code null} or the operation has failed
          */
         boolean existsById(ID id);
 
         /**
          * Return all entities of the {@code E} type.
+         * This method will return all records from related database table, so it should be used carefully
+         * to avoid performance issues.
          *
          * @return all entities found, never returns {@code null}
          * @throws io.helidon.data.DataException if the operation has failed
@@ -223,6 +228,8 @@ public final class Data {
 
         /**
          * Deletes all entities of the {@code E} type.
+         * This method will delete all records from related database table, so it should be used carefully
+         * to avoid unexpected loss of data.
          *
          * @return the number of deleted entities
          * @throws io.helidon.data.DataException if the operation has failed
@@ -236,11 +243,11 @@ public final class Data {
      * CRUD entity operations are:<ul>
      * <li>Create</li>
      * <li>Read</li>
-     * <li>Write</li>
-     * <li>Update</li></ul>
+     * <li>Update</li>
+     * <li>Delete</li></ul>
      *
-     * @param <E>  type of the entity
-     * @param <ID> type of the ID (primary key)
+     * @param <E>  the entity type
+     * @param <ID> the identifier type
      */
     public interface CrudRepository<E, ID> extends BasicRepository<E, ID> {
 
@@ -252,6 +259,7 @@ public final class Data {
          * @param entity the entity to persist, shall not be {@code null}
          * @param <T>    type of the entity
          * @return persisted entity, never returns {@code null}
+         * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         <T extends E> T insert(T entity);
 
@@ -263,6 +271,7 @@ public final class Data {
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
          * @return persisted entity, never returns {@code null}
+         * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         <T extends E> Iterable<T> insertAll(Iterable<T> entities);
 
@@ -271,7 +280,7 @@ public final class Data {
          *
          * @param entity the entity to persist, shall not be {@code null}
          * @param <T>    type of the entity
-         * @return persisted entity, never returns {@code null}
+         * @return updated entity, never returns {@code null}
          * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         <T extends E> T update(T entity);
@@ -281,7 +290,7 @@ public final class Data {
          *
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
-         * @return persisted entities, never returns {@code null}
+         * @return updated entities, never returns {@code null}
          * @throws io.helidon.data.DataException if the entities are {@code null} or the operation has failed
          */
         <T extends E> Iterable<T> updateAll(Iterable<T> entities);
@@ -290,16 +299,21 @@ public final class Data {
 
     /**
      * Data repository interface.
-     * This is the parent interface of all data repositories.
+     * This is the parent interface of all data repositories. Any user data repository interface must be annotated
+     * with the {@link Data.Repository} annotation and extend this {@link Data.GenericRepository} interface.
      *
-     * @param <E>  type of the entity
-     * @param <ID> type of the ID
+     * @param <E>  the entity type
+     * @param <ID> the identifier type
      */
     public interface GenericRepository<E, ID> {
     }
 
     /**
-     * Data repository interface with persistence session support.
+     * Data repository interface with persistence provider session support.
+     * <p>
+     * This interface provides access to persistence provider session. Life cycle of the session is managed
+     * by the Helidon Data framework.
+     * <p>
      * Implementing this interface makes repository class to depend on specific persistence session type.
      * Target persistence session type must match session type of the specific persistence provider, e.g.<ul>
      * <li>{@code EntityManager} for Jakarta Persistence</li>
@@ -312,45 +326,59 @@ public final class Data {
 
         /**
          * Execute task with persistence session.
-         * Task does not return any result.
+         * <p>
+         * Persistence session life cycle is managed by the Helidon Data framework and this session
+         * is available only while this method is running. Supplied {@link Consumer} shall not pass
+         * provided persistence session instance outside this method scope. Supplied {@link Consumer}
+         * shall not close provided persistence session.
          *
-         * @param task task to be executed
+         * @param task task to be executed, shall not be {@code null}
+         * @throws RuntimeException when task execution failed, checked exceptions are not allowed
+         *                          and must be all handled by the supplied {@link Consumer}
          */
         void run(Consumer<S> task);
 
         /**
          * Execute task with persistence session.
-         * Task computes and returns result.
+         * <p>
+         * Persistence session life cycle is managed by the Helidon Data framework and this session
+         * is available only while this method is running. Supplied {@link Function} shall not pass
+         * provided persistence session instance outside this method scope. Supplied {@link Function}
+         * shall not close provided persistence session.
          *
-         * @param task task to be executed
+         * @param task task to be executed, shall not be {@code null}
          * @param <R>  task result type
          * @return task result
+         * @throws RuntimeException when task execution failed, checked exceptions are not allowed
+         *                          and must be all handled by the supplied {@link Function}
          */
         <R> R call(Function<S, R> task);
 
     }
 
     /**
-     * Data repository interface with pagination support.
+     * A {@link GenericRepository} that supports pagination.
      *
-     * @param <E>  type of the entity
-     * @param <ID> type of the ID
+     * @param <E>  the entity type
+     * @param <ID> the identifier type
      */
     public interface PageableRepository<E, ID> extends GenericRepository<E, ID> {
 
         /**
-         * Return all entities of the {@code E} type.
+         * Return {@link Page} with all entities of the {@code E} type.
+         * This is pageable alternative of {@link BasicRepository#findAll}.
          *
-         * @param pageable the query result request
+         * @param pageable pageable query result as page with specified page number and size, shall not be {@code null}
          * @return all entities found, never returns {@code null}
          * @throws io.helidon.data.DataException if the operation has failed
          */
         Page<E> pages(PageRequest pageable);
 
         /**
-         * Return all entities of the {@code E} type.
+         * Return {@link Slice} with all entities of the {@code E} type.
+         * This is pageable alternative of {@link BasicRepository#findAll}.
          *
-         * @param pageable the query result request
+         * @param pageable pageable query result as page with specified page number and size, shall not be {@code null}
          * @return all entities found, never returns {@code null}
          * @throws io.helidon.data.DataException if the operation has failed
          */

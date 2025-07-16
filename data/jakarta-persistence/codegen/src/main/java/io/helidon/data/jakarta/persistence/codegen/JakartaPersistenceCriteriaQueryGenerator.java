@@ -102,7 +102,7 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
         appendCreateOrderList(builder, "orderBy");
         dataQuery.order()
                 .ifPresent(order -> appendOrderExpression(builder, order, "orderBy"));
-        methodParams.sort()
+        methodParams.order()
                 .ifPresent(sort -> appendSortExpression(builder, sort, "orderBy"));
         appendSetOrderBy(builder,
                          dataQuery.order().isEmpty() || dataQuery.order().get().expressions().isEmpty(),
@@ -142,7 +142,7 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
         appendCreateOrderList(builder, "orderBy");
         dataQuery.order()
                 .ifPresent(order -> appendOrderExpression(builder, order, "orderBy"));
-        methodParams.sort()
+        methodParams.order()
                 .ifPresent(sort -> appendSortExpression(builder, sort, "orderBy"));
         appendSetOrderBy(builder,
                          dataQuery.order().isEmpty() || dataQuery.order().get().expressions().isEmpty(),
@@ -381,7 +381,7 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
                     }
                 });
 
-        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
+        Iterator<TypedElementInfo> parameters = methodParams.parameters().iterator();
         statement(builder,
                   b1 -> where(b1,
                               b2 -> criteriaBuilder.build(b2, parameters, setParameter()),
@@ -394,7 +394,7 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
             appendCreateOrderList(builder, "orderBy");
             dataQuery.order().ifPresent(
                     order -> appendOrderExpression(builder, order, "orderBy"));
-            methodParams.sort().ifPresent(
+            methodParams.order().ifPresent(
                     sort -> appendSortExpression(builder, sort, "orderBy"));
             appendSetOrderBy(builder,
                              dataQuery.order().isEmpty() || dataQuery.order().get().expressions().isEmpty(),
@@ -536,7 +536,7 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
                 .from(RAW_EXPRESSION)
                 .addTypeArgument(TypeNames.BOXED_BOOLEAN)
                 .build();
-        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
+        Iterator<TypedElementInfo> parameters = methodParams.parameters().iterator();
         statement(builder, b -> {
             b.addContent(expressionType)
                     .addContent(" ")

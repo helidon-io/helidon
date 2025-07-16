@@ -16,24 +16,26 @@
 package io.helidon.data;
 
 /**
- * Thrown when query result should return single record but no result was returned.
+ * Thrown when a query was expected to produce a result, but did not.
  */
 public class NoResultException extends DataException {
 
     /**
-     * Create new exception for a message.
+     * Creates a new {@link NoResultException} with the supplied detail message.
      *
-     * @param message descriptive message
+     * @param message descriptive message, shall not be {@code null}
+     * @throws NullPointerException when {@code message} is {@code null}
      */
     public NoResultException(String message) {
         super(message);
     }
 
     /**
-     * Create new exception for a message and a cause.
+     * Creates a new {@link NoResultException} with the supplied detail message and cause.
      *
-     * @param message descriptive message
-     * @param cause   original throwable causing this exception
+     * @param message descriptive message, shall not be {@code null}
+     * @param cause   original throwable causing this exception, shall not be {@code null}
+     * @throws NullPointerException when {@code message} or {@code cause} is {@code null}
      */
     public NoResultException(String message, Throwable cause) {
         super(message, cause);

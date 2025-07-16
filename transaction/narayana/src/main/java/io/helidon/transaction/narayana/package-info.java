@@ -16,5 +16,6 @@
 
 /**
  * Narayana Jakarta Transaction Provider.
+ * Adapts the Narayana JTA implementation to the requirements of the Helidon Transaction API.
  */
 package io.helidon.transaction.narayana;

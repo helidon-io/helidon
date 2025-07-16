@@ -18,37 +18,30 @@ package io.helidon.data;
 import java.util.Objects;
 
 /**
- * Helidon Data {@link RuntimeException}.
+ * A {@link RuntimeException} that indicates an operation on a data repository has failed.
  */
 public class DataException extends RuntimeException {
 
     /**
-     * Create new exception for a message.
+     * Creates a new {@link DataException} with the supplied detail message.
      *
-     * @param message descriptive message
+     * @param message descriptive message, shall not be {@code null}
+     * @throws NullPointerException when {@code message} is {@code null}
      */
     public DataException(String message) {
-        super(checkMessage(message));
+        super(Objects.requireNonNull(message, "Missing DataException message"));
     }
 
     /**
-     * Create new exception for a message and a cause.
+     * Creates a new {@link DataException} with the supplied detail message and cause.
      *
-     * @param message descriptive message
-     * @param cause   original throwable causing this exception
+     * @param message descriptive message, shall not be {@code null}
+     * @param cause   original throwable causing this exception, shall not be {@code null}
+     * @throws NullPointerException when {@code message} or {@code cause} is {@code null}
      */
     public DataException(String message, Throwable cause) {
-        super(checkMessage(message), checkCause(cause));
-    }
-
-    private static String checkMessage(String message) {
-        Objects.requireNonNull(message, "Missing DataException message");
-        return message;
-    }
-
-    private static Throwable checkCause(Throwable cause) {
-        Objects.requireNonNull(cause, "Missing DataException cause");
-        return cause;
+        super(Objects.requireNonNull(message, "Missing DataException message"),
+              Objects.requireNonNull(cause, "Missing DataException cause"));
     }
 
 }
