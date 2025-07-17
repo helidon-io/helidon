@@ -188,8 +188,7 @@ Helidon features (existing):
 |-------------------|-----------------|-----------------------------------------|
 | `client`          | WebClient       | may contain `uri` and `web-client` etc. |
 | `server`          | WebServer       | may contain `path`, `listener` etc.     |                     
-| `schedule`        | Scheduling      | CRON task                               |
-| `fixedRate`       | Scheduling      | Fixed Rate task                         |
+| `schedule`        | Scheduling      | CRON or Fixed Rate task                 |
 | `async`           | Fault Tolerance | Asynchronous handler                    |
 | `timeout`         | Fault Tolerance | Timeout handler                         |
 | `retry`           | Fault Tolerance | Retry handler                           |

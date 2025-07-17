@@ -40,6 +40,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.RunLevels;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -165,30 +166,21 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
         postConstruct.addContentLine("var taskManager = taskManagerSupplier.get();")
                 .addContentLine("var config = configSupplier.get();")
-                .addContent("var classConfig = config.get(\"")
-                .addContent(serviceType.fqName())
-                .addContentLine("\");")
                 .addContentLine("var service = serviceSupplier.get();")
                 .addContentLine("");
 
         for (int i = 0; i < schedules.size(); i++) {
             Scheduled scheduled = schedules.get(i);
-            addStartScheduled(postConstruct, scheduled, i);
+            addStartScheduled(serviceType, postConstruct, scheduled, i);
         }
 
         classModel.addMethod(postConstruct);
     }
 
-    private void addStartScheduled(Method.Builder postConstruct, Scheduled scheduled, int index) {
-        /*
-        this.task_1 = FixedRate.builder()
-            .task(service::scheduledTask)
-            .build();
-         */
-        postConstruct.addContent("this.")
-                .addContent("task_" + index)
-                .addContent(" = ");
-        scheduled.createScheduledContent(postConstruct);
+    private void addStartScheduled(TypeName typeName,
+                                   Method.Builder postConstruct,
+                                   Scheduled scheduled,
+                                   int index) {
 
         // config
         // classConfig
@@ -199,10 +191,27 @@ class SchedulingExtension implements RegistryCodegenExtension {
             configVariable = "config";
             configKey = scheduled.configKey().get();
         } else {
-            // class config + method name
-            configVariable = "classConfig";
-            configKey = scheduled.methodName() + ".schedule";
+            configVariable = "methodConfig_" + index;
+            TypeConfigSupport.generateMethodConfig(postConstruct,
+                                                   typeName,
+                                                   scheduled.element(),
+                                                   "config",
+                                                   configVariable);
+            configKey = "schedule";
         }
+
+        /*
+        var methodConfig_1 = ...
+        this.task_1 = FixedRate.builder()
+            .task(service::scheduledTask)
+            .config(taskConfig_1.get("fixedRate.schedule")
+            .build();
+         */
+        postConstruct.addContent("this.")
+                .addContent("task_" + index)
+                .addContent(" = ");
+        scheduled.createScheduledContent(postConstruct);
+
         postConstruct.increaseContentPadding()
                 .increaseContentPadding()
                 .addContentLine(".taskManager(taskManager)")
@@ -304,7 +313,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .filter(Predicate.not(String::isEmpty));
 
         // add for processing
-        allScheduled.add(new Cron(element.elementName(),
+        allScheduled.add(new Cron(element,
+                                  element.elementName(),
                                   hasInvocationArgument,
                                   toId(enclosingType, element),
                                   expression,
@@ -330,7 +340,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         CodegenValidator.validateDuration(enclosingType, element, FIXED_RATE_ANNOTATION, "delayBy", delayBy);
 
         // add for processing
-        allScheduled.add(new FixedRate(element.elementName(),
+        allScheduled.add(new FixedRate(element,
+                                       element.elementName(),
                                        hasInvocationArgument,
                                        toId(enclosingType, element),
                                        rate,
@@ -423,9 +434,12 @@ class SchedulingExtension implements RegistryCodegenExtension {
         Optional<String> configKey();
 
         String id();
+
+        TypedElementInfo element();
     }
 
-    private record Cron(String methodName,
+    private record Cron(TypedElementInfo element,
+                        String methodName,
                         boolean hasParameter,
                         String id,
                         String expression,
@@ -452,7 +466,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         }
     }
 
-    private record FixedRate(String methodName,
+    private record FixedRate(TypedElementInfo element,
+                             String methodName,
                              boolean hasParameter,
                              String id,
                              String rate,
