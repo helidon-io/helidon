@@ -29,11 +29,13 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenValidator.validateDuration;
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.RETRY;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.RETRY_ANNOTATION;
@@ -99,10 +101,13 @@ final class RetryHandler extends FtHandler {
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
 
         if (name == null) {
-            ctr.addContentLine("this.retry = produceRetry();");
+            ctr.addContentLine("this.retry = produceRetry(config);");
         } else {
             // named, inject
             ctr.addParameter(namedRetry -> namedRetry
@@ -112,9 +117,7 @@ final class RetryHandler extends FtHandler {
                                           .addTypeArgument(RETRY)
                                           .build())
                             .addAnnotation(namedAnnotation(name)))
-                    .addContent("this.retry = namedRetry.orElseGet(")
-                    .addContent(generatedType)
-                    .addContentLine("::produceRetry);");
+                    .addContentLine("this.retry = namedRetry.orElseGet(() -> produceRetry(config));");
         }
 
         classModel.addConstructor(ctr);
@@ -148,6 +151,9 @@ final class RetryHandler extends FtHandler {
                 .isStatic(true)
                 .returnType(RETRY)
                 .name("produceRetry")
+                .addParameter(config -> config
+                        .type(CONFIG)
+                        .name("config"))
                 .update(builder -> produceRetryMethodBody(enclosingTypeName,
                                                           element,
                                                           builder,
@@ -161,6 +167,14 @@ final class RetryHandler extends FtHandler {
                                         Method.Builder builder,
                                         Annotation annotation,
                                         String customName) {
+
+        // find appropriate method configuration for this retry
+        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+
+        builder.addContentLine("")
+                .addContentLine("var retryConfig = methodConfig.get(\"retry\");")
+                .addContentLine("");
+
 
         int calls = annotation.intValue("calls").orElse(3);
         String delayDuration = validateDuration(typeName,
@@ -239,6 +253,7 @@ final class RetryHandler extends FtHandler {
                 .addContent(".name(\"")
                 .addContent(customName)
                 .addContentLine("\")")
+                .addContentLine(".config(retryConfig)")
                 .addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();

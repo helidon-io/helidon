@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -38,9 +39,10 @@ class RetryImpl implements Retry {
     private final AtomicLong retryCounter = new AtomicLong(0L);
     private final String name;
     private final boolean metricsEnabled;
-
-    private Counter callsCounterMetric;
-    private Counter retryCounterMetric;
+    @SuppressWarnings("rawtypes")
+    private final Function<Supplier, Object> function;
+    private final Counter callsCounterMetric;
+    private final Counter retryCounterMetric;
 
     @Service.Inject
     RetryImpl(RetryConfig retryConfig) {
@@ -50,11 +52,24 @@ class RetryImpl implements Retry {
         this.retryPolicy = retryConfig.retryPolicy().orElseThrow();
         this.retryConfig = retryConfig;
 
-        this.metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
+        boolean metricsEnabled;
+        if (retryConfig.enabled()) {
+            function = this::realInvoke;
+            metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
+        } else {
+            function = Supplier::get;
+            metricsEnabled = false;
+        }
+
+        this.metricsEnabled = metricsEnabled;
+
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);
             retryCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_RETRIES_TOTAL, nameTag);
+        } else {
+            callsCounterMetric = null;
+            retryCounterMetric = null;
         }
     }
 
@@ -68,8 +83,13 @@ class RetryImpl implements Retry {
         return name;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
+        return (T) function.apply(supplier);
+    }
+
+    private <T> T realInvoke(Supplier<? extends T> supplier) {
         RetryContext<? extends T> context = new RetryContext<>();
         while (true) {
             try {

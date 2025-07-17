@@ -21,12 +21,13 @@ Rules for Helidon Declarative:
    type (example: fault tolerance fallback needs to invoke a fallback method, as this would require reflection, there is a
    generated type such as `GreetEndpoint_failingFallback__Fallback` that is named with the unique identification of the method it
    is generated for, and has the required code generated, the interceptor for fallback then looks it up at runtime to correctly
-   handle invocation)
+   handle invocation, or implements an `io.helidon.service.registry.Interception.ElementInterceptor` that intercepts one specific
+   element)
 5. If there is a good reason the user may want to override configuration in annotations with config, generate the code
-   appropriately (the configuration key should be <fully qualified class name>.<(method | field) name>.<type>, i.e.
-   `io.helidon.examples.decalarative.HttpEndpoint.retriable.retry`), or an explicit key configured on the annotation
+   appropriately (the configuration key should be type-config.<fully qualified class name>.<(method | field) name>.<type>, i.e.
+   `type-config.io.helidon.examples.decalarative.HttpEndpoint.retriable.retry`), or an explicit key configured on the annotation
 6. If there is a good reason the user may want to use a custom named service implementation, provide a way to inject it (see Retry
-   generated code for named retries, such as `GreetEndpoint_retriable__Retry.java`)
+   generated code for named retries, such as `GreetServiceEndpoint_retriable__Retry.java`)
 7. All features must be configured through service registry.
 
 A few codegen features that are available:
@@ -52,7 +53,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 | Fault Tolerance  | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
 | GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
 | WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
-| Security         | `Secured`                            | `Security` cannot be freed (big API)                      |
+| Security         | `Secured`                            | `Security` cannot be freed (big API), existing annots.    |
 | Messaging        | `Messages`                           | `Messaging` cannot be freed                               |
 | Scheduling       | `Scheduling`                         | Deprecate methods and current types for removal           |
 | Health           | `Health`                             | OK                                                        |
@@ -79,13 +80,12 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 
 The following Helidon features can be used to create a new declarative feature
 
-TODO: metrics, tracing - maybe allow update of service code
-
 1. Interceptors - metrics, tracing, logging etc.
 2. Injection (service factory) - for any feature where we expect the user to inject a specific service that the feature provides (
    AI, declarative rest client etc.)
 3. Code generation - for any feature that needs additional code to minimize runtime lookups and handling; ideally we should have
-   injection points that can be bound at build time (as opposed to runtime registry lookups)
+   injection points that can be bound at build time (as opposed to runtime registry lookups) - see
+   `Interception.ElementInterceptor` for generating code specific to a single method
 
 # Declarative Codegen Module
 
@@ -138,7 +138,8 @@ Annotations on method(s), may be defined on the endpoint type, or on an interfac
   method will be available on
 - `@Http.Produces` - the media type produced by this method (returned in the `Content-Type` header), also used when matching the
   `Accept` header of the request
-- `@Http.Consumes` - the media type expected by this method, when the request has an entity
+- `@Http.Consumes` - the media type expected by this method, when the request has an entity, matched against `Content-Type` of
+  the request
 - `@Http.Path` - the path this method will be available on, nested within the endpoint path, may contain path parameters (same as
   we can do when setting up routing)
 
@@ -158,6 +159,77 @@ Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 - `@Http.Entity` - the HTTP request entity
 
 ### Configuration
+
+Some annotation values may be overridden by configuration. The developer of the feature may decide to support this approach,
+though if supported, it must follow the guidelines defined here.
+
+1. Configuration key may be explicitly defined in an annotation to override the rules below
+2. The root configuration node for overriding annotation values is `type-config`
+3. Second level configuration node is the fully qualified class name of the annotated type (i.e. `com.example.MyType`)
+4. Third level is either name of the feature, or a reserved word `methods`; feature names must be unique within Helidon, third
+   party features may conflict, though that is outside of scope of our rules; methods are only identified by name; if multiple
+   methods with the same name exist, configuration would be used for all of them, or a full signature can be used (i.e.
+   `myMethod(java.lang.String,java.util.List)`), first we look for full signature
+
+See `io.helidon.declarative.codegen.TypeConfigSupport.generateMethodConfig` and
+`io.helidon.declarative.codegen.TypeConfigSupport.generateTypeConfig`.
+
+Now we have a split, that has the same sub-rules - either we configure something under the type (i.e. on same level as `methods`),
+or we configure something under a specific method (i.e. `type-config.fq-class-name.methods.method-name`).
+
+The next configuration level depends on complexity of the feature. WebServer, WebClient will have a dedicated feature config
+node `server` and `client`, with additional configuration option under these; other features may have directly a specific option
+defined here (such as fault tolerance, scheduling) - make sure there is no name conflict between features, if so, a dedicated
+feature node must be created.
+
+Helidon features (existing):
+
+| config key        | Feature         | Notes                                   |
+|-------------------|-----------------|-----------------------------------------|
+| `client`          | WebClient       | may contain `uri` and `web-client` etc. |
+| `server`          | WebServer       | may contain `path`, `listener` etc.     |                     
+| `schedule`        | Scheduling      | CRON task                               |
+| `fixedRate`       | Scheduling      | Fixed Rate task                         |
+| `async`           | Fault Tolerance | Asynchronous handler                    |
+| `timeout`         | Fault Tolerance | Timeout handler                         |
+| `retry`           | Fault Tolerance | Retry handler                           |
+| `circuit-breaker` | Fault Tolerance | Circuit Breaker handler                 |
+| `bulkhead`        | Fault Tolerance | Bulkhead handler                        |
+
+Helidon features (planned):
+
+| config key   | Feature     | Notes                                   |
+|--------------|-------------|-----------------------------------------|
+| `rpc-client` | Grpc client | may contain `uri` and `web-client` etc. |
+| `rpc-server` | Grpc server | may contain `listener` etc.             |
+| `security`   | Security    | may contain `roles-allowed` etc.        |
+| `counter`    | Metrics     | Counter metric                          |
+
+Other features must be added as they are being developed
+
+Documented example:
+
+```yaml
+type-config:
+  "com.example.MyType":
+    server:
+      listener: "admin" # override socket name
+      path: "/greeting"
+    client:
+      uri: "uri-to-invoke"
+      webclient:
+      # the full WebClientConfig
+    methods:
+      myMethod:
+        retry:
+          calls: 4
+      "myMethod(java.lang.String,java.util.List)":
+        retry:
+          enabled: false
+          calls: 5
+
+
+```
 
 TODO: we must have Listener name configurable per rest server endpoint
 There are currently no configurable options for HTTP endpoints.

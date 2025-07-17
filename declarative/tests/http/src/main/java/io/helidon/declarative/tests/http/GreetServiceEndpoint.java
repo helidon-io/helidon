@@ -32,6 +32,8 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.RestServer;
 
@@ -53,7 +55,7 @@ import jakarta.json.JsonObject;
  * <p>
  * The message is returned as a JSON object.
  */
-@RestServer.Listener("@default")
+@RestServer.Listener("admin")
 @RestServer.Endpoint
 @Service.Singleton
 @SuppressWarnings("deprecation")
@@ -180,6 +182,28 @@ class GreetServiceEndpoint implements GreetService {
     @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
     String getDefaultMessageHandlerPlain(Context context) {
         return stringResponse("World");
+    }
+
+    /**
+     * Set the greeting to use in future messages.
+     *
+     * @param greetingMessage the entity
+     * @return Hello World message
+     */
+    @Http.POST
+    @Http.Path("/greeting")
+    @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @RoleValidator.Roles("admin")
+    JsonObject updateGreetingHandlerWithSecurity(@Http.Entity JsonObject greetingMessage,
+                                                 SecurityContext securityContext) {
+        if (!greetingMessage.containsKey("greeting")) {
+            // mapped by QuickstartErrorHandler
+            throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
+        }
+        JsonObject response = response(securityContext.userName());
+        greeting.set(greetingMessage.getString("greeting"));
+        return response;
     }
 
     String fallback(String host) {

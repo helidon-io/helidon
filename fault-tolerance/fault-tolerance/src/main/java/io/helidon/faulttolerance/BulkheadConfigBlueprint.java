@@ -17,7 +17,6 @@
 package io.helidon.faulttolerance;
 
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -27,7 +26,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured("fault-tolerance.bulkheads")
 @Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderDecorator.class)
-interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
+interface BulkheadConfigBlueprint extends CommonHandlerConfig, Prototype.Factory<Bulkhead> {
     /**
      * Default limit.
      *
@@ -70,13 +69,6 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      */
     @Option.Singular
     List<Bulkhead.QueueListener> queueListeners();
-
-    /**
-     * Name for debugging, error reporting, monitoring.
-     *
-     * @return name of this bulkhead
-     */
-    Optional<String> name();
 
     /**
      * Flag to enable metrics for this instance. The value of this flag is

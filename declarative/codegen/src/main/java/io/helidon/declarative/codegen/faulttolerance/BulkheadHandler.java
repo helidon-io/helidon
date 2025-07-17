@@ -28,10 +28,12 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.BULKHEAD;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.BULKHEAD_ANNOTATION;
@@ -95,10 +97,13 @@ final class BulkheadHandler extends FtHandler {
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
 
         if (name == null) {
-            ctr.addContentLine("this.bulkhead = produceBulkhead();");
+            ctr.addContentLine("this.bulkhead = produceBulkhead(config);");
         } else {
             // named, inject
             ctr.addParameter(namedBulkhead -> namedBulkhead
@@ -108,9 +113,7 @@ final class BulkheadHandler extends FtHandler {
                                           .addTypeArgument(BULKHEAD)
                                           .build())
                             .addAnnotation(namedAnnotation(name)))
-                    .addContent("this.bulkhead = namedBulkhead.orElseGet(")
-                    .addContent(generatedType)
-                    .addContentLine("::produceBulkhead);");
+                    .addContentLine("this.bulkhead = namedBulkhead.orElseGet(() -> produceBulkhead(config));");
         }
 
         classModel.addConstructor(ctr);
@@ -144,6 +147,9 @@ final class BulkheadHandler extends FtHandler {
                 .isStatic(true)
                 .returnType(BULKHEAD)
                 .name("produceBulkhead")
+                .addParameter(config -> config
+                        .type(CONFIG)
+                        .name("config"))
                 .update(builder -> produceBulkheadMethodBody(enclosingTypeName,
                                                              element,
                                                              builder,
@@ -157,6 +163,13 @@ final class BulkheadHandler extends FtHandler {
                                            Method.Builder builder,
                                            Annotation annotation,
                                            String customName) {
+
+        // find appropriate method configuration for this retry
+        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+
+        builder.addContentLine("")
+                .addContentLine("var bulkheadConfig = methodConfig.get(\"bulkhead\");")
+                .addContentLine("");
 
         int limit = annotation.intValue("limit").orElse(10);
         int queueLength = annotation.intValue("queueLength").orElse(10);
@@ -175,6 +188,7 @@ final class BulkheadHandler extends FtHandler {
                 .addContent(".limit(")
                 .addContent(String.valueOf(limit))
                 .addContentLine(")")
+                .addContentLine(".config(bulkheadConfig)")
                 .addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();

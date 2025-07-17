@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -52,9 +53,10 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final String name;
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
-
-    private Counter callsCounterMetric;
-    private Counter openedCounterMetric;
+    @SuppressWarnings("rawtypes")
+    private final Function<Supplier, Object> function;
+    private final Counter callsCounterMetric;
+    private final Counter openedCounterMetric;
 
     @Service.Inject
     CircuitBreakerImpl(CircuitBreakerConfig config) {
@@ -66,11 +68,23 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        boolean metricsEnabled;
+        if (config.enabled()) {
+            function = this::realInvoke;
+            metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        } else {
+            function = Supplier::get;
+            metricsEnabled = false;
+        }
+
+        this.metricsEnabled = metricsEnabled;
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_CALLS_TOTAL, nameTag);
             openedCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_OPENED_TOTAL, nameTag);
+        } else {
+            callsCounterMetric = null;
+            openedCounterMetric = null;
         }
     }
 
@@ -84,8 +98,14 @@ class CircuitBreakerImpl implements CircuitBreaker {
         return name;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
+        // if disabled, just call the supplier, if enabled, call real invoke
+        return (T) function.apply(supplier);
+    }
+
+    private <T> T realInvoke(Supplier<? extends T> supplier) {
         if (metricsEnabled) {
             callsCounterMetric.increment();
         }

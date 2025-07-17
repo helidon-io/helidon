@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.service.registry.Lookup;
@@ -38,6 +39,8 @@ class AsyncImpl implements Async {
     private final ExecutorService executor;
     private final CompletableFuture<Async> onStart;
     private final AsyncConfig config;
+    @SuppressWarnings("rawtypes")
+    private final Function<Supplier, CompletableFuture> function;
 
     // this must only be invoked when within Inject, so we can use inject services
     @Service.Inject
@@ -47,12 +50,23 @@ class AsyncImpl implements Async {
                 .orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
+        if (config.enabled()) {
+            function = this::realInvoke;
+        } else {
+            function = supplier -> CompletableFuture.completedFuture(supplier.get());
+        }
     }
 
     AsyncImpl(AsyncConfig config) {
         this.executor = config.executor().orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
+
+        if (config.enabled()) {
+            function = this::realInvoke;
+        } else {
+            function = supplier -> CompletableFuture.completedFuture(supplier.get());
+        }
     }
 
     @Override
@@ -60,8 +74,13 @@ class AsyncImpl implements Async {
         return config;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> CompletableFuture<T> invoke(Supplier<T> supplier) {
+        return function.apply(supplier);
+    }
+
+    private <T> CompletableFuture<T> realInvoke(Supplier<T> supplier) {
         AtomicReference<Future<?>> ourFuture = new AtomicReference<>();
         CompletableFuture<T> result = new CompletableFuture<>() {
             @Override

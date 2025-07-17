@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
@@ -34,12 +35,17 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.THROWABLE;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
+import static io.helidon.declarative.codegen.faulttolerance.FtTypes.ERROR_CHECKER;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.FALLBACK_ANNOTATION;
+import static io.helidon.declarative.codegen.faulttolerance.FtTypes.FALLBACK_CONFIG;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.FALLBACK_GENERATED_METHOD;
 
 class FallbackHandler extends FtHandler {
@@ -64,7 +70,8 @@ class FallbackHandler extends FtHandler {
                                        .build());
 
         // generate the class body
-        addErrorChecker(classModel, fallbackAnnotation, true);
+        addErrorChecker(classModel, fallbackAnnotation, false);
+        constructor(classModel, enclosingType.typeName(), element);
         fallbackMethod(classModel, enclosingType, element, fallbackAnnotation);
 
         // add type to context
@@ -73,6 +80,57 @@ class FallbackHandler extends FtHandler {
                 classModel,
                 enclosingTypeName,
                 element);
+    }
+
+    private void constructor(ClassModel.Builder classModel, TypeName typeName, TypedElementInfo methodElement) {
+        var ctrBuilder = Constructor.builder()
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
+
+        classModel.addField(enabled -> enabled
+                .type(TypeNames.PRIMITIVE_BOOLEAN)
+                .name("enabled")
+                .isFinal(true)
+                .accessModifier(AccessModifier.PRIVATE));
+
+        classModel.addField(errorChecker -> errorChecker
+                .type(ERROR_CHECKER)
+                .name("errorChecker")
+                .isFinal(true)
+                .accessModifier(AccessModifier.PRIVATE));
+
+        TypeConfigSupport.generateMethodConfig(ctrBuilder,
+                                               typeName,
+                                               methodElement,
+                                               "config",
+                                               "methodConfig");
+
+        ctrBuilder.addContent("var fallbackConfig = ")
+                .addContent(FALLBACK_CONFIG)
+                .addContent(".<")
+                .addContent(String.class)
+                .addContentLine(">builder()")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContentLine(".applyOn(APPLY_ON)")
+                .addContentLine(".skipOn(SKIP_ON)")
+                .addContentLine(".fallback(x -> \"\")")
+                .addContentLine(".config(methodConfig.get(\"fallback\"))")
+                .addContentLine(".buildPrototype();")
+                .decreaseContentPadding()
+                .decreaseContentPadding();
+
+        ctrBuilder.addContentLine("var skipOn = fallbackConfig.skipOn();");
+        ctrBuilder.addContentLine("var applyOn = fallbackConfig.applyOn();");
+        ctrBuilder.addContent("this.errorChecker = ")
+                .addContent(ERROR_CHECKER)
+                .addContentLine(".create(skipOn, applyOn);");
+        ctrBuilder.addContentLine("this.enabled = fallbackConfig.enabled();");
+
+        classModel.addConstructor(ctrBuilder);
     }
 
     private void fallbackMethod(ClassModel.Builder classModel,
@@ -169,7 +227,8 @@ class FallbackHandler extends FtHandler {
                         .vararg(true)
                         .name("params"))
                 .addThrows(it -> it.type(Throwable.class))
-                .addContentLine("if (ERROR_CHECKER.shouldSkip(throwable)) {")
+                .addContentLine("if (enabled) {")
+                .addContentLine("if (errorChecker.shouldSkip(throwable)) {")
                 .addContentLine("throw throwable;")
                 .decreaseContentPadding()
                 .addContentLine("} else {")
@@ -181,6 +240,8 @@ class FallbackHandler extends FtHandler {
                                                  isStatic,
                                                  finalExpectsThrowable))
                 .addContentLine("}")
+                .addContentLine("}")
+                .addContentLine("throw throwable;")
         );
     }
 

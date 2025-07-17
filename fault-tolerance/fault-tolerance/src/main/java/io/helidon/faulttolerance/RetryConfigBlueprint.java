@@ -28,7 +28,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.retries")
-interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
+interface RetryConfigBlueprint extends CommonHandlerConfig, Prototype.Factory<Retry> {
     /**
      * Default calls to make.
      * @see #calls()
@@ -44,13 +44,6 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @see #overallTimeout()
      */
     Duration DEFAULT_OVERALL_TIMEOUT = Duration.ofSeconds(1);
-
-    /**
-     * Name for debugging, error reporting, monitoring.
-     *
-     * @return name of this retry
-     */
-    Optional<String> name();
 
     /**
      * Number of calls (first try + retries).
@@ -110,6 +103,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @see #applyOn()
      */
     @Option.Singular
+    @Option.Configured
     Set<Class<? extends Throwable>> skipOn();
 
     /**
@@ -119,6 +113,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @see #skipOn()
      */
     @Option.Singular
+    @Option.Configured
     Set<Class<? extends Throwable>> applyOn();
 
     /**

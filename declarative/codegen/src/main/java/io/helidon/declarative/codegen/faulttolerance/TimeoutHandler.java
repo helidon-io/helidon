@@ -29,11 +29,13 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenValidator.validateDuration;
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.TIMEOUT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.TIMEOUT_ANNOTATION;
@@ -98,10 +100,13 @@ final class TimeoutHandler extends FtHandler {
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
 
         if (name == null) {
-            ctr.addContentLine("this.timeout = produceTimeout();");
+            ctr.addContentLine("this.timeout = produceTimeout(config);");
         } else {
             // named, inject
             ctr.addParameter(namedTimeout -> namedTimeout
@@ -111,9 +116,7 @@ final class TimeoutHandler extends FtHandler {
                                           .addTypeArgument(TIMEOUT)
                                           .build())
                             .addAnnotation(namedAnnotation(name)))
-                    .addContent("this.timeout = namedTimeout.orElseGet(")
-                    .addContent(generatedType)
-                    .addContentLine("::produceTimeout);");
+                    .addContentLine("this.timeout = namedTimeout.orElseGet(() -> produceTimeout(config);");
         }
 
         classModel.addConstructor(ctr);
@@ -147,6 +150,9 @@ final class TimeoutHandler extends FtHandler {
                 .isStatic(true)
                 .returnType(TIMEOUT)
                 .name("produceTimeout")
+                .addParameter(config -> config
+                        .type(CONFIG)
+                        .name("config"))
                 .update(builder -> produceTimeoutMethodBody(enclosingTypeName,
                                                             element,
                                                             builder,
@@ -160,6 +166,14 @@ final class TimeoutHandler extends FtHandler {
                                           Method.Builder builder,
                                           Annotation annotation,
                                           String customName) {
+
+        // find appropriate method configuration for this timeout
+        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+
+        builder.addContentLine("")
+                .addContentLine("var timeoutConfig = methodConfig.get(\"timeout\");")
+                .addContentLine("");
+
 
         String timeout = validateDuration(typeName,
                                           element,
@@ -185,6 +199,7 @@ final class TimeoutHandler extends FtHandler {
                 .addContent(".currentThread(")
                 .addContent(String.valueOf(currentThread))
                 .addContentLine(")")
+                .addContentLine(".config(timeoutConfig)")
                 .addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
