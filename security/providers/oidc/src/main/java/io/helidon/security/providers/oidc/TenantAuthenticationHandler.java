@@ -22,7 +22,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -40,6 +39,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.common.types.TypeName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.SetCookie;
@@ -325,22 +325,21 @@ class TenantAuthenticationHandler {
         Set<String> result = new HashSet<>();
 
         for (SecurityLevel securityLevel : request.endpointConfig().securityLevels()) {
-            List<ScopeValidator.Scopes> expectedScopes = securityLevel.combineAnnotations(ScopeValidator.Scopes.class,
-                                                                                          EndpointConfig.AnnotationScope
-                                                                                                  .values());
+            var expectedScopes = securityLevel.combineAnnotations(TypeName.create(ScopeValidator.Scopes.class),
+                                                                  EndpointConfig.AnnotationScope
+                                                                          .values());
             expectedScopes.stream()
-                    .map(ScopeValidator.Scopes::value)
-                    .map(Arrays::asList)
-                    .map(List::stream)
-                    .forEach(stream -> stream.map(ScopeValidator.Scope::value)
-                            .forEach(result::add));
+                    .map(it -> it.annotationValues().orElseGet(List::of))
+                    .flatMap(List::stream)
+                    .map(it -> it.stringValue().orElse(""))
+                    .forEach(result::add);
 
-            List<ScopeValidator.Scope> expectedScopeAnnotations = securityLevel.combineAnnotations(ScopeValidator.Scope.class,
-                                                                                                   EndpointConfig.AnnotationScope
-                                                                                                           .values());
+            var expectedScopeAnnotations = securityLevel.combineAnnotations(TypeName.create(ScopeValidator.Scope.class),
+                                                                            EndpointConfig.AnnotationScope
+                                                                                    .values());
 
             expectedScopeAnnotations.stream()
-                    .map(ScopeValidator.Scope::value)
+                    .map(it -> it.value().orElse(""))
                     .forEach(result::add);
         }
 

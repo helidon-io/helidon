@@ -15,10 +15,15 @@
  */
 package io.helidon.security.abac.role;
 
-import java.lang.reflect.Method;
+import java.util.List;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
+import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 import jakarta.annotation.security.PermitAll;
@@ -36,25 +41,52 @@ public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
     }
 
     @Override
-    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
+    public AnalyzerResponse analyze(TypeName applicationType, List<Annotation> annotations) {
+        return analyze(annotations, AnalyzerResponse.abstain());
     }
 
     @Override
-    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
-        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
-
+    public AnalyzerResponse analyze(TypeName endpointType, List<Annotation> annotations, AnalyzerResponse previousResponse) {
+        return analyze(annotations, previousResponse);
     }
 
-    private static AnalyzerResponse analyze(PermitAll permitAll, AnalyzerResponse previousResponse) {
-        if (permitAll == null) {
+    @Override
+    public AnalyzerResponse analyze(TypeName typeName, TypedElementInfo method, AnalyzerResponse previousResponse) {
+        return analyze(method.annotations(), previousResponse);
+    }
+
+    private static AnalyzerResponse analyze(List<Annotation> annotations, AnalyzerResponse previousResponse) {
+        if (hasAnnotation(annotations,
+                          AbacProvider.PERMIT_ALL_JAKARTA_TYPE,
+                          AbacProvider.PERMIT_ALL_JAVAX_TYPE,
+                          RoleValidator.PermitAll.TYPE)) {
+            // permit all wins
             return AnalyzerResponse.builder(previousResponse)
+                    .authenticationResponse(Flag.OPTIONAL)
+                    .authorizeResponse(Flag.OPTIONAL)
                     .build();
         }
 
-        return AnalyzerResponse.builder(previousResponse)
-                .authenticationResponse(Flag.OPTIONAL)
-                .authorizeResponse(Flag.OPTIONAL)
-                .build();
+        if (hasAnnotation(annotations,
+                          AbacProvider.ROLES_ALLOWED_JAKARTA_TYPE,
+                          AbacProvider.ROLES_ALLOWED_JAVAX_TYPE,
+                          RoleValidator.RolesContainer.TYPE,
+                          RoleValidator.Roles.TYPE)) {
+            // when roles allowed are defined, we require authentication (roles allowed is handled by authentication)
+            return AnalyzerResponse.builder(previousResponse)
+                    .authenticationResponse(Flag.REQUIRED)
+                    .build();
+        }
+
+        return previousResponse;
+    }
+
+    private static boolean hasAnnotation(List<Annotation> annotations, TypeName... typeNames) {
+        for (TypeName typeName : typeNames) {
+            if (Annotations.findFirst(typeName, annotations).isPresent()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

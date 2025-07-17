@@ -19,8 +19,10 @@
  */
 module io.helidon.webserver.security {
     requires io.helidon.common.context;
-    requires io.helidon.security.integration.common;
     requires io.helidon.webserver;
+    requires io.helidon.service.registry;
+    requires io.helidon.security.integration.common;
+    requires io.helidon.security.providers.common;
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;

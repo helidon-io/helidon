@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.security.spi.AuthenticationProvider;
 
 /**
@@ -58,6 +59,11 @@ import io.helidon.security.spi.AuthenticationProvider;
 @Documented
 @Inherited
 public @interface Authorized {
+    /**
+     * Type name of this annotation.
+     */
+    TypeName TYPE = TypeName.create(Authorized.class.getName());
+
     /**
      * Determine whether authorization should be enabled. Defaults to {@code true}
      *

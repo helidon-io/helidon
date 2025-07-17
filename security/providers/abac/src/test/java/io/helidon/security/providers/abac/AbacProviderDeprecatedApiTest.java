@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.security.providers.abac;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.types.TypeName;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -40,15 +39,15 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for {@link io.helidon.security.providers.abac.AbacProvider}.
  */
-public class AbacProviderTest {
+@SuppressWarnings("removal")
+public class AbacProviderDeprecatedApiTest {
     @Test
     public void testMissingValidator() {
         AbacProvider provider = AbacProvider.create();
         Attrib1 attrib = Mockito.mock(Attrib1.class);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
-        SecurityLevel level = SecurityLevel.builder()
-                .type(TypeName.create("mock"))
+        SecurityLevel level = SecurityLevel.create("mock")
                 .addClassAnnotation(attrib)
                 .build();
 
@@ -77,8 +76,7 @@ public class AbacProviderTest {
         doReturn(RolesAllowed.class).when(attrib).annotationType();
         doReturn(new String[] {"admin"}).when(attrib).value();
 
-        SecurityLevel level = SecurityLevel.builder()
-                .type(TypeName.create("mock"))
+        SecurityLevel level = SecurityLevel.create("mock")
                 .addClassAnnotation(attrib)
                 .build();
 
@@ -107,8 +105,7 @@ public class AbacProviderTest {
         when(attrib.value()).thenReturn(false);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
-        SecurityLevel level = SecurityLevel.builder()
-                .type(TypeName.create("mock"))
+        SecurityLevel level = SecurityLevel.create("mock")
                 .addClassAnnotation(attrib)
                 .build();
 
@@ -137,8 +134,7 @@ public class AbacProviderTest {
         when(attrib.value()).thenReturn(true);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
-        SecurityLevel level = SecurityLevel.builder()
-                .type(TypeName.create("mock"))
+        SecurityLevel level = SecurityLevel.create("mock")
                 .addClassAnnotation(attrib)
                 .build();
 

@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.security.AuditEvent.AuditSeverity;
 
 /**
@@ -33,6 +34,10 @@ import io.helidon.security.AuditEvent.AuditSeverity;
 @Documented
 @Inherited
 public @interface Audited {
+    /**
+     * Type of this annotation.
+     */
+    TypeName TYPE = TypeName.create(Audited.class);
     /**
      * Default event type: {@value}.
      */

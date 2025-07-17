@@ -57,6 +57,10 @@
             <artifactId>helidon-webserver-context</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-common</artifactId>
+        </dependency>
+        <dependency>
             <!--
             emits warning: unknown enum constant Kind.LIST when not on classpath during compilation
             the annotation that triggers it has CLASS retention, so this is a bad warning...
@@ -154,6 +158,11 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -174,6 +183,11 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
