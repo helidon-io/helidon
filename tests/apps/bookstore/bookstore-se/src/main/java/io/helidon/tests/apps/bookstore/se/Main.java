@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public final class Main {
         LogConfig.configureRuntime();
 
         // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        Config config = Config.global();
 
         HealthObserver health = HealthObserver.builder()
                 .useSystemServices(false)
