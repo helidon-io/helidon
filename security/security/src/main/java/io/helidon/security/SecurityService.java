@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-/**
- * Annotations for integration with environment supporting annotations.
- */
-module io.helidon.security.annotations {
+package io.helidon.security;
 
-    requires transitive io.helidon.security;
-    requires transitive io.helidon.common.types;
+import java.util.function.Supplier;
 
-    exports io.helidon.security.annotations;
+import io.helidon.common.config.Config;
+import io.helidon.service.registry.Service;
 
+@Service.Singleton
+class SecurityService implements Supplier<Security> {
+    private final Security delegate;
+
+    SecurityService(Config config) {
+        this.delegate = Security.builder()
+                .config(config.get("security"))
+                .build();
+    }
+
+    @Override
+    public Security get() {
+        return delegate;
+    }
 }
