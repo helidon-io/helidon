@@ -88,10 +88,10 @@ follows:
 include::{sourcedir}/se/jsonrpc/ClientSnippets.java[tag=snippet_3, indent=0]
 ----
 
-NOTE: If the JSON-RPC response contains an error, it will also contain
-an error code which is independent of the HTTP status code returned.
+NOTE: The HTTP status code is independent of any other error code in
+a JSON-RPC error response.
 
-Every JSON-RPC response will contain either a result or an error, and that is
+Every JSON-RPC response contains either a result or an error, and that is
 the reason why `res.result()` returns an optional value. The last step
 shows how the result is mapped to a `StartStopResult` instance using JSON-B.
 See xref:{rootdir}/se/jsonrpc/server.adoc[JSON-RPC Server] for more
@@ -101,7 +101,7 @@ information on these types.
 
 The JSON-RPC client API also supports batching, whereby multiple method
 invocations can be aggregated and sent as a single unit for processing.
-The response to a batch request will include an entry for each of the
+The response to a batch request includes an entry for each of the
 invocations in the request; invocations are executed in order and can
 independently succeed or fail.
 
