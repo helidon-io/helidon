@@ -25,6 +25,7 @@ import io.helidon.service.registry.Service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnitUtil;
 
 /**
  * Jakarta Persistence specific repository tasks executor.
@@ -80,6 +81,16 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      * @return the session factory instance
      */
     EntityManagerFactory factory();
+
+    /**
+     * Retrieve {@link PersistenceUnitUtil} from persistence session factory.
+     *
+     * @return the {@link PersistenceUnitUtil} instance
+     */
+    @SuppressWarnings("resource")
+    default PersistenceUnitUtil persistenceUnitUtil() {
+        return factory().getPersistenceUnitUtil();
+    }
 
     /**
      * Run persistence session task.

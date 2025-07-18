@@ -15,6 +15,7 @@
  */
 package io.helidon.data.tests.common;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -141,21 +142,29 @@ public class InitialData {
     /**
      * Pokemons not stored in the database.
      */
-    public static final Map<Integer, Pokemon> NEW_POKEMONS = Map.of(
-            100, new Pokemon(100, TRAINERS[1], "Diglett", 32, true, List.of(TYPES[5])),
-            101, new Pokemon(101, TRAINERS[1], "Dugtrio", 72, true, List.of(TYPES[5])),
-            102, new Pokemon(102, TRAINERS[2], "Meowth", 90, true, List.of(TYPES[1])),
-            103, new Pokemon(103, TRAINERS[2], "Persian", 123, true, List.of(TYPES[1])),
-            // TestTransaction.testManual<type>2ndLevel
-            104, new Pokemon(104, TRAINERS[3], "Pikachu", 92, true, List.of(TYPES[13])),
-            105, new Pokemon(105, TRAINERS[3], "Machop", 138, true, List.of(TYPES[2])),
-            // TestTransaction.testAutomatic<type>2ndLevel
-            106, new Pokemon(106, TRAINERS[3], "Snorlax", 293, true, List.of(TYPES[1])),
-            107, new Pokemon(107, TRAINERS[3], "Charizard", 151, true, List.of(TYPES[10], TYPES[3])),
-            // TestTransaction.testUser<type>2ndLevel
-            108, new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])),
-            109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11]))
-    );
+    public static final Map<Integer, Pokemon> NEW_POKEMONS = initNewPokemons();
+
+    // Keeping this method here to show NEW_POKEMONS content right behind it.
+    private static Map<Integer, Pokemon> initNewPokemons() {
+        Map<Integer, Pokemon> pokemons = new HashMap<>();
+        pokemons.put(100, new Pokemon(100, TRAINERS[1], "Diglett", 32, true, List.of(TYPES[5])));
+        pokemons.put(101, new Pokemon(101, TRAINERS[1], "Dugtrio", 72, true, List.of(TYPES[5])));
+        pokemons.put(102, new Pokemon(102, TRAINERS[2], "Meowth", 90, true, List.of(TYPES[1])));
+        pokemons.put(103, new Pokemon(103, TRAINERS[2], "Persian", 123, true, List.of(TYPES[1])));
+        // TestTransaction.testManual<type>2ndLevel
+        pokemons.put(104, new Pokemon(104, TRAINERS[3], "Pikachu", 92, true, List.of(TYPES[13])));
+        pokemons.put(105, new Pokemon(105, TRAINERS[3], "Machop", 138, true, List.of(TYPES[2])));
+        // TestTransaction.testAutomatic<type>2ndLevel
+        pokemons.put(106, new Pokemon(106, TRAINERS[3], "Snorlax", 293, true, List.of(TYPES[1])));
+        pokemons.put(107, new Pokemon(107, TRAINERS[3], "Charizard", 151, true, List.of(TYPES[10], TYPES[3])));
+        // TestTransaction.testUser<type>2ndLevel
+        pokemons.put(108, new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])));
+        pokemons.put(109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11])));
+        pokemons.put(110, new Pokemon(110, TRAINERS[3], "Arbok", 115, true, List.of(TYPES[4])));
+        pokemons.put(111, new Pokemon(111, TRAINERS[4], "Sandshrew", 98, true, List.of(TYPES[5])));
+        pokemons.put(112, new Pokemon(112, TRAINERS[4], "Sandslash", 140, true, List.of(TYPES[5])));
+        return Map.copyOf(pokemons);
+    }
 
     private InitialData() {
         throw new UnsupportedOperationException("No instances of Data are allowed");

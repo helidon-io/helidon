@@ -80,6 +80,97 @@ final class JakartaStatementGenerator
     }
 
     @Override
+    public void addUpdate(Method.Builder builder,
+                          String executor,
+                          String identifier,
+                          TypeName entity) {
+        addEmLambdaBlock(builder, b -> {
+            // Object id = executor.persistenceUnitUtil().getIdentifier(entity);
+            statement(b, b1 -> initializedVariable(b1, OBJECT, "id",
+                                                   b2 -> b2.addContent(executor)
+                                                           .addContent(".persistenceUnitUtil().getIdentifier(")
+                                                           .addContent(identifier)
+                                                           .addContent(")")));
+            // if (id != null) {
+            b.addContentLine("if (id != null) {");
+            // League srcEntity = em.find(League.class, id);
+            statement(b, b1 -> initializedVariable(b, entity, "srcEntity",
+                                                     b2 -> addEmFind(b2, "id", entity)));
+            // if (srcEntity != null) {
+            b.addContentLine("if (srcEntity != null) {");
+            // return em.merge(entity);
+            returnStatement(b, b1 -> addEmMerge(b1, identifier));
+            // }
+            b.addContentLine("}");
+            // throw new DataException("Entity does not exist.");
+            statement(b, b1 -> throwException(b1,
+                                              JakartaPersistenceTypes.DATA_EXCEPTION,
+                                              b3 -> b3.addContent(
+                                                      "String.format(\"Entity with id = \\\"%s\\\" does not exist.\", id)")));
+            // }
+            b.addContentLine("}");
+            // throw new DataException("Entity does not have ID value set.");
+            statement(b, b1 -> throwException(b1,
+                                              JakartaPersistenceTypes.DATA_EXCEPTION,
+                                              "Entity does not have ID value set."));
+        });
+    }
+
+    @Override
+    public void addUpdateAll(Method.Builder builder,
+                             String executor,
+                             String srcEntities,
+                             String updatedEntities,
+                             TypeName entity) {
+        addEmLambda(builder, b1 -> {
+            // Finish initial line: executor.run(em -> entities.forEach(e -> {
+            b1.addContent(srcEntities)
+                    .addContentLine(".forEach(e -> {");
+            // Object id = executor.persistenceUnitUtil().getIdentifier(e);
+            statement(b1, b2 -> initializedVariable(b2, OBJECT, "id",
+                                                    b3 -> b3.addContent(executor)
+                                                            .addContent(".persistenceUnitUtil().getIdentifier(")
+                                                            .addContent("e")
+                                                            .addContent(")")));
+            // if (id != null) {
+            b1.addContentLine("if (id != null) {");
+            // League srcEntity = em.find(League.class, id);
+            statement(b1, b2 -> initializedVariable(b2, entity, "srcEntity",
+                                                    b3 -> addEmFind(b3, "id", entity)));
+            // if (srcEntity != null) {
+            b1.addContentLine("if (srcEntity != null) {");
+            // mergedEntities.add(em.merge(e));
+            statement(b1, b2 -> {
+                b2.addContent("mergedEntities.add(");
+                addEmMerge(b2, "e");
+                b2.addContent(")");
+            });
+            // } else {
+            b1.addContent("}")
+                    .addContentLine(" else {");
+            // throw new DataException("Entity does not exist.");
+            statement(b1, b2 -> throwException(b2,
+                                               JakartaPersistenceTypes.DATA_EXCEPTION,
+                                               b3 -> b3.addContent(
+                                                       "String.format(\"Entity with id = \\\"%s\\\" does not exist.\", id)")));
+            // }
+            b1.addContentLine("}");
+            // } else {
+            b1.addContent("}")
+                    .addContentLine(" else {");
+            // throw new DataException("Entity does not have ID value set.");
+            statement(b1, b2 -> throwException(b2,
+                                              JakartaPersistenceTypes.DATA_EXCEPTION,
+                                              "Entity does not have ID value set."));
+            // }
+            b1.addContentLine("}");
+            // Finish last line: }));
+            b1.addContent("}")
+                    .addContent(")");
+        });
+    }
+
+    @Override
     public void addExecuteSimpleQueryItem(Method.Builder builder, String query, TypeName returnType) {
         addEmLambda(builder, b -> {
             addCreateQuery(builder, query, returnType);

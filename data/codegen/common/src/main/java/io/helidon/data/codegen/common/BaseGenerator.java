@@ -54,6 +54,10 @@ public abstract class BaseGenerator {
             .addTypeArgument(T)
             .build();
     /**
+     * Type of the {@code Object}.
+     */
+    protected static final TypeName OBJECT = TypeName.create(Object.class);
+    /**
      * {@code Iterable<T> entities} method parameter.
      */
     protected static final Parameter ITERABLE_T_ENTITIES = Parameter.builder()
@@ -118,6 +122,17 @@ public abstract class BaseGenerator {
      */
     protected BaseGenerator() {
     }
+
+    /*
+     * Design note:
+     * Current Java AST expanding methods are based on Method.Builder lambda expressions. This was easy
+     * to implement to get initial version of the codegen. But it's not very effective.
+     * For next versions Method.Builder should be class instance property shared by all implementing methods.
+     * This should slightly simplify the code and replace lambdas with method references in some cases.
+     *
+     * Also, this AST methods syntax does not cover whole code being generated. This may be finished in later
+     * versions.
+     */
 
     /**
      * Generate statement.
@@ -188,6 +203,36 @@ public abstract class BaseGenerator {
      */
     protected static void nullValue(Method.Builder builder) {
         builder.addContent("null");
+    }
+
+    /**
+     * Generate {@code throw new <type>(<message>)} for an exception.
+     *
+     * @param builder method builder
+     * @param type    exception type
+     * @param message exception message
+     */
+    protected static void throwException(Method.Builder builder, TypeName type, String message) {
+        builder.addContent("throw new ")
+                .addContent(type)
+                .addContent("(\"")
+                .addContent(message)
+                .addContent("\")");
+    }
+
+    /**
+     * Generate {@code throw new <type>(<message>)} for an exception.
+     *
+     * @param builder method builder
+     * @param type    exception type
+     * @param message exception message content
+     */
+    protected static void throwException(Method.Builder builder, TypeName type, Consumer<Method.Builder> message) {
+        builder.addContent("throw new ")
+                .addContent(type)
+                .addContent("(");
+        message.accept(builder);
+        builder.addContent(")");
     }
 
     /**
