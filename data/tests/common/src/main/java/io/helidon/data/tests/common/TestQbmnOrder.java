@@ -18,6 +18,7 @@ package io.helidon.data.tests.common;
 import java.util.List;
 
 import io.helidon.data.Order;
+import io.helidon.data.OrderDirection;
 import io.helidon.data.Sort;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
@@ -59,6 +60,17 @@ public class TestQbmnOrder {
     @Test
     public void testFindAllOrderByHpAscDynamicName() {
         List<Pokemon> pokemons = pokemonRepository.findAllOrderByHp(Sort.create(Order.create("name")));
+        List<Pokemon> checkPokemons = sortedPokemonsListByHpAndName(pokemonsList());
+        checkPokemonsSortedList(pokemons, checkPokemons);
+    }
+
+    // Dynamic ordering (criteria API) with case sensitivity turned off
+    @Test
+    public void testFindAllOrderByHpAscDynamicInsensitiveName() {
+        List<Pokemon> pokemons = pokemonRepository.findAllOrderByHp(Sort.create(
+                Order.create("name",
+                             OrderDirection.ASC,
+                             false)));
         List<Pokemon> checkPokemons = sortedPokemonsListByHpAndName(pokemonsList());
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
