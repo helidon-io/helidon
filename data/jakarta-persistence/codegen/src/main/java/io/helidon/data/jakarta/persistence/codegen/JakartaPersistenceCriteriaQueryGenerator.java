@@ -189,8 +189,12 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
                 .addContent(".add(");
         builder.addContent("switch (order.direction()) ")
                 .addContentLine("{");
-        builder.addContentLine("case ASC -> cb.asc(root.get(order.property()));");
-        builder.addContentLine("case DESC -> cb.desc(root.get(order.property()));");
+        builder.addContentLine("case ASC -> cb.asc(order.caseSensitive()")
+                .addContentLine("                    ? root.get(order.property())")
+                .addContentLine("                    : cb.upper(root.get(order.property())));");
+        builder.addContentLine("case DESC -> cb.desc(order.caseSensitive()")
+                .addContentLine("                    ? root.get(order.property())")
+                .addContentLine("                    : cb.upper(root.get(order.property())));");
         builder.addContent("}")
                 .addContent(")");
         decreasePadding(builder, 2);
