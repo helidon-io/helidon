@@ -1450,6 +1450,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-grpc-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

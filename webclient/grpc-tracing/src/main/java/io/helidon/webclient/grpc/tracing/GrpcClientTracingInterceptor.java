@@ -19,6 +19,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.Scope;
@@ -46,7 +47,7 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
         ClientCall<ReqT, ResT> call = channel.newCall(method, callOptions);
         return new ForwardingClientCall.SimpleForwardingClientCall<>(call) {
 
-            private Span outgoingClientSpan;
+            private AtomicReference<Span> outgoingClientSpan;
             private Scope outgoingClientScope;
 
             @Override
@@ -57,42 +58,43 @@ class GrpcClientTracingInterceptor implements ClientInterceptor {
                         .spanBuilder(method.getServiceName() + "-" + method.getFullMethodName())
                         .kind(Span.Kind.CLIENT);
                 Span.current().ifPresent(parent -> outgoingClientSpanBuilder.parent(parent.context()));
-                outgoingClientSpan = outgoingClientSpanBuilder.start();
+                outgoingClientSpan = new AtomicReference<>(outgoingClientSpanBuilder.start());
 
                 try {
-                    Tracer.global().inject(outgoingClientSpan.context(), null, new GrpcHeaderConsumer(headers));
+                    Tracer.global().inject(outgoingClientSpan.get().context(), null, new GrpcHeaderConsumer(headers));
                     LOGGER.log(Level.DEBUG, "After injecting span context; metadata: {0}", headers);
-                    outgoingClientScope = outgoingClientSpan.activate();
+                    outgoingClientScope = outgoingClientSpan.get().activate();
 
                     super.start(responseListener, headers);
                 } catch (Exception e) {
-                    closeScopeIfActive();
-                    endSpanIfPresent(e);
+                    finishSpan(e);
                 }
             }
 
             @Override
+            public void cancel(String message, Throwable cause) {
+                finishSpan(cause);
+                super.cancel(message, cause);
+            }
+
+            @Override
             public void halfClose() {
-                closeScopeIfActive();
-                endSpanIfPresent(null);
+                finishSpan(null);
                 super.halfClose();
             }
 
-            private void closeScopeIfActive() {
-                if (outgoingClientScope != null) {
-                    outgoingClientScope.close();
-                    outgoingClientScope = null;
-                }
-            }
-
-            private void endSpanIfPresent(Exception e) {
-                if (outgoingClientSpan != null) {
-                    if (e == null) {
-                        outgoingClientSpan.end();
-                    } else {
-                        outgoingClientSpan.end(e);
+            private void finishSpan(Throwable t) {
+                Span currentSpan = outgoingClientSpan.get();
+                if (currentSpan != null && outgoingClientSpan.compareAndSet(currentSpan, null)) {
+                    if (outgoingClientScope != null) {
+                        outgoingClientScope.close();
+                        outgoingClientScope = null;
                     }
-                    outgoingClientSpan = null;
+                    if (t == null) {
+                        currentSpan.end();
+                    } else {
+                        currentSpan.end(t);
+                    }
                 }
             }
         };
