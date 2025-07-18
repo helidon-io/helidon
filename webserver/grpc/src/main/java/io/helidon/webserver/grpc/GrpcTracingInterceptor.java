@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.ContextKeys;
@@ -30,6 +31,7 @@ import io.helidon.grpc.core.GrpcTracingContext;
 import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -206,17 +208,19 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
     private class TracingListener<ReqT>
             extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
 
-        private final Span span;
+        private final AtomicReference<Span> span;
+        private Scope scope;
 
         private TracingListener(ServerCall.Listener<ReqT> delegate, Span span) {
             super(delegate);
-            this.span = span;
+            this.span = new AtomicReference<>(span);
+            scope = span.activate();
         }
 
         @Override
         public void onMessage(ReqT message) {
             if (streaming || verbose) {
-                span.addEvent("onMessage", Map.of("Message received", message));
+                span.get().addEvent("onMessage", Map.of("Message received", message));
             }
 
             delegate().onMessage(message);
@@ -225,7 +229,7 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
         @Override
         public void onHalfClose() {
             if (streaming) {
-                span.addEvent("Client finished sending messages");
+                span.get().addEvent("Client finished sending messages");
             }
 
             delegate().onHalfClose();
@@ -233,25 +237,40 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
 
         @Override
         public void onCancel() {
-            span.addEvent("Call cancelled");
+            span.get().addEvent("Call cancelled");
 
             try {
                 delegate().onCancel();
             } finally {
-                span.end();
+                finishSpan(false);
             }
         }
 
         @Override
         public void onComplete() {
+
             if (verbose) {
-                span.addEvent("Call completed");
+                span.get().addEvent("Call completed");
             }
 
             try {
                 delegate().onComplete();
             } finally {
-                span.end();
+               finishSpan(true);
+            }
+        }
+
+        private void finishSpan(boolean ok) {
+            Span currentSpan = span.get();
+            if (currentSpan != null && span.compareAndSet(currentSpan, null)) {
+                if (scope != null) {
+                    scope.close();
+                    scope = null;
+                    if (!ok) {
+                        currentSpan.status(Span.Status.ERROR);
+                    }
+                    currentSpan.end();
+                }
             }
         }
     }

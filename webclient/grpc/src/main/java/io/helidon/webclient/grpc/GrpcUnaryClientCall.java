@@ -39,7 +39,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private volatile boolean closeCalled;
     private volatile boolean requestSent;
-    private volatile boolean responseSent;
+    private volatile boolean responseReceived;
 
     GrpcUnaryClientCall(GrpcChannel grpcChannel,
                         MethodDescriptor<ReqT, ResT> methodDescriptor,
@@ -64,7 +64,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void halfClose() {
         socket().log(LOGGER, DEBUG, "halfClose called");
-        close(responseSent ? Status.OK : Status.UNKNOWN);
+        close(responseReceived ? Status.OK : Status.UNKNOWN);
     }
 
     @Override
@@ -84,7 +84,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         clientStream().writeData(BufferData.create(headerData, messageData), true);
         requestSent = true;
 
-        // Update bytes sent
+        // update bytes sent
         if (enableMetrics()) {
             bytesSent().addAndGet(serialized.length);
         }
@@ -96,6 +96,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             // trailers or eos received?
             if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
                 socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
+                responseReceived = true;
                 break;
             }
 
@@ -110,7 +111,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 }
 
                 responseListener().onMessage(toResponse(bufferData));
-                responseSent = true;
+                responseReceived = true;
             }
         }
     }
