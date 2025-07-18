@@ -351,6 +351,34 @@ public interface PersistenceGenerator {
         void addFind(Method.Builder builder, String identifier, TypeName entity);
 
         /**
+         * Add code to update entity.
+         *
+         * @param builder    method builder
+         * @param executor   executor identifier
+         * @param identifier entity identifier
+         * @param entity     entity class name
+         */
+        void addUpdate(Method.Builder builder,
+                       String executor,
+                       String identifier,
+                       TypeName entity);
+
+        /**
+         * Add code to update entity.
+         *
+         * @param builder         method builder
+         * @param executor        executor identifier
+         * @param srcEntities     source entities collection identifier
+         * @param updatedEntities updated entities collection identifier
+         * @param entity          entity class name
+         */
+        void addUpdateAll(Method.Builder builder,
+                          String executor,
+                          String srcEntities,
+                          String updatedEntities,
+                          TypeName entity);
+
+        /**
          * Add code to execute query on entity and return single {@code returnType} instance.
          *
          * @param builder    method builder

@@ -26,6 +26,7 @@ import java.util.function.Function;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.data.Data;
+import io.helidon.data.DataException;
 import io.helidon.data.jakarta.persistence.JpaRepositoryExecutor;
 import io.helidon.data.jakarta.persistence.spi.JpaEntityProvider;
 
@@ -134,6 +135,11 @@ public class JakartaPersistenceTypesTest {
     @Test
     void testFunction() {
         checkField("SESSION_FUNCTION", Function.class);
+    }
+
+    @Test
+    void testDataException() {
+        checkField("DATA_EXCEPTION", DataException.class);
     }
 
     @Test

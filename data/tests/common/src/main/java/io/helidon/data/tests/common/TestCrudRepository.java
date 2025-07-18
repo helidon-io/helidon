@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.data.tests.model.Pokemon;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
+import io.helidon.transaction.TxException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,11 +32,10 @@ import static io.helidon.data.tests.common.InitialData.POKEMONS;
 import static io.helidon.data.tests.common.InitialData.TYPES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestCrudRepository {
-
-    private static final System.Logger LOGGER = System.getLogger(TestCrudRepository.class.getName());
 
     private static PokemonRepository pokemonRepository;
 
@@ -43,10 +43,10 @@ public class TestCrudRepository {
     public static void before() {
         pokemonRepository = Services.get(PokemonRepository.class);
         // Used in testUpdate()
-        pokemonRepository.insert(NEW_POKEMONS.get(106));
-        // Used in testUpdateAll()
         pokemonRepository.insert(NEW_POKEMONS.get(107));
+        // Used in testUpdateAll()
         pokemonRepository.insert(NEW_POKEMONS.get(108));
+        pokemonRepository.insert(NEW_POKEMONS.get(109));
 
     }
 
@@ -86,7 +86,7 @@ public class TestCrudRepository {
     @Test
     public void testInsertExisting() {
         Pokemon pokemon = POKEMONS[1];
-        assertThrows(RuntimeException.class, () -> pokemonRepository.insert(pokemon));
+        assertThrows(TxException.class, () -> pokemonRepository.insert(pokemon));
     }
 
     // Add pokemons List with already existing pokemon shall fail
@@ -95,13 +95,13 @@ public class TestCrudRepository {
         List<Pokemon> pokemons = List.of(NEW_POKEMONS.get(104),
                                          POKEMONS[1],
                                          NEW_POKEMONS.get(105));
-        assertThrows(RuntimeException.class, () -> pokemonRepository.insertAll(pokemons));
+        assertThrows(TxException.class, () -> pokemonRepository.insertAll(pokemons));
     }
 
     // Update existing pokemon and verify it in the database
     @Test
     public void testUpdate() {
-        Pokemon pokemon = NEW_POKEMONS.get(106);
+        Pokemon pokemon = NEW_POKEMONS.get(107);
         // Verify that pokemon is present in the database
         boolean exists = pokemonRepository.existsById(pokemon.getId());
         assertThat(exists, is(true));
@@ -111,7 +111,7 @@ public class TestCrudRepository {
         pokemon.setHp(75);
         // Save and verify
         pokemonRepository.update(pokemon);
-        Optional<Pokemon> maybeFromDb = pokemonRepository.findById(106);
+        Optional<Pokemon> maybeFromDb = pokemonRepository.findById(107);
         assertThat(maybeFromDb.isPresent(), is(true));
         Pokemon fromDb = maybeFromDb.get();
         assertThat(fromDb, is(pokemon));
@@ -120,8 +120,8 @@ public class TestCrudRepository {
     // Update existing pokemons List and verify it in the database
     @Test
     public void testUpdateAll() {
-        List<Pokemon> pokemons = List.of(NEW_POKEMONS.get(106),
-                                         NEW_POKEMONS.get(107));
+        List<Pokemon> pokemons = List.of(NEW_POKEMONS.get(108),
+                                         NEW_POKEMONS.get(109));
         // Verify that pokemons are present in the database
         for (Pokemon pokemon : pokemons) {
             boolean exists = pokemonRepository.existsById(pokemon.getId());
@@ -131,7 +131,7 @@ public class TestCrudRepository {
         pokemons.get(0).setName("Persian");
         pokemons.get(0).setTypes(List.of(TYPES[17]));
         pokemons.get(0).setHp(75);
-        // Modify Magikarp to Alolan Persian
+        // Modify Magikarp to Gyarados
         pokemons.get(1).setName("Gyarados");
         pokemons.get(1).setTypes(List.of(TYPES[3], TYPES[11]));
         pokemons.get(1).setHp(150);
@@ -146,17 +146,20 @@ public class TestCrudRepository {
     }
 
     // Update not existing pokemon shall fail
-    // TODO: Not implemented yet
     @Test
     public void testUpdateNotExisting() {
-        LOGGER.log(System.Logger.Level.DEBUG, "Skipping testUpdateNotExisting: Not implemented yet");
+        Pokemon pokemon = NEW_POKEMONS.get(110);
+        assertThat(pokemon, is(notNullValue()));
+        assertThrows(TxException.class, () -> pokemonRepository.update(pokemon));
     }
 
     // Update pokemons List with not existing pokemon shall fail
-    // TODO: Not implemented yet
     @Test
     public void testUpdateAllNotExisting() {
-        LOGGER.log(System.Logger.Level.DEBUG, "Skipping testUpdateAllNotExisting: Not implemented yet");
+        List<Pokemon> pokemons = List.of(NEW_POKEMONS.get(111),
+                                         NEW_POKEMONS.get(112));
+        pokemons.forEach(p -> assertThat(p, is(notNullValue())));
+        assertThrows(TxException.class, () -> pokemonRepository.updateAll(pokemons));
     }
 
 }
