@@ -89,17 +89,15 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
                 .addParameter(T_ENTITY)
                 .returnType(T)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()));
-        // Implement properly:
-        //       Update requires an entity to already exist in the database, but this check is not trivial:
-        //       - verify entity existence with em.find
-        //       - or at least verify that entity has ID present
-        //       But codegen code does not have access to ID attribute information
-        //       EntityManager merge call should work this way, but there are known reported issues in Hibernate.
-        // Method body: return executor.call(em -> em.merge(entity));
+        // Update requires an entity to already exist in the database, but this check is not trivial:
+        //     - verify entity existence with em.find
+        //     - or at least verify that entity has ID present
         returnStatement(builder,
                         b1 -> call(b1,
-                                   b2 -> statementGenerator()
-                                           .addMerge(b2, ENTITY),
+                                   b2 -> statementGenerator().addUpdate(b2,
+                                                                        EXECUTOR,
+                                                                        ENTITY,
+                                                                        repositoryInfo().entity()),
                                    EXECUTOR));
     }
 
@@ -111,30 +109,27 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
                 .addParameter(ITERABLE_T_ENTITIES)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()))
                 .returnType(ITERABLE_T);
-        // Implement properly:
-        //       Update requires an entity to already exist in the database, but this check is not trivial:
-        //       - verify entity existence with em.find
-        //       - or at least verify that entity has ID present
-        //       But codegen code does not have access to ID attribute information
-        //       EntityManager merge call should work this way, but there are known reported issues in Hibernate.
-        // Method body: executor.run(em -> entities.forEach(em::merge));
-        // Method body: List<T> mergedEntities = new ArrayList<>();
-        //              executor.run(em -> entities.forEach(e -> mergedEntities.add(em.merge(e))));
-        //              return mergedEntities;
+        // Update requires an entity to already exist in the database, but this check is not trivial:
+        //     - verify entity existence with em.find
+        //     - or at least verify that entity has ID present
+        // List<T> mergedEntities = new ArrayList<>();
         statement(builder,
-                  b1 -> initializedVariable(b1,
-                                            LIST_T,
-                                            "mergedEntities",
+                  b1 -> initializedVariable(b1, LIST_T, "mergedEntities",
                                             b2 -> b2.addContent("new ")
                                                     .addContent(ArrayList.class)
                                                     .addContent("<>()")));
+        // Persistence layer specific code
         statement(builder,
                   b1 -> run(b1,
-                            b2 -> statementGenerator()
-                                    .addMergeCollection(b2, ENTITIES, "mergedEntities"),
-                            EXECUTOR));
-        returnStatement(builder,
-                        b -> identifier(b, "mergedEntities"));
+                             b2 -> statementGenerator().addUpdateAll(b2,
+                                                                     EXECUTOR,
+                                                                     ENTITIES,
+                                                                     "mergedEntities",
+                                                                     repositoryInfo().entity()),
+                             EXECUTOR));
+        // return mergedEntities;
+        returnStatement(builder, b -> identifier(b, "mergedEntities"));
+
     }
 
 }

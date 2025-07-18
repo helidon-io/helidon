@@ -259,6 +259,7 @@ class LocalTxSupport implements TxSupport {
         try {
             try {
                 result = task.call();
+            // Exceptions in rollback are not translated to TxException as rollback is expected to be properly handled
             } catch (TxException e) {
                 rollback(current);
                 throw e;
@@ -266,7 +267,14 @@ class LocalTxSupport implements TxSupport {
                 rollback(current);
                 throw new TxException("Resource local transaction task failed.", e);
             }
-            commit(current);
+            // This may also throw just persistence provider's own exception
+            try {
+                commit(current);
+            } catch (TxException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new TxException("Resource local transaction task commit failed.", e);
+            }
             return result;
         } finally {
             if (previous != null) {

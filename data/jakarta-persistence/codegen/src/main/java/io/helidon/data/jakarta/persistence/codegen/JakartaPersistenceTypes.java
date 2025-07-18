@@ -50,6 +50,8 @@ class JakartaPersistenceTypes {
             .addTypeArgument(GENERIC_R)
             .build();
 
+    // Helidon Data DataException
+    static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
     // Jakarta Persistence CriteriaBuilder
     static final TypeName CRITERIA_BUILDER = TypeName.create("jakarta.persistence.criteria.CriteriaBuilder");
     // Jakarta Persistence CriteriaQuery with no generic type
