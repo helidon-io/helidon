@@ -414,6 +414,15 @@ backend:
                   type: "icon"
                   value: "colorize"
               - type: "MENU"
+                title: "JSON-RPC"
+                dir: "jsonrpc"
+                glyph:
+                  type: "icon"
+                  value: "swap_horizontal_circle"
+                sources:
+                  - "server.adoc"
+                  - "client.adoc"
+              - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
                 glyph:
