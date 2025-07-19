@@ -28,10 +28,12 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.EXECUTOR_SERVICE;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.ASYNC;
@@ -102,7 +104,10 @@ final class AsyncHandler extends FtHandler {
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
 
         boolean hasName = name != null;
         boolean hasExecutorName = executorName != null;
@@ -133,16 +138,15 @@ final class AsyncHandler extends FtHandler {
         if (hasName) {
             ctr.addContent("this.async = namedAsync.orElseGet(");
             if (hasExecutorName) {
-                ctr.addContent("() -> produceAsync(namedExecutor));");
+                ctr.addContent("() -> produceAsync(config, namedExecutor));");
             } else {
-                ctr.addContent(generatedType)
-                        .addContentLine("::produceAsync);");
+                ctr.addContent("() -> produceAsync(config);");
             }
         } else {
             if (hasExecutorName) {
-                ctr.addContent("this.async = produceAsync(namedExecutor);");
+                ctr.addContent("this.async = produceAsync(config, namedExecutor);");
             } else {
-                ctr.addContent("this.async = produceAsync();");
+                ctr.addContent("this.async = produceAsync(config);");
             }
         }
 
@@ -177,6 +181,9 @@ final class AsyncHandler extends FtHandler {
                 .isStatic(true)
                 .returnType(ASYNC)
                 .name("produceAsync")
+                .addParameter(config -> config
+                        .type(CONFIG)
+                        .name("config"))
                 .update(builder -> {
                     if (hasExecutorName) {
                         builder.addParameter(namedExecutor -> namedExecutor
@@ -185,14 +192,25 @@ final class AsyncHandler extends FtHandler {
                     }
                 })
                 .update(builder -> produceAsyncMethodBody(builder,
+                                                          enclosingTypeName,
+                                                          element,
                                                           customName,
                                                           hasExecutorName))
         );
     }
 
     private void produceAsyncMethodBody(Method.Builder builder,
+                                        TypeName typeName,
+                                        TypedElementInfo element,
                                         String customName,
                                         boolean hasExecutorName) {
+
+        // find appropriate method configuration for this retry
+        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+
+        builder.addContentLine("")
+                .addContentLine("var asyncConfig = methodConfig.get(\"async\");")
+                .addContentLine("");
 
         builder.addContent("return ")
                 .addContent(ASYNC)
@@ -207,6 +225,7 @@ final class AsyncHandler extends FtHandler {
                         builder.addContentLine(".update(builder -> namedExecutor.ifPresent(builder::executor))");
                     }
                 })
+                .addContentLine("config(asyncConfig)")
                 .addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();

@@ -53,7 +53,7 @@ import jakarta.json.JsonObject;
  * <p>
  * The message is returned as a JSON object.
  */
-@RestServer.Listener("@default")
+@RestServer.Listener("admin")
 @RestServer.Endpoint
 @Service.Singleton
 @SuppressWarnings("deprecation")

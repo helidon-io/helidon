@@ -28,6 +28,7 @@ import io.helidon.faulttolerance.Async;
 import io.helidon.faulttolerance.Bulkhead;
 import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.ErrorChecker;
+import io.helidon.faulttolerance.FallbackConfig;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.faulttolerance.FtSupport;
 import io.helidon.faulttolerance.Retry;
@@ -67,6 +68,8 @@ class DeclarativeCodegenFtTypesTest {
         }
 
         checkField(toCheck, checked, fields, "ERROR_CHECKER", ErrorChecker.class);
+
+        checkField(toCheck, checked, fields, "FALLBACK_CONFIG", FallbackConfig.class);
         checkField(toCheck, checked, fields, "FALLBACK_ANNOTATION", Ft.Fallback.class);
         checkField(toCheck, checked, fields, "FALLBACK_GENERATED_METHOD", FtSupport.FallbackMethod.class);
 

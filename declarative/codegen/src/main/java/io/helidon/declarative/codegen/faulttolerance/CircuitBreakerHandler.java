@@ -29,11 +29,13 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenValidator.validateDuration;
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.CIRCUIT_BREAKER;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.CIRCUIT_BREAKER_ANNOTATION;
@@ -98,10 +100,13 @@ class CircuitBreakerHandler extends FtHandler {
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(config -> config
+                        .name("config")
+                        .type(CONFIG));
 
         if (name == null) {
-            ctr.addContentLine("this.breaker = produceBreaker();");
+            ctr.addContentLine("this.breaker = produceBreaker(config);");
         } else {
             // named, inject
             ctr.addParameter(namedCircuitBreaker -> namedCircuitBreaker
@@ -111,9 +116,7 @@ class CircuitBreakerHandler extends FtHandler {
                                           .addTypeArgument(CIRCUIT_BREAKER)
                                           .build())
                             .addAnnotation(namedAnnotation(name)))
-                    .addContent("this.breaker = namedBreaker.orElseGet(")
-                    .addContent(generatedType)
-                    .addContentLine("::produceBreaker);");
+                    .addContentLine("this.breaker = namedBreaker.orElseGet(() -> produceBreaker(config));");
         }
 
         classModel.addConstructor(ctr);
@@ -147,6 +150,9 @@ class CircuitBreakerHandler extends FtHandler {
                 .isStatic(true)
                 .returnType(CIRCUIT_BREAKER)
                 .name("produceBreaker")
+                .addParameter(config -> config
+                        .type(CONFIG)
+                        .name("config"))
                 .update(builder -> produceBreakerMethodBody(enclosingTypeName, element, builder, annotation, customName))
         );
     }
@@ -156,6 +162,14 @@ class CircuitBreakerHandler extends FtHandler {
                                           Method.Builder builder,
                                           Annotation annotation,
                                           String customName) {
+
+        // find appropriate method configuration for this breaker
+        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+
+        builder.addContentLine("")
+                .addContentLine("var breakerConfig = methodConfig.get(\"circuit-breaker\");")
+                .addContentLine("");
+
         String delayDuration = validateDuration(typeName,
                                                 element,
                                                 CIRCUIT_BREAKER_ANNOTATION,
@@ -189,6 +203,7 @@ class CircuitBreakerHandler extends FtHandler {
                 .addContent(".successThreshold(")
                 .addContent(String.valueOf(successThreshold))
                 .addContentLine(")")
+                .addContentLine(".config(breakerConfig)")
                 .addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();

@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.model.http.ClientEndpoint;
@@ -548,14 +549,13 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                         .update(it -> registryClientParameter(it, endpoint)))
                 .addContentLine("this.errorHandling = errorHandling;")
                 .addContentLine("")
-                .addContent("var endpointConfig = config.get(\"")
-                .addContent(endpoint.configKey())
-                .addContentLine("\");")
+                .update(it -> TypeConfigSupport.generateTypeConfig(it, endpoint.type().typeName(), "config", "endpointConfig"))
                 .addContentLine("var clientConfig = endpointConfig.get(\"client\");")
-                .addContentLine("if (clientConfig.exists()) {")
+                .addContentLine("var webClientConfig = clientConfig.get(\"webclient\");")
+                .addContentLine("if (webClientConfig.exists()) {")
                 .addContent("this.client = ")
                 .addContent(WEB_CLIENT)
-                .addContentLine(".builder().config(clientConfig).build();")
+                .addContentLine(".builder().config(webClientConfig).build();")
                 .decreaseContentPadding()
                 .addContentLine("} else {")
                 .addContent("this.client = registryClient.get().orElseGet(")
@@ -567,7 +567,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
 
     private void constructorUriHandling(Constructor.Builder ctr, ClientEndpoint endpoint) {
         ctr.addContent(String.class)
-                .addContentLine(" uri = endpointConfig.get(\"uri\")")
+                .addContentLine(" uri = clientConfig.get(\"uri\")")
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContentLine(".asString()");
@@ -580,8 +580,8 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
             ctr.addContent(".orElseThrow(() -> new ")
                     .addContent(CONFIG_EXCEPTION)
                     .addContent("(\"Configuration key \\\"")
-                    .addContent(endpoint.configKey())
-                    .addContent(".uri\\\" does not exist, and there is no default URI defined in")
+                    .addContent("type-config." + endpoint.configKey())
+                    .addContent("client.uri\\\" does not exist, and there is no default URI defined in")
                     .addContent(" @")
                     .addContent(REST_CLIENT_ENDPOINT.classNameWithEnclosingNames())
                     .addContent(" for ")

@@ -21,6 +21,7 @@ import io.helidon.common.types.TypeName;
 final class FtTypes {
     static final TypeName ERROR_CHECKER = TypeName.create("io.helidon.faulttolerance.ErrorChecker");
 
+    static final TypeName FALLBACK_CONFIG = TypeName.create("io.helidon.faulttolerance.FallbackConfig");
     static final TypeName FALLBACK_ANNOTATION = TypeName.create("io.helidon.faulttolerance.Ft.Fallback");
     static final TypeName FALLBACK_GENERATED_METHOD =
             TypeName.create("io.helidon.faulttolerance.FtSupport.FallbackMethod");

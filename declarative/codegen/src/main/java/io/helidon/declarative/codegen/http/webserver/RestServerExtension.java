@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.TypeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
@@ -60,6 +61,7 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
@@ -117,7 +119,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         }
     }
 
-    private static void addSetupMethod(ClassModel.Builder endpointService, String path) {
+    private static void addSetupMethod(ClassModel.Builder endpointService) {
         endpointService.addMethod(setup -> setup
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
@@ -125,20 +127,57 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .addParameter(routing -> routing
                         .name("routing")
                         .type(WebServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER))
-                .addContent("routing.register(\"")
-                .addContent(path)
-                .addContentLine("\", this::routing);"));
+                .addContent("routing.register(this.path, this::routing);"));
     }
 
-    private Constructor.Builder constructor(TypeName endpoint,
+    private Constructor.Builder constructor(ClassModel.Builder classModel,
+                                            ServerEndpoint endpoint,
+                                            TypeName endpointType,
                                             boolean singleton) {
         var constructor = Constructor.builder();
         constructor.accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .addParameter(param -> param
-                        .type(singleton ? endpoint : supplierOf(endpoint))
-                        .name("endpoint"))
-                .addContentLine("this.endpoint = endpoint;");
+                        .type(CONFIG)
+                        .name("config"))
+                .addParameter(param -> param
+                        .type(singleton ? endpointType : supplierOf(endpointType))
+                        .name("endpoint"));
+
+        TypeConfigSupport.generateTypeConfig(constructor, endpointType, "config", "typeConfig");
+        constructor.addContentLine("var endpointConfig = typeConfig.get(\"server\");");
+
+        constructor.addContentLine("");
+        constructor.addContentLine("this.endpoint = endpoint;");
+
+        /*
+        Configure the listener name, allow overriding by configuration
+         */
+        String declaredListener = endpoint.listener().orElse("@default");
+        constructor.addContent("this.socketName = endpointConfig.get(\"listener\").asString().orElse(\"")
+                .addContent(declaredListener)
+                .addContentLine("\");");
+        classModel.addField(field -> field
+                .name("socketName")
+                .type(String.class)
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true));
+        /*
+        Configure the feature path, allow overriding by configuration
+         */
+        String declaredPath = endpoint.path().orElse("/");
+        constructor.addContent("this.path = endpointConfig.get(\"path\").asString().orElse(\"")
+                .addContent(declaredPath)
+                .addContentLine("\");");
+        classModel.addField(field -> field
+                .name("path")
+                .type(String.class)
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true));
+
+        // separator line
+        constructor.addContentLine("");
+
         return constructor;
     }
 
@@ -360,13 +399,13 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         addFields(classModel, endpointTypeName, singleton);
 
         // constructor injecting the field(s)
-        var constructor = constructor(endpointTypeName, singleton);
+        var constructor = constructor(classModel, endpoint, endpointTypeName, singleton);
 
         FieldHandler fieldHandler = FieldHandler.create(classModel, constructor);
 
         methodHandlers(classModel, constructor, ctx.descriptorType(type.typeName()), endpoint.methods());
         // HttpFeature.setup(HttpRouting.Builder routing)
-        addSetupMethod(classModel, endpoint.path().orElse("/"));
+        addSetupMethod(classModel);
         // socket() and socketRequired()
         addSocketMethods(classModel, endpoint);
         // private void routing(HttpRules rules)
@@ -391,18 +430,12 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
     }
 
     private void addSocketMethods(ClassModel.Builder classModel, ServerEndpoint endpoint) {
-        Optional<String> listener = endpoint.listener();
-        if (listener.isEmpty()) {
-            return;
-        }
         classModel.addMethod(socket -> socket
                 .accessModifier(AccessModifier.PUBLIC)
                 .returnType(TypeNames.STRING)
                 .name("socket")
                 .addAnnotation(Annotations.OVERRIDE)
-                .addContent("return \"")
-                .addContent(listener.get())
-                .addContentLine("\";"));
+                .addContent("return this.socketName;"));
 
         if (endpoint.listenerRequired()) {
             classModel.addMethod(socket -> socket
