@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,5 +105,27 @@ class SseEventTest extends SseBaseTest {
                 .build();
         assertThrows(IllegalStateException.class, () -> event.data(Object.class));
         assertThrows(IllegalStateException.class, () -> event.data(Object.class, MediaTypes.TEXT_PLAIN));
+    }
+
+    @Test
+    void testMultiLineStringData() {
+        SseEvent event = SseEvent.builder()
+                .mediaContext(mediaContext)
+                .data("first")
+                .data("second")
+                .data("third")
+                .build();
+        assertThat(event.data(String.class), is("first\nsecond\nthird"));
+    }
+
+    @Test
+    void testBadMultiLineStringData() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> SseEvent.builder()
+                             .mediaContext(mediaContext)
+                             .data("first")
+                             .data(new Object())    // not a string!
+                             .data("third")
+                             .build());
     }
 }

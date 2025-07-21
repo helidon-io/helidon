@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,7 +294,16 @@ public class SseEvent {
          */
         public Builder data(Object data) {
             Objects.requireNonNull(data);
-            this.data = data;
+            // not set or an override?
+            if (this.data == NO_DATA || !(this.data instanceof String)) {
+                this.data = data;
+            } else {
+                // handle multi-line data
+                if (!(data instanceof String)) {
+                    throw new IllegalArgumentException("Cannot concatenate non-string event data");
+                }
+                this.data += "\n" + data;    // concatenate strings
+            }
             return this;
         }
 
