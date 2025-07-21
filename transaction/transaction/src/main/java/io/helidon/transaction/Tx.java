@@ -27,7 +27,7 @@ import io.helidon.service.registry.Services;
 import io.helidon.transaction.spi.TxSupport;
 
 /**
- * Transaction annotations and types.
+ * Annotations and types related to transactional method execution.
  */
 public final class Tx {
 

@@ -143,7 +143,7 @@ public final class Data {
     public interface BasicRepository<E, ID> extends GenericRepository<E, ID> {
 
         /**
-         * Saves provided entity.
+         * Save provided entity.
          * This method will update existing record or insert a new record if record does not exist in the database.
          *
          * @param entity the entity to persist, shall not be {@code null}
@@ -154,7 +154,7 @@ public final class Data {
         <T extends E> T save(T entity);
 
         /**
-         * Saves all provided entities.
+         * Save all provided entities.
          * This method will update existing record or insert a new record if record does not exist in the database.
          *
          * @param entities the entities to persist, shall not be {@code null}
@@ -202,7 +202,7 @@ public final class Data {
         long count();
 
         /**
-         * Deletes the entity with the given ID (primary key).
+         * Delete the entity with the given ID (primary key).
          *
          * @param id ID of the entity to be deleted, shall not be {@code null}
          * @return the number of deleted entities
@@ -211,7 +211,7 @@ public final class Data {
         long deleteById(ID id);
 
         /**
-         * Deletes provided entity.
+         * Delete provided entity.
          *
          * @param entity the entity to delete, shall not be {@code null}
          * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
@@ -219,7 +219,7 @@ public final class Data {
         void delete(E entity);
 
         /**
-         * Deletes all provided entities.
+         * Delete all provided entities.
          *
          * @param entities the entities to delete, shall not be {@code null}
          * @throws io.helidon.data.DataException if the entities are {@code null} or the operation has failed
@@ -227,7 +227,7 @@ public final class Data {
         void deleteAll(Iterable<? extends E> entities);
 
         /**
-         * Deletes all entities of the {@code E} type.
+         * Delete all entities of the {@code E} type.
          * This method will delete all records from related database table, so it should be used carefully
          * to avoid unexpected loss of data.
          *
@@ -252,7 +252,7 @@ public final class Data {
     public interface CrudRepository<E, ID> extends BasicRepository<E, ID> {
 
         /**
-         * Inserts provided entity.
+         * Insert provided entity.
          * This method will insert a new record into the database. The operation will fail if the record
          * is already present in the database.
          *
@@ -264,9 +264,9 @@ public final class Data {
         <T extends E> T insert(T entity);
 
         /**
-         * Inserts all provided entities.
+         * Insert all provided entities.
          * This method will insert a new record into the database. The operation will fail if the record
-         * is already present in the database.
+         * is already present in the database or entities are not unique.
          *
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
@@ -276,7 +276,8 @@ public final class Data {
         <T extends E> Iterable<T> insertAll(Iterable<T> entities);
 
         /**
-         * Persist provided entity with {@code update} operation.
+         * Update provided entity.
+         * This operation will fail if the record is not already present in the database.
          *
          * @param entity the entity to persist, shall not be {@code null}
          * @param <T>    type of the entity
@@ -286,7 +287,8 @@ public final class Data {
         <T extends E> T update(T entity);
 
         /**
-         * Persist all provided entities with {@code update} operation.
+         * Update all provided entities.
+         * This operation will fail if the record is not already present in the database.
          *
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
