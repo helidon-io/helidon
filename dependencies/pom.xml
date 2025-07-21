@@ -60,7 +60,7 @@
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
-        <version.lib.gson>2.9.0</version.lib.gson>
+        <version.lib.gson>2.13.1</version.lib.gson>
         <version.lib.grpc>1.65.1</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.2.220</version.lib.h2>
