@@ -483,6 +483,63 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     }
 
     @SuppressWarnings("unchecked")
+    <T> void setQualified(Class<T> contract, T instance, Set<Qualifier> qualifiers) {
+        if (!allowLateBinding) {
+            throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
+                                                       + "explicitly disabled through registry configuration: " + id);
+        }
+
+        stateWriteLock.lock();
+        try {
+            ResolvedType contractType = ResolvedType.create(contract);
+            checkValidContract(contractType);
+            ServiceInfo serviceInfo = servicesByType.get(contractType.type());
+            if (serviceInfo != null && !serviceInfo.qualifiers().equals(qualifiers)) {
+                throw new IllegalArgumentException("Attempting to create a qualified service instance for "
+                                                           + "a service implementation, with wrong qualifiers: "
+                                                           + contract.getName() + ", qualifiers: " + qualifiers);
+            }
+            if (serviceInfo == null) {
+                Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+
+                // we need to keep order of the instances; if somebody calls set, and then add, it may be tricky
+
+                VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), Weighted.DEFAULT_WEIGHT, instance, qualifiers);
+
+                ServiceProvider<Object> provider = new ServiceProvider<>(this, vt);
+                Activator<Object> activator = Activators.create(provider, instance);
+
+                servicesByDescriptor.put(vt, new ServiceManager<>(this,
+                                                                  scopeSupplier(vt),
+                                                                  provider,
+                                                                  true,
+                                                                  () -> activator));
+                serviceInfos.add(vt);
+
+                // replace the instances
+                servicesByContract.put(contractType, serviceInfos);
+            } else {
+                // this is a service instance, not contract implementation (i.e. the contract is actual service class)
+                ServiceProvider<Object> provider = new ServiceProvider<>(this,
+                                                                         (ServiceDescriptor<Object>) serviceInfo);
+
+                Activator<Object> activator = Activators.create(provider, instance);
+                servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
+                                                                           scopeSupplier(serviceInfo),
+                                                                           provider,
+                                                                           true,
+                                                                           () -> activator));
+            }
+            // reset bindings, as build-time binding would ignore instances explicitly set
+            bindings.forgetContract(contractType);
+        } finally {
+            stateWriteLock.unlock();
+        }
+
+        stateWriteLock.lock();
+    }
+
+    @SuppressWarnings("unchecked")
     <T> void set(Class<T> contract, T[] instances) {
         if (!allowLateBinding) {
             throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "

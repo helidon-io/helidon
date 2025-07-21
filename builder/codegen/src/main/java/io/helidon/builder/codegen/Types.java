@@ -37,6 +37,8 @@ final class Types {
     static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.ServiceRegistry");
     static final TypeName GLOBAL_SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.GlobalServiceRegistry");
     static final TypeName SERVICES = TypeName.create("io.helidon.service.registry.Services");
+    static final TypeName SERVICE_NAMED = TypeName.create("io.helidon.service.registry.Service.Named");
+    static final TypeName SERVICE_QUALIFIER = TypeName.create("io.helidon.service.registry.Service.Qualifier");
 
     static final TypeName BUILDER_DESCRIPTION = TypeName.create("io.helidon.builder.api.Description");
 

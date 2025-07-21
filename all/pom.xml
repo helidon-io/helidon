@@ -576,6 +576,10 @@
             <artifactId>helidon-grpc-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.jsonrpc</groupId>
+            <artifactId>helidon-jsonrpc-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
@@ -832,6 +836,14 @@
             <artifactId>helidon-integrations-langchain4j-providers-oracle</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
@@ -1065,6 +1077,10 @@
             <artifactId>helidon-webserver-concurrency-limits</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-jsonrpc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5</artifactId>
         </dependency>
@@ -1075,6 +1091,10 @@
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-jsonrpc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -1099,6 +1119,10 @@
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-grpc-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -1127,6 +1151,10 @@
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-jsonrpc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.websocket</groupId>

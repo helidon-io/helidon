@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,20 @@
  */
 package io.helidon.docs.mp.grpc;
 
+import java.lang.String;
+import java.io.InputStream;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import io.grpc.MethodDescriptor;
 
 import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.webserver.grpc.GrpcService;
 import io.helidon.webserver.grpc.GrpcService.Routing;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
@@ -39,21 +46,50 @@ class GrpcSnippets {
         @Grpc.GrpcService
         public class StringService {
 
-            @Grpc.Unary
-            public String upper(String s) {
-                return s == null ? null : s.toUpperCase();
+            @Grpc.Unary("Upper")
+            public Strings.StringMessage upper(Strings.StringMessage request) {
+                String text = request.getText().toUpperCase();
+                return Strings.StringMessage.newBuilder().setText(text).build();
             }
         }
         // end::snippet_1[]
+
+
+    }
+
+    class Snnippet1_5 {
+
+        // tag::snippet_1_5[]
+        @ApplicationScoped
+        @Grpc.GrpcService
+        public class StringService {
+
+            @Grpc.Proto
+            public Descriptors.FileDescriptor proto() {
+                return Strings.getDescriptor();
+            }
+
+            @Grpc.Unary("Upper")
+            public Strings.StringMessage upper(Strings.StringMessage request) {
+                String text = request.getText().toUpperCase();
+                return Strings.StringMessage.newBuilder().setText(text).build();
+            }
+        }
+        // end::snippet_1_5[]
     }
 
     class Snippet2 {
 
         // tag::snippet_2[]
-        @ApplicationScoped                             // <1>
-        @Grpc.GrpcService                              // <2>
+        @ApplicationScoped
+        @Grpc.GrpcService
+        @Grpc.GrpcMarshaller("string")
         public class StringService {
-            /* code is omitted */
+
+            @Grpc.Unary("Upper")
+            public String upper(String request) {
+                return request.toLowerCase();
+            }
         }
         // end::snippet_2[]
     }
@@ -61,12 +97,38 @@ class GrpcSnippets {
     class Snippet3 {
 
         // tag::snippet_3[]
-        @ApplicationScoped
-        @Grpc.GrpcService("Strings")                    // <1>
-        public class StringService {
-            /* code is omitted */
+        public class StringMarshaller<String>
+                implements MethodDescriptor.Marshaller<String> {
+
+            @Override
+            public InputStream stream(String obj) {
+                InputStream stream = null;
+                // convert to stream
+                return stream;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public String parse(InputStream in) {
+                String string = null;
+                // parse from stream
+                return string;
+            }
+
         }
         // end::snippet_3[]
+
+        // tag::snippet_3_5[]
+        @Dependent
+        @Named("string")
+        public class StringSupplier implements MarshallerSupplier {
+            @Override
+            public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
+                return new StringMarshaller<>();
+            }
+        }
+
+        // end::snippet_3_5[]
     }
 
     class Snippet4 {
@@ -85,9 +147,8 @@ class GrpcSnippets {
         public class MyExtension implements GrpcMpExtension {
 
             @Override
-            public void configure(GrpcMpContext context) {       // <1>
-                    context.routing()
-                            .service(new StringService());      // <2>
+            public void configure(GrpcMpContext context) {           // <1>
+                context.routing().service(new StringService());      // <2>
             }
         }
         // end::snippet_4[]

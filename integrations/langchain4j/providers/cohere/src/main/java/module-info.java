@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Provides integration with Cohere models.
  */
-@Feature(value = "Langchain4j Cohere",
-         description = "Langchain4j Cohere Provider Integration",
-         in = {HelidonFlavor.SE, HelidonFlavor.MP},
-         path = {"Langchain4j", "Cohere"}
-)
-@Preview
+@Features.Name("Langchain4j Cohere")
+@Features.Description("Langchain4j Cohere Provider Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Langchain4j", "Cohere"})
+@Features.Preview
 module io.helidon.integrations.langchain4j.providers.cohere {
     requires static io.helidon.common.features.api;
 

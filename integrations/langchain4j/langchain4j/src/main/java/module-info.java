@@ -39,4 +39,7 @@ module io.helidon.integrations.langchain4j {
     requires langchain4j;
 
     exports io.helidon.integrations.langchain4j;
+
+    provides dev.langchain4j.spi.services.TokenStreamAdapter
+            with io.helidon.integrations.langchain4j.TokenStreamToStreamAdapter;
 }

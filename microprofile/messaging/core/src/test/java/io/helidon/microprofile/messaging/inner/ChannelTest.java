@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.platform.commons.util.ClassFilter;
-import org.junit.platform.commons.util.ReflectionUtils;
+import org.junit.platform.commons.support.ReflectionSupport;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -42,10 +41,11 @@ class ChannelTest extends AbstractCDITest {
     }
 
     static Stream<CdiTestCase> testCaseSource() {
-        return ReflectionUtils
+        return ReflectionSupport
                 .findAllClassesInPackage(
                         ChannelTest.class.getPackage().getName(),
-                        ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
+                        c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class)),
+                        name -> true)
                 .stream()
                 .map(CdiTestCase::from);
     }

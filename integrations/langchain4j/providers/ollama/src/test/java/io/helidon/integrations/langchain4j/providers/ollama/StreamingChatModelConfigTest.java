@@ -57,8 +57,6 @@ class StreamingChatModelConfigTest {
         assertThat(config.stop().get(0), is("stop1"));
         assertThat(config.stop().get(1), is("stop2"));
         assertThat(config.stop().get(2), is("stop3"));
-        assertThat(config.format().isPresent(), is(true));
-        assertThat(config.format().get(), is("format"));
         assertThat(config.timeout().isPresent(), is(true));
         assertThat(config.timeout().get(), equalTo(Duration.parse("PT10M")));
         assertThat(config.logRequests().isPresent(), is(true));

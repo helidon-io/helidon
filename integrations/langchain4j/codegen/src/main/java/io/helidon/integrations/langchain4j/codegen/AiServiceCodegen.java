@@ -218,13 +218,13 @@ class AiServiceCodegen implements CodegenExtension {
                                         aiInterface,
                                         AI_CHAT_MODEL,
                                         LC_CHAT_MODEL,
-                                        "chatLanguageModel");
+                                        "chatModel");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
                                         AI_STREAMING_CHAT_MODEL,
                                         LC_STREAMING_CHAT_MODEL,
-                                        "streamingChatLanguageModel");
+                                        "streamingChatModel");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,

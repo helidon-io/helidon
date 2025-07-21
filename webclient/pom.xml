@@ -44,6 +44,7 @@
         <module>grpc</module>
         <module>grpc-tracing</module>
         <module>context</module>
+        <module>jsonrpc</module>
     </modules>
 
     <profiles>

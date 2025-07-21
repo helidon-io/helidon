@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,21 +32,21 @@ include::{rootdir}/includes/mp.adoc[]
 - <<API, API>>
 - <<Usage, Usage>>
 ** <<Defining a Service, Defining a Service>>
-** <<Service Name, Service Name>>
-** <<Defining Service Methods, Defining Service Methods>>
-- <<Implement a GrpcMpExtension, Implement a GrpcMpExtension>>
+** <<Using Custom Marshalers, Using Custom Marshalers>>
+- <<Implementing a gRPC Extension, Implementing a gRPC Extension>>
+- <<gRPC Reflection Service, gRPC Reflection Service>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 
 == Overview
-The gRPC Microprofile APIs are an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP] to allow building
-gRPC services that integrate with the Microprofile APIs. Using Helidon gRPC MP makes building gRPC services
-an easier process compared to the traditional approach using Protobuf files and code generation. Services
+The gRPC Microprofile API is an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP] to allow building
+gRPC services that integrate with the Microprofile APIs. Using Helidon MP makes building gRPC services
+easier when compared to the traditional approach. Services
 can be built using POJOs that are then discovered and deployed at runtime in the same way Helidon MP
-discovers and deploys other web resources.
+discovers and deploys other Web services.
 
 Building gRPC services using Helidon gRPC MP is simple and allows developers to concentrate on their
-application logic without needing to write a lot of boilerplate gRPC code.
+application logic without the need to write a lot of boilerplate code.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -62,28 +62,33 @@ include::{rootdir}/includes/dependencies.adoc[]
 All Helidon gRPC MP annotations are defined in the `Grpc` interface. The following annotations are
 used to implement Helidon MP gRPC services:
 
-* `@Grpc.GrpcService` - an annotation used to mark a class as representing a gRPC service.
-* `@Grpc.GrpcMarshaller` -  an annotation used to annotate a type or method to specify the named marshaller
-supplier to use for gRPC method calls.
+* `@Grpc.GrpcService`: an annotation that marks a class as a gRPC service.
+
+* `@Grpc.GrpcMarshaller`: an annotation on a type or method that specifies a named marshaller
+supplier. This annotation is required when not using Protobuf serialization.
+
+* `@Grpc.Proto`: an annotation for an optional method returning the Protobuf descriptor. For
+more information see the <<gRPC Reflection Service, gRPC Reflection Service>>.
 
 The following gRPC method types are supported:
 
-* `@Grpc.Unary` - a method with at most a single request value and returning at most a single
-response value.
-*`@Grpc.ServerStreaming` - a method that takes at most a single request value but may return zero
-or more response values.
-* `@Grpc.ClientStreaming` - a method that takes one or more request values and returns at most
-one response value.
-* `@Grpc.Bidirectional` - A method that can take one or more request values and return zero or more
-response values.
+* `@Grpc.Unary`: a method that takes a single value (or void) and returns a single value
+(or void).
+
+* `@Grpc.ServerStreaming`: a method that takes a single value (or void) and returns a
+stream of values.
+
+* `@Grpc.ClientStreaming`: a method that takes a stream of values and returns a single value (or void).
+
+* `@Grpc.Bidirectional`: a method that takes a stream of values and returns a stream of values.
 
 == Usage
 === Defining a Service
 
-The traditional approach to build Java gRPC services is to write Protobuf files describing the service,
-use these files to generate service stubs, and then implement the service methods by extending the
-generated stub classes. Using Helidon gRPC MP API, all you need to do is write an annotated service
-implementation class that is just a normal POJO.
+The traditional approach to building Java gRPC services is to write Protobuf files describing a
+service, use these files to generate service stubs, and then implement the service methods
+from stub classes. In Helidon MP, you have a simpler option of just writing normal POJOs that
+refer to the Protobuf message types without the need to extend any generated stubs.
 
 For example:
 
@@ -92,77 +97,59 @@ For example:
 include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_1, indent=0]
 ----
 
-The code above is a simple service with a single unary method that just converts a String to uppercase.
-The important parts in the example are the `@ApplicationScoped`, `@Grpc.GrpcService` and `@Grpc.Unary`
-annotations. These, along with other annotations discussed later, allow the gRPC MP APIs to discover,
-configure and deploy the service.
+Note that the message types in `Strings` are generated from a Protobuf file, but the class
+itself is just a POJO that uses the Helidon MP annotations described above. In addition,
+`@Grpc.Unary` overrides the Java method name to match that in the Protobuf file,
+as shown next:
 
-Of course Helidon gRPC MP does not preclude you from using the Protobuf files approach as traditional
-gRPC Java services also work in a gRPC MP server.
+[source,protobuf]
+----
+syntax = "proto3";
 
-As already shown above, a Helidon gRPC MP service is just an annotated POJO. To make a class a service,
-it requires two annotations.
+service StringService {
+  rpc Upper (StringMessage) returns (StringMessage) {}
+}
+
+message StringMessage {
+  string text = 1;
+}
+----
+
+=== Using Custom Marshalers
+
+Even though it is recommended to use Protobuf message types, it is not mandatory. Traditional
+Java types can be used as long as custom marshalers are provided. For instance, in the example
+above we can use a `String` type instead of the generated type `StringMessage`, if we create
+a marshaler for it. For example,
 
 [source,java]
 ----
 include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_2, indent=0]
 ----
 
-<1> The `ApplicationScoped` annotation is what makes the service implementation a CDI bean and hence
-discoverable.
-<2> The `Grpc.GrpcService` annotation is what defines the class as a gRPC service so that when the
-bean is discovered, it is then deployed by the gRPC MP server.
-
-=== Service Name
-By default, when a class is annotated with `Grpc.GrpcService`, the class name will be used as the
-gRPC service name. So in the example above, the service name will be `StringService`. This can be
-changed by supplying a name to the annotation.
+In this example, the marshaler is provided using the name `"string"` and its supplier must
+be discoverable via CDI. The following is an example of a marshaler and its supplier for the
+`String` type:
 
 [source,java]
 ----
+include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_3_5, indent=0]
 include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> The name of the deployed service will be `Strings`.
 
-=== Defining Service Methods
+Annotating the supplier with `@Dependent` ensures discoverability provided CDI is configured
+to find all annotated beans in the corresponding `beans.xml` file.
 
-- <<Request and Response Types, Request and Response Types>>
+== Implementing a gRPC Extension
 
-Once a class is properly annotated to make it a gRPC MP service, it needs to have service methods that implement the
-application business logic. In gRPC there are four different types of method:
+When unable to annotate a service class &mdash;for example when the code is built by a third party&mdash;
+another way to deploy non-CDI bean services is to implement a gRPC MP server extension.
+Such an extension will be called when the MP server is starting and be given the chance to provide
+additional services for deployment.
+An extension must implement the `io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` interface.
 
-* `Unary` - a simple method with at most a single request value and returning at most a single response value.
-* `Server Streaming` - a method that takes at most a single request value but may return zero or more response values.
-* `Client Streaming` - a method that takes one or more request values and returns at most one response value.
-* `Bi-directional Streaming` - a method that can take one or more request values and return zero or more response values.
-
-The Helidon gRPC MP API determines a method type by its annotation, which should be one of the following:
-[source,java]
-----
-@Grpc.Unary
-@Grpc.ServerStreaming
-@Grpc.ClientStreaming
-@Grpc.Bidirectional
-----
-
-==== Request and Response Types
-
-A gRPC service method typically takes a request parameter and returns a response value (`streaming` methods may take
-or return multiple requests or responses). In traditional gRPC Java, the types used for the request and response
-values must be Protobuf serializable classes but this is not the case with Helidon gRPC. Helidon supports
-pluggable marshallers and, by default, will support Protobuf types. Any type that
-can be marshalled by the built-in marshallers or custom supplied marshaller may be used as a request or response type.
-
-== Implement a GrpcMpExtension
-
-If it is not possible to annotate the service class (for example the code is built by a third party), another way to
-deploy non-CDI bean services is to implement a gRPC MP server extension.
-The extension will then be called when the MP server is starting and be given the chance to add additional
-services for deployment.
-An extension should implement the `io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` interface.
-
-For example, assuming that there was a gRPC service class called `StringService` that needed to be deployed, an
-extension class might look like this:
+For example, assuming that there is a gRPC service class called `StringService` that needs to
+be deployed, a gRPC server extension class might look like this:
 
 [source,java]
 ----
@@ -171,18 +158,60 @@ include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_4, indent=0]
 
 <1> The `configure` method of the extension will be called to allow the extension to add extra configuration to
 the server.
-<2> In this example, an instance of the `StringService` is registered with the routing (as described in
-the xref:{rootdir}/se/grpc/server.adoc#_grpc_server_routing[gRPC server routing] documentation).
+<2> In this example, an instance of the `StringService` is registered with the routing, as
+described in the xref:{rootdir}/se/grpc/server.adoc#_grpc_server_routing[gRPC Server Routing] documentation.
 
-The `GrpcMpExtension` instances are discovered and loaded using the service loader, so for the example above to
-work, a file `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be
-created that contained the names of the service implementations.
+The `GrpcMpExtension` instances are discovered and loaded using the service loader, so for
+this example above to work, a file
+`META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension`
+would need to be created with the name of the extension shown above.
+
+== gRPC Reflection Service
+
+When a gRPC client interacts with a server, it needs to have access to the
+Protobuf file to learn about the available services, methods and
+message types in use. For many applications, this information is simply
+_common knowledge_ between the two parties. However, in some cases, especially
+while developing a new service, it is convenient to use tools such as `grpcurl`
+or `Postman` to test a service.
+
+Helidon includes a gRPC reflection service that can be queried by client tools
+to learn about the available services &mdash;similar to
+OpenAPI for REST services. The reflection service is implemented as a
+_feature_ and can be enabled programmatically by adding the feature, or
+via config as follows:
+
+[source,yaml]
+----
+  features:
+    grpc-reflection:
+      enabled: true
+----
+
+For more information see xref:{rootdir}/se/grpc/server.adoc#_configuration[gRPC
+Server Configuration].
+
+
+In Helidon MP, annotated services must provide access to the underlying
+Protobuf description to use the reflection service. Here is a modified
+version of `StringService` that adds an annotated method returning the
+descriptor:
+
+[source,java]
+----
+include::{sourcedir}/mp/grpc/GrpcSnippets.java[tag=snippet_1_5, indent=0]
+----
+
+A method annotated by `@Grpc.Proto` must return type `Descriptors.FileDescriptor`;
+such a descriptor is available from the Protobuf generated code, in this example,
+the `Strings.getDescription()` method. The reflection service shall call this
+method to provide service introspection to any clients that support the protocol.
 
 == Configuration
 
-Unlike in previous versions of Helidon, gRPC services in Helidon 4 run alongside other services on the
-default webserver port. All gRPC services communicate with their corresponding clients using the HTTP/2
-protocol.
+At the time of writing, there is no configuration that is specific to
+Helidon MP. For more information about gRPC configuration in SE, see
+xref:{rootdir}/se/grpc/server.adoc#_configuration[gRPC Server Configuration].
 
 == Examples
 

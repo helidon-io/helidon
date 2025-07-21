@@ -241,11 +241,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 throw new IOException("Output stream already closed");
             }
 
-            BufferData data = BufferData.create(b, off, len);
-
             if (!chunked) {
                 if (firstPacket == null) {
-                    firstPacket = data;
+                    BufferData first = BufferData.create(len - off);
+                    first.write(b, off, len);    // copies byte buffer
+                    firstPacket = first;
                 } else {
                     chunked = true;
                     sendFirstChunk();
@@ -258,7 +258,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     noData = false;
                     sendPrologueAndHeader();
                 }
-                writeChunked(data);
+                writeChunked(BufferData.create(b, off, len));
             }
         }
 

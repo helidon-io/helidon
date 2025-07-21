@@ -99,6 +99,12 @@
                 <artifactId>helidon-microprofile-graphql-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- JSON-RPC -->
+            <dependency>
+                <groupId>io.helidon.jsonrpc</groupId>
+                <artifactId>helidon-jsonrpc-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- GRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
@@ -616,6 +622,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-jsonrpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.features</groupId>
                 <artifactId>helidon-common-features-api</artifactId>
                 <version>${helidon.version}</version>
@@ -1103,6 +1114,16 @@
                 <artifactId>helidon-integrations-langchain4j-providers-oracle</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- OpenAPI support -->
             <dependency>
@@ -1434,6 +1455,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-jsonrpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-api</artifactId>
                 <version>${helidon.version}</version>
@@ -1461,6 +1487,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-grpc-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1496,6 +1527,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-jsonrpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
