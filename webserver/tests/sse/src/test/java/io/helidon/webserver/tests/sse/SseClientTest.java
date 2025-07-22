@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ class SseClientTest extends SseBaseTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseClientTest::sseString1);
+        rules.get("/sseString2", SseClientTest::sseString2);
         rules.get("/sseJson1", SseClientTest::sseJson1);
         rules.get("/sseJson2", SseServerTest::sseJson2);
     }
@@ -68,6 +69,20 @@ class SseClientTest extends SseBaseTest {
                             .name("second")
                             .data("world")
                             .build());
+        }
+    }
+
+    static void sseString2(ServerRequest req, ServerResponse res) {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.builder()
+                                 .data("first line")
+                                 .data("second line")
+                                 .data("third line")
+                                 .build())
+                    .emit(SseEvent.builder()
+                                  .name("second")
+                                  .data("first line\nsecond line\nthird line")
+                                  .build());
         }
     }
 
@@ -95,6 +110,26 @@ class SseClientTest extends SseBaseTest {
                         }
                     }
                     state++;
+                }
+
+                @Override
+                public void onClose() {
+                    latch.countDown();
+                }
+            });
+            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @Test
+    void testSseString2() throws InterruptedException {
+        try (Http1ClientResponse r = client.get("/sseString2").header(ACCEPT_EVENT_STREAM).request()) {
+            CountDownLatch latch = new CountDownLatch(1);
+            r.source(SseSource.TYPE, new SseSource() {
+
+                @Override
+                public void onEvent(SseEvent event) {
+                    assertThat(event.data(), is("first line\nsecond line\nthird line"));
                 }
 
                 @Override

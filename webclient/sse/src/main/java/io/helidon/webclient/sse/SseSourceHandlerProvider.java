@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,9 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                 }
                 emit = true;
                 if (line.startsWith(DATA)) {
+                    if (!data.isEmpty()) {
+                        data.append("\n");      // multi-line string data
+                    }
                     data.append(skipPrefix(line));
                 } else if (line.startsWith(EVENT)) {
                     sseBuilder.name(skipPrefix(line));
