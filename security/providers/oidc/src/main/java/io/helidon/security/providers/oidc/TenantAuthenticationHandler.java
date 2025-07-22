@@ -64,7 +64,6 @@ import io.helidon.security.jwt.JwtHeaders;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.Validator;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;

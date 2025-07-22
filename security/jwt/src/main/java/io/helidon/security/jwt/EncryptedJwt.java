@@ -723,7 +723,7 @@ public final class EncryptedJwt {
 
         private final String cipher;
         private final int ivSize;
-        final int keySize;
+        private final int keySize;
 
         private AesAlgorithm(String cipher, int keySize, int ivSize) {
             this.cipher = cipher;
@@ -774,6 +774,9 @@ public final class EncryptedJwt {
             return false;
         }
 
+        int keySize() {
+            return keySize;
+        }
     }
 
     private static class AesAlgorithmWithHmac extends AesAlgorithm {
@@ -799,7 +802,7 @@ public final class EncryptedJwt {
         }
 
         private EncryptionParts createMacKey(EncryptionParts encryptionParts) {
-            byte[] mac = new byte[keySize / 8];
+            byte[] mac = new byte[keySize() / 8];
             RANDOM.nextBytes(mac);
             return new EncryptionParts(encryptionParts.key(),
                                        mac,
@@ -811,7 +814,7 @@ public final class EncryptedJwt {
 
         private byte[] sign(EncryptionParts parts) {
             byte[] fullHmacTag = computeMac(parts);
-            byte[] authKey = new byte[fullHmacTag.length/2];
+            byte[] authKey = new byte[fullHmacTag.length / 2];
             System.arraycopy(fullHmacTag, 0, authKey, 0, authKey.length);
             return authKey;
         }
@@ -826,7 +829,7 @@ public final class EncryptedJwt {
 
         private boolean verifySignature(EncryptionParts encryptionParts) {
             byte[] fullHmacTag = computeMac(encryptionParts);
-            byte[] authKey = new byte[fullHmacTag.length/2];
+            byte[] authKey = new byte[fullHmacTag.length / 2];
             System.arraycopy(fullHmacTag, 0, authKey, 0, authKey.length);
             return MessageDigest.isEqual(authKey, encryptionParts.authTag());
         }
