@@ -43,7 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.TypeConfigSupport;
+import io.helidon.declarative.codegen.TypeConfigOverrides;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.model.http.ClientEndpoint;
@@ -549,7 +549,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                         .update(it -> registryClientParameter(it, endpoint)))
                 .addContentLine("this.errorHandling = errorHandling;")
                 .addContentLine("")
-                .update(it -> TypeConfigSupport.generateTypeConfig(it, endpoint.type().typeName(), "config", "endpointConfig"))
+                .update(it -> TypeConfigOverrides.generateTypeConfig(it, endpoint.type().typeName(), "config", "endpointConfig"))
                 .addContentLine("var clientConfig = endpointConfig.get(\"client\");")
                 .addContentLine("var webClientConfig = clientConfig.get(\"webclient\");")
                 .addContentLine("if (webClientConfig.exists()) {")

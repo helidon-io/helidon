@@ -23,8 +23,8 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Support to generate consistent configuration for declarative types.
  */
-public final class TypeConfigSupport {
-    private TypeConfigSupport() {
+public final class TypeConfigOverrides {
+    private TypeConfigOverrides() {
     }
 
     /**

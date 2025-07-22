@@ -35,7 +35,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.TypeConfigSupport;
+import io.helidon.declarative.codegen.TypeConfigOverrides;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -102,11 +102,11 @@ class FallbackHandler extends FtHandler {
                 .isFinal(true)
                 .accessModifier(AccessModifier.PRIVATE));
 
-        TypeConfigSupport.generateMethodConfig(ctrBuilder,
-                                               typeName,
-                                               methodElement,
-                                               "config",
-                                               "methodConfig");
+        TypeConfigOverrides.generateMethodConfig(ctrBuilder,
+                                                 typeName,
+                                                 methodElement,
+                                                 "config",
+                                                 "methodConfig");
 
         ctrBuilder.addContent("var fallbackConfig = ")
                 .addContent(FALLBACK_CONFIG)

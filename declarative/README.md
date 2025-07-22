@@ -24,8 +24,7 @@ Rules for Helidon Declarative:
    handle invocation, or implements an `io.helidon.service.registry.Interception.ElementInterceptor` that intercepts one specific
    element)
 5. If there is a good reason the user may want to override configuration in annotations with config, generate the code
-   appropriately (the configuration key should be type-config.<fully qualified class name>.<(method | field) name>.<type>, i.e.
-   `type-config.io.helidon.examples.decalarative.HttpEndpoint.retriable.retry`), or an explicit key configured on the annotation
+   appropriately, see `io.helidon.declarative.codegen.TypeConfigOverrides`, and the configuration section below
 6. If there is a good reason the user may want to use a custom named service implementation, provide a way to inject it (see Retry
    generated code for named retries, such as `GreetServiceEndpoint_retriable__Retry.java`)
 7. All features must be configured through service registry.
@@ -163,37 +162,79 @@ Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 Some annotation values may be overridden by configuration. The developer of the feature may decide to support this approach,
 though if supported, it must follow the guidelines defined here.
 
-1. Configuration key may be explicitly defined in an annotation to override the rules below
-2. The root configuration node for overriding annotation values is `type-config`
-3. Second level configuration node is the fully qualified class name of the annotated type (i.e. `com.example.MyType`)
-4. Third level is either name of the feature, or a reserved word `methods`; feature names must be unique within Helidon, third
-   party features may conflict, though that is outside of scope of our rules; methods are only identified by name; if multiple
-   methods with the same name exist, configuration would be used for all of them, or a full signature can be used (i.e.
-   `myMethod(java.lang.String,java.util.List)`), first we look for full signature
+Rules that a component does not need to understand, when using `io.helidon.declarative.codegen.TypeConfigOverrides`:
 
-See `io.helidon.declarative.codegen.TypeConfigSupport.generateMethodConfig` and
-`io.helidon.declarative.codegen.TypeConfigSupport.generateTypeConfig`.
+1. There is a root configuration key `type-overrides`
+2. Under this key, a fully qualified class name of the annotated type is used as a key for overriding configuration of annotations
+   on a type
+3. Next key is either `methods` (reserved keyword), or key of an annotation (details below)
+4. In case `methods` is present, next level is either the method name, or unique method signature (i.e. either `greet`, or
+   `greet(java.lang.String)`), this is to allow overriding possibilities for methods with the same name
+5. Once again, under a method name/signature is a key of an annotation (details below)
+
+Annotation keys:
+
+The annotation key is created as a configuration key of the "container" class + `.` + configuration key of the annotation class +
+`.` + configuration key of the property name.
+Not all properties can be overridden, this depends on the feature developer, and this should be documented in javadoc.
+
+Configuration key is dash separated words, i.e. `RestServer` class will have `rest-server` configuration key.
+
+For example for property `RestServer.Listener.value()`, the configuration key would be `rest-server.listener.value`.
+For a theoretical type `com.example.MyType`, the result would be:
+
+`type-overrides.com.example.MyType.rest-server.listener.value`
 
 Now we have a split, that has the same sub-rules - either we configure something under the type (i.e. on same level as `methods`),
-or we configure something under a specific method (i.e. `type-config.fq-class-name.methods.method-name`).
-
-The next configuration level depends on complexity of the feature. WebServer, WebClient will have a dedicated feature config
-node `server` and `client`, with additional configuration option under these; other features may have directly a specific option
-defined here (such as fault tolerance, scheduling) - make sure there is no name conflict between features, if so, a dedicated
-feature node must be created.
+or we configure something under a specific method (i.e. `type-overrides.fq-class-name.methods.method-name`).
 
 Helidon features (existing):
 
-| config key        | Feature         | Notes                                   |
-|-------------------|-----------------|-----------------------------------------|
-| `client`          | WebClient       | may contain `uri` and `web-client` etc. |
-| `server`          | WebServer       | may contain `path`, `listener` etc.     |                     
-| `schedule`        | Scheduling      | CRON or Fixed Rate task                 |
-| `async`           | Fault Tolerance | Asynchronous handler                    |
-| `timeout`         | Fault Tolerance | Timeout handler                         |
-| `retry`           | Fault Tolerance | Retry handler                           |
-| `circuit-breaker` | Fault Tolerance | Circuit Breaker handler                 |
-| `bulkhead`        | Fault Tolerance | Bulkhead handler                        |
+| config key                             | Property                               | Notes                                                                                                         |
+|----------------------------------------|----------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `rest-server.listener.value`           | `RestServer.Listener.value()`          | name of the socket to listen on                                                                               |
+| `rest-server.status.value`             | `RestServer.Status.value()`            | HTTP status code (i.e. `201`)                                                                                 |
+| `rest-server.status.reason`            | `RestServer.Status.reason()`           | unless specified by annotation, defaults to the reason for the provided code                                  |
+| `rest-client.endpoint.value`           | `RestClient.Endpoint.value()`          | URI of the client (without path)                                                                              |
+| `rest-client.webclient`                | N/A                                    | Configuration for `WebClient`                                                                                 |
+| `http.path.value`                      | `Http.Path.value()`                    | Path of the component, on server endpoint for server, on type annotated with `RestClient.Endpoint` for client |
+| `ft.async.name`                        | `Ft.Async.name()`                      |                                                                                                               |
+| `ft.async.enabled`                     | N/A                                    | Set to `false` to disable this async                                                                          |              
+| `ft.timeout.name`                      | `Ft.Timeout.name()`                    |                                                                                                               |
+| `ft.timeout.time`                      | `Ft.Timeout.time()`                    | Duration string (i.e. `PT10S`)                                                                                |
+| `ft.timeout.currentThread`             | `Ft.Timeout.currentThread()`           |                                                                                                               |
+| `ft.timeout.enabled`                   | N/A                                    | Set to `false` to disable the timeout                                                                         |
+| `ft.bulkhead.name`                     | `Ft.Bulkhead.name()`                   |                                                                                                               |
+| `ft.bulkhead.limit`                    | `Ft.Bulkhead.limit()`                  |                                                                                                               |
+| `ft.bulkhead.queue-length`             | `Ft.Bulkhead.queueLength()`            |                                                                                                               |
+| `ft.bulkhead.enabled`                  | N/A                                    | Set to `false` to disable the bulkhead                                                                        |
+| `ft.circuit-breakder.name`             | `Ft.CircuitBreakder.name()`            |                                                                                                               |
+| `ft.circuit-breaker.delay`             | `Ft.CircuitBreaker.delay()`            | Duration string (i.e. `PT5S`)                                                                                 |
+| `ft.circuit-breaker.error-ratio`       | `Ft.CircuitBreaker.errorRatio()`       | integer                                                                                                       |
+| `ft.circuit-breaker.volume`            | `Ft.CircuitBreaker.volume()`           | integer                                                                                                       |
+| `ft.circuit-breaker.success-threshold` | `Ft.CircuitBreaker.successThreshold()` | integer                                                                                                       |
+| `ft.circuit-breaker.skip-on`           | `Ft.CircuitBreaker.skipOn()`           | List of classes (Throwables)                                                                                  |
+| `ft.circuit-breaker.apply-on`          | `Ft.CircuitBreaker.applyOn()`          | List of classes (Throwables)                                                                                  |
+| `ft.circuit-breakder.enabled`          | N/A                                    | Set to `false` to disable the bulkhead                                                                        |
+| `ft.retry.name`                        | `Ft.Retry.name()`                      |                                                                                                               |
+| `ft.retry.calls`                       | `Ft.Retry.calls()`                     | integer                                                                                                       |
+| `ft.retry.delay`                       | `Ft.Retry.delay()`                     | Duration string (i.e. `PT0.2S`)                                                                               |
+| `ft.retry.delay-factor`                | `Ft.Retry.delayFactor()`               | double                                                                                                        |
+| `ft.retry.jitter`                      | `Ft.Retry.jitter()`                    | duration string (i.e. `PT1S`)                                                                                 |
+| `ft.retry.overall-timeout`             | `Ft.Retry.overallTimeout()`            | Duration string (i.e. `PT1S`)                                                                                 |
+| `ft.retry.skip-on`                     | `Ft.Retry.skipOn()`                    | List of classes (Throwable)                                                                                   |
+| `ft.retry.apply-on`                    | `Ft.Retry.applyOn()`                   | List of classes (Throwable)                                                                                   |
+| `ft.retry.enabled`                     | N/A                                    | Set to `false` to disable the retry                                                                           |
+| `ft.fallback.skip-on`                  | `Ft.Fallback.skipOn()`                 | List of classes (Throwable)                                                                                   |
+| `ft.fallback.apply-on`                 | `Ft.Fallback.applyOn()`                | List of classes (Throwable)                                                                                   |
+| `ft.fallback.enabled`                  | N/A                                    | Set to `false` to disable the fallback                                                                        |
+| `scheduling.fixed-rate.value`          | `Scheduling.FixedRate.value()`         | Duration string (i.e. `PT10M`)                                                                                |
+| `scheduling.fixed-rate.delay-by`       | `Scheduling.FixedRate.delayBy()`       | Duration string (i.e. `PT0S`)                                                                                 |
+| `scheduling.fixed-rate.delay-type`     | `Scheduling.FixedRate.delayType()`     | Enum `io.helidon.scheduling.FixedRate.DelayType`                                                              |
+| `scheduling.fixed-rate.enabled`        | N/A                                    | Set to `false` to disable this scheduled task                                                                 |
+| `scheduling.cron.value`                | `Scheduling.Cron.value()`              | Cron expression                                                                                               |
+| `scheduling.cron.concurrent`           | `Scheduling.Cron.concurrent()`         | boolean                                                                                                       |
+| `scheduling.cron.enabled`              | N/A                                    | Set to `false` to disable this scheduled task                                                                 |
 
 Helidon features (planned):
 
@@ -209,23 +250,22 @@ Other features must be added as they are being developed
 Documented example:
 
 ```yaml
-type-config:
+type-overrides:
   "com.example.MyType":
-    server:
+    rest-server:
       listener: "admin" # override socket name
-      path: "/greeting"
-    client:
-      uri: "uri-to-invoke"
+    http.path: "/greeting"  
+    rest-client:
+      endpoint.value: "uri-to-invoke"
       webclient:
       # the full WebClientConfig
     methods:
       myMethod:
-        retry:
+        ft.retry:
           calls: 4
       "myMethod(java.lang.String,java.util.List)":
-        retry:
+        ft.retry:
           enabled: false
-          calls: 5
 
 
 ```

@@ -88,6 +88,7 @@ class GreetServiceEndpoint implements GreetService {
         throw new IllegalStateException("Failed");
     }
 
+    @Ft.Timeout(time = "${timeout.retriable:PT5S}")
     @Ft.Retry(name = "named")
     @RestServer.Header(name = "X-Header", value = "X-Value")
     @RestServer.ComputedHeader(name = ServerHeaderFunction.HEADER_NAME, function = ServerHeaderFunction.SERVICE_NAME)

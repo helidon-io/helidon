@@ -43,7 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.TypeConfigSupport;
+import io.helidon.declarative.codegen.TypeConfigOverrides;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
@@ -144,7 +144,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                         .type(singleton ? endpointType : supplierOf(endpointType))
                         .name("endpoint"));
 
-        TypeConfigSupport.generateTypeConfig(constructor, endpointType, "config", "typeConfig");
+        TypeConfigOverrides.generateTypeConfig(constructor, endpointType, "config", "typeConfig");
         constructor.addContentLine("var endpointConfig = typeConfig.get(\"server\");");
 
         constructor.addContentLine("");

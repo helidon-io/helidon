@@ -21,8 +21,10 @@ server:
   port: 8080
   host: 0.0.0.0
 
-type-config:
+
+type-overrides:
   "io.helidon.declarative.tests.http.GreetServiceClient":
-    client.uri: "http://localhost:${test.server.port}"
+    rest-client.endpoint.value: "http://localhost:${test.server.port}"
   "io.helidon.declarative.tests.http.GreetServiceEndpoint":
-    server.listener: "@default"
+    rest-server.listener.value: "@default"
+

@@ -40,7 +40,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.RunLevels;
-import io.helidon.declarative.codegen.TypeConfigSupport;
+import io.helidon.declarative.codegen.TypeConfigOverrides;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -192,11 +192,11 @@ class SchedulingExtension implements RegistryCodegenExtension {
             configKey = scheduled.configKey().get();
         } else {
             configVariable = "methodConfig_" + index;
-            TypeConfigSupport.generateMethodConfig(postConstruct,
-                                                   typeName,
-                                                   scheduled.element(),
-                                                   "config",
-                                                   configVariable);
+            TypeConfigOverrides.generateMethodConfig(postConstruct,
+                                                     typeName,
+                                                     scheduled.element(),
+                                                     "config",
+                                                     configVariable);
             configKey = "schedule";
         }
 

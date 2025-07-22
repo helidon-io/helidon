@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.TypeConfigSupport;
+import io.helidon.declarative.codegen.TypeConfigOverrides;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -168,7 +168,7 @@ final class TimeoutHandler extends FtHandler {
                                           String customName) {
 
         // find appropriate method configuration for this timeout
-        TypeConfigSupport.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
+        TypeConfigOverrides.generateMethodConfig(builder, typeName, element, "config", "methodConfig");
 
         builder.addContentLine("")
                 .addContentLine("var timeoutConfig = methodConfig.get(\"timeout\");")

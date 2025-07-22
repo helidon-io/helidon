@@ -24,6 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.builder.api.Option;
 import io.helidon.service.registry.Service;
 
 /**
@@ -135,6 +136,7 @@ public final class RestServer {
          *
          * @return name of a routing (or listener host/port) on WebServer
          */
+        @Option.Configured("server.listener")
         String value();
     }
 
