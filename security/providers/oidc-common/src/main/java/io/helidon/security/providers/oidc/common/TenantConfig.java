@@ -194,6 +194,13 @@ public interface TenantConfig {
     boolean useWellKnown();
 
     /**
+     * Used for JWE (Encrypted JWT) content encryption key decryption.
+     *
+     * @return content encryption key decryption keys
+     */
+    Optional<JwkKeys> contentKeyDecryptionKeys();
+
+    /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.
      */
     @Configured(description = "Open ID Connect tenant configuration")

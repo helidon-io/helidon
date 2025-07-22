@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.security.jwt;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -175,7 +177,7 @@ public final class EncryptedJwt {
      * </ul>
      *
      * @param header parsed JWT header
-     * @param token String with the token
+     * @param token  String with the token
      * @return Encrypted jwt parts
      * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
      */
@@ -198,9 +200,9 @@ public final class EncryptedJwt {
     /**
      * Add validator of kek algorithm to the collection of validators.
      *
-     * @param validators collection of validators
-     * @param expectedKekAlg   audience key encryption key algorithm
-     * @param mandatory  whether the alg field is mandatory in the token
+     * @param validators     collection of validators
+     * @param expectedKekAlg audience key encryption key algorithm
+     * @param mandatory      whether the alg field is mandatory in the token
      */
     public static void addKekValidator(Collection<Validator<EncryptedJwt>> validators, String expectedKekAlg, boolean mandatory) {
         validators.add((encryptedJwt, collector) -> {
@@ -379,13 +381,6 @@ public final class EncryptedJwt {
 
         errors.collect().checkValid();
 
-        byte[] decryptedKey = unwrapRsa(supportedAlgorithm, privateKey, encryptedKey);
-        //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
-        EncryptionParts encryptionParts = new EncryptionParts(decryptedKey,
-                                                              iv,
-                                                              headerBase64.getBytes(StandardCharsets.US_ASCII),
-                                                              encryptedPayload,
-                                                              authTag);
         AesAlgorithm aesAlgorithm;
         try {
             SupportedEncryption supportedEncryption = SupportedEncryption.getValue(enc);
@@ -393,7 +388,31 @@ public final class EncryptedJwt {
         } catch (IllegalArgumentException e) {
             throw new JwtException("Unsupported content encryption: " + enc);
         }
+
+        byte[] decryptedKey = unwrapRsa(supportedAlgorithm, privateKey, encryptedKey);
+        byte[] macKey;
+        byte[] encKey;
+        if (aesAlgorithm.hasHmac()) {
+            int keySizeInBytes = aesAlgorithm.keySize / 8;
+            macKey = new byte[keySizeInBytes];
+            encKey = new byte[keySizeInBytes];
+            System.arraycopy(decryptedKey, 0, macKey, 0, keySizeInBytes);
+            System.arraycopy(decryptedKey, keySizeInBytes, encKey, 0, keySizeInBytes);
+        } else {
+            encKey = decryptedKey;
+            macKey = new byte[0];
+        }
+        //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
+        EncryptionParts encryptionParts = new EncryptionParts(encKey,
+                                                              macKey,
+                                                              iv,
+                                                              headerBase64.getBytes(StandardCharsets.US_ASCII),
+                                                              encryptedPayload, authTag);
+
         String decryptedPayload = new String(aesAlgorithm.decrypt(encryptionParts), StandardCharsets.UTF_8);
+        Arrays.fill(decryptedKey, (byte) 0); //clear the decrypted key from the memory
+        Arrays.fill(macKey, (byte) 0);
+        Arrays.fill(encKey, (byte) 0);
         return SignedJwt.parseToken(decryptedPayload);
     }
 
@@ -561,9 +580,13 @@ public final class EncryptedJwt {
             //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
             EncryptionParts encryptionParts = contentEncryption.encrypt(jwt.tokenContent().getBytes(StandardCharsets.UTF_8),
                                                                         headersBase64.getBytes(StandardCharsets.US_ASCII));
+            byte[] mac = encryptionParts.mac();
             byte[] aesKey = encryptionParts.key();
+            byte[] result = new byte[mac.length + aesKey.length];
+            System.arraycopy(mac, 0, result, 0, mac.length);
+            System.arraycopy(aesKey, 0, result, mac.length, aesKey.length);
 
-            byte[] encryptedAesKey = wrapRsa(algorithm, publicKey, aesKey);
+            byte[] encryptedAesKey = wrapRsa(algorithm, publicKey, result);
             String token = tokenBuilder.append(headersBase64).append(".")
                     .append(encode(encryptedAesKey)).append(".")
                     .append(encode(encryptionParts.iv())).append(".")
@@ -696,11 +719,11 @@ public final class EncryptedJwt {
 
     private static class AesAlgorithm {
 
-        private static final SecureRandom RANDOM = new SecureRandom();
+        static final SecureRandom RANDOM = new SecureRandom();
 
         private final String cipher;
-        private final int keySize;
         private final int ivSize;
+        final int keySize;
 
         private AesAlgorithm(String cipher, int keySize, int ivSize) {
             this.cipher = cipher;
@@ -715,12 +738,12 @@ public final class EncryptedJwt {
                 SecretKey secretKey = kgen.generateKey();
                 byte[] iv = new byte[ivSize];
                 RANDOM.nextBytes(iv);
-                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), iv, aad, null, null);
+                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), new byte[0], iv, aad, null, null);
                 Cipher cipher = Cipher.getInstance(this.cipher);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey, createParameterSpec(encryptionParts));
                 postCipherConstruct(cipher, encryptionParts);
                 byte[] encryptedContent = cipher.doFinal(plainContent);
-                return new EncryptionParts(secretKey.getEncoded(), iv, aad, encryptedContent, null);
+                return new EncryptionParts(secretKey.getEncoded(), new byte[0], iv, aad, encryptedContent, null);
             } catch (Exception e) {
                 throw new JwtException("Exception during content encryption", e);
             }
@@ -747,6 +770,10 @@ public final class EncryptedJwt {
             return new IvParameterSpec(encryptionParts.iv());
         }
 
+        boolean hasHmac() {
+            return false;
+        }
+
     }
 
     private static class AesAlgorithmWithHmac extends AesAlgorithm {
@@ -761,24 +788,32 @@ public final class EncryptedJwt {
         @Override
         public EncryptionParts encrypt(byte[] plainContent, byte[] aad) {
             EncryptionParts encryptionParts = super.encrypt(plainContent, aad);
+            encryptionParts = createMacKey(encryptionParts);
             byte[] authTag = sign(encryptionParts);
             return new EncryptionParts(encryptionParts.key(),
+                                       encryptionParts.mac(),
                                        encryptionParts.iv(),
                                        encryptionParts.aad(),
                                        encryptionParts.encryptedContent(),
                                        authTag);
         }
 
+        private EncryptionParts createMacKey(EncryptionParts encryptionParts) {
+            byte[] mac = new byte[keySize / 8];
+            RANDOM.nextBytes(mac);
+            return new EncryptionParts(encryptionParts.key(),
+                                       mac,
+                                       encryptionParts.iv(),
+                                       encryptionParts.aad(),
+                                       encryptionParts.encryptedContent(),
+                                       encryptionParts.authTag());
+        }
+
         private byte[] sign(EncryptionParts parts) {
-            try {
-                Mac mac = macInstance();
-                mac.init(new SecretKeySpec(parts.key(), "AES"));
-                mac.update(parts.aad());
-                mac.update(parts.encryptedContent());
-                return mac.doFinal();
-            } catch (InvalidKeyException e) {
-                throw new JwtException("Exception occurred while HMAC signature");
-            }
+            byte[] fullHmacTag = computeMac(parts);
+            byte[] authKey = new byte[fullHmacTag.length/2];
+            System.arraycopy(fullHmacTag, 0, authKey, 0, authKey.length);
+            return authKey;
         }
 
         @Override
@@ -790,15 +825,44 @@ public final class EncryptedJwt {
         }
 
         private boolean verifySignature(EncryptionParts encryptionParts) {
+            byte[] fullHmacTag = computeMac(encryptionParts);
+            byte[] authKey = new byte[fullHmacTag.length/2];
+            System.arraycopy(fullHmacTag, 0, authKey, 0, authKey.length);
+            return MessageDigest.isEqual(authKey, encryptionParts.authTag());
+        }
+
+        private byte[] computeMac(EncryptionParts encryptionParts) {
             try {
+                /*
+                The octet string AL is equal to the number of bits in the
+                Additional Authenticated Data A expressed as a 64-bit unsigned
+                big-endian integer.
+                 */
+                byte[] al = ByteBuffer.allocate(8)
+                        .order(ByteOrder.BIG_ENDIAN)
+                        .putLong(encryptionParts.aad().length * 8L)
+                        .array();
+
+                /*
+                A message Authentication Tag T is computed by applying HMAC to the following data, in order:
+                the Additional Authenticated Data A,
+                the Initialization Vector IV,
+                the ciphertext E computed in the previous step, and
+                the octet string AL defined above.
+
+                We denote the output
+                of the MAC computed in this step as M. The first T_LEN octets of
+                M are used as T.
+                 */
                 Mac mac = macInstance();
-                mac.init(new SecretKeySpec(encryptionParts.key(), "AES"));
+                mac.init(new SecretKeySpec(encryptionParts.mac(), "AES"));
                 mac.update(encryptionParts.aad());
+                mac.update(encryptionParts.iv());
                 mac.update(encryptionParts.encryptedContent());
-                byte[] authKey = mac.doFinal();
-                return MessageDigest.isEqual(authKey, encryptionParts.authTag());
+                mac.update(al);
+                return mac.doFinal();
             } catch (InvalidKeyException e) {
-                throw new JwtException("Exception occurred while HMAC signature.");
+                throw new JwtException("Exception occurred while calculating HMAC signature.");
             }
         }
 
@@ -808,6 +872,11 @@ public final class EncryptedJwt {
             } catch (NoSuchAlgorithmException e) {
                 throw new JwtException("Could not find MAC instance: " + hmac);
             }
+        }
+
+        @Override
+        boolean hasHmac() {
+            return true;
         }
     }
 
@@ -827,10 +896,10 @@ public final class EncryptedJwt {
             System.arraycopy(wholeEncryptedContent, 0, encryptedContent, 0, encryptedContent.length);
             System.arraycopy(wholeEncryptedContent, length, authTag, 0, authTag.length);
             return new EncryptionParts(encryptionParts.key(),
+                                       encryptionParts.mac(),
                                        encryptionParts.iv(),
                                        encryptionParts.aad(),
-                                       encryptedContent,
-                                       authTag);
+                                       encryptedContent, authTag);
         }
 
         @Override
@@ -843,6 +912,7 @@ public final class EncryptedJwt {
             System.arraycopy(encryptedPayload, 0, result, 0, epl);
             System.arraycopy(authTag, 0, result, epl, al);
             EncryptionParts newEncParts = new EncryptionParts(encryptionParts.key(),
+                                                              encryptionParts.mac(),
                                                               encryptionParts.iv(),
                                                               encryptionParts.aad(),
                                                               result,
@@ -861,41 +931,8 @@ public final class EncryptedJwt {
         }
     }
 
-    private static final class EncryptionParts {
+    private record EncryptionParts(byte[] key, byte[] mac, byte[] iv, byte[] aad, byte[] encryptedContent, byte[] authTag) {
 
-        private final byte[] key;
-        private final byte[] iv;
-        private final byte[] aad;
-        private final byte[] encryptedContent;
-        private final byte[] authTag;
-
-        private EncryptionParts(byte[] key, byte[] iv, byte[] aad, byte[] encryptedContent, byte[] authTag) {
-            this.key = key;
-            this.iv = iv;
-            this.aad = aad;
-            this.encryptedContent = encryptedContent;
-            this.authTag = authTag;
-        }
-
-        public byte[] key() {
-            return key;
-        }
-
-        public byte[] iv() {
-            return iv;
-        }
-
-        public byte[] aad() {
-            return aad;
-        }
-
-        public byte[] encryptedContent() {
-            return encryptedContent;
-        }
-
-        public byte[] authTag() {
-            return authTag;
-        }
     }
 
 }
