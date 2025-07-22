@@ -128,4 +128,25 @@ class SseEventTest extends SseBaseTest {
                              .data("third")
                              .build());
     }
+
+    @Test
+    void testMultiLineStringArrayData() {
+        SseEvent event = SseEvent.builder()
+                .mediaContext(mediaContext)
+                .data("first", "second", "third")
+                .build();
+        assertThat(event.data(String.class), is("first\nsecond\nthird"));
+        assertThat(event.data(String[].class), is(new String[]{"first", "second", "third"}));
+    }
+
+    @Test
+    void testBadMultiLineStringArrayData() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> SseEvent.builder()
+                             .mediaContext(mediaContext)
+                             .data(new Object())
+                             .data("first", "second", "third")      // cannot concatenate
+                             .build());
+    }
+
 }

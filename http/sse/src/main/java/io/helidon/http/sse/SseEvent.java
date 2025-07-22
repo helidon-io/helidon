@@ -125,6 +125,9 @@ public class SseEvent {
         if (clazz.equals(byte[].class)) {
             return (T) sdata.getBytes(StandardCharsets.UTF_8);
         }
+        if (clazz.equals(String[].class)) {
+            return (T) sdata.split("\n");
+        }
         try {
             if (mediaContext == null) {
                 throw new IllegalStateException("Media context has not been set on this event");
@@ -304,6 +307,30 @@ public class SseEvent {
                 }
                 this.data += "\n" + data;    // concatenate strings
             }
+            return this;
+        }
+
+        /**
+         * Use an array of strings to set the value of a multi-line event.
+         *
+         * @param data array of strings
+         * @return updated builder instance
+         */
+        public Builder data(String... data) {
+            StringBuilder builder = new StringBuilder();
+            if (this.data != NO_DATA) {
+                if (!(this.data instanceof String)) {
+                    throw new IllegalArgumentException("Cannot concatenate non-string event data");
+                }
+                builder.append(this.data).append("\n");
+            }
+            for (int i = 0; i < data.length; i++) {
+                builder.append(data[i]);
+                if (i != data.length - 1) {
+                    builder.append("\n");
+                }
+            }
+            this.data = builder.toString();
             return this;
         }
 
