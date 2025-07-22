@@ -1263,27 +1263,29 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
         </dependency>
         <dependency>
             <id>126464</id>
-            <name>Jakarta Expression Language (EL)</name>
-            <version>4.0.2</version>
+            <name>Eclipse Expressly (org.glassfish.expressly:expressly)</name>
+            <version>5.0.0</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-bean-validation</consumer>
             </consumers>
-            <attribution>Jakarta Expression Language Implementation (org.glassfish:jakarta.el)
-  Copyright (c) 2018, 2020 Eclipse Foundation. All rights reserved.
+            <attribution>Eclipse Expressly (org.glassfish.expressly:expressly)
+  Copyright (c) 2021 Payara Services Ltd.
+  Copyright (c) 2018, 2022 Eclipse Foundation. All rights reserved.
   Copyright (c) 1997,2021 Oracle and/or its affiliates. All rights reserved.
-  Copyright (c) 1997,2020 Oracle and/or its affiliates and others.
+  Copyright (c) 1997,2022 Oracle and/or its affiliates and others.
 --------------------------------------------
-# Notices for Jakarta Expression Language
+# Notices for Expressley
 
 This content is produced and maintained by the Jakarta Expression Language project.
 
-* Project home: https://projects.eclipse.org/projects/ee4j.el
+* Project home: https://projects.eclipse.org/projects/ee4j.expressly
 
 ## Trademarks
 
-Jakarta Expression Language is a trademark of the Eclipse Foundation.
+Expressly and Jakarta Expression Language are trademark of the Eclipse
+Foundations.
 
 ## Copyright
 
