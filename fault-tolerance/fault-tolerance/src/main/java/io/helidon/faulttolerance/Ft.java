@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.builder.api.Option;
 import io.helidon.service.registry.Interception;
 
 /**
@@ -190,14 +191,18 @@ public final class Ft {
          *
          * @return timeout duration
          */
+        @Option.Configured
         String time() default "PT10S";
 
         /**
          * Flag to indicate that code must be executed in current thread instead
          * of in an executor's thread. This flag is {@code false} by default.
          *
+         * This option can be configured - link to "how to configure overrides for annotations"
+         *
          * @return whether to run on current thread ({@code true}), or in an executor's thread ({@code false}, default)
          */
+        @Option.Configured
         boolean currentThread() default false;
     }
 

@@ -29,7 +29,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
-interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
+interface CircuitBreakerConfigBlueprint extends CommonHandlerConfig, Prototype.Factory<CircuitBreaker> {
     /**
      * Default error ratio.
      */
@@ -42,13 +42,6 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * Default volume.
      */
     int DEFAULT_VOLUME = 10;
-
-    /**
-     * Name of this circuit breaker.
-     *
-     * @return name
-     */
-    Optional<String> name();
 
     /**
      * How long to wait before transitioning from open to half-open state.
@@ -108,6 +101,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @see #applyOn()
      */
     @Option.Singular
+    @Option.Configured
     Set<Class<? extends Throwable>> skipOn();
 
     /**
@@ -117,6 +111,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
      * @see #skipOn()
      */
     @Option.Singular
+    @Option.Configured
     Set<Class<? extends Throwable>> applyOn();
 
     /**

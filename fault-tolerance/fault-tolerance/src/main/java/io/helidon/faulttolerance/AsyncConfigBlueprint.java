@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = AsyncConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured
-interface AsyncConfigBlueprint extends Prototype.Factory<Async> {
-    /**
-     * Name for debugging, error reporting, monitoring.
-     *
-     * @return name of this async
-     */
-    Optional<String> name();
+interface AsyncConfigBlueprint extends CommonHandlerConfig, Prototype.Factory<Async> {
 
     /**
      * Name of an executor service. This is only honored when service registry is used.

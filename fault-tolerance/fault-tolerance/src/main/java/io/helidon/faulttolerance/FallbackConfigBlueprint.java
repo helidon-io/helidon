@@ -28,7 +28,8 @@ import io.helidon.builder.api.Prototype;
  * @param <T> return type of the fallback method
  */
 @Prototype.Blueprint
-interface FallbackConfigBlueprint<T> {
+@Prototype.Configured
+interface FallbackConfigBlueprint<T> extends CommonHandlerConfig {
     /**
      * A fallback function.
      *
@@ -42,6 +43,7 @@ interface FallbackConfigBlueprint<T> {
      * @return throwable classes to skip retries
      * @see #applyOn()
      */
+    @Option.Configured
     @Option.Singular
     Set<Class<? extends Throwable>> skipOn();
 
@@ -51,6 +53,7 @@ interface FallbackConfigBlueprint<T> {
      * @return throwable classes to trigger retries
      * @see #skipOn()
      */
+    @Option.Configured
     @Option.Singular
     Set<Class<? extends Throwable>> applyOn();
 }
