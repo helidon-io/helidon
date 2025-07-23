@@ -27,7 +27,7 @@ import com.google.gson.Gson;
  * Configuration of the {@link GsonSupport}.
  */
 @Prototype.Blueprint(decorator = GsonSupport.Decorator.class)
-@Prototype.Configured
+@Prototype.Configured(value = "gson", root = false)
 interface GsonSupportConfigBlueprint extends Prototype.Factory<GsonSupport> {
 
     /**

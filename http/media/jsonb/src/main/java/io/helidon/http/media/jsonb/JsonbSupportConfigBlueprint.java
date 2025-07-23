@@ -27,7 +27,7 @@ import jakarta.json.bind.Jsonb;
  * Configuration of the {@link JsonbSupport}.
  */
 @Prototype.Blueprint(decorator = JsonbSupport.Decorator.class)
-@Prototype.Configured
+@Prototype.Configured(value = "jsonb", root = false)
 interface JsonbSupportConfigBlueprint extends Prototype.Factory<JsonbSupport> {
 
     /**
