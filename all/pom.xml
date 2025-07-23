@@ -1078,6 +1078,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits-listeners</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-jsonrpc</artifactId>
         </dependency>
         <dependency>
