@@ -90,6 +90,8 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:cohere.adoc#_coherescoringmodel[`CohereScoringModel`]
 * xref:oracle.adoc[*Oracle*]
     ** xref:oracle.adoc#_oracleembeddingmodel[`OracleEmbeddingStore`]
+* xref:coherence.adoc[*Coherence*]
+    ** xref:coherence.adoc#_coherenceembeddingmodel[`CoherenceEmbeddingStore`]
 * xref:jlama.adoc[*Jlama*]
     ** xref:jlama.adoc#_jlamachatmodel[`JlamaChatModel`]
     ** xref:jlama.adoc#_jlamastreamingchatmodel[`JlamaStreamingChatModel`]
@@ -313,6 +315,7 @@ For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-lev
 ** xref:ollama.adoc[Ollama]
 ** xref:cohere.adoc[Cohere]
 ** xref:oracle.adoc[Oracle]
+** xref:coherence.adoc[Coherence]
 ** xref:jlama.adoc[Jlama]
 ** xref:codegen-provider.adoc[Code generated Lc4j Provider]
 

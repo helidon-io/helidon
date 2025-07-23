@@ -18,6 +18,7 @@ package io.helidon.integrations.langchain4j.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Returns;
@@ -44,15 +45,19 @@ class ConfigureMethodBuilder {
                 .addDescriptionLine("<b>Skipped:</b>")
                 .addDescriptionLine("<ul>");
 
-        if (parentTypeInfo.elementInfo().stream()
+        var customBuilderMappingMethod = parentTypeInfo.elementInfo().stream()
                 .filter(m -> m.kind().equals(ElementKind.METHOD))
                 .filter(m -> m.parameterArguments().isEmpty())
                 .filter(m -> m.typeName().equals(builderTypeInfo.typeName()))
-                .anyMatch(m -> m.elementName().equals("configuredBuilder"))) {
+                .filter(m -> m.elementName().equals("configuredBuilder"))
+                .findFirst();
+
+        if (customBuilderMappingMethod.isPresent()) {
             confMethodBuilder
                     .addContent("var modelBuilder = ")
                     .addContent(parentTypeInfo.typeName())
-                    .addContentLine(".super.configuredBuilder();");
+                    .addContent(".super.configuredBuilder(")
+                    .addContentLine(");");
         } else {
             confMethodBuilder.addContent("var modelBuilder = ").addContent(modelTypeName).addContentLine(".builder();");
         }

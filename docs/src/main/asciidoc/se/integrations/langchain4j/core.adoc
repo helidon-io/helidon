@@ -52,8 +52,10 @@ langchain4j:
   rag:
     embedding-store-content-retriever:
       enabled: true
-      embedding-model: "@default"
-      embedding-store: "@default"
+      embedding-model:
+        service-registry.named: "@default"
+      embedding-store:
+        service-registry.named: "@default"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -69,8 +71,8 @@ Full list of configuration properties:
 |`enabled` |boolean |If set to `false`, embedding store content retriever will be disabled even if configured.
 |`max-results` |int |Maximum number of results.
 |`min-score` |double |Minimum score threshold.
-|`embedding-model` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`. Use `@default` (the default option) to refer to the unnamed service.
-|`embedding-store` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. Use `@default` (the default option) to refer to the unnamed service.
+|`embedding-model` |string |Service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean.
+|`embedding-store` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean.
 
 |===
 
