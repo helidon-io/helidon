@@ -28,6 +28,10 @@
     <name>Helidon WebServer Concurrency Limits Listeners</name>
     <description>Life cycle listeners for concurrency limits related to web traffic</description>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
 
         <dependency>
