@@ -62,7 +62,7 @@
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.2.220</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.handlebars>4.3.1</version.lib.handlebars>
+        <version.lib.handlebars>4.4.0</version.lib.handlebars>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
