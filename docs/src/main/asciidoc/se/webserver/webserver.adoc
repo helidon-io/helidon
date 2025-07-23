@@ -766,9 +766,10 @@ The following table lists JSON media supports:
 |===
 |Media type|TypeName|Maven groupId:artifactId|Supported Java type(s)
 
-|*JSON-P*|JsonpSupport|`io.helidon.http.media:helidon-http-media-jsonp`|`JsonObject, JsonArray`
-|*JSON-B*|JsonbSupport|`io.helidon.http.media:helidon-http-media-jsonb`|Any *
-|*Jackson*|JacksonSupport|`io.helidon.http.media:helidon-http-media-jackson`|Any *
+|*<<JSON-P Support, JSON-P>>*|JsonpSupport|`io.helidon.http.media:helidon-http-media-jsonp`|`JsonObject, JsonArray`
+|*<<JSON-B Support, JSON-B>>*|JsonbSupport|`io.helidon.http.media:helidon-http-media-jsonb`|Any *
+|*<<Jackson Support, Jackson>>*|JacksonSupport|`io.helidon.http.media:helidon-http-media-jackson`|Any *
+|*<<Gson Support, Gson>>*|GsonSupport|`io.helidon.http.media:helidon-http-media-gson`|Any *
 |===
 
 * JSON-B and Jackson have lower weight, so they are used only when no other media type matched the object being written or read
@@ -835,6 +836,24 @@ To enable JSON-B Support add the following dependency to your project's `pom.xml
 </dependency>
 ----
 
+==== Configuration
+It is possible to configure the Jsonb instance via programmatic or configuration-based approach.
+When configured over the configuration, all the configured value types need to be selected correctly according
+to the JSON-B spec and placed to the right section.
+
+include::{rootdir}/config/io_helidon_http_media_jsonb_JsonbSupport.adoc[leveloffset=+3,tag=config]
+
+===== Example
+[source,yaml]
+.Example JSON-B configuration
+----
+jsonb:
+  boolean-properties:
+    jsonb.null-values: true
+  properties:
+    jsonb.property-naming-strategy: "LOWER_CASE_WITH_DASHES"
+----
+
 ==== Usage
 
 Now that automatic JSON serialization and deserialization facilities
@@ -886,6 +905,20 @@ To enable Jackson Support add the following dependency to your project's `pom.xm
 </dependency>
 ----
 
+==== Configuration
+It is possible to configure the Jackson ObjectMapper instance via programmatic or configuration-based approach.
+
+include::{rootdir}/config/io_helidon_http_media_jackson_JacksonSupport.adoc[leveloffset=+3,tag=config]
+
+===== Example
+[source,yaml]
+.Example Jackson configuration
+----
+jackson:
+  properties:
+    FAIL_ON_UNKNOWN_PROPERTIES: false
+----
+
 ==== Usage
 
 Now that automatic JSON serialization and deserialization facilities
@@ -893,6 +926,76 @@ have been set up, you can register a `Handler` that works with Java
 objects instead of raw JSON.  Deserialization from and serialization
 to JSON will be handled by
 https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
+
+Suppose you have a `Person` class that looks like this:
+
+[source,java]
+.Hypothetical `Person` class
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_26, indent=0]
+----
+
+Then you can set up a `Handler` like this:
+
+[source,java]
+.A `Handler` that works with Java objects instead of raw JSON
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_28, indent=0]
+----
+<1> This handler consumes a `Person` instance and simply echoes it back.  Note that there is no working with raw JSON here.
+
+[source,bash]
+.Example of posting JSON to the `/echo` endpoint
+----
+curl --noproxy '*' -X POST -H "Content-Type: application/json" \
+    http://localhost:8080/echo -d '{"name":"Joe"}'
+----
+
+[source, json]
+.Response body
+----
+{"name":"Joe"}
+----
+
+=== Gson Support
+The WebServer supports
+https://github.com/google/gson#gson[Gson].
+When this support is enabled, Java objects will be serialized to and
+deserialized from JSON automatically using Gson.
+
+==== Maven Coordinates
+
+To enable Gson Support add the following dependency to your project's `pom.xml`.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-gson</artifactId>
+</dependency>
+----
+
+==== Configuration
+It is possible to configure the Gson instance via programmatic or configuration-based approach.
+
+include::{rootdir}/config/io_helidon_http_media_gson_GsonSupport.adoc[leveloffset=+3,tag=config]
+
+===== Example
+[source,yaml]
+.Example Gson configuration
+----
+gson:
+  properties:
+    serialize-nulls: false
+----
+
+==== Usage
+
+Now that automatic JSON serialization and deserialization facilities
+have been set up, you can register a `Handler` that works with Java
+objects instead of raw JSON.  Deserialization from and serialization
+to JSON will be handled by
+link:++https://github.com/google/gson#gson[Gson].
 
 Suppose you have a `Person` class that looks like this:
 

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Configuration of the {@link JacksonSupport}.
  */
 @Prototype.Blueprint(decorator = JacksonSupport.Decorator.class)
-@Prototype.Configured
+@Prototype.Configured(value = "jackson", root = false)
 interface JacksonSupportConfigBlueprint extends Prototype.Factory<JacksonSupport> {
 
     /**
