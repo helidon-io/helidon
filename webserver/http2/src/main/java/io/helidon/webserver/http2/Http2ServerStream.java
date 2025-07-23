@@ -154,7 +154,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 http2Config.initialWindowSize(),
                 http2Config.maxFrameSize()
         );
-        limitListenerFactories = Services.all(PerRequestLimitAlgorithmListenerFactory.class);
+
+        Optional<Limit> limit = ctx.listenerContext().config().concurrencyLimit();
+        if (limit.isPresent()) {
+            limitListenerFactories = Services.all(PerRequestLimitAlgorithmListenerFactory.class);
+            limitListenerFactories.forEach(f -> f.init(limit.get()));
+        } else {
+            limitListenerFactories = List.of();
+        }
     }
 
     /**

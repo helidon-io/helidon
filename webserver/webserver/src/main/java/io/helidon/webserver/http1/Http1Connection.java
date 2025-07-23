@@ -110,7 +110,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile ServerConnection upgradeConnection;
 
-    private List<PerRequestLimitAlgorithmListenerFactory> limitListenerFactories;
+    private final List<PerRequestLimitAlgorithmListenerFactory> limitListenerFactories;
 
     /**
      * Create a new connection.
