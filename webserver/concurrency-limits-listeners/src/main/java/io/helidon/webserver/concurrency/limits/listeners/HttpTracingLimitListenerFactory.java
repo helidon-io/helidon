@@ -25,7 +25,6 @@ import io.helidon.common.concurrency.limits.AimdLimit;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListener;
-import io.helidon.common.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -33,7 +32,6 @@ import io.helidon.service.registry.Service;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
-import io.helidon.webserver.concurrency.limits.LimitsFeatureConfig;
 import io.helidon.webserver.spi.PerRequestLimitAlgorithmListenerFactory;
 
 /**
