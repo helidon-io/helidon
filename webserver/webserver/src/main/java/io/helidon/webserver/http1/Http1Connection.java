@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
@@ -54,6 +55,7 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
@@ -62,6 +64,7 @@ import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
+import io.helidon.webserver.spi.PerRequestLimitAlgorithmListenerFactory;
 import io.helidon.webserver.spi.ServerConnection;
 
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
@@ -107,6 +110,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile ServerConnection upgradeConnection;
 
+    private List<PerRequestLimitAlgorithmListenerFactory> limitListenerFactories;
+
     /**
      * Create a new connection.
      *
@@ -132,6 +137,14 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
         this.lastRequestTimestamp = DateTime.timestamp();
+
+        Optional<Limit> limit = ctx.listenerContext().config().concurrencyLimit();
+        if (limit.isPresent()) {
+            limitListenerFactories = Services.all(PerRequestLimitAlgorithmListenerFactory.class);
+            limitListenerFactories.forEach(f -> f.init(limit.get()));
+        } else {
+            limitListenerFactories = List.of();
+        }
     }
 
     @Override
@@ -207,7 +220,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(limitListenerFactories.stream()
+                                                                                .flatMap(f -> StreamSupport.stream(f.listeners(
+                                                                                        prologue,
+                                                                                        headers).spliterator(), false))
+                                                                                .toList());
+
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()

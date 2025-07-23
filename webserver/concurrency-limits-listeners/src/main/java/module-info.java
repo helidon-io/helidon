@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,21 @@
  */
 
 /**
- * Limits feature for Helidon WebServer.
- */
-module io.helidon.webserver.concurrency.limits {
+  * Concurrency limits listeners for web traffic.
+  */
+module io.helidon.webserver.concurrency.limits.listeners {
     requires io.helidon.common;
     requires io.helidon.http;
-    requires io.helidon.webserver;
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.concurrency.limits;
     requires io.helidon.service.registry;
+    requires io.helidon.webserver;
+    requires io.helidon.tracing;
+    requires io.helidon.webserver.concurrency.limits;
 
-    exports io.helidon.webserver.concurrency.limits;
+    exports io.helidon.webserver.concurrency.limits.listeners;
 
-    provides io.helidon.webserver.spi.ServerFeatureProvider
-            with io.helidon.webserver.concurrency.limits.LimitsFeatureProvider;
-
-    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
+    uses io.helidon.webserver.spi.PerRequestLimitAlgorithmListenerFactory;
 }

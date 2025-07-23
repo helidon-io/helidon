@@ -1435,6 +1435,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-concurrency-limits-listeners</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webserver.testing.junit5</groupId>
                 <artifactId>helidon-webserver-testing-junit5</artifactId>
                 <version>${helidon.version}</version>

@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.FixedLimit;
@@ -59,6 +60,7 @@ import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
@@ -67,6 +69,7 @@ import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
+import io.helidon.webserver.spi.PerRequestLimitAlgorithmListenerFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -109,6 +112,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
     // must be volatile, as it is accessed both from connection thread and from stream thread
     private volatile Limit requestLimit = FixedLimit.create(new Semaphore(1));
 
+    private List<PerRequestLimitAlgorithmListenerFactory> limitListenerFactories;
+
+
     /**
      * A new HTTP/2 server stream.
      *
@@ -148,6 +154,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 http2Config.initialWindowSize(),
                 http2Config.maxFrameSize()
         );
+        limitListenerFactories = Services.all(PerRequestLimitAlgorithmListenerFactory.class);
     }
 
     /**
@@ -580,7 +587,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire();
+                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(limitListenerFactories.stream()
+                                       .flatMap(f -> StreamSupport.stream(f.listeners(
+                                                                                          prologue,
+                                                                                          headers.httpHeaders())
+                                                                                  .spliterator(),
+                                                                          false))
+                                       .toList());
 
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");

@@ -41,6 +41,7 @@ module io.helidon.webserver.http2 {
     requires transitive io.helidon.http;
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.common.concurrency.limits;
+    requires io.helidon.service.registry;
 
     exports io.helidon.webserver.http2;
     exports io.helidon.webserver.http2.spi;
