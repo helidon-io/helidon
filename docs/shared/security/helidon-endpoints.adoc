@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,10 +49,12 @@ security:
     - provider-key: # <2>
   web-server:
     defaults:
+      # defaults for paths configured in the section below
       authenticate: true # <3>
     paths:
       - path: "/metrics[/{*}]" # <4>
         roles-allowed: "admin"
+        # "authenticate: true" is implicit, as it is configured in defaults above (same for paths below)
       - path: "/health[/{*}]" # <5>
         roles-allowed: "monitor"
       - path: "/openapi[/{*}]" # <6>
@@ -64,7 +66,7 @@ security:
 
 <1> Attribute based access control provider that checks roles and scopes
 <2> The provider(s) used in your application, such as `oidc`
-<3> Default configuration for all configured paths
+<3> Default configuration for paths configured below in `paths` section
 <4> Protection of `/metrics` and all nested paths with `admin` role required
 <5> Protection of `/health` and all nested paths with `monitor` role required
 <6> Protection of `/openapi` and all nested paths with `openapi` scope required

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -79,12 +79,17 @@ Routing.builder()
 security.web-server:
   # Configuration of integration with web server
   defaults:
+    # defaults for paths configured in the section below
     authenticate: true
   paths:
     - path: "/service1/[/{*}]"
       methods: ["get"]
       roles-allowed: ["user"]
+      # "authenticate: true" is implicit, as it is configured in defaults above
 ----
+
+Note: `defaults` section in configuration is related to paths on WebServer configured below in `paths` section, it will not
+apply to any other path on the webserver.
 
 include::../../shared/security/helidon-endpoints.adoc[]
 
