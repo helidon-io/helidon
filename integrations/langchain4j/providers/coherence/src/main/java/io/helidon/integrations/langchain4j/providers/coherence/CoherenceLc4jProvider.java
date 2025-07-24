@@ -56,6 +56,11 @@ interface CoherenceLc4jProvider {
     @AiProvider.CustomBuilderMapping
     Optional<Integer> dimension();
 
+    /**
+     * The embedding model to use.
+     *
+     * @return an {@link java.util.Optional} containing embedding model.
+     */
     @Option.Configured
     @Option.RegistryService
     @AiProvider.CustomBuilderMapping
