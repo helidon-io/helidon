@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,6 +37,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -55,6 +58,7 @@ class JacksonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
+    private static final Instant INSTANT = Instant.now();
     private final MediaSupport support;
 
     JacksonMediaTest() {
@@ -232,6 +236,43 @@ class JacksonMediaTest {
         assertThat(bos.size(), not(0));
     }
 
+    @Test
+    void testCustomInstance() {
+        ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        MediaSupport jacksonSupport = JacksonSupport.create(objectMapper);
+
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<Book> res = jacksonSupport.reader(BOOK_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+
+        InputStream is =
+                new ByteArrayInputStream("{\"title\": \"Some Test\", \"unknown\": \"value\"}".getBytes(StandardCharsets.UTF_8));
+        Book book = res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders);
+
+        assertThat(book.getTitle(), is("Some Test"));
+    }
+
+    @Test
+    void testCustomInstanceFromConfiguration() {
+        Config config = io.helidon.config.Config.create();
+        MediaSupport jacksonSupport = JacksonSupport.create(config);
+
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<Book> res = jacksonSupport.reader(BOOK_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+
+        InputStream is =
+                new ByteArrayInputStream("{\"title\": \"Some Test\", \"unknown\": \"value\"}".getBytes(StandardCharsets.UTF_8));
+        Book book = res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders);
+
+        assertThat(book.getTitle(), is("Some Test"));
+    }
 
     public static class Book {
         private String title;

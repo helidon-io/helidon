@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package io.helidon.http.media.jsonb;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
@@ -32,24 +36,40 @@ import io.helidon.http.media.MediaSupport;
 import jakarta.json.JsonObject;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
 
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
-public class JsonbSupport implements MediaSupport {
+@SuppressWarnings({"rawtypes", "unchecked"})
+@RuntimeType.PrototypedBy(JsonbSupportConfig.class)
+public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportConfig> {
     private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
+    private static final String DEFAULT_JSON_B_NAME = "jsonb";
 
     private static final Jsonb JSON_B = JsonbBuilder.create();
 
-    private final JsonbReader reader = new JsonbReader(JSON_B);
-    private final JsonbWriter writer = new JsonbWriter(JSON_B);
-
+    private final JsonbReader reader;
+    private final JsonbWriter writer;
+    private final JsonbSupportConfig jsonbSupportConfig;
     private final String name;
 
-    private JsonbSupport(String name) {
-        this.name = name;
+    private JsonbSupport(JsonbSupportConfig jsonbSupportConfig) {
+        this.jsonbSupportConfig = jsonbSupportConfig;
+        this.reader = new JsonbReader(jsonbSupportConfig.jsonb());
+        this.writer = new JsonbWriter(jsonbSupportConfig.jsonb());
+        this.name = jsonbSupportConfig.name();
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @return a new {@link JsonbSupport}
+     */
+    public static MediaSupport create() {
+        return builder().build();
     }
 
     /**
@@ -59,22 +79,64 @@ public class JsonbSupport implements MediaSupport {
      * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
-        return create(config, "jsonb");
+        return create(config, DEFAULT_JSON_B_NAME);
     }
 
     /**
      * Creates a new {@link JsonbSupport}.
      *
      * @param config must not be {@code null}
-     * @param name name of this instance
+     * @param name   name of this instance
      * @return a new {@link JsonbSupport}
      * @see #create(io.helidon.common.config.Config)
      */
     public static MediaSupport create(Config config, String name) {
-        Objects.requireNonNull(config);
-        Objects.requireNonNull(name);
+        return builder()
+                .name(name)
+                .config(config)
+                .build();
+    }
 
-        return new JsonbSupport(name);
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param jsonb jsonb instance
+     * @return a new instance
+     */
+    public static MediaSupport create(Jsonb jsonb) {
+        return builder()
+                .jsonb(jsonb)
+                .build();
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport} based on the {@link JsonbSupportConfig}.
+     *
+     * @param jsonbSupportConfig must not be {@code null}
+     * @return a new {@link JsonbSupport}
+     */
+    public static JsonbSupport create(JsonbSupportConfig jsonbSupportConfig) {
+        Objects.requireNonNull(jsonbSupportConfig);
+        return new JsonbSupport(jsonbSupportConfig);
+    }
+
+    /**
+     * Creates a new customized {@link JsonbSupport}.
+     *
+     * @param consumer config builder consumer
+     * @return a new {@link JsonbSupport}
+     */
+    public static JsonbSupport create(Consumer<JsonbSupportConfig.Builder> consumer) {
+        return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a new builder.
+     *
+     * @return a new builder instance
+     */
+    public static JsonbSupportConfig.Builder builder() {
+        return JsonbSupportConfig.builder();
     }
 
     @Override
@@ -167,5 +229,32 @@ public class JsonbSupport implements MediaSupport {
 
     <T> EntityWriter<T> writer() {
         return writer;
+    }
+
+    @Override
+    public JsonbSupportConfig prototype() {
+        return jsonbSupportConfig;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<JsonbSupportConfig.BuilderBase<?, ?>> {
+
+        @Override
+        public void decorate(JsonbSupportConfig.BuilderBase<?, ?> target) {
+            Map<String, Object> properties = target.properties();
+            target.stringProperties().forEach(properties::putIfAbsent);
+            target.booleanProperties().forEach(properties::putIfAbsent);
+            target.classProperties().forEach(properties::putIfAbsent);
+
+            if (target.jsonb().isEmpty()) {
+                if (properties.isEmpty()) {
+                    target.jsonb(JSON_B);
+                } else {
+                    JsonbConfig jsonbConfig = new JsonbConfig();
+                    properties.forEach(jsonbConfig::setProperty);
+                    target.jsonb(JsonbBuilder.create(jsonbConfig));
+                }
+            }
+        }
+
     }
 }
