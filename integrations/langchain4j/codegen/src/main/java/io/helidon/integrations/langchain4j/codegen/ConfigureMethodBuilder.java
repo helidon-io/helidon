@@ -18,7 +18,6 @@ package io.helidon.integrations.langchain4j.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Returns;

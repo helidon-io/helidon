@@ -40,16 +40,21 @@ final class CoherenceFactoryMethods {
      * @param dimension the configured  number of dimensions in the embeddings
      * @return an instance of {@link com.oracle.coherence.ai.VectorIndexExtractor} with dimensions
      */
-    static VectorIndexExtractor<DocumentChunk, float[]> createVectorIndexExtractor(Optional<String> index, Optional<Integer> dimension, Optional<EmbeddingModel> embeddingModel) {
+    static VectorIndexExtractor<DocumentChunk, float[]> createVectorIndexExtractor(Optional<String> index,
+                                                                                   Optional<Integer> dimension,
+                                                                                   Optional<EmbeddingModel> embeddingModel) {
         VectorIndexExtractor<DocumentChunk, float[]> extractor = null;
         if (index.isPresent()) {
             if ("hnsw".equalsIgnoreCase(index.get())) {
-                Integer modelDimension = embeddingModel.isPresent() ? (Integer) embeddingModel.get().dimension() : (dimension.orElse(null));
+                Integer modelDimension = embeddingModel.isPresent()
+                        ? (Integer) embeddingModel.get().dimension()
+                        : (dimension.orElse(null));
                 if (modelDimension != null) {
                     extractor = new HnswIndex<>(ValueExtractor.of(DocumentChunk::vector), modelDimension);
                 } else {
                     LOGGER.log(System.Logger.Level.WARNING,
-                               "Cannot create embedding hnsw store index - No dimension name has been specified for the hnsw index.");
+                               "Cannot create embedding hnsw store index - No dimension name has been specified for the hnsw "
+                                       + "index.");
                 }
             }
         }
