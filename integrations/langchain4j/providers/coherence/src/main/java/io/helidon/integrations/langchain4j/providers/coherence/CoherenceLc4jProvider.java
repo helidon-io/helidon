@@ -25,13 +25,15 @@ import io.helidon.integrations.langchain4j.AiProvider;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore;
 
+import static io.helidon.integrations.langchain4j.providers.coherence.CoherenceFactoryMethods.createVectorIndexExtractor;
+
 @AiProvider.ModelConfig(value = CoherenceEmbeddingStore.class, skip = {"index.*"})
 interface CoherenceLc4jProvider {
     /**
      * Default weight used for model factories.
      */
     @AiProvider.DefaultWeight
-    double WEIGHT = Weighted.DEFAULT_WEIGHT - 10.0;
+    double WEIGHT = Weighted.DEFAULT_WEIGHT - 8;
 
     /**
      * The index name to use.
@@ -66,7 +68,7 @@ interface CoherenceLc4jProvider {
      */
     default CoherenceEmbeddingStore.Builder configuredBuilder() {
         var modelBuilder = CoherenceEmbeddingStore.builder();
-        modelBuilder.index(CoherenceFactoryMethods.createVectorIndexExtractor(this.index(), this.dimension(), this.embeddingModel()));
+        modelBuilder.index(createVectorIndexExtractor(this.index(), this.dimension(), this.embeddingModel()));
         return modelBuilder;
     }
 }

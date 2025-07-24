@@ -45,6 +45,6 @@ class CoherenceEmbeddingStorePropertiesTest {
         assertThat(config.dimension().get(), is(768));
         assertThat(config.normalizeEmbeddings().isPresent(), is(true));
         assertThat(config.normalizeEmbeddings().get(), is(false));
-        assertThat(config.embeddingModel().isPresent(), is(false));
+        assertThat(config.embeddingModel().isPresent(), is(true));
     }
 }

@@ -65,7 +65,7 @@ langchain4j:
       normalize-embeddings: false
       index: "hnsw"
       dimension: 768
-      embeddingModel:
+      embedding-model:
         service-registry.named: beanName
 ----
 
@@ -78,7 +78,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`embeddingModel`|string | Allows to configure embedding model by specifying named bean using `embeddingModel.service-registry.named: beanName`. Default embedding model is used otherwise, if exists.
+|`embedding-model`|string | Allows to configure embedding model by specifying named bean using `embeddingModel.service-registry.named: beanName`. Default embedding model is used otherwise, if exists.
 |`dimension` |integer |The number of dimensions in the embeddings that will be stored in vector store.
 |`enabled` |boolean |If set to `true`, Coherence embedding store will be enabled.
 |`index` |string |Specifies vector index type use to create a vector index used to query embeddings. Only `hnsw` is supported.
