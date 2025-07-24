@@ -15,11 +15,8 @@
  */
 package io.helidon.http.media.gson;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
