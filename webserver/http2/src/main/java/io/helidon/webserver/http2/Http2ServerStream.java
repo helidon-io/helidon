@@ -59,12 +59,14 @@ import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.spi.HttpLimitListenerProvider;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
 
@@ -97,6 +99,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final Http2ConcurrentConnectionStreams streams;
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final List<HttpLimitListenerProvider>  limitListenerProviders;
     private boolean wasLastDataFrame = false;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
@@ -148,6 +151,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 http2Config.initialWindowSize(),
                 http2Config.maxFrameSize()
         );
+        this.limitListenerProviders = Services.all(HttpLimitListenerProvider.class);
     }
 
     /**
@@ -580,7 +584,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire();
+                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(limitListenerProviders.stream()
+                                                                                       .map(f -> f.create(prologue,
+                                                                                                          headers.httpHeaders()))
+                                                                                       .toList());
 
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");

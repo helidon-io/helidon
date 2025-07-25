@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +38,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class AimdLimitTest {
     @Test
@@ -47,7 +52,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .buildPrototype();
 
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
 
         assertThat(limiter.currentLimit(), is(30));
         limiter.updateWithSample(0, 0, 0, false);
@@ -61,7 +66,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .timeout(timeout)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, timeout.toNanos() + 1, 0, true);
         assertThat(limiter.currentLimit(), is(27));
     }
@@ -71,7 +76,7 @@ public class AimdLimitTest {
         AimdLimitConfig config = AimdLimitConfig.builder()
                 .initialLimit(20)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         assertThat(limiter.currentLimit(), is(21));
     }
@@ -83,7 +88,7 @@ public class AimdLimitTest {
                 .maxLimit(21)
                 .minLimit(0)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         // after success limit should still be at the max.
         assertThat(limiter.currentLimit(), is(21));
@@ -95,7 +100,7 @@ public class AimdLimitTest {
                 .minLimit(10)
                 .initialLimit(10)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         assertThat(limiter.currentLimit(), is(10));
     }
 
@@ -108,7 +113,7 @@ public class AimdLimitTest {
                 .minLimit(1)
                 .maxLimit(200)
                 .buildPrototype();
-        AimdLimitImpl limit = new AimdLimitImpl(config);
+        AimdLimitImpl limit = new AimdLimitImpl(config, "test");
 
         int threadCount = 100;
         int operationsPerThread = 1_000;
@@ -184,9 +189,20 @@ public class AimdLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+            TestLimitAlgorithmListener listener = new TestLimitAlgorithmListener();
+            assertThat("Listener before tryAcquire", listener.disposition(), nullValue());
+            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(List.of(listener));
             assertThat(token, not(Optional.empty()));
+
+            TestLimitAlgorithmListener.Disposition disposition = listener.disposition();
+            assertThat("Disposition",
+                       disposition.disp(),
+                       is(TestLimitAlgorithmListener.Disp.IMM_ACC));
+
+            assertThat("Exec", listener.exec(), is(nullValue()));
             token.get().success();
+            assertThat("Exec", listener.exec(), is(TestLimitAlgorithmListener.Exec.SUCCESS));
+
         }
     }
 
@@ -208,10 +224,14 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
+        List<TestLimitAlgorithmListener> listeners = Collections.synchronizedList(new ArrayList<>());
+
         for (int i = 0; i < concurrency; i++) {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
+                    var listener = new TestLimitAlgorithmListener();
+                    listeners.add(listener);
                     limiter.invoke(() -> {
                         barrier.waitOn();
                         lock.lock();
@@ -221,7 +241,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    });
+                    }, List.of(listener));
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -244,6 +264,15 @@ public class AimdLimitTest {
         assertThat(failures.get(), is(0));
         // and eventually run to completion
         assertThat(result.size(), is(5));
+
+        assertThat("Listeners", listeners, hasSize(5));
+        for (int i = 0; i < listeners.size(); i++) {
+            TestLimitAlgorithmListener listener = listeners.get(i);
+            assertThat("Listener + " + i + " disposition",
+                       listener.disposition().disp(),
+                       is(TestLimitAlgorithmListener.Disp.IMM_ACC));
+            assertThat("Listener " + i + " exec", listener.exec(), is(TestLimitAlgorithmListener.Exec.SUCCESS));
+        }
     }
 
     /**
