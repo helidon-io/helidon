@@ -18,6 +18,7 @@ package io.helidon.security.providers.oidc;
 
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -80,6 +81,11 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(OidcProvider.class.getName());
 
+    private record CachedToken(String accessToken, Instant expiration){
+        boolean isValid(){
+            return accessToken != null && Instant.now().isBefore(expiration);
+        }
+    }
     private final boolean optional;
     private final OidcConfig oidcConfig;
     private final List<TenantIdFinder> tenantIdFinders;
@@ -88,6 +94,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
     private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
+    private final ReentrantLock tokenLock = new ReentrantLock();
+    private volatile CachedToken cachedToken;
+     
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -249,40 +258,70 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
-            Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
-                    .add("grant_type", "client_credentials");
-
-            if (!oidcConfig.baseScopes().isEmpty()) {
-                formBuilder.add("scope", oidcConfig.baseScopes());
+            if (clientAccessToken != null && Instant.now().isBefore(tokenExpiration)) {
+                Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                target.tokenHandler.header(headers, clientAccessToken);
+                return OutboundSecurityResponse.withHeaders(headers);
             }
 
-            HttpClientRequest postRequest = oidcConfig.appWebClient()
+            tokenLock.lock();
+
+            try {
+                if (clientAccessToken != null && Instant.now().isBefore(tokenExpiration)) {
+                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                    target.tokenHandler.header(headers, clientAccessToken);
+                    return OutboundSecurityResponse.withHeaders(headers);
+                }
+
+                Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
+                    .add("grant_type", "client_credentials");
+
+                if (!oidcConfig.baseScopes().isEmpty()) {
+                    formBuilder.add("scope", oidcConfig.baseScopes());
+                }
+
+                HttpClientRequest postRequest = oidcConfig.appWebClient()
                     .post()
                     .uri(oidcConfig.tokenEndpointUri());
 
-            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
+                OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
 
-            try (var response = postRequest.submit(formBuilder.build())) {
-                if (response.status().family() == Status.Family.SUCCESSFUL) {
-                    JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.getString("access_token");
+                try (var response = postRequest.submit(formBuilder.build())) {
+                    if (response.status().family() == Status.Family.SUCCESSFUL) {
+                        JsonObject jsonObject = response.as(JsonObject.class);
+                        String accessToken = jsonObject.getString("access_token");
 
-                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                    target.tokenHandler.header(headers, accessToken);
-                    return OutboundSecurityResponse.withHeaders(headers);
-                } else {
-                    return OutboundSecurityResponse.builder()
+                        long expiresIn = jsonObject.getInt("expires_in", 3600);
+                        this.clientAccessToken = accessToken;
+                        this.tokenExpiration = Instant.now().plusSeconds(expiresIn - 30);
+
+                        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                        target.tokenHandler.header(headers, accessToken);
+                        return OutboundSecurityResponse.withHeaders(headers);
+                    } else {
+
+                        this.clientAccessToken = null;
+                        this.tokenExpiration = null;
+                        return OutboundSecurityResponse.builder()
                             .status(SecurityResponse.SecurityStatus.FAILURE)
                             .description("Could not obtain access token from the identity server")
                             .build();
-                }
-            } catch (Exception e) {
-                return OutboundSecurityResponse.builder()
+                    }
+                } catch (Exception e) {
+
+                    this.clientAccessToken = null;
+                    this.tokenExpiration = null;
+
+                    return OutboundSecurityResponse.builder()
                         .status(SecurityResponse.SecurityStatus.FAILURE)
                         .description("An error occurred while obtaining access token from the identity server")
                         .throwable(e)
                         .build();
+                }
+            } finally {
+                tokenLock.unlock();
             }
+
         }
         return OutboundSecurityResponse.empty();
     }
