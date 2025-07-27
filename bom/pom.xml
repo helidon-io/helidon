@@ -1124,6 +1124,11 @@
                 <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-coherence</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- OpenAPI support -->
             <dependency>

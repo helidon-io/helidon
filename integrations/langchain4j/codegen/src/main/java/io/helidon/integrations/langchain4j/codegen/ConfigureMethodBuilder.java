@@ -44,15 +44,19 @@ class ConfigureMethodBuilder {
                 .addDescriptionLine("<b>Skipped:</b>")
                 .addDescriptionLine("<ul>");
 
-        if (parentTypeInfo.elementInfo().stream()
+        var customBuilderMappingMethod = parentTypeInfo.elementInfo().stream()
                 .filter(m -> m.kind().equals(ElementKind.METHOD))
                 .filter(m -> m.parameterArguments().isEmpty())
                 .filter(m -> m.typeName().equals(builderTypeInfo.typeName()))
-                .anyMatch(m -> m.elementName().equals("configuredBuilder"))) {
+                .filter(m -> m.elementName().equals("configuredBuilder"))
+                .findFirst();
+
+        if (customBuilderMappingMethod.isPresent()) {
             confMethodBuilder
                     .addContent("var modelBuilder = ")
                     .addContent(parentTypeInfo.typeName())
-                    .addContentLine(".super.configuredBuilder();");
+                    .addContent(".super.configuredBuilder(")
+                    .addContentLine(");");
         } else {
             confMethodBuilder.addContent("var modelBuilder = ").addContent(modelTypeName).addContentLine(".builder();");
         }

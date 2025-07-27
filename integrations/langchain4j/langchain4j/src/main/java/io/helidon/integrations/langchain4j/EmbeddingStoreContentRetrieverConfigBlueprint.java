@@ -49,16 +49,21 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     /**
      * Embedding store to use in the content retriever.
      *
-     * @return an {@link java.util.Optional} containing the embedding store
+     * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
+     * can be used to select a named bean
      */
+    @Option.Configured
+    @Option.RegistryService
     EmbeddingStore<TextSegment> embeddingStore();
 
     /**
      * Explicit embedding model to use in the content retriever.
      *
-     * @return an {@link java.util.Optional} containing the embedding model bean name or "discovery:auto" if the bean must be
-     *         discovered automatically
+     * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
+     * can be used to select a named bean
      */
+    @Option.Configured
+    @Option.RegistryService
     Optional<EmbeddingModel> embeddingModel();
 
     /**
