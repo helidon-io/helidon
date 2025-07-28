@@ -59,6 +59,7 @@ import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
+import io.helidon.webclient.http2.Http2Client;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
@@ -285,7 +286,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 Proxy.noProxy());
         return TcpClientConnection.create(webClient,
                                           connectionKey,
-                                          Collections.emptyList(),
+                                          List.of(Http2Client.PROTOCOL_ID),
                                           connection -> false,
                                           connection -> {
                                           }).connect();
