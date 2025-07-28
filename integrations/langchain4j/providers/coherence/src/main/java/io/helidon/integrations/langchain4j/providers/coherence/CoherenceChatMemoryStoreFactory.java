@@ -30,7 +30,7 @@ import dev.langchain4j.store.memory.chat.coherence.CoherenceChatMemoryStore;
  */
 @Service.Singleton
 @Service.Named("CoherenceChatMemoryStore")
-public class CoherenceChatMemoryStoreFactory implements Supplier<ChatMemoryStore> {
+class CoherenceChatMemoryStoreFactory implements Supplier<ChatMemoryStore> {
 
     @Override
     public ChatMemoryStore get() {
