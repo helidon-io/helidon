@@ -123,13 +123,13 @@
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>5.1.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.1.2</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
-        <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
-        <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
+        <version.lib.microprofile-reactive-messaging-api>3.0.1</version.lib.microprofile-reactive-messaging-api>
+        <version.lib.microprofile-reactive-streams-operators-api>3.0.1</version.lib.microprofile-reactive-streams-operators-api>
+        <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
-        <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
+        <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
