@@ -27,6 +27,8 @@ import org.h2.engine.SessionLocal;
  */
 @TargetClass(className = "org.h2.engine.Engine")
 public final class EngineSubstitution {
+    private EngineSubstitution() {
+    }
 
     /**
      * Just throws an exception in native image.
