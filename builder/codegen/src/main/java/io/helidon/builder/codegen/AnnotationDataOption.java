@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import static io.helidon.builder.codegen.Types.OPTION_REGISTRY_SERVICE;
 import static io.helidon.builder.codegen.Types.OPTION_REQUIRED;
 import static io.helidon.builder.codegen.Types.OPTION_SAME_GENERIC;
 import static io.helidon.builder.codegen.Types.OPTION_SINGULAR;
+import static io.helidon.builder.codegen.Types.OPTION_TRAVERSE_CONFIG;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.MAP;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
@@ -71,6 +72,7 @@ record AnnotationDataOption(Javadoc javadoc,
                             boolean equalityRedundant,
                             boolean toStringRedundant,
                             boolean confidential,
+                            boolean traverseConfig,
                             List<AllowedValue> allowedValues,
                             Consumer<ContentBuilder<?>> defaultValue,
                             DeprecationData deprecationData,
@@ -92,6 +94,7 @@ record AnnotationDataOption(Javadoc javadoc,
         String singularName;
         boolean equalityRedundant;
         boolean toStringRedundant;
+        boolean traverseConfig;
 
         if (element.hasAnnotation(OPTION_CONFIGURED)) {
             Annotation annotation = element.annotation(OPTION_CONFIGURED);
@@ -165,6 +168,9 @@ record AnnotationDataOption(Javadoc javadoc,
         javadoc = processDeprecation(deprecationData, annotations, javadoc);
 
         TypeName decorator = optionDecorator(element);
+        traverseConfig = element.findAnnotation(OPTION_TRAVERSE_CONFIG)
+                .flatMap(Annotation::booleanValue)
+                .orElseGet(() -> traverseByDefault(handler));
 
         // default/is required only based on annotations
         return new AnnotationDataOption(javadoc,
@@ -184,6 +190,7 @@ record AnnotationDataOption(Javadoc javadoc,
                                         equalityRedundant,
                                         toStringRedundant,
                                         element.hasAnnotation(OPTION_CONFIDENTIAL),
+                                        traverseConfig,
                                         allowedValues,
                                         defaultValue,
                                         deprecationData,
@@ -368,6 +375,16 @@ record AnnotationDataOption(Javadoc javadoc,
         }
 
         return result.toString();
+    }
+
+    private static boolean traverseByDefault(TypeHandler handler) {
+        TypeName typeName = handler.declaredType();
+        if (typeName.isMap()) {
+            TypeName valueTypeName = typeName.typeArguments().get(1);
+            return handler.toPrimitive(valueTypeName).primitive();
+        } else {
+            return false;
+        }
     }
 
     record AllowedValue(String value, String description) {

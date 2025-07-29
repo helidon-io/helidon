@@ -998,6 +998,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
