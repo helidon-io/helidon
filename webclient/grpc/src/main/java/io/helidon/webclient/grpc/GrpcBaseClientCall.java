@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +54,7 @@ import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
@@ -82,7 +82,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected static final BufferData PING_FRAME = BufferData.create("PING");
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
     protected static final int DATA_PREFIX_LENGTH = 5;
-
     protected static final Tag OK_TAG = Tag.create("grpc.status", "OK");
     protected record MethodMetrics(Counter callStarted,
                                    Timer callDuration,
@@ -285,7 +284,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 Proxy.noProxy());
         return TcpClientConnection.create(webClient,
                                           connectionKey,
-                                          Collections.emptyList(),
+                                          List.of(Http2Client.PROTOCOL_ID),
                                           connection -> false,
                                           connection -> {
                                           }).connect();
