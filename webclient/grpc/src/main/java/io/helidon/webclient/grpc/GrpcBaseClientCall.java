@@ -68,6 +68,7 @@ import io.grpc.MethodDescriptor;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.TRACE;
 
 /**
  * Base class for gRPC client calls.
@@ -386,7 +387,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
             throw e;
         }
-        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
+        socket().log(LOGGER, TRACE, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 
     protected void initMetrics() {
