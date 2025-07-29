@@ -18,7 +18,6 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -117,13 +116,9 @@ public class ServiceRegistryExtension implements Extension {
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
 
     private final Set<CdiServiceId> processedBeans = new HashSet<>();
-    private final List<CdiBean> collectedCdiBeans = new ArrayList<>();
-    private final List<CdiProducer> collectedCdiProducers = new ArrayList<>();
-    // registry was not yet created, we can collect all the beans
-    private boolean registryPending = true;
 
     @SuppressWarnings("unchecked")
-    void registerTypes(@Observes BeforeBeanDiscovery bbd) {
+    void registerTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
         var registry = GlobalServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
@@ -137,33 +132,25 @@ public class ServiceRegistryExtension implements Extension {
                     bbd.addQualifier((Class<? extends Annotation>) TypeFactory.toClass(typeName));
                 }
             }
-
-            // and service types
-            // the service types cannot be added as annotated type this way, as our tests
-            // start failing - in some cases, a CDI bean is created for a Helidon registry service and
-            // fed back to us, which ends in expected disaster; this behavior must be investigated, and then
-            // the following code can (maybe) be used
-            //   var providedType = service.providedType();
-            //   if (addedAnnotatedTypes.add(providedType)) {
-            //     var annotatedType = bm.createAnnotatedType(TypeFactory.toClass(service.serviceType()));
-            //     bbd.addAnnotatedType(annotatedType, providedType.fqName());
-            //   }
         }
     }
 
-    /*
-    We must be one of the last ones, as what we get here, we insert to registry
-     */
-    void processManagedBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessManagedBean<?> pb) {
-        this.doProcessBean(pb);
+    void processManagedBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessManagedBean<?> pb,
+                            BeanManager bm) {
+        this.doProcessBean(bm, pb);
     }
 
-    void processSyntheticBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessSyntheticBean<?> pb) {
-        this.doProcessBean(pb);
+    void processSyntheticBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessSyntheticBean<?> pb,
+                              BeanManager bm) {
+        if (pb.getSource() == this) {
+            return;
+        }
+        this.doProcessBean(bm, pb);
     }
 
-    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessProducer pb) {
-        // make sure we also add produced stuff (now we only add beans themself)
+    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessProducer pb,
+                         BeanManager bm) {
+        // make sure we also add produced stuff
         var member = pb.getAnnotatedMember();
         Set<Type> typeClosure = member.getTypeClosure();
         Set<Annotation> annotations = member.getAnnotations();
@@ -172,40 +159,24 @@ public class ServiceRegistryExtension implements Extension {
         TypeName beanType = TypeName.create(member.getDeclaringType().getJavaClass());
 
         for (Type type : typeClosure) {
-            this.collectedCdiProducers.add(new CdiProducer(beanType, type, annotations, qualifiers));
+            addCdiProducer(bm, new CdiProducer(beanType, type, annotations, qualifiers));
         }
     }
 
-    /*
-    This must be done as early as possible,
-     */
-    void crossRegisterBeans(@Observes @Priority(Interceptor.Priority.PLATFORM_BEFORE) AfterBeanDiscovery abd, BeanManager bm) {
-        registryPending = false;
-
+    void registryToCdi(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) AfterBeanDiscovery abd,
+                       BeanManager bm) {
         var registry = GlobalServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();
-
-        // now we can add CDI beans to service registry
-        for (CdiBean cdiBean : collectedCdiBeans) {
-            addCdiBean(bm, cdiBean);
-        }
-
-        // and all CDI producers
-        for (CdiProducer cdiProducer : collectedCdiProducers) {
-            addCdiProducer(bm, cdiProducer);
-        }
 
         for (ServiceInfo service : allServices) {
             if (service instanceof CdiBeanDescriptor || service instanceof CdiProducerDescriptor) {
                 // we do not want to re-insert CDI beans into CDI, obviously
                 continue;
             }
-            addServiceInfo(abd, bm, registry, processedTypes, service);
+            addServiceInfo(abd, bm, processedTypes, service);
         }
-    }
 
-    void afterBeanDiscovery(@Observes AfterBeanDiscovery abd) {
         // add support for injecting the service registry itself into CDI beans
         abd.addBean()
                 .id("helidon-service-registry")
@@ -261,6 +232,9 @@ public class ServiceRegistryExtension implements Extension {
                               Class<? extends Annotation> cdiScope,
                               String name,
                               Supplier<Object> instanceSupplier) {
+        if (typeClosure.isEmpty()) {
+            return;
+        }
         var configurator = addBean(abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
         beanCreateWith(bm, annotatedType, beanClass, configurator, instanceSupplier);
         configurator.addQualifier(new NamedLiteral(name));
@@ -473,15 +447,14 @@ public class ServiceRegistryExtension implements Extension {
         return Optional.empty();
     }
 
-    private void doProcessBean(ProcessBean<?> pb) {
-        if (registryPending) {
-            Bean<?> bean = pb.getBean();
+    private void doProcessBean(BeanManager bm, ProcessBean<?> pb) {
 
-            // we need to be sure we register each bean only once
-            CdiServiceId id = new CdiServiceId(bean.getBeanClass(), bean.hashCode());
-            if (processedBeans.add(id)) {
-                collectedCdiBeans.add(new CdiBean(id, bean, pb.getAnnotated()));
-            }
+        Bean<?> bean = pb.getBean();
+
+        // we need to be sure we register each bean only once
+        CdiServiceId id = new CdiServiceId(bean.getBeanClass(), bean.hashCode());
+        if (processedBeans.add(id)) {
+            addCdiBean(bm, new CdiBean(id, bean, pb.getAnnotated()));
         }
     }
 
@@ -569,7 +542,6 @@ public class ServiceRegistryExtension implements Extension {
 
     private void addServiceInfo(AfterBeanDiscovery abd,
                                 BeanManager bm,
-                                ServiceRegistry registry,
                                 Set<UniqueBean> processedTypes,
                                 ServiceInfo service) {
         Set<ResolvedType> contracts = service.contracts();
@@ -577,7 +549,8 @@ public class ServiceRegistryExtension implements Extension {
         Set<ResolvedType> usedContracts = new HashSet<>();
         // first collect all contracts that we should advertise for this bean
         for (ResolvedType contract : contracts) {
-            if (!processedTypes.add(new UniqueBean(contract, service.qualifiers()))) {
+            var uniqueBean = new UniqueBean(contract, service.qualifiers());
+            if (!processedTypes.add(uniqueBean)) {
                 // this contract is already advertised by a higher weighted service; CDI only supports one bean
                 continue;
             }
@@ -591,8 +564,13 @@ public class ServiceRegistryExtension implements Extension {
         }
 
         TypeName serviceProvidedType = service.providedType();
-        // we also advertise the service provided type (factories are NOT advertised)
-        usedContracts.add(ResolvedType.create(serviceProvidedType));
+        ResolvedType serviceProvidedResolved = ResolvedType.create(serviceProvidedType);
+        if (processedTypes.add(new UniqueBean(serviceProvidedResolved, service.qualifiers()))
+                && !invalidContract(serviceProvidedResolved)) {
+            // we also advertise the service provided type (factories are NOT advertised)
+            usedContracts.add(serviceProvidedResolved);
+        }
+
             /*
             bean class: provided type (MyService, MyContract - never MyFactory)
             id: provided type fq name with our prefix
@@ -614,18 +592,21 @@ public class ServiceRegistryExtension implements Extension {
         var cdiScope = toCdiScope(service);
 
         if (named.isEmpty()) {
-            // unnamed
-            addBean(
-                    abd,
-                    serviceType,
-                    beanClass,
-                    typeClosure,
-                    cdiScope,
-                    "")
-                    .createWith(ctx -> {
-                        Object instance = registry.get(serviceProvidedType);
-                        return interceptInstance(bm, beanClass, annotatedType, ctx, instance);
-                    });
+            if (!typeClosure.isEmpty()) {
+                // unnamed
+                addBean(
+                        abd,
+                        serviceType,
+                        beanClass,
+                        typeClosure,
+                        cdiScope,
+                        "")
+                        .createWith(ctx -> {
+                            Object instance = GlobalServiceRegistry.registry()
+                                    .get(serviceProvidedType);
+                            return interceptInstance(bm, beanClass, annotatedType, ctx, instance);
+                        });
+            }
         } else {
             if (WILDCARD_NAME.equals(named.get().value().orElse(WILDCARD_NAME))) {
                 // services factory (or other factory type)
@@ -634,7 +615,8 @@ public class ServiceRegistryExtension implements Extension {
                         .addContract(serviceProvidedType)
                         .serviceType(serviceType)
                         .build();
-                List<ServiceInstance<Object>> instances = registry.lookupInstances(lookup);
+                List<ServiceInstance<Object>> instances = GlobalServiceRegistry.registry()
+                        .lookupInstances(lookup);
                 // add each named instance as its own bean
                 Set<String> names = new HashSet<>();
                 for (ServiceInstance<Object> instance : instances) {
@@ -665,10 +647,11 @@ public class ServiceRegistryExtension implements Extension {
                              typeClosure,
                              cdiScope,
                              name,
-                             () -> registry.get(Lookup.builder()
-                                                        .addQualifier(named.get())
-                                                        .addContract(serviceProvidedType)
-                                                        .build()));
+                             () -> GlobalServiceRegistry.registry()
+                                     .get(Lookup.builder()
+                                                  .addQualifier(named.get())
+                                                  .addContract(serviceProvidedType)
+                                                  .build()));
             }
         }
     }
