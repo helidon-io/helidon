@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public final class GlobalConfig {
      * @param config configuration to use
      * @param overwrite whether to overwrite an existing configured value
      * @return current global config
-     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} instead
+     * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} instead
      */
     @Deprecated(forRemoval = true, since = "4.2.0")
     public static Config config(Supplier<Config> config, boolean overwrite) {
@@ -118,13 +118,18 @@ public final class GlobalConfig {
             try {
                 Services.set(Config.class, configInstance);
             } catch (Exception e) {
-                if (LOGGED_REGISTERED.compareAndSet(false, true)) {
-                    // only log this once
-                    LOGGER.log(System.Logger.Level.WARNING,
-                               "Attempting to set a config instance when it either was already "
-                                       + "set once, or it was already used by a component. "
-                                       + "This will not work in future versions of Helidon",
-                               e);
+                Config registryInstance = Services.get(Config.class);
+                if (registryInstance != configInstance) {
+                    // only warn if the instance we are trying to set differs from the one in registry
+                    // if they are the same, somebody already used Services.get and then tried to register it as global
+                    if (LOGGED_REGISTERED.compareAndSet(false, true)) {
+                        // only log this once
+                        LOGGER.log(System.Logger.Level.WARNING,
+                                   "Attempting to set a config instance when it either was already "
+                                           + "set once, or it was already used by a component. "
+                                           + "This will not work in future versions of Helidon",
+                                   e);
+                    }
                 }
             }
         }

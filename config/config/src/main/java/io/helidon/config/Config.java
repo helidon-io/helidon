@@ -39,6 +39,7 @@ import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 /**
  * <h2>Configuration</h2>
@@ -400,12 +401,16 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
-     * Either return the registered global config, or create a new config using {@link #create()} and register
+     * Either return the registered global config, or get a config from ServiceRegistry and register
      * it as global.
      * The instance returned may differ from {@link io.helidon.common.config.GlobalConfig#config()} in case the
      * global config registered in not an instance of this type.
+     * <p>
+     * NOTE: Behavior of this method will change in the next major version of Helidon, as we are discontinuing the support
+     * for {@link io.helidon.common.config.GlobalConfig} class; this method will then return the current config instance
+     * from {@link io.helidon.service.registry.ServiceRegistry#get(Class)}
      *
-     * @return global config instance, creates one if not yet registered
+     * @return global config instance, or {@link io.helidon.service.registry.ServiceRegistry} instance if not registered
      */
     @SuppressWarnings("removal")
     static Config global() {
@@ -416,7 +421,7 @@ public interface Config extends io.helidon.common.config.Config {
             }
             return BuilderImpl.GlobalConfigHolder.get();
         }
-        Config config = Config.create();
+        Config config = Services.get(Config.class);
         io.helidon.common.config.GlobalConfig.config(() -> config, true);
         return config;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,13 +98,13 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             cl = (cl == null) ? CoreServiceDiscovery.class.getClassLoader() : cl;
 
-            return (Class) cl.loadClass(className.fqName());
+            return (Class) cl.loadClass(className.declaredName());
         } catch (ClassNotFoundException e) {
             try {
                 // fall back to classloader of our class
-                return (Class) CoreServiceDiscovery.class.getClassLoader().loadClass(className.fqName());
+                return (Class) CoreServiceDiscovery.class.getClassLoader().loadClass(className.declaredName());
             } catch (ClassNotFoundException ex) {
-                var toThrow = new ServiceRegistryException("Resolution of type \"" + className.fqName()
+                var toThrow = new ServiceRegistryException("Resolution of type \"" + className.declaredName()
                                                            + "\" to class failed.",
                                                    ex);
                 toThrow.addSuppressed(e);

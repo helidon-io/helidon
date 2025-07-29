@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,16 @@ public interface Context {
     <T> void register(T instance);
 
     /**
+     * Remove an instance registration from the context.
+     *
+     * @param instance an instance to remove from context
+     * @param <T> type of the instance
+     */
+    default <T> void unregister(T instance) {
+        // do nothing by default for backward compatibility
+    }
+
+    /**
      * Register a new instance using a provided supplier. The supplier is guaranteed to be called at most once when it's
      * requested by the {@link #get(Class)} method. The returned value is then registered and the supplier is never used again.
      *
@@ -124,6 +134,17 @@ public interface Context {
      * @throws NullPointerException if {@code classifier} or registered object is {@code null}
      */
     <T> void register(Object classifier, T instance);
+
+    /**
+     * Remove an instance registration from the context.
+     *
+     * @param classifier an additional registered instance classifier
+     * @param instance an instance to remove from context
+     * @param <T> type of the instance
+     */
+    default <T> void unregister(Object classifier, T instance) {
+        // do nothing by default for backward compatibility
+    }
 
     /**
      * Registers a new instance using a provided supplier. The supplier is guarantied to be called at most once when it's
