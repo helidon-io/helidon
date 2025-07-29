@@ -283,15 +283,17 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         } else {
             decoder = ContentDecoder.NO_OP;
         }
+        InputStream inputStream;
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
-            return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
+            inputStream = new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length);
         } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
+            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
-            return new EverythingInputStream(helidonSocket, reader, whenComplete, response);
+            inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response);
         }
+        return decoder.apply(inputStream);
     }
 
     private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
