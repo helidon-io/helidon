@@ -174,7 +174,7 @@ public class ServiceRegistryExtension implements Extension {
                 // we do not want to re-insert CDI beans into CDI, obviously
                 continue;
             }
-            addServiceInfo(abd, bm, processedTypes, service);
+            addServiceInfo(abd, bm, registry, processedTypes, service);
         }
 
         // add support for injecting the service registry itself into CDI beans
@@ -542,6 +542,7 @@ public class ServiceRegistryExtension implements Extension {
 
     private void addServiceInfo(AfterBeanDiscovery abd,
                                 BeanManager bm,
+                                ServiceRegistry registry,
                                 Set<UniqueBean> processedTypes,
                                 ServiceInfo service) {
         Set<ResolvedType> contracts = service.contracts();
@@ -571,11 +572,11 @@ public class ServiceRegistryExtension implements Extension {
             usedContracts.add(serviceProvidedResolved);
         }
 
-            /*
-            bean class: provided type (MyService, MyContract - never MyFactory)
-            id: provided type fq name with our prefix
-            scope: "guessed" from registry scope
-             */
+        /*
+        bean class: provided type (MyService, MyContract - never MyFactory)
+        id: provided type fq name with our prefix
+        scope: "guessed" from registry scope
+         */
         Class<?> beanClass = TypeFactory.toClass(serviceProvidedType);
         // annotated type of our provided type, to support interception
         var annotatedType = abd.getAnnotatedType(beanClass, serviceProvidedType.fqName());
@@ -602,8 +603,7 @@ public class ServiceRegistryExtension implements Extension {
                         cdiScope,
                         "")
                         .createWith(ctx -> {
-                            Object instance = GlobalServiceRegistry.registry()
-                                    .get(serviceProvidedType);
+                            Object instance = registry.get(serviceProvidedType);
                             return interceptInstance(bm, beanClass, annotatedType, ctx, instance);
                         });
             }
@@ -615,8 +615,7 @@ public class ServiceRegistryExtension implements Extension {
                         .addContract(serviceProvidedType)
                         .serviceType(serviceType)
                         .build();
-                List<ServiceInstance<Object>> instances = GlobalServiceRegistry.registry()
-                        .lookupInstances(lookup);
+                List<ServiceInstance<Object>> instances = registry.lookupInstances(lookup);
                 // add each named instance as its own bean
                 Set<String> names = new HashSet<>();
                 for (ServiceInstance<Object> instance : instances) {
@@ -647,11 +646,10 @@ public class ServiceRegistryExtension implements Extension {
                              typeClosure,
                              cdiScope,
                              name,
-                             () -> GlobalServiceRegistry.registry()
-                                     .get(Lookup.builder()
-                                                  .addQualifier(named.get())
-                                                  .addContract(serviceProvidedType)
-                                                  .build()));
+                             () -> registry.get(Lookup.builder()
+                                                        .addQualifier(named.get())
+                                                        .addContract(serviceProvidedType)
+                                                        .build()));
             }
         }
     }
