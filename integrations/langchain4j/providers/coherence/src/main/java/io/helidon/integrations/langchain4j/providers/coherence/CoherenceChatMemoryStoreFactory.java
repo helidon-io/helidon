@@ -29,7 +29,7 @@ import dev.langchain4j.store.memory.chat.coherence.CoherenceChatMemoryStore;
  * This class implements {@link java.util.function.Supplier} to supply a named memory store instance.
  */
 @Service.Singleton
-@Service.Named("CoherenceChatMemoryStore")
+@Service.Named("coherence")
 class CoherenceChatMemoryStoreFactory implements Supplier<ChatMemoryStore> {
 
     @Override
