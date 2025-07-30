@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -512,7 +513,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (finished || currentBuffer == null) {
                 return -1;
             }
-            return currentBuffer.read();
+            int read = currentBuffer.read();
+            //If we read fully the current chunk, and we are not asked to read again
+            //(such as when considered fully processed),
+            //we will have the last chunk not processed and hanging
+            ensureBuffer();
+            return read;
         }
 
         @Override
@@ -524,7 +530,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (finished || currentBuffer == null) {
                 return -1;
             }
-            return currentBuffer.read(b, off, len);
+            int read = currentBuffer.read(b, off, len);
+            //If we read fully the current chunk, and we are not asked to read again
+            //(such as when considered fully processed),
+            //we will have the last chunk not processed and hanging
+            ensureBuffer();
+            return read;
         }
 
         private void ensureBuffer() {
