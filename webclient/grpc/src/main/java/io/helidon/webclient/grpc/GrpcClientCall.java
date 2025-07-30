@@ -22,8 +22,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.http2.StreamTimeoutException;
@@ -36,18 +36,17 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 
 /**
- * An implementation of a gRPC call. Expects:
- * <p>
- * start (request | sendMessage)* (halfClose | cancel)
+ * An implementation of a gRPC call.
  *
  * @param <ReqT> request type
  * @param <ResT> response type
  */
 class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcClientCall.class.getName());
+    private static final int DRAIN_QUEUE_RETRIES = 3;
 
     private final ExecutorService executor;
-    private final AtomicInteger messageRequest = new AtomicInteger();
+    private final Semaphore messageRequest = new Semaphore(0);
 
     private final LinkedBlockingQueue<BufferData> sendingQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<BufferData> receivingQueue = new LinkedBlockingQueue<>();
@@ -67,7 +66,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void request(int numMessages) {
         socket().log(LOGGER, DEBUG, "request called %d", numMessages);
-        messageRequest.addAndGet(numMessages);
+        messageRequest.release(numMessages);
         startReadBarrier.countDown();
     }
 
@@ -202,8 +201,25 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                 }
 
-                socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
-                responseListener().onClose(Status.OK, EMPTY_METADATA);
+                // attempt to drain our receiving queue when permits arrive
+                int retries = 0;
+                while (!receivingQueue.isEmpty() && retries < DRAIN_QUEUE_RETRIES) {
+                    if (messageRequest.tryAcquire(100,  TimeUnit.MILLISECONDS)) {
+                        ResT res = toResponse(receivingQueue.remove());
+                        responseListener().onMessage(res);
+                    } else {
+                        retries++;
+                    }
+                }
+
+                // canceled after retrying too many times
+                if (retries == DRAIN_QUEUE_RETRIES) {
+                    socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
+                    responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
+                } else {
+                    socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
+                    responseListener().onClose(Status.OK, EMPTY_METADATA);
+                }
             } catch (StreamTimeoutException e) {
                 responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
             } catch (Throwable e) {
@@ -236,8 +252,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private void drainReceivingQueue() {
         socket().log(LOGGER, DEBUG, "[Reading thread] draining receiving queue");
-        while (messageRequest.get() > 0 && !receivingQueue.isEmpty()) {
-            messageRequest.getAndDecrement();
+        while (!receivingQueue.isEmpty() && messageRequest.tryAcquire()) {
             ResT res = toResponse(receivingQueue.remove());
             responseListener().onMessage(res);
         }
