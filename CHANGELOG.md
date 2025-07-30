@@ -9,6 +9,49 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.13]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Config: Fix empty config values propagation (#9888) [9890](https://github.com/helidon-io/helidon/pull/9890)
+- Config: Make sure Config.asMap() returns all nodes with values [9877](https://github.com/helidon-io/helidon/pull/9877)
+- DB: Optimize compareNotNull and compareNotNullSigned Methods in BitsSubstitution Class [9956](https://github.com/helidon-io/helidon/pull/9956)
+- Health: Fix deadlock health check if invoking the ThreadMXBean fails (#9910) [9911](https://github.com/helidon-io/helidon/pull/9911)
+- Media: Faster Jackson default settings [10072](https://github.com/helidon-io/helidon/pull/10072)
+- Metrics: Express Prometheus timer sum in untruncated (decimal) seconds [10338](https://github.com/helidon-io/helidon/pull/10338)
+- OCI: Adjusts OCI vault config sources to read only secret versions that are extant and in the Current rotation state [10172](https://github.com/helidon-io/helidon/pull/10172)
+- Security: Removed default header when abstain (#10255) [10256](https://github.com/helidon-io/helidon/pull/10256)
+- Testing: Refactoring and enabling tests io.helidon.microprofile.messaging.connector.ConnectorTest [9884](https://github.com/helidon-io/helidon/pull/9884)
+- WebServer: Fix case where invalid Accept header causes internal server error. [10193](https://github.com/helidon-io/helidon/pull/10193)
+- WebServer: Path pattern matching fix - backport for 3.x [10166](https://github.com/helidon-io/helidon/pull/10166)
+- WebServer: Update path matchers to honor quantifiers in Regular expressions (#10082) [10083](https://github.com/helidon-io/helidon/pull/10083)
+- Build: Backport releasing to Central Publishing Portal [10232](https://github.com/helidon-io/helidon/pull/10232)
+- Build: Upgrade ubuntu image to ubuntu-22.04 [9776](https://github.com/helidon-io/helidon/pull/9776)
+- Cleanup: Remove unused code from ResourceUtil [9950](https://github.com/helidon-io/helidon/pull/9950)
+- Dependencies: Updated version management [10449](https://github.com/helidon-io/helidon/pull/10449)
+- Dependencies: Upgrade bytebuddy to 1.17.5 and asm to 9.8 for Java 25 support [9965](https://github.com/helidon-io/helidon/pull/9965)
+- Dependencies: Upgrade commons-lang to 3.18.0 [10391](https://github.com/helidon-io/helidon/pull/10391)
+- Dependencies: Upgrade gson to 2.13.1 [10408](https://github.com/helidon-io/helidon/pull/10408)
+- Dependencies: Upgrade jgit to 7.2.1 [10161](https://github.com/helidon-io/helidon/pull/10161)
+- Dependencies: Upgrade Kafka clients to 3.9.1 [10317](https://github.com/helidon-io/helidon/pull/10317)
+- Dependencies: Upgrade neo4j driver to 5.28.3 [9896](https://github.com/helidon-io/helidon/pull/9896)
+- Dependencies: Upgrade snakeyaml to 2.4 [9825](https://github.com/helidon-io/helidon/pull/9825)
+- Docs: Add docs about configuration ordering in tests (#9994) [10062](https://github.com/helidon-io/helidon/pull/10062)
+- Docs: Add documentation for server.base-path (#10023) [10028](https://github.com/helidon-io/helidon/pull/10028)
+- Docs: Clarify docs about built-in healthchecks and Graal VM (#9906) [9907](https://github.com/helidon-io/helidon/pull/9907)
+- Docs: Clarify javadoc of io.helidon.microprofile.server.Server start/stop (#10271) [10272](https://github.com/helidon-io/helidon/pull/10272)
+- Docs: Describe adding dependency for built-in health checks [9941](https://github.com/helidon-io/helidon/pull/9941)
+- Docs: Docs update for webserver [10423](https://github.com/helidon-io/helidon/pull/10423)
+- Docs: Docs: Do not use --short with kubectl version (#10016) [10018](https://github.com/helidon-io/helidon/pull/10018)
+- Docs: Fix messaging documentation snippets (#9971) [9973](https://github.com/helidon-io/helidon/pull/9973)
+- Docs: Fix typo in jbatch documentation (#10008) [10009](https://github.com/helidon-io/helidon/pull/10009)
+- Docs: Fixes a link in MP Config documentation (#10024) [10029](https://github.com/helidon-io/helidon/pull/10029)
+- Docs: Fixes typo in REST.request configuration option (#10259) [10260](https://github.com/helidon-io/helidon/pull/10260)
+- Docs: JWT module description changed (#9998) [9999](https://github.com/helidon-io/helidon/pull/9999)
+- Examples: Remove Verrazzano option from archetype (#9969) [9970](https://github.com/helidon-io/helidon/pull/9970)
+
 ## [3.2.12]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -978,6 +1021,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.13]: https://github.com/helidon-io/helidon/compare/3.2.12...3.2.13
 [3.2.12]: https://github.com/helidon-io/helidon/compare/3.2.11...3.2.12
 [3.2.11]: https://github.com/helidon-io/helidon/compare/3.2.10...3.2.11
 [3.2.10]: https://github.com/helidon-io/helidon/compare/3.2.9...3.2.10
