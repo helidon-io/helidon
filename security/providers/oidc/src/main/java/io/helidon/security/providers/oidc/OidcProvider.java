@@ -263,18 +263,20 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
-            if (clientAccessToken != null && Instant.now().isBefore(tokenExpiration)) {
+            CachedToken token = cachedToken;
+            if (token != null && token.isValid()) {
                 Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                target.tokenHandler.header(headers, clientAccessToken);
+                target.tokenHandler.header(headers, token.accessToken());
                 return OutboundSecurityResponse.withHeaders(headers);
             }
 
             tokenLock.lock();
 
             try {
-                if (clientAccessToken != null && Instant.now().isBefore(tokenExpiration)) {
+                token = cachedToken;
+                if (token != null && token.isValid()) {
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                    target.tokenHandler.header(headers, clientAccessToken);
+                    target.tokenHandler.header(headers, token.accessToken());
                     return OutboundSecurityResponse.withHeaders(headers);
                 }
 
@@ -296,28 +298,20 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                     if (response.status().family() == Status.Family.SUCCESSFUL) {
                         JsonObject jsonObject = response.as(JsonObject.class);
                         String accessToken = jsonObject.getString("access_token");
-
                         long expiresIn = jsonObject.getInt("expires_in", 3600);
-                        this.clientAccessToken = accessToken;
-                        this.tokenExpiration = Instant.now().plusSeconds(expiresIn - 30);
-
+                        this.cachedToken = new CachedToken(accessToken, Instant.now().plusSeconds(expiresIn - 30));
                         Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                         target.tokenHandler.header(headers, accessToken);
                         return OutboundSecurityResponse.withHeaders(headers);
                     } else {
-
-                        this.clientAccessToken = null;
-                        this.tokenExpiration = null;
+                        this.cachedToken = null;
                         return OutboundSecurityResponse.builder()
                                 .status(SecurityResponse.SecurityStatus.FAILURE)
                                 .description("Could not obtain access token from the identity server")
                                 .build();
                     }
                 } catch (Exception e) {
-
-                    this.clientAccessToken = null;
-                    this.tokenExpiration = null;
-
+                    this.cachedToken = null;
                     return OutboundSecurityResponse.builder()
                             .status(SecurityResponse.SecurityStatus.FAILURE)
                             .description("An error occurred while obtaining access token from the identity server")
