@@ -24,7 +24,7 @@ import io.helidon.service.registry.Service;
 
 /**
  * Default factory for configuration, that returns the current global config, or creates a new config instance.
- * This is to ensure we have a service registry instance even when there is no implementation on classpath.
+ * This is to ensure we have a config instance in service registry even when there is no config implementation on classpath.
  */
 @SuppressWarnings("removal")
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
