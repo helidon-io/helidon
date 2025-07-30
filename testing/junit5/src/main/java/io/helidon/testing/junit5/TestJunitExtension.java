@@ -63,6 +63,11 @@ public class TestJunitExtension implements Extension,
                                            AfterAllCallback,
                                            ParameterResolver {
 
+    /*
+    These two constants must be aligned with GlobalServiceRegistry
+     */
+    private static final String GLOBAL_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
+    private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(TestJunitExtension.class);
 
     static {
@@ -83,8 +88,11 @@ public class TestJunitExtension implements Extension,
     }
 
     @Override
-    public void afterAll(ExtensionContext context) {
-        run(context, () -> afterShutdownMethods(context.getRequiredTestClass()));
+    public void afterAll(ExtensionContext ctx) {
+        run(ctx, () -> afterShutdownMethods(ctx.getRequiredTestClass()));
+
+        var store = store(ctx, ctx.getRequiredTestClass());
+        destroyStaticContext(store);
     }
 
     @Override
@@ -204,10 +212,10 @@ public class TestJunitExtension implements Extension,
                     .build();
 
             // self-register, so this context is used even if the current context is some child of it
-            context.register("helidon-registry-static-context", context);
+            context.register(GLOBAL_CONTEXT_CLASSIFIER, context);
 
             // supply registry
-            context.supply("helidon-registry", ServiceRegistry.class, () -> {
+            context.supply(GLOBAL_REGISTRY_CLASSIFIER, ServiceRegistry.class, () -> {
                 var manager = ServiceRegistryManager.create();
                 var registry = manager.registry();
                 store.put(ServiceRegistryManager.class, (CloseableResource) manager::shutdown);
@@ -216,6 +224,15 @@ public class TestJunitExtension implements Extension,
             });
             return context;
         });
+    }
+
+    protected void destroyStaticContext(ExtensionContext.Store store) {
+        var context = (Context) store.get(Context.class);
+        if (context == null) {
+            return;
+        }
+        context.get(GLOBAL_CONTEXT_CLASSIFIER, Context.class)
+                        .ifPresent(it -> context.unregister(GLOBAL_CONTEXT_CLASSIFIER, it));
     }
 
     /**
