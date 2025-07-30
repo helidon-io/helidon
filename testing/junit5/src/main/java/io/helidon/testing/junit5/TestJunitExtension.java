@@ -90,9 +90,6 @@ public class TestJunitExtension implements Extension,
     @Override
     public void afterAll(ExtensionContext ctx) {
         run(ctx, () -> afterShutdownMethods(ctx.getRequiredTestClass()));
-
-        var store = store(ctx, ctx.getRequiredTestClass());
-        destroyStaticContext(store);
     }
 
     @Override
@@ -120,7 +117,7 @@ public class TestJunitExtension implements Extension,
                 return registry.get(paramType);
             }
             throw new ParameterResolutionException("Failed to resolve parameter of type "
-                                                   + paramType.getName());
+                                                           + paramType.getName());
         });
     }
 
@@ -226,15 +223,6 @@ public class TestJunitExtension implements Extension,
         });
     }
 
-    protected void destroyStaticContext(ExtensionContext.Store store) {
-        var context = (Context) store.get(Context.class);
-        if (context == null) {
-            return;
-        }
-        context.get(GLOBAL_CONTEXT_CLASSIFIER, Context.class)
-                        .ifPresent(it -> context.unregister(GLOBAL_CONTEXT_CLASSIFIER, it));
-    }
-
     /**
      * Get an object from the given store.
      *
@@ -269,12 +257,12 @@ public class TestJunitExtension implements Extension,
         ExtensionContext.Namespace ns;
         if (qualifiers.length > 0) {
             ns = NAMESPACE.append(Arrays.stream(qualifiers)
-                    .map(e -> switch (e) {
-                        case Class<?> c -> c.getName();
-                        case Method m -> m.getName();
-                        default -> throw new IllegalArgumentException("Unsupported element: " + e);
-                    })
-                    .toArray());
+                                          .map(e -> switch (e) {
+                                              case Class<?> c -> c.getName();
+                                              case Method m -> m.getName();
+                                              default -> throw new IllegalArgumentException("Unsupported element: " + e);
+                                          })
+                                          .toArray());
         } else {
             ns = NAMESPACE;
         }
@@ -408,7 +396,7 @@ public class TestJunitExtension implements Extension,
                     declaredMethod.invoke(null);
                 } catch (Exception e) {
                     throw new TestException("Failed to invoke @TestRegistry.AfterShutdown annotated method "
-                                            + declaredMethod.getName(), e);
+                                                    + declaredMethod.getName(), e);
 
                 }
             }
