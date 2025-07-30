@@ -109,8 +109,8 @@
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
-        <version.lib.micrometer>1.13.4</version.lib.micrometer>
-        <version.lib.micrometer-prometheus>1.13.4</version.lib.micrometer-prometheus>
+        <version.lib.micrometer>1.15.2</version.lib.micrometer>
+        <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
         <version.lib.micronaut>4.2.2</version.lib.micronaut>
         <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
