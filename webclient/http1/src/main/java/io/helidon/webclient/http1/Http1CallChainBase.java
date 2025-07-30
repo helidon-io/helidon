@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.http1;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
