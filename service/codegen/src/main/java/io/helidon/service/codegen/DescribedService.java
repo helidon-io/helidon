@@ -25,6 +25,7 @@ import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -102,6 +103,9 @@ class DescribedService {
         TypeName providedTypeName = null;
 
         ServiceContracts serviceContracts = roundContext.serviceContracts(serviceInfo);
+        if (serviceInfo.kind() == ElementKind.INTERFACE) {
+            directContracts.add(ResolvedType.create(serviceInfo.typeName()));
+        }
 
         // now we know which contracts are OK to use, and we can check the service types and real contracts
         // service is a factory only if it implements the interface directly; this is never inherited
