@@ -34,7 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 public class OraDbSuite implements SuiteProvider {
 
     private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/free");
+            "container-registry.oracle.com/database/express");
 
     private final TestContainerHandler containerHandler;
 
