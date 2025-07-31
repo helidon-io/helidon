@@ -46,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class GrpcStubTest extends GrpcBaseTest {
-    private static final long TIMEOUT_SECONDS = 1000;
+    private static final long TIMEOUT_SECONDS = 10;
 
     private final WebClient webClient;
 
@@ -127,7 +127,7 @@ class GrpcStubTest extends GrpcBaseTest {
         StringServiceGrpc.StringServiceBlockingV2Stub service = StringServiceGrpc.newBlockingV2Stub(grpcClient.channel());
         BlockingClientCall<?, Strings.StringMessage> call = service.split(newStringMessage("hello world"));
         assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("hello"));
-        assertThat(call.read().getText(), is("world"));
+        assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("world"));
         assertThat(call.hasNext(), is(false));
     }
 
@@ -152,7 +152,7 @@ class GrpcStubTest extends GrpcBaseTest {
         call.write(newStringMessage("hello"));
         call.write(newStringMessage("world"));
         call.halfClose();
-        Strings.StringMessage res = call.read(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        Strings.StringMessage res = call.read(100, TimeUnit.MILLISECONDS);
         assertThat(res.getText(), is("hello world"));
     }
 
@@ -179,7 +179,7 @@ class GrpcStubTest extends GrpcBaseTest {
         CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try {
                 assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("hello"));
-                assertThat(call.read().getText(), is("world"));
+                assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("world"));
                 assertThat(call.hasNext(), is(false));
             } catch (InterruptedException | TimeoutException | StatusException e) {
                 throw new RuntimeException(e);

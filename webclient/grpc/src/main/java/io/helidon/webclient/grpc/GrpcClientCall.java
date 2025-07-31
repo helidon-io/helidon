@@ -43,7 +43,6 @@ import static java.lang.System.Logger.Level.ERROR;
  */
 class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcClientCall.class.getName());
-    private static final int DRAIN_QUEUE_RETRIES = 3;
 
     private final ExecutorService executor;
     private final Semaphore messageRequest = new Semaphore(0);
@@ -201,25 +200,24 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     socket().log(LOGGER, DEBUG, "[Reading thread] adding bufferData to receiving queue");
                 }
 
-                // attempt to drain our receiving queue when permits arrive
-                int retries = 0;
-                while (!receivingQueue.isEmpty() && retries < DRAIN_QUEUE_RETRIES) {
-                    if (messageRequest.tryAcquire(100,  TimeUnit.MILLISECONDS)) {
-                        ResT res = toResponse(receivingQueue.remove());
-                        responseListener().onMessage(res);
-                    } else {
-                        retries++;
-                    }
+                // attempt to drain our receiving queue if permits arrive on time
+                Status status = Status.OK;
+                if (!receivingQueue.isEmpty()) {
+                    Duration waitTime = grpcClient().prototype().protocolConfig().nextRequestWaitTime();
+                    do {
+                        if (messageRequest.tryAcquire(waitTime.toNanos(), TimeUnit.NANOSECONDS)) {
+                            ResT res = toResponse(receivingQueue.remove());
+                            responseListener().onMessage(res);
+                        } else {
+                            socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
+                            status = Status.CANCELLED;
+                            break;      // wait time expired
+                        }
+                    } while (!receivingQueue.isEmpty());
                 }
 
-                // canceled after retrying too many times
-                if (retries == DRAIN_QUEUE_RETRIES) {
-                    socket().log(LOGGER, DEBUG, "[Reading thread] unable to drain receiving queue");
-                    responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
-                } else {
-                    socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
-                    responseListener().onClose(Status.OK, EMPTY_METADATA);
-                }
+                // report onClose call with status
+                responseListener().onClose(status, EMPTY_METADATA);
             } catch (StreamTimeoutException e) {
                 responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
             } catch (Throwable e) {
