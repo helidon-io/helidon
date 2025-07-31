@@ -17,7 +17,7 @@
 test.database:
   username: "system"
   password: "oracle123"
-  url: "jdbc:oracle:thin:@localhost:1521/FREE"
+  url: "jdbc:oracle:thin:@localhost:1521/XEPDB1"
 
 data:
   sources:
