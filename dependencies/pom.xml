@@ -57,7 +57,7 @@
         <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.25.5</version.lib.google-protobuf>
+        <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
