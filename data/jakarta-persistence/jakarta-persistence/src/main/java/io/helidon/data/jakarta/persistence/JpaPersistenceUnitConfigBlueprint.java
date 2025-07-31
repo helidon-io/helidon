@@ -16,6 +16,7 @@
 
 package io.helidon.data.jakarta.persistence;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -57,7 +58,7 @@ interface JpaPersistenceUnitConfigBlueprint extends SqlConfig {
      * @return database initialization script path
      */
     @Option.Configured
-    Optional<String> initScript();
+    Optional<Path> initScript();
 
     /**
      * Path to database cleanup script on classpath.
@@ -65,7 +66,7 @@ interface JpaPersistenceUnitConfigBlueprint extends SqlConfig {
      * @return database cleanup script path
      */
     @Option.Configured
-    Optional<String> dropScript();
+    Optional<Path> dropScript();
 
     /**
      * Additional persistence unit or connection properties.
