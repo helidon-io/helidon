@@ -153,9 +153,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
                 if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
@@ -165,8 +162,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                         connection.closeResource();
                     }
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             } finally {
                 whenComplete.complete(null);
             }
@@ -235,8 +230,13 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private void entityFullyRead() {
-        this.entityFullyRead = true;
-        this.close();
+        try {
+            this.entityFullyRead = true;
+            inputStream.close();
+            this.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private BufferData readBytes(int estimate) {
