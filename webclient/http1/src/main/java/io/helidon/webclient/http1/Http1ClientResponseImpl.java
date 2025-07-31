@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.util.List;
@@ -152,6 +153,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
                 if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
@@ -161,6 +165,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                         connection.closeResource();
                     }
                 }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             } finally {
                 whenComplete.complete(null);
             }
