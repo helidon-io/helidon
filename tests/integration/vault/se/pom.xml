@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.vault</groupId>
         <artifactId>helidon-tests-integration-vault-project</artifactId>
-        <version>3.2.13-SNAPSHOT</version>
+        <version>3.2.13</version>
     </parent>
 
     <artifactId>helidon-tests-integration-vault-se</artifactId>
