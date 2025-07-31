@@ -38,6 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 * <<AI Services, AI Services>>
     ** <<Creating AI Service, Creating AI Service>>
     ** <<Tools (Callback Functions), Tools (Callback Functions)>>
+    ** <<Observability (ChatModelListeners), Observability (ChatModelListeners)>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -55,7 +56,7 @@ LangChain4J integration is a preview feature. The APIs shown here are subject to
 +
 Automatically creates and registers selected LangChain4J components in the Helidon service registry based on configuration.
 
-- **Integration with CDI*
+- *Integration with CDI*
 +
 Thanks to the *Helidon Inject to CDI Bridge*, LangChain4J components can be used in CDI environments, including Helidon MP applications.
 
@@ -305,6 +306,26 @@ public class OrderService {
 NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI beans, you must annotate the CDI bean with the `@Ai.Tool` qualifier.
 
 For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4J Documentation on Tools].
+
+=== Observability (ChatModelListeners)
+
+While LangChain4J doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4J Documentation on Observability].
+
+Helidon provides `MetricsChatModelListener` which when enabled, generates metrics that follow the https://opentelemetr.io/docs/specs/semconv/gen-ai/gen-ai-metrics[Semantic Conventions for GenAI Metrics].
+
+For example, adding the following lines to `application.yaml` for `OpenAiChatModel`, will enable Helidon's `MetricsChatModelListener`.
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    chat-model:
+      enabled: true
+      api-key: "demo"
+      model-name: "gpt-4o-mini"
+      listeners:
+        service-registry.named: "MetricsChatModelListener"
+----
 
 == Additional Information
 
