@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,12 @@ class GzipEncodingTest {
                                             } else {
                                                 res.send(entity);
                                             }
+                                        }))
+                .route(Http1Route.route(Method.GET,
+                                        "/chunked",
+                                        (req, res) -> {
+                                            res.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                                            res.send(ENTITY);
                                         }));
     }
 
@@ -139,6 +145,18 @@ class GzipEncodingTest {
     @Test
     void testDeflateMultipleAcceptedEncodingsHttp2Client() {
         testIt(http2Client, "/http2", "br;q=0.9, gzip, *;q=0.1");
+    }
+
+    @Test
+    void testGzipWithChunkedTransferEncoding() {
+        ClientResponseTyped<String> response = http1Client.get("/chunked")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is(ENTITY));
+        assertThat(response.headers(), hasHeader(CONTENT_ENCODING_GZIP));
+        assertThat(response.headers(), hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     void testIt(io.helidon.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
