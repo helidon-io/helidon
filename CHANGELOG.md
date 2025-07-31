@@ -37,6 +37,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Dependencies: Upgrade jgit to 7.2.1 [10161](https://github.com/helidon-io/helidon/pull/10161)
 - Dependencies: Upgrade Kafka clients to 3.9.1 [10317](https://github.com/helidon-io/helidon/pull/10317)
 - Dependencies: Upgrade neo4j driver to 5.28.3 [9896](https://github.com/helidon-io/helidon/pull/9896)
+- Dependencies: Upgrade protobuf to 3.25.8 [10463](https://github.com/helidon-io/helidon/pull/10463)
 - Dependencies: Upgrade snakeyaml to 2.4 [9825](https://github.com/helidon-io/helidon/pull/9825)
 - Docs: Add docs about configuration ordering in tests (#9994) [10062](https://github.com/helidon-io/helidon/pull/10062)
 - Docs: Add documentation for server.base-path (#10023) [10028](https://github.com/helidon-io/helidon/pull/10028)
