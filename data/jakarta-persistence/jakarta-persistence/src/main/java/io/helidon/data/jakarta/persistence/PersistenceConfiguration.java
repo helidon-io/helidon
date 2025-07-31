@@ -262,7 +262,7 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
         byte databaseAction = 0x00;
         if (dataJpaConfig.initScript().isPresent()) {
             properties.put("jakarta.persistence.schema-generation.create-script-source",
-                           dataJpaConfig.initScript().get());
+                           dataJpaConfig.initScript().get().toString());
             properties.put("jakarta.persistence.schema-generation.create-source",
                            "script");
 
@@ -270,7 +270,7 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
         }
         if (dataJpaConfig.dropScript().isPresent()) {
             properties.put("jakarta.persistence.schema-generation.drop-script-source",
-                           dataJpaConfig.dropScript().get());
+                           dataJpaConfig.dropScript().get().toString());
             properties.put("jakarta.persistence.schema-generation.drop-source",
                            "script");
             databaseAction |= 0x02;
