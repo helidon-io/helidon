@@ -29,10 +29,6 @@
     <artifactId>helidon-discovery</artifactId>
     <name>Helidon Discovery</name>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-
     <dependencies>
 
         <dependency>
