@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>PR.html</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+
+</head>
+
+<body>
+
+<h1 id="discovery">Discovery</h1>
+<h2 id="summary">Summary</h2>
+<p><em>Discovery</em> transforms a supplied <em>discovery name</em> into
+an immutable <em>discovered set</em> of immutable resources suitable for
+it at a given moment of runtime.</p>
+<p>In the first iteration of this feature, the resources are
+metadata-bearing URIs (<em>discovered URIs</em>), and can be used for
+any purpose. They are most often used to help connect to microservices
+on the network that may come and go over time.</p>
+<p>Discovery is fundamentally a specification, with a corresponding
+vendor-independent Java API, that can be implemented by any number of
+implementations.</p>
+<h2 id="pull-request">Pull Request</h2>
+<p>This pull request introduces the Discovery specification. Pull
+requests featuring implementations, and implicit integrations, will
+follow later.</p>
+<h2 id="requirements-and-terminology">Requirements and Terminology</h2>
+<p>These requirements informed the design of the Discovery
+specification. They, the full specification, and the terminology used to
+describe them, are present, normatively, in the API specification. They
+are reproduced here in the form originally agreed to.</p>
+<ol type="1">
+<li><em>Discovery</em> is fundamentally a Java API that provides a set
+of metadata-bearing <em>discovered URIs</em> when given a <em>discovery
+name</em> and a <em>default URI</em>. This provided set is the
+<em>discovered set</em>.</li>
+<li>A discovered URI represented by an element in the discovered set may
+be used for any purpose by the caller.</li>
+<li>A discovered URI must be immutable. Metadata borne by a discovered
+URI must be immutable and must be <code>String</code>-typed. A
+discovered URI may bear no metadata.</li>
+<li>Two discovered URIs are considered <em>equal</em> if and only if the
+URIs they represent are equal. Notably, metadata is not included in
+equality calculations.</li>
+<li>A discovered set must be immutable.</li>
+<li>A discovered set must include a discovered URI that represents the
+default URI supplied to the operation that produced it. (A discovered
+set therefore will never be empty.)</li>
+<li>Any two discovery operations may result in disjoint discovered
+sets.</li>
+<li>Any two discovery operations may result in identical discovered
+sets.</li>
+<li>Discovery must permit multiple implementations (<em>e. g.</em>
+Eureka, Consul, DNS, Kubernetes, etc.).</li>
+<li>The presence of two or more <em>enabled</em> Discovery
+implementations at runtime in an application is prohibited.</li>
+<li>The order of a discovered set may or may not be significant,
+depending on the Discovery implementation. A discovered set’s order is
+<em>stable</em>, however.</li>
+<li>No guarantees exist, or can be inferred, about the health or
+availability of an application described by a discovered URI.</li>
+<li>Discovery names should be composed only from legal DNS hostname
+characters, since DNS-based Discovery implementations should be
+possible. In practice, this means alphabetic characters, digits,
+“<code>.</code>”, and “<code>-</code>”.</li>
+<li>There must be no restriction on the schemes or general format of
+URIs used or supplied by Discovery (<code>http</code>,
+<code>https</code>, <code>mailto</code>, <code>jdbc</code>,
+<code>amqp</code>, etc.).</li>
+<li>Any malfunctioning of a Discovery implementation must not prevent an
+application from continuing.</li>
+<li>Discovery must be <em>opt-in</em>, not <em>opt-out</em>.
+Specifically:
+<ol type="1">
+<li>Discovery may be used <em>explicitly</em>, <em>i.e.</em> by a
+developer issuing deliberate method calls to the Discovery API and then
+making use of the discovered set of discovered URIs she receives.</li>
+<li>Discovery may be used <em>implicitly</em>, <em>i.e.</em> by future
+facilities in Helidon that can apply Discovery automatically, but there
+must still be some developer-visible manifestation of Discovery in such
+a case so that its effects can be anticipated.</li>
+</ol></li>
+<li>Discovery must not be used to find, or connect to, an implementation
+of Discovery.</li>
+</ol>
+<h2 id="use-cases">Use Cases</h2>
+<p>These use cases informed the design of Discovery. They are
+deliberately in a form that is technology agnostic.</p>
+<h3 id="basic-explicit">Basic, Explicit</h3>
+<ol type="1">
+<li>A developer or subsystem asks Helidon for a Discovery implementation
+without necessarily knowing in advance what implementation will be
+supplied.</li>
+<li>Helidon provides such a Discovery.</li>
+<li>The developer or subsystem asks Discovery for a set (the
+<em>discovered set</em>) of metadata-bearing URIs (<em>discovered
+URIs</em>) corresponding to a <em>discovery name</em>.
+<ol type="a">
+<li>She also supplies a <em>default URI</em> to use in case there is an
+error, or in case there would be no suitable discovered set
+otherwise.</li>
+</ol></li>
+<li>The Discovery implementation provides such a discovered set.
+<ol type="a">
+<li>At a minimum, the discovered set contains a representation of the
+default URI.</li>
+</ol></li>
+<li>The developer or subsystem selects an element from the discovered
+set for use according to the application’s requirements and
+heuristics.</li>
+<li>The developer or subsystem uses the URI the selected discovered URI
+represents in subsequent development.</li>
+</ol>
+<h3 id="testing-explicit">Testing, Explicit</h3>
+<ol type="1">
+<li>A developer wishes to test a part of her application that happens to
+use the Discovery API (a <em>Discovery-using component</em>).
+<ol type="a">
+<li>This Discovery API usage may not be, itself, under test.</li>
+</ol></li>
+<li>She ensures that a Discovery implementation is present in her
+project’s runtime (and hence test) dependencies.</li>
+<li>She configures this Discovery implementation to be disabled at test
+time, possibly because the test environment does not supply required
+external resources.
+<ol type="a">
+<li>Note that this implies any Discovery implementation may be so
+configured.</li>
+</ol></li>
+<li>She executes the test.</li>
+<li>The Discovery-using component is, by definition, prepared for a
+Discovery implementation to be disabled.
+<ol type="a">
+<li>For example, depending on the final shape of the Discovery API, it
+might supply a default value at discovery time, or it might test the
+discovered set to see if it is empty before using a default value
+instead.</li>
+</ol></li>
+<li>The Discovery-using component is prepared for this case and uses a
+default value instead (see (5a.)).</li>
+<li>The test runs successfully, with “real” Discovery never actually
+being performed.</li>
+</ol>
+
+</body>
+</html>
