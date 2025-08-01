@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,26 +496,6 @@ class Registry implements MetricRegistry {
         }
     }
 
-    void onMeterBuilderProvided(Meter.Builder<?, ?> meterBuilder) {
-        /*
-         Invoked with a builder for a built-in meter.
-         */
-        if (meterBuilder instanceof io.helidon.metrics.api.Counter.Builder cBuilder) {
-            createCounter(cBuilder);
-        } else if (meterBuilder instanceof io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
-            createHistogram(sBuilder);
-        } else if (meterBuilder instanceof io.helidon.metrics.api.FunctionalCounter.Builder fcBuilder) {
-            createFunctionalCounter(fcBuilder);
-        } else if (meterBuilder instanceof io.helidon.metrics.api.Gauge.Builder gBuilder) {
-            createGauge(gBuilder);
-        } else if (meterBuilder instanceof io.helidon.metrics.api.Timer.Builder tBuilder) {
-            createTimer(tBuilder);
-        } else {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "Unrecognized builder type; ignoring " + meterBuilder.getClass().getName());
-        }
-    }
-
     void clear() {
         lock.lock();
         try {
@@ -639,14 +619,6 @@ class Registry implements MetricRegistry {
     @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
         return createMeter(gBuilder, HelidonGauge::create);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
-        return createMeter(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
-                                                                () -> fcBuilder.fn()
-                                                                        .apply(fcBuilder.stateObject())),
-                           HelidonGauge::create);
     }
 
     private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
