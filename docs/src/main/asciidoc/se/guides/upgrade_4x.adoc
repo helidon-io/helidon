@@ -289,15 +289,6 @@ Metrics has changed significantly in Helidon 4. See xref:../metrics/metrics.adoc
 
 The global configuration represents a single instance of the `Config` class, which is implicitly employed by certain Helidon components. Furthermore, it offers a handy approach for your application to access configuration information from any part of your code.
 
-It is recommended that you explicitly initialize global configuration before using any Helidon components:
-
-[source,java]
-----
-include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_7, indent=0]
-----
-
-You can then utilize the global configuration for easy retrieval of your application's configuration:
-
 [source,java]
 ----
 include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_8, indent=0]
