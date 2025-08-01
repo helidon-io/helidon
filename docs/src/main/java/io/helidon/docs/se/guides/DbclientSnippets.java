@@ -58,9 +58,7 @@ class DbclientSnippets {
             // load logging configuration
             LogConfig.configureRuntime();
 
-            // initialize global config from default configuration
-            Config config = Config.create();
-            Config.global(config);
+            Config config = Config.global();
 
             DbClient dbClient = DbClient.create(config.get("db")); // <1>
             Contexts.globalContext().register(dbClient); // <2>
