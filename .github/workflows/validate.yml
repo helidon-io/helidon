@@ -338,7 +338,7 @@ jobs:
               verify
   _native-image:
     needs: build
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       matrix:
         os: [ ubuntu-22.04, macos-14, windows-2022 ]
