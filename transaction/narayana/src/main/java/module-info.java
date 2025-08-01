@@ -24,9 +24,6 @@ module io.helidon.transaction.helidon.narayana {
     requires io.helidon.transaction.jta;
     requires narayana.jta;
 
-    provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.transaction.narayana.CdiExtension;
-
     exports io.helidon.transaction.narayana;
 
 }
