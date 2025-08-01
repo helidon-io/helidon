@@ -16,8 +16,10 @@
 
 package io.helidon.service.registry;
 
+import java.util.Map;
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -77,5 +79,14 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
      */
     default TypeName scope() {
         return Service.Singleton.TYPE;
+    }
+
+    /**
+     * Provide a mapping of types that are contracts of this service to their inherited type set.
+     *
+     * @return type map for each type that is a contract of this service
+     */
+    default Map<TypeName, Set<ResolvedType>> typeSets() {
+        return Map.of();
     }
 }
