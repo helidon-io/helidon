@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -98,34 +98,37 @@ See the xref:advanced-configuration.adoc#_advanced_config_parsers[advanced topic
 
 == Configuration
 
-Helidon has an internal configuration, so you are not required to provide any configuration data for your application, though in practice you most likely would.
+=== Global Configuration
 
-In your application code, when you create a default `Config` object, Helidon uses the default configuration .
+Global configuration is a singleton instance of `Config` that is implicitly used by some components of Helidon, plus it provides a convenient mechanism for your application to retrieve configuration from anywhere in your code.
+By default, global configuration is initialized to the default `Config` object (as returned by `Config.create()`) and it is registered in the Helidon Service Registry.
+
+To retrieve the global configuration, you fetch it directly from the service registry:
 
 [source,java]
 ----
 include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> The `Config` object is created with default settings.
 
-=== Global Configuration
-
-Global configuration is a singleton instance of `Config` that is implicitly used by some components of Helidon, plus it provides a convenient mechanism for your application to retrieve configuration from anywhere in your code.
-By default, global configuration is initialized to the default `Config` object (as returned by `Config.create()`). But it is recommended that you initialize it explicitly. This is especially important if you define custom config sources.
+Or you can use the global configuration convenience method to retrieve it:
 
 [source,java]
 ----
 include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Create configuration. This shows creating the default config, but it could be created from custom config sources.
-<2> Assign it to the application's global configuration
 
-You can use global configuration to conveniently retrieve the application's configuration:
+If your application builds a custom configuration (from custom config sources for example) and you would like this
+configuration to be discovered and used by Helidon components then you should set this custom configuration instance as the global configuration.
+You do this by setting the configuration instance directly into the service registry (the old way of doing this via `Config.global(config)` is deprecated).
 
 [source,java]
 ----
 include::{sourcedir}/se/config/IntroductionSnippets.java[tag=snippet_3, indent=0]
 ----
+
+Note that if you want to explicitly set the global configuration then you *must* do it before any code in your application
+(or any Helidon component) retrieves global configuration. That means it should be done early in your application
+initialization before you create any other Helidon component.
 
 === Custom Config Sources
 
