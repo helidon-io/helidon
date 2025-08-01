@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ package io.helidon.webserver.observe.health;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.HelidonServiceLoader;
@@ -56,8 +58,10 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
                     .flatMap(Collection::stream)
                     .forEach(checks::add);
         }
-        // checks now contain all health checks we want to use in this instance
-        this.all = List.copyOf(checks);
+        // Omit any checks requested to be excluded by name.
+        this.all = checks.stream()
+                .filter(c -> !config.exclude().contains(c.name()))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -131,6 +135,11 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     @Override
     public HealthObserverConfig prototype() {
         return config;
+    }
+
+    // primarily for testing
+    List<HealthCheck> all() {
+        return Collections.unmodifiableList(all);
     }
 
     private static class HealthHttpFeature implements HttpFeature {
