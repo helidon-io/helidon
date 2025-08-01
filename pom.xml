@@ -241,6 +241,7 @@
         <module>metadata</module>
         <module>testing</module>
         <module>declarative</module>
+        <module>discovery</module>
     </modules>
 
     <build>

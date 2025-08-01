@@ -1220,6 +1220,10 @@
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.discovery</groupId>
+            <artifactId>helidon-discovery</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

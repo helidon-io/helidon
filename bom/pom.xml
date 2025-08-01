@@ -1599,6 +1599,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Discovery -->
+            <dependency>
+                <groupId>io.helidon.discovery</groupId>
+                <artifactId>helidon-discovery</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- Metadata -->
             <dependency>
                 <groupId>io.helidon.metadata</groupId>
