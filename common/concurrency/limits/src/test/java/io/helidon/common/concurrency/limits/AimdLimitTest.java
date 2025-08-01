@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,8 +39,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AimdLimitTest {
     @Test
@@ -47,7 +53,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .buildPrototype();
 
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
 
         assertThat(limiter.currentLimit(), is(30));
         limiter.updateWithSample(0, 0, 0, false);
@@ -61,7 +67,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .timeout(timeout)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, timeout.toNanos() + 1, 0, true);
         assertThat(limiter.currentLimit(), is(27));
     }
@@ -71,7 +77,7 @@ public class AimdLimitTest {
         AimdLimitConfig config = AimdLimitConfig.builder()
                 .initialLimit(20)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         assertThat(limiter.currentLimit(), is(21));
     }
@@ -83,7 +89,7 @@ public class AimdLimitTest {
                 .maxLimit(21)
                 .minLimit(0)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         // after success limit should still be at the max.
         assertThat(limiter.currentLimit(), is(21));
@@ -95,7 +101,7 @@ public class AimdLimitTest {
                 .minLimit(10)
                 .initialLimit(10)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config);
+        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
         assertThat(limiter.currentLimit(), is(10));
     }
 
@@ -108,7 +114,7 @@ public class AimdLimitTest {
                 .minLimit(1)
                 .maxLimit(200)
                 .buildPrototype();
-        AimdLimitImpl limit = new AimdLimitImpl(config);
+        AimdLimitImpl limit = new AimdLimitImpl(config, "test");
 
         int threadCount = 100;
         int operationsPerThread = 1_000;
@@ -183,10 +189,22 @@ public class AimdLimitTest {
                 .initialLimit(5)
                 .build();
 
+        AtomicReference<LimitOutcome> savedOutcome = new AtomicReference<>();
+
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, savedOutcome::set);
             assertThat(token, not(Optional.empty()));
+
+            // We expect immediate acceptances.
+            assertThat("Disposition",
+                       savedOutcome.get(),
+                       allOf(instanceOf(LimitOutcome.Accepted.class),
+                             not(instanceOf(LimitOutcome.Deferred.class))));
+
+            LimitOutcome.Accepted acceptedOutcome = (LimitOutcome.Accepted) savedOutcome.get();
+            assertThrows(IllegalStateException.class, acceptedOutcome::execResult);
             token.get().success();
+            assertThat("Exec", acceptedOutcome.execResult(), is(LimitOutcome.Accepted.ExecResult.SUCCEEDED));
         }
     }
 
@@ -208,6 +226,8 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
+        List<LimitOutcome> outcomes = Collections.synchronizedList(new ArrayList<>());
+
         for (int i = 0; i < concurrency; i++) {
             int index = i;
             threads[i] = new Thread(() -> {
@@ -221,7 +241,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    });
+                    }, outcomes::add);
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -244,6 +264,26 @@ public class AimdLimitTest {
         assertThat(failures.get(), is(0));
         // and eventually run to completion
         assertThat(result.size(), is(5));
+
+        assertThat("Outcomes", outcomes, hasSize(5));
+        int deferredAccepts = 0;
+        int immediateAccepts = 0;
+        int index = 0;
+        for (LimitOutcome outcome : outcomes) {
+            if (outcome instanceof LimitOutcome.Accepted acceptedOutcome) {
+                if (outcome instanceof LimitOutcome.Deferred) {
+                    deferredAccepts++;
+                } else {
+                    immediateAccepts++;
+                }
+                assertThat("Exec result " + index++,
+                           acceptedOutcome.execResult(), is(LimitOutcome.Accepted.ExecResult.SUCCEEDED));
+            }
+        }
+
+        assertThat("Immediate accepts ", immediateAccepts, is(1));
+        assertThat("Deferred accepts ", deferredAccepts, is(4));
+
     }
 
     /**

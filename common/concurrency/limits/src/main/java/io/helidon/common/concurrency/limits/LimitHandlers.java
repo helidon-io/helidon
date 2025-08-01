@@ -78,7 +78,10 @@ class LimitHandlers {
         private final long timeoutMillis;
         private final Supplier<Token> tokenSupplier;
 
-        QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout, Supplier<Token> tokenSupplier) {
+        QueuedSemaphoreHandler(Semaphore semaphore,
+                               int queueLength,
+                               Duration queueTimeout,
+                               Supplier<Token> tokenSupplier) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
             this.timeoutMillis = queueTimeout.toMillis();

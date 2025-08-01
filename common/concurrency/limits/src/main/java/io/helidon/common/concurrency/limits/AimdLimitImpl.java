@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.io.Serial;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.ConfigException;
@@ -34,7 +36,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -52,12 +53,15 @@ class AimdLimitImpl {
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
     private final int queueLength;
-    private final Tracer tracer;
+    private final String originName;
+    private final AimdLimitConfig config;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
 
-    AimdLimitImpl(AimdLimitConfig config) {
+    AimdLimitImpl(AimdLimitConfig config, String originName) {
+        this.config = config;
+        this.originName = originName;
         int initialLimit = config.initialLimit();
         this.backoffRatio = config.backoffRatio();
         this.timeoutInNanos = config.timeout().toNanos();
@@ -75,8 +79,6 @@ class AimdLimitImpl {
                                                                 queueLength,
                                                                 config.queueTimeout(),
                                                                 () -> new AimdToken(clock, concurrentRequests));
-        tracer = config.enableTracing() ? Tracer.global() : null;
-
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
         }
@@ -100,22 +102,42 @@ class AimdLimitImpl {
     }
 
     Optional<LimitAlgorithm.Token> tryAcquire(boolean wait) {
+        return tryAcquire(wait, outcome -> {});
+    }
+
+    Optional<LimitAlgorithm.Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
+        Objects.requireNonNull(outcomeConsumer, "limit algorithm outcome consumer cannot be null");
         Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
         if (token.isPresent()) {
+            LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName, AimdLimit.TYPE);
+            if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
+                outcomeAwareToken.outcome(outcome);
+            }
+            outcomeConsumer.accept(outcome);
             return token;
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            var limitSpan = LimitSpan.create(tracer, "aimd");
             token = handler.tryAcquire(true);
+            long endWait = clock.get();
             if (token.isPresent()) {
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
+                LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName,
+                                                                                    AimdLimit.TYPE,
+                                                                                    startWait,
+                                                                                    endWait);
+                if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
+                    outcomeAwareToken.outcome(outcome);
                 }
-                limitSpan.close();
+                outcomeConsumer.accept(outcome);
+
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
+                }
                 return token;
             }
-            limitSpan.closeWithError();
+            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, AimdLimit.TYPE, startWait, endWait));
+        } else {
+            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, AimdLimit.TYPE));
         }
         rejectedRequests.getAndIncrement();
         return token;
@@ -128,8 +150,20 @@ class AimdLimitImpl {
         });
     }
 
+    void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+        invoke(() -> {
+            runnable.run();
+            return null;
+        }, outcomeConsumer);
+    }
+
     <T> T invoke(Callable<T> callable) throws Exception {
-        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true);
+        return invoke(callable, outcome -> {});
+    }
+
+    <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+
+        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true, outcomeConsumer);
         if (optionalToken.isPresent()) {
             LimitAlgorithm.Token token = optionalToken.get();
             try {
@@ -273,7 +307,7 @@ class AimdLimitImpl {
         }
     }
 
-    private class AimdToken implements Limit.Token {
+    private class AimdToken extends OutcomeAwareToken {
         private final long startTime;
         private final int currentRequests;
 
@@ -285,6 +319,7 @@ class AimdLimitImpl {
         @Override
         public void dropped() {
             try {
+                super.dropped();
                 updateWithSample(startTime, clock.get(), currentRequests, false);
             } finally {
                 semaphore.release();
@@ -293,6 +328,7 @@ class AimdLimitImpl {
 
         @Override
         public void ignore() {
+            super.ignore();
             concurrentRequests.decrementAndGet();
             semaphore.release();
         }
@@ -302,6 +338,8 @@ class AimdLimitImpl {
             try {
                 updateWithSample(startTime, clock.get(), currentRequests, true);
                 concurrentRequests.decrementAndGet();
+                super.success();
+
             } finally {
                 semaphore.release();
             }

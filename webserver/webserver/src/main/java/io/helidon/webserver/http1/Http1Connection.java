@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
@@ -34,6 +35,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
+import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -207,7 +209,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+                AtomicReference<LimitOutcome> outcome = new AtomicReference<>();
+                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, outcome::set);
+
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
@@ -221,7 +225,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
                     try {
                         this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers);
+                        route(prologue, headers, limit, outcome.get());
                         permit.success();
                         this.lastRequestTimestamp = DateTime.timestamp();
                     } catch (Throwable e) {
@@ -499,7 +503,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return buffer;
     }
 
-    private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
+    private void route(HttpPrologue prologue, WritableHeaders<?> headers, Limit limit, LimitOutcome limitOutcome) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
@@ -534,6 +538,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    prologue,
                                                                    headers,
                                                                    requestId);
+            request.context().register(limitOutcome);
+            request.context().register(limit);
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,

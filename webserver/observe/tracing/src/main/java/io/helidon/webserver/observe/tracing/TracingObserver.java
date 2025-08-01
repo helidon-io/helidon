@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.observe.tracing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,10 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
+import io.helidon.common.concurrency.limits.AimdLimit;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
@@ -195,6 +200,9 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 Contexts.runInContext(context, chain::proceed);
                 return;
             }
+
+            recordLimitWaitingSpan(inboundSpanContext.orElse(null), req);
+
             /*
             Create web server span
              */
@@ -266,6 +274,38 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             }
         }
 
+        private void recordLimitWaitingSpan(SpanContext inboundSpanContext, RoutingRequest req) {
+            Optional<Limit> limit = req.context().get(Limit.class);
+            if (limit.isEmpty()) {
+                return;
+            }
+            boolean tracingEnabled = (limit.get() instanceof FixedLimit fixedLimit)
+                    ? fixedLimit.prototype().enableTracing()
+                    : (limit.get() instanceof AimdLimit aimdLimit)
+                        ? aimdLimit.prototype().enableTracing()
+                            : false;
+            if (!tracingEnabled) {
+                return;
+            }
+
+            Optional<LimitOutcome> limitOutcome = req.context().get(LimitOutcome.class);
+            limitOutcome.ifPresent(outcome -> {
+                if (outcome instanceof LimitOutcome.Deferred deferredOutcome) {
+                    Tracer tracer = req.context().get(Tracer.class).orElse(Tracer.global());
+                    var spanBuilder = tracer.spanBuilder(outcome.originName() + "-" + outcome.algorithmType() + "-limit-span");
+                    if (inboundSpanContext != null) {
+                        inboundSpanContext.asParent(spanBuilder);
+                    }
+                    var span = spanBuilder.start(Instant.ofEpochSecond(0, deferredOutcome.waitStart()));
+                    if (!(outcome instanceof LimitOutcome.Accepted acceptedOutcome)) {
+                        span.status(Span.Status.ERROR);
+                        span.addEvent("queue limit exceeded");
+                    }
+                    span.end(Instant.ofEpochSecond(0, deferredOutcome.waitEnd()));
+                }
+            });
+
+        }
         private TracingConfig configureTracingConfig(RoutingRequest req, Context context) {
             TracingConfig discovered = null;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,9 +101,29 @@ public interface Span {
     void addEvent(String name, Map<String, ?> attributes);
 
     /**
-     * End this tag (finish processing) using current timestamp.
+     * End this span (finish processing) using current timestamp.
      */
     void end();
+
+    /**
+     * End this span using the provided timestamp.
+     *
+     * @param timestamp end time for the span
+     */
+    default void end(Instant timestamp) {
+        end();
+    }
+
+    /**
+     * End this span with an error status using the provided ending time and throwable. Sets the span status to
+     * {@link io.helidon.tracing.Span.Status#ERROR} and adds appropriate tags and events to report the error.
+     *
+     * @param timestamp end time for the span
+     * @param t throwable causing the span to end
+     */
+    default void end(Instant timestamp, Throwable t) {
+        end(t);
+    }
 
     /**
      * End with error status and an exception. Configures status to {@link io.helidon.tracing.Span.Status#ERROR}, and

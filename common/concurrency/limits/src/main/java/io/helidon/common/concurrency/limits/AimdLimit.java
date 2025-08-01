@@ -50,9 +50,11 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     private final AimdLimitConfig config;
     private final AimdLimitImpl aimdLimitImpl;
 
+    private String originName;
+
     private AimdLimit(AimdLimitConfig config) {
         this.config = config;
-        this.aimdLimitImpl = new AimdLimitImpl(config);
+        this.aimdLimitImpl = new AimdLimitImpl(config, originName);
     }
 
     /**
@@ -114,13 +116,28 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
+    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+        return aimdLimitImpl.invoke(callable, outcomeConsumer);
+    }
+
+    @Override
     public void invoke(Runnable runnable) throws Exception {
         aimdLimitImpl.invoke(runnable);
     }
 
     @Override
+    public void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+        aimdLimitImpl.invoke(runnable, outcomeConsumer);
+    }
+
+    @Override
     public Optional<Token> tryAcquire(boolean wait) {
         return aimdLimitImpl.tryAcquire(wait);
+    }
+
+    @Override
+    public Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
+        return aimdLimitImpl.tryAcquire(wait, outcomeConsumer);
     }
 
     @SuppressWarnings("removal")
@@ -151,6 +168,7 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public void init(String socketName) {
+        originName = socketName;
         aimdLimitImpl.initMetrics(socketName, config);
     }
 }

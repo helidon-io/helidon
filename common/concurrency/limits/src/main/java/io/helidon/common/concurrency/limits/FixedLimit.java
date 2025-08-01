@@ -17,6 +17,7 @@
 package io.helidon.common.concurrency.limits;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -33,7 +34,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -72,17 +72,17 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     private final AtomicInteger concurrentRequests;
     private final AtomicInteger rejectedRequests;
     private final int queueLength;
-    private final Tracer tracer;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
+
+    private String originName;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
         this.concurrentRequests = new AtomicInteger();
         this.rejectedRequests = new AtomicInteger();
         this.clock = config.clock().orElseGet(() -> System::nanoTime);
-        tracer = config.enableTracing() ? Tracer.global() : null;
 
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.semaphore = null;
@@ -96,7 +96,8 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
             this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
                                                                     queueLength,
                                                                     config.queueTimeout(),
-                                                                    () -> new FixedLimit.FixedToken(clock, concurrentRequests));
+                                                                    () -> new FixedLimit.FixedToken(clock,
+                                                                                                    concurrentRequests));
         }
     }
 
@@ -167,22 +168,39 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
+        return tryAcquire(wait, outcome -> {});
+    }
+
+    @Override
+    public Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
+        Objects.requireNonNull(outcomeConsumer, "limit algorithm outcome consumer cannot be null");
         Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
         if (token.isPresent()) {
+            LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName, TYPE);
+            if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
+                outcomeAwareToken.outcome(outcome);
+            }
+            outcomeConsumer.accept(outcome);
             return token;
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            var limitSpan = LimitSpan.create(tracer, "fixed");
             token = handler.tryAcquire(true);
+            long endWait = clock.get();
             if (token.isPresent()) {
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
+                LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName, TYPE, startWait, endWait);
+                if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
+                    outcomeAwareToken.outcome(outcome);
                 }
-                limitSpan.close();
+                outcomeConsumer.accept(outcome);
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
+                }
                 return token;
             }
-            limitSpan.closeWithError();
+            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, TYPE, startWait, endWait));
+        } else {
+            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, TYPE));
         }
         rejectedRequests.getAndIncrement();
         return token;
@@ -190,7 +208,13 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     @Override
     public <T> T invoke(Callable<T> callable) throws Exception {
-        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true);
+        return invoke(callable, outcome -> {});
+    }
+
+    @Override
+    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+
+        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true, outcomeConsumer);
         if (optionalToken.isPresent()) {
             LimitAlgorithm.Token token = optionalToken.get();
             try {
@@ -218,10 +242,15 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     @Override
     public void invoke(Runnable runnable) throws Exception {
+        invoke(runnable, outcome -> {});
+    }
+
+    @Override
+    public void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
         invoke(() -> {
             runnable.run();
             return null;
-        });
+        }, outcomeConsumer);
     }
 
     @SuppressWarnings("removal")
@@ -265,6 +294,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
      */
     @Override
     public void init(String socketName) {
+        originName = socketName;
         if (config.enableMetrics()) {
             MetricsFactory metricsFactory = MetricsFactory.getInstance();
             MeterRegistry meterRegistry = Metrics.globalRegistry();
@@ -321,7 +351,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
     }
 
-    private class FixedToken implements Limit.Token {
+    private class FixedToken extends OutcomeAwareToken {
         private final long startTime;
 
         private FixedToken(Supplier<Long> clock, AtomicInteger concurrentRequests) {
@@ -332,6 +362,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         @Override
         public void dropped() {
             try {
+                super.dropped();
                 updateMetrics(startTime, clock.get());
             } finally {
                 semaphore.release();
@@ -341,6 +372,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         @Override
         public void ignore() {
             concurrentRequests.decrementAndGet();
+            super.ignore();
             semaphore.release();
         }
 
@@ -349,6 +381,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
             try {
                 updateMetrics(startTime, clock.get());
                 concurrentRequests.decrementAndGet();
+                super.success();
             } finally {
                 semaphore.release();
             }
