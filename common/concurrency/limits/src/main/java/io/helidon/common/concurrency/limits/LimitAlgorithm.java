@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 /**
  * Concurrency limit algorithm.
@@ -31,7 +32,7 @@ public interface LimitAlgorithm {
     /**
      * Invoke a callable within the limits of this limiter.
      * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
+     * {@link io.helidon.common.concurrency.limits.Limit} implementor's note:
      * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
      * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
      * or throw the exception after ignoring the timing for future decisions.
@@ -62,9 +63,34 @@ public interface LimitAlgorithm {
     }
 
     /**
+     * Invoke a callable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
+     * {@link io.helidon.common.concurrency.limits.LimitOutcome} resulting from applying the limit algorithm.
+     * <p>
+     * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
+     * <ul>
+     * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
+     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
+     * or throw the exception after ignoring the timing for future decisions.</li>
+     * <li>Make sure the {@code outcomeConsumer} is non-null, and after determining the disposition of the item of work create
+     * a suitable {@code LimitOutcome} and pass it to the consumer. Also, make sure to use an outcome-aware token internally so
+     * when the caller invokes the token's methods the outcome is updated accordingly.</li>
+     * </ul>
+     *
+     * @param callable        callable to execute within the limit
+     * @param outcomeConsumer consumer of the outcome
+     * @param <T>             the callable return type
+     * @return result of the callable
+     * @throws LimitException      in case the limiter did not have an available permit
+     * @throws java.lang.Exception in case the task failed with an exception
+     */
+    default <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws LimitException, Exception {
+        return invoke(callable);
+    }
+
+    /**
      * Invoke a runnable within the limits of this limiter.
      * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
+     * {@link io.helidon.common.concurrency.limits.Limit} implementor's note:
      * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
      * runnable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
      * or throw the exception after ignoring the timing for future decisions.
@@ -89,6 +115,29 @@ public interface LimitAlgorithm {
             permit.dropped();
             throw e;
         }
+    }
+
+    /**
+     * Invoke a runnable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
+     * {@link io.helidon.common.concurrency.limits.LimitOutcome} resulting from applying the limit algorithm.
+     * <p>
+     * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
+     * <ul>
+     * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
+     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
+     * or throw the exception after ignoring the timing for future decisions.</li>
+     * <li>Make sure the {@code outcomeConsumer} is non-null, and after determining the disposition of the item of work create
+     * a suitable {@code LimitOutcome} and pass it to the consumer. Also, make sure to use an outcome-aware token internally so
+     * when the caller invokes the token's methods the outcome is updated accordingly.</li>
+     * </ul>
+     *
+     * @param runnable        runnable to execute within the limit
+     * @param outcomeConsumer consumer of the outcome
+     * @throws LimitException      in case the limiter did not have an available permit
+     * @throws java.lang.Exception in case the task failed with an exception
+     */
+    default void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+        invoke(runnable);
     }
 
     /**
@@ -118,10 +167,31 @@ public interface LimitAlgorithm {
     Optional<Token> tryAcquire(boolean wait);
 
     /**
+     * Tries to acquire a token, waiting for available permits for the configured amount of time, if
+     * {@code wait} is enabled, returning immediately otherwise. Concrete implementations should invoke the provided
+     * {@code outcomeConsumer}.
+     * <p>
+     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
+     * operations to release the token.
+     * If the response is empty, the limit does not have an available token.
+     *
+     * @param wait whether to wait in the queue (if one is configured/available in the limit), or to return immediately
+     * @param outcomeConsumer consumer to accept the outcome
+     * @return acquired token, or empty if there is no available token
+     */
+    default Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
+        return tryAcquire(wait);
+    }
+
+    /**
      * When a token is retrieved from {@link #tryAcquire()}, one of its methods must be called when the task
      * is over, to release the token back to the pool (such as a permit returned to a {@link java.util.concurrent.Semaphore}).
      * <p>
      * Choice of method to invoke may influence the algorithm used for determining number of available permits.
+     * <p>
+     * Implementations of {@code Token} should be updated by their limit implementations with the
+     * appropriate {@link io.helidon.common.concurrency.limits.LimitOutcome} instance so the token can update the outcome
+     * depending on which token method is invoked (dropped, ignore, or success).
      */
     interface Token {
         /**

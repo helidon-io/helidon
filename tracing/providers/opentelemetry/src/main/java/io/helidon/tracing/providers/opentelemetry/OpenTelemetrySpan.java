@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -116,10 +117,21 @@ class OpenTelemetrySpan implements Span {
     }
 
     @Override
+    public void end(Instant timestamp) {
+        delegate.end(timestamp);
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, (listener -> listener.ended(limited())));
+    }
+
+    @Override
     public void end(Throwable t) {
+        end(Instant.now(), t);
+    }
+
+    @Override
+    public void end(Instant timestamp, Throwable t) {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
-        delegate.end();
+        delegate.end(timestamp);
         HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited(), t));
     }
 
