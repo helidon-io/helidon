@@ -28,13 +28,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = TimeoutConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.timeouts")
-interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
-    /**
-     * Name for debugging, error reporting, monitoring.
-     *
-     * @return name of this timeout
-     */
-    Optional<String> name();
+interface TimeoutConfigBlueprint extends CommonHandlerConfig, Prototype.Factory<Timeout> {
 
     /**
      * Duration to wait before timing out.

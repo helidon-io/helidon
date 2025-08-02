@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -38,9 +39,10 @@ class TimeoutImpl implements Timeout {
     private final String name;
     private final TimeoutConfig config;
     private final boolean metricsEnabled;
-
-    private Counter callsCounterMetric;
-    private Timer executionDurationMetric;
+    @SuppressWarnings("rawtypes")
+    private final Function<Supplier, Object> function;
+    private final Counter callsCounterMetric;
+    private final Timer executionDurationMetric;
 
     @Service.Inject
     TimeoutImpl(TimeoutConfig config) {
@@ -50,11 +52,23 @@ class TimeoutImpl implements Timeout {
         this.name = config.name().orElseGet(() -> "timeout-" + System.identityHashCode(config));
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        boolean metricsEnabled;
+        if (config.enabled()) {
+            function = this::realInvoke;
+            metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        } else {
+            function = Supplier::get;
+            metricsEnabled = false;
+        }
+
+        this.metricsEnabled = metricsEnabled;
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_TIMEOUT_CALLS_TOTAL, nameTag);
             executionDurationMetric = MetricsUtils.timerBuilder(FT_TIMEOUT_EXECUTIONDURATION, nameTag);
+        } else {
+            callsCounterMetric = null;
+            executionDurationMetric = null;
         }
     }
 
@@ -68,8 +82,14 @@ class TimeoutImpl implements Timeout {
         return name;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
+        // if disabled, just call the supplier, if enabled, call real invoke
+        return (T) function.apply(supplier);
+    }
+
+    private <T> T realInvoke(Supplier<? extends T> supplier) {
         if (metricsEnabled) {
             callsCounterMetric.increment();
         }

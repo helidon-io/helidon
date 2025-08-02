@@ -21,12 +21,12 @@ Rules for Helidon Declarative:
    type (example: fault tolerance fallback needs to invoke a fallback method, as this would require reflection, there is a
    generated type such as `GreetEndpoint_failingFallback__Fallback` that is named with the unique identification of the method it
    is generated for, and has the required code generated, the interceptor for fallback then looks it up at runtime to correctly
-   handle invocation)
+   handle invocation, or implements an `io.helidon.service.registry.Interception.ElementInterceptor` that intercepts one specific
+   element)
 5. If there is a good reason the user may want to override configuration in annotations with config, generate the code
-   appropriately (the configuration key should be <fully qualified class name>.<(method | field) name>.<type>, i.e.
-   `io.helidon.examples.decalarative.HttpEndpoint.retriable.retry`), or an explicit key configured on the annotation
+   appropriately, see `io.helidon.declarative.codegen.TypeConfigOverrides`, and the configuration section below
 6. If there is a good reason the user may want to use a custom named service implementation, provide a way to inject it (see Retry
-   generated code for named retries, such as `GreetEndpoint_retriable__Retry.java`)
+   generated code for named retries, such as `GreetServiceEndpoint_retriable__Retry.java`)
 7. All features must be configured through service registry.
 
 A few codegen features that are available:
@@ -52,7 +52,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 | Fault Tolerance  | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
 | GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
 | WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
-| Security         | `Secured`                            | `Security` cannot be freed (big API)                      |
+| Security         | `Secured`                            | `Security` cannot be freed (big API), existing annots.    |
 | Messaging        | `Messages`                           | `Messaging` cannot be freed                               |
 | Scheduling       | `Scheduling`                         | Deprecate methods and current types for removal           |
 | Health           | `Health`                             | OK                                                        |
@@ -79,13 +79,12 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 
 The following Helidon features can be used to create a new declarative feature
 
-TODO: metrics, tracing - maybe allow update of service code
-
 1. Interceptors - metrics, tracing, logging etc.
 2. Injection (service factory) - for any feature where we expect the user to inject a specific service that the feature provides (
    AI, declarative rest client etc.)
 3. Code generation - for any feature that needs additional code to minimize runtime lookups and handling; ideally we should have
-   injection points that can be bound at build time (as opposed to runtime registry lookups)
+   injection points that can be bound at build time (as opposed to runtime registry lookups) - see
+   `Interception.ElementInterceptor` for generating code specific to a single method
 
 # Declarative Codegen Module
 
@@ -138,7 +137,8 @@ Annotations on method(s), may be defined on the endpoint type, or on an interfac
   method will be available on
 - `@Http.Produces` - the media type produced by this method (returned in the `Content-Type` header), also used when matching the
   `Accept` header of the request
-- `@Http.Consumes` - the media type expected by this method, when the request has an entity
+- `@Http.Consumes` - the media type expected by this method, when the request has an entity, matched against `Content-Type` of
+  the request
 - `@Http.Path` - the path this method will be available on, nested within the endpoint path, may contain path parameters (same as
   we can do when setting up routing)
 
@@ -158,6 +158,117 @@ Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 - `@Http.Entity` - the HTTP request entity
 
 ### Configuration
+
+Some annotation values may be overridden by configuration. The developer of the feature may decide to support this approach,
+though if supported, it must follow the guidelines defined here.
+
+Rules that a component does not need to understand, when using `io.helidon.declarative.codegen.TypeConfigOverrides`:
+
+1. There is a root configuration key `type-overrides`
+2. Under this key, a fully qualified class name of the annotated type is used as a key for overriding configuration of annotations
+   on a type
+3. Next key is either `methods` (reserved keyword), or key of an annotation (details below)
+4. In case `methods` is present, next level is either the method name, or unique method signature (i.e. either `greet`, or
+   `greet(java.lang.String)`), this is to allow overriding possibilities for methods with the same name
+5. Once again, under a method name/signature is a key of an annotation (details below)
+
+Annotation keys:
+
+The annotation key is created as a configuration key of the "container" class + `.` + configuration key of the annotation class +
+`.` + configuration key of the property name.
+Not all properties can be overridden, this depends on the feature developer, and this should be documented in javadoc.
+
+Configuration key is dash separated words, i.e. `RestServer` class will have `rest-server` configuration key.
+
+For example for property `RestServer.Listener.value()`, the configuration key would be `rest-server.listener.value`.
+For a theoretical type `com.example.MyType`, the result would be:
+
+`type-overrides.com.example.MyType.rest-server.listener.value`
+
+Now we have a split, that has the same sub-rules - either we configure something under the type (i.e. on same level as `methods`),
+or we configure something under a specific method (i.e. `type-overrides.fq-class-name.methods.method-name`).
+
+Helidon features (existing):
+
+| config key                             | Property                               | Notes                                                                                                         |
+|----------------------------------------|----------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `rest-server.listener.value`           | `RestServer.Listener.value()`          | name of the socket to listen on                                                                               |
+| `rest-server.status.value`             | `RestServer.Status.value()`            | HTTP status code (i.e. `201`)                                                                                 |
+| `rest-server.status.reason`            | `RestServer.Status.reason()`           | unless specified by annotation, defaults to the reason for the provided code                                  |
+| `rest-client.endpoint.value`           | `RestClient.Endpoint.value()`          | URI of the client (without path)                                                                              |
+| `rest-client.webclient`                | N/A                                    | Configuration for `WebClient`                                                                                 |
+| `http.path.value`                      | `Http.Path.value()`                    | Path of the component, on server endpoint for server, on type annotated with `RestClient.Endpoint` for client |
+| `ft.async.name`                        | `Ft.Async.name()`                      |                                                                                                               |
+| `ft.async.enabled`                     | N/A                                    | Set to `false` to disable this async                                                                          |              
+| `ft.timeout.name`                      | `Ft.Timeout.name()`                    |                                                                                                               |
+| `ft.timeout.time`                      | `Ft.Timeout.time()`                    | Duration string (i.e. `PT10S`)                                                                                |
+| `ft.timeout.currentThread`             | `Ft.Timeout.currentThread()`           |                                                                                                               |
+| `ft.timeout.enabled`                   | N/A                                    | Set to `false` to disable the timeout                                                                         |
+| `ft.bulkhead.name`                     | `Ft.Bulkhead.name()`                   |                                                                                                               |
+| `ft.bulkhead.limit`                    | `Ft.Bulkhead.limit()`                  |                                                                                                               |
+| `ft.bulkhead.queue-length`             | `Ft.Bulkhead.queueLength()`            |                                                                                                               |
+| `ft.bulkhead.enabled`                  | N/A                                    | Set to `false` to disable the bulkhead                                                                        |
+| `ft.circuit-breakder.name`             | `Ft.CircuitBreakder.name()`            |                                                                                                               |
+| `ft.circuit-breaker.delay`             | `Ft.CircuitBreaker.delay()`            | Duration string (i.e. `PT5S`)                                                                                 |
+| `ft.circuit-breaker.error-ratio`       | `Ft.CircuitBreaker.errorRatio()`       | integer                                                                                                       |
+| `ft.circuit-breaker.volume`            | `Ft.CircuitBreaker.volume()`           | integer                                                                                                       |
+| `ft.circuit-breaker.success-threshold` | `Ft.CircuitBreaker.successThreshold()` | integer                                                                                                       |
+| `ft.circuit-breaker.skip-on`           | `Ft.CircuitBreaker.skipOn()`           | List of classes (Throwables)                                                                                  |
+| `ft.circuit-breaker.apply-on`          | `Ft.CircuitBreaker.applyOn()`          | List of classes (Throwables)                                                                                  |
+| `ft.circuit-breakder.enabled`          | N/A                                    | Set to `false` to disable the bulkhead                                                                        |
+| `ft.retry.name`                        | `Ft.Retry.name()`                      |                                                                                                               |
+| `ft.retry.calls`                       | `Ft.Retry.calls()`                     | integer                                                                                                       |
+| `ft.retry.delay`                       | `Ft.Retry.delay()`                     | Duration string (i.e. `PT0.2S`)                                                                               |
+| `ft.retry.delay-factor`                | `Ft.Retry.delayFactor()`               | double                                                                                                        |
+| `ft.retry.jitter`                      | `Ft.Retry.jitter()`                    | duration string (i.e. `PT1S`)                                                                                 |
+| `ft.retry.overall-timeout`             | `Ft.Retry.overallTimeout()`            | Duration string (i.e. `PT1S`)                                                                                 |
+| `ft.retry.skip-on`                     | `Ft.Retry.skipOn()`                    | List of classes (Throwable)                                                                                   |
+| `ft.retry.apply-on`                    | `Ft.Retry.applyOn()`                   | List of classes (Throwable)                                                                                   |
+| `ft.retry.enabled`                     | N/A                                    | Set to `false` to disable the retry                                                                           |
+| `ft.fallback.skip-on`                  | `Ft.Fallback.skipOn()`                 | List of classes (Throwable)                                                                                   |
+| `ft.fallback.apply-on`                 | `Ft.Fallback.applyOn()`                | List of classes (Throwable)                                                                                   |
+| `ft.fallback.enabled`                  | N/A                                    | Set to `false` to disable the fallback                                                                        |
+| `scheduling.fixed-rate.value`          | `Scheduling.FixedRate.value()`         | Duration string (i.e. `PT10M`)                                                                                |
+| `scheduling.fixed-rate.delay-by`       | `Scheduling.FixedRate.delayBy()`       | Duration string (i.e. `PT0S`)                                                                                 |
+| `scheduling.fixed-rate.delay-type`     | `Scheduling.FixedRate.delayType()`     | Enum `io.helidon.scheduling.FixedRate.DelayType`                                                              |
+| `scheduling.fixed-rate.enabled`        | N/A                                    | Set to `false` to disable this scheduled task                                                                 |
+| `scheduling.cron.value`                | `Scheduling.Cron.value()`              | Cron expression                                                                                               |
+| `scheduling.cron.concurrent`           | `Scheduling.Cron.concurrent()`         | boolean                                                                                                       |
+| `scheduling.cron.enabled`              | N/A                                    | Set to `false` to disable this scheduled task                                                                 |
+
+Helidon features (planned):
+
+| config key   | Feature     | Notes                                   |
+|--------------|-------------|-----------------------------------------|
+| `rpc-client` | Grpc client | may contain `uri` and `web-client` etc. |
+| `rpc-server` | Grpc server | may contain `listener` etc.             |
+| `security`   | Security    | may contain `roles-allowed` etc.        |
+| `counter`    | Metrics     | Counter metric                          |
+
+Other features must be added as they are being developed
+
+Documented example:
+
+```yaml
+type-overrides:
+  "com.example.MyType":
+    rest-server:
+      listener: "admin" # override socket name
+    http.path: "/greeting"  
+    rest-client:
+      endpoint.value: "uri-to-invoke"
+      webclient:
+      # the full WebClientConfig
+    methods:
+      myMethod:
+        ft.retry:
+          calls: 4
+      "myMethod(java.lang.String,java.util.List)":
+        ft.retry:
+          enabled: false
+
+
+```
 
 TODO: we must have Listener name configurable per rest server endpoint
 There are currently no configurable options for HTTP endpoints.

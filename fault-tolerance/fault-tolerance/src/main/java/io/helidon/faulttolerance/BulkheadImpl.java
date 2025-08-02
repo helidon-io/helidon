@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -54,9 +55,10 @@ class BulkheadImpl implements Bulkhead {
     private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
     private final BulkheadConfig config;
     private final boolean metricsEnabled;
-
-    private Counter callsCounterMetric;
-    private Timer waitingDurationMetric;
+    @SuppressWarnings("rawtypes")
+    private final Function<Supplier, Object> function;
+    private final Counter callsCounterMetric;
+    private final Timer waitingDurationMetric;
 
     @Service.Inject
     BulkheadImpl(BulkheadConfig config) {
@@ -69,7 +71,16 @@ class BulkheadImpl implements Bulkhead {
         this.inProgressLock = new ReentrantLock(true);
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        boolean metricsEnabled;
+        if (config.enabled()) {
+            function = this::realInvoke;
+            metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        } else {
+            function = Supplier::get;
+            metricsEnabled = false;
+        }
+
+        this.metricsEnabled = metricsEnabled;
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_BULKHEAD_CALLS_TOTAL, nameTag);
@@ -77,6 +88,9 @@ class BulkheadImpl implements Bulkhead {
             MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSRUNNING, concurrentExecutions::get, nameTag);
             MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSWAITING, callsWaiting::get, nameTag);
             MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSREJECTED, callsRejected::get, nameTag);
+        } else {
+            callsCounterMetric = null;
+            waitingDurationMetric = null;
         }
     }
 
@@ -90,8 +104,14 @@ class BulkheadImpl implements Bulkhead {
         return name;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
+        // if disabled, just call the supplier, if enabled, call real invoke
+        return (T) function.apply(supplier);
+    }
+
+    private <T> T realInvoke(Supplier<? extends T> supplier) {
         // we need to hold the lock until we decide what to do with this request
         // cannot release it in between attempts, as that would give window for another thread to change the state
         inProgressLock.lock();
