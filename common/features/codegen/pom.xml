@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common.features</groupId>
         <artifactId>helidon-common-features-project</artifactId>
-        <version>4.3.0-M1-SNAPSHOT</version>
+        <version>4.3.0-M1</version>
     </parent>
     <artifactId>helidon-common-features-codegen</artifactId>
     <name>Helidon Common Features Codegen</name>

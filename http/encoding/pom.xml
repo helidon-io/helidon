@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.http</groupId>
         <artifactId>helidon-http-project</artifactId>
-        <version>4.3.0-M1-SNAPSHOT</version>
+        <version>4.3.0-M1</version>
     </parent>
 
     <groupId>io.helidon.http.encoding</groupId>

@@ -23,7 +23,7 @@
         <!-- we cannot change the group id, as it would be backward incompatible change -->
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-context-project</artifactId>
-        <version>4.3.0-M1-SNAPSHOT</version>
+        <version>4.3.0-M1</version>
     </parent>
 
     <artifactId>helidon-common-context</artifactId>
