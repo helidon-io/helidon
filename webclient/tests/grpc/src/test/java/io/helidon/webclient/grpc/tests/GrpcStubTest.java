@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,12 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
+
+import io.grpc.StatusException;
+import io.grpc.stub.BlockingClientCall;
+import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import io.grpc.stub.StreamObserver;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -120,6 +122,16 @@ class GrpcStubTest extends GrpcBaseTest {
     }
 
     @Test
+    void testServerStreamingSplitV2() throws InterruptedException, StatusException, TimeoutException {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingV2Stub service = StringServiceGrpc.newBlockingV2Stub(grpcClient.channel());
+        BlockingClientCall<?, Strings.StringMessage> call = service.split(newStringMessage("hello world"));
+        assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("hello"));
+        assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("world"));
+        assertThat(call.hasNext(), is(false));
+    }
+
+    @Test
     void testClientStreamingJoinAsync() throws ExecutionException, InterruptedException, TimeoutException {
         GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
         StringServiceGrpc.StringServiceStub service = StringServiceGrpc.newStub(grpcClient.channel());
@@ -129,6 +141,18 @@ class GrpcStubTest extends GrpcBaseTest {
         req.onNext(newStringMessage("world"));
         req.onCompleted();
         Strings.StringMessage res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        assertThat(res.getText(), is("hello world"));
+    }
+
+    @Test
+    void testClientStreamingJoinV2() throws InterruptedException, TimeoutException, StatusException {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingV2Stub service = StringServiceGrpc.newBlockingV2Stub(grpcClient.channel());
+        BlockingClientCall<Strings.StringMessage, Strings.StringMessage> call = service.join();
+        call.write(newStringMessage("hello"));
+        call.write(newStringMessage("world"));
+        call.halfClose();
+        Strings.StringMessage res = call.read(100, TimeUnit.MILLISECONDS);
         assertThat(res.getText(), is("hello world"));
     }
 
@@ -145,6 +169,26 @@ class GrpcStubTest extends GrpcBaseTest {
         assertThat(res.next().getText(), is("hello"));
         assertThat(res.next().getText(), is("world"));
         assertThat(res.hasNext(), is(false));
+    }
+
+    @Test
+    void testBidirectionalEchoV2() throws InterruptedException, TimeoutException, StatusException, ExecutionException {
+        GrpcClient grpcClient = webClient.client(GrpcClient.PROTOCOL);
+        StringServiceGrpc.StringServiceBlockingV2Stub service = StringServiceGrpc.newBlockingV2Stub(grpcClient.channel());
+        BlockingClientCall<Strings.StringMessage, Strings.StringMessage> call = service.echo();
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            try {
+                assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("hello"));
+                assertThat(call.read(100, TimeUnit.MILLISECONDS).getText(), is("world"));
+                assertThat(call.hasNext(), is(false));
+            } catch (InterruptedException | TimeoutException | StatusException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        assertThat(call.write(newStringMessage("hello")), is(true));
+        assertThat(call.write(newStringMessage("world")), is(true));
+        call.halfClose();
+        future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
