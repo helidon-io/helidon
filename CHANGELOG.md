@@ -11,6 +11,29 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.2.5]
+
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- Config: Common config now has a config factory [10474](https://github.com/helidon-io/helidon/pull/10474)
+- Config: Remove deprecation of Config.global() getter [10392](https://github.com/helidon-io/helidon/pull/10392)
+- Config: Services.set for config will set both config contracts [10475](https://github.com/helidon-io/helidon/pull/10475)
+- Config: Update to correctly handle global config without issuing a warning [10444](https://github.com/helidon-io/helidon/pull/10444)
+- gRPC: Decrease log level severity when a stream timeout is retried [10467](https://github.com/helidon-io/helidon/pull/10467)
+- gRPC: grpc changes for proper event notification and tracing span propagation [10466](https://github.com/helidon-io/helidon/pull/10466)
+- Health: Add ability to exclude health checks by name; clarify doc [10465](https://github.com/helidon-io/helidon/pull/10465)
+- Native Image: Update to h2 database native image support [10468](https://github.com/helidon-io/helidon/pull/10468)
+- Tracing: Handle single baggage header with multiple assignments; add test [10479](https://github.com/helidon-io/helidon/pull/10479)
+- Dependencies: commons lang 3.18.0 [10417](https://github.com/helidon-io/helidon/pull/10417)
+- Dependencies: Upgrade gson to 2.13.1  [10418](https://github.com/helidon-io/helidon/pull/10418)
+- Dependencies: Upgrade protobuf to 3.25.8 [10461](https://github.com/helidon-io/helidon/pull/10461)
+- Dependencies: Uptake build-tools 4.0.20 (#10481) [10482](https://github.com/helidon-io/helidon/pull/10482)
+- Docs: remove use of Config.global(config) setter [10478](https://github.com/helidon-io/helidon/pull/10478)
+
 ## [4.2.4]
 
 This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
@@ -1837,6 +1860,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.2.5]: https://github.com/oracle/helidon/compare/4.2.4...4.2.5
 [4.2.4]: https://github.com/oracle/helidon/compare/4.2.3...4.2.4
 [4.2.3]: https://github.com/oracle/helidon/compare/4.2.2...4.2.3
 [4.2.2]: https://github.com/oracle/helidon/compare/4.2.1...4.2.2
