@@ -34,4 +34,8 @@ module io.helidon.webserver.concurrency.limits {
             with io.helidon.webserver.concurrency.limits.LimitsFeatureProvider;
 
     uses io.helidon.common.concurrency.limits.spi.LimitProvider;
+    uses io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
+
+    provides io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider
+            with io.helidon.webserver.concurrency.limits.LimitAlgorithmTracingListenerProvider;
 }
