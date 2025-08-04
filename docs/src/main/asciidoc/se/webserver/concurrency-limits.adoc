@@ -234,8 +234,16 @@ server:
       permits: 1000
       queue-length: 200
       queue-timeout: PT1S
-      enable-tracing: true       # <1>
+      listeners:
+        tracing:              # <1>
 ----
-<1> Turns on tracing to add a span for queued wait time.
+<1> Turns on tracing--simply by mentioning it--to add a span for queued wait time.
 
+The tracing listener configuration above is equivalent to the following:
+[source,yaml]
+----
+      listeners:
+        tracing:
+          enabled: true
+----
 Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the xref:{tracing-page}[Helidon tracing] documentation for more information.

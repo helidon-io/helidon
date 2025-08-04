@@ -196,7 +196,7 @@ public interface LimitAlgorithm {
      * <p>
      * Implementations of {@code Token} should be updated by their limit implementations with the
      * appropriate {@link io.helidon.common.concurrency.limits.LimitOutcome} instance so the token can update the outcome
-     * depending on which token method is invoked (dropped, ignore, or success).
+     * and any known listeners depending on which token method is invoked (dropped, ignore, or success).
      */
     interface Token {
         /**

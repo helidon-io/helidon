@@ -16,12 +16,14 @@
 
 package io.helidon.common.concurrency.limits;
 
+import io.helidon.common.config.NamedService;
+
 /**
  * Listener to events related to a limit algorithm's processing of a work item (e.g., an incoming HTTP request).
  *
  * @param <CTX> type of the listener context provided by this listener
  */
-public interface LimitAlgorithmListener<CTX extends LimitAlgorithmListener.Context> {
+public interface LimitAlgorithmListener<CTX extends LimitAlgorithmListener.Context> extends NamedService {
 
     /**
      * Indicates if the listener is enabled or not.

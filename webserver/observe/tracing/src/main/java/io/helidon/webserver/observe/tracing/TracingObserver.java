@@ -19,7 +19,6 @@ package io.helidon.webserver.observe.tracing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,11 +30,6 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
-import io.helidon.common.concurrency.limits.AimdLimit;
-import io.helidon.common.concurrency.limits.FixedLimit;
-import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
-import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
@@ -295,7 +289,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 return;
             }
 
-            tracingListenerContext.get().process(tracer, inboundSpanContext);
+            tracingListenerContext.get().createWaitingSpan(tracer, inboundSpanContext);
         }
 
         private TracingConfig configureTracingConfig(RoutingRequest req, Context context) {

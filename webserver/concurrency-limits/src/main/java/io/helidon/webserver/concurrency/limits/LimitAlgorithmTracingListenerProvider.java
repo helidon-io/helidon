@@ -16,22 +16,20 @@
 
 package io.helidon.webserver.concurrency.limits;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
+import io.helidon.common.config.Config;
+import io.helidon.service.registry.Service;
 
-/**
- * Settings for the tracing {@link io.helidon.common.concurrency.limits.LimitAlgorithmListener}.
- */
-@Prototype.Blueprint()
-@Prototype.Configured(root = false)
-interface LimitAlgorithmTracingListenerConfigBlueprint extends Prototype.Factory<LimitAlgorithmTracingListener> {
+@Service.Singleton
+public class LimitAlgorithmTracingListenerProvider implements LimitAlgorithmListenerProvider {
+    @Override
+    public String configKey() {
+        return "tracing";
+    }
 
-    /**
-     * Whether the tracing limit algorithm listener is enabled.
-     *
-     * @return true if the listener is enabled; false otherwise
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(true)
-    boolean enabled();
+    @Override
+    public LimitAlgorithmListener create(Config config, String name) {
+        return LimitAlgorithmTracingListener.builder().config(config).build();
+    }
 }

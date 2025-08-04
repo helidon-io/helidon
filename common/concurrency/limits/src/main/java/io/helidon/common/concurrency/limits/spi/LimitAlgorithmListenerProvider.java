@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.concurrency.limits;
+package io.helidon.common.concurrency.limits.spi;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.service.registry.Service;
 
 /**
- * Settings for the tracing {@link io.helidon.common.concurrency.limits.LimitAlgorithmListener}.
+ * Provider for {@link io.helidon.common.concurrency.limits.LimitAlgorithmListener}.
  */
-@Prototype.Blueprint()
-@Prototype.Configured(root = false)
-interface LimitAlgorithmTracingListenerConfigBlueprint extends Prototype.Factory<LimitAlgorithmTracingListener> {
-
-    /**
-     * Whether the tracing limit algorithm listener is enabled.
-     *
-     * @return true if the listener is enabled; false otherwise
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(true)
-    boolean enabled();
+@Service.Contract
+@SuppressWarnings("rawtypes")
+public interface LimitAlgorithmListenerProvider extends ConfiguredProvider<LimitAlgorithmListener> {
 }

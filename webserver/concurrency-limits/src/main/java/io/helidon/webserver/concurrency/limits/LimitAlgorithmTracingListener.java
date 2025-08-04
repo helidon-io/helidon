@@ -31,33 +31,44 @@ import io.helidon.tracing.Tracer;
 public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<LimitAlgorithmTracingListener.Context>,
                                                        RuntimeType.Api<LimitAlgorithmTracingListenerConfig> {
 
+    /**
+     * Create a new builder for a tracing listener.
+     *
+     * @return new builder
+     */
     static LimitAlgorithmTracingListenerConfig.Builder builder() {
         return LimitAlgorithmTracingListenerConfig.builder();
     }
 
+    /**
+     * Create a default tracing listener.
+     *
+     * @return new tracing listener with default settings
+     */
     static LimitAlgorithmTracingListener create() {
         return builder().build();
     }
 
+    /**
+     * Create a new tracing listener using the specified settings
+     *
+     * @param config settings for building the new listener
+     * @return new listener configured using the specified settings
+     */
     static LimitAlgorithmTracingListener create(LimitAlgorithmTracingListenerConfig config) {
         return new LimitAlgorithmTracingListenerImpl(config);
     }
 
+    /**
+     * Create a new tracing listener from a builder, customizing the builder's settings.
+     *
+     * @param consumer consumer of the builder, modifying the builder as needed
+     * @return new tracing listener
+     */
     static LimitAlgorithmTracingListener create(Consumer<LimitAlgorithmTracingListenerConfig.Builder> consumer) {
         return builder()
                 .update(consumer)
                 .build();
-    }
-
-
-    interface Context extends LimitAlgorithmListener.Context {
-
-        default boolean isRecordable() {
-            return false;
-        }
-
-        default void process(Tracer tracer, Optional<SpanContext> spanContext) {
-        }
     }
 
     /**
@@ -66,4 +77,28 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
      * @return true if enabled; false otherwise
      */
     boolean enabled();
+
+    /**
+     * Limit tracing listener context.
+     */
+    interface Context extends LimitAlgorithmListener.Context {
+
+        /**
+         * Indicates if the context represents a limit decision that should be recorded as a tracing span.
+         *
+         * @return true if a span should be recorded for this context; false otherwise
+         */
+        default boolean isRecordable() {
+            return false;
+        }
+
+        /**
+         * Create a tracing span for the limits decision represented by this context.
+         *
+         * @param tracer the {@link io.helidon.tracing.Tracer} to use in creating the span
+         * @param spanContext the parent {@link io.helidon.tracing.SpanContext} to use in creating the span, if any
+         */
+        default void createWaitingSpan(Tracer tracer, Optional<SpanContext> spanContext) {
+        }
+    }
 }

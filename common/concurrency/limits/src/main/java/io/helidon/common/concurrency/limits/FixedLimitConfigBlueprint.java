@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
@@ -116,15 +117,6 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     boolean enableMetrics();
 
     /**
-     * Whether to create tracing spans for waiting periods.
-     *
-     * @return tracing flag
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean enableTracing();
-
-    /**
      * {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener Limit algorithm listeners}.
      *
      * @return limit algorithm listeners
@@ -132,6 +124,8 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     @SuppressWarnings("rawtypes")
     @Option.Singular
     @Option.RegistryService
+    @Option.Configured
+    @Option.Provider(value = LimitAlgorithmListenerProvider.class)
     List<LimitAlgorithmListener> listeners();
 
     /**

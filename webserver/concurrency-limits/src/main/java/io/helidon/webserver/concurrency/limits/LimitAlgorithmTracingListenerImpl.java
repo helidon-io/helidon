@@ -30,15 +30,25 @@ final class LimitAlgorithmTracingListenerImpl implements LimitAlgorithmTracingLi
 
     private static final Context NO_OP_CONTEXT = new Context();
 
-    private final boolean enabled;
+    private final LimitAlgorithmTracingListenerConfig config;
 
     LimitAlgorithmTracingListenerImpl(LimitAlgorithmTracingListenerConfig config) {
-        this.enabled = config.enabled();
+        this.config = config;
+    }
+
+    @Override
+    public String name() {
+        return "tracing";
+    }
+
+    @Override
+    public String type() {
+        return "tracing";
     }
 
     @Override
     public boolean enabled() {
-        return enabled;
+        return config.enabled();
     }
 
     @Override
@@ -60,11 +70,10 @@ final class LimitAlgorithmTracingListenerImpl implements LimitAlgorithmTracingLi
 
     @Override
     public LimitAlgorithmTracingListenerConfig prototype() {
-        return null;
+        return config;
     }
 
     static class Context implements LimitAlgorithmTracingListener.Context {
-
     }
 
     static class DeferredDispositionContext extends Context {
@@ -92,7 +101,7 @@ final class LimitAlgorithmTracingListenerImpl implements LimitAlgorithmTracingLi
         }
 
         @Override
-        public void process(Tracer tracer, Optional<SpanContext> parentSpanContext) {
+        public void createWaitingSpan(Tracer tracer, Optional<SpanContext> parentSpanContext) {
             /*
             The caller should not have invoked this method if the context is not recordable, but check again anyway.
              */

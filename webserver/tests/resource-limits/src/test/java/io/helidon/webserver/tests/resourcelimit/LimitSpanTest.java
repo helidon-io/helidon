@@ -18,16 +18,23 @@ package io.helidon.webserver.tests.resourcelimit;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.imageio.spi.ServiceRegistry;
+
 import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.config.Config;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -81,12 +88,19 @@ class LimitSpanTest {
         ObserveFeature observe = ObserveFeature.builder()
                 .addObserver(TracingObserver.create(Tracer.global()))
                 .build();
-        builder.concurrencyLimit(FixedLimit.builder()
-                                         .permits(1)
-                                         .queueLength(5)
-                                         .queueTimeout(Duration.ofSeconds(10))
-                                         .enableTracing(true)
-                                         .build())
+        String configText = """
+                server:
+                  concurrency-limit:
+                    fixed:
+                      permits: 1
+                      queue-length: 5
+                      queue-timeout: "PT10S"
+                      listeners:
+                        tracing:
+                """;
+        Config config = io.helidon.config.Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_YAML));
+
+        builder.config(config.get("server"))
                 .addFeature(observe);
     }
 

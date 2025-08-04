@@ -324,6 +324,16 @@ public class AimdLimitTest {
             listenerContext.executionResult.set(execResult);
         }
 
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+
         record TestContext(LimitOutcome.Accepted acceptedOutcome,
                                   LimitOutcome rejectedOutcome,
                                   AtomicReference<LimitOutcome.Accepted.ExecutionResult> executionResult)
