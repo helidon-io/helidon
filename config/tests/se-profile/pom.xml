@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config.tests</groupId>
         <artifactId>helidon-config-tests-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.0-M1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-tests-config-profile</artifactId>
     <name>Helidon Config Tests Config Profile</name>

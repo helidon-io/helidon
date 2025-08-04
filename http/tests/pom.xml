@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.http</groupId>
         <artifactId>helidon-http-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.0-M1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.http.tests</groupId>

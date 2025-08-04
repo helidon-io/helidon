@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tracing.providers</groupId>
         <artifactId>helidon-tracing-providers-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.0-M1-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-providers-opentracing</artifactId>

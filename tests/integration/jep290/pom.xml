@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.0-M1-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.tests.integration.jep290</groupId>
     <artifactId>helidon-tests-integration-jep290-project</artifactId>
