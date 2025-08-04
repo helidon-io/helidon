@@ -11,14 +11,15 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [4.3.0-SNAPSHOT]
+## [4.3.0-M1]
 
-This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4. It is API compatible with Helidon 4.2.X.
+This is a milestone build and is meant to provide early access to Helidon 4.3.0. Features and documentation may be incomplete.
 
 A minimum of Java 21 is required to use Helidon 4.
 
 ### CHANGES
 
+- AI: Add Coherence ChatMemory Store Support [10438](https://github.com/helidon-io/helidon/pull/10438)
 - AI: Add Coherence Embedding Store Support [10419](https://github.com/helidon-io/helidon/pull/10419)
 - AI: LangChain4j integration update [10362](https://github.com/helidon-io/helidon/pull/10362)
 - Builders: Builder fix for not-configured providers [10296](https://github.com/helidon-io/helidon/pull/10296)
@@ -36,9 +37,11 @@ A minimum of Java 21 is required to use Helidon 4.
 - Codegen: Fixed regexp for identifying class tokens to be replaced with imports in class model. [10180](https://github.com/helidon-io/helidon/pull/10180)
 - Config provider fix default profiled config sources [10169](https://github.com/helidon-io/helidon/pull/10169)
 - Config: Adjusts OCI vault config sources to read only secret versions that are extant and in the Current rotation state [10035](https://github.com/helidon-io/helidon/pull/10035)
+- Config: Common config now has a config factory [10427](https://github.com/helidon-io/helidon/pull/10427)
+- Config: Config.global() updates [10170](https://github.com/helidon-io/helidon/pull/10170)
 - Config: Do not warn about setting a config to registry when using Config.global [10367](https://github.com/helidon-io/helidon/pull/10367)
 - Config: Fix `asMap` method in MP config on SE config delegate for empty values [10038](https://github.com/helidon-io/helidon/pull/10038)
-- Config.global() [10170](https://github.com/helidon-io/helidon/pull/10170)
+- Config: Services.set for config will set both config contracts [10473](https://github.com/helidon-io/helidon/pull/10473)
 - Context propagation over HTTP [10200](https://github.com/helidon-io/helidon/pull/10200)
 - DbClient - return generated IDs from INSERT statement. [9081](https://github.com/helidon-io/helidon/pull/9081)
 - Declarative: Add default value for config property. [10290](https://github.com/helidon-io/helidon/pull/10290)
@@ -77,6 +80,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - Metrics: Use Services.get(Config.class) instead of global config [10339](https://github.com/helidon-io/helidon/pull/10339)
 - Native image: Update to h2 database native image support [10443](https://github.com/helidon-io/helidon/pull/10443)
 - Registry: Fix issue with invalid registry if global registry is shutdown [10376](https://github.com/helidon-io/helidon/pull/10376)
+- Registry: Remove unused code from AbstractRegistry and Registry [10428](https://github.com/helidon-io/helidon/pull/10428)
 - Scheduling: Support for tracking scheduled tasks. [10289](https://github.com/helidon-io/helidon/pull/10289)
 - Scheduling: Update annotation design for scheduling to align with "namespace" classes [10073](https://github.com/helidon-io/helidon/pull/10073)
 - Security: Deprecate Google Login Security Provider [10375](https://github.com/helidon-io/helidon/pull/10375)
@@ -85,7 +89,9 @@ A minimum of Java 21 is required to use Helidon 4.
 - Service Registry: Adds service registry-sourced beans as selected alternatives to fix #10096 [10313](https://github.com/helidon-io/helidon/pull/10313)
 - Service Registry: Update to ServiceRegistry API to add helper methods for qualified instances [10324](https://github.com/helidon-io/helidon/pull/10324)
 - SSE: Adds support for multi-line SSE event [10406](https://github.com/helidon-io/helidon/pull/10406)
+- Security: JwtAuthProvider correct errors reported now [10458](https://github.com/helidon-io/helidon/pull/10458)
 - Tracing: Update sampler type options in JaegerTracerBuilder. [9257](https://github.com/helidon-io/helidon/pull/9257)
+- Tracing: Handle single baggage header with multiple assignments; add test [10470](https://github.com/helidon-io/helidon/pull/10470)
 - Util: Leverages SequencedMap semantic methods in common LruCache (#10000) [10002](https://github.com/helidon-io/helidon/pull/10002)
 - WebClient: Compares values of the Upgrade header ignoring case in WebClient [10115](https://github.com/helidon-io/helidon/pull/10115)
 - WebClient: Copies underlying byte buffer passed from application  [10358](https://github.com/helidon-io/helidon/pull/10358)
@@ -124,8 +130,10 @@ A minimum of Java 21 is required to use Helidon 4.
 - Dependencies: Upgrade hibernate-validator to 8.0.2 [10053](https://github.com/helidon-io/helidon/pull/10053)
 - Dependencies: Upgrade jgit to 7.2.1 [10148](https://github.com/helidon-io/helidon/pull/10148)
 - Dependencies: Upgrade kafka-clients to 3.9.1 [10282](https://github.com/helidon-io/helidon/pull/10282)
+- Dependencies: Upgrades protobuf dependency to 4.31.1 [10462](https://github.com/helidon-io/helidon/pull/10462)
 - Dependencies: Upgrade typesafe-config to 1.4.4 [10442](https://github.com/helidon-io/helidon/pull/10442)
 - Dependencies: Upgrades to gRPC 1.73.0 and removes reflection proto files [10412](https://github.com/helidon-io/helidon/pull/10412)
+- Dependencies: Uptake build-tools 4.0.20 [10481](https://github.com/helidon-io/helidon/pull/10481)
 - Docs: Adds documentation for new JSON-RPC client and server APIs [10389](https://github.com/helidon-io/helidon/pull/10389)
 - Docs: Clarify javadoc of io.helidon.microprofile.server.Server start/stop (#8275) [10266](https://github.com/helidon-io/helidon/pull/10266)
 - Docs: dependency fix for GraphQL server. [10218](https://github.com/helidon-io/helidon/pull/10218)
@@ -135,6 +143,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - Docs: Helidon MP app on OCI Guide (8353) [10079](https://github.com/helidon-io/helidon/pull/10079)
 - Docs: Improvements to gRPC SE and MP docs [10347](https://github.com/helidon-io/helidon/pull/10347)
 - Docs: Remove asciidoc collapsible as it's unsupported [10269](https://github.com/helidon-io/helidon/pull/10269)
+- Docs: Docs: remove use of Config.global(config) setter [10477](https://github.com/helidon-io/helidon/pull/10477)
 - Docs: Update doc for removal of RequestPredicate in [10210](https://github.com/helidon-io/helidon/pull/10210)
 - Docs: Update to documentation of internal features [10393](https://github.com/helidon-io/helidon/pull/10393)
 - Docs: Update to security documentation to clarify a statement [10251](https://github.com/helidon-io/helidon/pull/10251)
@@ -1973,6 +1982,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.3.0-M1]: https://github.com/oracle/helidon/compare/4.2.4...4.3.0-M1
 [4.2.4]: https://github.com/oracle/helidon/compare/4.2.3...4.2.4
 [4.2.3]: https://github.com/oracle/helidon/compare/4.2.2...4.2.3
 [4.2.2]: https://github.com/oracle/helidon/compare/4.2.1...4.2.2
