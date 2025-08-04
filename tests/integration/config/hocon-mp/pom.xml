@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration-config</artifactId>
-        <version>4.2.5-SNAPSHOT</version>
+        <version>4.2.5</version>
     </parent>
 
     <artifactId>helidon-tests-integration-config-hocon-mp</artifactId>
