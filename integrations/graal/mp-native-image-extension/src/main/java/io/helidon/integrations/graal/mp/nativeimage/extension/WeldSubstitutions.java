@@ -45,8 +45,7 @@ public class WeldSubstitutions {
 
         @Inject
         @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.Reset)
-        private final DaemonThreadFactory dtf = new DaemonThreadFactory(new ThreadGroup("weld-preloaders"),
-                                                                        "weld-preloader-");
+        private final DaemonThreadFactory dtf = new DaemonThreadFactory("weld-preloader-");
 
         @Substitute
         void preloadContainerLifecycleEvent(Class<?> eventRawType, Type... typeParameters) {
