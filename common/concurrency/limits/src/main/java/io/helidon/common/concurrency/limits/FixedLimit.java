@@ -168,89 +168,43 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
-        return tryAcquire(wait, outcome -> {});
+        return doTryAcquire(wait, null);
     }
 
     @Override
-    public Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
-        Objects.requireNonNull(outcomeConsumer, "limit algorithm outcome consumer cannot be null");
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
-        if (token.isPresent()) {
-            LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName, TYPE);
-            if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
-                outcomeAwareToken.outcome(outcome);
-            }
-            outcomeConsumer.accept(outcome);
-            return token;
-        }
-        if (wait && queueLength > 0) {
-            long startWait = clock.get();
-            token = handler.tryAcquire(true);
-            long endWait = clock.get();
-            if (token.isPresent()) {
-                LimitOutcomeImpl.Accepted outcome = LimitOutcomeImpl.createAccepted(originName, TYPE, startWait, endWait);
-                if (token.get() instanceof OutcomeAwareToken outcomeAwareToken) {
-                    outcomeAwareToken.outcome(outcome);
-                }
-                outcomeConsumer.accept(outcome);
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
-                }
-                return token;
-            }
-            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, TYPE, startWait, endWait));
-        } else {
-            outcomeConsumer.accept(LimitOutcomeImpl.createRejected(originName, TYPE));
-        }
-        rejectedRequests.getAndIncrement();
-        return token;
+    public Optional<Token> tryAcquire(boolean wait,
+                                      Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
+        Objects.requireNonNull(limitListenerContextsConsumer, "limit algorithm listener contexts consumer cannot be null");
+        return doTryAcquire(wait, limitListenerContextsConsumer);
+    }
+
+    @Override
+    public <T> T invoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+            throws Exception {
+        Objects.requireNonNull(limitListenerContextsConsumer, "limit algorithm listener contexts consumer cannot be null");
+        return doInvoke(callable, limitListenerContextsConsumer);
+    }
+
+    @Override
+    public void invoke(Runnable runnable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+            throws Exception {
+        invoke(() -> {
+            runnable.run();
+            return null;
+        }, limitListenerContextsConsumer);
     }
 
     @Override
     public <T> T invoke(Callable<T> callable) throws Exception {
-        return invoke(callable, outcome -> {});
-    }
-
-    @Override
-    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
-
-        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true, outcomeConsumer);
-        if (optionalToken.isPresent()) {
-            LimitAlgorithm.Token token = optionalToken.get();
-            try {
-                concurrentRequests.getAndIncrement();
-                long startTime = clock.get();
-                T response = callable.call();
-                if (rttTimer != null) {
-                    rttTimer.record(clock.get() - startTime, TimeUnit.NANOSECONDS);
-                }
-                token.success();
-                return response;
-            } catch (IgnoreTaskException e) {
-                token.ignore();
-                return e.handle();
-            } catch (Throwable e) {
-                token.dropped();
-                throw e;
-            } finally {
-                concurrentRequests.getAndDecrement();
-            }
-        } else {
-            throw new LimitException("No more permits available for the semaphore");
-        }
+        return doInvoke(callable, null);
     }
 
     @Override
     public void invoke(Runnable runnable) throws Exception {
-        invoke(runnable, outcome -> {});
-    }
-
-    @Override
-    public void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
         invoke(() -> {
             runnable.run();
             return null;
-        }, outcomeConsumer);
+        });
     }
 
     @SuppressWarnings("removal")
@@ -348,6 +302,82 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                 waitTimerBuilder.tags(List.of(socketNameTag));
             }
             queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
+        }
+    }
+
+    private Optional<Token> doTryAcquire(boolean wait,
+                                         Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
+
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+
+        if (token.isPresent()) {
+            LimitOutcomeImpl.processImmediateAcceptance(originName,
+                                                        TYPE,
+                                                        token.get(),
+                                                        config.enabledListeners(),
+                                                        limitListenerContextsConsumer);
+            return token;
+        }
+        if (wait && queueLength > 0) {
+            long startWait = clock.get();
+            token = handler.tryAcquire(true);
+            long endWait = clock.get();
+            if (token.isPresent()) {
+                LimitOutcomeImpl.processDeferredAcceptance(originName,
+                                                           TYPE,
+                                                           token.get(),
+                                                           startWait,
+                                                           endWait,
+                                                           config.enabledListeners(),
+                                                           limitListenerContextsConsumer);
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
+                }
+
+                return token;
+            }
+            LimitOutcomeImpl.processDeferredRejection(originName,
+                                                      TYPE,
+                                                      startWait,
+                                                      endWait,
+                                                      config.enabledListeners(),
+                                                      limitListenerContextsConsumer);
+        } else {
+            LimitOutcomeImpl.processImmediateRejection(originName,
+                                                       TYPE,
+                                                       config.enabledListeners(),
+                                                       limitListenerContextsConsumer);
+        }
+        rejectedRequests.getAndIncrement();
+        return token;
+    }
+
+    private <T> T doInvoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+            throws Exception {
+
+        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitListenerContextsConsumer);
+        if (optionalToken.isPresent()) {
+            LimitAlgorithm.Token token = optionalToken.get();
+            try {
+                concurrentRequests.getAndIncrement();
+                long startTime = clock.get();
+                T response = callable.call();
+                if (rttTimer != null) {
+                    rttTimer.record(clock.get() - startTime, TimeUnit.NANOSECONDS);
+                }
+                token.success();
+                return response;
+            } catch (IgnoreTaskException e) {
+                token.ignore();
+                return e.handle();
+            } catch (Throwable e) {
+                token.dropped();
+                throw e;
+            } finally {
+                concurrentRequests.getAndDecrement();
+            }
+        } else {
+            throw new LimitException("No more permits available for the semaphore");
         }
     }
 

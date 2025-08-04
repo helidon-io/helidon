@@ -70,6 +70,10 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

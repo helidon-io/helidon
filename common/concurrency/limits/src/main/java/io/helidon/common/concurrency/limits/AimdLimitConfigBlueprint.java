@@ -17,6 +17,7 @@
 package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -147,4 +148,28 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableTracing();
+
+
+    /**
+     * {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener Limit algorithm listeners}.
+     *
+     * @return limit algorithm listeners
+     */
+    @SuppressWarnings("rawtypes")
+    @Option.Singular
+    @Option.RegistryService
+    List<LimitAlgorithmListener> listeners();
+
+    /**
+     * Enabled {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener limit algorithm listeners}.
+     *
+     * @return enabled listeners
+     */
+    @SuppressWarnings("rawtypes")
+    default List<LimitAlgorithmListener> enabledListeners() {
+        return listeners().stream()
+                .filter(LimitAlgorithmListener::enabled)
+                .toList();
+    }
+
 }

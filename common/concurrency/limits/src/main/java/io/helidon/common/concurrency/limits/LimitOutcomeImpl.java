@@ -16,70 +16,105 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 class LimitOutcomeImpl implements LimitOutcome {
 
     private final String originName;
     private final String algorithmType;
     private final Disposition disposition;
 
-    protected LimitOutcomeImpl(String originName, String algorithmType, Disposition disposition) {
+    @SuppressWarnings("rawtypes")
+    private final List<ListenerInfo> listenerInfos = new ArrayList<>();
+
+    LimitOutcomeImpl(String originName, String algorithmType, Disposition disposition) {
         this.originName = originName;
         this.algorithmType = algorithmType;
         this.disposition = disposition;
     }
 
     /**
-     * Create an immediately-accepted outcome.
+     * Process an immediately-accepted outcome.
      *
      * @param originName limit origin
      * @param algorithmType limit algorithm type
-     * @return immediately-accepted limit outcome
      */
-    static LimitOutcomeImpl.Accepted createAccepted(String originName, String algorithmType) {
-        return new ImmediateAccepted(originName, algorithmType);
-    }
-
-    /**
-     * Create an immediately-rejected outcome.
-     *
-     * @param originName limit origin
-     * @param algorithmType limit algorithm type
-     * @return immediate-rejected limit outcome
-     */
-    static LimitOutcomeImpl createRejected(String originName, String algorithmType) {
-        return new LimitOutcomeImpl(originName, algorithmType, Disposition.REJECTED);
-    }
-
-    /**
-     * Create a deferred accepted outcome.
-     *
-     * @param originName limit origin
-     * @param algorithmType limit algorithm type
-     * @param waitStart nanoseconds wait start time
-     * @param waitEnd nanoseconds wait end time
-     * @return deferred accepted limit outcome
-     */
-    static LimitOutcomeImpl.Accepted createAccepted(String originName,
-                                                    String algorithmType,
-                                                    long waitStart,
-                                                    long waitEnd) {
-        return new DeferredAccepted(originName, algorithmType, waitStart, waitEnd);
-    }
-
-    /**
-     * Create a deferred rejected outcome.
-     *
-     * @param originName limit origin
-     * @param algorithmType limit algorithm type
-     * @param waitStart nanoseconds wait start time
-     * @param waitEnd nanoseconds wait end time
-     * @return deferred rejected limit outcome
-     */
-    static LimitOutcomeImpl createRejected(String originName,
+    @SuppressWarnings("rawtypes")
+    static void processImmediateAcceptance(String originName,
                                            String algorithmType,
-                                           long waitStart,
-                                           long waitEnd) {
-        return new Deferred(originName, algorithmType, Disposition.REJECTED, waitStart, waitEnd);
+                                           LimitAlgorithm.Token token,
+                                           List<LimitAlgorithmListener> listeners,
+                                           Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        processAccepted(() -> new ImmediateAccepted(originName, algorithmType),
+                        token,
+                        listeners,
+                        listenerContextsConsumer);
+
+    }
+
+    /**
+     * Process an immediately-rejected outcome.
+     *
+     * @param originName limit origin
+     * @param algorithmType limit algorithm type
+     */
+    @SuppressWarnings("rawtypes")
+    static void processImmediateRejection(String originName,
+                                          String algorithmType,
+                                          List<LimitAlgorithmListener> listeners,
+                                          Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        processRejected(() -> new LimitOutcomeImpl(originName, algorithmType, Disposition.REJECTED),
+                        listeners,
+                        listenerContextsConsumer);
+    }
+
+    /**
+     * Process a deferred accepted outcome.
+     *
+     * @param originName limit origin
+     * @param algorithmType limit algorithm type
+     * @param waitStart nanoseconds wait start time
+     * @param waitEnd nanoseconds wait end time
+     */
+    @SuppressWarnings("rawtypes")
+    static void processDeferredAcceptance(String originName,
+                                          String algorithmType,
+                                          LimitAlgorithm.Token token,
+                                          long waitStart,
+                                          long waitEnd,
+                                          List<LimitAlgorithmListener> listeners,
+                                          Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        processAccepted(() -> new DeferredAccepted(originName,
+                                                   algorithmType,
+                                                   waitStart,
+                                                   waitEnd),
+                        token,
+                        listeners,
+                        listenerContextsConsumer);
+
+    }
+
+    /**
+     * Process a deferred rejected outcome.
+     *
+     * @param originName limit origin
+     * @param algorithmType limit algorithm type
+     * @param waitStart nanoseconds wait start time
+     * @param waitEnd nanoseconds wait end time
+     */
+    @SuppressWarnings("rawtypes")
+    static void processDeferredRejection(String originName,
+                                         String algorithmType,
+                                         long waitStart,
+                                         long waitEnd,
+                                         List<LimitAlgorithmListener> listeners,
+                                         Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        processRejected(() -> new Deferred(originName, algorithmType, Disposition.REJECTED, waitStart, waitEnd),
+                        listeners,
+                        listenerContextsConsumer);
     }
 
     @Override
@@ -97,16 +132,70 @@ class LimitOutcomeImpl implements LimitOutcome {
         return disposition;
     }
 
+    @SuppressWarnings("rawtypes")
+    public List<ListenerInfo> listenerInfos() {
+        return listenerInfos;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public void listenerInfos(List<ListenerInfo> listenerInfos) {
+        this.listenerInfos.addAll(listenerInfos);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void processAccepted(Supplier<Accepted> acceptedFactory,
+                                        LimitAlgorithm.Token token,
+                                        List<LimitAlgorithmListener> listeners,
+                                        Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        if (listenerContextsConsumer == null) {
+            return;
+        }
+        var result = acceptedFactory.get();
+        result.listenerInfos(listeners.stream()
+                                     .map(l -> ListenerInfo.createAccepted(l, result))
+                                     .toList());
+
+        if (token instanceof OutcomeAwareToken outcomeAwareToken) {
+            outcomeAwareToken.outcome(result);
+        }
+        listenerContextsConsumer.accept(result.listenerInfos().stream()
+                                                .map(ListenerInfo::listenerContext)
+                                                .toList());
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void processRejected(Supplier<LimitOutcomeImpl> rejectedFactory,
+                                        List<LimitAlgorithmListener> listeners,
+                                        Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+        if (listenerContextsConsumer == null) {
+            return;
+        }
+        var result = rejectedFactory.get();
+        result.listenerInfos(listeners.stream()
+                                     .map(l -> ListenerInfo.createRejected(l, result))
+                                     .toList());
+
+        listenerContextsConsumer.accept(result.listenerInfos().stream()
+                                                .map(ListenerInfo::listenerContext)
+                                                .toList());
+    }
+
     interface Accepted extends LimitOutcome.Accepted {
 
-        void execResult(ExecResult execResult);
+        void execResult(ExecutionResult execResult);
+
+        @SuppressWarnings("rawtypes")
+        List<ListenerInfo> listenerInfos();
+
+        @SuppressWarnings("rawtypes")
+        void listenerInfos(List<ListenerInfo> listenerInfos);
 
     }
 
     /**
      * A deferred rejected limit outcome and the superclass for a deferred accepted limit outcome.
      */
-    private static class Deferred extends LimitOutcomeImpl implements LimitOutcome.Deferred {
+    static class Deferred extends LimitOutcomeImpl implements LimitOutcome.Deferred {
 
         private final long waitStart;
         private final long waitEnd;
@@ -131,50 +220,72 @@ class LimitOutcomeImpl implements LimitOutcome {
     /**
      * An immediately-accepted limit outcome.
      */
-    private static class ImmediateAccepted extends LimitOutcomeImpl implements Accepted {
+    static class ImmediateAccepted extends LimitOutcomeImpl implements Accepted {
 
-        private ExecResult execResult;
+        private ExecutionResult execResult;
 
         ImmediateAccepted(String originName, String algorithmType) {
             super(originName, algorithmType, Disposition.ACCEPTED);
+
         }
 
         @Override
-        public ExecResult execResult() throws IllegalStateException {
+        public ExecutionResult executionResult() throws IllegalStateException {
             if (execResult == null) {
                 throw new IllegalStateException("Execution result has not yet been set");
             }
             return execResult;
         }
-
+        @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
-        public void execResult(ExecResult execResult) {
+        public void execResult(ExecutionResult execResult) {
             this.execResult = execResult;
+            for (ListenerInfo info : listenerInfos()) {
+                info.listener.onFinish(info.listenerContext, execResult);
+            }
         }
     }
 
     /**
      * A deferred accepted limit outcome.
      */
-    private static class DeferredAccepted extends Deferred implements Accepted {
+    static class DeferredAccepted extends Deferred implements Accepted {
 
-        private ExecResult execResult;
+        private ExecutionResult execResult;
 
         DeferredAccepted(String originName, String algorithmType, long waitStart, long waitEnd) {
             super(originName, algorithmType, Disposition.ACCEPTED, waitStart, waitEnd);
         }
 
         @Override
-        public ExecResult execResult() throws IllegalStateException {
+        public ExecutionResult executionResult() throws IllegalStateException {
             if (execResult == null) {
                 throw new IllegalStateException("Execution result has not yet been set");
             }
             return execResult;
         }
 
+        @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
-        public void execResult(ExecResult execResult) {
+        public void execResult(ExecutionResult execResult) {
             this.execResult = execResult;
+            for (ListenerInfo info : listenerInfos()) {
+                info.listener.onFinish(info.listenerContext, execResult);
+            }
+        }
+    }
+
+    record ListenerInfo<CTX extends LimitAlgorithmListener.Context>(LimitAlgorithmListener<CTX> listener, CTX listenerContext) {
+
+        static <CTX extends LimitAlgorithmListener.Context> ListenerInfo<?> createAccepted(LimitAlgorithmListener<CTX> listener,
+                                                                                           LimitOutcome.Accepted
+                                                                                                   acceptedOutcome) {
+            return new ListenerInfo<>(listener, listener.onAccept(acceptedOutcome));
+        }
+
+        static <CTX extends LimitAlgorithmListener.Context> ListenerInfo<?> createRejected(LimitAlgorithmListener<CTX> listener,
+                                                                                           LimitOutcome rejectedOutcome) {
+            return new ListenerInfo<>(listener, listener.onReject(rejectedOutcome));
         }
     }
 }

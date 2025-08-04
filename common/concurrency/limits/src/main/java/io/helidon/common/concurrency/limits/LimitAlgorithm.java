@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -76,14 +77,15 @@ public interface LimitAlgorithm {
      * when the caller invokes the token's methods the outcome is updated accordingly.</li>
      * </ul>
      *
-     * @param callable        callable to execute within the limit
-     * @param outcomeConsumer consumer of the outcome
-     * @param <T>             the callable return type
+     * @param callable                 callable to execute within the limit
+     * @param listenerContextsConsumer consumer of contexts provided by limit algorithm listeners
+     * @param <T>                      the callable return type
      * @return result of the callable
      * @throws LimitException      in case the limiter did not have an available permit
      * @throws java.lang.Exception in case the task failed with an exception
      */
-    default <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws LimitException, Exception {
+    default <T> T invoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer)
+            throws LimitException, Exception {
         return invoke(callable);
     }
 
@@ -131,12 +133,13 @@ public interface LimitAlgorithm {
      * when the caller invokes the token's methods the outcome is updated accordingly.</li>
      * </ul>
      *
-     * @param runnable        runnable to execute within the limit
-     * @param outcomeConsumer consumer of the outcome
+     * @param runnable                 runnable to execute within the limit
+     * @param listenerContextsConsumer consumer of contexts provided by limit algorithm listeners
      * @throws LimitException      in case the limiter did not have an available permit
      * @throws java.lang.Exception in case the task failed with an exception
      */
-    default void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
+    default void invoke(Runnable runnable, Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer)
+            throws Exception {
         invoke(runnable);
     }
 
@@ -175,11 +178,13 @@ public interface LimitAlgorithm {
      * operations to release the token.
      * If the response is empty, the limit does not have an available token.
      *
-     * @param wait whether to wait in the queue (if one is configured/available in the limit), or to return immediately
-     * @param outcomeConsumer consumer to accept the outcome
+     * @param wait                          whether to wait in the queue (if one is configured/available in the limit), or to
+     *                                      return immediately
+     * @param limitListenerContextsConsumer consumer of contexts provided by limit algorithm listeners
      * @return acquired token, or empty if there is no available token
      */
-    default Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
+    default Optional<Token> tryAcquire(boolean wait,
+                                       Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
         return tryAcquire(wait);
     }
 

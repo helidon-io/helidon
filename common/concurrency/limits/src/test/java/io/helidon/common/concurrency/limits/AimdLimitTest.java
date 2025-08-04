@@ -187,24 +187,37 @@ public class AimdLimitTest {
         Limit limit = AimdLimit.builder()
                 .minLimit(5)
                 .initialLimit(5)
+                .addListener(new TestListener())
                 .build();
 
-        AtomicReference<LimitOutcome> savedOutcome = new AtomicReference<>();
+        List<LimitAlgorithmListener.Context> savedLimitListenerContexts = new ArrayList<>();
 
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, savedOutcome::set);
+            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, savedLimitListenerContexts::addAll);
             assertThat(token, not(Optional.empty()));
+            token.get().success();
 
             // We expect immediate acceptances.
-            assertThat("Disposition",
-                       savedOutcome.get(),
-                       allOf(instanceOf(LimitOutcome.Accepted.class),
-                             not(instanceOf(LimitOutcome.Deferred.class))));
+            int deferredAccepts = 0;
+            int immediateAccepts = 0;
+            int index = 0;
+            for (LimitAlgorithmListener.Context listenerContext : savedLimitListenerContexts) {
+                if (listenerContext instanceof TestListener.TestContext testContext) {
+                    if (testContext.acceptedOutcome instanceof LimitOutcome.Deferred) {
+                        deferredAccepts++;
+                    } else {
+                        immediateAccepts++;
+                    }
+                    assertThat("Exec result " + index,
+                               testContext.result(), is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
+                    index++;
+                }
+            }
 
-            LimitOutcome.Accepted acceptedOutcome = (LimitOutcome.Accepted) savedOutcome.get();
-            assertThrows(IllegalStateException.class, acceptedOutcome::execResult);
-            token.get().success();
-            assertThat("Exec", acceptedOutcome.execResult(), is(LimitOutcome.Accepted.ExecResult.SUCCEEDED));
+            assertThat("Immediate accepts ", immediateAccepts, is(1));
+            assertThat("Deferred accepts ", deferredAccepts, is(0));
+
+            savedLimitListenerContexts.clear();
         }
     }
 
@@ -216,6 +229,7 @@ public class AimdLimitTest {
                 .initialLimit(1)
                 .queueLength(5)
                 .queueTimeout(Duration.ofSeconds(5))
+                .addListener(new TestListener())
                 .build();
 
         int concurrency = 5;
@@ -226,7 +240,7 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
-        List<LimitOutcome> outcomes = Collections.synchronizedList(new ArrayList<>());
+        List<LimitAlgorithmListener.Context> limitListenerContexts = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < concurrency; i++) {
             int index = i;
@@ -241,7 +255,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    }, outcomes::add);
+                    }, limitListenerContexts::addAll);
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -265,25 +279,64 @@ public class AimdLimitTest {
         // and eventually run to completion
         assertThat(result.size(), is(5));
 
-        assertThat("Outcomes", outcomes, hasSize(5));
+        assertThat("Outcomes", limitListenerContexts, hasSize(5));
         int deferredAccepts = 0;
         int immediateAccepts = 0;
         int index = 0;
-        for (LimitOutcome outcome : outcomes) {
-            if (outcome instanceof LimitOutcome.Accepted acceptedOutcome) {
-                if (outcome instanceof LimitOutcome.Deferred) {
+        for (Object listenerContext : limitListenerContexts) {
+            if (listenerContext instanceof TestListener.TestContext testContext) {
+                if (testContext.acceptedOutcome instanceof LimitOutcome.Deferred) {
                     deferredAccepts++;
                 } else {
                     immediateAccepts++;
                 }
-                assertThat("Exec result " + index++,
-                           acceptedOutcome.execResult(), is(LimitOutcome.Accepted.ExecResult.SUCCEEDED));
+                assertThat("Exec result " + index,
+                           testContext.result(), is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
+                index++;
             }
         }
 
         assertThat("Immediate accepts ", immediateAccepts, is(1));
         assertThat("Deferred accepts ", deferredAccepts, is(4));
 
+    }
+
+    static class TestListener implements LimitAlgorithmListener<TestListener.TestContext> {
+
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+
+        @Override
+        public TestContext onAccept(LimitOutcome.Accepted acceptedLimitOutcome) {
+            return new TestContext(acceptedLimitOutcome, null);
+        }
+
+        @Override
+        public TestContext onReject(LimitOutcome rejectedLimitOutcome) {
+            return new TestContext(null, rejectedLimitOutcome);
+        }
+
+        @Override
+        public void onFinish(TestContext listenerContext, LimitOutcome.Accepted.ExecutionResult execResult) {
+            listenerContext.executionResult.set(execResult);
+        }
+
+        record TestContext(LimitOutcome.Accepted acceptedOutcome,
+                                  LimitOutcome rejectedOutcome,
+                                  AtomicReference<LimitOutcome.Accepted.ExecutionResult> executionResult)
+                implements LimitAlgorithmListener.Context {
+
+            TestContext(LimitOutcome.Accepted acceptedOutcome, LimitOutcome rejectedOutcome) {
+                this(acceptedOutcome, rejectedOutcome, new AtomicReference<>());
+            }
+
+            LimitOutcome.Accepted.ExecutionResult result() {
+                return executionResult.get();
+            }
+        }
     }
 
     /**

@@ -20,12 +20,12 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
@@ -35,7 +35,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -209,8 +209,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                AtomicReference<LimitOutcome> outcome = new AtomicReference<>();
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, outcome::set);
+                List<LimitAlgorithmListener.Context> listenerContexts = new ArrayList<>();
+                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, listenerContexts::addAll);
 
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
@@ -225,7 +225,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
                     try {
                         this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers, limit, outcome.get());
+                        route(prologue, headers, limit, listenerContexts);
                         permit.success();
                         this.lastRequestTimestamp = DateTime.timestamp();
                     } catch (Throwable e) {
@@ -503,7 +503,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return buffer;
     }
 
-    private void route(HttpPrologue prologue, WritableHeaders<?> headers, Limit limit, LimitOutcome limitOutcome) {
+    private void route(HttpPrologue prologue,
+                       WritableHeaders<?> headers,
+                       Limit limit,
+                       List<LimitAlgorithmListener.Context> listenerContexts) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
@@ -538,8 +541,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    prologue,
                                                                    headers,
                                                                    requestId);
-            request.context().register(limitOutcome);
-            request.context().register(limit);
+            listenerContexts.stream()
+                    .filter(LimitAlgorithmListener.Context::shouldBePropagated)
+                    .forEach(listenerContext -> request.context().register(listenerContext));
+
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,

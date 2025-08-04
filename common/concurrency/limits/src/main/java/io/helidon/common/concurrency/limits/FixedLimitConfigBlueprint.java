@@ -17,6 +17,7 @@
 package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -32,9 +33,10 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
  * @see #queueLength()
  * @see #queueTimeout()
  */
-@Prototype.Blueprint
+@Prototype.Blueprint()
 @Prototype.Configured(value = FixedLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
+@Prototype.RegistrySupport
 interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     /**
      * Number of permit to allow.
@@ -121,4 +123,27 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableTracing();
+
+    /**
+     * {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener Limit algorithm listeners}.
+     *
+     * @return limit algorithm listeners
+     */
+    @SuppressWarnings("rawtypes")
+    @Option.Singular
+    @Option.RegistryService
+    List<LimitAlgorithmListener> listeners();
+
+    /**
+     * Enabled {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener limit algorithm listeners}.
+     *
+     * @return enabled listeners
+     */
+    @SuppressWarnings("rawtypes")
+    default List<LimitAlgorithmListener> enabledListeners() {
+        return listeners().stream()
+                .filter(LimitAlgorithmListener::enabled)
+                .toList();
+    }
+
 }

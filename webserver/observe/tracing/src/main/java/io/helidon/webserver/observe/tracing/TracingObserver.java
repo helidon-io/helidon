@@ -34,6 +34,7 @@ import io.helidon.common.Weighted;
 import io.helidon.common.concurrency.limits.AimdLimit;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
 import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -52,6 +53,7 @@ import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
+import io.helidon.webserver.concurrency.limits.LimitAlgorithmTracingListener;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.HttpFeature;
@@ -207,7 +209,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 return;
             }
 
-            recordLimitWaitingSpan(inboundSpanContext.orElse(null), req);
+            recordLimitWaitingSpan(req, tracer, inboundSpanContext);
 
 
             TracingSemanticConventions semconv = tracingSemanticConventionsProvider.create(spanConfig, socketTag, req, res);
@@ -284,38 +286,18 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             }
         }
 
-        private void recordLimitWaitingSpan(SpanContext inboundSpanContext, RoutingRequest req) {
-            Optional<Limit> limit = req.context().get(Limit.class);
-            if (limit.isEmpty()) {
-                return;
-            }
-            boolean tracingEnabled = (limit.get() instanceof FixedLimit fixedLimit)
-                    ? fixedLimit.prototype().enableTracing()
-                    : (limit.get() instanceof AimdLimit aimdLimit)
-                        ? aimdLimit.prototype().enableTracing()
-                            : false;
-            if (!tracingEnabled) {
+        private void recordLimitWaitingSpan(RoutingRequest req, Tracer tracer, Optional<SpanContext> inboundSpanContext) {
+
+            Optional<LimitAlgorithmTracingListener.Context> tracingListenerContext = req.context()
+                    .get(LimitAlgorithmTracingListener.Context.class);
+
+            if (tracingListenerContext.isEmpty() || !tracingListenerContext.get().isRecordable()) {
                 return;
             }
 
-            Optional<LimitOutcome> limitOutcome = req.context().get(LimitOutcome.class);
-            limitOutcome.ifPresent(outcome -> {
-                if (outcome instanceof LimitOutcome.Deferred deferredOutcome) {
-                    Tracer tracer = req.context().get(Tracer.class).orElse(Tracer.global());
-                    var spanBuilder = tracer.spanBuilder(outcome.originName() + "-" + outcome.algorithmType() + "-limit-span");
-                    if (inboundSpanContext != null) {
-                        inboundSpanContext.asParent(spanBuilder);
-                    }
-                    var span = spanBuilder.start(Instant.ofEpochSecond(0, deferredOutcome.waitStart()));
-                    if (!(outcome instanceof LimitOutcome.Accepted acceptedOutcome)) {
-                        span.status(Span.Status.ERROR);
-                        span.addEvent("queue limit exceeded");
-                    }
-                    span.end(Instant.ofEpochSecond(0, deferredOutcome.waitEnd()));
-                }
-            });
-
+            tracingListenerContext.get().process(tracer, inboundSpanContext);
         }
+
         private TracingConfig configureTracingConfig(RoutingRequest req, Context context) {
             TracingConfig discovered = null;
 

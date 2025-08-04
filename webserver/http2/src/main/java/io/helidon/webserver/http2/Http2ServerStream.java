@@ -17,6 +17,7 @@
 package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,7 +29,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
@@ -587,10 +588,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                AtomicReference<LimitOutcome> limitOutcome = new AtomicReference<>();
-                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(true, limitOutcome::set);
-                request.context().register(limitOutcome.get());
-                request.context().register(requestLimit);
+                List<LimitAlgorithmListener.Context> listenerContexts = new ArrayList<>();
+                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(true, listenerContexts::addAll);
+                listenerContexts.stream()
+                        .filter(LimitAlgorithmListener.Context::shouldBePropagated)
+                        .forEach(listenerContext -> request.context().register(listenerContext));
 
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");

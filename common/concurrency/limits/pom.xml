@@ -30,6 +30,10 @@
     <artifactId>helidon-common-concurrency-limits</artifactId>
     <name>Helidon Common Concurrency Limits</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -54,6 +58,11 @@
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

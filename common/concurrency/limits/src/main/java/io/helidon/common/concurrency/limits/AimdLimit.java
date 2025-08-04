@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -116,8 +117,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
-        return aimdLimitImpl.invoke(callable, outcomeConsumer);
+    public <T> T invoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+            throws Exception {
+        return aimdLimitImpl.invoke(callable, limitListenerContextsConsumer);
     }
 
     @Override
@@ -126,8 +128,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public void invoke(Runnable runnable, Consumer<LimitOutcome> outcomeConsumer) throws Exception {
-        aimdLimitImpl.invoke(runnable, outcomeConsumer);
+    public void invoke(Runnable runnable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+            throws Exception {
+        aimdLimitImpl.invoke(runnable, limitListenerContextsConsumer);
     }
 
     @Override
@@ -136,8 +139,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public Optional<Token> tryAcquire(boolean wait, Consumer<LimitOutcome> outcomeConsumer) {
-        return aimdLimitImpl.tryAcquire(wait, outcomeConsumer);
+    public Optional<Token> tryAcquire(boolean wait,
+                                      Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
+        return aimdLimitImpl.tryAcquire(wait, limitListenerContextsConsumer);
     }
 
     @SuppressWarnings("removal")

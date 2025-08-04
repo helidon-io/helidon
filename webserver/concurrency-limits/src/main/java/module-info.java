@@ -25,6 +25,8 @@ module io.helidon.webserver.concurrency.limits {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.concurrency.limits;
+    requires io.helidon.tracing;
+    requires io.helidon.service.registry;
 
     exports io.helidon.webserver.concurrency.limits;
 

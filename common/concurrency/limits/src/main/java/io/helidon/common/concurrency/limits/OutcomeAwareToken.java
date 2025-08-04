@@ -16,23 +16,39 @@
 
 package io.helidon.common.concurrency.limits;
 
-class OutcomeAwareToken implements LimitAlgorithm.Token {
+/**
+ * Implementation ot {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Token} that propagates
+ * the algorithm user's completion of an accepted {@link io.helidon.common.concurrency.limits.LimitOutcome.Accepted}
+ * work item.
+ * <p>
+ * Concrete implementations should do their own processing for dropped, ignore, and success and then invoke
+ * the corresponding method here.
+ */
+abstract class OutcomeAwareToken implements LimitAlgorithm.Token {
 
+    // Can be null if no listeners are present that require creating the outcome instance.
     private LimitOutcomeImpl.Accepted acceptedOutcome;
 
     @Override
     public void dropped() {
-        acceptedOutcome.execResult(LimitOutcome.Accepted.ExecResult.DROPPED);
+        if (acceptedOutcome != null) {
+            acceptedOutcome.execResult(LimitOutcome.Accepted.ExecutionResult.DROPPED);
+        }
+
     }
 
     @Override
     public void ignore() {
-        acceptedOutcome.execResult(LimitOutcome.Accepted.ExecResult.IGNORED);
+        if (acceptedOutcome != null) {
+            acceptedOutcome.execResult(LimitOutcome.Accepted.ExecutionResult.IGNORED);
+        }
     }
 
     @Override
     public void success() {
-        acceptedOutcome.execResult(LimitOutcome.Accepted.ExecResult.SUCCEEDED);
+        if (acceptedOutcome != null) {
+            acceptedOutcome.execResult(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED);
+        }
     }
 
     OutcomeAwareToken outcome(LimitOutcomeImpl.Accepted acceptedOutcome) {

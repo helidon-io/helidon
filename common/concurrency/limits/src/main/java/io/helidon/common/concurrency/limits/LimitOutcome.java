@@ -18,6 +18,29 @@ package io.helidon.common.concurrency.limits;
 
 /**
  * Information about the result of applying a concurrency limiting algorithm to a work item.
+ * <p>
+ * An outcome has several orthogonal attributes:
+ * <h2>Disposition</h2>
+ * <ul>
+ *     <li>accepted
+ *     <p>The limit algorithm accepted the work item for execution. </li>
+ *     <li>rejected
+ *     <p>The limit algorithm rejected the work item due to concurrency limit constraints. No further changes
+ *     occur to a rejected outcome.</li>
+ * </ul>
+ * <h2>Deferral</h2>
+ * The limit algorithm decides whether to accept or reject the work item either:
+ * <ul>
+ *     <li><em>immediately</em> upon learning of the work item (in which case there is no waiting time), or</li>
+ *     <li><em>deferred</em> in which case the algorithm makes its decision some time after the work item arrives,
+ *     leading to some amount of waiting time.</li>
+ * </ul>
+ * <h2>Execution result</h2>
+ * If the algorithm accepts a work item, then later the code using the limit algorithm should
+ * invoke exactly one of the token's {@code dropped}, {@code ignore}, or {@code success} methods.
+ * Any implementation of {@link io.helidon.common.concurrency.limits.LimitOutcome.Accepted} must
+ * invoke the {@link LimitAlgorithmListener#onFinish(io.helidon.common.concurrency.limits.LimitAlgorithmListener.Context, io.helidon.common.concurrency.limits.LimitOutcome.Accepted.ExecutionResult)}
+ * method on each known listener with its listener context.
  */
 public interface LimitOutcome {
 
@@ -85,7 +108,7 @@ public interface LimitOutcome {
         /**
          * Describes the result of executing an accepted work item.
          */
-        enum ExecResult {
+        enum ExecutionResult {
 
             /**
              * Indicates that the caller of the limit algorithm invoked
@@ -107,13 +130,13 @@ public interface LimitOutcome {
         }
 
         /**
-         * Returns the {@link io.helidon.common.concurrency.limits.LimitOutcome.Accepted.ExecResult} reporting the result
+         * Returns the {@link io.helidon.common.concurrency.limits.LimitOutcome.Accepted.ExecutionResult} reporting the result
          * of executing the work item.
          *
          * @return execution result
          * @throws IllegalStateException if the execution result has not yet been set in the outcome
          */
-        ExecResult execResult() throws IllegalStateException;
+        ExecutionResult executionResult() throws IllegalStateException;
     }
 
 }
