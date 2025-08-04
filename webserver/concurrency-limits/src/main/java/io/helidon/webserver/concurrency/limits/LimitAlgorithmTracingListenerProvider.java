@@ -21,13 +21,18 @@ import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
 import io.helidon.common.config.Config;
 import io.helidon.service.registry.Service;
 
+/**
+ * Provider for the limit algorithm tracing listener.
+ */
 @Service.Singleton
 public class LimitAlgorithmTracingListenerProvider implements LimitAlgorithmListenerProvider {
+
     @Override
     public String configKey() {
         return "tracing";
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public LimitAlgorithmListener create(Config config, String name) {
         return LimitAlgorithmTracingListener.builder().config(config).build();

@@ -32,7 +32,7 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
                                                        RuntimeType.Api<LimitAlgorithmTracingListenerConfig> {
 
     /**
-     * Create a new builder for a tracing listener.
+     * Creates a new builder for a tracing listener.
      *
      * @return new builder
      */
@@ -41,7 +41,7 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
     }
 
     /**
-     * Create a default tracing listener.
+     * Creates a default tracing listener.
      *
      * @return new tracing listener with default settings
      */
@@ -50,7 +50,7 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
     }
 
     /**
-     * Create a new tracing listener using the specified settings
+     * Creates a new tracing listener using the specified settings.
      *
      * @param config settings for building the new listener
      * @return new listener configured using the specified settings
@@ -60,7 +60,7 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
     }
 
     /**
-     * Create a new tracing listener from a builder, customizing the builder's settings.
+     * Creates a new tracing listener from a builder, customizing the builder's settings.
      *
      * @param consumer consumer of the builder, modifying the builder as needed
      * @return new tracing listener
@@ -93,7 +93,7 @@ public interface LimitAlgorithmTracingListener extends LimitAlgorithmListener<Li
         }
 
         /**
-         * Create a tracing span for the limits decision represented by this context.
+         * Creates a tracing span for the limits decision represented by this context.
          *
          * @param tracer the {@link io.helidon.tracing.Tracer} to use in creating the span
          * @param spanContext the parent {@link io.helidon.tracing.SpanContext} to use in creating the span, if any
