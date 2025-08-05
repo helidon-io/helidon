@@ -11,5 +11,5 @@ For example, to create a tracing span representing the time that a work item spe
 Later during request processing the tracing filter looks for the listener context in the request context, and if it finds it creates a "wait" span using the saved wait start and end times. 
 
 The following diagram illustrates the general approach.
-![Limit Algorithm Listener processing](Limit%20Algorithm%20Outcome%20and%20Listeners.drawio.png)
+![Limit Algorithm Listener processing](LimitAlgorithmOutcomeAndListeners.drawio.svg)
 
