@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ final class ConfigMetadataTypes {
     /*
     Using builder API
      */
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
     static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName PROTOTYPE_FACTORY = TypeName.create("io.helidon.builder.api.Prototype.Factory");
     static final TypeName BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");

@@ -31,7 +31,7 @@ public final class Option {
     }
 
     /**
-     * Mark a prototype option as one that can be read from {@code io.helidon.common.config.Config}.
+     * Mark a prototype option as one that can be read from {@code io.helidon.config.Config}.
      */
     @Target(ElementType.METHOD)
     @Inherited

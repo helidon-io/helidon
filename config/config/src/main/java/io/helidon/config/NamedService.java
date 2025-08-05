@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.test.testsubjects;
+package io.helidon.config;
 
-import io.helidon.config.ConfiguredProvider;
-import io.helidon.config.NamedService;
+/**
+ * To be used with {@link ConfiguredProvider}, each configured service may have a name.
+ */
+public interface NamedService {
+    /**
+     * Name of this implementation, as provided in {@link ConfiguredProvider#create(io.helidon.config.Config, String)}.
+     *
+     * @return name of this service
+     */
+    String name();
 
-public interface SomeProvider extends ConfiguredProvider<SomeProvider.SomeService> {
-
-    interface SomeService extends NamedService {
-        String prop();
-    }
+    /**
+     * Type of this implementation, to distinguish instances of same type, with different {@link #name()}.
+     * Use for example {@link ConfiguredProvider#configKey()} to define the type.
+     *
+     * @return type of this service
+     */
+    String type();
 }

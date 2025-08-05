@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ class BuilderCodegen implements CodegenExtension {
                     .isStatic(true)
                     .description("Create a new instance from configuration.")
                     .returnType(prototype, "a new instance configured from configuration")
-                    .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
+                    .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG)
                             .name("config")
                             .description("used to configure the new instance"));
             typeArguments.forEach(method::addGenericArgument);

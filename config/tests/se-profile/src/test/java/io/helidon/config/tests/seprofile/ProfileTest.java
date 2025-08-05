@@ -16,7 +16,7 @@
 
 package io.helidon.config.tests.seprofile;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;

@@ -268,13 +268,13 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty child : properties) {
             String getterName = child.getterName();
             if ("config".equals(getterName) && configured.configured()) {
-                if (child.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+                if (child.typeHandler().actualType().equals(Types.CONFIG)) {
                     // this will always exist
                     continue;
                 }
                 // now we have a method called config with wrong return type - this is not supported
                 throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
-                                                           + Types.COMMON_CONFIG.declaredName() + ", but is: "
+                                                           + Types.CONFIG.declaredName() + ", but is: "
                                                            + child.typeName().declaredName());
             }
             /*
@@ -304,7 +304,7 @@ final class GenerateAbstractBuilder {
         if (configured.configured()) {
             TypeName configReturnType = TypeName.builder()
                     .type(Optional.class)
-                    .addTypeArgument(Types.COMMON_CONFIG)
+                    .addTypeArgument(Types.CONFIG)
                     .build();
             Method.Builder method = Method.builder()
                     .name("config")
@@ -374,7 +374,7 @@ final class GenerateAbstractBuilder {
                 .javadoc(javadoc)
                 .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
                 .addParameter(param -> param.name("config")
-                        .type(Types.COMMON_CONFIG)
+                        .type(Types.CONFIG)
                         .description("configuration instance used to obtain values to update this builder"))
                 .addAnnotation(Annotations.OVERRIDE)
                 .addContent(Objects.class)
@@ -545,7 +545,7 @@ final class GenerateAbstractBuilder {
 
     private static void fields(InnerClass.Builder classBuilder, TypeContext typeContext, boolean isBuilder) {
         if (isBuilder && (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties()))) {
-            classBuilder.addField(builder -> builder.type(Types.COMMON_CONFIG).name("config"));
+            classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
         }
         if (isBuilder && typeContext.typeInfo().supportsServiceRegistry()) {
             classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
@@ -612,7 +612,7 @@ final class GenerateAbstractBuilder {
             if (configured) {
                 // need to have a non-null config instance
                 preBuildBuilder.addContent("var config = this.config == null ? ")
-                        .addContent(Types.COMMON_CONFIG)
+                        .addContent(Types.CONFIG)
                         .addContentLine(".empty() : this.config;");
             }
 
