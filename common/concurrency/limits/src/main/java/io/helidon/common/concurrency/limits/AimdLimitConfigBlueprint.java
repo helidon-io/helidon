@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
@@ -158,6 +159,8 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
     @SuppressWarnings("rawtypes")
     @Option.Singular
     @Option.RegistryService
+    @Option.Configured
+    @Option.Provider(value = LimitAlgorithmListenerProvider.class)
     List<LimitAlgorithmListener> listeners();
 
     /**
