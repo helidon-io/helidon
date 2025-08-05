@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,11 @@ import io.helidon.common.mapper.OptionalValue;
  * A typed value that has all the methods of {@link java.util.Optional} - including the ones added in JDK9 and newer.
  *
  * @param <T> type of the value
+ *
+ * @deprecated use types in {@code io.helidon.config} package instead
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.3.0")
 public interface ConfigValue<T> extends OptionalValue<T> {
 
     /**
