@@ -16,6 +16,14 @@
 
 package io.helidon.http.media.gson;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
@@ -25,17 +33,12 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
-
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*
@@ -205,6 +208,27 @@ class GsonMediaTest {
                 .read(BOOK_LIST_TYPE, is, requestHeaders);
 
         assertThat(books, hasItems(new Book("čř"), new Book("šň")));
+    }
+
+    @Test
+    void testCustomInstanceFromConfiguration() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        res.supplier().get()
+                .write(BOOK_TYPE, new Book(null), os, headers);
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
+        String result = os.toString(StandardCharsets.UTF_8);
+        assertThat(result, is("{}"));
+
+        MediaSupport mediaSupport = GsonSupport.create(Config.create());
+        res = mediaSupport.writer(BOOK_TYPE, headers);
+        os = new ByteArrayOutputStream();
+        res.supplier().get()
+                .write(BOOK_TYPE, new Book(null), os, headers);
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
+        result = os.toString(StandardCharsets.UTF_8);
+        assertThat(result, is("{\"title\":null}"));
     }
 
     public static class Book {
