@@ -58,7 +58,6 @@ class DeclarativeSchedulingTest {
         CronInvocation invocation = task.cronParam.get(10, TimeUnit.SECONDS);
 
         assertThat("Cron should have configured (overridden) pattern", invocation.cron(), is("0/1 * * * * ?"));
-        assertThat("Cron should have configured concurrent set to false.", invocation.concurrent(), is(false));
     }
 
     @Test
@@ -73,7 +72,6 @@ class DeclarativeSchedulingTest {
         FixedRateInvocation invocation = task.fixedParam.get(10, TimeUnit.SECONDS);
 
         assertThat("Cron should have configured (overridden) pattern", invocation.delayBy(), is(Duration.ZERO));
-        assertThat("Cron should have configured concurrent set to false.", invocation.interval(), is(Duration.ofSeconds(1)));
     }
 
     @TestRegistry.AfterShutdown

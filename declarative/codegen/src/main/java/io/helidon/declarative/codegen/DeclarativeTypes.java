@@ -70,6 +70,11 @@ public final class DeclarativeTypes {
      */
     public static final TypeName EXECUTOR_SERVICE = TypeName.create(ExecutorService.class);
 
+    /**
+     * Type name for {@code io.helidon.common.config.ConfigBuilderSupport}.
+     */
+    public static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
+
     private DeclarativeTypes() {
     }
 }
