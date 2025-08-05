@@ -16,7 +16,7 @@
 package io.helidon.webclient.grpc.tracing;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 

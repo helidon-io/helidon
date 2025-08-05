@@ -22,7 +22,7 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * AIMD based limiter.

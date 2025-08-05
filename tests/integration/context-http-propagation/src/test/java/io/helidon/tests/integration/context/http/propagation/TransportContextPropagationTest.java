@@ -18,9 +18,9 @@ package io.helidon.tests.integration.context.http.propagation;
 
 import java.util.Arrays;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.service.registry.Services;

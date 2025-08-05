@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 

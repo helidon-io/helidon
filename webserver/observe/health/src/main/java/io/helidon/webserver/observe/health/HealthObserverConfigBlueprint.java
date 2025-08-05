@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.observe.spi.ObserveProvider;

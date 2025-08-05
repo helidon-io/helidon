@@ -26,11 +26,11 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.WritableHeaders;

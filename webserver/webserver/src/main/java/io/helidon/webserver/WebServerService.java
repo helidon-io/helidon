@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.Builder;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.ContentEncodingContext;

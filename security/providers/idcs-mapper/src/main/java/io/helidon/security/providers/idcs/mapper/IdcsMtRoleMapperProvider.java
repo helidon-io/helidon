@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderNames;
@@ -353,9 +353,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         public B config(Config config) {
             super.config(config);
 
-            config.get("cache-config").map(EvictableCache::<MtCacheKey, List<Grant>>create).ifPresent(this::cache);
-            config.get("idcs-tenant-handler").map(TokenHandler::create).ifPresent(this::idcsTenantTokenHandler);
-            config.get("idcs-app-name-handler").map(TokenHandler::create).ifPresent(this::idcsAppNameTokenHandler);
+            config.get("cache-config").as(EvictableCache::<MtCacheKey, List<Grant>>create).ifPresent(this::cache);
+            config.get("idcs-tenant-handler").as(TokenHandler::create).ifPresent(this::idcsTenantTokenHandler);
+            config.get("idcs-app-name-handler").as(TokenHandler::create).ifPresent(this::idcsAppNameTokenHandler);
 
             return me;
         }

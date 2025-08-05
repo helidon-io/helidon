@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;

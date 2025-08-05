@@ -18,7 +18,7 @@ package io.helidon.integrations.eureka;
 import java.lang.System.Logger;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.http1.Http1Client;
 
 import static java.lang.System.getLogger;

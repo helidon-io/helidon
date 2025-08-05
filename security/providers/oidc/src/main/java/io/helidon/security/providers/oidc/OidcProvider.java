@@ -30,9 +30,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Status;
@@ -568,7 +568,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                                         .orElse(true);
                                 TokenHandler handler = outboundTarget.getConfig()
                                         .flatMap(cfg -> cfg.get("outbound-token")
-                                                .map(TokenHandler::create)
+                                                .as(TokenHandler::create)
                                                 .asOptional())
                                         .orElse(defaultTokenHandler);
                                 return new OidcOutboundTarget(propagate, handler);

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
 class MetricsConfigSupport {
@@ -36,7 +36,7 @@ class MetricsConfigSupport {
     /**
      * Looks up a single config value within the metrics configuration by config key.
      *
-     * @param metricsConfig the {@link io.helidon.common.config.Config} node containing the metrics configuration
+     * @param metricsConfig the {@link io.helidon.config.Config} node containing the metrics configuration
      * @param key           config key to fetch
      * @return config value
      */

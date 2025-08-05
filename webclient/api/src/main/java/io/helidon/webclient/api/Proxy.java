@@ -38,11 +38,11 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Header;

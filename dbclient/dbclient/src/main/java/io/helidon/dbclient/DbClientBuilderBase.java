@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
@@ -73,7 +73,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     @Override
     public T config(Config config) {
         config.get("missing-map-parameters-as-null").as(Boolean.class).ifPresent(this::missingMapParametersAsNull);
-        config.get("statements").map(DbStatements::create).ifPresent(this::statements);
+        config.get("statements").as(DbStatements::create).ifPresent(this::statements);
         return identity();
     }
 

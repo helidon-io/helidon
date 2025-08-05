@@ -18,7 +18,7 @@ package io.helidon.webserver.observe.health;
 
 import java.util.Map;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;

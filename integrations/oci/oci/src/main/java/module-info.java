@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
  * This core module provides services for {@link com.oracle.bmc.Region} and
  * {@link com.oracle.bmc.auth.BasicAuthenticationDetailsProvider}.
  * <p>
- * The module does not require {@link io.helidon.common.config.Config} service to be available, as it is considered
+ * The module does not require {@link io.helidon.config.Config} service to be available, as it is considered
  * a prerequisite for possible config sources.
  * <p>
  *
@@ -47,7 +47,6 @@
 module io.helidon.integrations.oci {
     requires io.helidon.common.configurable;
     requires io.helidon.service.registry;
-    requires io.helidon.common.config;
     requires io.helidon.config;
     requires io.helidon.webclient;
 

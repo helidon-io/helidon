@@ -19,9 +19,9 @@ package io.helidon.webserver.security;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.Security;
 

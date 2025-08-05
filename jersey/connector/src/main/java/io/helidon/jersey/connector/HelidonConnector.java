@@ -32,7 +32,6 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
-import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -334,15 +333,7 @@ class HelidonConnector implements Connector {
     }
 
     Config configFromRegistry() {
-        try {
-            io.helidon.common.config.Config cfg = Services.get(io.helidon.common.config.Config.class);
-            if (cfg instanceof Config config) {
-                return config.get(CONNECTOR_CONFIG_ROOT);
-            }
-        } catch (ServiceRegistryException e) {
-            // falls through
-        }
-        LOGGER.log(System.Logger.Level.TRACE, "Unable to find Config in service registry");
-        return Config.empty();
+        return Services.get(Config.class)
+                .get(CONNECTOR_CONFIG_ROOT);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -222,10 +222,10 @@ public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecuri
             config.get("authenticate").asBoolean().ifPresent(this::authenticate);
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token").map(TokenHandler::create).ifPresent(this::atnTokenHandler);
-            config.get("outbound-token").map(TokenHandler::create).ifPresent(this::outboundTokenHandler);
+            config.get("atn-token").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            config.get("outbound-token").as(TokenHandler::create).ifPresent(this::outboundTokenHandler);
 
-            config.get("outbound").mapList(OutboundTarget::create)
+            config.get("outbound").asList(OutboundTarget::create)
                     .ifPresent(it -> it.forEach(outboundBuilder::addTarget));
 
             return this;

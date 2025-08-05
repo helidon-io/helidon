@@ -30,7 +30,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webserver.jsonrpc {
 
     requires io.helidon.builder.api;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.webserver;
     requires io.helidon.jsonrpc.core;
     requires jakarta.json;

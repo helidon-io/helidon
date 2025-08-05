@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
@@ -61,7 +61,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  * <p>
  * <b>Unless You want to explicitly depend on Jaeger in Your code, please
  * use {@link io.helidon.tracing.TracerBuilder#create(String)} or
- * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.common.config.Config)} that is abstracted.</b>
+ * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.config.Config)} that is abstracted.</b>
  * <p>
  * The Jaeger tracer uses environment variables and system properties to override the defaults.
  * Except for {@code protocol} and {@code service} these are honored, unless overridden in configuration
@@ -208,7 +208,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      *
      * @param config configuration to load this builder from
      * @return a new builder instance.
-     * @see io.helidon.tracing.providers.jaeger.JaegerTracerBuilder#config(io.helidon.common.config.Config)
+     * @see io.helidon.tracing.providers.jaeger.JaegerTracerBuilder#config(io.helidon.config.Config)
      */
     public static JaegerTracerBuilder create(Config config) {
         return create().config(config);
@@ -276,9 +276,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("private-key-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
-        config.get("client-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
-        config.get("trusted-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
+        config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
+        config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
+        config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
         config.get("propagation").asList(String.class)
                 .ifPresent(propagationStrings -> {
                     propagationStrings.stream()

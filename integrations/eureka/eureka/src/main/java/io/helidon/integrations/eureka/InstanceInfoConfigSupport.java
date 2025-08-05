@@ -21,7 +21,7 @@ import java.net.UnknownHostException;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
 import static java.lang.System.Logger.Level.WARNING;

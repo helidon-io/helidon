@@ -65,7 +65,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg,
                                      String name,
-                                     io.helidon.common.config.Config config) {
+                                     io.helidon.config.Config config) {
         super(name, TYPE);
         this.cfg = Objects.requireNonNull(cfg);
 
@@ -118,7 +118,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
      *
      * @param config the new config
      */
-    void config(io.helidon.common.config.Config config) {
+    void config(io.helidon.config.Config config) {
         Objects.requireNonNull(config);
         maybeReload();
     }

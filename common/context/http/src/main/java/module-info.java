@@ -20,6 +20,6 @@
 module io.helidon.common.context.http {
     exports io.helidon.common.context.http;
     requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.http;
 }

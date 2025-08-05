@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Dependency;
@@ -67,7 +66,7 @@ class OciAuthenticationDetailsProviderTest {
     }
 
     void resetWith(Config config, ServiceRegistryConfig injectionConfig) {
-        GlobalConfig.config(() -> config, true);
+        Config.global(config);
         tearDown();
         registryManager = ServiceRegistryManager.create(injectionConfig);
         registry = registryManager.registry();

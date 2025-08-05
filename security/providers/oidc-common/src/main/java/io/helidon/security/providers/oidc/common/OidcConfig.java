@@ -28,9 +28,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -205,7 +205,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>oidc-metadata.resource</td>
  *     <td>identity-uri/.well-known/openid-configuration</td>
  *     <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information
- *     about the identity server. See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     about the identity server. See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>token-endpoint-uri</td>
@@ -228,7 +228,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>"jwks-uri" in OIDC metadata, or identity-uri/admin/v1/SigningCert/jwk if not available, only needed
  *              when jwt validation is done by us</td>
  *     <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT.
- *     See {@link Resource#create(io.helidon.common.config.Config)}</td>
+ *     See {@link Resource#create(io.helidon.config.Config)}</td>
  * </tr>
  * <tr>
  *     <td>introspect-endpoint-uri</td>
@@ -467,7 +467,7 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Create a new instance from {@link io.helidon.common.config.Config}.
+     * Create a new instance from {@link io.helidon.config.Config}.
      * The config instance has to be on the node containing keys used by this class (e.g. client-id).
      *
      * @param config configuration used to obtain OIDC integration values
@@ -1160,7 +1160,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
 
-            config.get("cors").map(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
+            config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
             config.get("token-refresh-before-expiration").as(Duration.class).ifPresent(this::tokenRefreshSkew);
 

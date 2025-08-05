@@ -17,7 +17,7 @@
 package io.helidon.http.encoding.gzip;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.spi.ContentEncodingProvider;
 

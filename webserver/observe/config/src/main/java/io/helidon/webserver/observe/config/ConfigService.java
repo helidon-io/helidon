@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.ConfigValue;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.media.EntityWriter;
@@ -65,7 +65,7 @@ class ConfigService implements HttpService {
     private void value(ServerRequest req, ServerResponse res) {
         String name = req.path().pathParameters().get("name");
 
-        ConfigValue<String> value = GlobalConfig.config().get(name).asString();
+        ConfigValue<String> value = Config.global().get(name).asString();
         if (value.isPresent()) {
             JsonObjectBuilder json = JSON.createObjectBuilder()
                     .add("name", name);
@@ -78,7 +78,8 @@ class ConfigService implements HttpService {
     }
 
     private void values(ServerRequest req, ServerResponse res) {
-        Map<String, String> mapOfValues = new HashMap<>(GlobalConfig.config().asMap()
+        Map<String, String> mapOfValues = new HashMap<>(Config.global()
+                                                                .asMap()
                                                                 .orElseGet(Map::of));
 
         JsonObjectBuilder json = JSON.createObjectBuilder();

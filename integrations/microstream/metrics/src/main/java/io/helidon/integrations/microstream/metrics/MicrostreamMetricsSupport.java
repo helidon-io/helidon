@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;

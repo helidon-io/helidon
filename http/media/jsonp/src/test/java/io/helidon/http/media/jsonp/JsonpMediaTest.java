@@ -23,9 +23,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;

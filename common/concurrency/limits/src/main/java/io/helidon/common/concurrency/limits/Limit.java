@@ -16,7 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
-import io.helidon.common.config.NamedService;
+import io.helidon.config.NamedService;
 import io.helidon.service.registry.Service;
 
 /**

@@ -45,7 +45,7 @@ public class HeaderAdjustmentFeatureProvider
     }
 
     @Override
-    public HeaderAdjustmentFeature create(io.helidon.common.config.Config config, String name) {
+    public HeaderAdjustmentFeature create(io.helidon.config.Config config, String name) {
         return new HeaderAdjustmentFeature();
     }
 
@@ -75,9 +75,9 @@ public class HeaderAdjustmentFeatureProvider
         @Weight(WEIGHT)
         private static class HeaderAdjustmentHttpFeature implements HttpFeature {
 
-            private final io.helidon.common.config.Config config;
+            private final io.helidon.config.Config config;
 
-            private HeaderAdjustmentHttpFeature(io.helidon.common.config.Config config) {
+            private HeaderAdjustmentHttpFeature(io.helidon.config.Config config) {
                 this.config = config;
             }
 

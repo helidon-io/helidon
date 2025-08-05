@@ -46,8 +46,8 @@ import static io.helidon.common.types.AccessModifier.PUBLIC;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
 import static io.helidon.common.types.TypeNames.SUPPLIER;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.COMMON_CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.COMMON_WEIGHT;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIGS_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIED_INSTANCE;
@@ -209,7 +209,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                                           .addParameter(Parameter.builder()
                                                                 .description("Configuration for the new model.")
                                                                 .name("config")
-                                                                .type(COMMON_CONFIG)
+                                                                .type(CONFIG)
                                                                 .build()));
 
         classModel.addMethod(servicesMethod(modelType, constantClassTypeName));

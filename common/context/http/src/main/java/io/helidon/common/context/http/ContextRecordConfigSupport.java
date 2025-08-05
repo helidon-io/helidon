@@ -17,7 +17,7 @@
 package io.helidon.common.context.http;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 
@@ -35,7 +35,7 @@ final class ContextRecordConfigSupport {
         @Prototype.FactoryMethod
         static HeaderName createHeader(Config config) {
             return config.asString()
-                    .map(HeaderNames::create)
+                    .as(HeaderNames::create)
                     .orElseThrow(() -> new IllegalStateException("Config node did not contain a header name"));
         }
     }

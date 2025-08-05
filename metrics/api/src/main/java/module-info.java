@@ -29,7 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
     requires static io.helidon.common.features.api;
 
     requires io.helidon.http;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
 
     requires io.helidon.builder.api;
     requires io.helidon.service.registry;

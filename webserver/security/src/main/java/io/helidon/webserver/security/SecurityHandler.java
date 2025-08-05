@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -64,7 +64,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
  * or automatically from configuration when integration done through {@link io.helidon.webserver.security.SecurityFeature},
- * or {@link SecurityHttpFeature#create(io.helidon.common.config.Config)}.
+ * or {@link SecurityHttpFeature#create(io.helidon.config.Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

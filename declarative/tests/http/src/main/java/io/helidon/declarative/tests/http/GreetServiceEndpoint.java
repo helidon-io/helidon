@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Default;
-import io.helidon.common.config.Configuration;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Configuration;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;

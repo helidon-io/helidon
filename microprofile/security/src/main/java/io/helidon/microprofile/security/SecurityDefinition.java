@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.annotations.Audited;

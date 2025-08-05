@@ -290,10 +290,10 @@ class ConfigProvider implements Supplier<Config> {
         }
     }
 
-    private static class CommonKeyWrapper implements Config.Key {
+    static class CommonKeyWrapper implements Config.Key {
         private final io.helidon.common.config.Config.Key delegate;
 
-        private CommonKeyWrapper(io.helidon.common.config.Config.Key key) {
+        CommonKeyWrapper(io.helidon.common.config.Config.Key key) {
             this.delegate = key;
         }
 

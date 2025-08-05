@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.tracing.Tracer;

@@ -19,7 +19,7 @@ package io.helidon.integrations.langchain4j.providers.oracle;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 

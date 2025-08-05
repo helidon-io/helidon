@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import io.helidon.common.Weight;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.concurrency.limits.AimdLimit}

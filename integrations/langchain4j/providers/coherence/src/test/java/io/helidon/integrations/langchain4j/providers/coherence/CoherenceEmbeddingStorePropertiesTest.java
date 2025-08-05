@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.langchain4j.providers.coherence;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 

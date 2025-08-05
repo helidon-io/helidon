@@ -32,7 +32,7 @@ module io.helidon.http.encoding {
 
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.http;
 
     exports io.helidon.http.encoding;

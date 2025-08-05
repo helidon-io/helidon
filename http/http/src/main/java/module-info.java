@@ -29,6 +29,7 @@ module io.helidon.http {
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
 
     exports io.helidon.http;
 

@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.grpc.spi;
 
-import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.config.ConfiguredProvider;
 
 /**
  * Java service loader interface for gRPC client services.

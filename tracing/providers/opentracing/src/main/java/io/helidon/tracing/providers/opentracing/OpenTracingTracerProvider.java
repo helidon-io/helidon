@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
@@ -49,7 +48,7 @@ public class OpenTracingTracerProvider implements TracerProvider {
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
 
     private LazyValue<Tracer> globalHelidonTracer = LazyValue.create(() -> {
-        Config tracingConfig = GlobalConfig.config().get("tracing");
+        Config tracingConfig = Config.global().get("tracing");
 
         // Set up to create an explicit OpenTracing tracer only if we have config for tracing, indicating that the user wants
         // something other than the no-op implementation.

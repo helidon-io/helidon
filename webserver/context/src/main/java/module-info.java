@@ -29,7 +29,7 @@ module io.helidon.webserver.context {
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
 
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.context.ContextFeatureProvider;
