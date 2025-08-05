@@ -15,9 +15,7 @@
 #
 
 override:
-  cron:
-    expression: "0/1 * * * * ?"
-    concurrent: false
+  cron: "0/1 * * * * ?"
   fixed:
     delay-by: "PT0S"
     interval: "PT1S"

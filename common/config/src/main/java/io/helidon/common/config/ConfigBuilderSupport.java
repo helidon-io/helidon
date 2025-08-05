@@ -35,7 +35,7 @@ import io.helidon.service.registry.ServiceRegistry;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
     // matches string between ${ } with a negative lookbehind if there is not backslash
-    private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}:]+)(:.+)?}";
+    private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}:]+)(:.+?)?}";
     private static final Pattern PATTERN_REFERENCE = Pattern.compile(REGEX_REFERENCE);
     // matches a backslash with a positive lookahead if it is the backslash that encodes ${}
     private static final String REGEX_BACKSLASH = "\\\\(?=\\$\\{([^}]+)})";
@@ -270,21 +270,27 @@ public final class ConfigBuilderSupport {
     public static String resolveExpression(Config config, String expression) {
         Matcher m = PATTERN_REFERENCE.matcher(expression);
 
-        StringBuilder sb = new StringBuilder();
-        while(m.find()) {
-            String configKey = m.group(1);
-            String defaultValue = m.group(2);
+        try {
+            StringBuilder sb = new StringBuilder();
+            while (m.find()) {
+                String configKey = m.group(1);
+                String defaultValue = m.group(2);
 
-            if (defaultValue == null) {
-                m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().get()));
-            } else {
-                m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().orElse(defaultValue)));
+                if (defaultValue == null) {
+                    m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().get()));
+                } else {
+                    // remove the :
+                    defaultValue = defaultValue.substring(1);
+                    m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().orElse(defaultValue)));
+                }
             }
-        }
 
-        m.appendTail(sb);
-        m = PATTERN_BACKSLASH.matcher(sb.toString());
-        return m.replaceAll("");
+            m.appendTail(sb);
+            m = PATTERN_BACKSLASH.matcher(sb.toString());
+            return m.replaceAll("");
+        } catch (ConfigException e) {
+            throw new ConfigException("Failed to resolve expression: " + expression, e);
+        }
     }
 
     /**
