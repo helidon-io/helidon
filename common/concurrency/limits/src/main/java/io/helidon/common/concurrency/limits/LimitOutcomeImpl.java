@@ -142,7 +142,7 @@ class LimitOutcomeImpl implements LimitOutcome {
         this.listenerInfos.addAll(listenerInfos);
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static void processAccepted(Supplier<Accepted> acceptedFactory,
                                         LimitAlgorithm.Token token,
                                         List<LimitAlgorithmListener> listeners,
@@ -163,7 +163,7 @@ class LimitOutcomeImpl implements LimitOutcome {
                                                 .toList());
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static void processRejected(Supplier<LimitOutcomeImpl> rejectedFactory,
                                         List<LimitAlgorithmListener> listeners,
                                         Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {

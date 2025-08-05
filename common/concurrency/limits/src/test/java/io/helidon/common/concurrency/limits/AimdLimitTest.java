@@ -53,7 +53,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .buildPrototype();
 
-        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
 
         assertThat(limiter.currentLimit(), is(30));
         limiter.updateWithSample(0, 0, 0, false);
@@ -67,7 +67,7 @@ public class AimdLimitTest {
                 .initialLimit(30)
                 .timeout(timeout)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
         limiter.updateWithSample(0, timeout.toNanos() + 1, 0, true);
         assertThat(limiter.currentLimit(), is(27));
     }
@@ -77,7 +77,7 @@ public class AimdLimitTest {
         AimdLimitConfig config = AimdLimitConfig.builder()
                 .initialLimit(20)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         assertThat(limiter.currentLimit(), is(21));
     }
@@ -89,7 +89,7 @@ public class AimdLimitTest {
                 .maxLimit(21)
                 .minLimit(0)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
         limiter.updateWithSample(0, Duration.ofMillis(1).toNanos(), 10, true);
         // after success limit should still be at the max.
         assertThat(limiter.currentLimit(), is(21));
@@ -101,7 +101,7 @@ public class AimdLimitTest {
                 .minLimit(10)
                 .initialLimit(10)
                 .buildPrototype();
-        AimdLimitImpl limiter = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limiter = new AimdLimitImpl(config);
         assertThat(limiter.currentLimit(), is(10));
     }
 
@@ -114,7 +114,7 @@ public class AimdLimitTest {
                 .minLimit(1)
                 .maxLimit(200)
                 .buildPrototype();
-        AimdLimitImpl limit = new AimdLimitImpl(config, "test");
+        AimdLimitImpl limit = new AimdLimitImpl(config);
 
         int threadCount = 100;
         int operationsPerThread = 1_000;

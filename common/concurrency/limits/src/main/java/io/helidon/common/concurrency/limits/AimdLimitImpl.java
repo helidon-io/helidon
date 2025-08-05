@@ -53,15 +53,14 @@ class AimdLimitImpl {
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
     private final int queueLength;
-    private final String originName;
     private final AimdLimitConfig config;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
+    private String originName;
 
-    AimdLimitImpl(AimdLimitConfig config, String originName) {
+    AimdLimitImpl(AimdLimitConfig config) {
         this.config = config;
-        this.originName = originName;
         int initialLimit = config.initialLimit();
         this.backoffRatio = config.backoffRatio();
         this.timeoutInNanos = config.timeout().toNanos();
@@ -252,6 +251,7 @@ class AimdLimitImpl {
      * @param config this limit's config
      */
     void initMetrics(String socketName, AimdLimitConfig config) {
+        originName = socketName;
         if (config.enableMetrics()) {
             MetricsFactory metricsFactory = MetricsFactory.getInstance();
             MeterRegistry meterRegistry = Metrics.globalRegistry();

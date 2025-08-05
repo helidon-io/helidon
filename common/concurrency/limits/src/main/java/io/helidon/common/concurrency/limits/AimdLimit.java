@@ -51,11 +51,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     private final AimdLimitConfig config;
     private final AimdLimitImpl aimdLimitImpl;
 
-    private String originName;
-
     private AimdLimit(AimdLimitConfig config) {
         this.config = config;
-        this.aimdLimitImpl = new AimdLimitImpl(config, originName);
+        this.aimdLimitImpl = new AimdLimitImpl(config);
     }
 
     /**
@@ -172,7 +170,6 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public void init(String socketName) {
-        originName = socketName;
         aimdLimitImpl.initMetrics(socketName, config);
     }
 }
