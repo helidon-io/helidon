@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import io.helidon.common.Errors;
@@ -29,6 +28,8 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -110,5 +111,17 @@ public class JwtTest {
         errors = jwtValidator.validate(jwt);
         errors.log(LOGGER);
         errors.checkValid();
+    }
+
+    @Test
+    public void testUpnNotAddedAutomatically() {
+        String json = Jwt.builder().subject("a").build().payloadJson().toString();
+        assertThat(json, not(containsString("\"upn\"")));
+    }
+
+    @Test
+    public void testUserPrincipalFallsBackToSub() {
+        Jwt jwt = Jwt.builder().subject("a").build();
+        assertThat(jwt.userPrincipal(), is(Optional.of("a")));
     }
 }
