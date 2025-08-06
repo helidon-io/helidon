@@ -20,7 +20,7 @@ import java.util.List;
 import io.helidon.data.tests.model.Type;
 import io.helidon.data.tests.repository.TypeRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.TestSuite;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
-@Suite(MySqlSuite.class)
+@TestSuite.Suite(MySqlSuite.class)
 @Testcontainers(disabledWithoutDocker = true)
 public class TestScripts {
 

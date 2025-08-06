@@ -57,6 +57,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-common</artifactId>
             <scope>test</scope>
@@ -91,6 +96,11 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.service</groupId>
                             <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
@@ -102,6 +112,28 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.features</groupId>
+                        <artifactId>helidon-common-features-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <!-- Issue with jakarta injection and transactions modules -->
             <plugin>

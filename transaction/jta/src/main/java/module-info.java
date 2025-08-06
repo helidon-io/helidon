@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+
 /**
  * Jakarta Transaction Providers Registry.
  */
+@Features.Name("JTA")
+@Features.Since("4.3.0")
+@Features.Path({"Transaction", "JTA"})
+@Features.Description("Helidon Transactions - JTA")
+@Features.Incubating
 module io.helidon.transaction.jta {
+    requires static io.helidon.common.features.api;
 
     requires jakarta.transaction;
     requires io.helidon.service.registry;

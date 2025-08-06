@@ -23,9 +23,7 @@ import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.suite.AfterSuite;
-import io.helidon.testing.junit5.suite.BeforeSuite;
-import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.junit.jupiter.api.Test;
@@ -49,7 +47,7 @@ public class MySqlSuite implements SuiteProvider {
                                                                           ConfigSources.classpath("application.yaml"));
     }
 
-    @BeforeSuite
+    @TestSuite.BeforeSuite
     public void beforeSuite() {
         this.containerHandler.startContainer();
         this.containerHandler.setConfig();
@@ -60,17 +58,17 @@ public class MySqlSuite implements SuiteProvider {
         pokemonRepository.run(InitialData::verify);
     }
 
-    @AfterSuite
+    @TestSuite.AfterSuite
     public void afterSuite() {
         containerHandler.stopContainer();
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestApplication extends io.helidon.data.tests.common.TestApplication {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestBasicRepository extends io.helidon.data.tests.common.TestBasicRepository {
 
@@ -90,52 +88,52 @@ public class MySqlSuite implements SuiteProvider {
 
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestBasicRepositoryDelete extends io.helidon.data.tests.common.TestBasicRepositoryDelete {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestCrudRepository extends io.helidon.data.tests.common.TestCrudRepository {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnCriteria extends io.helidon.data.tests.common.TestQbmnCriteria {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnCriteriaExtended extends io.helidon.data.tests.common.TestQbmnCriteriaExtended {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnDml extends io.helidon.data.tests.common.TestQbmnDml {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnOrder extends io.helidon.data.tests.common.TestQbmnOrder {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.common.TestQueryByAnnotation {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
     }
 
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {
     }

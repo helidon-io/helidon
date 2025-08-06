@@ -20,7 +20,11 @@ import java.lang.reflect.Type;
 /**
  * {@code SuiteResolver} defines API for suite providers
  * to dynamically resolve arguments for constructors and methods at runtime.
+ *
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 public interface SuiteResolver {
 
     /**

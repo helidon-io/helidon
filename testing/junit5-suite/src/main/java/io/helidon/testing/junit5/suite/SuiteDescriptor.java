@@ -28,6 +28,7 @@ import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 // Suite descriptor
+@SuppressWarnings("deprecation")
 class SuiteDescriptor {
 
     private final SuiteProvider provider;
@@ -39,7 +40,7 @@ class SuiteDescriptor {
             .builder(ServiceLoader.load(SuiteProvider.class))
             .build();
 
-    private SuiteDescriptor(Suite suite,
+    private SuiteDescriptor(TestSuite.Suite suite,
                             SuiteProvider provider,
                             ExtensionContext context) {
         this.provider = provider;
@@ -49,7 +50,7 @@ class SuiteDescriptor {
                         ExtensionContext.Namespace.create(suite.value().getName())));
     }
 
-    static SuiteDescriptor create(Suite suite, ExtensionContext context) {
+    static SuiteDescriptor create(TestSuite.Suite suite, ExtensionContext context) {
         Class<? extends SuiteProvider> providerClass = suite.value();
         SuiteProvider provider;
         List<SuiteProvider> loadedProviders = LOADER.stream()
@@ -91,7 +92,7 @@ class SuiteDescriptor {
     void init() {
         // Run @BeforeSuite annotated methods
         for (Method method : provider.getClass().getMethods()) {
-            if (method.isAnnotationPresent(BeforeSuite.class)) {
+            if (method.isAnnotationPresent(TestSuite.BeforeSuite.class)) {
                 callMethod(method);
             }
         }
@@ -101,7 +102,7 @@ class SuiteDescriptor {
     void close() {
         // Run @AfterSuite annotated methods
         for (Method method : provider.getClass().getMethods()) {
-            if (method.isAnnotationPresent(AfterSuite.class)) {
+            if (method.isAnnotationPresent(TestSuite.AfterSuite.class)) {
                 callMethod(method);
             }
         }

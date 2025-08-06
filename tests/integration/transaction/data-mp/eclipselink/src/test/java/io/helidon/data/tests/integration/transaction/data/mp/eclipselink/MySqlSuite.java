@@ -23,9 +23,7 @@ import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.suite.AfterSuite;
-import io.helidon.testing.junit5.suite.BeforeSuite;
-import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 import io.helidon.tests.integration.transaction.data.mp.repository.PokemonRepository;
 import io.helidon.tests.integration.transaction.data.mp.test.Data;
@@ -48,7 +46,7 @@ public class MySqlSuite implements SuiteProvider {
                                                                           ConfigSources.classpath("application.yaml"));
     }
 
-    @BeforeSuite
+    @TestSuite.BeforeSuite
     public void beforeSuite() {
         this.containerHandler.startContainer();
         Config config = this.containerHandler.setConfig();
@@ -67,14 +65,14 @@ public class MySqlSuite implements SuiteProvider {
         pokemonRepository.run(Data::init);
     }
 
-    @AfterSuite
+    @TestSuite.AfterSuite
     public void afterSuite() {
         containerHandler.stopContainer();
     }
 
     @HelidonTest
     @Configuration(useExisting = true)
-    @Suite(MySqlSuite.class)
+    @TestSuite.Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestTransaction extends io.helidon.tests.integration.transaction.data.mp.test.TestTransaction {
     }

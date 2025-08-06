@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Suite(SimpleSuite.class)
+@TestSuite.Suite(SimpleSuite.class)
 public class TestSimpleSuite {
 
     // Validate that shared suite context is available and @BeforeSuite was executed

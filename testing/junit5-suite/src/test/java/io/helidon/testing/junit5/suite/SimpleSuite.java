@@ -34,7 +34,7 @@ public class SimpleSuite implements SuiteProvider, SuiteStorage {
     }
 
     // Validate that @BeforeSuite is executed
-    @BeforeSuite
+    @TestSuite.BeforeSuite
     public void beforeSuite(Storage storage) {
         LOGGER.log(Level.TRACE,
                    () -> String.format("Running beforeSuite of SimpleSuite test class, order %d", counter));
@@ -42,7 +42,7 @@ public class SimpleSuite implements SuiteProvider, SuiteStorage {
     }
 
     // Validate that @AfterSuite is executed
-    @AfterSuite
+    @TestSuite.AfterSuite
     public void afterSuite(Storage storage) {
         LOGGER.log(Level.TRACE,
                    () -> String.format("Running afterSuite of SimpleSuite test class, order %d", counter));

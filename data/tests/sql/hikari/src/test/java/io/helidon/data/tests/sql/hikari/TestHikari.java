@@ -26,7 +26,7 @@ import io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
-import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.TestSuite;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -34,7 +34,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Suite(MySqlSuite.class)
+@TestSuite.Suite(MySqlSuite.class)
 @Testcontainers(disabledWithoutDocker = true)
 @Testing.Test
 class TestHikari {

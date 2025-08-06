@@ -31,7 +31,11 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 
 /**
  * Suite junit 5 extension.
+ *
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 public class SuiteExtension
         implements BeforeAllCallback, ExtensionContext.Store.CloseableResource, ParameterResolver {
 
@@ -54,7 +58,7 @@ public class SuiteExtension
     public void beforeAll(ExtensionContext context) {
         if (context.getTestClass().isPresent()) {
             globalStore = context.getRoot().getStore(GLOBAL);
-            Suite suite = suiteFromTestClass(context.getTestClass().get());
+            TestSuite.Suite suite = suiteFromTestClass(context.getTestClass().get());
             Class<? extends SuiteProvider> providerClass = suite.value();
             String storeKey = providerClass.getName();
             descriptor = providerFromStore(globalStore, storeKey);
@@ -104,8 +108,8 @@ public class SuiteExtension
         PROVIDER_KEYS.add(storeKey);
     }
 
-    private static Suite suiteFromTestClass(Class<?> testClass) {
-        Suite suite = testClass.getAnnotation(Suite.class);
+    private static TestSuite.Suite suiteFromTestClass(Class<?> testClass) {
+        TestSuite.Suite suite = testClass.getAnnotation(TestSuite.Suite.class);
         if (suite == null) {
             throw new IllegalStateException(
                     String.format("Suite annotation was not found on %s class", testClass.getSimpleName()));

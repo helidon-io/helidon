@@ -18,7 +18,7 @@ package io.helidon.testing.junit5.suite;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * {@link Suite} shared context storage mapped to jUnit 5 {@code GLOBAL} storage.
+ * {@link TestSuite} shared context storage mapped to jUnit 5 {@code GLOBAL} storage.
  */
 class StorageImpl implements Storage {
 

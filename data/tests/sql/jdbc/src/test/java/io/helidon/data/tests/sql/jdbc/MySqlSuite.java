@@ -18,8 +18,7 @@ package io.helidon.data.tests.sql.jdbc;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestContainerHandler;
-import io.helidon.testing.junit5.suite.AfterSuite;
-import io.helidon.testing.junit5.suite.BeforeSuite;
+import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
@@ -38,13 +37,13 @@ public class MySqlSuite implements SuiteProvider {
                                                                           ConfigSources.classpath("application.yaml"));
     }
 
-    @BeforeSuite
+    @TestSuite.BeforeSuite
     public void beforeSuite() {
         this.containerHandler.startContainer();
         this.containerHandler.setConfig();
     }
 
-    @AfterSuite
+    @TestSuite.AfterSuite
     public void afterSuite() {
         containerHandler.stopContainer();
     }

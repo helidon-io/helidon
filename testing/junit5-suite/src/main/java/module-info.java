@@ -16,7 +16,11 @@
 
 /**
  * Helidon Integration Tests Suite Extension.
+ *
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 module io.helidon.testing.junit5.suite {
 
     requires transitive org.junit.jupiter.api;

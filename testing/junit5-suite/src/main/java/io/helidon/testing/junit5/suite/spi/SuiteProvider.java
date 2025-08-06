@@ -17,11 +17,15 @@ package io.helidon.testing.junit5.suite.spi;
 
 /**
  * Integration tests suite provider.
- * Any {@link io.helidon.testing.junit5.suite.Suite} class must implement this interface.
+ * Any {@link io.helidon.testing.junit5.suite.TestSuite} class must implement this interface.
  * <p>
- * A Suite may provide methods annotated with {@link io.helidon.testing.junit5.suite.BeforeSuite} and/or
- * {@link io.helidon.testing.junit5.suite.AfterSuite}.
+ * A Suite may provide methods annotated with {@link io.helidon.testing.junit5.suite.TestSuite.BeforeSuite} and/or
+ * {@link io.helidon.testing.junit5.suite.TestSuite.AfterSuite}.
  * Currently supported parameter is the {@link io.helidon.testing.junit5.suite.SuiteStorage}.
+ *
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 public interface SuiteProvider {
 }

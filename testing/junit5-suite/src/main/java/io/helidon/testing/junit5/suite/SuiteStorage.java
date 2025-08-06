@@ -19,6 +19,10 @@ package io.helidon.testing.junit5.suite;
  * {@code SuiteStorage} defines API for suite providers to provide suite specific storage
  * shared for all tests running as part of the suite.
  * Storage is available as arguments resolver for the {@link Storage} class.
+ *
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 public interface SuiteStorage {
 }

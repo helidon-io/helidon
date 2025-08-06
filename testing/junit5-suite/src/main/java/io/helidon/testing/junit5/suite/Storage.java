@@ -17,7 +17,10 @@ package io.helidon.testing.junit5.suite;
 
 /**
  * Suite specific storage.
+ * @deprecated this is a feature in progress of development, there may be backward incompatible changes done to it, so please
+ *         use with care
  */
+@Deprecated
 public interface Storage {
 
     /**

@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+
 /**
  * Helidon Transaction API.
  */
+@Features.Name("Transaction")
+@Features.Since("4.3.0")
+@Features.Path("Transaction")
+@Features.Description("Helidon Transactions - JTA")
+@Features.Incubating
 module io.helidon.transaction {
+    requires static io.helidon.common.features.api;
 
     requires static io.helidon.service.registry;
 
