@@ -30,7 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Advanced Config Sources, Advanced Config Sources>>
 - <<Advanced Config Parsers, Advanced Config Parsers>>
 - <<Config Keys with . in name, Config Keys with . in name>>
-- <<filters-and-overrides, Filters, Overrides and Token Substitution>>
+- <<filters, Filters and Token Substitution>>
 - <<Executors for Asynchronous Config Activity, Executors for Asynchronous Config Activity>>
 
 == Overview
@@ -432,18 +432,17 @@ that might be in the node's name, in this example in `oracle.com`.
 <6> The config node `"oracle.com"` has type `OBJECT`...
 <7> ...and name `"oracle.com"`.
 
-== Filters, Overrides, and Token Substitution [[filters-and-overrides]]
+== Filters, and Token Substitution [[filters]]
 When your application retrieves a config value, the config system can transform it
-before returning the value, according to _filters_, _overrides_, and
+before returning the value, according to _filters_, and
 _tokens_. The config system provides some built-in instances of these
 you can use, and you can add your own as described in the
 sections which describe
-xref:extensions.adoc#Config-SPI-ConfigFilter[filters] and
-xref:extensions.adoc#Config-SPI-OverrideSource[overrides].
+xref:extensions.adoc#Config-SPI-ConfigFilter[filters]
 
-Your application can add filters and overrides explicitly to a config builder
+Your application can add filters explicitly to a config builder
 and the config system by default uses the Java service loader mechanism to
-locate all available filters and overrides and add them automatically to all
+locate all available filters and add them automatically to all
 config builders (unless your code disables that behavior for a given
 builder).
 
@@ -458,31 +457,52 @@ filter enables the token substitution described below.
 See the link:{config-javadoc-base-url}/io/helidon/config/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
 for more information.
 
-=== Overrides
-The overrides feature allows you to create an external document containing key/value
-pairs which replace the value otherwise returned for the name, and then add that
-document as an override source to a config builder.
+=== Overrides Filter
 
-There are some key differences between overrides and filters.
+The filter in module `io.helidon.config:helidon-config-overrides` provides support for overriding values using a pattern.
 
-* Because overrides are loaded
-from sources those sources can change while your application runs and so the
-overrides they that prescribe can change.
-* The override document can use wildcards in key expressions.
-* Overrides can affect only keys that already exist in the original source; filters
-can supply values even if the key is absent from the config source.
+The overrides filter allows you to create an external source containing key/value
+pairs which replace the value otherwise returned for the name. Such a source can be then configured
+on the filter, which will apply the patterns.
 
-Each override entry consists of a Java properties-format definition. The key is an
-expression (which can use wildcards) to match config keys read from the current
-config sources, and the override value is the new value for any key matching the
-key expression from that entry. Order is important. The
-config system tests every key expression/value pair one by one in the order they appear
-in the overrides sources. Once the config system finds an override entry in which
-the key expression matches the configuration key, the system returns that entry's
-value for the key being processed.
+Key features of the overrides filter:
 
-See the link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSource.html[`OverrideSource]` JavaDoc
-for more detail.
+* it can use config sources or config instance that supports changes as the source of the overrides
+* it uses wildcards in key expressions, allowing better customization options
+* overrides can affect only keys that already exist in the original source
+
+The configuration of the filter can be done through its builder API, or through a config source.
+If config source is used, then the key is the expression that can use wildcards, while the value is the target value to use for keys matching that expression.
+
+Example of an override config source (using properties format):
+
+[source,properties]
+.Example `overrides.properties`
+----
+prod.*.logging.level = WARNING
+----
+
+The wildcard is in place for any word, so the following keys would match:
+
+- `prod.first-pod.logging.level`
+- `prod.second-pod.logging.level`
+
+But the following key would NOT match:
+
+- `prod.first-pod.component.logging.level`
+
+The overrides filter can be configured with a custom config source, a custom config, using the actual config instance it filters (the base key is `overrides.expressions`), or using a builder, which allows configuration based on regular expression as well as wildcard expressions.
+
+Example configuration using a builder:
+[source,java]
+.Initialize `Config` with Override Definition from `overrides.properties` file
+----
+include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_14, indent=0]
+----
+<1> Adds an override config filter
+<2> Adds a file config source with the override values
+<3> Adds the application configuration file
+using the environment-specific override.
 
 === Tokens
 A token reference is a key token starting with `$`, optionally enclosed between
@@ -495,16 +515,6 @@ config source, which identifies a current environment (see `env.yaml` examples
 below). You can then use the same overrides for different environments, say `test` and `prod`.
 The configuration in each environment is then overridden with a different values
 using wildcards (see `overrides.properties` below).
-
-[source,java]
-.Initialize `Config` with Override Definition from `overrides.properties` file
-----
-include::{sourcedir}/se/config/AdvancedConfigurationSnippets.java[tag=snippet_14, indent=0]
-----
-<1> Loads _overrides_ from the specified file.
-<2> A deployment-specific environment configuration file.
-<3> A default configuration containing token references that are resolved
-using the environment-specific override.
 
 You can disable key and value token replacement separately as the following example shows.
 

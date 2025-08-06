@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,15 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import io.helidon.config.spi.ConfigContent.OverrideContent;
-import io.helidon.config.spi.OverrideSource;
-
 /**
- * {@link OverrideSource} implementation that loads override definitions from a resource on a classpath.
+ * {@link io.helidon.config.spi.OverrideSource} implementation that loads override definitions from a resource on a classpath.
  *
  * @see io.helidon.config.spi.Source.Builder
+ * @deprecated override feature has been moved to module {@code io.helidon.config:helidon-config-overrides}
  */
-public class ClasspathOverrideSource extends AbstractSource implements OverrideSource {
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.3.0")
+public class ClasspathOverrideSource extends AbstractSource implements io.helidon.config.spi.OverrideSource {
     private final String resource;
     private final URL resourceUrl;
 
@@ -48,7 +48,7 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
     }
 
     @Override
-    public Optional<OverrideContent> load() throws ConfigException {
+    public Optional<io.helidon.config.spi.ConfigContent.OverrideContent> load() throws ConfigException {
         if (null == resourceUrl) {
             return Optional.empty();
         }
@@ -61,7 +61,7 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
         }
 
         OverrideData data = OverrideData.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-        return Optional.of(OverrideContent.builder()
+        return Optional.of(io.helidon.config.spi.ConfigContent.OverrideContent.builder()
                            .data(data)
                            .build());
     }
@@ -94,7 +94,7 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
      * </ul>
      * <p>
      * If the {@code OverrideSource} is {@code mandatory} and the {@code resource} does not exist
-     * then {@link OverrideSource#load} throws {@link ConfigException}.
+     * then {@link io.helidon.config.spi.OverrideSource#load} throws {@link ConfigException}.
      */
     public static final class Builder extends AbstractSourceBuilder<Builder, Void>
             implements io.helidon.common.Builder<Builder, ClasspathOverrideSource> {

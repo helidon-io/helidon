@@ -27,7 +27,6 @@ import java.nio.file.Paths;
  * Utilities for file-related source classes.
  *
  * @see io.helidon.config.ClasspathConfigSource
- * @see ClasspathOverrideSource
  */
 class ClasspathSourceHelper {
 

@@ -37,6 +37,7 @@
 
     <modules>
         <module>config</module>
+        <module>overrides</module>
         <module>object-mapping</module>
         <module>yaml</module>
         <module>etcd</module>
