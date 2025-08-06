@@ -43,6 +43,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class SseClientTest extends SseBaseTest {
 
+    private static final CountDownLatch SSE_JSON_1_LATCH = new CountDownLatch(1);
+    private static final CountDownLatch SSE_JSON_2_LATCH = new CountDownLatch(1);
     private final Http1Client client;
 
     SseClientTest(WebServer webServer, Http1Client client) {
@@ -54,8 +56,12 @@ class SseClientTest extends SseBaseTest {
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseClientTest::sseString1);
         rules.get("/sseString2", SseClientTest::sseString2);
-        rules.get("/sseJson1", SseClientTest::sseJson1);
-        rules.get("/sseJson2", SseServerTest::sseJson2);
+        rules.get("/sseJson1", (req, res) -> {
+            SseServerTest.sseJson1(req, res, SSE_JSON_1_LATCH);
+        });
+        rules.get("/sseJson2", (req, res) -> {
+            SseServerTest.sseJson2(req, res, SSE_JSON_2_LATCH);
+        });
     }
 
     static void sseString1(ServerRequest req, ServerResponse res) {
@@ -144,28 +150,26 @@ class SseClientTest extends SseBaseTest {
     @Test
     void testSseJson1() throws InterruptedException {
         try (Http1ClientResponse r = client.get("/sseJson1").header(ACCEPT_EVENT_STREAM).request()) {
-            CountDownLatch latch = new CountDownLatch(1);
             r.source(SseSource.TYPE, event -> {
                 JsonObject json = event.data(JsonObject.class);
                 assertThat(json, is(notNullValue()));
                 assertThat(json.getString("hello"), is("world"));
-                latch.countDown();
+                SSE_JSON_1_LATCH.countDown();
             });
-            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(SSE_JSON_1_LATCH.await(5, TimeUnit.SECONDS), is(true));
         }
     }
 
     @Test
     void testSseJson2() throws InterruptedException {
         try (Http1ClientResponse r = client.get("/sseJson2").header(ACCEPT_EVENT_STREAM).request()) {
-            CountDownLatch latch = new CountDownLatch(1);
             r.source(SseSource.TYPE, event -> {
                 HelloWorld json = event.data(HelloWorld.class, MediaTypes.APPLICATION_JSON);
                 assertThat(json, is(notNullValue()));
                 assertThat(json.getHello(), is("world"));
-                latch.countDown();
+                SSE_JSON_2_LATCH.countDown();
             });
-            assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(SSE_JSON_2_LATCH.await(5, TimeUnit.SECONDS), is(true));
         }
     }
 }

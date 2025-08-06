@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 class SseBaseTest {
 
+    private static final System.Logger LOGGER = System.getLogger(SseBaseTest.class.getName());
     private final WebServer webServer;
 
     SseBaseTest() {
@@ -61,12 +65,21 @@ class SseBaseTest {
         sseSink.close();
     }
 
-    static void sseJson1(ServerRequest req, ServerResponse res) {
+    static void sseJson1(ServerRequest req, ServerResponse res, CountDownLatch latch) {
         JsonObject json = Json.createObjectBuilder()
                 .add("hello", "world")
                 .build();
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             sseSink.emit(SseEvent.create(json));
+            boolean notReceived = true;
+            try {
+                notReceived = latch.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (notReceived) {
+                LOGGER.log(System.Logger.Level.ERROR, "Client did not receive the event in time");
+            }
         }
     }
 
@@ -83,11 +96,20 @@ class SseBaseTest {
         }
     }
 
-    static void sseJson2(ServerRequest req, ServerResponse res) {
+    static void sseJson2(ServerRequest req, ServerResponse res, CountDownLatch latch) {
         SseServerTest.HelloWorld json = new SseServerTest.HelloWorld();
         json.setHello("world");
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             sseSink.emit(SseEvent.create(json));
+            boolean notReceived = true;
+            try {
+                notReceived = latch.await(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (notReceived) {
+                LOGGER.log(System.Logger.Level.ERROR, "Client did not receive the event in time");
+            }
         }
     }
 

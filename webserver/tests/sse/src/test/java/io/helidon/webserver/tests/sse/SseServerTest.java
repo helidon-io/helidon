@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.webserver.tests.sse;
+
+import java.util.concurrent.CountDownLatch;
 
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -41,8 +43,12 @@ class SseServerTest extends SseBaseTest {
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
         rules.get("/sseString2", SseServerTest::sseString2);
-        rules.get("/sseJson1", SseServerTest::sseJson1);
-        rules.get("/sseJson2", SseServerTest::sseJson2);
+        rules.get("/sseJson1", (req, res) -> {
+            SseServerTest.sseJson1(req, res, new CountDownLatch(0));
+        });
+        rules.get("/sseJson2", (req, res) -> {
+            SseServerTest.sseJson2(req, res, new CountDownLatch(0));
+        });
         rules.get("/sseMixed", SseServerTest::sseMixed);
         rules.get("/sseIdComment", SseServerTest::sseIdComment);
     }
