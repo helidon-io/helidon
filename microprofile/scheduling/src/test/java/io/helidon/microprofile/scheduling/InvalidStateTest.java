@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.scheduling;
 
 import java.util.Map;
 
+import io.helidon.common.config.ConfigException;
 import io.helidon.config.mp.MpConfigSources;
 
 import jakarta.enterprise.inject.se.SeContainer;
@@ -88,7 +89,7 @@ public class InvalidStateTest {
 
     @Test
     void unresolvedCronPlaceholder() {
-        assertDeploymentException(IllegalArgumentException.class, UnresolvedPlaceholderBean.class);
+        assertDeploymentException(ConfigException.class, UnresolvedPlaceholderBean.class);
     }
 
     @Test
