@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -283,15 +284,17 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         } else {
             decoder = ContentDecoder.NO_OP;
         }
+        InputStream inputStream;
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
-            return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
+            inputStream = new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length);
         } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
+            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
-            return new EverythingInputStream(helidonSocket, reader, whenComplete, response);
+            inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response);
         }
+        return decoder.apply(inputStream);
     }
 
     private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
@@ -566,6 +569,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
             reader.skip(2); // trailing CRLF after each chunk
             this.currentBuffer = chunk;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!finished) {
+                ensureBuffer();
+            }
         }
     }
 }
