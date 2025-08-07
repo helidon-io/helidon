@@ -100,6 +100,7 @@ class Http2ServerRequest implements RoutingRequest {
                                                                              ctx.listenerContext().mediaContext()));
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static Http2ServerRequest create(ConnectionContext ctx,
                                      HttpSecurity security,
                                      HttpPrologue httpPrologue,
