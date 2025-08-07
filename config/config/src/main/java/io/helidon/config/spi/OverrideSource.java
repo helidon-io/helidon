@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,10 @@ import io.helidon.config.ConfigException;
  * {@code Config} nodes, only modify existing ones.
  *
  * @see OverrideData
+ * @deprecated override feature has been moved to module {@code io.helidon.config:helidon-config-overrides}
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.3.0")
 public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override
@@ -78,7 +81,9 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
      * second is the replacement value the config system will use as it loads
      * any {@code Config} value node with a key that matches the wildcard
      * expression.
+     * @deprecated override feature has been moved to module {@code io.helidon.config:helidon-config-overrides}
      */
+    @Deprecated(forRemoval = true, since = "4.3.0")
     final class OverrideData {
 
         /**

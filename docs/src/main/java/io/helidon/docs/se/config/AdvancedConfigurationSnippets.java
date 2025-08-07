@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.config.OverrideSources;
 import io.helidon.config.PollingStrategies;
 import io.helidon.config.RetryPolicies;
 import io.helidon.config.hocon.HoconConfigParser;
+import io.helidon.config.overrides.OverrideConfigFilter;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.MergingStrategy;
@@ -210,9 +211,10 @@ class AdvancedConfigurationSnippets {
     void snippet_14() {
         // tag::snippet_14[]
         Config config = Config.builder()
-                .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
-                .sources(file("conf/env.yaml"), // <2>
-                         classpath("resolving-tokens.yaml")) // <3>
+                .addFilter(OverrideConfigFilter.builder()  // <1>
+                                   .addConfigSource(ConfigSources.file("conf/overrides.properties").build()) // <2>
+                                   .build())
+                .addSource(ConfigSources.classpath("application.yaml")) // <3>
                 .build();
         // end::snippet_14[]
     }

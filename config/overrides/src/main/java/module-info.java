@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.config.spi;
 
 /**
- * Java service loader service to provide a override source based on meta configuration.
- * @deprecated override feature has been moved to module {@code io.helidon.config:helidon-config-overrides}
+ * Config override filter for Helidon Config.
  */
-@SuppressWarnings("removal")
-@Deprecated(forRemoval = true, since = "4.3.0")
-public interface OverrideSourceProvider extends MetaConfigurableProvider<OverrideSource> {
+module io.helidon.config.overrides {
+    requires transitive io.helidon.builder.api;
+    requires io.helidon.common;
+    requires io.helidon.config;
+    requires io.helidon.service.registry;
+
+    provides io.helidon.config.spi.ConfigFilter
+            with io.helidon.config.overrides.OverrideConfigFilter;
 }
