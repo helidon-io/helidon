@@ -25,7 +25,6 @@ module io.helidon.webserver.concurrency.limits {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.concurrency.limits;
-    requires io.helidon.tracing;
     requires io.helidon.service.registry;
 
     exports io.helidon.webserver.concurrency.limits;
@@ -34,8 +33,4 @@ module io.helidon.webserver.concurrency.limits {
             with io.helidon.webserver.concurrency.limits.LimitsFeatureProvider;
 
     uses io.helidon.common.concurrency.limits.spi.LimitProvider;
-    uses io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
-
-    provides io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider
-            with io.helidon.webserver.concurrency.limits.LimitAlgorithmTracingListenerProvider;
 }

@@ -29,7 +29,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.concurrency.limits.LimitAlgorithmListener;
+import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
@@ -578,21 +578,21 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 decoder = ContentDecoder.NO_OP;
             }
 
+            AtomicReference<LimitOutcome> limitOutcomeRef = new AtomicReference<>();
+            Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(true, limitOutcomeRef::set);
+
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
                                                                    routing.security(),
                                                                    prologue,
                                                                    headers,
                                                                    decoder,
                                                                    streamId,
-                                                                   this::readEntityFromPipeline);
+                                                                   this::readEntityFromPipeline,
+                                                                   limitOutcomeRef.get());
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                List<LimitAlgorithmListener.Context> listenerContexts = new ArrayList<>();
-                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire(true, listenerContexts::addAll);
-                listenerContexts.stream()
-                        .filter(LimitAlgorithmListener.Context::shouldBePropagated)
-                        .forEach(listenerContext -> request.context().register(listenerContext));
+
 
                 if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");

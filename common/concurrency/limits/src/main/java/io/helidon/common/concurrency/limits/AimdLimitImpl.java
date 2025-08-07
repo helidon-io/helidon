@@ -105,17 +105,17 @@ class AimdLimitImpl {
     }
 
     Optional<LimitAlgorithm.Token> tryAcquire(boolean wait,
-                                              Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
-        Objects.requireNonNull(limitListenerContextsConsumer, "limit algorithm listeners consumer cannot be null");
-        return doTryAcquire(wait, limitListenerContextsConsumer);
+                                              Consumer<LimitOutcome> limitOutcomeConsumer) {
+        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
+        return doTryAcquire(wait, limitOutcomeConsumer);
     }
 
-    void invoke(Runnable runnable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+    void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
         invoke(() -> {
             runnable.run();
             return null;
-        }, limitListenerContextsConsumer);
+        }, limitOutcomeConsumer);
     }
 
     void invoke(Runnable runnable) throws Exception {
@@ -125,20 +125,20 @@ class AimdLimitImpl {
         });
     }
 
-    <T> T invoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+    <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
-        Objects.requireNonNull(limitListenerContextsConsumer, "limit algorithm listeners consumer cannot be null");
-        return doInvoke(callable, limitListenerContextsConsumer);
+        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
+        return doInvoke(callable, limitOutcomeConsumer);
     }
 
     <T> T invoke(Callable<T> callable) throws Exception {
         return doInvoke(callable, null);
     }
 
-    private <T> T doInvoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+    private <T> T doInvoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
 
-        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitListenerContextsConsumer);
+        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitOutcomeConsumer);
         if (optionalToken.isPresent()) {
             LimitAlgorithm.Token token = optionalToken.get();
             try {
@@ -174,15 +174,14 @@ class AimdLimitImpl {
     }
 
     private Optional<LimitAlgorithm.Token> doTryAcquire(boolean wait,
-                                                        Consumer<List<LimitAlgorithmListener.Context>> listenerContextsConsumer) {
+                                                        Consumer<LimitOutcome> limitOutcomeConsumer) {
         Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
 
         if (token.isPresent()) {
             LimitOutcomeImpl.processImmediateAcceptance(originName,
                                                         AimdLimit.TYPE,
                                                         token.get(),
-                                                        config.enabledListeners(),
-                                                        listenerContextsConsumer);
+                                                        limitOutcomeConsumer);
             return token;
         }
         if (wait && queueLength > 0) {
@@ -195,8 +194,7 @@ class AimdLimitImpl {
                                                            token.get(),
                                                            startWait,
                                                            endWait,
-                                                           config.enabledListeners(),
-                                                           listenerContextsConsumer);
+                                                           limitOutcomeConsumer);
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
                 }
@@ -206,13 +204,11 @@ class AimdLimitImpl {
                                                       AimdLimit.TYPE,
                                                       startWait,
                                                       endWait,
-                                                      config.enabledListeners(),
-                                                      listenerContextsConsumer);
+                                                      limitOutcomeConsumer);
         } else {
             LimitOutcomeImpl.processImmediateRejection(originName,
                                                        AimdLimit.TYPE,
-                                                       config.enabledListeners(),
-                                                       listenerContextsConsumer);
+                                                       limitOutcomeConsumer);
         }
         rejectedRequests.getAndIncrement();
         return token;

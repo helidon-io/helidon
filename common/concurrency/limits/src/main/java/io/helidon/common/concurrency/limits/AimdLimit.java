@@ -115,9 +115,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
-        return aimdLimitImpl.invoke(callable, limitListenerContextsConsumer);
+        return aimdLimitImpl.invoke(callable, limitOutcomeConsumer);
     }
 
     @Override
@@ -126,9 +126,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public void invoke(Runnable runnable, Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer)
+    public void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
-        aimdLimitImpl.invoke(runnable, limitListenerContextsConsumer);
+        aimdLimitImpl.invoke(runnable, limitOutcomeConsumer);
     }
 
     @Override
@@ -138,8 +138,8 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public Optional<Token> tryAcquire(boolean wait,
-                                      Consumer<List<LimitAlgorithmListener.Context>> limitListenerContextsConsumer) {
-        return aimdLimitImpl.tryAcquire(wait, limitListenerContextsConsumer);
+                                      Consumer<LimitOutcome> limitOutcomeConsumer) {
+        return aimdLimitImpl.tryAcquire(wait, limitOutcomeConsumer);
     }
 
     @SuppressWarnings("removal")
