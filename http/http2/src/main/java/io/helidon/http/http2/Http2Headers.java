@@ -1175,6 +1175,7 @@ public class Http2Headers {
             }
             this.maxTableSize = number;
             if (maxTableSize == 0) {
+                currentTableSize = 0;
                 headers.clear();
             }
             while (maxTableSize < currentTableSize) {
