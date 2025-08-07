@@ -44,6 +44,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AimdLimitTest {
@@ -187,37 +188,22 @@ public class AimdLimitTest {
         Limit limit = AimdLimit.builder()
                 .minLimit(5)
                 .initialLimit(5)
-                .addListener(new TestListener())
                 .build();
 
-        List<LimitAlgorithmListener.Context> savedLimitListenerContexts = new ArrayList<>();
-
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, savedLimitListenerContexts::addAll);
+            AtomicReference<LimitOutcome> limitOutcomeRef = new AtomicReference<>();
+            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, limitOutcomeRef::set);
             assertThat(token, not(Optional.empty()));
             token.get().success();
 
             // We expect immediate acceptances.
-            int deferredAccepts = 0;
-            int immediateAccepts = 0;
             int index = 0;
-            for (LimitAlgorithmListener.Context listenerContext : savedLimitListenerContexts) {
-                if (listenerContext instanceof TestListener.TestContext testContext) {
-                    if (testContext.acceptedOutcome instanceof LimitOutcome.Deferred) {
-                        deferredAccepts++;
-                    } else {
-                        immediateAccepts++;
-                    }
-                    assertThat("Exec result " + index,
-                               testContext.result(), is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
-                    index++;
-                }
-            }
 
-            assertThat("Immediate accepts ", immediateAccepts, is(1));
-            assertThat("Deferred accepts ", deferredAccepts, is(0));
-
-            savedLimitListenerContexts.clear();
+            assertThat("Limit outcome + " + i, limitOutcomeRef.get(), allOf(not(nullValue()),
+                                                                          instanceOf(LimitOutcome.Accepted.class)));
+            assertThat("Exec result " + index,
+                       ((LimitOutcome.Accepted) limitOutcomeRef.get()).executionResult(),
+                       is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
         }
     }
 
@@ -229,7 +215,6 @@ public class AimdLimitTest {
                 .initialLimit(1)
                 .queueLength(5)
                 .queueTimeout(Duration.ofSeconds(5))
-                .addListener(new TestListener())
                 .build();
 
         int concurrency = 5;
@@ -240,7 +225,7 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
-        List<LimitAlgorithmListener.Context> limitListenerContexts = Collections.synchronizedList(new ArrayList<>());
+        List<LimitOutcome> outcomes = Collections.synchronizedList(new ArrayList<>(concurrency));
 
         for (int i = 0; i < concurrency; i++) {
             int index = i;
@@ -255,7 +240,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    }, limitListenerContexts::addAll);
+                    }, outcomes::add);
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -279,74 +264,25 @@ public class AimdLimitTest {
         // and eventually run to completion
         assertThat(result.size(), is(5));
 
-        assertThat("Outcomes", limitListenerContexts, hasSize(5));
+        assertThat("Outcomes", outcomes, hasSize(5));
         int deferredAccepts = 0;
         int immediateAccepts = 0;
         int index = 0;
-        for (Object listenerContext : limitListenerContexts) {
-            if (listenerContext instanceof TestListener.TestContext testContext) {
-                if (testContext.acceptedOutcome instanceof LimitOutcome.Deferred) {
-                    deferredAccepts++;
-                } else {
-                    immediateAccepts++;
-                }
-                assertThat("Exec result " + index,
-                           testContext.result(), is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
-                index++;
+        for (LimitOutcome outcome : outcomes) {
+            if (outcome instanceof LimitOutcome.Deferred) {
+                deferredAccepts++;
+            } else {
+                immediateAccepts++;
             }
+            assertThat("Exec result " + index,
+                       ((LimitOutcome.Accepted) outcome).executionResult(),
+                       is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
+            index++;
         }
 
         assertThat("Immediate accepts ", immediateAccepts, is(1));
         assertThat("Deferred accepts ", deferredAccepts, is(4));
 
-    }
-
-    static class TestListener implements LimitAlgorithmListener<TestListener.TestContext> {
-
-
-        @Override
-        public boolean enabled() {
-            return true;
-        }
-
-        @Override
-        public TestContext onAccept(LimitOutcome.Accepted acceptedLimitOutcome) {
-            return new TestContext(acceptedLimitOutcome, null);
-        }
-
-        @Override
-        public TestContext onReject(LimitOutcome rejectedLimitOutcome) {
-            return new TestContext(null, rejectedLimitOutcome);
-        }
-
-        @Override
-        public void onFinish(TestContext listenerContext, LimitOutcome.Accepted.ExecutionResult execResult) {
-            listenerContext.executionResult.set(execResult);
-        }
-
-        @Override
-        public String name() {
-            return "test";
-        }
-
-        @Override
-        public String type() {
-            return "test";
-        }
-
-        record TestContext(LimitOutcome.Accepted acceptedOutcome,
-                                  LimitOutcome rejectedOutcome,
-                                  AtomicReference<LimitOutcome.Accepted.ExecutionResult> executionResult)
-                implements LimitAlgorithmListener.Context {
-
-            TestContext(LimitOutcome.Accepted acceptedOutcome, LimitOutcome rejectedOutcome) {
-                this(acceptedOutcome, rejectedOutcome, new AtomicReference<>());
-            }
-
-            LimitOutcome.Accepted.ExecutionResult result() {
-                return executionResult.get();
-            }
-        }
     }
 
     /**

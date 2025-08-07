@@ -222,28 +222,25 @@ For more information regarding metrics support in Helidon and the dependencies t
 required for metrics to work, see xref:{metrics-page}[Helidon Metrics].
 
 == Tracing
-The Concurrency Limit component supports tracing.
-If you enable tracing for the strategy you configure, any time Helidon queues a request waiting for an available worker thread it creates a span representing the request's waiting time.
+The Concurrency Limit component supports tracing for the webserver.
+If you enable tracing for waiting time, any time Helidon queues a request waiting for an available worker thread it creates a span representing the request's waiting time.
 Concurrency limit tracing is disabled by default. Enable it using configuration:
 
 [source,yaml]
 ----
 server:
+  features:
+    observe:
+      observers:
+        tracing:
+          wait-tracing-enabled: true # <1>
+
   concurrency-limit:
     fixed:
       permits: 1000
       queue-length: 200
       queue-timeout: PT1S
-      listeners:
-        tracing:              # <1>
 ----
-<1> Turns on tracing--simply by mentioning it--to add a span for queued wait time.
+<1> Turns on the addition of a span recording queued wait time.
 
-The tracing listener configuration above is equivalent to the following:
-[source,yaml]
-----
-      listeners:
-        tracing:
-          enabled: true
-----
 Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the xref:{tracing-page}[Helidon tracing] documentation for more information.

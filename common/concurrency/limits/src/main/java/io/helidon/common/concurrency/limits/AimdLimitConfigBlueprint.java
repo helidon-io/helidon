@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
@@ -149,30 +148,5 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean enableTracing();
-
-
-    /**
-     * {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener Limit algorithm listeners}.
-     *
-     * @return limit algorithm listeners
-     */
-    @SuppressWarnings("rawtypes")
-    @Option.Singular
-    @Option.RegistryService
-    @Option.Configured
-    @Option.Provider(value = LimitAlgorithmListenerProvider.class)
-    List<LimitAlgorithmListener> listeners();
-
-    /**
-     * Enabled {@linkplain io.helidon.common.concurrency.limits.LimitAlgorithmListener limit algorithm listeners}.
-     *
-     * @return enabled listeners
-     */
-    @SuppressWarnings("rawtypes")
-    default List<LimitAlgorithmListener> enabledListeners() {
-        return listeners().stream()
-                .filter(LimitAlgorithmListener::enabled)
-                .toList();
-    }
 
 }

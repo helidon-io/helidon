@@ -33,6 +33,4 @@ module io.helidon.common.concurrency.limits {
     provides io.helidon.common.concurrency.limits.spi.LimitProvider
             with io.helidon.common.concurrency.limits.FixedLimitProvider,
                     io.helidon.common.concurrency.limits.AimdLimitProvider;
-
-    uses io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider;
 }

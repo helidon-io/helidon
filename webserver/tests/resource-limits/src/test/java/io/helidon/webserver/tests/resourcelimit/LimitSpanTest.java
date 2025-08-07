@@ -85,9 +85,6 @@ class LimitSpanTest {
 
     @SetUpServer
     static void setupServer(WebServerConfig.Builder builder) {
-        ObserveFeature observe = ObserveFeature.builder()
-                .addObserver(TracingObserver.create(Tracer.global()))
-                .build();
         String configText = """
                 server:
                   concurrency-limit:
@@ -95,11 +92,15 @@ class LimitSpanTest {
                       permits: 1
                       queue-length: 5
                       queue-timeout: "PT10S"
-                      listeners:
-                        tracing:
                 """;
         Config config = io.helidon.config.Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_YAML));
 
+        ObserveFeature observe = ObserveFeature.builder()
+                .addObserver(TracingObserver.builder()
+                                     .waitTracingEnabled(true)
+                                     .tracer(Tracer.global())
+                                     .build())
+                .build();
         builder.config(config.get("server"))
                 .addFeature(observe);
     }
