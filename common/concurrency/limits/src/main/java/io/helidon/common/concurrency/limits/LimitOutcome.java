@@ -38,9 +38,6 @@ package io.helidon.common.concurrency.limits;
  * <h2>Execution result</h2>
  * If the algorithm accepts a work item, then later the code using the limit algorithm should
  * invoke exactly one of the token's {@code dropped}, {@code ignore}, or {@code success} methods.
- * Any implementation of {@link io.helidon.common.concurrency.limits.LimitOutcome.Accepted} must
- * invoke the {@link LimitAlgorithmListener#onFinish(io.helidon.common.concurrency.limits.LimitAlgorithmListener.Context, io.helidon.common.concurrency.limits.LimitOutcome.Accepted.ExecutionResult)}
- * method on each known listener with its listener context.
  */
 public interface LimitOutcome {
 
