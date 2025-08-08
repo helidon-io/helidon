@@ -46,7 +46,8 @@ class ComplexCaseTest {
         var complexCase = ComplexCase.builder()
                 .setName("name")
                 .setClassType(Object.class)
-                .allowConfigBean(configBean)                .build();
+                .allowConfigBean(configBean)
+                .build();
 
         assertThat(complexCase.getName(), is("name"));
         assertThat(complexCase.getListOfConfigBeans(), hasItem(configBean));
