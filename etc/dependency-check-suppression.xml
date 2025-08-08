@@ -241,5 +241,16 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-43714</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is in angus mail, not angus activation.
+     https://gitlab.eclipse.org/security/cve-assignement/-/issues/67
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: angus-activation-2.0.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-activation@.*$</packageUrl>
+   <cve>CVE-2025-7962</cve>
+</suppress>
 
 </suppressions>
