@@ -114,13 +114,31 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
+    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+            throws Exception {
+        return aimdLimitImpl.invoke(callable, limitOutcomeConsumer);
+    }
+
+    @Override
     public void invoke(Runnable runnable) throws Exception {
         aimdLimitImpl.invoke(runnable);
     }
 
     @Override
+    public void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
+            throws Exception {
+        aimdLimitImpl.invoke(runnable, limitOutcomeConsumer);
+    }
+
+    @Override
     public Optional<Token> tryAcquire(boolean wait) {
         return aimdLimitImpl.tryAcquire(wait);
+    }
+
+    @Override
+    public Optional<Token> tryAcquire(boolean wait,
+                                      Consumer<LimitOutcome> limitOutcomeConsumer) {
+        return aimdLimitImpl.tryAcquire(wait, limitOutcomeConsumer);
     }
 
     @SuppressWarnings("removal")

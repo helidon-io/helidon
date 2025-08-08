@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.io.Serial;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.ConfigException;
@@ -34,7 +36,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -52,12 +53,14 @@ class AimdLimitImpl {
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
     private final int queueLength;
-    private final Tracer tracer;
+    private final AimdLimitConfig config;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
+    private String originName;
 
     AimdLimitImpl(AimdLimitConfig config) {
+        this.config = config;
         int initialLimit = config.initialLimit();
         this.backoffRatio = config.backoffRatio();
         this.timeoutInNanos = config.timeout().toNanos();
@@ -75,8 +78,6 @@ class AimdLimitImpl {
                                                                 queueLength,
                                                                 config.queueTimeout(),
                                                                 () -> new AimdToken(clock, concurrentRequests));
-        tracer = config.enableTracing() ? Tracer.global() : null;
-
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
         }
@@ -100,25 +101,21 @@ class AimdLimitImpl {
     }
 
     Optional<LimitAlgorithm.Token> tryAcquire(boolean wait) {
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
-        if (token.isPresent()) {
-            return token;
-        }
-        if (wait && queueLength > 0) {
-            long startWait = clock.get();
-            var limitSpan = LimitSpan.create(tracer, "aimd");
-            token = handler.tryAcquire(true);
-            if (token.isPresent()) {
-                if (queueWaitTimer != null) {
-                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
-                }
-                limitSpan.close();
-                return token;
-            }
-            limitSpan.closeWithError();
-        }
-        rejectedRequests.getAndIncrement();
-        return token;
+        return doTryAcquire(wait, null);
+    }
+
+    Optional<LimitAlgorithm.Token> tryAcquire(boolean wait,
+                                              Consumer<LimitOutcome> limitOutcomeConsumer) {
+        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
+        return doTryAcquire(wait, limitOutcomeConsumer);
+    }
+
+    void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
+            throws Exception {
+        invoke(() -> {
+            runnable.run();
+            return null;
+        }, limitOutcomeConsumer);
     }
 
     void invoke(Runnable runnable) throws Exception {
@@ -128,8 +125,20 @@ class AimdLimitImpl {
         });
     }
 
+    <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+            throws Exception {
+        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
+        return doInvoke(callable, limitOutcomeConsumer);
+    }
+
     <T> T invoke(Callable<T> callable) throws Exception {
-        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true);
+        return doInvoke(callable, null);
+    }
+
+    private <T> T doInvoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+            throws Exception {
+
+        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitOutcomeConsumer);
         if (optionalToken.isPresent()) {
             LimitAlgorithm.Token token = optionalToken.get();
             try {
@@ -162,6 +171,47 @@ class AimdLimitImpl {
             currentLimit = currentLimit + 1;
         }
         setLimit(Math.min(maxLimit, Math.max(minLimit, currentLimit)));
+    }
+
+    private Optional<LimitAlgorithm.Token> doTryAcquire(boolean wait,
+                                                        Consumer<LimitOutcome> limitOutcomeConsumer) {
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+
+        if (token.isPresent()) {
+            LimitOutcomeImpl.processImmediateAcceptance(originName,
+                                                        AimdLimit.TYPE,
+                                                        token.get(),
+                                                        limitOutcomeConsumer);
+            return token;
+        }
+        if (wait && queueLength > 0) {
+            long startWait = clock.get();
+            token = handler.tryAcquire(true);
+            long endWait = clock.get();
+            if (token.isPresent()) {
+                LimitOutcomeImpl.processDeferredAcceptance(originName,
+                                                           AimdLimit.TYPE,
+                                                           token.get(),
+                                                           startWait,
+                                                           endWait,
+                                                           limitOutcomeConsumer);
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
+                }
+                return token;
+            }
+            LimitOutcomeImpl.processDeferredRejection(originName,
+                                                      AimdLimit.TYPE,
+                                                      startWait,
+                                                      endWait,
+                                                      limitOutcomeConsumer);
+        } else {
+            LimitOutcomeImpl.processImmediateRejection(originName,
+                                                       AimdLimit.TYPE,
+                                                       limitOutcomeConsumer);
+        }
+        rejectedRequests.getAndIncrement();
+        return token;
     }
 
     private void setLimit(int newLimit) {
@@ -197,6 +247,7 @@ class AimdLimitImpl {
      * @param config this limit's config
      */
     void initMetrics(String socketName, AimdLimitConfig config) {
+        originName = socketName;
         if (config.enableMetrics()) {
             MetricsFactory metricsFactory = MetricsFactory.getInstance();
             MeterRegistry meterRegistry = Metrics.globalRegistry();
@@ -273,7 +324,7 @@ class AimdLimitImpl {
         }
     }
 
-    private class AimdToken implements Limit.Token {
+    private class AimdToken extends OutcomeAwareToken {
         private final long startTime;
         private final int currentRequests;
 
@@ -285,6 +336,7 @@ class AimdLimitImpl {
         @Override
         public void dropped() {
             try {
+                super.dropped();
                 updateWithSample(startTime, clock.get(), currentRequests, false);
             } finally {
                 semaphore.release();
@@ -293,6 +345,7 @@ class AimdLimitImpl {
 
         @Override
         public void ignore() {
+            super.ignore();
             concurrentRequests.decrementAndGet();
             semaphore.release();
         }
@@ -302,6 +355,8 @@ class AimdLimitImpl {
             try {
                 updateWithSample(startTime, clock.get(), currentRequests, true);
                 concurrentRequests.decrementAndGet();
+                super.success();
+
             } finally {
                 semaphore.release();
             }

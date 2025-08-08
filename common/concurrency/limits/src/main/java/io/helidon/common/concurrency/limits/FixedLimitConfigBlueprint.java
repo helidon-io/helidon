@@ -32,9 +32,10 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
  * @see #queueLength()
  * @see #queueTimeout()
  */
-@Prototype.Blueprint
+@Prototype.Blueprint()
 @Prototype.Configured(value = FixedLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
+@Prototype.RegistrySupport
 interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     /**
      * Number of permit to allow.
@@ -113,12 +114,4 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
 
-    /**
-     * Whether to create tracing spans for waiting periods.
-     *
-     * @return tracing flag
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean enableTracing();
 }

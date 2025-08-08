@@ -1,0 +1,11 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+    ],
+    "classes": [
+        "io.helidon.common.concurrency.limits.spi.LimitAlgorithmListenerProvider"
+    ],
+    "exclude": [
+    ]
+}

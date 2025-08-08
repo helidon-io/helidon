@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.observe.tracing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
+import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
@@ -160,12 +162,18 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
         private final Tracer tracer;
         private final TracingConfig envConfig;
+        private final boolean waitTracingEnabled;
         private final List<PathTracingConfig> pathConfigs;
         private final String socketTag;
 
-        TracingFilter(Tracer tracer, TracingConfig envConfig, List<PathTracingConfig> pathConfigs, String socketTag) {
+        TracingFilter(Tracer tracer,
+                      TracingConfig envConfig,
+                      boolean waitTracingEnabled,
+                      List<PathTracingConfig> pathConfigs,
+                      String socketTag) {
             this.tracer = tracer;
             this.envConfig = envConfig;
+            this.waitTracingEnabled = waitTracingEnabled;
             this.pathConfigs = pathConfigs;
             this.socketTag = socketTag;
         }
@@ -195,6 +203,11 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 Contexts.runInContext(context, chain::proceed);
                 return;
             }
+
+            if (waitTracingEnabled) {
+                recordLimitWaitingSpan(req, tracer, inboundSpanContext);
+            }
+
             /*
             Create web server span
              */
@@ -264,6 +277,28 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 span.end(e);
                 throw e;
             }
+        }
+
+        private void recordLimitWaitingSpan(RoutingRequest req, Tracer tracer, Optional<SpanContext> inboundSpanContext) {
+
+            req.context().get(LimitOutcome.class)
+                    .filter(oc -> oc instanceof LimitOutcome.Deferred)
+                    .map(oc -> (LimitOutcome.Deferred) oc)
+                    .ifPresent(deferred -> {
+
+                        var spanBuilder = tracer.spanBuilder(deferred.originName() + "-" + deferred.algorithmType() + "-limit"
+                                                                     + "-span");
+                        inboundSpanContext.ifPresent(sc -> sc.asParent(spanBuilder));
+                        var span = spanBuilder.start(Instant.ofEpochSecond(0, deferred.waitStart()));
+                        Instant endInstant = Instant.ofEpochSecond(0, deferred.waitEnd());
+                        if (deferred instanceof LimitOutcome.Accepted) {
+                            span.end(endInstant);
+                        } else {
+                            span.status(Span.Status.ERROR);
+                            span.addEvent("queue limit exceeded");
+                            span.end(endInstant);
+                        }
+                    });
         }
 
         private TracingConfig configureTracingConfig(RoutingRequest req, Context context) {
@@ -606,6 +641,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         public void setup(HttpRouting.Builder routing) {
             routing.addFilter(new TracingFilter(config.tracer(),
                                                 config.envConfig(),
+                                                config.waitTracingEnabled(),
                                                 config.pathConfigs(),
                                                 socketTag));
         }
