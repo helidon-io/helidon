@@ -18,6 +18,8 @@ package io.helidon.security.providers.oidc;
 
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -98,6 +100,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final String jwtGroupsPath;
     private final String jwtGroupsSeparator;
     private final TenantCache<TenantAuthenticationHandler> tenantAuthHandlers;
+    private final ReentrantLock tokenCacheLock = new ReentrantLock();
+    private CachedToken cachedToken;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -307,17 +311,32 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return OutboundSecurityResponse.empty();
     }
 
+    /**
+     * Retrieves a client-credentials access token and injects it into the outbound
+     * headers. The first successful call is cached in {@code cachedToken}; while the
+     * token is still {@linkplain CachedToken#isValid() valid} every subsequent call
+     * simply reuses it, protected by {@link #tokenCacheLock} to avoid concurrent
+     * refreshes. Only when the cached entry is close to expiry is the identity
+     * server contacted again and the cache updated.
+     */
     private OutboundSecurityResponse clientCredentials(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
-            ClientCredentialsConfig clientCredentialsConfig = oidcConfig.clientCredentialsConfig();
-            Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
-                    .add("grant_type", "client_credentials");
-
-            clientCredentialsConfig.scope().ifPresent(scope -> formBuilder.add("scope", scope));
-
+            tokenCacheLock.lock();
             try {
+                if (Objects.nonNull(cachedToken) && cachedToken.isValid()) {
+                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                    target.tokenHandler.header(headers, cachedToken.token);
+                    return OutboundSecurityResponse.withHeaders(headers);
+                }
+
+                ClientCredentialsConfig clientCredentialsConfig = oidcConfig.clientCredentialsConfig();
+                Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
+                        .add("grant_type", "client_credentials");
+
+                clientCredentialsConfig.scope().ifPresent(scope -> formBuilder.add("scope", scope));
+
                 HttpClientRequest postRequest = oidcConfig.appWebClient()
                         .post()
                         .uri(oidcConfig.tokenEndpointUri());
@@ -330,6 +349,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                         String accessToken = jsonObject.stringValue("access_token")
                                 .orElseThrow(() -> new IllegalStateException("JSON field \"access_token\" must be defined"));
 
+                        cacheTokenWithExpiry(jsonObject, accessToken);
                         Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                         target.tokenHandler.header(headers, accessToken);
                         return OutboundSecurityResponse.withHeaders(headers);
@@ -346,9 +366,21 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                         .description("An error occurred while obtaining access token from the identity server")
                         .throwable(e)
                         .build();
+            } finally {
+                tokenCacheLock.unlock();
             }
         }
         return OutboundSecurityResponse.empty();
+    }
+
+    private void cacheTokenWithExpiry(JsonObject jsonObject, String accessToken) {
+        if (jsonObject.containsKey("expires_in")) {
+            Duration expiresIn = Duration.ofSeconds(jsonObject.numberValue("expires_in").orElseThrow().longValueExact());
+            Instant expiresAt = Instant.now().plus(expiresIn);
+            cachedToken = new CachedToken(accessToken, expiresAt);
+        } else {
+            cachedToken = null;
+        }
     }
 
     /**
@@ -708,6 +740,22 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         private OidcOutboundTarget(boolean propagate, TokenHandler handler) {
             this.propagate = propagate;
             tokenHandler = handler;
+        }
+    }
+
+    private static final class CachedToken {
+
+        private static final Duration DEFAULT_BUFFER_TIME = Duration.ofSeconds(30);
+        private final String token;
+        private final Instant expiresAt;
+
+        CachedToken(String token, Instant expiresAt) {
+            this.token = token;
+            this.expiresAt = expiresAt;
+        }
+
+        private boolean isValid() {
+            return Instant.now().isBefore(expiresAt.minus(DEFAULT_BUFFER_TIME));
         }
     }
 }

@@ -26,6 +26,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.configurable.ResourceConfig;
@@ -340,14 +341,30 @@ class OidcFeatureTest {
 
     @Test
     void outboundOnlyProviderExchangesClientCredentialsWithoutSigningKeys() {
+        assertClientCredentialsTokenRequests("{\"access_token\":\"outbound-token\"}", 2);
+    }
+
+    @Test
+    void clientCredentialsCachesUnexpiredToken() {
+        assertClientCredentialsTokenRequests("{\"access_token\":\"outbound-token\",\"expires_in\":3600}", 1);
+    }
+
+    @Test
+    void clientCredentialsRefreshesTokenWithinExpiryBuffer() {
+        assertClientCredentialsTokenRequests("{\"access_token\":\"outbound-token\",\"expires_in\":30}", 2);
+    }
+
+    private void assertClientCredentialsTokenRequests(String tokenResponse, int expectedRequests) {
+        AtomicInteger tokenRequests = new AtomicInteger();
         AtomicReference<String> requestBody = new AtomicReference<>();
         WebServer server = WebServer.builder()
                 .host("localhost")
                 .port(0)
                 .featuresDiscoverServices(false)
                 .routing(routing -> routing.post("/token", (req, res) -> {
+                    tokenRequests.incrementAndGet();
                     requestBody.set(req.content().as(String.class));
-                    res.header(HeaderValues.CONTENT_TYPE_JSON).send("{\"access_token\":\"outbound-token\"}");
+                    res.header(HeaderValues.CONTENT_TYPE_JSON).send(tokenResponse);
                 }))
                 .build()
                 .start();
@@ -373,17 +390,20 @@ class OidcFeatureTest {
                         .addOutboundSecurityProvider(outboundProvider)
                         .build();
 
-                OutboundSecurityResponse response = security.contextBuilder("outbound-only").build()
-                        .outboundClientBuilder()
-                        .outboundEnvironment(SecurityEnvironment.builder()
-                                                     .targetUri(URI.create("http://service.example.test/resource"))
-                                                     .path("/resource")
-                                                     .build())
-                        .outboundEndpointConfig(EndpointConfig.create())
-                        .buildAndGet();
+                for (int i = 0; i < 2; i++) {
+                    OutboundSecurityResponse response = security.contextBuilder("outbound-only").build()
+                            .outboundClientBuilder()
+                            .outboundEnvironment(SecurityEnvironment.builder()
+                                                         .targetUri(URI.create("http://service.example.test/resource"))
+                                                         .path("/resource")
+                                                         .build())
+                            .outboundEndpointConfig(EndpointConfig.create())
+                            .buildAndGet();
 
-                assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
-                assertThat(response.requestHeaders().get("Authorization"), is(List.of("Bearer outbound-token")));
+                    assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+                    assertThat(response.requestHeaders().get("Authorization"), is(List.of("Bearer outbound-token")));
+                }
+                assertThat(tokenRequests.get(), is(expectedRequests));
                 assertThat(requestBody.get(), containsString("grant_type=client_credentials"));
                 assertThat(requestBody.get(), containsString("client_id=id"));
                 assertThat(requestBody.get(), containsString("client_secret=secret"));
