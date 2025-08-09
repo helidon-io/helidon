@@ -80,16 +80,13 @@ public final class RestClient {
     @Documented
     public @interface Endpoint {
         /**
-         * The URI of this API. When left blank (default), the URI must be specified in configuration.
-         * The configuration key is either {@link #configKey()}, and if that value is empty, the fully
-         * qualified class name of the annotated interface, with suffix {@code .uri}, such as
-         * {@code io.helidon.application.MyClient.uri}.
+         * The URI of this API.
          * <p>
          * Note that {@link io.helidon.http.Http.Path} annotation on the API (or its super interface) is added to this value.
          *
          * @return endpoint URI of the generated client
          */
-        String value() default "";
+        String value();
 
         /**
          * Configuration key base to use when looking up options for the generated client.

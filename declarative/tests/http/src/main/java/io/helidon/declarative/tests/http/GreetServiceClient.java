@@ -24,7 +24,7 @@ import io.helidon.webclient.api.RestClient;
  * API for typed client for the Greet endpoint HTTP API.
  */
 @SuppressWarnings("deprecation")
-@RestClient.Endpoint
+@RestClient.Endpoint("${greet-service.client.uri:http://localhost:8080}")
 public interface GreetServiceClient extends GreetService {
     /**
      * Return a worldly greeting message.

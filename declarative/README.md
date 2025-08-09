@@ -22,12 +22,9 @@ Rules for Helidon Declarative:
    generated type such as `GreetEndpoint_failingFallback__Fallback` that is named with the unique identification of the method it
    is generated for, and has the required code generated, the interceptor for fallback then looks it up at runtime to correctly
    handle invocation)
-5. If there is a good reason the user may want to override configuration in annotations with config, generate the code
-   appropriately (the configuration key should be <fully qualified class name>.<(method | field) name>.<type>, i.e.
-   `io.helidon.examples.decalarative.HttpEndpoint.retriable.retry`), or an explicit key configured on the annotation
-6. If there is a good reason the user may want to use a custom named service implementation, provide a way to inject it (see Retry
+5. If there is a good reason the user may want to use a custom named service implementation, provide a way to inject it (see Retry
    generated code for named retries, such as `GreetEndpoint_retriable__Retry.java`)
-7. All features must be configured through service registry.
+6. All features must be configured through service registry.
 
 A few codegen features that are available:
 
@@ -52,7 +49,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 | Fault Tolerance  | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
 | GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
 | WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
-| Security         | `Secured`                            | `Security` cannot be freed (big API)                      |
+| Security         | `Secured`                            | `Security` cannot be freed (big API), existing annots.    |
 | Messaging        | `Messages`                           | `Messaging` cannot be freed                               |
 | Scheduling       | `Scheduling`                         | Deprecate methods and current types for removal           |
 | Health           | `Health`                             | OK                                                        |
@@ -79,13 +76,12 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 
 The following Helidon features can be used to create a new declarative feature
 
-TODO: metrics, tracing - maybe allow update of service code
-
 1. Interceptors - metrics, tracing, logging etc.
 2. Injection (service factory) - for any feature where we expect the user to inject a specific service that the feature provides (
    AI, declarative rest client etc.)
 3. Code generation - for any feature that needs additional code to minimize runtime lookups and handling; ideally we should have
-   injection points that can be bound at build time (as opposed to runtime registry lookups)
+   injection points that can be bound at build time (as opposed to runtime registry lookups) - see
+   `Interception.ElementInterceptor` for generating code specific to a single method
 
 # Declarative Codegen Module
 
@@ -138,7 +134,8 @@ Annotations on method(s), may be defined on the endpoint type, or on an interfac
   method will be available on
 - `@Http.Produces` - the media type produced by this method (returned in the `Content-Type` header), also used when matching the
   `Accept` header of the request
-- `@Http.Consumes` - the media type expected by this method, when the request has an entity
+- `@Http.Consumes` - the media type expected by this method, when the request has an entity, matched against `Content-Type` of
+  the request
 - `@Http.Path` - the path this method will be available on, nested within the endpoint path, may contain path parameters (same as
   we can do when setting up routing)
 
@@ -159,8 +156,12 @@ Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 
 ### Configuration
 
-TODO: we must have Listener name configurable per rest server endpoint
-There are currently no configurable options for HTTP endpoints.
+Currently we only support use of configuration in String annotation properties, where a template can be used that will
+be read from configuration, such as `@RestServer.Listener("${my-endpoint.listener:admin}")`, which would look for 
+`my-endpoint.listener` property in configuration, and if not found, would use the default value of `admin` instead.
+
+Capability to override values specified through annotations and additional configurability of declarative features will be 
+designed later.
 
 ### Implementation
 
