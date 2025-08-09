@@ -18,11 +18,14 @@ package io.helidon.security.providers.oidc;
 
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -87,6 +90,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
+    private final ReentrantLock tokenCacheLock = new ReentrantLock();
+    private CachedToken cachedToken;
     private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
@@ -245,46 +250,78 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return OutboundSecurityResponse.empty();
     }
 
+    /**
+     * Retrieves a client-credentials access token and injects it into the outbound
+     * headers. The first successful call is cached in {@code cachedToken}; while the
+     * token is still {@linkplain CachedToken#isValid() valid} every subsequent call
+     * simply reuses it, protected by {@link #tokenCacheLock} to avoid concurrent
+     * refreshes. Only when the cached entry is close to expiry is the identity
+     * server contacted again and the cache updated.
+     */
     private OutboundSecurityResponse clientCredentials(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
-            Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
-                    .add("grant_type", "client_credentials");
-
-            if (!oidcConfig.baseScopes().isEmpty()) {
-                formBuilder.add("scope", oidcConfig.baseScopes());
-            }
-
-            HttpClientRequest postRequest = oidcConfig.appWebClient()
-                    .post()
-                    .uri(oidcConfig.tokenEndpointUri());
-
-            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
-
-            try (var response = postRequest.submit(formBuilder.build())) {
-                if (response.status().family() == Status.Family.SUCCESSFUL) {
-                    JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.getString("access_token");
-
+            tokenCacheLock.lock();
+            try {
+                if (Objects.nonNull(cachedToken) && cachedToken.isValid()) {
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                    target.tokenHandler.header(headers, accessToken);
+                    target.tokenHandler.header(headers, cachedToken.token);
                     return OutboundSecurityResponse.withHeaders(headers);
                 } else {
-                    return OutboundSecurityResponse.builder()
-                            .status(SecurityResponse.SecurityStatus.FAILURE)
-                            .description("Could not obtain access token from the identity server")
-                            .build();
+                    Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
+                                                         .add("grant_type", "client_credentials");
+
+                    if (!oidcConfig.baseScopes().isEmpty()) {
+                        formBuilder.add("scope", oidcConfig.baseScopes());
+                    }
+
+                    HttpClientRequest postRequest = oidcConfig.appWebClient()
+                                                        .post()
+                                                        .uri(oidcConfig.tokenEndpointUri());
+
+                    OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
+
+                    try (var response = postRequest.submit(formBuilder.build())) {
+                        if (response.status().family() == Status.Family.SUCCESSFUL) {
+                            JsonObject jsonObject = response.as(JsonObject.class);
+                            String accessToken = jsonObject.getString("access_token");
+                            cacheTokenWithExpiry(jsonObject, accessToken);
+                            Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                            target.tokenHandler.header(headers, accessToken);
+                            return OutboundSecurityResponse.withHeaders(headers);
+                        } else {
+                            return OutboundSecurityResponse.builder()
+                                       .status(SecurityResponse.SecurityStatus.FAILURE)
+                                       .description("Could not obtain access token from the identity server")
+                                       .build();
+                        }
+                    } catch (Exception e) {
+                        return OutboundSecurityResponse.builder()
+                                   .status(SecurityResponse.SecurityStatus.FAILURE)
+                                   .description("An error occurred while obtaining access token from the identity server")
+                                   .throwable(e)
+                                   .build();
+                    }
                 }
-            } catch (Exception e) {
-                return OutboundSecurityResponse.builder()
-                        .status(SecurityResponse.SecurityStatus.FAILURE)
-                        .description("An error occurred while obtaining access token from the identity server")
-                        .throwable(e)
-                        .build();
+            } finally {
+                tokenCacheLock.unlock();
             }
+
         }
+
+
         return OutboundSecurityResponse.empty();
+    }
+
+    private void cacheTokenWithExpiry(JsonObject jsonObject, String accessToken) {
+        if (jsonObject.containsKey("expires_in")) {
+            Duration expiresIn = Duration.ofSeconds(jsonObject.getJsonNumber("expires_in").longValueExact());
+            Instant expiresAt = Instant.now().plus(expiresIn);
+            cachedToken = new CachedToken(accessToken, expiresAt);
+        } else {
+            cachedToken = null;
+        }
     }
 
     /**
@@ -587,6 +624,22 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         private OidcOutboundTarget(boolean propagate, TokenHandler handler) {
             this.propagate = propagate;
             tokenHandler = handler;
+        }
+    }
+
+    private static final class CachedToken {
+
+        static final Duration DEFAULT_BUFFER_TIME = Duration.ofSeconds(30);
+        final String token;
+        final Instant expiresAt;
+
+        CachedToken(String token, Instant expiresAt) {
+            this.token = token;
+            this.expiresAt = expiresAt;
+        }
+
+        boolean isValid() {
+            return Instant.now().isBefore(expiresAt.minus(DEFAULT_BUFFER_TIME));
         }
     }
 }
