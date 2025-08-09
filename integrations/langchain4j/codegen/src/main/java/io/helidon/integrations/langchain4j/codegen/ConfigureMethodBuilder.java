@@ -55,8 +55,7 @@ class ConfigureMethodBuilder {
             confMethodBuilder
                     .addContent("var modelBuilder = ")
                     .addContent(parentTypeInfo.typeName())
-                    .addContent(".super.configuredBuilder(")
-                    .addContentLine(");");
+                    .addContentLine(".super.configuredBuilder();");
         } else {
             confMethodBuilder.addContent("var modelBuilder = ").addContent(modelTypeName).addContentLine(".builder();");
         }

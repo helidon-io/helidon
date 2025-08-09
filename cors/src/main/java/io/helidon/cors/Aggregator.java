@@ -21,10 +21,10 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.cors.LogHelper.MatcherChecks;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -124,13 +124,13 @@ public class Aggregator {
                 // (allow-origins, etc.)
                 Config pathsNode = config.get(CrossOriginConfig.CORS_PATHS_CONFIG_KEY);
                 if (pathsNode.exists()) {
-                    ConfigValue<MappedCrossOriginConfig.Builder> configValue = config.map(MappedCrossOriginConfig::builder);
+                    ConfigValue<MappedCrossOriginConfig.Builder> configValue = config.as(MappedCrossOriginConfig::builder);
                     if (configValue.isPresent()) {
                         MappedCrossOriginConfig mappedCrossOriginConfig = configValue.get().build();
                         mappedCrossOriginConfig.forEach(this::addCrossOrigin);
                     }
                 } else {
-                    ConfigValue<CrossOriginConfig.Builder> configValue = config.map(CrossOriginConfig::builder);
+                    ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
                     if (configValue.isPresent()) {
                         CrossOriginConfig crossOriginConfig = configValue.get().build();
                         addPathlessCrossOrigin(crossOriginConfig);
@@ -149,7 +149,7 @@ public class Aggregator {
         Builder mappedConfig(Config config) {
 
             if (config.exists()) {
-                ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.map(MappedCrossOriginConfig::builder);
+                ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig::builder);
                 if (mappedConfigValue.isPresent()) {
                     MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
                     /*

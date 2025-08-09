@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
-import io.helidon.common.config.ConfiguredProvider;
-import io.helidon.common.config.NamedService;
+import io.helidon.config.ConfiguredProvider;
+import io.helidon.config.NamedService;
 
 public interface ProviderNoImpls extends ConfiguredProvider<ProviderNoImpls.SomeService> {
     interface SomeService extends NamedService {

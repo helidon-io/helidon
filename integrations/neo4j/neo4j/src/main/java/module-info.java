@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ module io.helidon.integrations.neo4j {
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j;

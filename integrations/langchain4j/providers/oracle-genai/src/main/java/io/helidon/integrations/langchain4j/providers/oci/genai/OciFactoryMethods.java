@@ -30,14 +30,14 @@ final class OciFactoryMethods {
     }
 
     @Prototype.FactoryMethod
-    static Region createRegion(io.helidon.common.config.Config config) {
+    static Region createRegion(io.helidon.config.Config config) {
         return config.asString()
                 .map(Region::fromRegionCodeOrId)
                 .get();
     }
 
     @Prototype.FactoryMethod
-    static ServingMode.ServingType createServingType(io.helidon.common.config.Config config) {
+    static ServingMode.ServingType createServingType(io.helidon.config.Config config) {
         return config.asString()
                 .map(ServingMode.ServingType::create)
                 .get();

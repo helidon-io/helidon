@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Scopes;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.spi.ServerFeatureProvider;

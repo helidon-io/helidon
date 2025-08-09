@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -36,7 +35,6 @@ import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.Region;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +65,7 @@ class OciRegionProviderTest {
         registryManager = ServiceRegistryManager.create(injectionConfig);
         OciExtension.serviceRegistry(registryManager);
         registry = registryManager.registry();
-        GlobalConfig.config(() -> config, true);
+        Config.global(config);
     }
 
     @Test

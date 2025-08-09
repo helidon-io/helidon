@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.webserver.tests.observe;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -47,7 +46,7 @@ class ObserveTest {
 
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
-        Config config = GlobalConfig.config();
+        Config config = Config.global();
 
         // quite often we need to pass something to the health check, so this represents a real usage
         healthCheck = new TestHealthCheck("message");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.DisabledObserverFeature;
@@ -45,7 +45,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * to customize observer setup.
  * <p>
  * This class supports finer grained configuration using Helidon Config:
- * {@link #create(io.helidon.common.config.Config)}.
+ * {@link #create(io.helidon.config.Config)}.
  * <p>
  * The application metrics registry is then available as follows:
  * <pre>{@code

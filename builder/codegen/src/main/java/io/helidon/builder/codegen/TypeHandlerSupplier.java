@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,30 +171,33 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
             } else {
                 builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
             }
-            String argumentName = "consumer";
-            TypeName argumentType = TypeName.builder()
-                    .type(Consumer.class)
-                    .addTypeArgument(builderType)
-                    .build();
 
-            Javadoc javadoc = setterJavadoc(blueprintJavadoc)
-                    .addParameter(argumentName, blueprintJavadoc.returnDescription())
-                    .build();
+            if (!skipBuilderConsumer(builderType)) {
+                String argumentName = "consumer";
+                TypeName argumentType = TypeName.builder()
+                        .type(Consumer.class)
+                        .addTypeArgument(builderType)
+                        .build();
 
-            classBuilder.addMethod(builder -> builder.name(setterName())
-                    .accessModifier(setterAccessModifier(configured))
-                    .returnType(returnType)
-                    .addParameter(param -> param.name(argumentName)
-                            .type(argumentType))
-                    .javadoc(javadoc)
-                    .addContent(Objects.class)
-                    .addContentLine(".requireNonNull(" + argumentName + ");")
-                    .addContent("var builder = ")
-                    .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                    .addContentLine("." + fm.createMethodName() + "();")
-                    .addContentLine("consumer.accept(builder);")
-                    .addContentLine("this." + name() + "(builder.build());")
-                    .addContentLine("return self();"));
+                Javadoc javadoc = setterJavadoc(blueprintJavadoc)
+                        .addParameter(argumentName, blueprintJavadoc.returnDescription())
+                        .build();
+
+                classBuilder.addMethod(builder -> builder.name(setterName())
+                        .accessModifier(setterAccessModifier(configured))
+                        .returnType(returnType)
+                        .addParameter(param -> param.name(argumentName)
+                                .type(argumentType))
+                        .javadoc(javadoc)
+                        .addContent(Objects.class)
+                        .addContentLine(".requireNonNull(" + argumentName + ");")
+                        .addContent("var builder = ")
+                        .addContent(fm.typeWithFactoryMethod().genericTypeName())
+                        .addContentLine("." + fm.createMethodName() + "();")
+                        .addContentLine("consumer.accept(builder);")
+                        .addContentLine("this." + name() + "(builder.build());")
+                        .addContentLine("return self();"));
+            }
         }
     }
 

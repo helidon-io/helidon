@@ -36,7 +36,6 @@ import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.tls.ConfiguredTlsManager;
 import io.helidon.common.tls.TlsConfig;
-import io.helidon.config.Config;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
 import io.helidon.scheduling.Cron;
@@ -65,13 +64,13 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg,
                                      String name,
-                                     io.helidon.common.config.Config config) {
+                                     io.helidon.config.Config config) {
         super(name, TYPE);
         this.cfg = Objects.requireNonNull(cfg);
 
         // if config changes then will do a reload
-        if (config instanceof Config watchableConfig) {
-            watchableConfig.onChange(this::config);
+        if (config != null) {
+            config.onChange(this::config);
         }
     }
 
@@ -118,7 +117,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
      *
      * @param config the new config
      */
-    void config(io.helidon.common.config.Config config) {
+    void config(io.helidon.config.Config config) {
         Objects.requireNonNull(config);
         maybeReload();
     }

@@ -25,10 +25,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.Test;

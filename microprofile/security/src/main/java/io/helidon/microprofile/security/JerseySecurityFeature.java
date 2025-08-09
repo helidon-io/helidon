@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.microprofile.security;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authorized;
@@ -312,7 +312,7 @@ public final class JerseySecurityFeature implements Feature {
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("authenticate-annotated-only").asBoolean().ifPresent(this::authenticateAnnotatedOnly);
-            myConfig.get("query-params").mapList(QueryParamHandler::create).ifPresent(this::addQueryParamHandlers);
+            myConfig.get("query-params").asList(QueryParamHandler::create).ifPresent(this::addQueryParamHandlers);
             myConfig.get("debug").asBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
 
             return this;

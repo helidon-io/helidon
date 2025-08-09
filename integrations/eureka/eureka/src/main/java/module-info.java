@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * <p>Most users will never need to programmatically interact with any of the classes in any of the packages belonging
  * to this module.</p>
  *
- * @see io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider#create(io.helidon.common.config.Config, String)
+ * @see io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider#create(io.helidon.config.Config, String)
  */
 @Features.Name("EurekaRegistration")
 @Features.Description( "Eureka Server Service Instance Registration Integration")
@@ -34,7 +34,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.integrations.eureka {
 
     requires transitive io.helidon.builder.api;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.service.registry;
     requires transitive io.helidon.webclient.http1;
     requires transitive io.helidon.webserver;

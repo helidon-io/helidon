@@ -16,17 +16,6 @@
 
 package io.helidon.http.media.gson;
 
-import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
-import io.helidon.http.HeaderValues;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.MediaSupport;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -35,7 +24,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
-import static org.hamcrest.CoreMatchers.*;
+import io.helidon.common.GenericType;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.MediaSupport;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /*

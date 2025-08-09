@@ -30,7 +30,7 @@ import io.helidon.service.registry.InterceptionContext;
  * <p>
  * When generated, the generated code provides the instance either from {@link io.helidon.service.registry.ServiceRegistry},
  * or it creates a new instance, with configuration taken from annotations, and maybe augmented by a
- * {@link io.helidon.common.config.Config}.
+ * {@link io.helidon.config.Config}.
  * <p>
  * If you want to implement extend one of these classes, you must add a service annotation
  * (i.e. {@link io.helidon.service.registry.Service.Singleton}), and the instance must be named with the signature of the

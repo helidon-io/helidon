@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -40,8 +40,8 @@ import io.helidon.service.registry.Services;
  * resulting metrics factory as the most recent.
  * <p>
  * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
- * {@link io.helidon.common.config.Config} parameter creates and saves a metrics factory using the current
- * {@link io.helidon.common.config.Config}.
+ * {@link io.helidon.config.Config} parameter creates and saves a metrics factory using the current
+ * {@link io.helidon.config.Config}.
  * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
@@ -88,7 +88,7 @@ class MetricsFactoryManager {
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
                     .asList());
     /**
-     * The metrics {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
+     * The metrics {@link io.helidon.config.Config} node used to initialize the current metrics factory.
      */
     private static Config metricsConfigNode;
     /**

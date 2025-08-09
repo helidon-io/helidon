@@ -20,10 +20,10 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -133,7 +133,7 @@ public interface RequestedUriDiscoveryContext {
 
         /**
          * Update the settings from the {@value REQUESTED_URI_DISCOVERY_CONFIG_KEY}
-         * {@link io.helidon.common.config.Config} node within the socket configuration.
+         * {@link io.helidon.config.Config} node within the socket configuration.
          *
          * @param requestedUriDiscoveryConfig requested URI discovery configuration node
          * @return updated builder instance
@@ -151,7 +151,7 @@ public interface RequestedUriDiscoveryContext {
                     .asList(RequestedUriDiscoveryType.class)
                     .ifPresent(this::types);
             requestedUriDiscoveryConfig.get("trusted-proxies")
-                    .map(AllowList::create)
+                    .as(AllowList::create)
                     .ifPresent(this::trustedProxies);
             return this;
         }

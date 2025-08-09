@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webserver.observe.spi;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-import io.helidon.common.config.NamedService;
+import io.helidon.config.NamedService;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.spi.ServerFeature;

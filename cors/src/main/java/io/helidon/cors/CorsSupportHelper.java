@@ -27,8 +27,8 @@ import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.uri.UriInfo;
+import io.helidon.config.Config;
 import io.helidon.cors.LogHelper.Headers;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;

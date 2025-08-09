@@ -35,9 +35,9 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.RegistryBuilderSupport;
 import io.helidon.service.registry.Service;
@@ -53,6 +53,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressWarnings("removal")
 public class TypesTest {
     @Test
     void testTypes() {
@@ -83,7 +84,8 @@ public class TypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "COMMON_CONFIG", Config.class);
+        checkField(toCheck, checked, fields, "CONFIG", Config.class);
+        checkField(toCheck, checked, fields, "CONFIG_BUILDER", Config.Builder.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);
         checkField(toCheck, checked, fields, "LINKED_HASH_MAP", LinkedHashMap.class);

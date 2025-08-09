@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientBuilderBase;
 import io.helidon.dbclient.spi.DbClientBuilder;
@@ -53,7 +53,7 @@ public final class JdbcClientBuilder
     @Override
     public JdbcClientBuilder config(Config config) {
         super.config(config);
-        config.get("connection").detach().map(JdbcConnectionPool::create).ifPresent(this::connectionPool);
+        config.get("connection").detach().as(JdbcConnectionPool::create).ifPresent(this::connectionPool);
         Config parameters = config.get("parameters");
         if (parameters.exists()) {
             this.parametersConfig = JdbcParametersConfig.create(parameters);

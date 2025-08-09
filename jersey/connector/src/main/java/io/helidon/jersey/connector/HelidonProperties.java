@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class HelidonProperties {
      * Property name to set a {@link Config} instance to by used by underlying {@link WebClient}.
      * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
      *
-     * @see io.helidon.webclient.api.WebClientConfig.Builder#config(io.helidon.common.config.Config)
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#config(io.helidon.config.Config)
      */
     public static final String CONFIG = "jersey.connector.helidon.config";
 

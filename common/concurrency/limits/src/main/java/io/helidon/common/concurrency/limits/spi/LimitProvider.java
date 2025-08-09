@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.common.concurrency.limits.spi;
 
 import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.config.ConfiguredProvider;
 import io.helidon.service.registry.Service;
 
 /**

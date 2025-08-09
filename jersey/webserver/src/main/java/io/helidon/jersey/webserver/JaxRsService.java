@@ -34,11 +34,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
+import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -121,7 +121,7 @@ public class JaxRsService implements HttpService {
      * @param resourceConfig   containing application resources
      * @param injectionManager injection manager to use
      * @return a new service to register with the WebServer
-     * @see #create(io.helidon.common.config.Config, org.glassfish.jersey.server.ResourceConfig)
+     * @see #create(io.helidon.config.Config, org.glassfish.jersey.server.ResourceConfig)
      */
     public static JaxRsService create(Config config,
                                       ResourceConfig resourceConfig,

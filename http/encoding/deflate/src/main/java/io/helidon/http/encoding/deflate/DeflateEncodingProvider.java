@@ -16,7 +16,7 @@
 
 package io.helidon.http.encoding.deflate;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.spi.ContentEncodingProvider;
 

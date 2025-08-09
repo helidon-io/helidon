@@ -53,7 +53,6 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- We need a full metrics implementation to test that config affects system meter names correctly. -->
         <dependency>

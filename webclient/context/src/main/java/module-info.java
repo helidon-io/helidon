@@ -30,7 +30,7 @@ module io.helidon.webclient.context {
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.http;
     requires io.helidon.common.context.http;
 

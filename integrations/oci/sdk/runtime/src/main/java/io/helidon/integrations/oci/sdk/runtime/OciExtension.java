@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.service.registry.ServiceRegistry;
@@ -136,8 +135,8 @@ public final class OciExtension {
     private static volatile LazyValue<ServiceRegistryManager> injectionServices =
             LazyValue.create(ServiceRegistryManager::create);
     private static String overrideOciConfigFile;
-    private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
-    private static volatile Supplier<io.helidon.common.config.Config> fallbackConfigSupplier;
+    private static volatile Supplier<io.helidon.config.Config> ociConfigSupplier;
+    private static volatile Supplier<io.helidon.config.Config> fallbackConfigSupplier;
 
     private OciExtension() {
     }
@@ -164,7 +163,7 @@ public final class OciExtension {
      * oci-specific bootstrap {@link io.helidon.config.spi.ConfigSource}.
      * <p>
      * If the implementation is unable to find this file, then a fallback mechanism will be used to find it in the configuration
-     * based on {@link io.helidon.common.config.GlobalConfig}, using a top-level attribute key named
+     * based on {@link io.helidon.config.Config#global()}, using a top-level attribute key named
      * {@value OciConfigBlueprint#CONFIG_KEY}.
      * <p>
      * The final fallback mechanism will use an {@code auto} authentication strategy - see {@link OciConfigBlueprint} for details.
@@ -174,14 +173,14 @@ public final class OciExtension {
      * @see #ociConfigSupplier
      */
     public static OciConfig ociConfig() {
-        io.helidon.common.config.Config config = configSupplier().get();
+        io.helidon.config.Config config = configSupplier().get();
         if (isSufficientlyConfigured(config)) {
             // we are good as-is
             return OciConfig.create(config);
         }
 
         // fallback
-        config = GlobalConfig.config().get("oci");
+        config = Config.global().get("oci");
         if (isSufficientlyConfigured(config)) {
             return OciConfig.create(config);
         }
@@ -213,7 +212,7 @@ public final class OciExtension {
      * @see #fallbackConfigSupplier(Supplier)
      * @see #ociAuthenticationProvider()
      */
-    public static Supplier<io.helidon.common.config.Config> configSupplier() {
+    public static Supplier<io.helidon.config.Config> configSupplier() {
         if (ociConfigSupplier != null) {
             return ociConfigSupplier;
         }
@@ -244,7 +243,7 @@ public final class OciExtension {
      * @param configSupplier the config supplier
      * @see #configSupplier()
      */
-    public static void configSupplier(Supplier<io.helidon.common.config.Config> configSupplier) {
+    public static void configSupplier(Supplier<io.helidon.config.Config> configSupplier) {
         ociConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
@@ -257,7 +256,7 @@ public final class OciExtension {
      * @param configSupplier the fallback config supplier
      * @see #configSupplier()
      */
-    public static void fallbackConfigSupplier(Supplier<io.helidon.common.config.Config> configSupplier) {
+    public static void fallbackConfigSupplier(Supplier<io.helidon.config.Config> configSupplier) {
         fallbackConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
@@ -268,7 +267,7 @@ public final class OciExtension {
      * @param config the config
      * @return true if the given config can be used to identify an OCI authentication strategy
      */
-    public static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
+    public static boolean isSufficientlyConfigured(io.helidon.config.Config config) {
         return (config != null
                         && (config.get(KEY_AUTH_STRATEGY).exists()
                                     || config.get(KEY_AUTH_STRATEGIES).exists()));

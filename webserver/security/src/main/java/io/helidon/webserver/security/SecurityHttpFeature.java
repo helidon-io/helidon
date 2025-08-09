@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;

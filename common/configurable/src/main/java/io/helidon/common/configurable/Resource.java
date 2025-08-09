@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 
 /**
  * A representation of a resource that can be
  * loaded from URL ({@link #create(URI)}), classpath ({@link #create(String)}), filesystem ({@link #create(Path)},
- * content in config ({@link #create(Config)}, input stream({@link #create(String, InputStream)},
+ * content in config ({@link #create(io.helidon.config.Config)}, input stream({@link #create(String, InputStream)},
  * or direct value ({@link #create(String, byte[])}, {@link #create(String, String)}.
  * <p>
  * The resource bytes can then be accessed by various methods, depending on the type required - either you can access bytes
@@ -207,7 +207,7 @@ public interface Resource extends RuntimeType.Api<ResourceConfig> {
      * @param config    configuration current node must be the node containing the location of the resource, by
      *                          convention in helidon, this should be on key named {@code resource}
      * @return a resource ready to load from one of the locations
-     * @throws io.helidon.common.config.ConfigException in case this config does not define a resource configuration
+     * @throws io.helidon.config.ConfigException in case this config does not define a resource configuration
      */
     static Resource create(Config config) {
         return ResourceConfig.create(config).build();

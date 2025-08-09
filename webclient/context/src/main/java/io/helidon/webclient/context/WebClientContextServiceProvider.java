@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.context;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 

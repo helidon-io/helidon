@@ -18,7 +18,7 @@ package io.helidon.integrations.eureka;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import jakarta.json.JsonBuilderFactory;
@@ -28,11 +28,11 @@ import jakarta.json.JsonString;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static java.net.InetAddress.getLocalHost;
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_YAML;
 import static jakarta.json.Json.createBuilderFactory;
 import static jakarta.json.JsonValue.FALSE;
 import static jakarta.json.JsonValue.TRUE;
+import static java.net.InetAddress.getLocalHost;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;

@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
@@ -58,7 +58,7 @@ public interface MetricsFactory {
 
     /**
      * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * {@link io.helidon.common.config.Config} to set up the metrics factory and saving the resulting metrics factory
+     * {@link io.helidon.config.Config} to set up the metrics factory and saving the resulting metrics factory
      * as the current one, returned by {@link #getInstance()}}.
      *
      * @param metricsConfigNode metrics config node
@@ -94,9 +94,9 @@ public interface MetricsFactory {
      * <p>
      * The metric factory creates its global registry on-demand using
      * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
-     * {@link MetricsConfig} instance derived from the root {@link io.helidon.common.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.common.config.Config)}, or if none then the config from
-     * current {@link io.helidon.common.config.Config}.
+     * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
+     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
+     * current {@link io.helidon.config.Config}.
      *
      * @return the global meter registry
      */

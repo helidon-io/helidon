@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.eureka;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.integrations.eureka.EurekaRegistrationServerFeature;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClient;
@@ -23,7 +23,6 @@ import io.helidon.webserver.WebServer;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,6 @@ import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 class EurekaRegistrationServerFeatureIT {
 

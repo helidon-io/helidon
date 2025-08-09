@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webclient.http2;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
@@ -80,7 +80,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
     }
 
     /**
-     * Create a new instance based on {@link io.helidon.common.config.Config}.
+     * Create a new instance based on {@link io.helidon.config.Config}.
      *
      * @param config client config
      * @return a new HTTP/2 client

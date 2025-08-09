@@ -16,7 +16,7 @@
 
 package io.helidon.jersey.webserver;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRouting;

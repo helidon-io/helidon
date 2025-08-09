@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderNames;
@@ -248,7 +248,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
          */
         public B config(Config config) {
             super.config(config);
-            config.get("cache-config").map(EvictableCache::<String, List<Grant>>create).ifPresent(this::roleCache);
+            config.get("cache-config").as(EvictableCache::<String, List<Grant>>create).ifPresent(this::roleCache);
 
             return me;
         }

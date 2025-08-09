@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.grpc.spi;
 
-import io.helidon.common.config.NamedService;
+import io.helidon.config.NamedService;
 import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.ClientInterceptor;

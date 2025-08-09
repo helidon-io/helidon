@@ -17,7 +17,7 @@ package io.helidon.integrations.eureka;
 
 import java.util.List;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 

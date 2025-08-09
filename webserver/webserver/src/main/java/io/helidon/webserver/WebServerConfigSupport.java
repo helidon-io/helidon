@@ -29,8 +29,8 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Builder;
-import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;

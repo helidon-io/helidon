@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,8 @@ class ProviderImpl implements Config.Context {
     private final Function<String, List<String>> aliasGenerator;
 
     private ConfigDiff lastConfigsDiff;
-    private AbstractConfigImpl lastConfig;
+    private Config lastConfig;
+    private AbstractConfigImpl lastConfigImpl;
     private boolean listening;
 
     @SuppressWarnings("ParameterNumber")
@@ -79,7 +80,8 @@ class ProviderImpl implements Config.Context {
         this.changesExecutor = changesExecutor;
 
         this.lastConfigsDiff = null;
-        this.lastConfig = (AbstractConfigImpl) Config.empty();
+        this.lastConfig = Config.empty();
+        this.lastConfigImpl = null;
 
         this.keyResolving = keyResolving;
         this.keyResolvingFailOnMissing = keyResolvingFailOnMissing;
@@ -87,7 +89,7 @@ class ProviderImpl implements Config.Context {
     }
 
     public synchronized AbstractConfigImpl newConfig() {
-        lastConfig = build(configSource.load());
+        lastConfigImpl = build(configSource.load());
 
         if (!listening) {
             // only start listening for changes once the first config is built
@@ -98,23 +100,23 @@ class ProviderImpl implements Config.Context {
             listening = true;
         }
 
-        return lastConfig;
+        return lastConfigImpl;
     }
 
     @Override
     public synchronized Config reload() {
         rebuild(configSource.latest(), true);
-        return lastConfig;
+        return lastConfigInstance();
     }
 
     @Override
     public synchronized Instant timestamp() {
-        return lastConfig.timestamp();
+        return lastConfigInstance().timestamp();
     }
 
     @Override
     public synchronized Config last() {
-        return lastConfig;
+        return lastConfigInstance();
     }
 
     Optional<ConfigNode> lazyValue(String string) {
@@ -123,6 +125,10 @@ class ProviderImpl implements Config.Context {
 
     void onChange(Consumer<ConfigDiff> listener) {
         this.listeners.add(listener);
+    }
+
+    private Config lastConfigInstance() {
+        return lastConfigImpl == null ? lastConfig : lastConfigImpl;
     }
 
     private synchronized AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
@@ -231,15 +237,17 @@ class ProviderImpl implements Config.Context {
         AbstractConfigImpl newConfig = build(objectNode);
         // 2. for each subscriber fire event on specific node/key - see AbstractConfigImpl.FilteringConfigChangeEventSubscriber
         // 3. fire event
-        ConfigDiff configsDiff = ConfigDiff.from(lastConfig, newConfig);
+        ConfigDiff configsDiff = ConfigDiff.from(lastConfigInstance(), newConfig);
         if (!configsDiff.isEmpty()) {
             lastConfig = newConfig;
+            lastConfigImpl = newConfig;
             lastConfigsDiff = configsDiff;
 
             fireLastChangeEvent();
         } else {
             if (force) {
                 lastConfig = newConfig;
+                lastConfigImpl = newConfig;
             }
 
             LOGGER.log(Level.TRACE, "Change event is not fired, there is no change from the last load.");

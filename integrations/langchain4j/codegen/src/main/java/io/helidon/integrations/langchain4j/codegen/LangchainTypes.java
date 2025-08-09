@@ -63,7 +63,7 @@ final class LangchainTypes {
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");
     static final TypeName SVC_QUALIFIER = TypeName.create("io.helidon.service.registry.Qualifier");
     static final TypeName COMMON_WEIGHT = TypeName.create("io.helidon.common.Weight");
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
     static final Annotation BLDR_REGISTRY_SUPPORT_ANNOTATION = Annotation.create(BLDR_PROTOTYPE_REGISTRY_SUPPORT);
     static final TypeName OPT_SINGULAR = TypeName.create("io.helidon.builder.api.Option.Singular");
