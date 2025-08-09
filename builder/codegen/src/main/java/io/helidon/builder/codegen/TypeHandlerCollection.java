@@ -397,7 +397,12 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc,
                                 String singularName) {
-        String methodName = "add" + capitalize(singularName);
+        String methodName;
+        if (configured.singularAddPrefix()) {
+            methodName = "add" + capitalize(singularName);
+        } else {
+            methodName = singularName;
+        }
 
         Method.Builder builder = Method.builder()
                 .name(methodName)
