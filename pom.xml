@@ -65,7 +65,6 @@
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
-        <version.lib.commons-io>2.14.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
@@ -151,6 +150,7 @@
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
+        <version.plugin.replacer>1.4.1</version.plugin.replacer>
 
         <version.helidon-cli>3.0.0</version.helidon-cli>
 
@@ -242,6 +242,8 @@
         <module>testing</module>
         <module>declarative</module>
         <module>discovery</module>
+        <module>data</module>
+        <module>transaction</module>
     </modules>
 
     <build>
@@ -899,6 +901,16 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${version.lib.antlr}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.google.code.maven-replacer-plugin</groupId>
+                    <artifactId>maven-replacer-plugin</artifactId>
+                    <version>${version.plugin.replacer}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1342,11 +1354,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${version.lib.commons-lang3}</version>
-            </dependency>
-            <dependency>
                 <!-- used for classpath scanning in native image extension -->
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
@@ -1357,11 +1364,6 @@
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>${version.lib.jsoup}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.lib.commons-io}</version>
             </dependency>
             <!-- Injection TCK tests -->
             <dependency>
