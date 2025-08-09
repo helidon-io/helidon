@@ -33,7 +33,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.tracing.Tracer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -72,7 +71,6 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     private final AtomicInteger concurrentRequests;
     private final AtomicInteger rejectedRequests;
     private final int queueLength;
-    private final Tracer tracer;
 
     private Timer rttTimer;
     private Timer queueWaitTimer;
@@ -82,7 +80,6 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         this.concurrentRequests = new AtomicInteger();
         this.rejectedRequests = new AtomicInteger();
         this.clock = config.clock().orElseGet(() -> System::nanoTime);
-        tracer = config.enableTracing() ? Tracer.global() : null;
 
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.semaphore = null;
@@ -173,16 +170,13 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            var limitSpan = LimitSpan.create(tracer, "fixed");
             token = handler.tryAcquire(true);
             if (token.isPresent()) {
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
                 }
-                limitSpan.close();
                 return token;
             }
-            limitSpan.closeWithError();
         }
         rejectedRequests.getAndIncrement();
         return token;
