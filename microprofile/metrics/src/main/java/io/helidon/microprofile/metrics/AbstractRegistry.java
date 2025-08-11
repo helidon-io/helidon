@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -303,54 +301,6 @@ abstract class AbstractRegistry implements MetricRegistry {
         return asType.cast(metricStore.metric(metricID));
     }
 
-    Counter counter(io.helidon.metrics.api.Counter delegate, Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(() -> HelidonCounter.create(scope, metadata, delegate),
-                                               metadata,
-                                               Counter.class,
-                                               tags);
-    }
-
-    Gauge<?> gauge(io.helidon.metrics.api.Gauge delegate, Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(() -> HelidonGauge.create(scope,
-                                                                         metadata,
-                                                                         delegate),
-                                               metadata,
-                                               Gauge.class,
-                                               tags);
-    }
-
-    Gauge<?> gauge(io.helidon.metrics.api.FunctionalCounter delegate, Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(() -> HelidonGauge.create(scope,
-                                                                         metadata,
-                                                                         delegate),
-                                               metadata,
-                                               Gauge.class,
-                                               tags);
-    }
-
-    Histogram histogram(io.helidon.metrics.api.DistributionSummary delegate, Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(() -> HelidonHistogram.create(scope, metadata, delegate),
-                                               metadata,
-                                               Histogram.class,
-                                               tags);
-    }
-
-    Timer timer(io.helidon.metrics.api.Timer delegate, MeterRegistry meterRegistry, Metadata metadata, Tag... tags) {
-        return metricStore.getOrRegisterMetric(() -> HelidonTimer.create(meterRegistry, scope, metadata, delegate),
-                                               metadata,
-                                               Timer.class,
-                                               tags);
-    }
-
-    /**
-     * Update the registry settings for this registry.
-     *
-     * @param metricsConfig new settings to use going forward
-     */
-    void update(MetricsConfig metricsConfig) {
-        metricStore.update(metricsConfig);
-    }
-
     /**
      * Returns type of this registry.
      *
@@ -365,27 +315,9 @@ abstract class AbstractRegistry implements MetricRegistry {
         return scope;
     }
 
-    /**
-     * Determines if registry is empty.
-     *
-     * @return Outcome of test.
-     */
-    boolean empty() {
-        return metricStore.metrics().isEmpty();
-    }
-
     @Override
     public String toString() {
         return scope() + ": " + metricStore.metrics().size() + " metrics";
-    }
-
-    /**
-     * Returns a stream of {@link Map.Entry} for this registry for enabled metrics.
-     *
-     * @return Stream of {@link Map.Entry}
-     */
-    Stream<MetricInstance> stream() {
-        return metricStore.stream();
     }
 
     // -- Package private -----------------------------------------------------

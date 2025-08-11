@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,7 +211,12 @@ class TypeHandlerMap extends TypeHandler {
         if (configured.singular()) {
             // Builder putValue(String key, String value)
             String singularName = configured.singularName();
-            String methodName = "put" + capitalize(singularName);
+            String methodName;
+            if (configured.singularAddPrefix()) {
+                methodName = "put" + capitalize(singularName);
+            } else {
+                methodName = singularName;
+            }
 
             Method.Builder method = Method.builder()
                     .name(methodName)

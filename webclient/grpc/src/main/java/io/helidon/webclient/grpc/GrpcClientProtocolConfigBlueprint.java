@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,4 +92,19 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.Default("2048")
     int initBufferSize();
+
+    /**
+     * When data has been received from the server but not yet requested by the client
+     * (i.e., listener), the implementation will wait for this duration before signaling
+     * an error. If data is requested and more data is still in the queue, this time
+     * wait restarts until the next request is received. If duration expires, a
+     * status of {@link io.grpc.Status#CANCELLED} is reported in the call to
+     * {@link io.grpc.ClientCall.Listener#onClose(io.grpc.Status, io.grpc.Metadata)}.
+     *
+     * @return duration to wait for the next data request from listener
+     * @see io.grpc.ClientCall.Listener#request(int)
+     */
+    @Option.Configured
+    @Option.Default("PT1S")
+    Duration nextRequestWaitTime();
 }

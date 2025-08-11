@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data;
+
+import io.helidon.builder.api.Prototype;
+
+// OrderBlueprint custom methods
+class OrderSupport {
+
+    private OrderSupport() {
+        throw new UnsupportedOperationException("No instances of OrderSupport are allowed");
+    }
+
+    /**
+     * Create new instance of order definition with default direction and case-sensitivity.
+     * Default direction is {@link OrderDirection#ASC} and default value of {@link Order#caseSensitive()} is {@code true}.
+     *
+     * @param property entity property
+     * @return new order definition instance
+     */
+    @Prototype.FactoryMethod
+    static Order create(String property) {
+        return Order.builder()
+                .property(property)
+                .build();
+    }
+
+    /**
+     * Create new instance of order definition with default case-sensitivity.
+     * Default value of {@link Order#caseSensitive()} is {@code true}.
+     *
+     * @param property  entity property
+     * @param direction direction of the ordering
+     * @return new order definition instance
+     */
+    @Prototype.FactoryMethod
+    static Order create(String property, OrderDirection direction) {
+        return Order.builder()
+                .property(property)
+                .direction(direction)
+                .build();
+    }
+
+    /**
+     * Create new instance of order definition.
+     *
+     * @param property   entity property
+     * @param direction  direction of the ordering
+     * @param caseSensitive value of {@code true} for case-sensitive or {@code false} for case-sensitive ordering
+     * @return new order definition instance
+     */
+    @Prototype.FactoryMethod
+    static Order create(String property, OrderDirection direction, boolean caseSensitive) {
+        return Order.builder()
+                .property(property)
+                .direction(direction)
+                .caseSensitive(caseSensitive)
+                .build();
+    }
+
+}
