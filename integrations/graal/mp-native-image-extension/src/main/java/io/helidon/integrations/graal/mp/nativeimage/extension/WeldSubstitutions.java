@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,7 @@ public class WeldSubstitutions {
 
         @Inject
         @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.Reset)
-        private final DaemonThreadFactory dtf = new DaemonThreadFactory(new ThreadGroup("weld-preloaders"),
-                                                                        "weld-preloader-");
+        private final DaemonThreadFactory dtf = new DaemonThreadFactory("weld-preloader-");
 
         @Substitute
         void preloadContainerLifecycleEvent(Class<?> eventRawType, Type... typeParameters) {

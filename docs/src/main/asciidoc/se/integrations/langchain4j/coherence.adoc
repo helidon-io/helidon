@@ -29,7 +29,8 @@ include::{rootdir}/includes/se.adoc[]
 * <<Overview, Overview>>
 * <<Maven Coordinates, Maven Coordinates>>
 * <<Components, Components>>
-** <<CoherenceEmbeddingModel, CoherenceEmbeddingModel>>
+** <<CoherenceEmbeddingStore, CoherenceEmbeddingStore>>
+** <<CoherenceChatMemoryStore, CoherenceChatMemoryStore>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -50,9 +51,9 @@ In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration w
 
 == Components
 
-=== CoherenceEmbeddingModel
+=== CoherenceEmbeddingStore
 
-To automatically create and add `CoherenceEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `CoherenceEmbeddingStore` to the service registry add the following lines to `application.yaml`:
 
 [source,yaml]
 ----
@@ -88,6 +89,18 @@ Full list of configuration properties:
 
 |===
 
+=== CoherenceChatMemoryStore
+
+To automatically create and add persistence support backed by Coherence to `CharMemory`, just specify `store="CoherenceChatMemoryStore"` as following:
+
+[source,java]
+----
+@Ai.Service
+@Ai.ChatMemoryWindow(value=3,store="CoherenceChatMemoryStore")
+public interface ChatAiService {
+    String chat(@UserMessage String question);
+}
+----
 
 == Additional Information
 

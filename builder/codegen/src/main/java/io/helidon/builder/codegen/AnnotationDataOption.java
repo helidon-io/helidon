@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ record AnnotationDataOption(Javadoc javadoc,
                             boolean providerDiscoverServices,
                             boolean singular,
                             String singularName,
+                            boolean singularAddPrefix,
                             boolean sameGeneric,
                             boolean equalityRedundant,
                             boolean toStringRedundant,
@@ -90,6 +91,7 @@ record AnnotationDataOption(Javadoc javadoc,
         List<AllowedValue> allowedValues = null;
         boolean singular;
         String singularName;
+        boolean singularAddPrefix;
         boolean equalityRedundant;
         boolean toStringRedundant;
 
@@ -123,14 +125,17 @@ record AnnotationDataOption(Javadoc javadoc,
                     .toList();
         }
         if (element.hasAnnotation(OPTION_SINGULAR)) {
+            var singularAnnot = element.annotation(OPTION_SINGULAR);
             singular = true;
-            singularName = element.annotation(OPTION_SINGULAR)
-                    .value()
+            singularName = singularAnnot.value()
                     .filter(Predicate.not(String::isBlank))
                     .orElseGet(() -> singularName(handler.name()));
+            singularAddPrefix = singularAnnot.booleanValue("withPrefix")
+                    .orElse(true);
         } else {
             singular = false;
             singularName = null;
+            singularAddPrefix = true;
         }
         if (element.hasAnnotation(OPTION_REDUNDANT)) {
             Annotation annotation = element.annotation(OPTION_REDUNDANT);
@@ -180,6 +185,7 @@ record AnnotationDataOption(Javadoc javadoc,
                                         discoverServices,
                                         singular,
                                         singularName,
+                                        singularAddPrefix,
                                         element.hasAnnotation(OPTION_SAME_GENERIC),
                                         equalityRedundant,
                                         toStringRedundant,

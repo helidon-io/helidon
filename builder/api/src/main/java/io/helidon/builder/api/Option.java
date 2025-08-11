@@ -361,6 +361,18 @@ public final class Option {
          * @return The singular name to add
          */
         String value() default "";
+
+        /**
+         * When set to {@code true}, the prefix {@code add} or {@code put} will be added to generated methods
+         * (for collections and maps respectively).
+         * When set to {@code false}, the {@link #value()} will be used as a full method name for singular add/put methods.
+         * <p>
+         * In case you set this to {@code false}, you must make sure the method name does not conflict with other methods
+         * on the generated type
+         *
+         * @return whether to add prefix to the generated method, defaults to {@code true}
+         */
+        boolean withPrefix() default true;
     }
 
     /**

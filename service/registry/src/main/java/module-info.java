@@ -37,6 +37,7 @@ module io.helidon.service.registry {
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
+    requires java.naming;
 
     exports io.helidon.service.registry;
 

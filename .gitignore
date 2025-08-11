@@ -81,6 +81,7 @@ PutObjectStoreDirHere/
 package-lock.json
 RUNTIMEDB/
 docs/se/config/images
+.helidon-oidc-secret
 
 # Baseline results for regression tests
 jmh-baseline.json

@@ -37,12 +37,14 @@
         Changing these versions requires approval for a new third party dependency!
         -->
         <version.lib.activemq>5.16.0</version.lib.activemq>
-        <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
-        <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
+        <version.lib.antlr>4.13.1</version.lib.antlr>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.17.5</version.lib.bytebuddy>
         <version.lib.coherence>25.03.1</version.lib.coherence>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
+        <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
+        <version.lib.commons-io>2.16.1</version.lib.commons-io>
+        <version.lib.commons-lang>3.16.0</version.lib.commons-lang>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -57,7 +59,7 @@
         <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.25.5</version.lib.google-protobuf>
+        <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
@@ -92,12 +94,14 @@
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
         <version.lib.javassist>3.30.2-GA</version.lib.javassist>
-        <version.lib.jaxb-core>4.0.3</version.lib.jaxb-core>
-        <version.lib.jaxb-impl>4.0.3</version.lib.jaxb-impl>
-        <version.lib.jboss.classfilewriter>1.3.0.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jaxb-core>4.0.5</version.lib.jaxb-core>
+        <version.lib.jaxb-impl>4.0.5</version.lib.jaxb-impl>
+        <version.lib.jboss.classfilewriter>1.3.1.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
-        <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
+        <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.10</version.lib.jersey>
+        <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
+        <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.2.1.202505142326-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
@@ -109,8 +113,8 @@
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
-        <version.lib.micrometer>1.13.4</version.lib.micrometer>
-        <version.lib.micrometer-prometheus>1.13.4</version.lib.micrometer-prometheus>
+        <version.lib.micrometer>1.15.2</version.lib.micrometer>
+        <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
         <version.lib.micronaut>4.2.2</version.lib.micronaut>
         <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
@@ -123,13 +127,13 @@
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>5.1.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.1.2</version.lib.microprofile-openapi-api>
-        <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
-        <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
-        <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
+        <version.lib.microprofile-reactive-messaging-api>3.0.1</version.lib.microprofile-reactive-messaging-api>
+        <version.lib.microprofile-reactive-streams-operators-api>3.0.1</version.lib.microprofile-reactive-streams-operators-api>
+        <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
-        <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
+        <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
@@ -164,11 +168,11 @@
         <version.lib.slf4j>2.0.16</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.4</version.lib.snakeyaml>
-        <version.lib.testcontainers>1.19.3</version.lib.testcontainers>
-        <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
+        <version.lib.testcontainers>1.19.8</version.lib.testcontainers>
+        <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
-        <version.lib.weld>5.1.1.SP2</version.lib.weld>
+        <version.lib.weld>5.1.6.Final</version.lib.weld>
         <version.lib.yasson>3.0.4</version.lib.yasson>
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
@@ -537,6 +541,11 @@
                 <version>${version.lib.javassist}</version>
             </dependency>
             <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${version.lib.antlr}</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.websocket</groupId>
                 <artifactId>jakarta.websocket-api</artifactId>
                 <version>${version.lib.jakarta.websockets-api}</version>
@@ -843,6 +852,11 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.persistence</groupId>
+                <artifactId>org.eclipse.persistence.core</artifactId>
+                <version>${version.lib.eclipselink}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.persistence</groupId>
                 <artifactId>org.eclipse.persistence.jpa</artifactId>
                 <version>${version.lib.eclipselink}</version>
             </dependency>
@@ -984,6 +998,11 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk8</artifactId>
                 <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${version.lib.jetbrains.annotations}</version>
             </dependency>
             <!-- Jersey -->
             <dependency>
@@ -1193,6 +1212,24 @@
                 <version>${version.lib.commons-codec}</version>
             </dependency>
             <dependency>
+                <!-- version managed to fix issues in third party dependency -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${version.lib.commons-compress}</version>
+            </dependency>
+            <dependency>
+                <!-- version managed to align with commons-compress version above -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.lib.commons-lang}</version>
+            </dependency>
+            <dependency>
+                <!-- version managed to align with commons-compress version above -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-http</artifactId>
                 <version>${version.lib.micronaut}</version>
@@ -1267,6 +1304,11 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>junit-jupiter</artifactId>
+                <version>${version.lib.testcontainers}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
                 <version>${version.lib.testcontainers}</version>
             </dependency>
             <dependency>

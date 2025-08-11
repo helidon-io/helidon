@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,12 @@ public final class MpConfig {
             ConfigSource first = configSources.hasNext() ? configSources.next() : null;
             if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
                 // we only have Helidon SE config as a source - let's just use it
-                return ((MpHelidonConfigSource) first).unwrap();
+
+                // just make sure we are not returning an existing delegate, to prevent stack overflow
+                var unwrapped = ((MpHelidonConfigSource) first).unwrap();
+                if (!(unwrapped instanceof MpConfigProviderResolver.ConfigDelegate)) {
+                    return unwrapped;
+                }
             }
 
             // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
