@@ -16,8 +16,11 @@
 
 package io.helidon.builder.test;
 
+import java.util.Map;
+
 import io.helidon.builder.test.testsubjects.OtelTracing;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +31,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 class TestFactoryMethod {
      @Test
     void testConfigFactory() {
-        var config = Config.empty();
+        var config = Config.just(ConfigSources.create(Map.of("processors", "")));
 
         var otelConfig = OtelTracing.create(config);
         var processors = otelConfig.processors();
