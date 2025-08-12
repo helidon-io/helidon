@@ -1222,6 +1222,12 @@
                 <version>${version.lib.commons-lang}</version>
             </dependency>
             <dependency>
+                <!-- version managed to align with commons-compress version above -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-http</artifactId>
                 <version>${version.lib.micronaut}</version>
