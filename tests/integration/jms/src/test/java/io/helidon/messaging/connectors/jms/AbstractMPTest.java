@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public abstract class AbstractMPTest extends AbstractJmsTest {
                                    final List<String> expected, Consumer<TextMessage> messageConsumer) {
         consumingBean.expectedRequests(expected.size());
         produce(topic, testData, messageConsumer);
-        if (expected.size() > 0) {
+        if (!expected.isEmpty()) {
             // Wait till records are delivered
             boolean done = consumingBean.await();
             assertThat(String.format("Timeout waiting for results.\nExpected: %s \nBut was: %s",
@@ -65,11 +65,12 @@ public abstract class AbstractMPTest extends AbstractJmsTest {
             Destination dest = topic.startsWith("topic")
                     ? session.createTopic(topic)
                     : session.createQueue(topic);
-            MessageProducer producer = session.createProducer(dest);
-            for (String s : testData) {
-                TextMessage textMessage = session.createTextMessage(s);
-                messageConsumer.accept(textMessage);
-                producer.send(textMessage);
+            try (MessageProducer producer = session.createProducer(dest)) {
+                for (String s : testData) {
+                    TextMessage textMessage = session.createTextMessage(s);
+                    messageConsumer.accept(textMessage);
+                    producer.send(textMessage);
+                }
             }
         } catch (JMSException e) {
             throw new RuntimeException(e);
@@ -81,17 +82,17 @@ public abstract class AbstractMPTest extends AbstractJmsTest {
             Destination dest = topic.startsWith("topic")
                     ? session.createTopic(topic)
                     : session.createQueue(topic);
-            MessageConsumer consumer = session.createConsumer(dest);
-            Message m;
             List<Message> result = new ArrayList<>();
-            for (; ; ) {
-                m = consumer.receive(500L);
-                if (m == null) {
-                    break;
+            try (MessageConsumer consumer = session.createConsumer(dest)) {
+                Message m;
+                for (; ; ) {
+                    m = consumer.receive(500L);
+                    if (m == null) {
+                        break;
+                    }
+                    result.add(m);
                 }
-                result.add(m);
             }
-            consumer.close();
             return result.stream();
         } catch (JMSException e) {
             throw new RuntimeException(e);
