@@ -31,7 +31,7 @@ import io.helidon.common.resumable.ResumableSupport;
 )
 module io.helidon.integrations.crac {
     requires static io.helidon.common.features.api; // @Feature
-    requires transitive crac;
+    requires transitive org.crac;
     requires io.helidon.common.resumable;
     provides ResumableSupport with io.helidon.integrations.crac.CracSupport;
 }
