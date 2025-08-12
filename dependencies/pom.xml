@@ -177,7 +177,7 @@
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
-        <version.lib.crac>1.4.0</version.lib.crac>
+        <version.lib.crac>1.5.0</version.lib.crac>
     </properties>
 
     <dependencyManagement>
