@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 /**
  * Helidon Common Config Library.
+ *
+ * @deprecated use {@code io.helidon.config:helidon-config} module instead
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.3.0")
 module io.helidon.common.config {
 
     requires transitive io.helidon.common;

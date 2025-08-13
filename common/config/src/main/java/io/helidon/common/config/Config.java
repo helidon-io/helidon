@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import java.util.function.Function;
  * Immutable tree-structured configuration.
  * <p>
  * See {@link ConfigValue}.
+ *
+ * @deprecated use {@code io.helidon.config.Config} instead
  */
+@Deprecated(forRemoval = true, since = "4.3.0")
 public interface Config {
     /**
      * Empty instance of {@code Config}.
