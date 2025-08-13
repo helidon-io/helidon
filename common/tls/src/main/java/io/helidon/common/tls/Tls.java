@@ -177,7 +177,12 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         checkEnabled();
         try {
             SSLServerSocket socket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
-            socket.setSSLParameters(sslParameters);
+
+            // create a copy of SSLParameters, as otherwise we may use wrong endpoint identification algorithm for server
+            SSLParameters parameters = copySslParameters();
+            parameters.setApplicationProtocols(parameters.getApplicationProtocols());
+
+            socket.setSSLParameters(parameters);
             return socket;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -199,25 +204,9 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
 
             // create a copy of SSLParameters, as otherwise we may overwrite alpnProtocols of requests in parallel
-            SSLParameters parameters = new SSLParameters();
+            SSLParameters parameters = copySslParameters();
             parameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
-            parameters.setServerNames(this.sslParameters.getServerNames());
-            parameters.setCipherSuites(this.sslParameters.getCipherSuites());
-            parameters.setAlgorithmConstraints(this.sslParameters.getAlgorithmConstraints());
-            parameters.setEnableRetransmissions(this.sslParameters.getEnableRetransmissions());
             parameters.setEndpointIdentificationAlgorithm(this.sslParameters.getEndpointIdentificationAlgorithm());
-            parameters.setMaximumPacketSize(this.sslParameters.getMaximumPacketSize());
-            parameters.setNamedGroups(this.sslParameters.getNamedGroups());
-            parameters.setProtocols(this.sslParameters.getProtocols());
-            parameters.setSignatureSchemes(this.sslParameters.getSignatureSchemes());
-            parameters.setSNIMatchers(this.sslParameters.getSNIMatchers());
-            parameters.setUseCipherSuitesOrder(this.sslParameters.getUseCipherSuitesOrder());
-            if (this.sslParameters.getNeedClientAuth()) {
-                parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
-            }
-            if (this.sslParameters.getWantClientAuth()) {
-                parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
-            }
 
             sslSocket.setSSLParameters(parameters);
             return sslSocket;
@@ -271,6 +260,29 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
 
     Optional<X509TrustManager> trustManager() {
         return tlsManager.trustManager();
+    }
+
+    private SSLParameters copySslParameters() {
+        // this copy does not set application protocols (each client request may have different
+        // this copy does not set endpoint identification algorithm, server must not set it
+        SSLParameters parameters = new SSLParameters();
+        parameters.setServerNames(this.sslParameters.getServerNames());
+        parameters.setCipherSuites(this.sslParameters.getCipherSuites());
+        parameters.setAlgorithmConstraints(this.sslParameters.getAlgorithmConstraints());
+        parameters.setEnableRetransmissions(this.sslParameters.getEnableRetransmissions());
+        parameters.setMaximumPacketSize(this.sslParameters.getMaximumPacketSize());
+        parameters.setNamedGroups(this.sslParameters.getNamedGroups());
+        parameters.setProtocols(this.sslParameters.getProtocols());
+        parameters.setSignatureSchemes(this.sslParameters.getSignatureSchemes());
+        parameters.setSNIMatchers(this.sslParameters.getSNIMatchers());
+        parameters.setUseCipherSuitesOrder(this.sslParameters.getUseCipherSuitesOrder());
+        if (this.sslParameters.getNeedClientAuth()) {
+            parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
+        }
+        if (this.sslParameters.getWantClientAuth()) {
+            parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
+        }
+        return parameters;
     }
 
     private static int hashCode(SSLParameters first) {
