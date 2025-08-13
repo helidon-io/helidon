@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.2.5-SNAPSHOT</version>
+        <version>4.2.6-SNAPSHOT</version>
     </parent>
     <artifactId>tck-fault-tolerance</artifactId>
     <name>Helidon Microprofile Tests TCK Fault Tolerance</name>
