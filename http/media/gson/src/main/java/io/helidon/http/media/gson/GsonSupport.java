@@ -16,6 +16,7 @@
 package io.helidon.http.media.gson;
 
 import java.util.Objects;
+import java.util.ServiceLoader;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
@@ -30,6 +31,7 @@ import io.helidon.http.media.MediaSupport;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapterFactory;
 
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
@@ -73,6 +75,10 @@ public class GsonSupport implements MediaSupport {
         Objects.requireNonNull(name, "Name must not be null");
 
         GsonBuilder gsonBuilder = new GsonBuilder();
+        // Enable the registering of custom type adapters by using service providers for TypeAdapterFactory.
+        for (var factory : ServiceLoader.load(TypeAdapterFactory.class)) {
+            gsonBuilder.registerTypeAdapterFactory(factory);
+        }
         Gson gson = gsonBuilder.create();
         return create(gson, name);
     }
