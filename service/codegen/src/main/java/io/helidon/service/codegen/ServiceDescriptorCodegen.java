@@ -200,6 +200,7 @@ public class ServiceDescriptorCodegen {
                 .sortStaticFields(false);
 
         singletonInstanceField(classModel, service);
+        singletonLoggerField(classModel, service);
 
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
 
@@ -1062,6 +1063,17 @@ public class ServiceDescriptorCodegen {
                 .defaultValueContent("new " + service.descriptorType().className() + "<>()"));
     }
 
+    private void singletonLoggerField(ClassModel.Builder classModel, DescribedService service) {
+        // singleton instance of the descriptor
+        classModel.addField(instance -> instance
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(TypeName.create("java.lang.System.Logger"))
+                .name("LOGGER")
+                .defaultValueContent("System.getLogger(\"" + service.serviceDescriptor().typeName().genericTypeName() + "\")"));
+    }
+
     private void injectionPointFields(ClassModel.Builder classModel,
                                       TypeInfo service,
                                       Map<String, GenericTypeDeclaration> genericTypes,
@@ -1644,6 +1656,8 @@ public class ServiceDescriptorCodegen {
                 .map(ParamDefinition::ipParamName)
                 .collect(Collectors.joining(", "));
 
+        method.addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"instantiate (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");");
+
         if (interceptedMethods) {
             // return new MyImpl__Intercepted(interceptMeta, this, ANNOTATIONS, casted params
             method.addContent("return new ")
@@ -1922,6 +1936,7 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
+                    .addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"postConstruct\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
@@ -1936,6 +1951,7 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
+                    .addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"preDestroy\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
