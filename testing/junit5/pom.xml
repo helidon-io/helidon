@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.testing</groupId>
         <artifactId>helidon-testing-project</artifactId>
-        <version>4.2.5-SNAPSHOT</version>
+        <version>4.2.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-testing-junit5</artifactId>

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.common.testing</groupId>
         <artifactId>helidon-common-testing-project</artifactId>
-        <version>4.2.5-SNAPSHOT</version>
+        <version>4.2.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-common-testing-virtual-threads</artifactId>
