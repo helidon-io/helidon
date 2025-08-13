@@ -1069,7 +1069,7 @@ public class ServiceDescriptorCodegen {
                 .accessModifier(AccessModifier.PRIVATE)
                 .isStatic(true)
                 .isFinal(true)
-                .type(TypeName.create("java.lang.System.Logger"))
+                .type(System.Logger.class)
                 .name("LOGGER")
                 .defaultValueContent("System.getLogger(\"" + service.serviceDescriptor().typeName().genericTypeName() + "\")"));
     }
@@ -1656,7 +1656,15 @@ public class ServiceDescriptorCodegen {
                 .map(ParamDefinition::ipParamName)
                 .collect(Collectors.joining(", "));
 
-        method.addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"instantiate (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");");
+        method.addContent("if (LOGGER.isLoggable(")
+                .addContent(System.Logger.Level.class)
+                .addContentLine(".DEBUG)) {")
+                .increaseContentPadding()
+                .addContent("LOGGER.log(")
+                .addContent(System.Logger.Level.class)
+                .addContentLine(".DEBUG, \"instantiate (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");")
+                .decreaseContentPadding()
+                .addContentLine("}");
 
         if (interceptedMethods) {
             // return new MyImpl__Intercepted(interceptMeta, this, ANNOTATIONS, casted params
@@ -1936,7 +1944,9 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
-                    .addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"postConstruct\");")
+                    .addContent("LOGGER.log(")
+                    .addContent(System.Logger.Level.class)
+                    .addContentLine(".DEBUG, \"postConstruct\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
@@ -1951,7 +1961,9 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
-                    .addContentLine("LOGGER.log(System.Logger.Level.DEBUG, \"preDestroy\");")
+                    .addContent("LOGGER.log(")
+                    .addContent(System.Logger.Level.class)
+                    .addContentLine(".DEBUG, \"preDestroy\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
