@@ -200,6 +200,7 @@ public class ServiceDescriptorCodegen {
                 .sortStaticFields(false);
 
         singletonInstanceField(classModel, service);
+        singletonLoggerField(classModel, service);
 
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
 
@@ -1062,6 +1063,17 @@ public class ServiceDescriptorCodegen {
                 .defaultValueContent("new " + service.descriptorType().className() + "<>()"));
     }
 
+    private void singletonLoggerField(ClassModel.Builder classModel, DescribedService service) {
+        // singleton instance of the descriptor
+        classModel.addField(instance -> instance
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(System.Logger.class)
+                .name("LOGGER")
+                .defaultValueContent("System.getLogger(\"" + service.serviceDescriptor().typeName().genericTypeName() + "\")"));
+    }
+
     private void injectionPointFields(ClassModel.Builder classModel,
                                       TypeInfo service,
                                       Map<String, GenericTypeDeclaration> genericTypes,
@@ -1644,6 +1656,17 @@ public class ServiceDescriptorCodegen {
                 .map(ParamDefinition::ipParamName)
                 .collect(Collectors.joining(", "));
 
+        method.addContent("if (LOGGER.isLoggable(")
+                .addContent(System.Logger.Level.class)
+                .addContentLine(".DEBUG)) {")
+                .increaseContentPadding()
+                .addContent("LOGGER.log(")
+                .addContent(System.Logger.Level.class)
+                .addContent(".DEBUG, \"instantiate")
+                .addContentLine(" (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");")
+                .decreaseContentPadding()
+                .addContentLine("}");
+
         if (interceptedMethods) {
             // return new MyImpl__Intercepted(interceptMeta, this, ANNOTATIONS, casted params
             method.addContent("return new ")
@@ -1922,6 +1945,9 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
+                    .addContent("LOGGER.log(")
+                    .addContent(System.Logger.Level.class)
+                    .addContentLine(".DEBUG, \"postConstruct\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
@@ -1936,6 +1962,9 @@ public class ServiceDescriptorCodegen {
                     .addAnnotation(Annotations.OVERRIDE)
                     .addParameter(instance -> instance.type(typeName)
                             .name("instance"))
+                    .addContent("LOGGER.log(")
+                    .addContent(System.Logger.Level.class)
+                    .addContentLine(".DEBUG, \"preDestroy\");")
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
