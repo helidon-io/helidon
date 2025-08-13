@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class SseBaseTest {
 
+    private static final System.Logger LOGGER = System.getLogger(SseBaseTest.class.getName());
     private final WebServer webServer;
 
     SseBaseTest() {
@@ -62,11 +63,14 @@ class SseBaseTest {
     }
 
     static void sseJson1(ServerRequest req, ServerResponse res) {
+        LOGGER.log(System.Logger.Level.ERROR, "sseJson1 called");
         JsonObject json = Json.createObjectBuilder()
                 .add("hello", "world")
                 .build();
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            LOGGER.log(System.Logger.Level.ERROR, "sseJson1 sseSink called");
             sseSink.emit(SseEvent.create(json));
+            LOGGER.log(System.Logger.Level.ERROR, "sseJson1 emit called");
         }
     }
 
@@ -84,10 +88,13 @@ class SseBaseTest {
     }
 
     static void sseJson2(ServerRequest req, ServerResponse res) {
+        LOGGER.log(System.Logger.Level.ERROR, "sseJson2 called");
         SseServerTest.HelloWorld json = new SseServerTest.HelloWorld();
         json.setHello("world");
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            LOGGER.log(System.Logger.Level.ERROR, "sseJson2 sseSink called");
             sseSink.emit(SseEvent.create(json));
+            LOGGER.log(System.Logger.Level.ERROR, "sseJson2 emit called");
         }
     }
 
