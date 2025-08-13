@@ -344,6 +344,11 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                        Javadoc blueprintJavadoc,
                                        FactoryMethods factoryMethods,
                                        FactoryMethods.FactoryMethod factoryMethod) {
+        if (!configured.singular()) {
+            // if singular is not defined, we are not instructed to create add methods, so it does not make sense
+            // to create an add method with a builder consumer
+            return;
+        }
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
         TypeName builderType;
         if (factoryMethod.factoryMethodReturnType().className().equals("Builder")) {
@@ -382,14 +387,20 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             builder.addContentLine("this." + name() + "(builder.build());")
                     .addContentLine("return self();");
             classBuilder.addMethod(builder);
-        } else if (configured.singular()) {
-            String singularName = configured.singularName();
-            String methodName = "add" + capitalize(singularName);
-            builder.name(methodName)
-                    .addContentLine("this." + name() + ".add(builder.build());")
-                    .addContentLine("return self();");
-            classBuilder.addMethod(builder);
+            return;
         }
+
+        String singularName = configured.singularName();
+        String methodName;
+        if (configured.singularAddPrefix()) {
+            methodName = "add" + capitalize(singularName);
+        } else {
+            methodName = singularName;
+        }
+        builder.name(methodName)
+                .addContentLine("this." + name() + ".add(builder.build());")
+                .addContentLine("return self();");
+        classBuilder.addMethod(builder);
     }
 
     private void singularSetter(InnerClass.Builder classBuilder,
