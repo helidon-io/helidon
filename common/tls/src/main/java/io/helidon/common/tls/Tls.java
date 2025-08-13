@@ -180,7 +180,8 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
 
             // create a copy of SSLParameters, as otherwise we may use wrong endpoint identification algorithm for server
             SSLParameters parameters = copySslParameters();
-            parameters.setApplicationProtocols(parameters.getApplicationProtocols());
+            parameters.setApplicationProtocols(this.sslParameters.getApplicationProtocols());
+            parameters.setEndpointIdentificationAlgorithm("");
 
             socket.setSSLParameters(parameters);
             return socket;
