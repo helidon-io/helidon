@@ -1662,7 +1662,8 @@ public class ServiceDescriptorCodegen {
                 .increaseContentPadding()
                 .addContent("LOGGER.log(")
                 .addContent(System.Logger.Level.class)
-                .addContentLine(".DEBUG, \"instantiate (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");")
+                .addContent(".DEBUG, \"instantiate")
+                .addContentLine(" (weight = \" + weight() + \", run level = \" + runLevel().orElse(null) + \")\");")
                 .decreaseContentPadding()
                 .addContentLine("}");
 
