@@ -1,0 +1,56 @@
+package io.helidon.integrations.langchain4j;
+
+import java.util.List;
+
+import io.helidon.common.config.Config;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+
+@Service.Singleton
+class McpClientFactory implements Service.ServicesFactory<McpClient> {
+
+    private final List<Service.QualifiedInstance<McpClient>> clients;
+
+    McpClientFactory(Config config) {
+        this.clients = config.get(McpClientConfigBlueprint.CONFIG_ROOT)
+                .asNodeList()
+                .orElse(List.of())
+                .stream()
+                .map(McpClientFactory::create)
+                .toList();
+    }
+
+    private static Service.QualifiedInstance<McpClient> create(Config config) {
+        McpClientConfig mcpClientConfig = McpClientConfig.create(config);
+        HttpMcpTransport transport = new HttpMcpTransport.Builder()
+                .sseUrl(mcpClientConfig.sseUrl())
+                .build();
+
+        DefaultMcpClient.Builder builder = new DefaultMcpClient.Builder()
+                .transport(transport);
+
+        mcpClientConfig.key().ifPresent(builder::key);
+        mcpClientConfig.clientVersion().ifPresent(builder::clientVersion);
+        mcpClientConfig.clientName().ifPresent(builder::clientName);
+        mcpClientConfig.toolExecutionTimeoutErrorMessage().ifPresent(builder::toolExecutionTimeoutErrorMessage);
+        mcpClientConfig.initializationTimeout().ifPresent(builder::initializationTimeout);
+        mcpClientConfig.toolExecutionTimeout().ifPresent(builder::toolExecutionTimeout);
+        mcpClientConfig.pingTimeout().ifPresent(builder::pingTimeout);
+        mcpClientConfig.promptsTimeout().ifPresent(builder::promptsTimeout);
+        mcpClientConfig.reconnectInterval().ifPresent(builder::reconnectInterval);
+        mcpClientConfig.resourcesTimeout().ifPresent(builder::resourcesTimeout);
+
+        DefaultMcpClient mcpClient = builder.build();
+
+        return Service.QualifiedInstance.create(mcpClient, Qualifier.createNamed(mcpClient.key()));
+    }
+
+    @Override
+    public List<Service.QualifiedInstance<McpClient>> services() {
+        return clients;
+    }
+}

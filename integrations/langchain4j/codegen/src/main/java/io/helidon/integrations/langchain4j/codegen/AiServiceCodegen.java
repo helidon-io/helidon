@@ -42,11 +42,13 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CONTENT_RETRIEVER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MCP_CLIENTS;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MODERATION_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_RETRIEVER_AUGMENTOR;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_SERVICE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_STREAMING_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOLS;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOL_PROVIDER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AI_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_PROVIDER;
@@ -54,9 +56,12 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CONTENT_RETRIEVER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MCP_CLIENT;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MCP_TOOL_PROVIDER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MODERATION_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_RETRIEVAL_AUGMENTOR;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_STREAMING_CHAT_MODEL;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_TOOL_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
@@ -162,6 +167,36 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(");");
     }
 
+    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface) {
+        if (aiInterface.hasAnnotation(AI_MCP_CLIENTS) && !aiInterface.hasAnnotation(AI_TOOL_PROVIDER)) {
+            Annotation clients = aiInterface.annotation(AI_MCP_CLIENTS);
+            List<String> toolTypes = clients.stringValues()
+                    .orElseGet(List::of);
+
+            List<String> mcpClientParameters = new ArrayList<>();
+            int index = 1;
+            for (String clientName : toolTypes) {
+                String toolParameter = "mcpClient_" + index++;
+
+                builder.addParameter(param -> param
+                        .name(toolParameter)
+                        .type(LC_MCP_CLIENT)
+                        .addAnnotation(namedAnnotation(clientName)));
+                mcpClientParameters.add(toolParameter);
+            }
+            builder.addContent("var mcpToolProvider = ")
+                    .addContent(LC_MCP_TOOL_PROVIDER)
+                    .addContentLine(".builder()")
+                    .increaseContentPadding()
+                    .addContent(".mcpClients(")
+                    .addContent(String.join(", ", mcpClientParameters))
+                    .addContentLine(")")
+                    .addContentLine(".build();")
+                    .decreaseContentPadding();
+            builder.addContentLine("builder.toolProvider(mcpToolProvider);");
+        }
+    }
+
     private Annotation namedAnnotation(String modelName) {
         return Annotation.create(SERVICE_ANNOTATION_NAMED, modelName);
     }
@@ -243,6 +278,13 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_CONTENT_RETRIEVER,
                                         LC_CONTENT_RETRIEVER,
                                         "contentRetriever");
+                    aiServicesParameter(it,
+                                        autoDiscovery,
+                                        aiInterface,
+                                        AI_TOOL_PROVIDER,
+                                        LC_TOOL_PROVIDER,
+                                        "toolProvider");
+                    aiMcpClientParameter(it, aiInterface);
                     aiServicesToolParameters(it,
                                              aiInterface);
                 })

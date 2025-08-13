@@ -232,6 +232,36 @@ public final class Ai {
     }
 
     /**
+     * Annotation to specify a ToolProvider for the service.
+     * This is mutually exclusive with the {@link McpClients}.
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface ToolProvider {
+        /**
+         * Name of the Tool provider to be used.
+         *
+         * @return name of the Tool provider
+         */
+        String value();
+    }
+
+    /**
+     * Annotation to specify a MCP Clients to be used in McpToolProvider.
+     * This is mutually exclusive with the {@link ToolProvider}.
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface McpClients {
+        /**
+         * Name of the Tool provider to be used.
+         *
+         * @return name of the Tool provider
+         */
+        String[] value();
+    }
+
+    /**
      * Annotation to manually specify classes containing tools for the service.
      */
     @Target(TYPE)
