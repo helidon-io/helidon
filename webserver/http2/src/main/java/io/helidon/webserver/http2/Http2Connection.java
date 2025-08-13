@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,12 +102,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
     private final WritableHeaders<?> connectionHeaders;
-    private final long rapidResetCheckPeriod;
-    private final int maxRapidResets;
     private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
-    private int rapidResetCnt = 0;
-    private long rapidResetPeriodStart = 0;
+    private final Http2ConnectionChecks connectionChecks;
     private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -129,8 +126,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
         this.http2Config = http2Config;
-        this.rapidResetCheckPeriod = http2Config.rapidResetCheckPeriod().toNanos();
-        this.maxRapidResets = http2Config.maxRapidResets();
         this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))
@@ -139,6 +134,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.connectionWriter = new Http2ConnectionWriter(ctx,
                                                           ctx.dataWriter(),
                                                           List.of(new Http2LoggingFrameListener("send")));
+        this.connectionChecks = new Http2ConnectionChecks(http2Config, connectionWriter, this);
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
                 serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
@@ -300,6 +296,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     @Override
     public Duration idleTime() {
         return Duration.between(lastRequestTimestamp, DateTime.timestamp());
+    }
+
+    void finish() {
+        this.state = State.FINISHED;
     }
 
     @Override
@@ -784,18 +784,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         try {
             StreamContext streamContext = stream(streamId);
             boolean rapidReset = streamContext.stream().rstStream(rstStream);
-            if (rapidReset && maxRapidResets != -1) {
-                long currentTime = System.nanoTime();
-                if (rapidResetCheckPeriod >= currentTime - rapidResetPeriodStart) {
-                    rapidResetCnt = 1;
-                    rapidResetPeriodStart = currentTime;
-                } else if (maxRapidResets < rapidResetCnt) {
-                    throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Rapid reset attack detected!");
-                } else {
-                    rapidResetCnt++;
-                }
-            }
-
+            connectionChecks.rapidResetCheck(rapidReset);
             state = State.READ_FRAME;
         } catch (Http2Exception e) {
             if (e.getMessage().startsWith("Stream closed")) {
@@ -857,7 +846,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     serverSettings,
                                                                     clientSettings,
                                                                     connectionWriter,
-                                                                    flowControl));
+                                                                    flowControl,
+                                                                    connectionChecks));
             streams.put(streamContext);
             streams.doMaintenance(maxClientConcurrentStreams);
         }
