@@ -40,7 +40,7 @@ include::{rootdir}/includes/se.adoc[]
 == Overview
 
 The Helidon SE Data Repository provides a unified API for working with database queries.
-Data repository queries are an abstraction on top of Object–relational mapping (ORM). This
+Data repository queries are an abstraction on top of Object–Relational Mapping (ORM). This
 allows compile time translation of interfaces with query definitions into implementing classes.
 
 Supported ORM is Jakarta Persistence 3.1 and EclipseLink or Hibernate providers.
@@ -49,41 +49,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
-        <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.jakarta.persistence</groupId>
-            <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.jakarta.persistence</groupId>
-            <artifactId>helidon-data-jakarta-persistence</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+include::{sourcedir}/../../../../../../pom.xml[tag=data_dependencies, indent=0]
 ----
-
-Data Repository GAPI module depends on Jakarta Persistence 3.1.
 
 Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runtime dependencies:
+
 [source,xml]
 ----
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.jpa</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.core</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+include::{sourcedir}/../../../../../../pom.xml[tag=data_eclipselink_dependencies, indent=0]
 ----
 
 == Annotation Processor
@@ -92,34 +65,7 @@ Both ORM entity model and data repository interfaces require specific annotation
 
 [source,xml]
 ----
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.codegen</groupId>
-                            <artifactId>helidon-data-codegen</artifactId>
-                            <version>${project.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.jakarta.persistence</groupId>
-                            <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                            <version>${project.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
+include::{sourcedir}/../../../../../../pom.xml[tag=data_annotationProcessorPaths, indent=0]
 ----
 
 == Usage
@@ -131,61 +77,54 @@ There are two ways how such a query may be defined:
 
 [source,java]
 ----
-    @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
-    List<Pet> listPetsByCategory(String categoryName);
+include::{sourcedir}/se/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 
 * using method name as query definition
 
 [source,java]
 ----
-    Optional<Pet> findByName(String name);
+include::{sourcedir}/se/data/PetRepository.java[tag=findByName_method, indent=0]
 ----
 
 == Helidon Config
 
-The data repository must be configured before you begin. In the example below we'll use Helidon Config to set up data repository
+The data repository must be configured before you begin. In the example below Helidon Config is used to set up data repository
 with EclipseLink and MySQL database:
 [source,yaml]
 ----
 data:
-  provider.jakarta:
-    username: "user"
-    password: "password"
-    connection-string: "jdbc:mysql://localhost:3306/pets"
-    jdbc-driver: "com.mysql.cj.jdbc.Driver"
-    # EclipseLink properties
-    properties:
-      eclipselink.target-database: "MySQL"
-      eclipselink.target-server: "None"
-      eclipselink.weaving: false
-      eclipselink.logging.level.weaver: "OFF"
-      eclipselink.logging.parameters: true
-      jakarta.persistence.schema-generation.database.action: none
+  persistence-units:
+    jakarta:
+      - connection:
+          username: "user"
+          password: "password"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+          # EclipseLink properties
+          properties:
+            eclipselink.target-database: "MySQL"
+            eclipselink.target-server: "None"
+            jakarta.persistence.schema-generation.database.action: "none"
 ----
 
 == SE Application
 
-Data repository must be initialized using programmatic API in Java SE application:
+Data repository runtime initialization is handled by service registry. Repository interface instances can be obtained using
+service registry API:
 
 [source,java]
 ----
-DataRegistry helidonData = DataRegistry.create(config.get("data"));
-----
-
-`DataRegistry` instance can be used now to create repository interface instances:
-
-[source,java]
-----
-PetRepository pets = helidonData.repository(PetRepository.class);
+include::{sourcedir}/se/data/PetService.java[tag=repository_init, indent=0]
 ----
 
 == Repository Interface
 
-Data repository interfaces are interfces annotated with the `@Data.Repository` annotation and extending `Data.GenericRepository`
+Data repository interfaces are interfaces annotated with the `@Data.Repository` annotation and extending `Data.GenericRepository`
 interface.
 The `@Data.Repository` annotation has no argument. The `Data.GenericRepository` has no methods, but has two generic arguments
 `E` and `ID`. Argument `E` is the type of the persistence entity and argument `ID` is the type of entity primary key attribute.
+Composite primary keys are not supported.
 
 The `Data.GenericRepository` interface is extended by additional interfaces to add specific features:
 
@@ -220,16 +159,7 @@ by `@Data.Query` annotation:
 
 [source,java]
 ----
-@Data.Repository
-public interface PetRepository extends Data.CrudRepository<Pet, Integer> {
-
-    Optional<Pet> findByName(String name);
-
-    Slice<String> listNameOrderByName(PageRequest request);
-
-    @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
-    List<Pet> listPetsByCategory(String categoryName);
-}
+include::{sourcedir}/se/data/PetRepository.java[tag=PetRepository_class, indent=0]
 ----
 
 ==== Method with query defined by `@Data.Query` annotation
@@ -243,8 +173,7 @@ Method arguments must match the data query arguments:
 
 [source,java]
 ----
-    @Data.Query("SELECT p FROM Player p WHERE p.name = :name AND p.trainer.name = :trainerName")
-    Optional<Pokemon> selectByNameAndTrainer(String trainerName, String name);
+include::{sourcedir}/se/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 
 * in case of indexed arguments, each indexed argument from the query must have argument in corresponding order in method
@@ -252,8 +181,7 @@ arguments. Arguments are indexed from '1'.
 
 [source,java]
 ----
-    @Data.Query("SELECT k FROM Keeper k WHERE k.name = $2 AND k.id = $1")
-    Optional<Trainer> selectKeeperByNameAndId(int id, String name);
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=selectKeeper_method, indent=0]
 ----
 
 Supported return types are
@@ -273,15 +201,16 @@ follow _query by method name_ specific grammar:
 
         query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
                             | <all-action> "All" [ "OrderBy" <order> ]
-        delete       :: [ <prefix> ] "delete" "By" <criteria> ] | [ <prefix> ] "delete" [ "All" ]
+        delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
 
-        action       :: <action-l> | [ <prefix> ] <action-u>
+        action       :: <action-l> | <prefix> <action-u>
         all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
+        del-action   :: "delete" | [ <prefix> ] "Delete"
 
         prefix       :: [a-zA-Z0-9]*
-        action-l     :: "count" |  "exists" | "get" | <all-action>
+        action-l     :: "count" |  "exists" | "get" | <all-action-l>
+        action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
         all-action-l :: "find" | "list" | "stream"
-        action-u     :: "Count" |  "Exists" | "Get" | <all-action>
         all-action-u :: "Find" | "List" | "Stream"
 
         projection   :: [ <expression> ] [ <property> ]
@@ -304,19 +233,13 @@ follow _query by method name_ specific grammar:
 
 ===== Method name prefix and return type
 
-Method can have user defined prefix. This prefix must start with letter followed by sequence of letters and digits. This prefix
+Method can have user defined prefix. The prefix is sequence of letters and digits not matching `<action-u>` keyword. This prefix
 has no influence on the query. Prefix can be used to distinguish between methods with the same query but different result type.
-If prefix is used, the following `query-action` or `all-action` identifier must start with capital letter.
+If prefix is used, the following query action keyword must start with capital letter.
 
 [source,java]
 ----
-    Number countByName(String name);
-    long longCountByName(String name);
-    Long boxedLongCountByName(String name);
-    int intCountByName(String name);
-    Integer boxedIntCountByName(String name);
-    short shortCountByName(String name);
-    Short boxedShortCountByName(String name);
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_method, indent=0]
 ----
 
 Return type of the method depends on action keyword being used.
@@ -394,32 +317,11 @@ The expression keywords are:
 |===
 
 Property is the entity property. The property is composed of the entity properties names separated by '_' character, e.g.
-`Trainer_Name` of the `Player` entity points to the `name` property of the `Trainer` entity which is present in the `Player`
-entity as the `trainer` property:
+`Keeper_Name` of the `Pet` entity will be translated to `SELECT p.keeper.name FROM Pet p` JPQL query.
 
 [source,java]
 ----
-@Entity
-public class Player {
-    Trainer trainer;
-}
-
-@Entity
-public class Trainer {
-    String name;
-}
-
-@Data.Repository
-public interface PokemonRepository extends Data.GenericRepository<Pokemon, Integer> {
-    List<String> listTrainer_Name();
-}
-----
-
-This will result in following Jakarta Persistence code to be generated (`em` is `EntityManager em`):
-[source,java]
-----
-    em.createQuery("SELECT p.trainer.name FROM Player p", String.class)
-            .getResultList();
+include::{sourcedir}/se/data/SimpleSnippets.java[tag=simple_model, indent=0]
 ----
 
 ===== Criteria part of the query
@@ -431,7 +333,7 @@ which consists of the entity property `name` and `IgnoreCase`, `Not` and `EndsWi
 
 Criteria condition keywords are of 2 types:
 
-* `IgnoreCase` and `Not` keywords which can used before the condition keyword as modifiers
+* `IgnoreCase` and `Not` modifiers which can be used before the condition keyword
 * the condition keyword, for example `EndsWith`
 
 The condition keyword can consume method arguments. Each keyword has exact number of arguments being consumed. Method arguments
@@ -539,18 +441,7 @@ Logical operators:
 |===
 
 Logical operators precedence in JPQL is defined in Jakarta Persistence 3.1 specification, chapter _4.6.6. Operators and Operator
-Precedence_: operator `AND` has higher precedence than `OR`. Generated JPQL does not contain any brackets.
-When used with dynamic sorting, `CriteriaBuilder` API is used to build the query and `AND` operator will always be the inner one
-to be evaluated 1st, e.g.:
-
-[source,java]
-----
-    stmt.where(cb.or(
-            cb.and(
-                cb.equal(root.get("name"), cb.parameter(String.class, "name")),
-                cb.equal(root.get("hp"), cb.parameter(Integer.class, "hp"))),
-            cb.equal(root.get("id"), cb.parameter(Integer.class, "id"))));
-----
+Precedence_: operator `AND` has higher precedence than `OR`.
 
 ===== Sorting part of the query
 
@@ -578,12 +469,12 @@ An example of repository method with sorting:
 
 [source,java]
 ----
-    List<Player> findAllOrderByAgeAscName();
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
 ----
 
 == Pagination
 
-Pagination allows user to split the data collection into individual pages. When pagination is used, the repository method
+Pagination allows user to split returned data collection into individual pages. When pagination is used, the repository method
 must have an argument of `PageRequest` type. Return type of the method is `Slice` or `Page`.
 The `PageRequest` argument of the method defines size of the page and index of the page (starting from `0`) to be returned.
 
@@ -604,45 +495,27 @@ An example of repository method with pagination:
 
 [source,java]
 ----
-    Slice<Player> listOrderByName(PageRequest pageRequest);
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_slice_method, indent=0]
 ----
 
 == Dynamic Sorting
 
 Sorting part of the method name defines static sorting rule which cannot be modified in runtime. Dynamic sorting allows user
-to define additional sorting rule which is defined in runtime. Dynamic sorting is triggered by adding an argument of `Sort`
+to define additional sorting rule which is defined at runtime. Dynamic sorting is triggered by adding an argument of `Sort`
 type to the repository method. Both rules can be used simultaneously.
 
 An example of repository method with dynamic sorting:
 
 [source,java]
 ----
-    List<Player> findByAgeBetween(int min, int max, Sort sort);
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_dynamic_sort_method, indent=0]
 ----
 
-Static sorting rules from the method name are always applied first and dynamic rules are added after them as seen in following
-example. Let's have repository method with both sorting rules applied:
-
-[source,java]
-----
-    List<Player> findByAgeBetweenOrderByAge(int min, int max, Sort sort);
-----
-
-Following code based on `CriteriaBuilder` API will be generated to apply the sorting rules:
+Static sorting rules from the method name are always applied first and dynamic rules are added after them.
 
 [source,java]
 ----
-    CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Player> stmt = cb.createQuery(Player.class);
-    // ...
-    List<Order> orderBy = new ArrayList<>();
-    orderBy.add(cb.asc(root.get("age")));
-    sort.orderBy().forEach(order ->
-            orderBy.add(switch (order.direction()) {
-                case ASC -> cb.asc(root.get(order.property()));
-                case DESC -> cb.desc(root.get(order.property()));
-            }));
-    stmt.orderBy(orderBy);
+include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_dual_sort_method, indent=0]
 ----
 
 == Persistence Session Access
@@ -656,31 +529,14 @@ to handle session instance life-cycle.
 
 [source,java]
 ----
-@Data.Repository
-public interface PlayerRepository
-        extends Data.GenericRepository<Player, Integer>, Data.SessionRepository<EntityManager> {
-}
+include::{sourcedir}/se/data/SimpleSnippets.java[tag=session_repository, indent=0]
 ----
 
 Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
 
 [source,java]
 ----
-public class PlayerService {
-
-    private final PlayerRepository pr;
-
-    PlayerService(DataRegistry data) {
-        this.pr = data.repository(PlayerRepository.class);
-    }
-
-    public List<Player> myPlayerQuery(String name) {
-        return pr.call(em -> em.createQuery("SELECT p FROM Player p WHERE name = :name", Player.class)
-                .setParameter("name", name)
-                .getResultList());
-    }
-
-}
+include::{sourcedir}/se/data/PetService.java[tag=session_access, indent=0]
 ----
 
 NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
