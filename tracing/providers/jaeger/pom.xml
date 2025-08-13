@@ -41,28 +41,9 @@
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
-        <!-- For dependency convergence of kotlin-stdlib
-             Once okhttp3 4.12.0 is released we can remove this since it upgrades okio
-             https://github.com/square/okhttp/pull/7947 -->
-        <dependency>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-jaeger</artifactId>
-            <exclusions>
-                <!-- For dependency convergence. This excludes the transitive dep
-                     on kotlin from okhttp. We defer to the transitive dep from okio -->
-                <exclusion>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib-jdk8</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
@@ -88,6 +69,12 @@
             <!-- redirecting Jaeger slf4j logging to JUL logging -->
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <!-- Needed for module-info -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
