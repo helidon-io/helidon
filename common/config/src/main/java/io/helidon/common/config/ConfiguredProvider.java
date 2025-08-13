@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ package io.helidon.common.config;
  * </pre>
  *
  * @param <T> type of the service this provider provides
+ *
+ * @deprecated use {@code io.helidon.config.ConfiguredProvider} instead
  */
+@Deprecated(forRemoval = true, since = "4.3.0")
 public interface ConfiguredProvider<T extends NamedService> {
     /**
      * Key this service implementation is stored under. This is also considered the service "type" when used

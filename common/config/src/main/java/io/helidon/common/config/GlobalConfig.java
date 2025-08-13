@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.spi.ConfigProvider;
 import io.helidon.service.registry.Services;
 
 /**
@@ -42,13 +41,15 @@ import io.helidon.service.registry.Services;
  * {@link io.helidon.service.registry.Services#set(Class, Object[])} to use a custom instance of configuration, just make sure
  * it is registered before it is used the first time
  */
+@SuppressWarnings("removal")
 @Deprecated(forRemoval = true, since = "4.2.0")
 public final class GlobalConfig {
     private static final System.Logger LOGGER = System.getLogger(GlobalConfig.class.getName());
     private static final AtomicBoolean LOGGED_REGISTERED = new AtomicBoolean(false);
     private static final Config EMPTY = Config.empty();
     private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(() -> {
-        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
+        List<io.helidon.common.config.spi.ConfigProvider> providers =
+                HelidonServiceLoader.create(ServiceLoader.load(io.helidon.common.config.spi.ConfigProvider.class))
                 .asList();
         // no implementations available, use empty configuration
         if (providers.isEmpty()) {
@@ -137,7 +138,7 @@ public final class GlobalConfig {
     }
 
     static Config create() {
-        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
+        var providers = HelidonServiceLoader.create(ServiceLoader.load(io.helidon.common.config.spi.ConfigProvider.class))
                 .asList();
         // no implementations available, use empty configuration
         if (providers.isEmpty()) {
