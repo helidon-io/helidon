@@ -23,6 +23,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Service;
 
 import dev.langchain4j.model.chat.listener.ChatModelErrorContext;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
@@ -35,6 +36,8 @@ import dev.langchain4j.model.chat.response.ChatResponse;
  * Creates metrics that follow the
  * <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/">Semantic Conventions for GenAI Metrics</a>.
  */
+@Service.Singleton
+@Service.Named("MetricsChatModelListener")
 public class MetricsChatModelListener implements ChatModelListener {
 
     private static final String GEN_AI_CLIENT_OPERATION_START_TIME = "GEN_AI_CLIENT_OPERATION_START_TIME";
@@ -51,7 +54,6 @@ public class MetricsChatModelListener implements ChatModelListener {
      * Constructs a {@code MetricsChatModelListener} instance.
      */
     public MetricsChatModelListener() {
-        System.out.println("*** MetricsChatModelListener ***");
         this.meterRegistry = Metrics.globalRegistry();
 
         // Limits set based on https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage.
@@ -76,13 +78,11 @@ public class MetricsChatModelListener implements ChatModelListener {
 
     @Override
     public void onRequest(ChatModelRequestContext chatModelRequestContext) {
-        System.out.println("*** MetricsChatModelListener.onRequest ***");
         chatModelRequestContext.attributes().put(GEN_AI_CLIENT_OPERATION_START_TIME, System.nanoTime());
     }
 
     @Override
     public void onResponse(ChatModelResponseContext chatModelResponseContext) {
-        System.out.println("*** MetricsChatModelListener.onResponse ***");
         final long endTime = System.nanoTime();
         final long startTime = (Long) chatModelResponseContext.attributes().get(GEN_AI_CLIENT_OPERATION_START_TIME);
 
@@ -113,7 +113,6 @@ public class MetricsChatModelListener implements ChatModelListener {
 
     @Override
     public void onError(ChatModelErrorContext chatModelErrorContext) {
-        System.out.println("*** MetricsChatModelListener.onError ***");
         final long endTime = System.nanoTime();
         final long startTime = (Long) chatModelErrorContext.attributes().get(GEN_AI_CLIENT_OPERATION_START_TIME);
 
