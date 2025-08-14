@@ -42,16 +42,19 @@ class McpClientFactory implements Service.ServicesFactory<McpClient> {
 
     private static Service.QualifiedInstance<McpClient> create(Config config) {
         McpClientConfig mcpClientConfig = McpClientConfig.create(config);
-        HttpMcpTransport transport = new HttpMcpTransport.Builder()
-                .sseUrl(mcpClientConfig.sseUrl())
-                .build();
+        HttpMcpTransport.Builder transport = new HttpMcpTransport.Builder()
+                .sseUrl(mcpClientConfig.sseUrl());
+
+        mcpClientConfig.logRequests().ifPresent(transport::logRequests);
+        mcpClientConfig.logResponses().ifPresent(transport::logResponses);
 
         DefaultMcpClient.Builder builder = new DefaultMcpClient.Builder()
-                .transport(transport);
+                .transport(transport.build());
 
         mcpClientConfig.key().ifPresent(builder::key);
         mcpClientConfig.clientVersion().ifPresent(builder::clientVersion);
         mcpClientConfig.clientName().ifPresent(builder::clientName);
+        mcpClientConfig.protocolVersion().ifPresent(builder::protocolVersion);
         mcpClientConfig.toolExecutionTimeoutErrorMessage().ifPresent(builder::toolExecutionTimeoutErrorMessage);
         mcpClientConfig.initializationTimeout().ifPresent(builder::initializationTimeout);
         mcpClientConfig.toolExecutionTimeout().ifPresent(builder::toolExecutionTimeout);

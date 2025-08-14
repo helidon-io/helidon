@@ -167,34 +167,45 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(");");
     }
 
-    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface) {
-        if (aiInterface.hasAnnotation(AI_MCP_CLIENTS) && !aiInterface.hasAnnotation(AI_TOOL_PROVIDER)) {
-            Annotation clients = aiInterface.annotation(AI_MCP_CLIENTS);
-            List<String> toolTypes = clients.stringValues()
-                    .orElseGet(List::of);
-
-            List<String> mcpClientParameters = new ArrayList<>();
+    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, boolean autoDiscovery) {
+        if (aiInterface.hasAnnotation(AI_TOOL_PROVIDER)) {
+            //If there is a ToolProvider specified, we should use that
+            return;
+        }
+        Optional<List<String>> mcpClients = aiInterface.findAnnotation(AI_MCP_CLIENTS)
+                .flatMap(Annotation::stringValues);
+        List<String> mcpClientParameters = new ArrayList<>();
+        if (mcpClients.isEmpty()) {
+            if (!autoDiscovery) {
+                // no autodiscovery
+                return;
+            }
+            builder.addParameter(tools -> tools
+                    .name("mcpClients")
+                    .type(listType(LC_MCP_CLIENT)));
+            mcpClientParameters.add("mcpClients");
+        } else {
+            List<String> toolTypes = mcpClients.get();
             int index = 1;
             for (String clientName : toolTypes) {
                 String toolParameter = "mcpClient_" + index++;
-
                 builder.addParameter(param -> param
                         .name(toolParameter)
                         .type(LC_MCP_CLIENT)
                         .addAnnotation(namedAnnotation(clientName)));
                 mcpClientParameters.add(toolParameter);
             }
-            builder.addContent("var mcpToolProvider = ")
-                    .addContent(LC_MCP_TOOL_PROVIDER)
-                    .addContentLine(".builder()")
-                    .increaseContentPadding()
-                    .addContent(".mcpClients(")
-                    .addContent(String.join(", ", mcpClientParameters))
-                    .addContentLine(")")
-                    .addContentLine(".build();")
-                    .decreaseContentPadding();
-            builder.addContentLine("builder.toolProvider(mcpToolProvider);");
         }
+        builder.addContent("var mcpToolProvider = ")
+                .addContent(LC_MCP_TOOL_PROVIDER)
+                .addContentLine(".builder()")
+                .increaseContentPadding()
+                .addContent(".mcpClients(")
+                .addContent(String.join(", ", mcpClientParameters))
+                .addContentLine(")")
+                .addContentLine(".build();")
+                .decreaseContentPadding();
+        builder.addContentLine("builder.toolProvider(mcpToolProvider);");
     }
 
     private Annotation namedAnnotation(String modelName) {
@@ -284,7 +295,7 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_TOOL_PROVIDER,
                                         LC_TOOL_PROVIDER,
                                         "toolProvider");
-                    aiMcpClientParameter(it, aiInterface);
+                    aiMcpClientParameter(it, aiInterface, autoDiscovery);
                     aiServicesToolParameters(it,
                                              aiInterface);
                 })

@@ -240,6 +240,8 @@ Helidon's LangChain4J integration introduces a declarative Helidon Inject-based 
     ** *Retrieval Augmentor*: `dev.langchain4j.rag.RetrievalAugmentor`
 * *Callback Functions*:
     ** Methods annotated with `dev.langchain4j.agent.tool.Tool`
+* *MCP Client*:
+    ** `dev.langchain4j.mcp.client.McpClient`
 
 === Creating AI Service
 
@@ -270,6 +272,8 @@ In this scenario all LangChain4J components from the list above are taken from t
 | `Ai.ModerationModel`     | Specifies the name of a service in the service registry that implements `ModerationModel` to use in the annotated Ai Service.
 | `Ai.ContentRetriever`    | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`.
 | `Ai.RetrievalAugmentor`  | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`.
+| `Ai.ToolProvider`        | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.
+| `Ai.McpClients`          | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`.
 |===
 
 For example, in the snippet below a service with name "myCustomChatMemory" will be used as chat memory and all other components are discovered automatically.
