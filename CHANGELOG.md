@@ -9,6 +9,14 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.14]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Upgrade Netty to 4.1.124.Final [10542](https://github.com/helidon-io/helidon/pull/10542)
+
 ## [3.2.13]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -1021,6 +1029,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.14]: https://github.com/helidon-io/helidon/compare/3.2.13...3.2.14
 [3.2.13]: https://github.com/helidon-io/helidon/compare/3.2.12...3.2.13
 [3.2.12]: https://github.com/helidon-io/helidon/compare/3.2.11...3.2.12
 [3.2.11]: https://github.com/helidon-io/helidon/compare/3.2.10...3.2.11
