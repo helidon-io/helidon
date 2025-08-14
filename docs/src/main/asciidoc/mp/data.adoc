@@ -44,9 +44,7 @@ The Helidon MP Data Repository provides a unified API for working with database 
 include::{rootdir}/includes/data.adoc[tag=data_overview]
 
 include::{rootdir}/includes/data.adoc[tag=data_annotation_processor]
-
 include::{rootdir}/includes/data.adoc[tag=data_usage]
-
 include::{rootdir}/includes/data.adoc[tag=data_config]
 
 == MP Application
@@ -60,31 +58,12 @@ include::{sourcedir}/mp/data/PetService.java[tag=repository_init, indent=0]
 ----
 
 include::{rootdir}/includes/data.adoc[tag=data_repository_interface]
-
 include::{rootdir}/includes/data.adoc[tag=data_pagination]
-
 include::{rootdir}/includes/data.adoc[tag=data_dynamic_ordering]
 
-== Persistence Session Access
-
-User can get access to persistence provider session to implement more complex tasks which are not supported by this framework.
-This feature is available to the data repository interface which extends `Data.SessionRepository<S>` interface. Generic argument
-`S` is the persistence session type, e.g. `EntityManager`.
-
-`Data.SessionRepository<S>` interface contains methods to provide session managed by data repository framework so there is no need
-to handle session instance life-cycle.
-
-[source,java]
-----
-include::{sourcedir}/se/data/SimpleSnippets.java[tag=session_repository, indent=0]
-----
-
-Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
-
+include::{rootdir}/includes/data.adoc[tag=data_session_access_1]
 [source,java]
 ----
 include::{sourcedir}/mp/data/PetService.java[tag=session_access, indent=0]
 ----
-
-NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
-this method has ended.
+include::{rootdir}/includes/data.adoc[tag=data_session_access_2]

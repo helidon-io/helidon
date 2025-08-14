@@ -17,8 +17,8 @@ package io.helidon.docs.mp.data;
 
 import java.util.List;
 
-import io.helidon.docs.se.data.Keeper;
-import io.helidon.docs.se.data.SimpleSnippets.KeeperRepository;
+import io.helidon.docs.includes.data.Keeper;
+import io.helidon.docs.includes.data.SimpleSnippets.KeeperRepository;
 
 import jakarta.inject.Inject;
 
@@ -27,12 +27,12 @@ public class PetService {
 
     // tag::repository_init[]
     @Inject
-    private KeeperRepository pr;
+    private KeeperRepository repository;
     // end::repository_init[]
 
     public List<Keeper> keeperQuery(String name) {
-        return pr.call(em -> em.createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
-                                            Keeper.class)
+        return repository.call(em -> em.createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
+                                                    Keeper.class)
                 .setParameter("name", name)
                 .getResultList());
     }

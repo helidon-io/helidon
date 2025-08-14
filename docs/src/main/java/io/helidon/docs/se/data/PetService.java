@@ -17,19 +17,20 @@ package io.helidon.docs.se.data;
 
 import java.util.List;
 
-import io.helidon.docs.se.data.SimpleSnippets.KeeperRepository;
+import io.helidon.docs.includes.data.Keeper;
+import io.helidon.docs.includes.data.SimpleSnippets.KeeperRepository;
 import io.helidon.service.registry.Services;
 
 // tag::session_access[]
 public class PetService {
 
     // tag::repository_init[]
-    private final KeeperRepository pr = Services.get(KeeperRepository.class);
+    private final KeeperRepository repository = Services.get(KeeperRepository.class);
     // end::repository_init[]
 
     public List<Keeper> keeperQuery(String name) {
-        return pr.call(em -> em.createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
-                                            Keeper.class)
+        return repository.call(em -> em.createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
+                                                    Keeper.class)
                 .setParameter("name", name)
                 .getResultList());
     }

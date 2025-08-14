@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.se.data;
+package io.helidon.docs.includes.data;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +22,6 @@ import io.helidon.data.Data;
 import io.helidon.data.PageRequest;
 import io.helidon.data.Slice;
 import io.helidon.data.Sort;
-
-import jakarta.persistence.EntityManager;
 
 /**
  * Pet data repository interface with additional snippets.
