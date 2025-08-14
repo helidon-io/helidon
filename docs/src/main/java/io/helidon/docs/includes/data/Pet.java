@@ -13,46 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.se.data;
+package io.helidon.docs.includes.data;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 
 /**
- * Pet keeper entity.
+ * Pet entity.
  */
 @Entity
-public class Keeper {
+public class Pet {
 
     @Id
-    private int id;
-
-    private String name;
-
-    private int age;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
+    public int id;
+    public String name;
+    @ManyToOne
+    public Category category;
+    @ManyToOne
+    public Keeper keeper;
 
 }

@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.se.data;
+package io.helidon.docs.mp.data;
 
 import java.util.List;
 
 import io.helidon.docs.includes.data.Keeper;
 import io.helidon.docs.includes.data.SimpleSnippets.KeeperRepository;
-import io.helidon.service.registry.Services;
+
+import jakarta.inject.Inject;
 
 // tag::session_access[]
 public class PetService {
 
     // tag::repository_init[]
-    private final KeeperRepository repository = Services.get(KeeperRepository.class);
+    @Inject
+    private KeeperRepository repository;
     // end::repository_init[]
 
     public List<Keeper> keeperQuery(String name) {

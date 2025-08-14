@@ -18,20 +18,21 @@
 
 = About Helidon Data Repository
 :description: Helidon Data Repository
-:keywords: helidon, se, database, data, repository
+:keywords: helidon, microprofile, micro-profile, database, data, repository
 :feature-name: Data Repository
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/se.adoc[]
+
+include::{rootdir}/includes/mp.adoc[]
 
 == Contents
 
--  <<Overview, Overview>>
+- <<Overview, Overview>>
 -  <<Maven Coordinates, Maven Coordinates>>
 -  <<Annotation Processor, Annotation Processor>>
 -  <<Usage, Usage>>
 -  <<Helidon Config, Helidon Config>>
--  <<SE Application, SE Application>>
+-  <<MP Application, MP Application>>
 -  <<Repository Interface, Repository Interface>>
 -  <<Pagination, Pagination>>
 -  <<Dynamic Ordering, Dynamic Ordering>>
@@ -39,21 +40,21 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-The Helidon SE Data Repository provides a unified API for working with database queries.
+The Helidon MP Data Repository provides a unified API for working with database queries.
 include::{rootdir}/includes/data.adoc[tag=data_overview]
 
 include::{rootdir}/includes/data.adoc[tag=data_annotation_processor]
 include::{rootdir}/includes/data.adoc[tag=data_usage]
 include::{rootdir}/includes/data.adoc[tag=data_config]
 
-== SE Application
+== MP Application
 
 Data repository runtime initialization is handled by service registry. Repository interface instances can be obtained using
-service registry API:
+`@Inject` annotation:
 
 [source,java]
 ----
-include::{sourcedir}/se/data/PetService.java[tag=repository_init, indent=0]
+include::{sourcedir}/mp/data/PetService.java[tag=repository_init, indent=0]
 ----
 
 include::{rootdir}/includes/data.adoc[tag=data_repository_interface]
@@ -63,6 +64,6 @@ include::{rootdir}/includes/data.adoc[tag=data_dynamic_ordering]
 include::{rootdir}/includes/data.adoc[tag=data_session_access_1]
 [source,java]
 ----
-include::{sourcedir}/se/data/PetService.java[tag=session_access, indent=0]
+include::{sourcedir}/mp/data/PetService.java[tag=session_access, indent=0]
 ----
 include::{rootdir}/includes/data.adoc[tag=data_session_access_2]
