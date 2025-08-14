@@ -96,7 +96,7 @@ class GeneratedMetadataTest {
         List<String> producers = new ArrayList<>();
         producers.add(producersJson.getString(0));
         producers.add(producersJson.getString(1));
-        assertThat(producers, hasItems(MyTarget.class.getName() + "#create(io.helidon.common.config.Config)",
+        assertThat(producers, hasItems(MyTarget.class.getName() + "#create(io.helidon.config.Config)",
                                        MyTarget.class.getName() + "#builder()"));
 
         JsonArray options = builder.getJsonArray("options");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.objectmapping;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
@@ -46,28 +47,28 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testBuilderNoBuildMethod() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         assertThrows(ConfigMappingException.class, () -> config.as(BuilderNoBuildMethodBean.class).get());
     }
 
     @Test
     public void testBuilderBadTypeBuildMethod() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         assertThrows(ConfigMappingException.class, () -> config.as(BadTypeBuilderBean.class).get());
     }
 
     @Test
     public void testTransientBuilder() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         assertThrows(ConfigMappingException.class, () -> config.as(TransientBuilderBean.class).get());
     }
 
     @Test
     public void testTransientBuildMethod() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         assertThrows(ConfigMappingException.class, () -> config.as(TransientBuildMethodBean.class).get());
     }
@@ -176,7 +177,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testDefaultsSettersBuilder() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         DefaultsSettersBuilderBean bean = config.as(DefaultsSettersBuilderBean.class).get();
 
@@ -191,7 +192,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testDefaultsFieldsBuilder() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         DefaultsFieldsBuilderBean bean = config.as(DefaultsFieldsBuilderBean.class).get();
 
@@ -206,7 +207,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testDefaultsInterfaceBuilder() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         DefaultsInterfaceBuilderBean bean = config.as(DefaultsInterfaceBuilderBean.class).get();
 

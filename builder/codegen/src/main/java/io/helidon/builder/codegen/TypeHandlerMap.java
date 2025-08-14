@@ -254,31 +254,34 @@ class TypeHandlerMap extends TypeHandler {
                 } else {
                     builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
                 }
-                classBuilder.addMethod(builder -> builder.name(methodName)
-                        .accessModifier(setterAccessModifier(configured))
-                        .returnType(returnType, "updated builder instance")
-                        .description(blueprintJavadoc.content())
-                        .addDescriptionLine("This method adds a new value to the map, or replaces it if the key already exists.")
-                        .addJavadocTag("see", "#" + getterName() + "()")
-                        .addParameter(param -> param.name("key")
-                                .type(keyType)
-                                .description("key to add or replace"))
-                        .addParameter(param -> param.name("consumer")
-                                .type(TypeName.builder()
-                                              .type(Consumer.class)
-                                              .addTypeArgument(builderType)
-                                              .build())
-                                .description("builder consumer to create new value for the key"))
-                        .addContent(Objects.class)
-                        .addContentLine(".requireNonNull(key);")
-                        .addContent(Objects.class)
-                        .addContentLine(".requireNonNull(consumer);")
-                        .addContent("var builder = ")
-                        .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                        .addContentLine("." + fm.createMethodName() + "();")
-                        .addContentLine("consumer.accept(builder);")
-                        .addContentLine("this." + methodName + "(key, builder.build());")
-                        .addContentLine("return self();"));
+                if (!skipBuilderConsumer(builderType)) {
+                    classBuilder.addMethod(builder -> builder.name(methodName)
+                            .accessModifier(setterAccessModifier(configured))
+                            .returnType(returnType, "updated builder instance")
+                            .description(blueprintJavadoc.content())
+                            .addDescriptionLine(
+                                    "This method adds a new value to the map, or replaces it if the key already exists.")
+                            .addJavadocTag("see", "#" + getterName() + "()")
+                            .addParameter(param -> param.name("key")
+                                    .type(keyType)
+                                    .description("key to add or replace"))
+                            .addParameter(param -> param.name("consumer")
+                                    .type(TypeName.builder()
+                                                  .type(Consumer.class)
+                                                  .addTypeArgument(builderType)
+                                                  .build())
+                                    .description("builder consumer to create new value for the key"))
+                            .addContent(Objects.class)
+                            .addContentLine(".requireNonNull(key);")
+                            .addContent(Objects.class)
+                            .addContentLine(".requireNonNull(consumer);")
+                            .addContent("var builder = ")
+                            .addContent(fm.typeWithFactoryMethod().genericTypeName())
+                            .addContentLine("." + fm.createMethodName() + "();")
+                            .addContentLine("consumer.accept(builder);")
+                            .addContentLine("this." + methodName + "(key, builder.build());")
+                            .addContentLine("return self();"));
+                }
             }
         }
     }

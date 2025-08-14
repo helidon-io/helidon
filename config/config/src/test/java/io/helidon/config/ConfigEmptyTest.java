@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -38,7 +38,8 @@ public class ConfigEmptyTest {
 
     @Test
     public void testChildren() {
-        assertThat(Config.empty().asNodeList().get().size(), is(0));
+        // updated based on javadoc, it should throw a missing value exception
+        assertThrows(MissingValueException.class, () -> Config.empty().asNodeList().get());
     }
 
     @Test
@@ -74,31 +75,36 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringList() {
-        assertThat(Config.empty().asList(String.class).get(), is(empty()));
+        assertThrows(MissingValueException.class,
+                     () -> Config.empty().asList(String.class).get());
     }
 
     @Test
     public void testAsStringListDefault() {
         List<String> list = List.of("record");
 
-        assertThat(Config.empty().asList(String.class).orElse(list), is(empty()));
+        // config is empty, we should get the default
+        assertThat(Config.empty().asList(String.class).orElse(list), hasItem("record"));
     }
 
     @Test
     public void testAsIntList() {
-        assertThat(Config.empty().asList(Integer.class).get(), is(empty()));
+        // as documented - if empty, throw a missing value
+        assertThrows(MissingValueException.class, () -> Config.empty().asList(Integer.class).get());
     }
 
     @Test
     public void testAsIntListDefault() {
         List<Integer> list = List.of(5);
 
-        assertThat(Config.empty().asList(Integer.class).orElse(list), is(empty()));
+        // empty config does not exist, i.e. it uses a default
+        assertThat(Config.empty().asList(Integer.class).orElse(list), hasItem(5));
     }
 
     @Test
     public void testType() {
-        assertThat(Config.empty().type(), is(Config.Type.OBJECT));
+        // empty config is not present, i.e. it should be missing by definition
+        assertThat(Config.empty().type(), is(Config.Type.MISSING));
     }
 
     @Test
@@ -106,21 +112,6 @@ public class ConfigEmptyTest {
         assertThrows(MissingValueException.class, () -> {
             Config.empty().asString().as(ConfigMappers::toBigInteger).get();
         });
-    }
-
-    @Test
-    public void testKeyViaSupplier() {
-        assertThat(Config.empty().asNode().optionalSupplier().get().get().get("one.two").key().toString(), is("one.two"));
-    }
-
-    @Test
-    public void testChildrenSupplier() {
-        assertThat(Config.empty().asNodeList().supplier().get().size(), is(0));
-    }
-
-    @Test
-    public void testTraverseSupplier() {
-        assertThat(Config.empty().asNode().optionalSupplier().get().get().traverse().count(), is(0L));
     }
 
     @Test
@@ -159,32 +150,24 @@ public class ConfigEmptyTest {
     }
 
     @Test
-    public void testAsStringListSupplier() {
-        assertThat(Config.empty()
-                           .asList(String.class)
-                           .supplier()
-                           .get(),
-                   is(empty()));
-    }
-
-    @Test
     public void testAsStringListDefaultSupplier() {
         List<String> list = List.of("record");
 
+        // once again fixed according to javadoc of `supplier(T)` method, if the config does not have a value, use default
         assertThat(Config.empty()
                            .asList(String.class)
                            .supplier(list)
                            .get(),
-                   is(empty()));
+                   hasItem("record"));
     }
 
     @Test
     public void testAsIntListSupplier() {
-        assertThat(Config.empty()
+        assertThrows(MissingValueException.class,
+                     () -> Config.empty()
                            .asList(Integer.class)
                            .supplier()
-                           .get(),
-                   is(empty()));
+                           .get());
     }
 
     @Test
@@ -195,12 +178,7 @@ public class ConfigEmptyTest {
                            .asList(Integer.class)
                            .supplier(list)
                            .get(),
-                   is(empty()));
-    }
-
-    @Test
-    public void testTypeSupplier() {
-        assertThat(Config.empty().asNode().optionalSupplier().get().get().type(), is(Config.Type.OBJECT));
+                   hasItem(5));
     }
 
     @Test

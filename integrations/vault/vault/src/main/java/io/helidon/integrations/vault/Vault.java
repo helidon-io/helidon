@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Method;
@@ -50,6 +50,19 @@ public interface Vault {
      */
     static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a Vault from configuration.
+     *
+     * @param config configuration
+     * @return a new Vault
+     * @see Vault.Builder#config(io.helidon.config.Config)
+     * @deprecated use {@link #create(Config)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.3.0")
+    static Vault create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
     }
 
     /**
@@ -234,6 +247,16 @@ public interface Vault {
          * @param config configuration to use
          * @return updated builder instance
          */
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config configuration to use
+         * @return updated builder instance
+         */
         public Builder config(Config config) {
             this.config = config;
             config.get("address").asString().ifPresent(this::address);
@@ -294,7 +317,7 @@ public interface Vault {
          *
          * @return config instance
          */
-        public Config config() {
+        public io.helidon.common.config.Config config() {
             return config;
         }
 

@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
-import io.helidon.common.config.Configuration;
 import io.helidon.common.mapper.DefaultsResolver;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Lookup;

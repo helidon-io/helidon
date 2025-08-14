@@ -33,7 +33,7 @@ module io.helidon.integrations.langchain4j.providers.cohere {
 
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
 
     exports io.helidon.integrations.langchain4j.providers.cohere;
 }

@@ -52,7 +52,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
@@ -197,7 +197,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             }
             if (mapList) {
                 method.addContentLine(configGet(configured)
-                                              + ".mapList("
+                                              + ".asList("
                                               + generateMapListFromConfig(factoryMethods)
                                               + ").ifPresent(this::" + setterName() + ");");
             } else {
@@ -356,6 +356,11 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         } else {
             builderType = TypeName.create(factoryMethod.factoryMethodReturnType().fqName() + ".Builder");
         }
+
+        if (skipBuilderConsumer(builderType)) {
+            return;
+        }
+
         TypeName argumentType = TypeName.builder()
                 .type(Consumer.class)
                 .addTypeArgument(builderType)
@@ -448,7 +453,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
-        if (factoryMethod.argumentType().equals(COMMON_CONFIG)) {
+        if (factoryMethod.argumentType().equals(CONFIG)) {
             // if the factory method uses config as a parameter, then it is not desired on the builder
             return;
         }

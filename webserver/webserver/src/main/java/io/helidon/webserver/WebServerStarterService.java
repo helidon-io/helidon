@@ -17,7 +17,7 @@
 package io.helidon.webserver;
 
 import io.helidon.common.Default;
-import io.helidon.common.config.Configuration;
+import io.helidon.config.Configuration;
 import io.helidon.service.registry.Service;
 
 @SuppressWarnings("deprecation")
