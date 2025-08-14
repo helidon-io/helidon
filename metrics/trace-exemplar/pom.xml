@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-metrics-project</artifactId>
         <groupId>io.helidon.metrics</groupId>
-        <version>3.2.13-SNAPSHOT</version>
+        <version>3.2.14-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

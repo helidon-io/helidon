@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-applications-project</artifactId>
-        <version>3.2.13-SNAPSHOT</version>
+        <version>3.2.14-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-applications</artifactId>
