@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.testing.junit5</groupId>
         <artifactId>helidon-webserver-testing-junit5-project</artifactId>
-        <version>4.2.6-SNAPSHOT</version>
+        <version>4.2.6</version>
     </parent>
     <artifactId>helidon-webserver-testing-junit5</artifactId>
     <name>Helidon WebServer Testing JUnit5</name>

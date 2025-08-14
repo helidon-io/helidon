@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>4.2.6-SNAPSHOT</version>
+        <version>4.2.6</version>
     </parent>
     <!-- normally we would use io.helidon.config.metadata group id, but this would introduce backward incompatibility -->
     <artifactId>helidon-config-metadata-project</artifactId>
