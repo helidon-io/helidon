@@ -16,30 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= About Helidon Data Repository
-:description: Helidon Data Repository
-:keywords: helidon, se, database, data, repository
-:feature-name: Data Repository
-:rootdir: {docdir}/..
+ifndef::rootdir[:rootdir: {docdir}/..]
+// Temporary path change
+ifndef::sourcedir[:sourcedir: {rootdir}/../java/io/helidon/docs]
 
-include::{rootdir}/includes/se.adoc[]
-
-== Contents
-
--  <<Overview, Overview>>
--  <<Maven Coordinates, Maven Coordinates>>
--  <<Annotation Processor, Annotation Processor>>
--  <<Usage, Usage>>
--  <<Helidon Config, Helidon Config>>
--  <<SE Application, SE Application>>
--  <<Repository Interface, Repository Interface>>
--  <<Pagination, Pagination>>
--  <<Dynamic Ordering, Dynamic Ordering>>
--  <<Persistence Session Access, Persistence Session Access>>
-
-== Overview
-
-The Helidon SE Data Repository provides a unified API for working with database queries.
+// tag::data_overview[]
 Data repository queries are an abstraction on top of Object–Relational Mapping (ORM). This
 allows compile time translation of interfaces with query definitions into implementing classes.
 
@@ -58,7 +39,9 @@ Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runt
 ----
 include::{rootdir}/../../../pom.xml[tag=data_eclipselink_dependencies, indent=0]
 ----
+// end::data_overview[]
 
+// tag::data_annotation_processor[]
 == Annotation Processor
 
 Both ORM entity model and data repository interfaces require specific annotation processor configuration:
@@ -67,7 +50,9 @@ Both ORM entity model and data repository interfaces require specific annotation
 ----
 include::{rootdir}/../../../pom.xml[tag=data_annotationProcessorPaths, indent=0]
 ----
+// end::data_annotation_processor[]
 
+// tag::data_usage[]
 == Usage
 
 The Data Repository provides API and tools to implement database queries using interface method prototypes.
@@ -86,7 +71,9 @@ include::{sourcedir}/se/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 include::{sourcedir}/se/data/PetRepository.java[tag=findByName_method, indent=0]
 ----
+// end::data_usage[]
 
+// tag::data_config[]
 == Helidon Config
 
 The data repository must be configured before you begin. In the example below Helidon Config is used to set up data repository
@@ -107,17 +94,9 @@ data:
             eclipselink.target-server: "None"
             jakarta.persistence.schema-generation.database.action: "none"
 ----
+// end::data_config[]
 
-== SE Application
-
-Data repository runtime initialization is handled by service registry. Repository interface instances can be obtained using
-service registry API:
-
-[source,java]
-----
-include::{sourcedir}/se/data/PetService.java[tag=repository_init, indent=0]
-----
-
+// tag::data_repository_interface[]
 == Repository Interface
 
 Data repository interfaces are interfaces annotated with the `@Data.Repository` annotation and extending `Data.GenericRepository`
@@ -169,7 +148,7 @@ This kind of method requires `@Data.Query` annotation to be always present on th
 Method arguments must match the data query arguments:
 
 * in case of named arguments, each named argument from the query must have corresponding argument of the same name in method
-  arguments. Method arguments can be in any order.
+arguments. Method arguments can be in any order.
 
 [source,java]
 ----
@@ -278,7 +257,7 @@ Return type of the method depends on action keyword being used.
 |===
 
 NOTE: Validation of the keyword and return type mapping is not fully implemented so current code generator is less restrictive.
-      But this may change in next releases.
+But this may change in next releases.
 
 ===== Projection part of the query
 
@@ -471,7 +450,9 @@ An example of repository method with ordering:
 ----
 include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
 ----
+// end::data_repository_interface[]
 
+// tag::data_pagination[]
 == Pagination
 
 Pagination allows user to split returned data collection into individual pages. When pagination is used, the repository method
@@ -497,7 +478,9 @@ An example of repository method with pagination:
 ----
 include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_slice_method, indent=0]
 ----
+// end::data_pagination[]
 
+// tag::data_dynamic_ordering[]
 == Dynamic Ordering
 
 Ordering part of the method name defines static ordering rule which cannot be modified at runtime. Dynamic ordering allows user
@@ -517,27 +500,4 @@ Static ordering rules from the method name are always applied first and dynamic 
 ----
 include::{sourcedir}/se/data/PetRepositorySnippets.java[tag=qbmn_dual_sort_method, indent=0]
 ----
-
-== Persistence Session Access
-
-User can get access to persistence provider session to implement more complex tasks which are not supported by this framework.
-This feature is available to the data repository interface which extends `Data.SessionRepository<S>` interface. Generic argument
-`S` is the persistence session type, e.g. `EntityManager`.
-
-`Data.SessionRepository<S>` interface contains methods to provide session managed by data repository framework so there is no need
-to handle session instance life-cycle.
-
-[source,java]
-----
-include::{sourcedir}/se/data/SimpleSnippets.java[tag=session_repository, indent=0]
-----
-
-Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
-
-[source,java]
-----
-include::{sourcedir}/se/data/PetService.java[tag=session_access, indent=0]
-----
-
-NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
-      this method has ended.
+// end::data_dynamic_ordering[]

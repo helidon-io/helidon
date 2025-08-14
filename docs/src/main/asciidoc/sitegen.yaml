@@ -124,6 +124,12 @@ backend:
                   type: "icon"
                   value: "share"
               - type: "PAGE"
+                title: "Data Repository"
+                source: "data.adoc"
+                glyph:
+                  type: "icon"
+                  value: "storage"
+              - type: "PAGE"
                 title: "Fault Tolerance"
                 source: "fault-tolerance.adoc"
                 glyph:

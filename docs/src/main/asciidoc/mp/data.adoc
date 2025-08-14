@@ -1,0 +1,90 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= About Helidon Data Repository
+:description: Helidon Data Repository
+:keywords: helidon, microprofile, micro-profile, database, data, repository
+:feature-name: Data Repository
+:rootdir: {docdir}/..
+
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+-  <<Maven Coordinates, Maven Coordinates>>
+-  <<Annotation Processor, Annotation Processor>>
+-  <<Usage, Usage>>
+-  <<Helidon Config, Helidon Config>>
+-  <<MP Application, MP Application>>
+-  <<Repository Interface, Repository Interface>>
+-  <<Pagination, Pagination>>
+-  <<Dynamic Ordering, Dynamic Ordering>>
+-  <<Persistence Session Access, Persistence Session Access>>
+
+== Overview
+
+The Helidon MP Data Repository provides a unified API for working with database queries.
+include::{rootdir}/includes/data.adoc[tag=data_overview]
+
+include::{rootdir}/includes/data.adoc[tag=data_annotation_processor]
+
+include::{rootdir}/includes/data.adoc[tag=data_usage]
+
+include::{rootdir}/includes/data.adoc[tag=data_config]
+
+== MP Application
+
+Data repository runtime initialization is handled by service registry. Repository interface instances can be obtained using
+`@Inject` annotation:
+
+[source,java]
+----
+include::{sourcedir}/mp/data/PetService.java[tag=repository_init, indent=0]
+----
+
+include::{rootdir}/includes/data.adoc[tag=data_repository_interface]
+
+include::{rootdir}/includes/data.adoc[tag=data_pagination]
+
+include::{rootdir}/includes/data.adoc[tag=data_dynamic_ordering]
+
+== Persistence Session Access
+
+User can get access to persistence provider session to implement more complex tasks which are not supported by this framework.
+This feature is available to the data repository interface which extends `Data.SessionRepository<S>` interface. Generic argument
+`S` is the persistence session type, e.g. `EntityManager`.
+
+`Data.SessionRepository<S>` interface contains methods to provide session managed by data repository framework so there is no need
+to handle session instance life-cycle.
+
+[source,java]
+----
+include::{sourcedir}/se/data/SimpleSnippets.java[tag=session_repository, indent=0]
+----
+
+Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
+
+[source,java]
+----
+include::{sourcedir}/mp/data/PetService.java[tag=session_access, indent=0]
+----
+
+NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
+this method has ended.
