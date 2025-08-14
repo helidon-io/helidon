@@ -29,14 +29,35 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
 ----
-include::{rootdir}/../../../pom.xml[tag=data_dependencies, indent=0]
+<dependency>
+    <groupId>io.helidon.data</groupId>
+    <artifactId>helidon-data</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.data.jakarta.persistence</groupId>
+    <artifactId>helidon-data-jakarta-persistence</artifactId>
+</dependency>
 ----
 
 Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runtime dependencies:
 
 [source,xml]
 ----
-include::{rootdir}/../../../pom.xml[tag=data_eclipselink_dependencies, indent=0]
+<dependency>
+    <groupId>org.eclipse.persistence</groupId>
+    <artifactId>org.eclipse.persistence.jpa</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>org.eclipse.persistence</groupId>
+    <artifactId>org.eclipse.persistence.core</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
 ----
 // end::data_overview[]
 
@@ -47,7 +68,23 @@ Entity model as well as data repository interfaces require specific annotation p
 
 [source,xml]
 ----
-include::{rootdir}/../../../pom.xml[tag=data_annotationProcessorPaths, indent=0]
+<annotationProcessorPaths>
+    <path>
+        <groupId>io.helidon.bundles</groupId>
+        <artifactId>helidon-bundles-apt</artifactId>
+        <version>${helidon.version}</version>
+    </path>
+    <path>
+        <groupId>io.helidon.data.codegen</groupId>
+        <artifactId>helidon-data-codegen</artifactId>
+        <version>${helidon.version}</version>
+    </path>
+    <path>
+        <groupId>io.helidon.data.jakarta.persistence</groupId>
+        <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+        <version>${helidon.version}</version>
+    </path>
+</annotationProcessorPaths>
 ----
 // end::data_annotation_processor[]
 
