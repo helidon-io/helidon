@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -1129,7 +1131,8 @@ public class Http2Headers {
      */
     public static class DynamicTable {
         private final List<DynamicHeader> headers = new ArrayList<>();
-        private volatile long protocolMaxTableSize;
+        private final Lock lock = new ReentrantLock();
+        private long protocolMaxTableSize;
         private long maxTableSize;
         private int currentTableSize;
 
@@ -1158,7 +1161,12 @@ public class Http2Headers {
          * @param number maximal table size in bytes
          */
         public void protocolMaxTableSize(long number) {
-            this.protocolMaxTableSize = number;
+            lock.lock();
+            try {
+                this.protocolMaxTableSize = number;
+            } finally {
+                lock.unlock();
+            }
         }
 
         HeaderRecord get(int index) {
@@ -1173,43 +1181,57 @@ public class Http2Headers {
             if (number > protocolMaxTableSize) {
                 throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Attempt to set larger size than protocol max");
             }
-            this.maxTableSize = number;
-            if (maxTableSize == 0) {
-                headers.clear();
-            }
-            while (maxTableSize < currentTableSize) {
-                evict();
+            lock.lock();
+            try {
+                this.maxTableSize = number;
+                if (maxTableSize == 0) {
+                    currentTableSize = 0;
+                    headers.clear();
+                }
+                while (maxTableSize < currentTableSize) {
+                    evict();
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
         int add(HeaderName headerName, String headerValue) {
             String name = headerName.lowerCase();
             int size = name.length() + headerValue.getBytes(StandardCharsets.US_ASCII).length + 32;
-
-            if (currentTableSize + size <= maxTableSize) {
-                return add(headerName, headerValue, size);
-            }
-
-            while ((currentTableSize + size) > maxTableSize) {
-                evict();
-                if (currentTableSize <= 0) {
-                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
-                                             "Cannot add header record, max table size too low. "
-                                                     + "current size: " + currentTableSize + ", max size: " + maxTableSize + ","
-                                                     + " header size: " + size);
+            lock.lock();
+            try {
+                if (currentTableSize + size <= maxTableSize) {
+                    return add(headerName, headerValue, size);
                 }
+
+                while ((currentTableSize + size) > maxTableSize) {
+                    evict();
+                    if (currentTableSize <= 0) {
+                        throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                                 "Cannot add header record, max table size too low. "
+                                                         + "current size: " + currentTableSize
+                                                         + ", max size: " + maxTableSize
+                                                         + ", header size: " + size);
+                    }
+                }
+                return add(headerName, headerValue, size);
+            } finally {
+                lock.unlock();
             }
-            return add(headerName, headerValue, size);
         }
 
+        // Test only
         long protocolMaxTableSize() {
             return protocolMaxTableSize;
         }
 
+        // Test only
         long maxTableSize() {
             return maxTableSize;
         }
 
+        // Test only
         int currentTableSize() {
             return currentTableSize;
         }
@@ -1226,16 +1248,21 @@ public class Http2Headers {
                 }
                 candidate = staticHeader;
             }
-            for (int i = 0; i < headers.size(); i++) {
-                DynamicHeader header = headers.get(i);
-                if (header.headerName.equals(headerName)) {
-                    if (header.value().equals(headerValue)) {
-                        return new IndexedHeader(header, StaticHeader.MAX_INDEX + i + 1);
-                    }
-                    if (candidate == null) {
-                        candidate = new IndexedHeader(header, StaticHeader.MAX_INDEX + i + 1);
+            try {
+                lock.lock();
+                for (int i = 0; i < headers.size(); i++) {
+                    DynamicHeader header = headers.get(i);
+                    if (header.headerName.equals(headerName)) {
+                        if (header.value().equals(headerValue)) {
+                            return new IndexedHeader(header, StaticHeader.MAX_INDEX + i + 1);
+                        }
+                        if (candidate == null) {
+                            candidate = new IndexedHeader(header, StaticHeader.MAX_INDEX + i + 1);
+                        }
                     }
                 }
+            } finally {
+                lock.unlock();
             }
 
             return candidate;
@@ -1259,12 +1286,15 @@ public class Http2Headers {
         }
 
         private HeaderRecord doGet(int index) {
+            lock.lock();
             try {
                 // table is 1 based, list is 0 based
                 return headers.get(index - 1);
             } catch (IndexOutOfBoundsException e) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                          "Dynamic table does not contain required header at index " + index);
+            } finally {
+                lock.unlock();
             }
         }
     }
