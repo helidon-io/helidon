@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,6 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      * Default value is {@code PT10S}.
      *
      * @return duration
-     * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
      * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
      */
     @Option.Configured
@@ -126,13 +125,12 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
      * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
-     * Default value is {@code 100}.
+     * Default value is {@code 50}.
      *
      * @return maximum number of rapid resets
-     * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
      */
     @Option.Configured
-    @Option.DefaultInt(100)
+    @Option.DefaultInt(50)
     int maxRapidResets();
 
     /**
