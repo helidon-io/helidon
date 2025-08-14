@@ -57,8 +57,8 @@ class ServerSnippets {
         public void routing(JsonRpcRules rules) {
             rules.register("/machine",
                            JsonRpcHandlers.builder()
-                                   .putMethod("start", this::start)
-                                   .putMethod("stop", this::stop)
+                                   .method("start", this::start)
+                                   .method("stop", this::stop)
                                    .build());
         }
 
