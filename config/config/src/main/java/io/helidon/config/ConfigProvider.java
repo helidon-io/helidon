@@ -86,7 +86,7 @@ class ConfigProvider implements Supplier<Config> {
         return config;
     }
 
-    private Config wrapCommon(io.helidon.common.config.Config config) {
+    static Config wrapCommon(io.helidon.common.config.Config config) {
         if (config instanceof Config cfg) {
             return cfg;
         }
@@ -235,6 +235,15 @@ class ConfigProvider implements Supplier<Config> {
             return emptyConfig.mapper();
         }
 
+        @Override
+        public ConfigValue<String> asString() {
+            var commonValue = delegate.asString();
+            if (commonValue.isPresent()) {
+                return ConfigValues.create(this, commonValue::asOptional, Config::asString);
+            }
+            return ConfigValues.create(this, Optional::empty, Config::asString);
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public <T> ConfigValue<T> as(GenericType<T> genericType) {
@@ -266,7 +275,17 @@ class ConfigProvider implements Supplier<Config> {
 
         @Override
         public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
-            return asList(Config.class);
+            var nodeList = delegate.asNodeList();
+            if (nodeList.isEmpty()) {
+                return ConfigValues.create(this, Optional::empty, Config::asNodeList);
+            }
+
+            return ConfigValues.create(this,
+                                       () -> Optional.of(nodeList.stream()
+                                                                 .flatMap(List::stream)
+                                                                 .map(ConfigProvider::wrapCommon)
+                                                                 .toList()),
+                                       Config::asNodeList);
         }
 
         @Override
@@ -290,10 +309,10 @@ class ConfigProvider implements Supplier<Config> {
         }
     }
 
-    private static class CommonKeyWrapper implements Config.Key {
+    static class CommonKeyWrapper implements Config.Key {
         private final io.helidon.common.config.Config.Key delegate;
 
-        private CommonKeyWrapper(io.helidon.common.config.Config.Key key) {
+        CommonKeyWrapper(io.helidon.common.config.Config.Key key) {
             this.delegate = key;
         }
 

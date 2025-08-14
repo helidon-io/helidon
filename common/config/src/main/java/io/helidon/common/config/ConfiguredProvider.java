@@ -31,9 +31,9 @@ package io.helidon.common.config;
  *
  * @param <T> type of the service this provider provides
  *
- * @deprecated use {@code io.helidon.config.ConfiguredProvider} instead
+ * @deprecated this class will be moved to {@code helidon-config} module in Helidon 5
  */
-@Deprecated(forRemoval = true, since = "4.3.0")
+@Deprecated(since = "4.3.0")
 public interface ConfiguredProvider<T extends NamedService> {
     /**
      * Key this service implementation is stored under. This is also considered the service "type" when used

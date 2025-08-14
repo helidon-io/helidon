@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * SQL specific support, use by all modules that interact with SQL databases.
- */
-module io.helidon.data.sql.common {
-    requires transitive io.helidon.data;
-    requires java.sql;
-    requires io.helidon.builder.api;
-    requires io.helidon.config;
+package io.helidon.builder.test.testsubjects;
 
-    exports io.helidon.data.sql.common;
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
+
+@Prototype.Blueprint
+@Prototype.Configured
+interface ConfigMethodDeprecatedBlueprint {
+    @Option.Default("default-value")
+    @Option.Configured
+    String key();
+
+    Config config();
 }

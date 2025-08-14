@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import static io.helidon.builder.codegen.Types.BUILDER_SUPPORT;
+import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.CONFIG_BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.REGISTRY_BUILDER_SUPPORT;
 import static io.helidon.builder.codegen.Types.SERVICE_NAMED;
@@ -55,6 +58,9 @@ import static io.helidon.common.types.TypeNames.SET;
 final class GenerateAbstractBuilder {
 
     private static final String SERVICE_REGISTRY_CONFIG_KEY = "service-registry";
+    private static final TypeName OPTIONAL_COMMON_CONFIG = TypeName.builder(TypeNames.OPTIONAL)
+            .addTypeArgument(COMMON_CONFIG)
+            .build();
 
     private GenerateAbstractBuilder() {
     }
@@ -268,13 +274,17 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty child : properties) {
             String getterName = child.getterName();
             if ("config".equals(getterName) && configured.configured()) {
-                if (child.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+                if (child.typeHandler().actualType().equals(Types.CONFIG)) {
                     // this will always exist
+                    continue;
+                }
+                if (child.typeHandler().actualType().equals(Types.COMMON_CONFIG)) {
+                    // we are fine with either
                     continue;
                 }
                 // now we have a method called config with wrong return type - this is not supported
                 throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
-                                                           + Types.COMMON_CONFIG.declaredName() + ", but is: "
+                                                           + Types.CONFIG.declaredName() + ", but is: "
                                                            + child.typeName().declaredName());
             }
             /*
@@ -302,9 +312,11 @@ final class GenerateAbstractBuilder {
         }
 
         if (configured.configured()) {
+            TypeName configType = configType(properties).orElse(COMMON_CONFIG);
+
             TypeName configReturnType = TypeName.builder()
                     .type(Optional.class)
-                    .addTypeArgument(Types.COMMON_CONFIG)
+                    .addTypeArgument(configType)
                     .build();
             Method.Builder method = Method.builder()
                     .name("config")
@@ -315,6 +327,15 @@ final class GenerateAbstractBuilder {
                     .addContentLine(".ofNullable(config);");
             classBuilder.addMethod(method);
         }
+    }
+
+    private static Optional<TypeName> configType(List<PrototypeProperty> properties) {
+        for (PrototypeProperty property : properties) {
+            if (TypeHandler.isConfigProperty(property.typeHandler())) {
+                return Optional.of(property.typeHandler().actualType());
+            }
+        }
+        return Optional.empty();
     }
 
     private static void serviceRegistrySetter(InnerClass.Builder classBuilder) {
@@ -348,7 +369,8 @@ final class GenerateAbstractBuilder {
         classBuilder.addMethod(builder);
     }
 
-    private static void createConfigMethod(InnerClass.Builder classBuilder, TypeContext typeContext,
+    private static void createConfigMethod(InnerClass.Builder classBuilder,
+                                           TypeContext typeContext,
                                            AnnotationDataConfigured configured,
                                            List<PrototypeProperty> properties) {
         /*
@@ -369,12 +391,29 @@ final class GenerateAbstractBuilder {
                     .addLine("Config to use.")
                     .build();
         }
+
+        // backward compatibility
+        classBuilder.addMethod(commonConfig -> commonConfig
+                .name("config")
+                .javadoc(Javadoc.builder(javadoc)
+                                 .addTag("deprecated", "use {@link #config(" + Types.CONFIG.fqName() + ")}")
+                                 .build())
+                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
+                .addParameter(param -> param.name("config")
+                        .type(Types.COMMON_CONFIG)
+                        .description("configuration instance used to obtain values to update this builder"))
+                .addAnnotation(Annotations.DEPRECATED)
+                .addContent("return config(")
+                .addContent(Types.CONFIG)
+                .addContentLine(".config(config));")
+        );
+
         Method.Builder builder = Method.builder()
                 .name("config")
                 .javadoc(javadoc)
                 .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
                 .addParameter(param -> param.name("config")
-                        .type(Types.COMMON_CONFIG)
+                        .type(Types.CONFIG)
                         .description("configuration instance used to obtain values to update this builder"))
                 .addAnnotation(Annotations.OVERRIDE)
                 .addContent(Objects.class)
@@ -444,9 +483,21 @@ final class GenerateAbstractBuilder {
                 Special handling from config - we have to assign it to field, we cannot go through (config(Config))
                 */
                 if (isConfigProperty(property)) {
-                    methodBuilder.addContent("this.config = prototype.config()");
-                    if (declaredType.isOptional()) {
-                        methodBuilder.addContent(".orElse(null)");
+                    if (property.typeHandler().actualType().equals(COMMON_CONFIG)) {
+                        if (declaredType.isOptional()) {
+                            methodBuilder.addContent("this.config = prototype.config().map(")
+                                    .addContent(CONFIG)
+                                    .addContent("::config).orElse(null)");
+                        } else {
+                            methodBuilder.addContent("this.config = ")
+                                    .addContent(CONFIG)
+                                    .addContent(".config(prototype.config())");
+                        }
+                    } else {
+                        methodBuilder.addContent("this.config = prototype.config()");
+                        if (declaredType.isOptional()) {
+                            methodBuilder.addContent(".orElse(null)");
+                        }
                     }
                     methodBuilder.addContentLine(";");
                 } else {
@@ -545,7 +596,7 @@ final class GenerateAbstractBuilder {
 
     private static void fields(InnerClass.Builder classBuilder, TypeContext typeContext, boolean isBuilder) {
         if (isBuilder && (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties()))) {
-            classBuilder.addField(builder -> builder.type(Types.COMMON_CONFIG).name("config"));
+            classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
         }
         if (isBuilder && typeContext.typeInfo().supportsServiceRegistry()) {
             classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
@@ -612,7 +663,7 @@ final class GenerateAbstractBuilder {
             if (configured) {
                 // need to have a non-null config instance
                 preBuildBuilder.addContent("var config = this.config == null ? ")
-                        .addContent(Types.COMMON_CONFIG)
+                        .addContent(Types.CONFIG)
                         .addContentLine(".empty() : this.config;");
             }
 
@@ -1357,26 +1408,33 @@ final class GenerateAbstractBuilder {
         for (PrototypeProperty child : typeContext.propertyData().properties()) {
             constructor.addContent("this." + child.name() + " = ");
             TypeName declaredType = child.typeHandler().declaredType();
-            if (declaredType.genericTypeName().equals(LIST)) {
-                constructor.addContent(List.class)
-                        .addContentLine(".copyOf(builder." + child.getterName() + "());");
-            } else if (declaredType.genericTypeName().equals(SET)) {
-                constructor.addContent(Collections.class)
-                        .addContent(".unmodifiableSet(new ")
-                        .addContent(LinkedHashSet.class)
-                        .addContentLine("<>(builder." + child.getterName() + "()));");
-            } else if (declaredType.genericTypeName().equals(MAP)) {
-                constructor.addContent(Collections.class)
-                        .addContent(".unmodifiableMap(new ")
-                        .addContent(LinkedHashMap.class)
-                        .addContentLine("<>(builder." + child.getterName() + "()));");
+
+            if (declaredType.equals(OPTIONAL_COMMON_CONFIG)) {
+                constructor.addContent("builder." + child.getterName() + "().map(")
+                        .addContent(Function.class)
+                        .addContentLine(".identity());");
             } else {
-                if (child.builderGetterOptional() && !declaredType.isOptional()) {
-                    // builder getter optional, but type not, we call get (must be present - is validated)
-                    constructor.addContentLine("builder." + child.getterName() + "().get();");
+                if (declaredType.genericTypeName().equals(LIST)) {
+                    constructor.addContent(List.class)
+                            .addContentLine(".copyOf(builder." + child.getterName() + "());");
+                } else if (declaredType.genericTypeName().equals(SET)) {
+                    constructor.addContent(Collections.class)
+                            .addContent(".unmodifiableSet(new ")
+                            .addContent(LinkedHashSet.class)
+                            .addContentLine("<>(builder." + child.getterName() + "()));");
+                } else if (declaredType.genericTypeName().equals(MAP)) {
+                    constructor.addContent(Collections.class)
+                            .addContent(".unmodifiableMap(new ")
+                            .addContent(LinkedHashMap.class)
+                            .addContentLine("<>(builder." + child.getterName() + "()));");
                 } else {
-                    // optional and other types are just plainly assigned
-                    constructor.addContentLine("builder." + child.getterName() + "();");
+                    if (child.builderGetterOptional() && !declaredType.isOptional()) {
+                        // builder getter optional, but type not, we call get (must be present - is validated)
+                        constructor.addContentLine("builder." + child.getterName() + "().get();");
+                    } else {
+                        // optional and other types are just plainly assigned
+                        constructor.addContentLine("builder." + child.getterName() + "();");
+                    }
                 }
             }
         }

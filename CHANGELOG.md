@@ -13,9 +13,19 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [4.3.0-SNAPSHOT]
 
-This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4. It is API compatible with Helidon 4.2.X.
+This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
 
 A minimum of Java 21 is required to use Helidon 4.
+
+### BREAKING CHANGES
+
+- As part of deprecation of module `helidon-common-config`, `helidon-config` MUST be on classpath for any component that uses
+    configuration. Helidon modules are updated to include this dependency where possible
+- Configured builders generated with Helidon 4.3.0 will not work with older versions of Helidon, as the API they use from 
+    `helidon-config` module does not exist yet
+- Configured builders generated with Helidon 4.2.4+ will work with Helidon 4.3.0
+- Configured builders generated with previous versions of Helidon will not work, and must be re-generated
+- As `io.helidon.config.Config` implements `io.helidon.common.config.Config`, it can be used as a replacement
 
 ### CHANGES
 

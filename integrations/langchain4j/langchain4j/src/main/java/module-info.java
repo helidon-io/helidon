@@ -32,7 +32,7 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.langchain4j {
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.service.registry;
     requires langchain4j.core;

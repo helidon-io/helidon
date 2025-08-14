@@ -26,6 +26,8 @@ import io.helidon.common.types.TypeName;
 
 final class Types {
     static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
+    static final TypeName CONFIG_BUILDER = TypeName.create("io.helidon.config.Config.Builder");
     static final TypeName GENERATED = TypeName.create(Generated.class);
     static final TypeName DEPRECATED = TypeName.create(Deprecated.class);
     static final TypeName LINKED_HASH_MAP = TypeName.create(LinkedHashMap.class);
@@ -86,9 +88,9 @@ final class Types {
     static final TypeName OPTION_DECORATOR = TypeName.create("io.helidon.builder.api.Option.Decorator");
 
     static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
-            "io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder");
+            "io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder");
     static final TypeName BUILDER_SUPPORT = TypeName.create("io.helidon.builder.api.BuilderSupport");
-    static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
+    static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.config.ConfigBuilderSupport");
 
     static final TypeName REGISTRY_BUILDER_SUPPORT = TypeName.create("io.helidon.service.registry.RegistryBuilderSupport");
 
