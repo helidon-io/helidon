@@ -106,33 +106,6 @@
             <artifactId>helidon-microprofile-testing-testng</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- tag::data_dependencies[] -->
-        <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.jakarta.persistence</groupId>
-            <artifactId>helidon-data-jakarta-persistence</artifactId>
-        </dependency>
-        <!-- end::data_dependencies[] -->
-        <!-- tag::data_eclipselink_dependencies[] -->
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.jpa</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.core</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- end::data_eclipselink_dependencies[] -->
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
@@ -202,43 +175,7 @@
                     <compilerArgs>
                         <arg>-Xlint:-removal</arg>
                     </compilerArgs>
-                    <!-- tag::data_annotationProcessorPaths[] -->
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.bundles</groupId>
-                            <artifactId>helidon-bundles-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.codegen</groupId>
-                            <artifactId>helidon-data-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.jakarta.persistence</groupId>
-                            <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                    <!-- end::data_annotationProcessorPaths[] -->
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.data.codegen</groupId>
-                        <artifactId>helidon-data-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.data.jakarta.persistence</groupId>
-                        <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <id>compile-snippets</id>
