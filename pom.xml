@@ -82,7 +82,7 @@
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
-        <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
+        <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <!--
         !Version statement! - end
@@ -118,7 +118,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>12.1.0</version.plugin.dependency-check>
+        <version.plugin.dependency-check>12.1.3</version.plugin.dependency-check>
         <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
