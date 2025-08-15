@@ -571,11 +571,6 @@
                                 <failOnWarning>true</failOnWarning>
                                 <ignoredDependencies>
                                     <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
-                                    <!-- used by generated code, and as such not correctly identified by the plugin -->
-                                    <dependency>io.helidon.config:helidon-config</dependency>
-                                    <!-- used in tests for example with configuration, also required by Config, the plugin
-                                        fails to understand that -->
-                                    <dependency>io.helidon.common:helidon-common-media-type</dependency>
                                 </ignoredDependencies>
                             </configuration>
                         </execution>

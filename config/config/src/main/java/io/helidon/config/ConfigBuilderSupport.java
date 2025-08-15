@@ -175,7 +175,8 @@ public final class ConfigBuilderSupport {
      * @param <BUILDER>   type of the builder
      * @param <PROTOTYPE> type of the prototype to be built
      */
-    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE> {
+    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE>,
+            io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder<BUILDER, PROTOTYPE> {
         /**
          * Update builder from configuration.
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,

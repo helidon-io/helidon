@@ -42,4 +42,32 @@
         <module>cohere</module>
         <module>coherence</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>check-dependencies</id>
+                            <phase>verify</phase>
+                            <configuration>
+                                <!--
+                                A transitive dependency required by module path, yet also used in tests
+                                 incorrectly reported as both
+                                 `Used undeclared dependencies found`
+                                 `Non-test scoped test only dependencies found`
+                                 -->
+                                <ignoredDependencies>
+                                    <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
+                                    <dependency>io.helidon.common:helidon-common-media-type</dependency>
+                                </ignoredDependencies>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
