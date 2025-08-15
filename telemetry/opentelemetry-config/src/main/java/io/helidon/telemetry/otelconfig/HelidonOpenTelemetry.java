@@ -33,14 +33,31 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
      */
     String CONFIG_KEY = "telemetry";
 
+    /**
+     * Creates a new builder for {@code HelidonOpenTelemetry}.
+     *
+     * @return new builder
+     */
     static OpenTelemetryConfig.Builder builder() {
         return OpenTelemetryConfig.builder();
     }
 
+    /**
+     * Creates a new {@code HelidonOpenTelemetry} from config.
+     *
+     * @param config the config node to use in building the result
+     * @return new {@code HelidonOpenTelemetry} based on the supplied config
+     */
     static HelidonOpenTelemetry create(OpenTelemetryConfig config) {
         return new HelidonOpenTelemetryImpl(config);
     }
 
+    /**
+     * Builds a new {@code HelidonOpenTelemetry} instance by revising and then building the supplied builder.
+     *
+     * @param consumer consumer of a builder for {@code HelidonOpenTelemetry}
+     * @return new instance
+     */
     static HelidonOpenTelemetry create(Consumer<OpenTelemetryConfig.Builder> consumer) {
         return builder().update(consumer).build();
     }

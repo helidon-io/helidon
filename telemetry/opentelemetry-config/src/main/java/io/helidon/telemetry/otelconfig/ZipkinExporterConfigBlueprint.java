@@ -31,7 +31,6 @@ import zipkin2.reporter.Sender;
 
 @Prototype.Configured
 @Prototype.Blueprint(decorator = ZipkinExporterConfigSupport.BuilderDecorator.class)
-@Prototype.CustomMethods(ZipkinExporterConfigSupport.CustomMethods.class)
 interface  ZipkinExporterConfigBlueprint {
 
     /**

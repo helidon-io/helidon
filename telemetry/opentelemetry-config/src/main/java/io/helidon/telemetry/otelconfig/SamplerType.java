@@ -16,10 +16,6 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Arrays;
-
-import io.helidon.common.config.Config;
-
 /**
  * Sampler types valid for OpenTelemetry tracing.
  * <p>
@@ -31,58 +27,43 @@ import io.helidon.common.config.Config;
  * <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-traces">Properties: traces; Properties
  * for sampler</a>.
  */
-enum SamplerType {
+public enum SamplerType {
+
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
+
     /**
      * Always on sampler.
      */
-    ALWAYS_ON("always_on"),
+    ALWAYS_ON,
 
     /**
      * Always off sampler.
      */
-    ALWAYS_OFF("always_off"),
+    ALWAYS_OFF,
 
     /**
      * Trace ID ratio-based sampler.
      */
-    TRACE_ID_RATIO("traceidratio"),
+    TRACEIDRATIO,
 
     /**
      * Parent-based always-on sampler.
      */
-    PARENT_BASED_ALWAYS_ON("parentbased_always_on"),
+    PARENTBASED_ALWAYS_ON,
 
     /**
      * Parent-based always-off sampler.
      */
-    PARENT_BASED_ALWAYS_OFF("parentbased_always_off"),
+    PARENTBASED_ALWAYS_OFF,
 
     /**
      * Parent-based trace ID ration-based sampler.
      */
-    PARENT_BASED_TRACE_ID_RATIO("parentbased_traceidratio");
+    PARENTBASED_TRACEIDRATIO;
 
-    static final String DEFAULT_NAME = "PARENT_BASED_ALWAYS_ON";
-    static final SamplerType DEFAULT = PARENT_BASED_ALWAYS_ON;
+    static final SamplerType DEFAULT = PARENTBASED_ALWAYS_ON;
 
-    private final String name;
-
-    SamplerType(String name) {
-        this.name = name;
-    }
-
-    static SamplerType from(String value) {
-        for (SamplerType samplerType : SamplerType.values()) {
-            if (samplerType.name.equals(value) || samplerType.name().equals(value)) {
-                return samplerType;
-            }
-        }
-        throw new IllegalArgumentException("Unknown sampler type: " + value + "; expected one of "
-                                                   + Arrays.toString(SamplerType.values())
-                                                   + "(or in lower case)");
-    }
-
-    static SamplerType from(Config config) {
-        return config.asString().map(SamplerType::from).orElseThrow();
-    }
 }

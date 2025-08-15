@@ -16,14 +16,10 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Locale;
-
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
-import zipkin2.codec.SpanBytesEncoder;
 
 class ZipkinExporterConfigSupport {
 
@@ -37,33 +33,14 @@ class ZipkinExporterConfigSupport {
 
             LazyValue<ZipkinSpanExporterBuilder> builder = LazyValue.create(ZipkinSpanExporterBuilder::new);
 
-            target.compression().ifPresent(v -> builder.get().setCompression(v.value()));
+            target.compression().ifPresent(v -> builder.get().setCompression(v.lowerCase()));
             target.endpoint().ifPresent(v -> builder.get().setEndpoint(v.toASCIIString()));
             target.timeout().ifPresent(v -> builder.get().setReadTimeout(v));
             target.sender().ifPresent(v -> builder.get().setSender(v));
             target.localIpAddressSupplier().ifPresent(v -> builder.get().setLocalIpAddressSupplier(v));
             target.meterProvider().ifPresent(v -> builder.get().setMeterProvider(v));
 
-//            if (builder.isLoaded()) {
-//                target.exporter(builder.get().build());
-//            }
         }
     }
 
-    static class CustomMethods {
-
-        private CustomMethods() {
-        }
-
-        @Prototype.FactoryMethod
-        static SpanBytesEncoder createSpanBytesEncoder(Config config) {
-            return SpanBytesEncoder.valueOf(config.asString().get().toUpperCase(Locale.ROOT));
-        }
-
-        @Prototype.FactoryMethod
-        static CompressionType createCompressionType(Config config) {
-            return CompressionType.from(config);
-        }
-
-    }
 }

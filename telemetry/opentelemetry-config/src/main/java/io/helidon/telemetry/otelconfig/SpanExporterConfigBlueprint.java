@@ -21,7 +21,6 @@ import io.helidon.builder.api.Prototype;
 
 @Prototype.Configured
 @Prototype.Blueprint
-@Prototype.CustomMethods(SpanExporterConfigSupport.CustomMethods.class)
 interface SpanExporterConfigBlueprint {
 
     /**

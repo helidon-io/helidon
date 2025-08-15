@@ -16,45 +16,25 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Arrays;
-
-import io.helidon.common.config.Config;
-
 /**
  * Span Processor type. Batch is default for production.
  */
-enum SpanProcessorType {
+public enum SpanProcessorType {
+
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
+
     /**
      * Simple Span Processor.
      */
-    SIMPLE("simple"),
+    SIMPLE,
     /**
      * Batch Span Processor.
      */
-    BATCH("batch");
+    BATCH;
 
     static final SpanProcessorType DEFAULT = BATCH;
-    static final String DEFAULT_NAME = "BATCH";
-
-    private final String processorType;
-
-    SpanProcessorType(String processorType) {
-        this.processorType = processorType;
-    }
-
-    static SpanProcessorType from(String value) {
-        for (SpanProcessorType spanProcessorType : SpanProcessorType.values()) {
-            if (spanProcessorType.processorType.equals(value) || spanProcessorType.name().equals(value)) {
-                return spanProcessorType;
-            }
-        }
-        throw new IllegalArgumentException("Unknown span processor type: " + value + "; expected one of "
-                                                   + Arrays.toString(SpanProcessorType.values()));
-
-    }
-
-    static SpanProcessorType from(Config config) {
-        return from(config.asString().get());
-    }
 }
 

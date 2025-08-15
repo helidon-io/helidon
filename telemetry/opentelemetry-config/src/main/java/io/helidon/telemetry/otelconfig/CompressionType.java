@@ -16,46 +16,28 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Arrays;
-
-import io.helidon.common.config.Config;
-
 /**
  * Types of compression supported by OpenTelemetry.
  */
 public enum CompressionType {
 
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
+
     /**
      * GZIP compression.
      */
-    GZIP("gzip"),
+    GZIP,
 
     /**
      * No compression.
      */
-    NONE("none");
+    NONE;
 
-    private final String text;
-
-    CompressionType(String text) {
-        this.text = text;
+    String lowerCase() {
+        return name().toLowerCase();
     }
 
-    String value() {
-        return text;
-    }
-
-    static CompressionType from(String value) {
-        for (CompressionType compressionType : CompressionType.values()) {
-            if (compressionType.text.equals(value) || compressionType.name().equals(value)) {
-                return compressionType;
-            }
-        }
-        throw new IllegalArgumentException("Unknown compression type: " + value + "; expected one of "
-                                           + Arrays.toString(CompressionType.values()));
-    }
-
-    static CompressionType from(Config config) {
-        return from(config.asString().get());
-    }
 }

@@ -16,11 +16,10 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
@@ -35,72 +34,68 @@ import io.opentelemetry.extension.trace.propagation.OtTracePropagator;
  * OTel configuration of propagation uses lower-case names. For user-friendliness, we allow users
  * to use the Otel-friendly names (lowercase) or the enum names (UPPERCASE) in config sources.
  */
-enum ContextPropagationType {
+public enum ContextPropagationType {
 
-    // This enum is public so it can be used from the tracing signal module.
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
 
     /**
      * W3C trace context propagation.
      */
-    TRACE_CONTEXT("tracecontext", W3CTraceContextPropagator::getInstance),
+    TRACECONTEXT(W3CTraceContextPropagator::getInstance),
 
     /**
      * W3C baggage propagation.
      */
-    BAGGAGE("baggage", W3CBaggagePropagator::getInstance),
+    BAGGAGE(W3CBaggagePropagator::getInstance),
 
     /**
      * Zipkin B3 trace context propagation using a single header.
      */
-    B3("b3", B3Propagator::injectingSingleHeader),
+    B3(B3Propagator::injectingSingleHeader),
 
     /**
      * Zipkin B3 trace context propagation using multiple headers.
      */
-    B3_MULTI("b3multi", B3Propagator::injectingMultiHeaders),
+    B3MULTI(B3Propagator::injectingMultiHeaders),
 
     /**
      * Jaeger trace context propagation format.
      */
-    JAEGER("jaeger", JaegerPropagator::getInstance),
+    JAEGER(JaegerPropagator::getInstance),
 
     /**
      * OT trace format propagation.
      */
-    OT_TRACE("ottrace", OtTracePropagator::getInstance);
+    OTTRACE(OtTracePropagator::getInstance);
 
     /*
     The following is used in a {@value} Javadoc reference, so it needs to be a constant.
      */
     static final String DEFAULT_NAMES = "tracecontext,baggage";
 
-    /*
-    The following is used as the config default, so it must be writable;,therefore collect into a "new ArrayList" instead
-    of using "toList."
-     */
-    static final List<TextMapPropagator> DEFAULT_PROPAGATORS = Arrays.stream(DEFAULT_NAMES.split(","))
-            .map(ContextPropagationType::from)
-            .map(ContextPropagationType::propagator)
-            .collect(Collectors.toCollection(ArrayList::new));
+    static final List<TextMapPropagator> DEFAULT_PROPAGATORS = List.of(TRACECONTEXT.propagator(),
+                                                                       BAGGAGE.propagator());
 
-    private final String format;
     private final Supplier<TextMapPropagator> propagatorSupplier;
 
-    ContextPropagationType(String format, Supplier<TextMapPropagator> propagatorSupplier) {
-        this.format = format;
+    ContextPropagationType(Supplier<TextMapPropagator> propagatorSupplier) {
         this.propagatorSupplier = propagatorSupplier;
     }
 
     /**
-     * Converts the specified string to a {@code PropagationFormat} enum value, using the enum names as well as the
-     * OTel-friendly values.
+     * Converts the specified string to a {@code PropagationFormat} enum value, using either the string itself or its upper-case
+     * equivalent to match against enum value names. This allows users to use the OTel-friendly lower-case names in Helidon
+     * config.
      *
      * @param value string to convert
      * @return {@code PropagationFormat} value corresponding to the provided string
      */
     static ContextPropagationType from(String value) {
         for (ContextPropagationType contextPropagation : ContextPropagationType.values()) {
-            if (contextPropagation.format.equals(value) || contextPropagation.name().equals(value)) {
+            if (contextPropagation.name().equals(value) || contextPropagation.name().equals(value.toUpperCase(Locale.ROOT))) {
                 return contextPropagation;
             }
         }
