@@ -240,6 +240,8 @@ Helidon's LangChain4J integration introduces a declarative Helidon Inject-based 
     ** *Retrieval Augmentor*: `dev.langchain4j.rag.RetrievalAugmentor`
 * *Callback Functions*:
     ** Methods annotated with `dev.langchain4j.agent.tool.Tool`
+* *MCP Client*:
+    ** `dev.langchain4j.mcp.client.McpClient`
 
 === Creating AI Service
 
@@ -270,6 +272,8 @@ In this scenario all LangChain4J components from the list above are taken from t
 | `Ai.ModerationModel`     | Specifies the name of a service in the service registry that implements `ModerationModel` to use in the annotated Ai Service.
 | `Ai.ContentRetriever`    | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`.
 | `Ai.RetrievalAugmentor`  | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`.
+| `Ai.ToolProvider`        | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.
+| `Ai.McpClients`          | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`.
 |===
 
 For example, in the snippet below a service with name "myCustomChatMemory" will be used as chat memory and all other components are discovered automatically.
@@ -284,6 +288,12 @@ public interface ChatAiService {
 ----
 
 NOTE: There is a possibility to switch off automatic discovery by using `@Ai.Service(autodicovery=false)`. In this case the service components are not discovered automatically and users must add components manually using annotations specified above. `@ChatModel` or `@StreamingChatModel` annotations are required.
+
+Since `Ai.ToolProvider` and `Ai.McpClients` are mutually exclusive, some clarification is needed regarding their functionality. Assume that automatic discovery is set to true in this context:
+
+* If neither annotation is present, a `ToolProvider` will be automatically discovered from the service registry.
+* If the `Ai.McpClients` annotation is present, corresponding MCP client services will be discovered, and no `ToolProvider` will be discovered.
+* If both annotations are present, an exception will be thrown.
 
 === Tools (Callback Functions)
 
