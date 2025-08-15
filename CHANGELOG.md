@@ -9,6 +9,21 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.12]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
+
+### CHANGES
+
+- WebServer: Fix accept header handling in server request headers [10202](https://github.com/helidon-io/helidon/pull/10202)
+- Dependencies: Upgrade commons-lang3 to 3.18.0 [10547](https://github.com/helidon-io/helidon/pull/10547)
+- Dependencies: Upgrade gson to 2.13.1 [10547](https://github.com/helidon-io/helidon/pull/10547)
+- Dependencies: Upgrade jgit to 6.10.1 [10547](https://github.com/helidon-io/helidon/pull/10547)
+- Dependencies: Upgrade Netty to 4.1.124.Final [10543](https://github.com/helidon-io/helidon/pull/10543)
+- Dependencies: Upgrade snakeyaml to 2.4 [9841](https://github.com/helidon-io/helidon/pull/9841)
+- Build: Backport releasing to Central Publishing Portal  [10253](https://github.com/helidon-io/helidon/pull/10253)
+- Docs: Clarification of documentation of integration of security and webserver [10424](https://github.com/helidon-io/helidon/pull/10424)
+
 ## [2.6.11]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
