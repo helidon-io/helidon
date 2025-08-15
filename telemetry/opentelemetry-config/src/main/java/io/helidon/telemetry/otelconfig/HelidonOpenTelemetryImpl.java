@@ -16,8 +16,6 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.function.Consumer;
-
 import io.helidon.builder.api.RuntimeType;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -26,13 +24,12 @@ import io.opentelemetry.api.OpenTelemetry;
 /**
  * Helidon management of OpenTelemetry.
  */
-@RuntimeType.PrototypedBy(OpenTelemetryConfig.class)
-public class HelidonOpenTelemetryImpl implements HelidonOpenTelemetry, RuntimeType.Api<OpenTelemetryConfig> {
+class HelidonOpenTelemetryImpl implements HelidonOpenTelemetry, RuntimeType.Api<OpenTelemetryConfig> {
 
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetry.class.getName());
     private final OpenTelemetryConfig config;
 
-    private HelidonOpenTelemetryImpl(OpenTelemetryConfig config) {
+    HelidonOpenTelemetryImpl(OpenTelemetryConfig config) {
         this.config = config;
         if (prototype().enabled() && prototype().global()) {
             try {
@@ -44,18 +41,6 @@ public class HelidonOpenTelemetryImpl implements HelidonOpenTelemetry, RuntimeTy
                 LOGGER.log(System.Logger.Level.WARNING, "Failed to set global OpenTelemetry as requested by settings", e);
             }
         }
-    }
-
-    static OpenTelemetryConfig.Builder builder() {
-        return OpenTelemetryConfig.builder();
-    }
-
-    static HelidonOpenTelemetryImpl create(OpenTelemetryConfig config) {
-        return new HelidonOpenTelemetryImpl(config);
-    }
-
-    static HelidonOpenTelemetryImpl create(Consumer<OpenTelemetryConfig.Builder> consumer) {
-        return builder().update(consumer).build();
     }
 
     @Override

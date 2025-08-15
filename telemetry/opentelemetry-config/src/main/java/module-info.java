@@ -42,11 +42,11 @@ module io.helidon.telemetry.otelconfig {
     requires io.opentelemetry.sdk;
     requires io.opentelemetry.sdk.common;
     requires io.opentelemetry.sdk.trace;
+    requires io.opentelemetry.semconv;
 
     requires zipkin2;
     requires zipkin2.reporter;
 
     requires static io.helidon.common.features.api;
-    requires io.opentelemetry.semconv;
 
 }

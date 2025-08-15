@@ -36,7 +36,7 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
 
     @Override
     public OpenTelemetry get() {
-        return HelidonOpenTelemetryImpl.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
+        return HelidonOpenTelemetry.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
                 .openTelemetry();
     }
 }

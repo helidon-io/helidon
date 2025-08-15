@@ -32,7 +32,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 @Prototype.Blueprint(decorator = OpenTelemetryConfigSupport.BuildDecorator.class)
 @Prototype.Configured("telemetry")
 @Prototype.CustomMethods(OpenTelemetryConfigSupport.CustomMethods.class)
-interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTelemetryImpl> {
+interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTelemetry> {
 
     /**
      * Service name used in sending telemetry data to the collector.
