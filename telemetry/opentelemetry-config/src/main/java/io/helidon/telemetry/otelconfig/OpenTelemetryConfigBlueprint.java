@@ -17,7 +17,6 @@
 package io.helidon.telemetry.otelconfig;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -32,7 +31,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 @Prototype.Blueprint(decorator = OpenTelemetryConfigSupport.BuildDecorator.class)
 @Prototype.Configured("telemetry")
 @Prototype.CustomMethods(OpenTelemetryConfigSupport.CustomMethods.class)
-interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTelemetry> {
+interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTelemetryImpl> {
 
     /**
      * Service name used in sending telemetry data to the collector.

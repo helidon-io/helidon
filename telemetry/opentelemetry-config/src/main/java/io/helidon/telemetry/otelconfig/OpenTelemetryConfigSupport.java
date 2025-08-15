@@ -23,14 +23,41 @@ import java.util.stream.Stream;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
 class OpenTelemetryConfigSupport {
+
+    private static OpenTelemetry openTelemetry(OpenTelemetryConfig.BuilderBase<?, ?> target) {
+        var builder = OpenTelemetrySdk.builder();
+
+        if (!target.propagators().isEmpty()) {
+            builder.setPropagators(ContextPropagators.create(
+                    TextMapPropagator.composite(target.propagators())));
+        }
+
+        if (target.tracing().isPresent()) {
+            var tracingConfig = target.tracing().get();
+            var tracingBuilderInfo = tracingConfig.tracingBuilderInfo();
+            var tracingBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
+
+            var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
+            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
+
+            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            tracingBuilder.setResource(resource);
+
+            builder.setTracerProvider(tracingBuilder.build());
+        }
+
+        var sdk = builder.build();
+        target.openTelemetrySdk(sdk);
+        return sdk;
+    }
 
     static class BuildDecorator implements Prototype.BuilderDecorator<OpenTelemetryConfig.BuilderBase<?, ?>> {
 
@@ -45,34 +72,12 @@ class OpenTelemetryConfigSupport {
                 return;
             }
 
-            var builder = OpenTelemetrySdk.builder();
-
-            if (!target.propagators().isEmpty()) {
-                builder.setPropagators(ContextPropagators.create(
-                        TextMapPropagator.composite(target.propagators())));
-            }
-
-            if (target.tracing().isPresent()) {
-                var tracingConfig = target.tracing().get();
-                var tracingBuilderInfo = tracingConfig.tracingBuilderInfo();
-                var tracingBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
-
-                var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
-                attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
-
-                var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
-                tracingBuilder.setResource(resource);
-
-                builder.setTracerProvider(tracingBuilder.build());
-            }
-
-            var sdk = builder.build();
-            target.openTelemetrySdk(sdk);
-            target.openTelemetry(sdk);
-
+            target.openTelemetry(target.enabled()
+                                         ? openTelemetry(target)
+                                         : OpenTelemetry.noop());
         }
-    }
 
+    }
     static class CustomMethods {
 
         /**
@@ -101,7 +106,6 @@ class OpenTelemetryConfigSupport {
         static OpenTelemetryTracingConfig createTracing(Config config) {
             return OpenTelemetryTracingConfig.create(config);
         }
-
 
     }
 

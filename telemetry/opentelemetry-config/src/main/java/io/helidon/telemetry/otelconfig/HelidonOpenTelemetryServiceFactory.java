@@ -16,24 +16,27 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Map;
+import java.util.function.Supplier;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
 
-@Prototype.Blueprint
-@Prototype.Configured
-interface AttrsConfigBlueprint {
+import io.opentelemetry.api.OpenTelemetry;
 
-    @Option.Configured
-    Map<String, String> attributes();
+@Service.Singleton
+@Service.RunLevel(Service.RunLevel.STARTUP)
+class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
 
-    @Option.Configured
-    Map<String, Boolean> booleanAttributes();
+    private final Config config;
 
-    @Option.Configured
-    Map<String, Number> numericAttributes();
+    @Service.Inject
+    HelidonOpenTelemetryServiceFactory(Config config) {
+        this.config = config;
+    }
 
-    @Option.Configured
-    Map<String, String> stringAttributes();
+    @Override
+    public OpenTelemetry get() {
+        return HelidonOpenTelemetryImpl.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
+                .openTelemetry();
+    }
 }
