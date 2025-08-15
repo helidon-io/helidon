@@ -16,6 +16,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 ### CHANGES
 
 - Upgrade Netty to 4.1.124.Final [10542](https://github.com/helidon-io/helidon/pull/10542)
+- Upgrade OCI SDK to 3.68.0 [10546](https://github.com/helidon-io/helidon/pull/10546)
 
 ## [3.2.13]
 
