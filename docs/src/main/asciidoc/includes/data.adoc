@@ -20,10 +20,11 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 ifndef::sourcedir[:sourcedir: {rootdir}/../java/io/helidon/docs]
 
 // tag::data_overview[]
-Data repository queries are an abstraction on top of Object–Relational Mapping (ORM). This
-allows compile time translation of interfaces with query definitions into implementing classes.
+Data repository queries are an abstraction over Object–Relational Mapping, or ORM. This enables
+interfaces with query definitions to be translated into implementation classes at compile time.
 
-Helidon Data Repository is built on top of Jakarta Persistence supporting major providers such as EclipseLink and Hibernate.
+The Helidon Data Repository is built on Jakarta Persistence and supports major providers such as
+EclipseLink and Hibernate.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -39,7 +40,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runtime dependencies:
+The Jakarta Persistence provider (EclipseLink) and the JDBC driver (MySQL) are required at runtime.
 
 [source,xml]
 ----
@@ -64,7 +65,7 @@ Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runt
 // tag::data_annotation_processor[]
 == Annotation Processor
 
-Entity model as well as data repository interfaces require specific annotation processor configuration:
+Both the entity model and data repository interfaces require a specific annotation-processor configuration:
 
 [source,xml]
 ----
@@ -91,17 +92,19 @@ Entity model as well as data repository interfaces require specific annotation p
 // tag::data_usage[]
 == Usage
 
-The Data Repository provides API and tools to implement database queries using interface method prototypes.
-There are two ways how such a query may be defined:
+The Data Repository provides an API and tooling for implementing database queries through interface method
+prototypes.
 
-* using method annotated with `@Data.Query`
+There are two ways in which such a query can be defined:
+
+* using a method annotated with `@Data.Query`
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 
-* using method name as query definition
+* using the method name as the query definition
 
 [source,java]
 ----
@@ -112,8 +115,11 @@ include::{sourcedir}/includes/data/PetRepository.java[tag=findByName_method, ind
 // tag::data_config[]
 == Helidon Config
 
-The data repository must be configured before you begin. In the example below Helidon Config is used to set up data repository
-with EclipseLink and MySQL database:
+You must configure the data repository before using it.
+
+In the example below, Helidon Config sets up the data repository using the EclipseLink
+provider and a MySQL database:
+
 [source,yaml]
 ----
 data:
@@ -135,42 +141,43 @@ data:
 // tag::data_repository_interface[]
 == Repository Interface
 
-Data repository interfaces are interfaces annotated with the `@Data.Repository` annotation and extending `Data.GenericRepository`
+Data repository interfaces are annotated with `@Data.Repository` and extend the `Data.GenericRepository`
 interface.
-The `@Data.Repository` annotation has no argument. The `Data.GenericRepository` has no methods, but has two generic arguments
-`E` and `ID`. Argument `E` is the type of the persistence entity and argument `ID` is the type of entity primary key attribute.
-Composite primary keys are not supported.
 
-The `Data.GenericRepository` interface is extended by additional interfaces to add specific features:
+The `@Data.Repository` annotation takes no arguments. The `Data.GenericRepository` declares no methods
+but has two generic type parameters, `E` and `ID`. `E` represents the persistence entity type and `ID`
+represents the type of the entity's primary key attribute. Composite primary keys are not supported.
+
+The `Data.GenericRepository` interface is extended by additional interfaces that add specific features:
 
 [cols=2*]
 |===
 |Interface |Description
 
-|`Data.GenericRepository<E, ID>`
+|`Data.GenericRepository`
 |Root interface with entity type and primary key type as generic arguments.
 
-|`Data.BasicRepository<E, ID>`
-|Extends `GenericRepository`, adds set of basic entity life-cycle operations.
+|`Data.BasicRepository`
+|Extends `GenericRepository`; adds a set of basic entity life-cycle operations.
 
-|`Data.CrudRepository<E, ID>`
-|Extends `BasicRepository`, adds `insert` and `update` methods to contain full set of CRUD operations.
+|`Data.CrudRepository`
+|Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support.
 
-|`Data.PageableRepository<E, ID>`
-|Extends `GenericRepository`, adds pagination support.
+|`Data.PageableRepository`
+|Extends `GenericRepository`; adds pagination support.
 |===
 
 === Repository Interface Methods
 
-Repository interface can contain three kinds of methods:
+A repository interface may contain three kinds of methods:
 
-* methods inherited from an ancestor interface
-* methods with query defined by `@Data.Query` annotation
-* methods with query defined by method name
+* Methods inherited from an ancestor interface
+* Methods with a query defined via the `@Data.Query` annotation
+* Methods with a query defined via the method name
 
-Following `PetRepository` interface contains all kinds of methods: methods inherited from `CrudRepository` interface, methods
-`findByName` and `listNameOrderByName` with query defined by method name and finally method `listPetsByCategory` with query defined
-by `@Data.Query` annotation:
+The following `PetRepository` interface contains all of these: inherited methods from `CrudRepository`,
+the methods `findByName` and `listNameOrderByName` defined by method name, and `listPetsByCategory`
+defined by the `@Data.Query` annotation:
 
 [source,java]
 ----
@@ -179,36 +186,34 @@ include::{sourcedir}/includes/data/PetRepository.java[tag=PetRepository_class, i
 
 ==== Method with query defined by `@Data.Query` annotation
 
-This kind of method requires `@Data.Query` annotation to be always present on the method. `@Data.Query` annotation has single
-`String` argument with the database query. Currently only JPQL is supported as the database query.
-Method arguments must match the data query arguments:
+This method type must always include the `@Data.Query` annotation. The annotation takes a single `String`
+argument containing the database query. Currently only JPQL is supported. Method arguments must match
+the query parameters:
 
-* in case of named arguments, each named argument from the query must have corresponding argument of the same name in method
-arguments. Method arguments can be in any order.
+* for named arguments, each named argument in the query must correspond to a method argument with the same name, in any order.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 
-* in case of indexed arguments, each indexed argument from the query must have argument in corresponding order in method
-arguments. Arguments are indexed from '1'.
+* for indexed arguments, each argument must appear in the same order as in the query. Indexing starts at `1`.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=selectKeeper_method, indent=0]
 ----
 
-Supported return types are
+Supported return types include:
 
-* the query row types (entity class, entity attribute class, additional query result types),
-* List, Collection, Stream and Optional with query row type as generic argument
-* and Page or Slice with query row type as generic argument.
+* The query row types such as entity class, entity attribute, or custom projection
+* `List`, `Collection`, `Stream`, or `Optional` with the query row type as a generic parameter
+* `Page` or `Slice` with the query row type as a generic parameter
 
 ==== Method with query defined by method name
 
-This kind of method defines the query by the name of the method. Method has no query specific annotation and its name must
-follow _query by method name_ specific grammar:
+This method type infers the query based on the method name and does not use a specific annotation.
+The method name must follow the _query-by-method-name_ syntax:
 
 [source,text]
 ----
@@ -248,59 +253,58 @@ follow _query by method name_ specific grammar:
 
 ===== Method name prefix and return type
 
-Method can have user defined prefix. The prefix is sequence of letters and digits not matching `<action-u>` keyword. This prefix
-has no influence on the query. Prefix can be used to distinguish between methods with the same query but different result type.
-If prefix is used, the following query action keyword must start with capital letter.
+A method can have a user-defined prefix. The prefix is a sequence of letters and digits that does not
+match any `<action-u>` keyword. This prefix has no influence on the query and can be used to distinguish
+between methods that have the same query but different result types. If a prefix is used, the following
+query action keyword must start with a capital letter.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_method, indent=0]
 ----
 
-Return type of the method depends on action keyword being used.
+The return type depends on the action keyword:
 
 [cols=3*]
 |===
-|Keyword |Types |Description
+|Keyword |Return Type |Description
 
 |count
-|numeric type
-|Number of rows matching the query criteria.
+|Numeric type
+|Number of rows matching the query criteria
 
 |exists
 |`boolean` or `Boolean`
-|Whether at least one row matching the query criteria exists.
+|Whether at least one matching row exists
 
 |get
-|query row type
-|Single row from the database, throws an exception when result is not a single row.
+|Query row type
+|Single result that throws an exception if there are zero or multiple results
 
 |find
-|`Optional` of query row type
-|Empty result or single row from the database, throws an exception when result returns more than a single row .
+|`Optional<…>`
+|Zero or single result that throws an exception if there are multiple results
 
 |list
-|`Collection` or `List` of query row type
-|List of rows from the database.
+|`Collection` or `List`
+|All matching rows
 
 |list
-|`Slice` or `Page` of query row type
-|Pageable result of rows from the database.
+|`Slice` or `Page`
+|Pageable result set
 
 |stream
-|`Stream` of query row type
-|Stream of rows from the database.
+|`Stream`
+|Stream of matching rows
 |===
 
-NOTE: Validation of the keyword and return type mapping is not fully implemented so current code generator is less restrictive.
-But this may change in next releases.
+NOTE: Validation of the keyword–return type mapping is not fully enforced by the code generator,
+though this may change in future releases.
 
-===== Projection part of the query
+===== Projection in method name
 
-Projection part of the method name is optional and may follow right after the return type keyword. The projection consists
-of 2 parts, `expression` and `property`.
-
-The expression keywords are:
+The projection part is optional and follows directly after the return-type keyword. It consists
+of `expression` and `property` components:
 
 [cols=3*]
 |===
@@ -308,38 +312,39 @@ The expression keywords are:
 
 |Distinct
 |`listDistinctNameByTrainer_Name`
-|Only different values are returned.
+|Returns only unique values.
 
 |First<number>
 |`listFirst10ByAge`
-|Returns up to `<number>` of database rows.
+|Returns up to `<number>` rows.
 
 |Min
 |`getMinPoints`
-|Returns minimum value of entity property. Requires numeric type.
+|Returns the minimum property value. Requires numeric type.
 
 |Max
 |`getMaxPoints`
-|Returns maximum value of entity property. Requires numeric type.
+|Returns the maximum property value. Requires numeric type.
 
 |Sum
 |`getSumPoints`
-|Returns sum of all entity property values. Requires numeric type.
+|Returns the sum of values. Requires numeric type.
 
 |Avg
 |`getAvgPoints`
-|Returns average value of all entity properties values. Requires floating point type.
+|Returns the average value. Requires floating point type.
 |===
 
-Property is the entity property. The property is composed of the entity properties names separated by '_' character, e.g.
-`Keeper_Name` of the `Pet` entity will be translated to `SELECT p.keeper.name FROM Pet p` JPQL query.
+The `property` part is the entity property name and it can contain underscores. An underscore is interpreted
+as a dot, which means navigation to a related entity attribute. For example, `Keeper_Name` on the `Pet` entity
+translates to the JPQL query `SELECT p.keeper.name FROM Pet p`.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/SimpleSnippets.java[tag=simple_model, indent=0]
 ----
 
-===== Criteria part of the query
+===== Criteria in method name
 
 Criteria part of the method name is optional and represents the `WHERE` clause of the database query. It is a logical expression
 composed of individual conditions joined by `AND` and `OR` logical operators.
@@ -354,92 +359,92 @@ Criteria condition keywords are of 2 types:
 The condition keyword can consume method arguments. Each keyword has exact number of arguments being consumed. Method arguments
 are being consumed in the same order as is the order of the condition keywords in the method name.
 
-Criteria condition modifiers:
+Criteria modifiers:
 
 [cols=2*]
 |===
 |Keyword |Description
 
 |Not
-|Negates following criteria condition .
+|Negates the next condition
 
 |IgnoreCase
-|Makes following criteria condition case-insensitive.
+|Makes the next condition case-insensitive
 |===
 
-Criteria condition keywords:
+Supported condition keywords:
 
 [cols=3*]
 |===
-|Keyword |Arguments |Description
+|Keyword |Args |Description
 
 |After
 |1
-|The property value is after the given value.
+|The property value is after the given value
 
 |Before
 |1
-|The property value is before the given value.
+|The property value is before the given value
 
 |Contains
 |1
-|The property value contains the given value. Requires `String` property and method argument.
+|The property value contains the given value. Requires a `String` property and argument
 
 |EndsWith
 |1
-|The property value ends with the given value. Requires `String` property and method argument.
+|The property value ends with the given value. Requires a `String` property and argument
 
 |StartsWith
 |1
-|The property value starts with the given value. Requires `String` property and method argument.
+|The property value starts with the given value. Requires a `String` property and argument
 
 |Equal
 |1
-|The property value is equal to the given value.
+|The property value is equal to the given value
 
 |LessThan
 |1
-|The property value is less than the given value. Requires `Comparable` property and method argument.
+|The property value is less than the given value. Requires a `Comparable` property and argument
 
 |LessThanEqual
 |1
-|The property value is less than or equal to the given value. Requires `Comparable` property and method argument.
+|The property value is less or equal to the given value. Requires a `Comparable` property and argument
 
 |GreaterThan
 |1
-|The property value is greater than the given value. Requires `Comparable` property and method argument.
+|The property value is greater than the given value. Requires a `Comparable` property and argument
 
 |GreaterThanEqual
 |1
-|The property value is greater than or equal to the given value. Requires `Comparable` property and method argument.
+|The property value is greater or equal to the given value. Requires a `Comparable` property and argument
 
 |Between
 |2
-|The property value is between the given values. Requires `Comparable` properties and method arguments.
+|The property value is between the given values. Requires `Comparable` properties and arguments
 
 |Like
 |1
-|The property value is `LIKE` the given value, equivalent to JPQL `LIKE` keyword. Requires `String` property and method argument.
+|The property value is `LIKE` the given value. Requires a `String` property and argument
 
 |In
 |1
-|The property value is in the given collection. Requires `Collection<T>` method argument and property of type `T`.
+|The property value is in the given collection. Requires a `Collection` argument
 
 |Empty
 |0
-|The property value is empty. Requires `Collection` property.
+|The property value is empty. Requires a `Collection` property
 
 |Null
 |0
-|The property value is `NULL`.
+|The property value is `NULL`
 
 |True
 |0
-|The property value is `true`. Requires `boolean` or `Boolean` property.
+|The property value is `true`. Requires `boolean` or `Boolean` property
 
 |False
 |0
-|The property value is `false`. Requires `boolean` or `Boolean` property.
+|The property value is `false`
 |===
 
 Logical operators:
@@ -449,16 +454,15 @@ Logical operators:
 |Keyword |Description
 
 |And
-|Logical `AND` of conditions before and after the operator.
+|Logical AND
 
 |Or
-|Logical `OR` of conditions before and after the operator.
+|Logical OR
 |===
 
-Logical operators precedence in JPQL is defined in Jakarta Persistence 3.1 specification, chapter _4.6.6. Operators and Operator
-Precedence_: operator `AND` has higher precedence than `OR`.
+In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1 section 4.6.6.
 
-===== Ordering part of the query
+===== Ordering in method name
 
 Ordering part of the method name is optional and represents the `ORDER BY` clause of the database query. It is list of ordering
 rules. Single ordering rule is the property followed by optional order direction keyword.
