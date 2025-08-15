@@ -82,7 +82,7 @@
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
-        <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
+        <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <!--
         !Version statement! - end
