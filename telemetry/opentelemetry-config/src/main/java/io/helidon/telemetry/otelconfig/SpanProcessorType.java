@@ -35,6 +35,5 @@ public enum SpanProcessorType {
      */
     BATCH;
 
-    static final SpanProcessorType DEFAULT = BATCH;
 }
 
