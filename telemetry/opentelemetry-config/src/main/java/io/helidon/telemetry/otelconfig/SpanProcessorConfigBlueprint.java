@@ -31,7 +31,10 @@ import io.helidon.builder.api.Prototype;
 interface SpanProcessorConfigBlueprint {
 
     /**
-     * Name of the span exporter this span processor should use.
+     * Name(s) of the span exporter(s) this span processor should use; specifying no names uses all configured exporters (or
+     * if no exporters are configured, the default OpenTelemetry exporter(s)).
+     * <p>
+     * Each name must be the name of one of the configured {@link OpenTelemetryTracingConfig#exporterConfigs()}.
      *
      * @return span exporter name
      */
@@ -44,6 +47,7 @@ interface SpanProcessorConfigBlueprint {
      */
     @Option.Configured
     @Option.Required
+    @Option.Access("")
     SpanProcessorType type();
 
 }

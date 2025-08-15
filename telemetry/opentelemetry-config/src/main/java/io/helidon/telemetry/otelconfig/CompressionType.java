@@ -23,7 +23,7 @@ import io.helidon.common.config.Config;
 /**
  * Types of compression supported by OpenTelemetry.
  */
-enum CompressionType {
+public enum CompressionType {
 
     /**
      * GZIP compression.
@@ -35,19 +35,19 @@ enum CompressionType {
      */
     NONE("none");
 
-    private final String value;
+    private final String text;
 
-    CompressionType(String value) {
-        this.value = value;
+    CompressionType(String text) {
+        this.text = text;
     }
 
     String value() {
-        return value;
+        return text;
     }
 
     static CompressionType from(String value) {
         for (CompressionType compressionType : CompressionType.values()) {
-            if (compressionType.value.equals(value) || compressionType.name().equals(value)) {
+            if (compressionType.text.equals(value) || compressionType.name().equals(value)) {
                 return compressionType;
             }
         }

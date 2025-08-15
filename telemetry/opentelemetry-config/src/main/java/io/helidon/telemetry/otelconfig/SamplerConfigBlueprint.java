@@ -44,6 +44,6 @@ interface SamplerConfigBlueprint {
      * @return sampler parameter
      */
     @Option.Configured
-    Optional<Number> param();
+    Optional<Double> param();
 
 }

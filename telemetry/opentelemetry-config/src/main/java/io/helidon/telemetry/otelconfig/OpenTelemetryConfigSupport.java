@@ -30,7 +30,10 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
-class OpenTelemetryConfigSupport {
+final class OpenTelemetryConfigSupport {
+
+    private OpenTelemetryConfigSupport() {
+    }
 
     private static OpenTelemetry openTelemetry(OpenTelemetryConfig.BuilderBase<?, ?> target) {
         var openTelemetrySdkBuilder = OpenTelemetrySdk.builder();
@@ -78,8 +81,12 @@ class OpenTelemetryConfigSupport {
         }
 
     }
+
     static class CustomMethods {
 
+        private CustomMethods() {
+        }
+        
         /**
          * Converts a config node for propagators into a list of {@link io.opentelemetry.context.propagation.TextMapPropagator}.
          * <p>
