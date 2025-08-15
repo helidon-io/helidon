@@ -16,23 +16,30 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.testing.junit5.Testing;
 
-import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.iterableWithSize;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.nullValue;
 
-class TestBasicConfig {
+class TestAttributeValueConversions {
 
     static final Config config = Config.just(ConfigSources.create(
             """
@@ -63,40 +70,22 @@ class TestBasicConfig {
                     """,
             MediaTypes.APPLICATION_YAML));
 
-    @Test
-    void testTelemetryWithTracer() {
-
-        OpenTelemetryConfig openTelemetryConfig = OpenTelemetryConfig.create(config.get("telemetry"));
-
-        OpenTelemetryTracingConfig openTelemetryTracingConfig = openTelemetryConfig.tracingConfig().orElseThrow();
-        assertThat("Helidon OTel tracing", openTelemetryTracingConfig, is(notNullValue()));
-
-        assertThat("Exporters",
-                   openTelemetryTracingConfig.exporterConfigs().values(),
-                   allOf(hasItems(instanceOf(OtlpHttpSpanExporter.class),
-                                  instanceOf(ZipkinSpanExporter.class)),
-                         iterableWithSize(2)));
-
-        assertThat("Sampler",
-                   openTelemetryConfig.openTelemetrySdk().getSdkTracerProvider().getSampler().toString(),
-                   is("AlwaysOffSampler"));
-
-
+    @ParameterizedTest
+    @MethodSource
+    void testConversions(Config config, Class<?> expectedType, Object expectedValue) {
+        var result = OpenTelemetryTracingConfigSupport.CustomMethods.createAttributes(config);
+        assertThat("Value text " + config.asString().get(), result, is(equalTo(expectedValue)));
 
     }
 
-    @Test
-    void testTelemetryDefaults() {
-        var config = Config.just(ConfigSources.create(
-                """
-                        telemetry:
-                          service: "test-otel"
-                        """,
-                MediaTypes.APPLICATION_YAML));
+    static Stream<Arguments> testConversions() {
+        Config attrs = config.get("telemetry.signals.tracing.attributes");
+        return Stream.of(Arguments.arguments(attrs.get("attr1"), String.class, "12"),
+                         Arguments.arguments(attrs.get("attr2"), Long.class, 12L),
+                         Arguments.arguments(attrs.get("attr3"), Double.class, 24.5D),
+                         Arguments.arguments(attrs.get("attr4"), Boolean.class, true),
+                         Arguments.arguments(attrs.get("attr5"), String.class, "anything"));
+    }
 
-            OpenTelemetryConfig openTelemetry = OpenTelemetryConfig.create(config.get("telemetry"));
 
-            assertThat("Global", openTelemetry.global(), is(true));
-            assertThat("Enabled", openTelemetry.enabled(), is(true));
-        }
 }
