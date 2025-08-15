@@ -16,14 +16,17 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import io.helidon.common.config.Config;
-
 /**
  * Types of OpenTelemetry span exporters supported via Helidon {@code tracing} configuration.
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
  */
-enum ExporterType {
+public enum ExporterType {
+
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
 
     /**
      * OpenTelemetry Protocol {@link io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter} and
@@ -46,15 +49,6 @@ enum ExporterType {
      */
     LOGGING_OTLP;
 
-    static final String DEFAULT_NAME = "OTLP";
     static final ExporterType DEFAULT = OTLP;
 
-    // This is easier than for some other enums because the OTel-friendly names happen to be just the enum values in lower case.
-    static ExporterType from(String value) {
-        return ExporterType.valueOf(value.toUpperCase());
-    }
-
-    static ExporterType from(Config config) {
-        return from(config.asString().orElseThrow());
-    }
 }

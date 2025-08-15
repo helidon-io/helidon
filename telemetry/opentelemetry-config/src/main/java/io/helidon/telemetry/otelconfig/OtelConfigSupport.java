@@ -98,13 +98,13 @@ class OtelConfigSupport {
         return switch (samplerConfig.type()) {
             case SamplerType.ALWAYS_OFF -> Sampler.alwaysOff();
             case SamplerType.ALWAYS_ON -> Sampler.alwaysOn();
-            case SamplerType.PARENT_BASED_ALWAYS_OFF -> Sampler.parentBased(Sampler.alwaysOff());
-            case SamplerType.PARENT_BASED_ALWAYS_ON -> Sampler.parentBased(Sampler.alwaysOn());
-            case SamplerType.PARENT_BASED_TRACE_ID_RATIO -> Sampler.parentBased(
+            case SamplerType.PARENTBASED_ALWAYS_OFF -> Sampler.parentBased(Sampler.alwaysOff());
+            case SamplerType.PARENTBASED_ALWAYS_ON -> Sampler.parentBased(Sampler.alwaysOn());
+            case SamplerType.PARENTBASED_TRACEIDRATIO -> Sampler.parentBased(
                     Sampler.traceIdRatioBased(samplerConfig.param()
                                                       .map(Number::doubleValue)
                                                       .orElseThrow()));
-            case SamplerType.TRACE_ID_RATIO -> Sampler.traceIdRatioBased(samplerConfig.param()
+            case SamplerType.TRACEIDRATIO -> Sampler.traceIdRatioBased(samplerConfig.param()
                                                                                  .map(Number::doubleValue)
                                                                                  .orElseThrow());
         };

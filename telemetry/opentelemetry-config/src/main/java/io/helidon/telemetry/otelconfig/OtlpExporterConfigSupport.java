@@ -47,11 +47,6 @@ class OtlpExporterConfigSupport {
         }
 
         @Prototype.FactoryMethod
-        static CompressionType createCompression(Config config) {
-            return CompressionType.from(config);
-        }
-
-        @Prototype.FactoryMethod
         static OtlpExporterProtocolType createProtocol(Config config) {
             return OtlpExporterProtocolType.from(config);
         }
@@ -82,7 +77,7 @@ class OtlpExporterConfigSupport {
 
             var zipkinConfig = ZipkinExporterConfig.create(config);
 
-            zipkinConfig.compression().map(CompressionType::value).ifPresent(builder::setCompression);
+            zipkinConfig.compression().map(CompressionType::lowerCase).ifPresent(builder::setCompression);
             zipkinConfig.endpoint().map(URI::toASCIIString).ifPresent(builder::setEndpoint);
             zipkinConfig.timeout().ifPresent(builder::setReadTimeout);
             zipkinConfig.sender().ifPresent(builder::setSender);
@@ -136,7 +131,7 @@ class OtlpExporterConfigSupport {
                           Consumer<MeterProvider> doMeterProvider) {
 
             target.compression()
-                    .map(CompressionType::value)
+                    .map(CompressionType::lowerCase)
                     .ifPresent(doCompression);
 
             target.endpoint().map(URI::toASCIIString).ifPresent(doEndpoint);

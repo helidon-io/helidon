@@ -23,6 +23,7 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import io.opentelemetry.api.OpenTelemetry;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
+@Testing.Test
 class TestServiceBootstrap {
 
     @Test

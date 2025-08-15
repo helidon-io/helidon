@@ -86,7 +86,7 @@ final class OpenTelemetryConfigSupport {
 
         private CustomMethods() {
         }
-        
+
         /**
          * Converts a config node for propagators into a list of {@link io.opentelemetry.context.propagation.TextMapPropagator}.
          * <p>

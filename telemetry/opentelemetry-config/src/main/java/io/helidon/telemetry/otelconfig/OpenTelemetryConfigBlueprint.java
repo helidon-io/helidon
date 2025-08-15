@@ -71,7 +71,7 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      */
     @Option.Configured
     @Option.Singular
-    @Option.DefaultCode("io.helidon.telemetry.otelconfig.ContextPropagationType.DEFAULT_PROPAGATORS")
+    @Option.DefaultCode("new java.util.ArrayList<>(io.helidon.telemetry.otelconfig.ContextPropagationType.DEFAULT_PROPAGATORS)")
     List<TextMapPropagator> propagators();
 
     /**

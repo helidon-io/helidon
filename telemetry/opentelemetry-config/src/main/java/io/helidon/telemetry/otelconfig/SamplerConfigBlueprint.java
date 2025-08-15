@@ -26,7 +26,6 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint
 @Prototype.Configured
-@Prototype.CustomMethods(SamplerConfigSupport.CustomMethods.class)
 interface SamplerConfigBlueprint {
 
     /**
@@ -35,7 +34,7 @@ interface SamplerConfigBlueprint {
      * @return sampler type
      */
     @Option.Configured
-    @Option.Default(SamplerType.DEFAULT_NAME)
+    @Option.Default("DEFAULT")
     SamplerType type();
 
     /**

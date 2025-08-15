@@ -23,7 +23,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Name("Telemetry")
 @Features.Description("Support for Telemetry")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
-@Features.Path({"Telemetry"})
+@Features.Path({"Telemetry/OpenTelemetry/Config"})
 @Features.Incubating
 module io.helidon.telemetry.otelconfig {
 
@@ -34,10 +34,6 @@ module io.helidon.telemetry.otelconfig {
 
     requires io.opentelemetry.api;
     requires io.opentelemetry.context;
-    requires io.opentelemetry.exporter.logging;
-    requires io.opentelemetry.exporter.logging.otlp;
-    requires io.opentelemetry.exporter.otlp;
-    requires io.opentelemetry.exporter.zipkin;
     requires io.opentelemetry.extension.trace.propagation;
     requires io.opentelemetry.sdk;
     requires io.opentelemetry.sdk.common;
@@ -48,5 +44,15 @@ module io.helidon.telemetry.otelconfig {
     requires zipkin2.reporter;
 
     requires static io.helidon.common.features.api;
+
+    /*
+    For conditionally-present exporter types.
+     */
+    requires static io.opentelemetry.exporter.logging;
+    requires static io.opentelemetry.exporter.logging.otlp;
+    requires static io.opentelemetry.exporter.otlp;
+    requires static io.opentelemetry.exporter.zipkin;
+
+    exports io.helidon.telemetry.otelconfig;
 
 }
