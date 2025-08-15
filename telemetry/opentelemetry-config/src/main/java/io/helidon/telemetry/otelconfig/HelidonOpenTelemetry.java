@@ -16,42 +16,21 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.function.Consumer;
-
-import io.helidon.builder.api.RuntimeType;
-
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
- * Helidon management of OpenTelemetry.
+ * Public access to OpenTelemetry as managed via Helidon config and builders.
  */
-@RuntimeType.PrototypedBy(OpenTelemetryConfig.class)
-public class HelidonOpenTelemetry implements RuntimeType.Api<OpenTelemetryConfig> {
+public interface HelidonOpenTelemetry {
 
-    static final String TYPE = "otel";
+    /**
+     * Top-level config key for telemetry settings.
+     */
+    String CONFIG_KEY = "telemetry";
 
-    private static final System.Logger LOGGER = System.getLogger(OpenTelemetry.class.getName());
-    private final OpenTelemetryConfig config;
-
-    HelidonOpenTelemetry(OpenTelemetryConfig config) {
-        this.config = config;
-    }
-
-    static OpenTelemetryConfig.Builder builder() {
-        return OpenTelemetryConfig.builder();
-    }
-
-    static HelidonOpenTelemetry create(OpenTelemetryConfig config) {
-        return new HelidonOpenTelemetry(config);
-    }
-
-    static HelidonOpenTelemetry create(Consumer<OpenTelemetryConfig.Builder> consumer) {
-        return builder().update(consumer).build();
-    }
-
-    @Override
-    public OpenTelemetryConfig prototype() {
-        return config;
-    }
-
+    /**
+     * Returns the {@link io.opentelemetry.api.OpenTelemetry} instance managed by Helidon.
+     * @return the OpenTelemetry instance
+     */
+    OpenTelemetry openTelemetry();
 }

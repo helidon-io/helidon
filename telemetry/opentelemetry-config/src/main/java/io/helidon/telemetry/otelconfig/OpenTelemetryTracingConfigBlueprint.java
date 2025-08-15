@@ -80,7 +80,7 @@ interface OpenTelemetryTracingConfigBlueprint {
     Map<String, SpanExporter> exporters();
 
     /**
-     * String attributes
+     * String attributes.
      *
      * @return string attributes
      */
