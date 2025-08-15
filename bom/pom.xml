@@ -1697,6 +1697,11 @@
                 <artifactId>helidon-discovery</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.discovery.providers</groupId>
+                <artifactId>helidon-discovery-providers-eureka</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Metadata -->
             <dependency>

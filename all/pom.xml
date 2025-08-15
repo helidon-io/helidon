@@ -1281,6 +1281,10 @@
             <groupId>io.helidon.discovery</groupId>
             <artifactId>helidon-discovery</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.discovery.providers</groupId>
+            <artifactId>helidon-discovery-providers-eureka</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
