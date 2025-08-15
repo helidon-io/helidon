@@ -289,6 +289,12 @@ public interface ChatAiService {
 
 NOTE: There is a possibility to switch off automatic discovery by using `@Ai.Service(autodicovery=false)`. In this case the service components are not discovered automatically and users must add components manually using annotations specified above. `@ChatModel` or `@StreamingChatModel` annotations are required.
 
+Since `Ai.ToolProvider` and `Ai.McpClients` are mutually exclusive, some clarification is needed regarding their functionality. Assume that automatic discovery is set to true in this context:
+
+* If neither annotation is present, a `ToolProvider` will be automatically discovered from the service registry.
+* If the `Ai.McpClients` annotation is present, corresponding MCP client services will be discovered, and no `ToolProvider` will be discovered.
+* If both annotations are present, an exception will be thrown.
+
 === Tools (Callback Functions)
 
 In LangChain4J, tools are callback functions that the language model can invoke during a conversation to perform specific tasks, retrieve information, or execute external logic. These tools extend the model's capabilities beyond simple text generation, allowing it to dynamically interact with external systems. For instance, a tool might query a database, call an external API, or perform calculations. Based on user input, the model can decide to call a tool, interpret its response, and incorporate it into the conversation for a more context-aware and multi-step interaction.

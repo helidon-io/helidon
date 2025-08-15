@@ -249,6 +249,7 @@ public final class Ai {
     /**
      * Annotation to specify an MCP Clients to be used in McpToolProvider.
      * This is mutually exclusive with the {@link ToolProvider}.
+     * It requires to have {@code dev.langchain4j:langchain4j-mcp} dependency added on the classpath for it to work properly.
      */
     @Target(TYPE)
     @Retention(RUNTIME)
@@ -258,7 +259,7 @@ public final class Ai {
          *
          * @return client names
          */
-        String[] value();
+        String[] value() default {};
     }
 
     /**

@@ -62,6 +62,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mcp</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

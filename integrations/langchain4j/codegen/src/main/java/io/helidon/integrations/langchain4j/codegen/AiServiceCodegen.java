@@ -167,27 +167,26 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(");");
     }
 
-    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, boolean autoDiscovery) {
-        if (aiInterface.hasAnnotation(AI_TOOL_PROVIDER)) {
-            //If there is a ToolProvider specified, we should use that
-            return;
+    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, CodegenContext ctx) {
+        Optional<TypeInfo> mcpClientTypeInfo = ctx.typeInfo(LC_MCP_CLIENT);
+        if (mcpClientTypeInfo.isEmpty()) {
+            //McpClients annotation present. Dependency needs to be added.
+            throw new CodegenException("McpClients annotation is being used, "
+                                               + "but the required LC4J MCP dependency is missing. "
+                                               + "Please add: dev.langchain4j:langchain4j-mcp");
         }
-        Optional<List<String>> mcpClients = aiInterface.findAnnotation(AI_MCP_CLIENTS)
-                .flatMap(Annotation::stringValues);
+        List<String> mcpClients = aiInterface.findAnnotation(AI_MCP_CLIENTS)
+                .flatMap(Annotation::stringValues)
+                .orElseGet(List::of);
         List<String> mcpClientParameters = new ArrayList<>();
         if (mcpClients.isEmpty()) {
-            if (!autoDiscovery) {
-                // no autodiscovery
-                return;
-            }
             builder.addParameter(tools -> tools
                     .name("mcpClients")
                     .type(listType(LC_MCP_CLIENT)));
             mcpClientParameters.add("mcpClients");
         } else {
-            List<String> toolTypes = mcpClients.get();
             int index = 1;
-            for (String clientName : toolTypes) {
+            for (String clientName : mcpClients) {
                 String toolParameter = "mcpClient_" + index++;
                 builder.addParameter(param -> param
                         .name(toolParameter)
@@ -289,13 +288,7 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_CONTENT_RETRIEVER,
                                         LC_CONTENT_RETRIEVER,
                                         "contentRetriever");
-                    aiServicesParameter(it,
-                                        autoDiscovery,
-                                        aiInterface,
-                                        AI_TOOL_PROVIDER,
-                                        LC_TOOL_PROVIDER,
-                                        "toolProvider");
-                    aiMcpClientParameter(it, aiInterface, autoDiscovery);
+                    aiMcpClientAndToolProvider(it, aiInterface, autoDiscovery, ctx);
                     aiServicesToolParameters(it,
                                              aiInterface);
                 })
@@ -313,6 +306,25 @@ class AiServiceCodegen implements CodegenExtension {
         );
 
         roundCtx.addGeneratedType(generatedType, classModel, aiInterfaceType, aiInterface.originatingElementValue());
+    }
+
+    private void aiMcpClientAndToolProvider(Constructor.Builder it,
+                                            TypeInfo aiInterface,
+                                            boolean autoDiscovery,
+                                            CodegenContext ctx) {
+        if (aiInterface.hasAnnotation(AI_TOOL_PROVIDER) && aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
+            throw new CodegenException("McpClients and ToolProvider annotations cannot be used at the same time. "
+                                               + "Interface: " + aiInterface);
+        } else if (aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
+            aiMcpClientParameter(it, aiInterface, ctx);
+        } else {
+            aiServicesParameter(it,
+                                autoDiscovery,
+                                aiInterface,
+                                AI_TOOL_PROVIDER,
+                                LC_TOOL_PROVIDER,
+                                "toolProvider");
+        }
     }
 
     private void aiServicesChatMemoryConstructor(Constructor.Builder ctr, boolean autoDiscovery, TypeInfo aiInterface) {
