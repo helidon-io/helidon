@@ -238,6 +238,17 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 
+<!-- False Positive.
+     jgit-6.10.1 has the fix for CVE-2025-4949. See
+     https://projects.eclipse.org/projects/technology.jgit/releases/6.10.1
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: org.eclipse.jgit-6.10.1.202505221210-r.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
+   <cve>CVE-2025-4949</cve>
+</suppress>
 
 
 
