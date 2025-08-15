@@ -33,13 +33,4 @@
         <module>opentelemetry-config</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
-
 </project>
