@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 /**
  * Config provider represents initialization context used to create new instance of Config again and again.
  */
+@SuppressWarnings("removal")
 class ProviderImpl implements Config.Context {
 
     private static final System.Logger LOGGER = System.getLogger(ConfigFactory.class.getName());

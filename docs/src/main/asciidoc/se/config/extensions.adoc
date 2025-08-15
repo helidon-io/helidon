@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuring an Extension, Configuring an Extension>>
 - <<Config-SPI-ConfigSource, Config-SPI-ConfigSource>>
 - <<Config-SPI-ConfigParser, Config-SPI-ConfigParser>>
-- <<Config-SPI-OverrideSource, Config-SPI-OverrideSource>>
 - <<Config-SPI-ConfigFilter, Config-SPI-ConfigFilter>>
 - <<Config-SPI-ConfigMapperProvider, Config-SPI-ConfigMapperProvider>>
 - <<Change Support SPI, Change Support SPI>>
@@ -56,8 +55,6 @@ Each config extension implements one of the interfaces defined in the Configurat
 //represents the loaded and parsed configuration.
 //`ConfigParser`:: Translates configuration content in a given format into the
 //corresponding internal config data structures.
-//`OverrideSource`:: Provides key/value pairs which override config values loaded
-//from any `ConfigSource`, given the key but _ignoring_ the original value.
 //`ConfigFilter`:: Transforms config `String` values returned from any value-type
 //`Config` node, given the key _and_ the original value.
 //`ConfigMapperProvider`:: Provides one or more ``ConfigMapper``s each of which
@@ -66,7 +63,6 @@ Each config extension implements one of the interfaces defined in the Configurat
 //when the data underlying a `ConfigSource` or `OverrideSource` has changed.
 * `ConfigSource` - Loads raw configuration data from a given type of source and delegates to a `ConfigParser`, producing the in-memory data structure which represents the loaded and parsed configuration.
 * `ConfigParser` - Translates configuration content in a given format into the corresponding internal config data structures.
-* `OverrideSource` - Provides key/value pairs which override config values loaded from any `ConfigSource`, given the key and _ignoring_ the original value.
 * `ConfigFilter` - Transforms config `String` values returned from any value-type
 `Config` node, given the key _and_ the original value.
 * `ConfigMapperProvider` - Provides one or more ``ConfigMapper``s each of which converts a `Config` object tree to a Java type specific to the application.
@@ -83,7 +79,6 @@ Service providers:
 * `ConfigParser` - support for config parsers, automatically discovered by the config system
 * `ConfigSourceProvider` - support for named config sources, configurable through profiles
 * `ChangeWatcherProvider` - support for named change watchers, configurable through profiles
-* `OverrideSourceProvider` - support for named override sources, configurable through profiles
 * `PollingStrategyProvider` - support for named polling strategies, configurable through profiles
 * `RetryPolicyProvider` - support for retry policies, configurable through profiles
 
@@ -207,28 +202,6 @@ See <<priority-info, About Priority>>.
 ----
 my.module.MyConfigParser
 ----
-
-== OverrideSource SPI [[Config-SPI-OverrideSource]]
-
-When the application retrieves a configuration value the config system first uses
-the relevant config sources and filters. It then applies any _overrides_ the
-application has provided. Each override has:
-
-* a `Predicate<Config.Key>` (a boolean-valued function that operates on
-the config key), and
-* a replacement, _overriding_, `String` value the config system should use if the predicate evaluates to true.
-
-To furnish overrides to the config system, implement the
-link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of
- those implementations to the config builder's
-link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`] method.
-The config system will apply the overrides returned from each
-`OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
-
-To support custom override sources in config profiles, also implement the
-link:{config-javadoc-base-url}/io/helidon/config/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
-
-image::config/spi-OverrideSource.png[title="OverrideSource SPI",align="center"]
 
 Note that override sources can also implement `PollableSource`, and `WatchableSource` to add change support.
 
