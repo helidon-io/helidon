@@ -20,7 +20,7 @@
     <parent>
         <artifactId>helidon-logging-project</artifactId>
         <groupId>io.helidon.logging</groupId>
-        <version>3.2.14-SNAPSHOT</version>
+        <version>3.2.14</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
