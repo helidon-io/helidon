@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
@@ -36,7 +37,17 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
 
     @Override
     public OpenTelemetry get() {
-        return HelidonOpenTelemetry.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
-                .openTelemetry();
+        try {
+            return HelidonOpenTelemetry.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
+                    .openTelemetry();
+        } catch (Exception e) {
+            /*
+            The configuration set "global" to "true" and so HelidonOpenTelemetry tried to tell OTel to use the
+            configured OpenTelemetry instance as the global one. The exception probably is because the OTel global instance
+            was already set. In that case, register the current OTel global instance in our registry so code
+            that retrieves it from our registry will use the actual OTel global instance.
+             */
+            return GlobalOpenTelemetry.get();
+        }
     }
 }
