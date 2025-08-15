@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 
@@ -78,8 +79,16 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      *
      * @return tracing settings
      */
+    @Option.Access("")
     @Option.Configured("signals.tracing")
-    Optional<OpenTelemetryTracingConfig> tracing();
+    Optional<OpenTelemetryTracingConfig> tracingConfig();
+
+    /**
+     * Sets the tracer provider that OpenTelemetry should use.
+     *
+     * @return OpenTelemetry tracer provider
+     */
+    Optional<TracerProvider> tracerProvider();
 
     /**
      * The {@link io.opentelemetry.api.OpenTelemetry} instance to use for telemetry.

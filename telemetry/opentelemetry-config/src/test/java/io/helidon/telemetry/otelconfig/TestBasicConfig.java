@@ -69,11 +69,11 @@ class TestBasicConfig {
 
         OpenTelemetryConfig openTelemetryConfig = OpenTelemetryConfig.create(config.get("telemetry"));
 
-        OpenTelemetryTracingConfig openTelemetryTracing = openTelemetryConfig.tracing().orElseThrow();
-        assertThat("Helidon OTel tracing", openTelemetryTracing, is(notNullValue()));
+        OpenTelemetryTracingConfig openTelemetryTracingConfig = openTelemetryConfig.tracingConfig().orElseThrow();
+        assertThat("Helidon OTel tracing", openTelemetryTracingConfig, is(notNullValue()));
 
         assertThat("Exporters",
-                   openTelemetryTracing.exporters().values(),
+                   openTelemetryTracingConfig.exporters().values(),
                    allOf(hasItems(instanceOf(OtlpHttpSpanExporter.class),
                                   instanceOf(ZipkinSpanExporter.class)),
                          iterableWithSize(2)));

@@ -33,28 +33,28 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 class OpenTelemetryConfigSupport {
 
     private static OpenTelemetry openTelemetry(OpenTelemetryConfig.BuilderBase<?, ?> target) {
-        var builder = OpenTelemetrySdk.builder();
+        var openTelemetrySdkBuilder = OpenTelemetrySdk.builder();
 
         if (!target.propagators().isEmpty()) {
-            builder.setPropagators(ContextPropagators.create(
+            openTelemetrySdkBuilder.setPropagators(ContextPropagators.create(
                     TextMapPropagator.composite(target.propagators())));
         }
 
-        if (target.tracing().isPresent()) {
-            var tracingConfig = target.tracing().get();
+        if (target.tracingConfig().isPresent()) {
+            var tracingConfig = target.tracingConfig().get();
             var tracingBuilderInfo = tracingConfig.tracingBuilderInfo();
-            var tracingBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
+            var sdkTracerProviderBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
 
             var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
             attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
 
             var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
-            tracingBuilder.setResource(resource);
+            sdkTracerProviderBuilder.setResource(resource);
 
-            builder.setTracerProvider(tracingBuilder.build());
+            openTelemetrySdkBuilder.setTracerProvider(sdkTracerProviderBuilder.build());
         }
 
-        var sdk = builder.build();
+        var sdk = openTelemetrySdkBuilder.build();
         target.openTelemetrySdk(sdk);
         return sdk;
     }
@@ -103,7 +103,7 @@ class OpenTelemetryConfigSupport {
         }
 
         @Prototype.FactoryMethod
-        static OpenTelemetryTracingConfig createTracing(Config config) {
+        static OpenTelemetryTracingConfig createTracingConfig(Config config) {
             return OpenTelemetryTracingConfig.create(config);
         }
 
