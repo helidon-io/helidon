@@ -34,7 +34,7 @@ enum ExporterType {
     /**
      * Zipkin {@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}.
      */
-    ZIPKIN("http", 9411, "api/v2/spans"),
+    ZIPKIN,
 
     /**
      * Console ({@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
@@ -48,32 +48,6 @@ enum ExporterType {
 
     static final String DEFAULT_NAME = "OTLP";
     static final ExporterType DEFAULT = OTLP;
-
-    private final String defaultProtocol;
-    private final int defaultPort;
-    private final String defaultPath;
-
-    ExporterType(String defaultProtocol, int defaultPort, String defaultPath) {
-        this.defaultProtocol = defaultProtocol;
-        this.defaultPort = defaultPort;
-        this.defaultPath = defaultPath;
-    }
-
-    ExporterType() {
-        this(null, 0, null);
-    }
-
-    String defaultProtocol() {
-        return defaultProtocol;
-    }
-
-    Integer defaultPort() {
-        return defaultPort;
-    }
-
-    String defaultPath() {
-        return defaultPath;
-    }
 
     // This is easier than for some other enums because the OTel-friendly names happen to be just the enum values in lower case.
     static ExporterType from(String value) {
