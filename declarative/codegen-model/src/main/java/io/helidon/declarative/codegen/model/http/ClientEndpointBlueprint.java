@@ -30,7 +30,7 @@ interface ClientEndpointBlueprint extends RestEndpointBlueprint {
      *
      * @return URI if configured
      */
-    Optional<String> uri();
+    String uri();
 
     /**
      * Configuration key to use at runtime.

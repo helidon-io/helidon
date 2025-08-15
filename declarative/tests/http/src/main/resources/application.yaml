@@ -21,10 +21,5 @@ server:
   port: 8080
   host: 0.0.0.0
 
-io:
-  helidon:
-    declarative:
-      tests:
-        http:
-          GreetServiceClient:
-            uri: "http://localhost:${test.server.port}"
+greet-service.client:
+  uri: "http://localhost:${test.server.port}"

@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.Weight;
 import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.types.TypeName;
@@ -70,6 +71,7 @@ class DeclarativeCodegenTypesTest {
         checkField(toCheck, checked, fields, "THROWABLE", Throwable.class);
         checkField(toCheck, checked, fields, "EXECUTOR_SERVICE", ExecutorService.class);
         checkField(toCheck, checked, fields, "SET_OF_THROWABLES", Set.class);
+        checkField(toCheck, checked, fields, "CONFIG_BUILDER_SUPPORT", ConfigBuilderSupport.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,
