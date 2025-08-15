@@ -20,9 +20,18 @@ import java.util.Arrays;
 
 import io.helidon.common.config.Config;
 
-enum OtlpExporterProtocolType {
+/**
+ * Legal values for OTLP exporters.
+ */
+public enum OtlpExporterProtocolType {
+    /**
+     * http/proto protocol type.
+     */
     HTTP_PROTO("http/proto"),
 
+    /**
+     * grpc protocol type.
+     */
     GRPC("grpc");
 
     private final String protocol;
@@ -33,7 +42,12 @@ enum OtlpExporterProtocolType {
         this.protocol = protocol;
     }
 
-
+    /**
+     * Converts from a string that should match the protocol name to the corresponding protocol type enum.
+     *
+     * @param protocol string to match
+     * @return matching type
+     */
     static OtlpExporterProtocolType from(String protocol) {
         for (OtlpExporterProtocolType value : OtlpExporterProtocolType.values()) {
             if (value.protocol.equals(protocol) || value.name().equals(protocol)) {
@@ -44,6 +58,12 @@ enum OtlpExporterProtocolType {
                                                    + Arrays.toString(OtlpExporterProtocolType.values()));
     }
 
+    /**
+     * Maps a config node's string value to the corresponding type.
+     *
+     * @param config config node
+     * @return matching type
+     */
     static OtlpExporterProtocolType from(Config config) {
         return from(config.asString().get());
     }
