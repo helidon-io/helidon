@@ -72,12 +72,18 @@ interface OpenTelemetryTracingConfigBlueprint {
 
     /**
      * Span exporters.
+     * <p>
+     * The key in the map is a unique name--of the user's choice--for the exporter config settings.
+     * The {@link SpanProcessorConfig#exporters()} config setting for a processor config specifies zero
+     * or more of these names to associate the exporters built from the exporter configs with the processor
+     * built from the processor config.
      *
      * @return span exporters
      */
-    @Option.Configured
+    @Option.Access("")
+    @Option.Configured("exporters")
     @Option.Singular
-    Map<String, SpanExporter> exporters();
+    Map<String, SpanExporter> exporterConfigs();
 
     /**
      * String attributes.

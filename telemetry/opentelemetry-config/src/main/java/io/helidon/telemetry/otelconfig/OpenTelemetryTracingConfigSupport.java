@@ -52,7 +52,7 @@ class OpenTelemetryTracingConfigSupport {
             // Add configured processors to any the app added programmatically.
             target.addProcessors(target.processorConfigs().stream()
                                          .map(processorConfig -> OtelConfigSupport.createSpanProcessor(processorConfig,
-                                                                                                       target.exporters(),
+                                                                                                       target.exporterConfigs(),
                                                                                                        errorsCollector))
                                          .toList());
 
@@ -70,6 +70,9 @@ class OpenTelemetryTracingConfigSupport {
 
     static class CustomMethods {
 
+        private CustomMethods() {
+        }
+
         @Prototype.FactoryMethod
         static SpanProcessorConfig createProcessorConfigs(Config config) {
             return OtelConfigSupport.createProcessorConfig(config);
@@ -86,7 +89,7 @@ class OpenTelemetryTracingConfigSupport {
         }
 
         @Prototype.FactoryMethod
-        static SpanExporter createExporters(Config config) {
+        static SpanExporter createExporterConfigs(Config config) {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
         }
 

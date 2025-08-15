@@ -17,7 +17,6 @@
 package io.helidon.telemetry.otelconfig;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -73,7 +72,7 @@ class TestBasicConfig {
         assertThat("Helidon OTel tracing", openTelemetryTracingConfig, is(notNullValue()));
 
         assertThat("Exporters",
-                   openTelemetryTracingConfig.exporters().values(),
+                   openTelemetryTracingConfig.exporterConfigs().values(),
                    allOf(hasItems(instanceOf(OtlpHttpSpanExporter.class),
                                   instanceOf(ZipkinSpanExporter.class)),
                          iterableWithSize(2)));
