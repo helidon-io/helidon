@@ -47,14 +47,35 @@ public interface LimitOutcome {
     enum Disposition {
 
         /**
-         * Indicates that the limit algorithm accepted the work item.
+         * Indicates that the limit algorithm accepted the work item; the outcome instance <em>does not</em> implement
+         * the {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred} interface.
          */
         ACCEPTED,
 
         /**
-         * Indicates that the limit algorithm rejected the work item.
+         * Indicates that the limit algorithm rejected the work item; the outcome instance also implements
+         * the {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred} interface.
          */
         REJECTED
+    }
+
+    /**
+     * Describes when the limit algorithm decided on the outcome relative to the receipt of the work item.
+     */
+    enum Timing {
+
+        /**
+         * The outcome was an immediate decision by the limit algorithm as soon as the work item arrived; the work
+         * item was never on the virtual queue, and the outcome instance does <em>not</em> implement
+         * {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred}.
+         */
+        IMMEDIATE,
+
+        /**
+         * The outcome was a deferred decided, made only after the work item was on the virtual queue; the outcome instance
+         * <em>does</em> implement {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred}.
+         */
+        DEFERRED
     }
 
     /**
@@ -77,6 +98,14 @@ public interface LimitOutcome {
      * @return work item's disposition
      */
     Disposition disposition();
+
+    /**
+     * Returns the {@link io.helidon.common.concurrency.limits.LimitOutcome.Timing} of the decision regarding the
+     * work item.
+     *
+     * @return timing of the limit algorithm's decision
+     */
+    Timing timing();
 
     /**
      * Information about a deferred work item's processing.

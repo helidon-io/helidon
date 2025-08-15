@@ -19,6 +19,13 @@ package io.helidon.common.concurrency.limits;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * implementation of {@link io.helidon.common.concurrency.limits.LimitOutcome}.
+ * <p>
+ * This is not only the superclass for more specialized implementations, but it is also the actual implementation
+ * for an immediate rejected outcome: there are no wait start/wait end details (because the decision was immediate)
+ * and no execution result (because the work item was rejected and therefore never executed).
+ */
 class LimitOutcomeImpl implements LimitOutcome {
 
     private final String originName;
@@ -115,6 +122,14 @@ class LimitOutcomeImpl implements LimitOutcome {
         return disposition;
     }
 
+    @Override
+    public Timing timing() {
+        /*
+        Overridden by Deferred (the implementation) in this same class.
+         */
+        return Timing.IMMEDIATE;
+    }
+
     private static void processAccepted(Supplier<Accepted> acceptedFactory,
                                         LimitAlgorithm.Token token,
                                         Consumer<LimitOutcome> limitOutcomeConsumer) {
@@ -164,6 +179,11 @@ class LimitOutcomeImpl implements LimitOutcome {
         @Override
         public long waitEnd() {
             return waitEnd;
+        }
+
+        @Override
+        public final Timing timing() {
+            return Timing.DEFERRED;
         }
     }
 
