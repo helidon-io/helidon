@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -611,28 +611,6 @@ class BuilderImpl implements Config.Builder {
 
             return result;
         }
-    }
-
-    /**
-     * Holds single instance of empty Config.
-     */
-    static final class EmptyConfigHolder {
-        private EmptyConfigHolder() {
-            throw new AssertionError("Instantiation not allowed.");
-        }
-
-        static final Config EMPTY = new BuilderImpl()
-                // the empty config source is needed, so we do not look for meta config or default
-                // config sources
-                .sources(ConfigSources.empty())
-                .overrides(OverrideSources.empty())
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableParserServices()
-                .disableFilterServices()
-                .changesExecutor(command -> {})
-                .build();
-
     }
 
     static final class GlobalConfigHolder {

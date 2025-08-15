@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testAmbiguousConstructors() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
         ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousConstructorsBean.class).get();
         });
@@ -167,7 +167,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testAmbiguousFromMethods() {
-        Config config = Config.empty();
+        Config config = Config.just(ConfigSources.create(Map.of()));
 
         ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousFromMethodsBean.class).get();

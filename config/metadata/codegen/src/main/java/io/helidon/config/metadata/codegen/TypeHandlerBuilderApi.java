@@ -29,7 +29,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.ElementKind.ENUM;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.BLUEPRINT;
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.COMMON_CONFIG;
+import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIGURED;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_CONFIGURED;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.PROTOTYPE_FACTORY;
@@ -77,7 +77,7 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
 
         addInterfaces(type, blueprint, CONFIGURED);
 
-        type.addProducer(new ConfiguredType.ProducerMethod(true, prototype, "create", List.of(COMMON_CONFIG)));
+        type.addProducer(new ConfiguredType.ProducerMethod(true, prototype, "create", List.of(CONFIG)));
         type.addProducer(new ConfiguredType.ProducerMethod(true, prototype, "builder", List.of()));
 
         if (!targetType.equals(prototype)) {
@@ -145,7 +145,7 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                 .map(TypeInfo::typeName)
                 .filter(it -> PROTOTYPE_FACTORY.equals(it.genericTypeName()))
                 .filter(it -> it.typeArguments().size() == 1)
-                .map(it -> it.typeArguments().get(0))
+                .map(it -> it.typeArguments().getFirst())
                 .findAny()
                 .orElse(prototype);
     }

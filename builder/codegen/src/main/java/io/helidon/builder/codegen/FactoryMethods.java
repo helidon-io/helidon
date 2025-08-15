@@ -29,6 +29,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_API;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD;
 import static io.helidon.builder.codegen.Types.RUNTIME_API;
@@ -164,8 +165,11 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
 
         // check the blueprint itself, and then check the custom methods type
         Optional<TypeName> returnType = findFactoryMethodByParamType(blueprint,
-                                                                     COMMON_CONFIG,
-                                                                     methodName);
+                                                                     CONFIG,
+                                                                     methodName)
+                .or(() -> findFactoryMethodByParamType(blueprint,
+                                                       COMMON_CONFIG,
+                                                       methodName));
 
         TypeName typeWithFactoryMethod = blueprint.typeName();
 
@@ -178,8 +182,11 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     TypeInfo customMethods = typeInfo.get();
                     typeWithFactoryMethod = customMethods.typeName();
                     returnType = findFactoryMethodByParamType(customMethods,
-                                                               COMMON_CONFIG,
-                                                               methodName);
+                                                               CONFIG,
+                                                               methodName)
+                            .or(() -> findFactoryMethodByParamType(customMethods,
+                                                                   COMMON_CONFIG,
+                                                                   methodName));
                 }
             }
         }
@@ -188,7 +195,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             return Optional.of(new FactoryMethod(typeWithFactoryMethod,
                                                  returnType.get(),
                                                  methodName,
-                                                 COMMON_CONFIG));
+                                                 CONFIG));
         }
 
         // there is no factory method on definition, let's check if the return type itself is a config object
@@ -206,13 +213,17 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             if (doesImplement(typeInfo, PROTOTYPE_API)) {
                 // it should have create(Config) with the correct typing
                 Optional<FactoryMethod> foundMethod = findMethod(
-                        new MethodSignature(typeInfo.typeName(), createMethod, List.of(COMMON_CONFIG)),
+                        new MethodSignature(typeInfo.typeName(), createMethod, List.of(CONFIG)),
                         typeInfo,
                         ElementInfoPredicates::isStatic)
+                        .or(() -> findMethod(
+                                new MethodSignature(typeInfo.typeName(), createMethod, List.of(COMMON_CONFIG)),
+                                typeInfo,
+                                ElementInfoPredicates::isStatic))
                         .map(it -> new FactoryMethod(typeInfo.typeName(),
                                                      typeInfo.typeName(),
                                                      createMethod,
-                                                     COMMON_CONFIG));
+                                                     CONFIG));
                 if (foundMethod.isPresent()) {
                     return foundMethod;
                 }
@@ -228,10 +239,14 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 TypeName candidateTypeName = typeInfo.typeName();
                 // we are now interested in a method with signature "static T create(Config)" where T is the type we are handling
                 Optional<FactoryMethod> foundMethod = findMethod(
-                        new MethodSignature(candidateTypeName, createMethod, List.of(COMMON_CONFIG)),
+                        new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG)),
                         typeInfo,
                         ElementInfoPredicates::isStatic)
-                        .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, COMMON_CONFIG));
+                        .or(() -> findMethod(
+                                new MethodSignature(candidateTypeName, createMethod, List.of(COMMON_CONFIG)),
+                                typeInfo,
+                                ElementInfoPredicates::isStatic))
+                        .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG));
                 if (foundMethod.isPresent()) {
                     return foundMethod;
                 }
@@ -243,11 +258,16 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
             // similar to above - but we first want to find the best candidate, this is a fallback
             TypeName candidateTypeName = typeInfo.typeName();
             Optional<FactoryMethod> foundMethod = findMethod(
-                    new MethodSignature(candidateTypeName, createMethod, List.of(COMMON_CONFIG)),
+                    new MethodSignature(candidateTypeName, createMethod, List.of(CONFIG)),
                     typeInfo,
                     ElementInfoPredicates::isStatic,
                     ElementInfoPredicates::isPublic)
-                    .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, COMMON_CONFIG));
+                    .or(() -> findMethod(
+                            new MethodSignature(candidateTypeName, createMethod, List.of(COMMON_CONFIG)),
+                            typeInfo,
+                            ElementInfoPredicates::isStatic,
+                            ElementInfoPredicates::isPublic))
+                    .map(it -> new FactoryMethod(candidateTypeName, candidateTypeName, createMethod, CONFIG));
             if (foundMethod.isPresent()) {
                 return foundMethod;
             }
@@ -259,7 +279,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         for (TypeName configObjectCandidate : configObjectCandidates) {
             if (configObjectCandidate.packageName().isEmpty()) {
                 // most likely a generated type that is created as part of this round, let's assume it is a config object
-                return Optional.of(new FactoryMethod(configObjectCandidate, configObjectCandidate, "create", COMMON_CONFIG));
+                return Optional.of(new FactoryMethod(configObjectCandidate,
+                                                     configObjectCandidate,
+                                                     "create",
+                                                     CONFIG));
             }
         }
 

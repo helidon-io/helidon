@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.common.config;
+package io.helidon.config;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

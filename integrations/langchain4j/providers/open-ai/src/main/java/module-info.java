@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Provides integration with OpenAi models.
@@ -33,7 +33,7 @@ module io.helidon.integrations.langchain4j.providers.openai {
 
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
-    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires org.apache.opennlp.tools;
     requires langchain4j.http.client;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.codegen.ConfiguredType.ProducerMethod;
 
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.COMMON_CONFIG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.META_CONFIGURED;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.META_OPTION;
@@ -206,8 +205,8 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                     validMethods.add(method);
                     List<TypedElementInfo> parameters = method.parameterArguments();
                     if (parameters.size() == 1) {
-                        TypeName paramType = parameters.get(0).typeName();
-                        if (paramType.equals(CONFIG) || paramType.equals(COMMON_CONFIG)) {
+                        TypeName paramType = parameters.getFirst().typeName();
+                        if (paramType.equals(CONFIG)) {
                             configCreator = method;
                         }
                     }
@@ -312,7 +311,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
             type.addProducer(new ProducerMethod(true,
                                                 targetTypeName,
                                                 "create",
-                                                List.of(COMMON_CONFIG)));
+                                                List.of(CONFIG)));
         }
 
         // find all public methods annotated with @ConfiguredOption

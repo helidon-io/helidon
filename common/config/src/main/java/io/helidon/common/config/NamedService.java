@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ package io.helidon.common.config;
 
 /**
  * To be used with {@link io.helidon.common.config.ConfiguredProvider}, each configured service may have a name.
+ *
+ * @deprecated this class will be moved to {@code helidon-config} module in Helidon 5
  */
+@Deprecated(since = "4.3.0")
 public interface NamedService {
     /**
      * Name of this implementation, as provided in {@link io.helidon.common.config.ConfiguredProvider#create(Config, String)}.

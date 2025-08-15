@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,12 @@
 package io.helidon.common.config;
 
 /**
- * Exception is thrown by {@link Config} implementations.
+ * Exception is thrown by {@link io.helidon.common.config.Config} implementations.
+ *
+ * @deprecated this class is no longer used, switch to {@code helidon-config} module with its own config exception class
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.3.0")
 public class ConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

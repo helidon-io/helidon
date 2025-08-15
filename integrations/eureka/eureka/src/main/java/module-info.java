@@ -34,7 +34,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.integrations.eureka {
 
     requires transitive io.helidon.builder.api;
-    requires io.helidon.common.config;
+    requires transitive io.helidon.config;
     requires io.helidon.service.registry;
     requires transitive io.helidon.webclient.http1;
     requires transitive io.helidon.webserver;
