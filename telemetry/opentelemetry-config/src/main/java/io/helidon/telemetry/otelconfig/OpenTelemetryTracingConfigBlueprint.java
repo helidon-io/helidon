@@ -86,31 +86,14 @@ interface OpenTelemetryTracingConfigBlueprint {
     Map<String, SpanExporter> exporterConfigs();
 
     /**
-     * String attributes.
+     * Any attributes, automatically converted to the correct attribute datatype accepted by
+     * OpenTelemetry ((boolean, double, long, or string).
      *
-     * @return string attributes
+     * @return attributes
      */
     @Option.Configured
     @Option.Singular
-    Map<String, String> attributes();
-
-    /**
-     * Numeric attributes.
-     *
-     * @return numeric attributes
-     */
-    @Option.Configured
-    @Option.Singular
-    Map<String, Number> numericAttributes();
-
-    /**
-     * Boolean attributes.
-     *
-     * @return boolean attributes
-     */
-    @Option.Configured
-    @Option.Singular
-    Map<String, Boolean> booleanAttributes();
+    Map<String, Object> attributes();
 
     /**
      * Used internally to share information with the parent prototype.
