@@ -150,6 +150,24 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <!--
+                            A transitive dependency required by module path, yet also used in test
+                            incorrectly reported as `Non-test scoped test only dependency`
+                             -->
+                            <ignoredDependencies>
+                                <dependency>io.helidon.config:helidon-config</dependency>
+                            </ignoredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
