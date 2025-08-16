@@ -66,6 +66,9 @@ public interface LimitAlgorithm {
      * Invoke a callable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
      * {@link io.helidon.common.concurrency.limits.LimitOutcome} resulting from applying the limit algorithm.
      * <p>
+     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
+     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
+     * <p>
      * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
      * <ul>
      * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
@@ -85,7 +88,9 @@ public interface LimitAlgorithm {
      */
     default <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws LimitException, Exception {
-        return invoke(callable);
+        var result = invoke(callable);
+        limitOutcomeConsumer.accept(LimitOutcomeImpl.UNKNOWN_OUTCOME);
+        return result;
     }
 
     /**
@@ -122,6 +127,9 @@ public interface LimitAlgorithm {
      * Invoke a runnable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the
      * {@link io.helidon.common.concurrency.limits.LimitOutcome} resulting from applying the limit algorithm.
      * <p>
+     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
+     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
+     * <p>
      * {@link io.helidon.common.concurrency.limits.Limit} implementor's notes:
      * <ul>
      * <li>Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
@@ -140,6 +148,7 @@ public interface LimitAlgorithm {
     default void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
             throws Exception {
         invoke(runnable);
+        limitOutcomeConsumer.accept(LimitOutcomeImpl.UNKNOWN_OUTCOME);
     }
 
     /**
@@ -173,18 +182,23 @@ public interface LimitAlgorithm {
      * {@code wait} is enabled, returning immediately otherwise. Concrete implementations should invoke the provided
      * {@code outcomeConsumer}.
      * <p>
+     * Note that custom implementations of this interface might not implement this method, in which case the caller's limit
+     * outcome consumer receives an "unknown" outcome. Clearly the algorithm made a decision, but does not expose it to callers.
+     * <p>
      * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
      * operations to release the token.
      * If the response is empty, the limit does not have an available token.
      *
      * @param wait                 whether to wait in the queue (if one is configured/available in the limit), or to
      *                             return immediately
-     * @param limitOutcomeConsumer consumer of contexts provided by limit algorithm listeners
+     * @param limitOutcomeConsumer consumer of outcomes provided by the limit algorithm
      * @return acquired token, or empty if there is no available token
      */
     default Optional<Token> tryAcquire(boolean wait,
                                        Consumer<LimitOutcome> limitOutcomeConsumer) {
-        return tryAcquire(wait);
+        var result = tryAcquire(wait);
+        limitOutcomeConsumer.accept(LimitOutcomeImpl.UNKNOWN_OUTCOME);
+        return result;
     }
 
     /**
