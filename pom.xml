@@ -244,6 +244,7 @@
         <module>discovery</module>
         <module>data</module>
         <module>transaction</module>
+        <module>telemetry</module>
     </modules>
 
     <build>
