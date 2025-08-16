@@ -32,6 +32,29 @@ class LimitOutcomeImpl implements LimitOutcome {
     private final String algorithmType;
     private final Disposition disposition;
 
+    static final LimitOutcome UNKNOWN_OUTCOME = new LimitOutcome() {
+
+        @Override
+        public String originName() {
+            return "unknown";
+        }
+
+        @Override
+        public String algorithmType() {
+            return "unknown";
+        }
+
+        @Override
+        public Disposition disposition() {
+            return Disposition.UNKNOWN;
+        }
+
+        @Override
+        public Timing timing() {
+            return Timing.UNKNOWN;
+        }
+    };
+
     LimitOutcomeImpl(String originName, String algorithmType, Disposition disposition) {
         this.originName = originName;
         this.algorithmType = algorithmType;

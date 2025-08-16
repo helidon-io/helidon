@@ -56,7 +56,16 @@ public interface LimitOutcome {
          * Indicates that the limit algorithm rejected the work item; the outcome instance also implements
          * the {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred} interface.
          */
-        REJECTED
+        REJECTED,
+
+        /**
+         * The disposition is unknown.
+         * <p>
+         * This can happen if a custom limit algorithm implements an older version ot the
+         * {@link io.helidon.common.concurrency.limits.LimitAlgorithm} API and does not expose the outcome to callers that
+         * provide an outcome consumer.
+         */
+        UNKNOWN
     }
 
     /**
@@ -75,7 +84,16 @@ public interface LimitOutcome {
          * The outcome was a deferred decided, made only after the work item was on the virtual queue; the outcome instance
          * <em>does</em> implement {@link io.helidon.common.concurrency.limits.LimitOutcome.Deferred}.
          */
-        DEFERRED
+        DEFERRED,
+
+        /**
+         * The timing is unknown.
+         * <p>
+         * This can happen if a custom limit algorithm implements an older version ot the
+         * {@link io.helidon.common.concurrency.limits.LimitAlgorithm} API and does not expose the outcome to callers that
+         * provide an outcome consumer.
+         */
+        UNKNOWN
     }
 
     /**
