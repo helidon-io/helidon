@@ -28,6 +28,15 @@ import io.helidon.webserver.observe.tracing.TracingSemanticConventions;
 @Service.Contract
 public interface TracingSemanticConventionsProvider {
 
+    /**
+     * Creates a new instance of the tracing semantic conventions to help prepare span builders and spans.
+     *
+     * @param spanTracingConfig span tracing config
+     * @param socketName        Helidon socket name
+     * @param routingRequest    request
+     * @param routingResponse   response
+     * @return new semantic conventions instance
+     */
     TracingSemanticConventions create(SpanTracingConfig spanTracingConfig,
                                       String socketName,
                                       RoutingRequest routingRequest,
