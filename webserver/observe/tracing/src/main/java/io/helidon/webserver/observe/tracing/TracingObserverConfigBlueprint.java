@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,4 +123,13 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      */
     @Option.Singular
     Set<String> sockets();
+
+    /**
+     * Whether waiting due to concurrency limit constraints should be traced.
+     *
+     * @return true if wait-time spans should be created; false otherwise
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean waitTracingEnabled();
 }
