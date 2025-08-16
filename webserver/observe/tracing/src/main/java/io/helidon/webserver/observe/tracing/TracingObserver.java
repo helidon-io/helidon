@@ -36,8 +36,8 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -54,9 +54,11 @@ import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 import io.helidon.webserver.spi.ServerFeature;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
+import static io.helidon.webserver.observe.tracing.HelidonTracingSemanticConventions.TRACING_SPAN_HTTP_REQUEST;
 
 /**
  * Observer that registers tracing endpoint, and collects all tracing checks.
@@ -157,17 +159,19 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
     }
 
     private static class TracingFilter implements Filter {
-        private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
         private final Tracer tracer;
         private final TracingConfig envConfig;
         private final List<PathTracingConfig> pathConfigs;
         private final String socketTag;
+        private final TracingSemanticConventionsProvider tracingSemanticConventionsProvider;
 
         TracingFilter(Tracer tracer, TracingConfig envConfig, List<PathTracingConfig> pathConfigs, String socketTag) {
             this.tracer = tracer;
             this.envConfig = envConfig;
             this.pathConfigs = pathConfigs;
             this.socketTag = socketTag;
+            this.tracingSemanticConventionsProvider = Services.get(TracingSemanticConventionsProvider.class);
+
         }
 
         @Override
@@ -195,23 +199,16 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 Contexts.runInContext(context, chain::proceed);
                 return;
             }
+
+            TracingSemanticConventions semconv = tracingSemanticConventionsProvider.create(spanConfig, socketTag, req, res);
+
             /*
             Create web server span
              */
-            HttpPrologue prologue = req.prologue();
 
-            String spanName = spanConfig.newName().orElse(TRACING_SPAN_HTTP_REQUEST);
-            if (spanName.indexOf('%') > -1) {
-                spanName = String.format(spanName, prologue.method().text(), req.path().rawPath(), req.query().rawValue());
-            }
             // tracing is enabled, so we replace the parent span with web server parent span
-            Span span = tracer.spanBuilder(spanName)
-                    .kind(Span.Kind.SERVER)
-                    .update(it -> {
-                        if (!socketTag.isBlank()) {
-                            it.tag("helidon.socket", socketTag);
-                        }
-                    })
+            Span span = tracer.spanBuilder(semconv.spanName())
+                    .update(semconv::update)
                     .update(it -> inboundSpanContext.ifPresent(it::parent))
                     .start();
 
@@ -240,27 +237,13 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             }
 
             try (Scope ignored = span.activate()) {
-                span.tag(Tag.COMPONENT.create("helidon-webserver"));
-                span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
-                UriInfo uriInfo = req.requestedUri();
-                span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path()));
-                span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
                 Contexts.runInContext(context, chain::proceed);
 
-                Status status = res.status();
-                span.tag(Tag.HTTP_STATUS.create(status.code()));
-
-                if (status.code() >= 400) {
-                    span.status(Span.Status.ERROR);
-                    span.addEvent("error", Map.of("message", "Response HTTP status: " + status,
-                                                  "error.kind", status.code() < 500 ? "ClientError" : "ServerError"));
-                } else {
-                    span.status(Span.Status.OK);
-                }
-
+                semconv.update(span);
                 span.end();
             } catch (Exception e) {
+                semconv.update(span, e);
                 span.end(e);
                 throw e;
             }
