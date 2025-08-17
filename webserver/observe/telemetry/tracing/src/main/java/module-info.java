@@ -35,6 +35,4 @@ module io.helidon.webserver.observe.telemetry.tracing {
     requires io.helidon.tracing.config;
     requires io.helidon.webserver;
     requires io.helidon.tracing;
-
-    requires io.opentelemetry.semconv;
 }

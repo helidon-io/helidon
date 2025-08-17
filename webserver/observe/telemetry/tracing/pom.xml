@@ -46,10 +46,6 @@
             <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.telemetry</groupId>
             <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
             <scope>runtime</scope>
