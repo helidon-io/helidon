@@ -47,7 +47,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
      */
     static class SemanticConventions implements TracingSemanticConventions {
 
-        // Required
         private static final String HTTP_REQUEST_METHOD = "http.request.method";
         private static final String URL_PATH = "url.path";
         private static final String URL_SCHEME = "url.scheme";
@@ -61,7 +60,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
 
         private static final String HELIDON_SOCKET = "helidon.socket";
 
-        private final SpanTracingConfig spanTracingConfig;
         private final String socketName;
         private final RoutingRequest request;
         private final RoutingResponse response;
@@ -73,7 +71,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                             String socketName,
                             RoutingRequest request,
                             RoutingResponse response) {
-            this.spanTracingConfig = spanTracingConfig;
             this.socketName = socketName;
             this.request = request;
             this.response = response;
