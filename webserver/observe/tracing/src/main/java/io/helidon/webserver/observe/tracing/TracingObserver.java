@@ -54,7 +54,7 @@ import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvid
 import io.helidon.webserver.spi.ServerFeature;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
-import static io.helidon.webserver.observe.tracing.HelidonTracingSemanticConventions.TRACING_SPAN_HTTP_REQUEST;
+import static io.helidon.webserver.observe.tracing.HelidonTracingSemanticConventionsProvider.HelidonTracingSemanticConventions.TRACING_SPAN_HTTP_REQUEST;
 
 /**
  * Observer that registers tracing endpoint, and collects all tracing checks.

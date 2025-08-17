@@ -16,10 +16,12 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Map;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
+import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -37,8 +39,10 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
 
     @Override
     public OpenTelemetry get() {
+        OpenTelemetry result;
+        var otelConfig = OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY));
         try {
-            return HelidonOpenTelemetry.create(OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY)))
+            result = HelidonOpenTelemetry.create(otelConfig)
                     .openTelemetry();
         } catch (Exception e) {
             /*
@@ -47,7 +51,13 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
             was already set. In that case, register the current OTel global instance in our registry so code
             that retrieves it from our registry will use the actual OTel global instance.
              */
-            return GlobalOpenTelemetry.get();
+            result = GlobalOpenTelemetry.get();
         }
+        Tracer neutralTracer = io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry
+                .create(result,
+                        result.getTracer(otelConfig.service()), Map.of());
+
+        Tracer.global(neutralTracer);
+        return result;
     }
 }
