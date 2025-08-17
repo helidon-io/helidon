@@ -96,7 +96,7 @@ WebClient offers a set of request methods that are used to specify the type of a
 * `get()`
 * `post()`
 * `put()`
-* `method(String methodName)`
+* `method(Method method)`
 
 Check out link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClient.html[HttpClient] API to learn more about
 request methods. These methods will create a new instance of link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/HttpClientRequest.html[HttpClientRequest] which can then be configured to add optional settings that will customize the behavior of the request.
