@@ -28,6 +28,10 @@
     <name>Helidon WebServer Observe Telemetry Tracing</name>
     <description>WebServer Telemetry Tracing observability support</description>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.service</groupId>
