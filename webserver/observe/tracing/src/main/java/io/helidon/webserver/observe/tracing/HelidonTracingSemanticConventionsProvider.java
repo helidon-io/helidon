@@ -88,7 +88,7 @@ class HelidonTracingSemanticConventionsProvider implements TracingSemanticConven
         }
 
         @Override
-        public void update(Span.Builder<?> spanBuilder) {
+        public void beforeStart(Span.Builder<?> spanBuilder) {
             spanBuilder
                     .kind(Span.Kind.SERVER)
                     .update(it -> {
@@ -96,25 +96,17 @@ class HelidonTracingSemanticConventionsProvider implements TracingSemanticConven
                             it.tag("helidon.socket", socketName);
                         }
                     });
-        }
-
-        @Override
-        public void update(Span span) {
-            updateMost(span);
-        }
-
-        @Override
-        public void update(Span span, Exception e) {
-            updateMost(span);
-        }
-
-        private void updateMost(Span span) {
             HttpPrologue prologue = routingRequest.prologue();
-            span.tag(Tag.COMPONENT.create("helidon-webserver"));
-            span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
+            spanBuilder.tag(Tag.COMPONENT.create("helidon-webserver"));
+            spanBuilder.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
             UriInfo uriInfo = routingRequest.requestedUri();
-            span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path()));
-            span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
+            spanBuilder.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path()));
+            spanBuilder.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
+
+        }
+
+        @Override
+        public void beforeEnd(Span span) {
 
             Status status = routingResponse.status();
             span.tag(Tag.HTTP_STATUS.create(status.code()));
@@ -126,7 +118,11 @@ class HelidonTracingSemanticConventionsProvider implements TracingSemanticConven
             } else {
                 span.status(Span.Status.OK);
             }
-
         }
+
+        @Override
+        public void beforeEnd(Span span, Exception e) {
+        }
+
     }
 }

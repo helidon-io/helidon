@@ -19,35 +19,48 @@ package io.helidon.webserver.observe.tracing;
 import io.helidon.tracing.Span;
 
 /**
- * Applies a particular set of semantic conventions to spans.
+ * Applies a particular set of semantic conventions to spans created automatically for requests.
+ * <p>
+ * Helidon creates a new instance of this interface for each request it traces by invoking
+ * {@linkplain io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider#create(io.helidon.tracing.config.SpanTracingConfig, String, io.helidon.webserver.http.RoutingRequest, io.helidon.webserver.http.RoutingResponse)
+ * TracingSemanticConventionsProvider#create}.
  */
 public interface TracingSemanticConventions {
 
     /**
-     * Provides the span name.
+     * Provides the span name Helidon should use to construct the {@link io.helidon.tracing.Span.Builder}.
      *
      * @return span name
      */
     String spanName();
 
     /**
-     * Updates the span builder, applying the semantic conventions.
+     * Applies semantic conventions to the {@link io.helidon.tracing.Span.Builder} just prior to Helidon using the span
+     * builder to create the span for the request.
+     *
      * @param spanBuilder span builder to update
      */
-    void update(Span.Builder<?> spanBuilder);
+    void beforeStart(Span.Builder<?> spanBuilder);
 
     /**
-     * Updates the span once built.
+     * Applies semantic conventions to the {@link io.helidon.tracing.Span} after Helidon has
+     * successfully processed the request and prepared the response and just before it ends the span; that is, Helidon has set
+     * the response status and entity (if any) and no exception escaped from the request processing.
+     * <p>
+     * The lack of an exception does not necessarily indicate the response has a successful status, only that
+     * the request was processed and the response prepared without error.
      *
-     * @param span span to update
+     * @param span span about to be ended
      */
-    void update(Span span);
+    void beforeEnd(Span span);
 
     /**
-     * Updates the span once built if the request ended abnormally.
+     * Applies semantic conventions the {@link io.helidon.tracing.Span} after Helidon has attempted to process the request just
+     * before Helidon ends the span unsuccessfully (with an exception). Implementations of this method should not assume that
+     * the response status or entity (if appropriate for a given response) have been set,
      *
-     * @param span span to update
-     * @param e exception
+     * @param span span about to be ended
+     * @param e exception thrown as Helidon processed the request
      */
-    void update(Span span, Exception e);
+    void beforeEnd(Span span, Exception e);
 }

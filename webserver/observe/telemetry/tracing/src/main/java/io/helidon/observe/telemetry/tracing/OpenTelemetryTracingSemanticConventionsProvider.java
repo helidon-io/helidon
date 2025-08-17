@@ -89,14 +89,13 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         }
 
         @Override
-        public void update(Span.Builder<?> spanBuilder) {
+        public void beforeStart(Span.Builder<?> spanBuilder) {
             UriInfo uriInfo = request.requestedUri();
 
             spanBuilder.kind(Span.Kind.SERVER)
                     .tag(HTTP_REQUEST_METHOD, methodText)
                     .tag(URL_PATH, uriInfo.path().path())
                     .tag(URL_SCHEME, uriInfo.scheme())
-                    .tag(HTTP_RESPONSE_STATUS_CODE, Integer.toString(response.status().code()))
                     .update(b -> matchingPattern.ifPresent(route -> b.tag(HTTP_ROUTE, route)))
                     .tag(SERVER_PORT, Integer.toString(request.localPeer().port()))
                     .update(b -> {
@@ -113,11 +112,12 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         }
 
         @Override
-        public void update(Span span) {
+        public void beforeEnd(Span span) {
+            span.tag(HTTP_RESPONSE_STATUS_CODE, Integer.toString(response.status().code()));
         }
 
         @Override
-        public void update(Span span, Exception e) {
+        public void beforeEnd(Span span, Exception e) {
             span.tag(ERROR_TYPE, e.getClass().getName());
         }
     }

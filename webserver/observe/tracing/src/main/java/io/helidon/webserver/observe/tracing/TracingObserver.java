@@ -204,7 +204,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
 
             // tracing is enabled, so we replace the parent span with web server parent span
             Span span = tracer.spanBuilder(semconv.spanName())
-                    .update(semconv::update)
+                    .update(semconv::beforeStart)
                     .update(it -> inboundSpanContext.ifPresent(it::parent))
                     .start();
 
@@ -236,10 +236,10 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
 
                 Contexts.runInContext(context, chain::proceed);
 
-                semconv.update(span);
+                semconv.beforeEnd(span);
                 span.end();
             } catch (Exception e) {
-                semconv.update(span, e);
+                semconv.beforeEnd(span, e);
                 span.end(e);
                 throw e;
             }
