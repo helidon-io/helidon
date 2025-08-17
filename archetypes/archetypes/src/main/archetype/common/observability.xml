@@ -234,7 +234,7 @@ curl -X GET http://localhost:8080/observe/health/ready
                 <value key="tracing" if="${tracing}">true</value>
                 <value key="tracing.provider" if="${tracing}">${tracing.provider}</value>
                 <list key="dependencies" if="${flavor} == 'mp' &amp;&amp; ${extra} contains 'fault-tolerance'">
-                    <map if="!(${metrics}) || ${metrics.provider} == 'micrometer'">
+                    <map if="!${metrics}">
                         <value key="groupId">io.helidon.microprofile.metrics</value>
                         <value key="artifactId">helidon-microprofile-metrics</value>
                     </map>

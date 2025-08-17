@@ -286,8 +286,8 @@ jobs:
           run: |
             mvn ${MVN_ARGS} \
               -f archetypes/archetypes/pom.xml \
-              -Darchetype.test.permutationStartIndex=${{ matrix.start }} \
-              -Darchetype.test.permutationEndIndex=${{ matrix.end }} \
+              -Darchetype.test.startIndex=${{ matrix.start }} \
+              -Darchetype.test.endIndex=${{ matrix.end }} \
               -Darchetype.test.testGoal=verify \
               -Darchetype.test.testProfiles=${{ matrix.profile }} \
               verify

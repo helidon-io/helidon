@@ -37,6 +37,17 @@ This will mount `~/.oci` as a volume in the running docker container.
     <variables>
         <text path="module-dir">server</text>
         <boolean path="multi-module">true</boolean>
+        <list path="~media">
+            <value>json</value>
+        </list>
+        <boolean path="~security">false</boolean>
+        <boolean path="~metrics">true</boolean>
+        <enum path="~metrics.provider">microprofile</enum>
+        <boolean path="~metrics.builtin">true</boolean>
+        <boolean path="~health">true</boolean>
+        <boolean path="~health.builtin">true</boolean>
+        <boolean path="~tracing">false</boolean>
+        <list path="~extra"/>
     </variables>
     <presets>
         <boolean path="db">false</boolean>
@@ -45,6 +56,7 @@ This will mount `~/.oci` as a volume in the running docker container.
         <boolean path="docker.jlink-image">false</boolean>
         <boolean path="k8s">true</boolean>
         <boolean path="jpms">false</boolean>
+        <text path="media.json-lib">jackson</text>
     </presets>
     <call method="pre-processed-models"/>
     <exec src="/common/common.xml"/>
