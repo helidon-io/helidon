@@ -57,7 +57,9 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
                 .create(result,
                         result.getTracer(otelConfig.service()), Map.of());
 
-        Tracer.global(neutralTracer);
+        if (otelConfig.global()) {
+            Tracer.global(neutralTracer);
+        }
         return result;
     }
 }
