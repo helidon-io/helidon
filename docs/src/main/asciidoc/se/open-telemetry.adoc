@@ -1,0 +1,114 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+= OpenTelemetry Support in Helidon SE
+:h1Prefix: SE
+:description: Helidon SE Telemetry Support
+:keywords: helidon, telemetry, tracing
+:feature-name: Telemetry/OpenTelemetry/Config
+:rootdir: {docdir}/..
+:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/${version.lib.opentelemetry}/docs/http/http-spans.md#http-server-semantic-conventions
+:otelcfg-javadoc: {otel-config-javadoc-base-url}/io/helidon/telemetry/opentelemetry-config/
+
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<API, API>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+NOTE: Helidon SE support for OpenTelemetry as described here is currently an link:https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Incubating.html[incubating feature]. We intend to support it going forward but we might withdraw it entirely or change its external API and behavior in backward-incompatible ways across dot releases.
+
+Helidon SE supports OpenTelemetry in these important ways:
+
+* You can assign the settings OpenTelemetry should use either programmatically or using Helidon config under the top-level `telemetry` config key.
+* You can have the Helidon OpenTelemetry tracing provider emit tracing spans that comply with the link:{semconv-link}[OpenTelemetry semantic conventions] by adding a Maven runtime dependency to your project.
+
+To help understand the Helidon OpenTelemetry API and the configuration settings available to you, note that OpenTelemetry models observability as a set of _signals_ such as metrics, tracing, and logging. Each of those signal types has its own extensive settings to control its behavior.
+Helidon support for OpenTelemetry follows this approach with some attributes applying to OpenTelemetry as a whole, others pertaining to individual signals, and still others describing even lower-level behavior with one of the signals.
+
+You see this hierarchy represented in the Helidon OpenTelemetry configuration format and the Helidon OpenTelemetry API.
+
+== API
+
+Helidon strives to provides _programmatic_ ways to prepare items that you can also prepare using _configuration_--in YAML or properties files, for example--and the support for OpenTelemetry is no exception.
+
+That said, if your application needs to prepare the OpenTelemetry runtime environment programmatically you might consider using the OpenTelemetry API directly from your code rather than using the Helidon API.
+
+In any case, the link:{otelcfg-javadoc}[Helidon OpenTelemetry API Javadoc] pages provide complete information about the Helidon API.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+Depending on your app's requirements, add one or both of the following dependencies to your project.
+[source,xml]
+.Dependency for Helidon OpenTelemetry builder and config support
+----
+<dependency>
+    <groupId>io.helidon.telemetry</groupId>
+    <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+</dependency>
+----
+
+[source,xml]
+.Dependency for OpenTelemetry semantic conventions support
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+=== Adding Additional OpenTelemetry Dependencies
+You might need to add additional dependencies on OpenTelemetry artifacts for span exporters you configure. (See https://github.com/open-telemetry/opentelemetry-java/tree/{otel-version}/exporters)
+[source,xml]
+.Example dependency for the OTLP exporter (the default)
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-otlp</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+[source,xml]
+.Example dependency for the Zipkin exporter
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-zipkin</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+If your application inherits from a Helidon SE application `pom` then your own `pom.xml` should not need to specify the OpenTelemetry version for these dependencies. If you need to specify the OpenTelemetry verison, add `<version>{otel-version}</version>` to the OpenTelemetry dependencies you add.
+
+== Configuration
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryConfig.adoc[tag=config,leveloffset=+1]
+
+
+
+
+* You have to add OTel dependencies for the propagators and exporters you plan to use.
+
+== Usage
+
+== Additional Information

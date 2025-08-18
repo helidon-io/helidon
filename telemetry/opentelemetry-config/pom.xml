@@ -49,6 +49,14 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
         </dependency>
@@ -136,10 +144,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tracing.providers</groupId>
-            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
         </dependency>
     </dependencies>
 
