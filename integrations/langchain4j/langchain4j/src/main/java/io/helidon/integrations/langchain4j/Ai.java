@@ -255,7 +255,8 @@ public final class Ai {
     @Retention(RUNTIME)
     public @interface McpClients {
         /**
-         * Names of MCP Clients to be used in McpToolProvider creation.
+         * Names of the MCP Clients to be used in McpToolProvider creation.
+         * These names are mapped from the {@code key} values of the MCP Client.
          *
          * @return client names
          */

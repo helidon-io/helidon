@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.langchain4j;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -38,7 +39,7 @@ interface McpClientConfigBlueprint {
      * @return sse url
      */
     @Option.Configured
-    String sseUrl();
+    URI sseUri();
 
     /**
      * Sets the name that the client will use to identify itself to the

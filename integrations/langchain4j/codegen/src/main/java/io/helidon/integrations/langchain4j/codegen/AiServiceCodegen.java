@@ -167,7 +167,14 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(");");
     }
 
-    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface) {
+    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, CodegenContext ctx) {
+        Optional<TypeInfo> mcpClientTypeInfo = ctx.typeInfo(LC_MCP_CLIENT);
+        if (mcpClientTypeInfo.isEmpty()) {
+            //McpClients annotation present. Dependency needs to be added.
+            throw new CodegenException("McpClients annotation is being used, "
+                                               + "but the required LC4J MCP dependency is missing. "
+                                               + "Please add: dev.langchain4j:langchain4j-mcp");
+        }
         List<String> mcpClients = aiInterface.findAnnotation(AI_MCP_CLIENTS)
                 .flatMap(Annotation::stringValues)
                 .orElseGet(List::of);
@@ -281,7 +288,7 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_CONTENT_RETRIEVER,
                                         LC_CONTENT_RETRIEVER,
                                         "contentRetriever");
-                    aiMcpClientAndToolProvider(it, aiInterface, autoDiscovery);
+                    aiMcpClientAndToolProvider(it, aiInterface, autoDiscovery, ctx);
                     aiServicesToolParameters(it,
                                              aiInterface);
                 })
@@ -303,12 +310,13 @@ class AiServiceCodegen implements CodegenExtension {
 
     private void aiMcpClientAndToolProvider(Constructor.Builder it,
                                             TypeInfo aiInterface,
-                                            boolean autoDiscovery) {
+                                            boolean autoDiscovery,
+                                            CodegenContext ctx) {
         if (aiInterface.hasAnnotation(AI_TOOL_PROVIDER) && aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
-            throw new CodegenException("McpClients and ToolProvider annotations cannot be used at the same time. "
-                                               + "Interface: " + aiInterface);
+            throw new CodegenException("McpClients and ToolProvider annotations cannot be used at the same time.",
+                                       aiInterface.originatingElementValue());
         } else if (aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
-            aiMcpClientParameter(it, aiInterface);
+            aiMcpClientParameter(it, aiInterface, ctx);
         } else {
             aiServicesParameter(it,
                                 autoDiscovery,

@@ -18,6 +18,7 @@ package io.helidon.integrations.langchain4j;
 
 import java.util.List;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -29,21 +30,21 @@ import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 @Service.Singleton
 class McpClientFactory implements Service.ServicesFactory<McpClient> {
 
-    private final List<Service.QualifiedInstance<McpClient>> clients;
+    private final LazyValue<List<Service.QualifiedInstance<McpClient>>> clients;
 
     McpClientFactory(Config config) {
-        this.clients = config.get(McpClientConfigBlueprint.CONFIG_ROOT)
+        this.clients = LazyValue.create(() -> config.get(McpClientConfigBlueprint.CONFIG_ROOT)
                 .asNodeList()
                 .orElse(List.of())
                 .stream()
                 .map(McpClientFactory::create)
-                .toList();
+                .toList());
     }
 
     private static Service.QualifiedInstance<McpClient> create(Config config) {
         McpClientConfig mcpClientConfig = McpClientConfig.create(config);
         HttpMcpTransport.Builder transport = new HttpMcpTransport.Builder()
-                .sseUrl(mcpClientConfig.sseUrl());
+                .sseUrl(mcpClientConfig.sseUri().toString());
 
         mcpClientConfig.logRequests().ifPresent(transport::logRequests);
         mcpClientConfig.logResponses().ifPresent(transport::logResponses);
@@ -70,6 +71,6 @@ class McpClientFactory implements Service.ServicesFactory<McpClient> {
 
     @Override
     public List<Service.QualifiedInstance<McpClient>> services() {
-        return clients;
+        return clients.get();
     }
 }
