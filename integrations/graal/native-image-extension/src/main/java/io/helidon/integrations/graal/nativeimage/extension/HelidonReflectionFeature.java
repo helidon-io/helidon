@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.features.HelidonFeatures;
@@ -41,11 +43,14 @@ import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryConfig;
 
 import io.github.classgraph.ClassGraph;
+import io.github.classgraph.Resource;
 import io.github.classgraph.ScanResult;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.graalvm.nativeimage.hosted.RuntimeResourceAccess;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
@@ -117,6 +122,8 @@ public class HelidonReflectionFeature implements Feature {
 
         // Service descriptors
         processServiceDescriptors(context);
+        // types from META-INF/helidon/service.loader
+        processServiceLoaderForRegistry(context);
 
         // JPA Entity registration
         processEntity(context);
@@ -180,6 +187,38 @@ public class HelidonReflectionFeature implements Feature {
         Set<Class<?>> subclasses = util.findSubclasses(aClass.getName());
 
         processClasses(context, subclasses);
+    }
+
+    private void processServiceLoaderForRegistry(BeforeAnalysisContext context) {
+        context.scan()
+                .getResourcesWithPath(ServiceDiscovery.SERVICES_LOADER_RESOURCE)
+                .stream()
+                .flatMap(this::parseServiceLoaderFile)
+                .flatMap(it -> findClass(context, it))
+                .forEach(context::register);
+    }
+
+    private Stream<Class<?>> findClass(BeforeAnalysisContext context, String className) {
+        Class<?> type = context.access().findClassByName(className);
+        if (type == null) {
+            // we may not have the class on the classpath... strange, but let us not fail
+            return Stream.empty();
+        }
+        return Stream.of(type);
+    }
+
+    private Stream<String> parseServiceLoaderFile(Resource serviceLoader) {
+        try {
+            String allLines = new String(serviceLoader.load(), StandardCharsets.UTF_8);
+            // similar to what we do in CoreServiceDiscovery
+            return Arrays.stream(allLines.split("\n"))
+                    .map(String::trim)
+                    .filter(not(it -> it.startsWith("#")))
+                    .filter(not(String::isEmpty));
+        } catch (IOException e) {
+            tracer.parsing(() -> "Failed to process resource " + serviceLoader, e);
+            return Stream.of();
+        }
     }
 
     private void processServiceDescriptors(BeforeAnalysisContext context) {
