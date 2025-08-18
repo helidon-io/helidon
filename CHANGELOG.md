@@ -19,16 +19,19 @@ A minimum of Java 21 is required to use Helidon 4.
 
 ### BREAKING CHANGES
 
-- `io.helidon.common.config.Config` is deprecated in favor of `io.helidon.config.Config`.
 - `io.helidon.config:helidon-config` is now required by generated builders that use `@io.helidon.builder.api.Option.Configured`
-- `io.helidon.config:helidon-config` depends on `io.helidon.common.config:helidon-common-config`, thus the incompatibility occurs 
-      when depending only on `io.helidon.common.config:helidon-common-config`.
-- Configured builders generated with Helidon 4.3.0 will not work with older versions of Helidon, as the API they use from 
-    `helidon-config` module does not exist yet (class `io.helidon.config.ConfigBuilderSupport`,
-    and `io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder`)
+- `io.helidon.config:helidon-config` depends on `io.helidon.common.config:helidon-common-config`, thus the incompatibility occurs
+  when depending only on `io.helidon.common.config:helidon-common-config`.
+- Configured builders generated with Helidon 4.3.0 will not work with older versions of Helidon, as the API they use from
+  `helidon-config` module does not exist yet (class `io.helidon.config.ConfigBuilderSupport`,
+  and `io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder`)
 - Configured builders generated with Helidon 4.2.4+ will work with Helidon 4.3.0
-- Configured builders generated with previous versions of Helidon will not work, and must be re-generated 
-    (we had to move `ConfigBuilderSupport` from our builder module due to cyclic dependency)
+- Configured builders generated with previous versions of Helidon will not work, and must be re-generated
+  (we had to move `ConfigBuilderSupport` from our builder module due to cyclic dependency)
+
+### DEPRECATIONS
+
+- `io.helidon.common.config.Config` is deprecated in favor of `io.helidon.config.Config`.
 - As `io.helidon.config.Config` implements `io.helidon.common.config.Config`, it can be used as a replacement
 
 ### CHANGES
