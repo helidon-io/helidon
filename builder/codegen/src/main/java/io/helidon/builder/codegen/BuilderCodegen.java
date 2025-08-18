@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,9 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Errors;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -418,6 +420,9 @@ class BuilderCodegen implements CodegenExtension {
 
         generateCustomMethods(classModel, builderTypeName, prototype, customMethods);
 
+        // re-create all blueprint methods to have correct javadoc references
+        generatePrototypeMethods(classModel, blueprint.typeName(), propertyData);
+
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
                                          typeInformation.prototype(),
@@ -445,6 +450,32 @@ class BuilderCodegen implements CodegenExtension {
                     this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());
                 }
             }
+        }
+    }
+
+    private void generatePrototypeMethods(ClassModel.Builder classModel,
+                                          TypeName blueprintType,
+                                          TypeContext.PropertyData propertyData) {
+
+        for (PrototypeProperty property : propertyData.properties()) {
+            Method.Builder method = Method.builder()
+                    .name(property.getterName())
+                    .returnType(property.typeHandler().declaredType())
+                    .addAnnotation(Annotations.OVERRIDE);
+
+            property.element()
+                    .description()
+                    .map(Javadoc::parse)
+                    .ifPresent(method::javadoc);
+            if (property.element().elementModifiers().contains(Modifier.DEFAULT)) {
+                method.isDefault(true)
+                        .addContent("return ")
+                        .addContent(blueprintType.classNameWithEnclosingNames())
+                        .addContent(".super.")
+                        .addContent(property.getterName())
+                        .addContent("();");
+            }
+            classModel.addMethod(method);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.builder.test;
+
+import java.util.Optional;
 
 import io.helidon.builder.test.testsubjects.A;
 import io.helidon.builder.test.testsubjects.B;
@@ -66,4 +68,15 @@ class UsageTest {
         assertThat(t.t(), is("helloT"));
     }
 
+    @Test
+    void testDefaultMethod() {
+        A a = A.builder()
+                .a("hello")
+                .aNewProperty("value")
+                .build();
+
+        assertThat(a.a(), is("hello"));
+        assertThat(a.aNewProperty(), is(Optional.of("value")));
+
+    }
 }

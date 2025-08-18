@@ -415,5 +415,26 @@ public final class Prototype {
          */
         boolean value() default true;
     }
+
+    /**
+     * Include default methods from the blueprint and its super types.
+     * <p>
+     * If the value is specified, only methods with names matching the values are included, as long as they qualify as
+     * blueprint methods (i.e. they have a non-void return type and zero parameters).
+     * <p>
+     * This can be used to define backward compatible changes.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface IncludeDefaultMethods {
+        /**
+         * Names of default methods from super types or this blueprint to include as prototype properties.
+         * This can be used for backward compatibility.
+         *
+         * @return names of methods, if left blank, all default methods are included
+         */
+        String[] value() default {};
+    }
+
 }
 
