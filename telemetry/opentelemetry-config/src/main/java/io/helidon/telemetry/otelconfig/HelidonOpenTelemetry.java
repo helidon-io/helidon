@@ -16,10 +16,14 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.service.registry.Services;
+import io.helidon.tracing.Tracer;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
@@ -60,6 +64,28 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
      */
     static HelidonOpenTelemetry create(Consumer<OpenTelemetryConfig.Builder> consumer) {
         return builder().update(consumer).build();
+    }
+
+    /**
+     * Initializes the specified {@link io.opentelemetry.api.OpenTelemetry} instance as global:
+     * <ol>
+     *     <li>Sets it as the global OpenTelemetry instance.</li>
+     *     <li>Creates a new Helidon {@link io.helidon.tracing.Tracer} using the {@code OpenTelemetry} instance.</li>
+     *     <li>Makes the Helidon {@code Tracer} the global tracer.</li>
+     *     <li>Registers the {@code OpenTelemetry} instance in the Helidon service registry.</li>
+     * </ol>
+     * @param openTelemetry the {@code OpenTelemetry} instance to make global
+     * @param serviceName service name with which to create the new global tracer
+     * @throws IllegalStateException if other code has already established the OpenTelemetry global instance
+     */
+    static void global(OpenTelemetry openTelemetry, String serviceName) throws IllegalStateException {
+        GlobalOpenTelemetry.set(openTelemetry);
+        var otelTracer = openTelemetry.getTracer(serviceName);
+        var helidonTracer = io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry.create(openTelemetry,
+                                                                                                   otelTracer,
+                                                                                                   Map.of());
+        Tracer.global(helidonTracer);
+        Services.set(OpenTelemetry.class, openTelemetry);
     }
 
     /**
