@@ -317,6 +317,24 @@ NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI be
 
 For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4J Documentation on Tools].
 
+=== MCP Client
+In LangChain4J, an MCP (Model Context Protocol) client acts as a bridge between the language model and external services or resources that follow the MCP standard. Instead of directly embedding custom logic into the application, the MCP client enables the model to discover, connect to, and interact with external tools and data providers in a standardized way.
+
+To add MCP Clients to your AI Service, use the following:
+[source,java]
+----
+@Ai.Service
+@Ai.McpClients
+public interface ChatAiService {
+    String chat(String question);
+}
+----
+
+If you want to have your MCP clients created from the configuration, it should be placed under the `langchain4j.mcp-clients`.
+These are all the MCP Client configuration options currently supported:
+
+include::{rootdir}/config/io_helidon_integrations_langchain4j_McpClientConfig.adoc[leveloffset=+2,tag=config]
+
 == Additional Information
 
 * https://docs.langchain4j.dev/[LangChain4J documentation]
