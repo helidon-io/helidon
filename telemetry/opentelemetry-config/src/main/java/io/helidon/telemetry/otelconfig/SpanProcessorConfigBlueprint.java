@@ -46,7 +46,6 @@ interface SpanProcessorConfigBlueprint {
      */
     @Option.Configured
     @Option.Required
-    @Option.Access("")
     SpanProcessorType type();
 
 }

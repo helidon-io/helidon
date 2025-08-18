@@ -54,6 +54,7 @@ class TestAttributeValueConversions {
                             attr3: 24.5
                             attr4: true
                             attr5: anything
+                            attr6: 12D
                           sampler:
                             type: "always_off"
                           exporters:
@@ -84,7 +85,8 @@ class TestAttributeValueConversions {
                          Arguments.arguments(attrs.get("attr2"), Long.class, 12L),
                          Arguments.arguments(attrs.get("attr3"), Double.class, 24.5D),
                          Arguments.arguments(attrs.get("attr4"), Boolean.class, true),
-                         Arguments.arguments(attrs.get("attr5"), String.class, "anything"));
+                         Arguments.arguments(attrs.get("attr5"), String.class, "anything"),
+                         Arguments.arguments(attrs.get("attr6"), Double.class, 12D));
     }
 
 

@@ -23,7 +23,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Name("Telemetry")
 @Features.Description("Support for Telemetry")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
-@Features.Path({"Telemetry/OpenTelemetry/Config"})
+@Features.Path({"Telemetry", "OpenTelemetry", "Config"})
 @Features.Incubating
 module io.helidon.telemetry.otelconfig {
 
