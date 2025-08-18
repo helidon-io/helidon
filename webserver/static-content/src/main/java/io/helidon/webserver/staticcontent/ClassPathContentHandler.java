@@ -61,7 +61,9 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     ClassPathContentHandler(ClasspathHandlerConfig config) {
         super(config);
 
-        this.classLoader = config.classLoader().orElseGet(() -> Thread.currentThread().getContextClassLoader());
+        this.classLoader = config.classLoader()
+                .or(() -> Optional.ofNullable(Thread.currentThread().getContextClassLoader()))
+                .orElseGet(ClassPathContentHandler.class::getClassLoader);
         this.cacheInMemory = new HashSet<>(config.cachedFiles());
         this.root = cleanRoot(config.location());
         this.rootWithTrailingSlash = root + '/';
@@ -71,6 +73,9 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     @SuppressWarnings("removal") // will be replaced with HttpService once removed
     static StaticContentService create(ClasspathHandlerConfig config) {
+        if (config.singleFile()) {
+            return new SingleFileClassPathContentHandler(config);
+        }
         return new ClassPathContentHandler(config);
     }
 
@@ -167,11 +172,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
-        Optional<CachedHandler> handler = switch (url.getProtocol()) {
-            case "file" -> fileHandler(Paths.get(url.toURI()));
-            case "jar" -> jarHandler(requestedResource, url);
-            default -> urlStreamHandler(url);
-        };
+        Optional<CachedHandler> handler = cachedHandler(requestedResource, url);
 
         if (handler.isEmpty()) {
             return false;
@@ -181,6 +182,43 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         cacheHandler(requestedResource, cachedHandler);
 
         return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
+    }
+
+    Optional<CachedHandler> cachedHandler(String requestedResource, URL url) throws IOException, URISyntaxException {
+        return switch (url.getProtocol()) {
+        case "file" -> fileHandler(Paths.get(url.toURI()));
+        case "jar" -> jarHandler(requestedResource, url);
+        default -> urlStreamHandler(url);
+        };
+    }
+
+    static String cleanRoot(String location) {
+        String cleanRoot = location;
+        if (cleanRoot.startsWith("/")) {
+            cleanRoot = cleanRoot.substring(1);
+        }
+        while (cleanRoot.endsWith("/")) {
+            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
+        }
+
+        if (cleanRoot.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+        return cleanRoot;
+    }
+
+    void addToInMemoryCache(String requestedResource, URL url) throws IOException {
+        // now we do have a resource, and we want to load it into memory
+        // we are not checking the size, as this is explicitly configured by the user, and if we run out of memory, we just do...
+        Optional<Instant> lastModified = lastModified(url);
+        MediaType contentType = detectType(fileName(url));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (InputStream in = url.openStream()) {
+            in.transferTo(baos);
+        }
+        byte[] entityBytes = baos.toByteArray();
+
+        cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
     }
 
     private static String fileName(URL url) {
@@ -339,17 +377,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             return;
         }
 
-        // now we do have a resource, and we want to load it into memory
-        // we are not checking the size, as this is explicitly configured by the user, and if we run out of memory, we just do...
-        Optional<Instant> lastModified = lastModified(url);
-        MediaType contentType = detectType(fileName(url));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream in = url.openStream()) {
-            in.transferTo(baos);
-        }
-        byte[] entityBytes = baos.toByteArray();
-
-        cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
+        addToInMemoryCache(requestedResource, url);
     }
 
     private Optional<Instant> lastModified(URL url) {
@@ -375,20 +403,5 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     private Optional<Instant> lastModified(String path) throws IOException {
         return lastModified(Paths.get(path));
-    }
-
-    private static String cleanRoot(String location) {
-        String cleanRoot = location;
-        if (cleanRoot.startsWith("/")) {
-            cleanRoot = cleanRoot.substring(1);
-        }
-        while (cleanRoot.endsWith("/")) {
-            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
-        }
-
-        if (cleanRoot.isEmpty()) {
-            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
-        }
-        return cleanRoot;
     }
 }

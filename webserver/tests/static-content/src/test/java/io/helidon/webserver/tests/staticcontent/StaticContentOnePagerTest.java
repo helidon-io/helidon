@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.staticcontent;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -26,16 +27,17 @@ import io.helidon.webserver.staticcontent.StaticContentFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpFeatures;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-class StaticContentRedirectTest {
+class StaticContentOnePagerTest {
     private final Http1Client client;
 
-    StaticContentRedirectTest(Http1Client client) {
+    StaticContentOnePagerTest(Http1Client client) {
         this.client = Http1Client.builder()
                 .from(client.prototype())
                 .followRedirects(false)
@@ -44,32 +46,37 @@ class StaticContentRedirectTest {
 
     @SetUpFeatures
     static List<ServerFeature> setUpFeatures() {
-//        return List.of(StaticContentFeature.builder()
-//                               .addPath(cp -> cp.context("/static/{+}")
-//                                       .location(Paths.get("/home/tomas/Projects/oracle/helidon/helidon_4/webserver/tests/static-content/src/test/resources/static/welcome.txt")))
-//                               .build());
         return List.of(StaticContentFeature.builder()
-                               .addClasspath(cp -> cp.context("/static/{+}")
-                                       .location("/static/welcome.txt"))
+                               .addClasspath(cp -> cp.context("/static")
+                                       .location("/static/welcome.txt")
+                                       .singleFile(true))
                                .build());
     }
 
-    @Test
-    void testContent() {
-        ClientResponseTyped<String> response = client.get("/static/first")
-                .request(String.class);
-
-        assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity(), is("Welcome"));
+    static Stream<TestData> testData() {
+        return Stream.of(new TestData("/static"),
+                         new TestData("/static/"),
+                         new TestData("/static/nested"),
+                         new TestData("/static/nested/"),
+                         new TestData("/staticbad", Status.NOT_FOUND_404));
     }
 
-    @Test
-    void testContentNested() {
-        // as we use a single static content page, this should return the same page as the test above
-        ClientResponseTyped<String> response = client.get("/static/nested")
+    @ParameterizedTest
+    @MethodSource("testData")
+    void testBasePath(TestData testData) {
+        ClientResponseTyped<String> response = client.get(testData.path())
                 .request(String.class);
 
-        assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity(), is("Welcome"));
+        assertThat(response.status(), is(testData.expectedStatus));
+
+        if (testData.expectedStatus().equals(Status.OK_200)) {
+            assertThat(response.entity(), is("Welcome"));
+        }
+    }
+
+    private record TestData(String path, Status expectedStatus) {
+        TestData(String path) {
+            this(path, Status.OK_200);
+        }
     }
 }
