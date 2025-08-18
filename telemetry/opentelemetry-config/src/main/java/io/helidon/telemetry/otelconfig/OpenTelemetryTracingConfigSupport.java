@@ -89,7 +89,7 @@ class OpenTelemetryTracingConfigSupport {
 
         @Prototype.FactoryMethod
         static Object createAttributes(Config config) {
-            return config.isLeaf() ? parseValue(config.asString().get()) : null;
+            return parseValue(config.asString().get());
         }
 
         @Prototype.FactoryMethod
