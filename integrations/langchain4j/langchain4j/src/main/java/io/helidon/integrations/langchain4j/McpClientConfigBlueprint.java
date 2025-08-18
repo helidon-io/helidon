@@ -43,8 +43,8 @@ interface McpClientConfigBlueprint {
 
     /**
      * Sets the name that the client will use to identify itself to the
-     * MCP server in the initialization message. The default value is
-     * "langchain4j".
+     * MCP server in the initialization message.
+     * Overwrites the default client name from langchain4j.
      *
      * @return client name
      */
@@ -53,8 +53,8 @@ interface McpClientConfigBlueprint {
 
     /**
      * Sets the version string that the client will use to identify
-     * itself to the MCP server in the initialization message. The
-     * default value is "1.0".
+     * itself to the MCP server in the initialization message.
+     * Overwrites the default client version from langchain4j.
      *
      * @return client version
      */
