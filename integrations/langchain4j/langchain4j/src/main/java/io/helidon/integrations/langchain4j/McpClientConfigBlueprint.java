@@ -33,10 +33,10 @@ interface McpClientConfigBlueprint {
     String CONFIG_ROOT = "langchain4j.mcp-clients";
 
     /**
-     * The initial URL where to connect to the server and request a SSE
+     * The initial URI where to connect to the server and request a SSE
      * channel.
      *
-     * @return sse url
+     * @return sse uri
      */
     @Option.Configured
     URI sseUri();
