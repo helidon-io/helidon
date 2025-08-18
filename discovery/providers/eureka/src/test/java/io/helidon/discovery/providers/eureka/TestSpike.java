@@ -39,14 +39,14 @@ class TestSpike {
     @Test
     void testServiceRegistryLookup() {
         try (var d = (EurekaDiscoveryImpl) Services.get(Discovery.class)) {
-            assertThat(d.prototype().registryFetchInterval(), is(Duration.of(20, SECONDS)));
+            assertThat(d.prototype().cache().syncInterval(), is(Duration.of(20, SECONDS)));
         }
     }
 
     @Test
     void testBuilder() {
         try (var d = EurekaDiscovery.builder().config(Services.get(Config.class).get("discovery.eureka")).build()) {
-            assertThat(d.prototype().registryFetchInterval(), is(Duration.of(20, SECONDS)));
+            assertThat(d.prototype().cache().syncInterval(), is(Duration.of(20, SECONDS)));
         }
     }
 

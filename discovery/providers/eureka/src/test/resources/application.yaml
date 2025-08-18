@@ -17,6 +17,7 @@
 discovery:
   eureka:
     enabled: true
+    cache:
+      sync-interval: "PT20S"
     client:
       base-uri: "http://localhost:8761/eureka"
-    registry-fetch-interval: "PT20S"

@@ -115,7 +115,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      * <p>The fetch thread is a {@link Thread} that periodically retrieves the Eureka service registry, or changes to
      * it, from a Eureka server.</p>
      *
-     * <p>The value of this field is relevant only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>The value of this field is relevant only when {@linkplain CacheConfig#enabled() the local cache is enabled}.
      *
      * @see #createFetchThread()
      */
@@ -136,7 +136,8 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      *
      * <p>This field is never {@code null}.</p>
      *
-     * <p>The value of this field is relevant only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>The value of this field is relevant only when {@linkplain CacheConfig#enabled() the local cache is
+     * enabled}.</p>
      */
     private final ReadWriteLock lock;
 
@@ -171,11 +172,12 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      *
      * <p>This field is read and written only by the {@linkplain #fetchThread fetch thread}.</p>
      *
-     * <p>The value of this field is relevant only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>The value of this field is relevant only when {@linkplain CacheConfig#enabled() the local cache is
+     * enabled}.</p>
      *
      * @see EurekaDiscoveryConfig#cache()
      *
-     * @see EurekaDiscoveryConfig#registryFetchChanges()
+     * @see CacheConfig#computeChanges()
      */
     private boolean fetchAll; // non-volatile on purpose; after construction, read/written only by fetchThread
 
@@ -186,7 +188,8 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      * <p>This field must be read and written only while the appropriate read or write lock is held. See {@link
      * #lock}.</p>
      *
-     * <p>The value of this field is relevant only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>The value of this field is relevant only when {@linkplain CacheConfig#enabled() the local cache is
+     * enabled}.</p>
      *
      * @see #lock
      *
@@ -206,7 +209,8 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      *
      * <p>This field is initially {@code null} by design and accessed only from the fetch thread.</p>
      *
-     * <p>The value of this field is relevant only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>The value of this field is relevant only when {@linkplain CacheConfig#enabled() the local cache is
+     * enabled}.</p>
      *
      * @see #createFetchThread()
      *
@@ -240,11 +244,11 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
         this.prototype = prototype;
         this.fetchThread = new AtomicReference<>();
         this.cache = Map.of();
-        this.fetchAll = true; // always true for at least the first fetch, then modulated by prototype.registryFetchChanges()
-        if (prototype.cache()) {
+        this.fetchAll = true; // always true for at least the first fetch, then modulated by prototype.cache().computeChanges()
+        if (prototype.cache().enabled()) {
             this.instancesFunction = this::instancesFromCache;
             Thread fetchThread = this.createFetchThread(); // unstarted
-            if (prototype.registryFetchThreadStartEagerly()) {
+            if (!prototype.cache().deferSync()) {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG, "Starting registry fetch thread (" + fetchThread.getName() + ")");
                 }
@@ -287,7 +291,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
               fetchThread.interrupt();
             }
 
-            if (this.prototype().cache()) {
+            if (this.prototype().cache().enabled()) {
                 // Purge the cache.
                 this.lock.writeLock().lock();
                 try {
@@ -541,7 +545,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
         // Return a new (happens-to-be-virtual) Thread (that does not prevent the VM from exiting) in an unstarted
         // state.
         return Thread.ofVirtual()
-            .name(this.prototype().registryFetchThreadName())
+            .name(this.prototype().cache().fetchThreadName())
             .uncaughtExceptionHandler(this::handleUncaughtFetchThreadThrowable)
             .unstarted(r);
     }
@@ -574,7 +578,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      *
      * <p>This method is idempotent and safe for concurrent use by multiple threads.</p>
      *
-     * <p>This method will be called only when {@link EurekaDiscoveryConfig#cache()} returns {@code true}.</p>
+     * <p>This method will be called only when {@linkplain CacheConfig#enabled() the local cache is enabled}.</p>
      *
      * @param discoveryName a discovery name; must not be {@code null}
      *
@@ -690,9 +694,9 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      *
      * @see #close()
      *
-     * @see EurekaDiscoveryConfig#registryFetchChanges()
+     * @see CacheConfig#computeChanges()
      *
-     * @see EurekaDiscoveryConfig#registryFetchInterval()
+     * @see CacheConfig#syncInterval()
      *
      * @see #fetchAll
      *
@@ -716,7 +720,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
                 // only changes resulted in a special "you can't have them" result that isn't, strictly speaking, an
                 // error.
                 this.replaceAll();
-                if (this.prototype().registryFetchChanges()) {
+                if (this.prototype().cache().computeChanges()) {
                     // The user said to fetch changes only (after the first time).
                     this.fetchAll = false; // non-volatile write, but only this thread reads and writes it
                 }
@@ -763,7 +767,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
             // Sleep for a configurable duration, and go around again. Handle genuine interruptions spurious wakeups
             // properly.
             try {
-                Thread.sleep(this.prototype().registryFetchInterval());
+                Thread.sleep(this.prototype().cache().syncInterval());
             } catch (InterruptedException e) {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG, "Registry fetch thread (" + Thread.currentThread().getName() + ") interrupted");
@@ -788,7 +792,7 @@ final class EurekaDiscoveryImpl implements EurekaDiscovery, NamedService {
      * <p>This method is called only from the {@link #uris(String, UriFactory, URI)} method.</p>
      */
     private void start() {
-        if (!this.prototype().cache()) {
+        if (!this.prototype().cache().enabled()) {
             // No need to create or start a thread.
             return;
         }

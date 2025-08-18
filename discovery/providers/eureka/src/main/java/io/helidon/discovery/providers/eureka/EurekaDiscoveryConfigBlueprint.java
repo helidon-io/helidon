@@ -15,7 +15,6 @@
  */
 package io.helidon.discovery.providers.eureka;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -42,13 +41,15 @@ import io.helidon.webclient.http1.Http1Client;
 interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscovery> {
 
     /**
-     * Whether to use the discovery cache; {@code true} by default.
+     * The {@link CacheConfig} to use controlling how a local cache of Eureka server information is used.
      *
-     * @return {@code true} if the discovery cache should be used
+     * @return a {@link CacheConfig}
+     *
+     * @see CacheConfig
      */
     @Option.Configured("cache")
-    @Option.DefaultBoolean(true)
-    boolean cache();
+    @Option.DefaultCode("CacheConfig.create()")
+    CacheConfig cache();
 
     /**
      * The {@link Http1Client} to use to communicate with the Eureka server.
@@ -86,48 +87,5 @@ interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscove
      */
     @Option.Configured("prefer-ip-address")
     boolean preferIpAddress();
-
-    /**
-     * Whether only changes to service information in the Eureka server should be fetched; {@code true} by default.
-     *
-     * @return whether only changes to service information in the Eureka server should be fetched
-     */
-    @Option.Configured("registry-fetch-changes")
-    @Option.DefaultBoolean(true)
-    boolean registryFetchChanges();
-
-    /**
-     * The time between retrievals of service information from the Eureka server; 30 seconds by default.
-     *
-     * @return the time between retrievals of service information from the Eureka server
-     *
-     * @see Duration#parse(CharSequence)
-     */
-    @Option.Configured("registry-fetch-interval")
-    @Option.Default("PT30S")
-    Duration registryFetchInterval();
-
-    /**
-     * The name of the {@link Thread} used to retrieve service information from the Eureka server; "Eureka registry
-     * fetch thread" by default.
-     *
-     * @return the name of the {@link Thread} used to retrieve service information from the Eureka server
-     *
-     * @see Thread.Builder#name(String)
-     */
-    @Option.Configured("registry-fetch-thread-name")
-    @Option.Default("Eureka registry fetch thread")
-    String registryFetchThreadName();
-
-    /**
-     * Whether to eagerly start the {@link Thread} that retrieves service information from the Eureka server; {@code
-     * true} by default.
-     *
-     * @return {@code true} if the thread should be started as soon as possible; {@code false} if it should be started
-     * as late as possible
-     */
-    @Option.Configured("registry-fetch-thread-start-eagerly")
-    @Option.DefaultBoolean(true)
-    boolean registryFetchThreadStartEagerly();
 
 }
