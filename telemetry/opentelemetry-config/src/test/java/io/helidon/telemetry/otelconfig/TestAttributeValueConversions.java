@@ -17,27 +17,21 @@
 package io.helidon.telemetry.otelconfig;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import io.opentelemetry.api.common.AttributeKey;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
-import static org.hamcrest.Matchers.nullValue;
 
 class TestAttributeValueConversions {
 
@@ -49,12 +43,17 @@ class TestAttributeValueConversions {
                       signals:
                         tracing:
                           attributes:
-                            attr1: \\"12\\"
-                            attr2: 12
-                            attr3: 24.5
-                            attr4: true
+                            attr1: 12
                             attr5: anything
-                            attr6: 12D
+                          long-attributes:
+                            attr2: 12
+                          double-attributes:
+                            attr3: 24.5
+                            attr6: 12
+                          boolean-attributes:
+                            attr4: true
+                          string-attributes:
+                            attr7: something
                           sampler:
                             type: "always_off"
                           exporters:
@@ -71,23 +70,45 @@ class TestAttributeValueConversions {
                     """,
             MediaTypes.APPLICATION_YAML));
 
-    @ParameterizedTest
-    @MethodSource
-    void testConversions(Config config, Class<?> expectedType, Object expectedValue) {
-        var result = OpenTelemetryTracingConfigSupport.CustomMethods.createAttributes(config);
-        assertThat("Value text " + config.asString().get(), result, is(equalTo(expectedValue)));
+    static final OpenTelemetryTracingConfig tracingConfig = OpenTelemetryConfig.builder()
+            .config(config.get("telemetry"))
+            .build()
+            .prototype()
+            .tracingConfig()
+            .get();
 
-    }
+    static final Map<AttributeKey<?>, Object> attrs = tracingConfig.tracingBuilderInfo()
+            .attributesBuilder()
+            .build()
+            .asMap();
 
     static Stream<Arguments> testConversions() {
-        Config attrs = config.get("telemetry.signals.tracing.attributes");
-        return Stream.of(Arguments.arguments(attrs.get("attr1"), String.class, "12"),
-                         Arguments.arguments(attrs.get("attr2"), Long.class, 12L),
-                         Arguments.arguments(attrs.get("attr3"), Double.class, 24.5D),
-                         Arguments.arguments(attrs.get("attr4"), Boolean.class, true),
-                         Arguments.arguments(attrs.get("attr5"), String.class, "anything"),
-                         Arguments.arguments(attrs.get("attr6"), Double.class, 12D));
+        return Stream.of(Arguments.arguments("attr1", Long.class, 12L),
+                         Arguments.arguments("attr2", Long.class, 12L),
+                         Arguments.arguments("attr3", Double.class, 24.5D),
+                         Arguments.arguments("attr4", Boolean.class, true),
+                         Arguments.arguments("attr5", String.class, "anything"),
+                         Arguments.arguments("attr6", Double.class, 12D),
+                         Arguments.arguments("attr7", String.class, "something"));
     }
 
+    static AttributeKey<?> getKey(String key, Object expectedValue) {
+        return switch (expectedValue) {
+            case String ignore -> AttributeKey.stringKey(key);
+            case Double ignore -> AttributeKey.doubleKey(key);
+            case Boolean ignore -> AttributeKey.booleanKey(key);
+            case Long ignore -> AttributeKey.longKey(key);
+            default -> throw new IllegalStateException("Unexpected type: " + expectedValue.getClass());
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testConversions(String key, Class<?> expectedType, Object expectedValue) {
+        var result = attrs.get(getKey(key, expectedValue));
+        assertThat("Value type", result, instanceOf(expectedType));
+        assertThat("Value ", result, is(equalTo(expectedValue)));
+
+    }
 
 }

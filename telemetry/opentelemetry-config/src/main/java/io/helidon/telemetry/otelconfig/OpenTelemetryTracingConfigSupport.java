@@ -43,7 +43,11 @@ class OpenTelemetryTracingConfigSupport {
             var sdkTracerProviderBuilder = SdkTracerProvider.builder();
 
             var attributesBuilder = Attributes.builder();
-            target.attributes().forEach((k, v) -> storeAttribute(attributesBuilder, k, v));
+            target.attributes().forEach((key, value) -> storeAttribute(attributesBuilder, key, value));
+            target.longAttributes().forEach(attributesBuilder::put);
+            target.doubleAttributes().forEach(attributesBuilder::put);
+            target.booleanAttributes().forEach(attributesBuilder::put);
+            target.stringAttributes().forEach(attributesBuilder::put);
 
             target.sampler().ifPresent(sdkTracerProviderBuilder::setSampler);
             target.spanLimits().ifPresent(sdkTracerProviderBuilder::setSpanLimits);
@@ -85,23 +89,7 @@ class OpenTelemetryTracingConfigSupport {
 
         @Prototype.FactoryMethod
         static Object createAttributes(Config config) {
-            var str = config.asString().get();
-            if (str.startsWith("\\\"") && str.endsWith("\\\"")) {
-                return str.substring(2, str.length() - 2);
-            }
-            if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
-                return Boolean.parseBoolean(str);
-            }
-            try {
-                return Long.parseLong(str);
-            } catch (NumberFormatException e) {
-                // Ignore for the moment
-            }
-            try {
-                return Double.parseDouble(str);
-            } catch (NumberFormatException e) {
-                return str;
-            }
+            return config.isLeaf() ? parseValue(config.asString().get()) : null;
         }
 
         @Prototype.FactoryMethod
@@ -127,6 +115,22 @@ class OpenTelemetryTracingConfigSupport {
         @Prototype.FactoryMethod
         static Number createNumericAttributes(Config config) {
             return config.asDouble().get();
+        }
+
+        private static Object parseValue(String str) {
+            if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
+                return Boolean.parseBoolean(str);
+            }
+            try {
+                return Long.parseLong(str);
+            } catch (NumberFormatException e) {
+                // Ignore for the moment
+            }
+            try {
+                return Double.parseDouble(str);
+            } catch (NumberFormatException e) {
+                return str;
+            }
         }
 
     }
