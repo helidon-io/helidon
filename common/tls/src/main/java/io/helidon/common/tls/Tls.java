@@ -264,7 +264,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     }
 
     private SSLParameters copySslParameters() {
-        // this copy does not set application protocols (each client request may have different
+        // this copy does not set application protocols (each client request may have different ones)
         // this copy does not set endpoint identification algorithm, server must not set it
         SSLParameters parameters = new SSLParameters();
         parameters.setServerNames(this.sslParameters.getServerNames());
