@@ -19,20 +19,27 @@ A minimum of Java 21 is required to use Helidon 4.
 
 ### BREAKING CHANGES
 
-- `io.helidon.config:helidon-config` is now required by generated builders that use `@io.helidon.builder.api.Option.Configured`
-- `io.helidon.config:helidon-config` depends on `io.helidon.common.config:helidon-common-config`, thus the incompatibility occurs
-  when depending only on `io.helidon.common.config:helidon-common-config`.
-- Configured builders generated with Helidon 4.3.0 will not work with older versions of Helidon, as the API they use from
-  `helidon-config` module does not exist yet (class `io.helidon.config.ConfigBuilderSupport`,
-  and `io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder`)
-- Configured builders generated with Helidon 4.2.4+ will work with Helidon 4.3.0
-- Configured builders generated with previous versions of Helidon will not work, and must be re-generated
-  (we had to move `ConfigBuilderSupport` from our builder module due to cyclic dependency)
+#### Configured Builders
+
+This change only impacts you if you have implemented configured builders using the following annotations from the 
+    `io.helidon.builder.api` package:
+
+- `@Prototype.Configured`
+- `@Option.Configured`
+
+We expect this situation to be rare. If you have implemented a configured builder then be aware of the following:
+
+- If your configured builder has a dependency on `io.helidon.common.config:helidon-common-config` then you must replace that 
+        dependency with `io.helidon.config:helidon-config`
+- Configured builders generated with Helidon 4.3.0 will not work with older versions of Helidon 4.
+- Configured builders generated with Helidon 4.2.4+ will work with Helidon 4.3.0.
+- Configured builders generated with Helidon 4.2.3 or earlier will not work with 4.3.0, and must be re-generated.
 
 ### DEPRECATIONS
 
-- `io.helidon.common.config.Config` is deprecated in favor of `io.helidon.config.Config`.
-- As `io.helidon.config.Config` implements `io.helidon.common.config.Config`, it can be used as a replacement
+- `io.helidon.common.config.Config` is deprecated. This class was not typically used by end user applications. 
+     Any use of `io.helidon.common.config.Config` should be replaced with `io.helidon.config.Config`
+     (which is fully compatible with io.helidon.common.config.Config).
 
 ### CHANGES
 
