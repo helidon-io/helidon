@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.common.config;
+package io.helidon.config;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperException;
+import io.helidon.config.spi.ConfigMapper;
 
-@SuppressWarnings("removal")
 final class EmptyConfig {
     static final Config.Key ROOT_KEY = new KeyImpl(null, "");
     static final Config EMPTY = new EmptyNode(ROOT_KEY);
@@ -36,6 +36,7 @@ final class EmptyConfig {
     private EmptyConfig() {
     }
 
+    @SuppressWarnings("removal")
     private static final class KeyImpl implements Config.Key {
         private final Config.Key parent;
         private final String name;
@@ -65,11 +66,11 @@ final class EmptyConfig {
         }
 
         @Override
-        public Config.Key child(Config.Key key) {
+        public Config.Key child(io.helidon.common.config.Config.Key key) {
             if (isRoot()) {
-                return key;
+                return new ConfigProvider.CommonKeyWrapper(key);
             }
-            List<String> path = path(key);
+            List<String> path = path(new ConfigProvider.CommonKeyWrapper(key));
             Config.Key node = this;
             for (String name : path) {
                 node = new KeyImpl(node, name);
@@ -79,7 +80,7 @@ final class EmptyConfig {
         }
 
         @Override
-        public int compareTo(Config.Key o) {
+        public int compareTo(io.helidon.common.config.Config.Key o) {
             return this.toString().compareTo(o.toString());
         }
 
@@ -118,60 +119,20 @@ final class EmptyConfig {
         }
     }
 
-    private static final class EmptyValue<T> implements ConfigValue<T> {
-        private final Config.Key key;
-
-        private EmptyValue(Config.Key key) {
-            this.key = key;
-        }
-
-        @Override
-        public Config.Key key() {
-            return key;
-        }
-
-        @Override
-        public Optional<T> asOptional() throws ConfigException {
-            return Optional.empty();
-        }
-
-        @Override
-        public T get() throws ConfigException {
-            throw new ConfigException("Config node " + key.name() + " is empty");
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
-            return new EmptyValue<>(key);
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(GenericType<N> type) throws MapperException {
-            return new EmptyValue<>(key);
-        }
-
-        @Override
-        public Supplier<T> supplier() {
-            return this::get;
-        }
-
-        @Override
-        public Supplier<T> supplier(T defaultValue) {
-            return () -> defaultValue;
-        }
-
-        @Override
-        public Supplier<Optional<T>> optionalSupplier() {
-            return this::asOptional;
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(Class<N> type) throws MapperException {
-            return null;
-        }
-    }
-
+    @SuppressWarnings("removal")
     private static final class EmptyNode implements Config {
+        private static final Config DELEGATE = new BuilderImpl()
+                // the empty config source is needed, so we do not look for meta config or default
+                // config sources
+                .sources(ConfigSources.empty())
+                .overrides(OverrideSources.empty())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableParserServices()
+                .disableFilterServices()
+                .changesExecutor(command -> {})
+                .build();
+
         private final Key key;
 
         private EmptyNode(Key key) {
@@ -197,7 +158,7 @@ final class EmptyConfig {
         @Override
         public Config get(String key) throws ConfigException {
             String[] split = key.split("\\.");
-            Config.Key node = this.key;
+            Key node = this.key;
 
             for (String s : split) {
                 node = new KeyImpl(node, s);
@@ -238,32 +199,75 @@ final class EmptyConfig {
 
         @Override
         public <T> ConfigValue<T> as(Class<T> type) {
-            return new EmptyValue<>(this.key);
+            return ConfigValues.empty();
         }
 
         @Override
-        public <T> ConfigValue<T> map(Function<Config, T> mapper) {
-            return new EmptyValue<>(this.key);
+        public <T> ConfigValue<T> map(Function<io.helidon.common.config.Config, T> mapper) {
+            return ConfigValues.empty();
         }
 
         @Override
-        public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
-            return new EmptyValue<>(this.key);
+        public <T> ConfigValue<List<T>> asList(Class<T> type) throws
+                ConfigException {
+            return ConfigValues.empty();
         }
 
         @Override
-        public <T> ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws ConfigException {
-            return new EmptyValue<>(this.key);
+        public <T> ConfigValue<List<T>> mapList(Function<io.helidon.common.config.Config, T> mapper) throws
+                ConfigException {
+            return ConfigValues.empty();
         }
 
         @Override
-        public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
-            return new EmptyValue<>(this.key);
+        public ConfigValue<List<Config>> asNodeList() throws
+                ConfigException {
+            return ConfigValues.empty();
         }
 
         @Override
         public ConfigValue<Map<String, String>> asMap() throws ConfigException {
-            return new EmptyValue<>(this.key);
+            return ConfigValues.empty();
+        }
+
+        @Override
+        public Instant timestamp() {
+            return DELEGATE.timestamp();
+        }
+
+        @Override
+        public Type type() {
+            return Type.MISSING;
+        }
+
+        @Override
+        public Stream<Config> traverse(Predicate<Config> predicate) {
+            return Stream.empty();
+        }
+
+        @Override
+        public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
+            return DELEGATE.convert(type, value);
+        }
+
+        @Override
+        public ConfigMapper mapper() {
+            return DELEGATE.mapper();
+        }
+
+        @Override
+        public <T> ConfigValue<T> as(GenericType<T> genericType) {
+            return ConfigValues.empty();
+        }
+
+        @Override
+        public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+            return ConfigValues.empty();
+        }
+
+        @Override
+        public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+            return ConfigValues.empty();
         }
     }
 }

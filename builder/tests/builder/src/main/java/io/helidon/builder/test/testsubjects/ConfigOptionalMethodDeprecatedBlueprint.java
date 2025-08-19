@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Common Config Library.
- *
- * @deprecated use {@code io.helidon.config:helidon-config} module instead
- */
-@SuppressWarnings("removal")
-@Deprecated(forRemoval = true, since = "4.3.0")
-module io.helidon.common.config {
+package io.helidon.builder.test.testsubjects;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.mapper;
-    requires io.helidon.service.registry;
+import java.util.Optional;
 
-    exports io.helidon.common.config;
-    exports io.helidon.common.config.spi;
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 
-    uses io.helidon.common.config.spi.ConfigProvider;
+@Prototype.Blueprint
+@Prototype.Configured
+interface ConfigOptionalMethodDeprecatedBlueprint {
+    @Option.Default("default-value")
+    @Option.Configured
+    String key();
 
+    Optional<Config> config();
 }

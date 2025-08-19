@@ -19,7 +19,7 @@
  */
 module io.helidon.builder.tests.wildcard {
     requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.builder.api;
 
     exports io.helidon.builder.tests.wildcard;

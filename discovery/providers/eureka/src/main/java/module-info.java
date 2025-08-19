@@ -19,15 +19,16 @@
  */
 module io.helidon.discovery.providers.eureka {
 
-    requires io.helidon.builder.api;
-    requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webclient.http1;
+
     requires io.helidon.common.media.type;
     requires io.helidon.discovery;
     requires io.helidon.http;
     requires io.helidon.http.media;
     requires io.helidon.service.registry;
-    requires io.helidon.webclient.http1;
 
     requires jakarta.json;
 

@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.common.config;
+package io.helidon.config;
 
 import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.common.config.NamedService;
 import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Methods used from generated code in builders when
  * {@link io.helidon.builder.api.Prototype.Configured} is used.
- *
- * @deprecated use {@code io.helidon.config.ConfigBuilderSupport} instead
  */
-@Deprecated(forRemoval = true, since = "4.3.0")
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
     private ConfigBuilderSupport() {
@@ -103,44 +102,6 @@ public final class ConfigBuilderSupport {
 
     /**
      * Discover services from configuration.
-     * If already configured instances already contain a service of the same type and name that would be added from
-     * configuration, the configuration would be ignored (e.g. the user must make a choice whether to configure, or
-     * set using an API).
-     *
-     * @param config               configuration located at the parent node of the service providers
-     * @param configKey            configuration key of the provider list
-     *                             (either a list node, or object, where each child is one service)
-     * @param serviceLoader        helidon service loader for the expected type
-     * @param providerType         type of the service provider interface
-     * @param configType           type of the configured service
-     * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
-     *                             node
-     * @param existingInstances    already configured instances
-     * @param <S>                  type of the expected service
-     * @param <T>                  type of the configured service provider that creates instances of S
-     * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
-     * @deprecated use {@link #discoverServices(Config, String, Class, Class, boolean, java.util.List)} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    public static <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
-    discoverServices(Config config,
-                     String configKey,
-                     HelidonServiceLoader<T> serviceLoader,
-                     Class<T> providerType,
-                     Class<S> configType,
-                     boolean allFromServiceLoader,
-                     List<S> existingInstances) {
-        return ProvidedUtil.discoverServices(config,
-                                             configKey,
-                                             serviceLoader,
-                                             providerType,
-                                             configType,
-                                             allFromServiceLoader,
-                                             existingInstances);
-    }
-
-    /**
-     * Discover services from configuration.
      * If already configured instances contain a service of the same type and name that would be added from
      * configuration, the configuration would be ignored (e.g. the user must make a choice whether to configure, or
      * set using an API).
@@ -171,45 +132,6 @@ public final class ConfigBuilderSupport {
                                              configType,
                                              allFromServiceLoader,
                                              existingInstances);
-    }
-
-
-    /**
-     * Discover service from configuration. If an instance is already configured using a builder, it will not be
-     * discovered from configuration (e.g. the user must make a choice whether to configure, or set using API).
-     *
-     * @param config               configuration located at the parent node of the service providers
-     * @param configKey            configuration key of the provider list
-     *                             (either a list node, or object, where each child is one service - this method requires
-     *                             *                             zero to one configured services)
-     * @param serviceLoader        helidon service loader for the expected type
-     * @param providerType         type of the service provider interface
-     * @param configType           type of the configured service
-     * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
-     *                             node
-     * @param existingValue        value already configured, if the name is same as discovered from configuration
-     * @param <S>                  type of the expected service
-     * @param <T>                  type of the configured service provider that creates instances of S
-     * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
-     *         is found
-     * @deprecated use {@link #discoverService(Config, String, Class, Class, boolean, java.util.Optional)}
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    public static <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
-    discoverService(Config config,
-                    String configKey,
-                    HelidonServiceLoader<T> serviceLoader,
-                    Class<T> providerType,
-                    Class<S> configType,
-                    boolean allFromServiceLoader,
-                    Optional<S> existingValue) {
-        return ProvidedUtil.discoverService(config,
-                                            configKey,
-                                            serviceLoader,
-                                            providerType,
-                                            configType,
-                                            allFromServiceLoader,
-                                            existingValue);
     }
 
     /**
@@ -253,7 +175,8 @@ public final class ConfigBuilderSupport {
      * @param <BUILDER>   type of the builder
      * @param <PROTOTYPE> type of the prototype to be built
      */
-    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE> {
+    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE>,
+            io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder<BUILDER, PROTOTYPE> {
         /**
          * Update builder from configuration.
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,

@@ -161,7 +161,7 @@ class BuilderCodegen implements CodegenExtension {
                     .isStatic(true)
                     .description("Create a new instance from configuration.")
                     .returnType(prototype, "a new instance configured from configuration")
-                    .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
+                    .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG)
                             .name("config")
                             .description("used to configure the new instance"));
             typeArguments.forEach(method::addGenericArgument);
@@ -176,6 +176,26 @@ class BuilderCodegen implements CodegenExtension {
                 }
             }
             classModel.addMethod(method);
+
+            // backward compatibility
+            Method.Builder commonMethod = Method.builder()
+                    .name("create")
+                    .isStatic(true)
+                    .returnType(prototype)
+                    .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
+                            .name("config"))
+                    .javadoc(Javadoc.builder()
+                                     .add("Create a new instance from configuration.")
+                                     .returnDescription("a new instance configured from configuration")
+                                     .addParameter("config", "used to configure the new instance")
+                                     .addTag("deprecated", "use {@link #create(" + Types.CONFIG.fqName() + ")}")
+                                     .build())
+                    .addContent("return create(")
+                    .addContent(Types.CONFIG)
+                    .addContentLine(".config(config));")
+                    .addAnnotation(Annotations.DEPRECATED);
+            typeArguments.forEach(commonMethod::addGenericArgument);
+             classModel.addMethod(commonMethod);
         }
     }
 

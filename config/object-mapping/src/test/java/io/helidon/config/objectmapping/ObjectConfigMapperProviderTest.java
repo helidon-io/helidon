@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class ObjectConfigMapperProviderTest {
     @BeforeAll
     static void initClass() {
         provider = new ObjectConfigMapperProvider();
-        empty = Config.empty();
+        empty = Config.just(ConfigSources.create(Map.of()));
         Map<String, String> configMap = Map.of(
                 Configurables.WithCreateConfig.CONFIG_KEY, TEST_MESSAGE
         );

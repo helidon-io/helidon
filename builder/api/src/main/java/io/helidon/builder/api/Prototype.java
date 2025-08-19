@@ -161,7 +161,7 @@ public final class Prototype {
 
     /**
      * A blueprint annotated with this annotation will create a prototype that can be created from a
-     * {@code io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
+     * {@code io.helidon.config.Config} instance. The builder will also have a method {@code config(Config)} that
      * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.
      */
     @Target(ElementType.TYPE)
@@ -313,7 +313,7 @@ public final class Prototype {
      *          {@code io.helidon.common.Builder}, that builds the prototype</li>
      *     <li>{@code static Prototype.Builder Prototype.builder(Prototype)} - a method that returns a builder populated from
      *          existing prototype instance</li>
-     *     <li>{@code static Prototype create(io.helidon.common.config.Config config)} - a method that creates a new instance of
+     *     <li>{@code static Prototype create(io.helidon.config.Config config)} - a method that creates a new instance of
      *          prototype from configuration</li>
      *     <li>{@code static Prototype create()} - a method that creates a new instance if there are no required fields</li>
      * </ul>

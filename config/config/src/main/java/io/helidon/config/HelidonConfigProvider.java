@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@
 package io.helidon.config;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.spi.ConfigProvider;
 
 /**
  * Service loader provider implementation for common config.
+ *
+ * @deprecated this class is only for common config, which will be removed
  */
-public class HelidonConfigProvider implements ConfigProvider {
+@Deprecated(forRemoval = true, since = "4.3.0")
+@SuppressWarnings("removal")
+public class HelidonConfigProvider implements io.helidon.common.config.spi.ConfigProvider {
     private static final LazyValue<io.helidon.config.Config> DEFAULT_CONFIG = LazyValue.create(io.helidon.config.Config::create);
 
     /**
@@ -36,7 +38,7 @@ public class HelidonConfigProvider implements ConfigProvider {
     }
 
     @Override
-    public Config create() {
+    public io.helidon.common.config.Config create() {
         return DEFAULT_CONFIG.get();
     }
 }

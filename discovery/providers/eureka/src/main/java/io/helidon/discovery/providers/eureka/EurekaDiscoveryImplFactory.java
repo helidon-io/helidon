@@ -19,11 +19,11 @@ import java.lang.System.Logger;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Service.Singleton;
 import io.helidon.service.registry.ServiceRegistry;
 
-import static io.helidon.common.config.ConfigBuilderSupport.discoverService;
+import static io.helidon.config.ConfigBuilderSupport.discoverService;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.getLogger;
 import static java.util.Objects.requireNonNull;
@@ -50,12 +50,12 @@ final class EurekaDiscoveryImplFactory implements Supplier<Optional<EurekaDiscov
      *
      * <p>This field is never {@code null}.</p>
      *
-     * @see #EurekaDiscoveryImplFactory(ServiceRegistry, Config)
+     * @see #EurekaDiscoveryImplFactory(ServiceRegistry, io.helidon.config.Config)
      */
     private final ServiceRegistry sr;
 
     /**
-     * A {@link Config}.
+     * A {@link io.helidon.config.Config}.
      *
      * <p>This field is never {@code null}.</p>
      *
