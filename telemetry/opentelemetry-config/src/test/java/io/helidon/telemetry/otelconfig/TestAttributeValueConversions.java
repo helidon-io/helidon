@@ -43,17 +43,17 @@ class TestAttributeValueConversions {
                       signals:
                         tracing:
                           attributes:
-                            attr1: 12
-                            attr5: anything
-                          long-attributes:
-                            attr2: 12
-                          double-attributes:
-                            attr3: 24.5
-                            attr6: 12
-                          boolean-attributes:
-                            attr4: true
-                          string-attributes:
-                            attr7: something
+                            strings:
+                              attr1: 12
+                              attr5: "any old thing"
+                              attr7: something
+                            longs:
+                              attr2: 12
+                            doubles:
+                              attr3: 24.5
+                              attr6: 12
+                            booleans:
+                              attr4: true
                           sampler:
                             type: "always_off"
                           exporters:
@@ -83,11 +83,11 @@ class TestAttributeValueConversions {
             .asMap();
 
     static Stream<Arguments> testConversions() {
-        return Stream.of(Arguments.arguments("attr1", Long.class, 12L),
+        return Stream.of(Arguments.arguments("attr1", String.class, "12"),
                          Arguments.arguments("attr2", Long.class, 12L),
                          Arguments.arguments("attr3", Double.class, 24.5D),
                          Arguments.arguments("attr4", Boolean.class, true),
-                         Arguments.arguments("attr5", String.class, "anything"),
+                         Arguments.arguments("attr5", String.class, "any old thing"),
                          Arguments.arguments("attr6", Double.class, 12D),
                          Arguments.arguments("attr7", String.class, "something"));
     }

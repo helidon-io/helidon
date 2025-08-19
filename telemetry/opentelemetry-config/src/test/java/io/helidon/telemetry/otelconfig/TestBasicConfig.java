@@ -42,11 +42,16 @@ class TestBasicConfig {
                       signals:
                         tracing:
                           attributes:
-                            attr1: \\"12\\"
-                            attr2: 12
-                            attr3: 24.5
-                            attr4: true
-                            attr5: anything
+                            strings:
+                              attr1: 12
+                              attr5: anything
+                            longs:
+                              attr2: 12
+                            doubles:
+                              attr3: 24.5
+                            booleans:
+                              attr4: true
+                            
                           sampler:
                             type: "always_off"
                           exporters:

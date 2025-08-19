@@ -90,16 +90,7 @@ interface OpenTelemetryTracingConfigBlueprint {
      *
      * @return string attributes
      */
-    @Option.Configured
-    @Option.Singular
-    Map<String, Object> attributes();
-
-    /**
-     * Boolean attributes.
-     *
-     * @return boolean attributes
-     */
-    @Option.Configured
+    @Option.Configured("attributes.strings")
     @Option.Singular
     Map<String, String> stringAttributes();
 
@@ -108,7 +99,7 @@ interface OpenTelemetryTracingConfigBlueprint {
      *
      * @return boolean attributes
      */
-    @Option.Configured
+    @Option.Configured("attributes.booleans")
     @Option.Singular
     Map<String, Boolean> booleanAttributes();
 
@@ -117,7 +108,7 @@ interface OpenTelemetryTracingConfigBlueprint {
      *
      * @return long attributes
      */
-    @Option.Configured
+    @Option.Configured("attributes.longs")
     @Option.Singular
     Map<String, Long> longAttributes();
 
@@ -126,7 +117,7 @@ interface OpenTelemetryTracingConfigBlueprint {
      *
      * @return double attributes
      */
-    @Option.Configured
+    @Option.Configured("attributes.doubles")
     @Option.Singular
     Map<String, Double> doubleAttributes();
 

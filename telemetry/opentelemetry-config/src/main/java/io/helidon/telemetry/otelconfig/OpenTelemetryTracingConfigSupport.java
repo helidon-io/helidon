@@ -21,7 +21,6 @@ import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
 
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -43,7 +42,7 @@ class OpenTelemetryTracingConfigSupport {
             var sdkTracerProviderBuilder = SdkTracerProvider.builder();
 
             var attributesBuilder = Attributes.builder();
-            target.attributes().forEach((key, value) -> storeAttribute(attributesBuilder, key, value));
+            target.stringAttributes().forEach(attributesBuilder::put);
             target.longAttributes().forEach(attributesBuilder::put);
             target.doubleAttributes().forEach(attributesBuilder::put);
             target.booleanAttributes().forEach(attributesBuilder::put);
@@ -67,29 +66,11 @@ class OpenTelemetryTracingConfigSupport {
             target.tracingBuilderInfo(new TracingBuilderInfo(sdkTracerProviderBuilder, attributesBuilder));
         }
 
-        private static void storeAttribute(AttributesBuilder attributesBuilder, String key, Object value) {
-            switch (value) {
-            case Boolean b -> attributesBuilder.put(key, b);
-            case Long l -> attributesBuilder.put(key, l);
-            case Double d -> attributesBuilder.put(key, d);
-            case String s -> attributesBuilder.put(key, s);
-            default -> throw new IllegalArgumentException("Unexpected type " + value.getClass().getName()
-                                                                  + " in attribute key: '"
-                                                                  + key + "', value: '"
-                                                                  + value + "'");
-            }
-        }
-
     }
 
     static class CustomMethods {
 
         private CustomMethods() {
-        }
-
-        @Prototype.FactoryMethod
-        static Object createAttributes(Config config) {
-            return parseValue(config.asString().get());
         }
 
         @Prototype.FactoryMethod
@@ -110,27 +91,6 @@ class OpenTelemetryTracingConfigSupport {
         @Prototype.FactoryMethod
         static SpanExporter createExporterConfigs(Config config) {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
-        }
-
-        @Prototype.FactoryMethod
-        static Number createNumericAttributes(Config config) {
-            return config.asDouble().get();
-        }
-
-        private static Object parseValue(String str) {
-            if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
-                return Boolean.parseBoolean(str);
-            }
-            try {
-                return Long.parseLong(str);
-            } catch (NumberFormatException e) {
-                // Ignore for the moment
-            }
-            try {
-                return Double.parseDouble(str);
-            } catch (NumberFormatException e) {
-                return str;
-            }
         }
 
     }
