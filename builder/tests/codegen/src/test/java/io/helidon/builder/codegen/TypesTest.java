@@ -110,6 +110,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER_DECORATOR", Prototype.BuilderDecorator.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CONSTANT", Prototype.Constant.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_SERVICE_REGISTRY", Prototype.RegistrySupport.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_INCLUDE_DEFAULTS", Prototype.IncludeDefaultMethods.class);
         checkField(toCheck, checked, fields, "GENERATED_EQUALITY_UTIL", GeneratedBuilder.EqualityUtil.class);
         checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPE", RuntimeType.PrototypedBy.class);
         checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPED_BY", RuntimeType.PrototypedBy.class);
