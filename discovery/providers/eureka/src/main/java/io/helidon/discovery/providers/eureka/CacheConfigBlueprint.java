@@ -19,13 +19,12 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.builder.api.Prototype.Blueprint;
 
 /**
  * Prototypical state for the portion of Eureka Discovery configuration related to a local cache of Eureka server
  * information.
  */
-@Blueprint
+@Prototype.Blueprint
 @Prototype.Configured
 interface CacheConfigBlueprint {
 
@@ -34,7 +33,7 @@ interface CacheConfigBlueprint {
      *
      * @return whether the state of the cache should be computed
      */
-    @Option.Configured("compute-changes")
+    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean computeChanges();
 
@@ -43,7 +42,7 @@ interface CacheConfigBlueprint {
      *
      * @return {@code true} if cache synchronization should be deferred until it is actually needed
      */
-    @Option.Configured("defer-sync")
+    @Option.Configured
     @Option.DefaultBoolean(false)
     boolean deferSync();
 
@@ -52,7 +51,7 @@ interface CacheConfigBlueprint {
      *
      * @return {@code true} if the cache should be used
      */
-    @Option.Configured("enabled")
+    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enabled();
 
@@ -64,7 +63,7 @@ interface CacheConfigBlueprint {
      *
      * @see Thread.Builder#name(String)
      */
-    @Option.Configured("fetch-thread-name")
+    @Option.Configured
     @Option.Default("Eureka registry fetch thread")
     String fetchThreadName();
 
@@ -75,7 +74,7 @@ interface CacheConfigBlueprint {
      *
      * @see Duration#parse(CharSequence)
      */
-    @Option.Configured("sync-interval")
+    @Option.Configured
     @Option.Default("PT30S")
     Duration syncInterval();
 

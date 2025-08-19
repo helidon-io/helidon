@@ -19,7 +19,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.builder.api.Prototype.Blueprint;
 import io.helidon.webclient.http1.Http1Client;
 
 /**
@@ -36,7 +35,7 @@ import io.helidon.webclient.http1.Http1Client;
  *
  * @see EurekaDiscovery#create(EurekaDiscoveryConfig)
  */
-@Blueprint
+@Prototype.Blueprint
 @Prototype.Configured(root = false, value = "eureka")
 interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscovery> {
 
@@ -47,8 +46,8 @@ interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscove
      *
      * @see CacheConfig
      */
-    @Option.Configured("cache")
-    @Option.DefaultCode("CacheConfig.create()")
+    @Option.Configured
+    @Option.DefaultMethod("create")
     CacheConfig cache();
 
     /**
@@ -65,7 +64,7 @@ interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscove
      *
      * @see io.helidon.webclient.http1.Http1ClientConfig.Builder#baseUri(io.helidon.webclient.api.ClientUri)
      */
-    @Option.Configured("client")
+    @Option.Configured
     Optional<Http1Client> client();
 
     /**
@@ -85,7 +84,7 @@ interface EurekaDiscoveryConfigBlueprint extends Prototype.Factory<EurekaDiscove
      *
      * @return {@code true} if the IP address should be used; {@code false} if the hostname should be used
      */
-    @Option.Configured("prefer-ip-address")
+    @Option.Configured
     boolean preferIpAddress();
 
 }
