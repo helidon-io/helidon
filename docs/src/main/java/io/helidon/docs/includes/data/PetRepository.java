@@ -37,7 +37,7 @@ public interface PetRepository extends Data.CrudRepository<Pet, Integer> {
 
     // tag::listPets_method[]
     @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
-    List<Pet> listPetsByCategory(String categoryName);
+    List<Pet> selectPetsByCategory(String categoryName);
     // end::listPets_method[]
 
 }

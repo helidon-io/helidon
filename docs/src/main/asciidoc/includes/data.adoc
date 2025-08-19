@@ -20,11 +20,12 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 ifndef::sourcedir[:sourcedir: {rootdir}/../java/io/helidon/docs]
 
 // tag::data_overview[]
+
 Data repository queries are an abstraction over Object–Relational Mapping, or ORM. This enables
 interfaces with query definitions to be translated into implementation classes at compile time.
 
-The Helidon Data Repository is built on Jakarta Persistence and supports major providers such as
-EclipseLink and Hibernate.
+The Helidon Data Repository supports Jakarta Persistence and major providers such as EclipseLink
+and Hibernate.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -40,7 +41,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-The Jakarta Persistence provider (EclipseLink) and the JDBC driver (MySQL) are required at runtime.
+The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such as MySQL,
+are required at runtime:
 
 [source,xml]
 ----
@@ -60,9 +62,11 @@ The Jakarta Persistence provider (EclipseLink) and the JDBC driver (MySQL) are r
     <scope>runtime</scope>
 </dependency>
 ----
+
 // end::data_overview[]
 
 // tag::data_annotation_processor[]
+
 == Annotation Processor
 
 Both the entity model and data repository interfaces require a specific annotation-processor configuration:
@@ -76,26 +80,30 @@ Both the entity model and data repository interfaces require a specific annotati
         <version>${helidon.version}</version>
     </path>
     <path>
-        <groupId>io.helidon.data.codegen</groupId>
-        <artifactId>helidon-data-codegen</artifactId>
-        <version>${helidon.version}</version>
-    </path>
-    <path>
         <groupId>io.helidon.data.jakarta.persistence</groupId>
         <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
         <version>${helidon.version}</version>
     </path>
 </annotationProcessorPaths>
 ----
+
 // end::data_annotation_processor[]
 
 // tag::data_usage[]
+
 == Usage
 
 The Data Repository provides an API and tooling for implementing database queries through interface method
 prototypes.
 
 There are two ways in which such a query can be defined:
+
+* using the method name as the query definition
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=findByName_method, indent=0]
+----
 
 * using a method annotated with `@Data.Query`
 
@@ -104,15 +112,10 @@ There are two ways in which such a query can be defined:
 include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
 ----
 
-* using the method name as the query definition
-
-[source,java]
-----
-include::{sourcedir}/includes/data/PetRepository.java[tag=findByName_method, indent=0]
-----
 // end::data_usage[]
 
 // tag::data_config[]
+
 == Helidon Config
 
 You must configure the data repository before using it.
@@ -136,9 +139,11 @@ data:
             eclipselink.target-server: "None"
             jakarta.persistence.schema-generation.database.action: "none"
 ----
+
 // end::data_config[]
 
 // tag::data_repository_interface[]
+
 == Repository Interface
 
 Data repository interfaces are annotated with `@Data.Repository` and extend the `Data.GenericRepository`
@@ -154,16 +159,16 @@ The `Data.GenericRepository` interface is extended by additional interfaces that
 |===
 |Interface |Description
 
-|`Data.GenericRepository`
+|`Data.GenericRepository<E, ID>`
 |Root interface with entity type and primary key type as generic arguments.
 
-|`Data.BasicRepository`
+|`Data.BasicRepository<E, ID>`
 |Extends `GenericRepository`; adds a set of basic entity life-cycle operations.
 
-|`Data.CrudRepository`
+|`Data.CrudRepository<E, ID>`
 |Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support.
 
-|`Data.PageableRepository`
+|`Data.PageableRepository<E, ID>`
 |Extends `GenericRepository`; adds pagination support.
 |===
 
@@ -176,39 +181,13 @@ A repository interface may contain three kinds of methods:
 * Methods with a query defined via the method name
 
 The following `PetRepository` interface contains all of these: inherited methods from `CrudRepository`,
-the methods `findByName` and `listNameOrderByName` defined by method name, and `listPetsByCategory`
+the methods `findByName` and `listNameOrderByName` defined by method name, and `selectPetsByCategory`
 defined by the `@Data.Query` annotation:
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepository.java[tag=PetRepository_class, indent=0]
 ----
-
-==== Method with query defined by `@Data.Query` annotation
-
-This method type must always include the `@Data.Query` annotation. The annotation takes a single `String`
-argument containing the database query. Currently only JPQL is supported. Method arguments must match
-the query parameters:
-
-* for named arguments, each named argument in the query must correspond to a method argument with the same name, in any order.
-
-[source,java]
-----
-include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
-----
-
-* for indexed arguments, each argument must appear in the same order as in the query. Indexing starts at `1`.
-
-[source,java]
-----
-include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=selectKeeper_method, indent=0]
-----
-
-Supported return types include:
-
-* The query row types such as entity class, entity attribute, or custom projection
-* `List`, `Collection`, `Stream`, or `Optional` with the query row type as a generic parameter
-* `Page` or `Slice` with the query row type as a generic parameter
 
 ==== Method with query defined by method name
 
@@ -346,18 +325,19 @@ include::{sourcedir}/includes/data/SimpleSnippets.java[tag=simple_model, indent=
 
 ===== Criteria in method name
 
-Criteria part of the method name is optional and represents the `WHERE` clause of the database query. It is a logical expression
-composed of individual conditions joined by `AND` and `OR` logical operators.
-Single criteria condition is the `property` which may be followed by set of criteria keywords. E.g. `NameIgnoreCaseNotEndsWith`
-which consists of the entity property `name` and `IgnoreCase`, `Not` and `EndsWith` keywords.
+The criteria part of the method name is optional and represents the `WHERE` clause of the query.
+It is a logical expression composed of individual conditions joined by the `AND` and `OR` operators.
+A single criteria condition is the `property`, optionally followed by a set of criteria keywords.
+For example, `NameIgnoreCaseNotEndsWith` consists of the entity property `name` and the keywords
+`IgnoreCase`, `Not`, and `EndsWith`.
 
-Criteria condition keywords are of 2 types:
+Criteria condition keywords are of two types:
 
-* `IgnoreCase` and `Not` modifiers which can be used before the condition keyword
-* the condition keyword, for example `EndsWith`
+* `IgnoreCase` and `Not` modifiers that can appear before the condition keyword
+* the condition keyword itself, such as `EndsWith`
 
-The condition keyword can consume method arguments. Each keyword has exact number of arguments being consumed. Method arguments
-are being consumed in the same order as is the order of the condition keywords in the method name.
+A condition keyword can consume method arguments. Each keyword consumes an exact number of arguments.
+Method arguments are consumed in the same order as the condition keywords appear in the method name.
 
 Criteria modifiers:
 
@@ -380,72 +360,81 @@ Supported condition keywords:
 
 |After
 |1
-|The property value is after the given value
+|The property value is after the given value. Requires a `Comparable` property and argument.
+ Intended for date and time. Effectively equivalent to `GreaterThan`.
 
 |Before
 |1
-|The property value is before the given value
+|The property value is before the given value. Requires a `Comparable` property and argument.
+ Intended for date and time. Effectively equivalent to `LessThan`.
 
 |Contains
 |1
-|The property value contains the given value. Requires a `String` property and argument
+|The property value contains the given value. Requires a `String` property and argument.
 
 |EndsWith
 |1
-|The property value ends with the given value. Requires a `String` property and argument
+|The property value ends with the given value. Requires a `String` property and argument.
 
 |StartsWith
 |1
-|The property value starts with the given value. Requires a `String` property and argument
+|The property value starts with the given value. Requires a `String` property and argument.
 
 |Equal
 |1
-|The property value is equal to the given value
+|The property value is equal to the given value.
 
 |LessThan
 |1
-|The property value is less than the given value. Requires a `Comparable` property and argument
+|The property value is less than the given value. Requires a `Comparable` property and argument.
 
 |LessThanEqual
 |1
-|The property value is less or equal to the given value. Requires a `Comparable` property and argument
+|The property value is less or equal to the given value. Requires a `Comparable` property and argument.
 
 |GreaterThan
 |1
-|The property value is greater than the given value. Requires a `Comparable` property and argument
+|The property value is greater than the given value. Requires a `Comparable` property and argument.
 
 |GreaterThanEqual
 |1
-|The property value is greater or equal to the given value. Requires a `Comparable` property and argument
+|The property value is greater or equal to the given value. Requires a `Comparable` property and argument.
 
 |Between
 |2
-|The property value is between the given values. Requires `Comparable` properties and arguments
+|The property value is between the given values. Requires `Comparable` properties and arguments.
 
 |Like
 |1
-|The property value is `LIKE` the given value. Requires a `String` property and argument
+|The property value is `LIKE` the given value. Requires a `String` property and argument.
 
 |In
 |1
-|The property value is in the given collection. Requires a `Collection` argument
+|The property value is in the given collection. Requires a `Collection` argument.
 
 |Empty
 |0
-|The property value is empty. Requires a `Collection` property
+|The property value is empty. Requires a `Collection` property.
 
 |Null
 |0
-|The property value is `NULL`
+|The property value is `NULL`.
 
 |True
 |0
-|The property value is `true`. Requires `boolean` or `Boolean` property
+|The property value is `true`. Requires `boolean` or `Boolean` property.
 
 |False
 |0
-|The property value is `false`
+|The property value is `false`. Requires `boolean` or `Boolean` property.
 |===
+
+An example method that returns all entities whose `age` attribute is greater than the provided value:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_criteria_method, indent=0]
+----
 
 Logical operators:
 
@@ -460,14 +449,15 @@ Logical operators:
 |Logical OR
 |===
 
-In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1 section 4.6.6.
+NOTE: In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1, section 4.6.6.
+      The same rule applies to SQL.
 
 ===== Ordering in method name
 
-Ordering part of the method name is optional and represents the `ORDER BY` clause of the database query. It is list of ordering
-rules. Single ordering rule is the property followed by optional order direction keyword.
-If more than one ordering rule is present, rules must be separated by the order direction keywords so only the last keyword
-is optional.
+The ordering part of the method name is optional and represents the `ORDER BY` clause of the query.
+It is a list of ordering rules. A single ordering rule is the `property` optionally followed by
+a direction keyword. If more than one ordering rule is present, the rules must be separated by direction
+keywords, so only the last keyword is optional.
 
 Ordering keywords:
 
@@ -476,28 +466,56 @@ Ordering keywords:
 |Keyword |Description
 
 |Asc
-|Returned collection is sorted in ascending order.
+|The returned collection is sorted in ascending order.
 
 |Desc
-|Returned collection is sorted in descending order.
+|The returned collection is sorted in descending order.
 |===
 
-Default `Asc` keyword is applied when missing after the `property`.
+The default direction is ascending when the keyword is omitted after the `property`.
 
-An example of repository method with ordering:
+An example repository method with ordering:
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
 ----
+
+==== Method with query defined by `@Data.Query` annotation
+
+This method type must be annotated with `@Data.Query`. The annotation takes a single `String` value containing
+the database query. Currently, JPQL is supported. Method arguments must match the query parameters:
+
+* For named parameters, each named parameter in the query must correspond to a method argument
+  with the same name. Order does not matter.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
+----
+
+* For indexed parameters, each argument must appear in the same order as in the query. Indexing starts at `1`.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=selectKeeper_method, indent=0]
+----
+
+Supported return types include:
+
+* the query row type such as an entity class, an entity attribute, or a custom projection
+* `List`, `Collection`, `Stream`, or `Optional` with the query row type as the generic parameter
+* `Page` or `Slice` with the query row type as the generic parameter
+
 // end::data_repository_interface[]
 
 // tag::data_pagination[]
+
 == Pagination
 
-Pagination allows user to split returned data collection into individual pages. When pagination is used, the repository method
-must have an argument of `PageRequest` type. Return type of the method is `Slice` or `Page`.
-The `PageRequest` argument of the method defines size of the page and index of the page (starting from `0`) to be returned.
+Pagination allows the caller to split a returned data collection into individual pages. When pagination is used,
+the repository method must have an argument of type `PageRequest`. The return type of the method is `Slice` or `Page`.
+The `PageRequest` argument defines the page size and the page index, starting from `0`.
 
 Returned page content types:
 
@@ -506,61 +524,69 @@ Returned page content types:
 |Name |Description
 
 |Slice
-|Contains page data as `List` or `Stream` and `PageRequest` to return this page.
+|Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page.
 
 |Page
-|Contains page data as `List` or `Stream`, total size of the result across all pages and `PageRequest` to return this page.
+|Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest`
+ to retrieve this page.
 |===
 
-An example of repository method with pagination:
+An example repository method with pagination:
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_slice_method, indent=0]
 ----
+
 // end::data_pagination[]
 
 // tag::data_dynamic_ordering[]
+
 == Dynamic Ordering
 
-Ordering part of the method name defines static ordering rule which cannot be modified at runtime. Dynamic ordering allows user
-to define additional ordering rule which is defined at runtime. Dynamic ordering is triggered by adding an argument of `Sort`
-type to the repository method. Both rules can be used simultaneously.
+The ordering part of the method name defines a static ordering rule that cannot be modified at runtime.
+Dynamic ordering allows the caller to define an additional ordering rule at runtime. Dynamic ordering is triggered
+by adding an argument of type `Sort` to the repository method. Both static and dynamic rules can be used together.
 
-An example of repository method with dynamic ordering:
+An example repository method with dynamic ordering:
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_dynamic_sort_method, indent=0]
 ----
 
-Static ordering rules from the method name are always applied first and dynamic rules are added after them.
+Static ordering rules from the method name are always applied first, and dynamic rules are added after them:
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_dual_sort_method, indent=0]
 ----
+
 // end::data_dynamic_ordering[]
 
 // tag::data_session_access_1[]
+
 == Persistence Session Access
 
-User can get access to persistence provider session to implement more complex tasks which are not supported by this framework.
-This feature is available to the data repository interface which extends `Data.SessionRepository<S>` interface. Generic argument
-`S` is the persistence session type, e.g. `EntityManager`.
+The caller can access the persistence provider session to implement more complex tasks that the framework does not
+support directly. This feature is available to a data repository interface that extends the `Data.SessionRepository<S>` interface.
 
-`Data.SessionRepository<S>` interface contains methods to provide session managed by data repository framework so there is no need
-to handle session instance life-cycle.
+The generic argument `S` is the persistence session type, for example `EntityManager`.
+The `Data.SessionRepository` interface provides methods that supply a session managed by the data repository framework,
+so there is no need to handle the session instance lifecycle.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/SimpleSnippets.java[tag=session_repository, indent=0]
 ----
 
-Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
+The session instance is available through the `Data.SessionRepository<S>` interface methods `run` and `call`:
+
 // end::data_session_access_1[]
 
 // tag::data_session_access_2[]
-NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
-this method has ended.
+
+NOTE: The session instance is valid only while `run` or `call` method is being executed. This instance must not
+      be stored and used after this method has ended.
+
 // end::data_session_access_2[]
