@@ -19,24 +19,16 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver-project</artifactId>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-project</artifactId>
         <version>4.3.0-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-project</artifactId>
-    <name>Helidon WebServer Observe Project</name>
-    <packaging>pom</packaging>
+	<packaging>pom</packaging>
+    <artifactId>helidon-webserver-observe-telemetry-project</artifactId>
+    <name>Helidon WebServer Observe Telemetry Project</name>
+    <description>WebServer telemetry observability support</description>
 
     <modules>
-        <module>observe</module>
-        <module>health</module>
-        <module>config</module>
-        <module>info</module>
-        <module>metrics</module>
-        <module>log</module>
         <module>tracing</module>
-        <module>telemetry</module>
     </modules>
 </project>

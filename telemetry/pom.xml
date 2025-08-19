@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,29 +14,23 @@
     See the License for the specific language governing permissions and
     limitations under the License.
   -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://maven.apache.org/POM/4.0.0"
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver-project</artifactId>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-project</artifactId>
         <version>4.3.0-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-project</artifactId>
-    <name>Helidon WebServer Observe Project</name>
     <packaging>pom</packaging>
+    <groupId>io.helidon.telemetry</groupId>
+    <artifactId>helidon-telemetry-project</artifactId>
+    <name>Helidon Telemetry Project</name>
 
     <modules>
-        <module>observe</module>
-        <module>health</module>
-        <module>config</module>
-        <module>info</module>
-        <module>metrics</module>
-        <module>log</module>
-        <module>tracing</module>
-        <module>telemetry</module>
+        <module>opentelemetry-config</module>
     </modules>
+
 </project>

@@ -20,30 +20,35 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-project</artifactId>
+        <artifactId>helidon-webserver-observe-telemetry-project</artifactId>
         <version>4.3.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-webserver-observe-tracing</artifactId>
-    <name>Helidon WebServer Observe Tracing</name>
-    <description>WebServer Tracing observability support</description>
+    <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+    <name>Helidon WebServer Observe Telemetry Tracing</name>
+    <description>WebServer Telemetry Tracing observability support</description>
+
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver.observe</groupId>
-            <artifactId>helidon-webserver-observe</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-config</artifactId>
+            <groupId>io.helidon.telemetry</groupId>
+            <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -100,11 +105,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.service</groupId>
                             <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
@@ -130,11 +130,6 @@
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
                         <artifactId>helidon-builder-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
