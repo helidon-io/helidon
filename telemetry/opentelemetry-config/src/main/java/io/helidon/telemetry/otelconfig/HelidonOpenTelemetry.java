@@ -76,14 +76,15 @@ public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfi
      * </ol>
      * @param openTelemetry the {@code OpenTelemetry} instance to make global
      * @param serviceName service name with which to create the new global tracer
+     * @param tags tags to be applied to every span
      * @throws IllegalStateException if other code has already established the OpenTelemetry global instance
      */
-    static void global(OpenTelemetry openTelemetry, String serviceName) throws IllegalStateException {
+    static void global(OpenTelemetry openTelemetry, String serviceName, Map<String, String> tags) throws IllegalStateException {
         GlobalOpenTelemetry.set(openTelemetry);
         var otelTracer = openTelemetry.getTracer(serviceName);
         var helidonTracer = io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry.create(openTelemetry,
                                                                                                    otelTracer,
-                                                                                                   Map.of());
+                                                                                                   tags);
         Tracer.global(helidonTracer);
         Services.set(OpenTelemetry.class, openTelemetry);
     }

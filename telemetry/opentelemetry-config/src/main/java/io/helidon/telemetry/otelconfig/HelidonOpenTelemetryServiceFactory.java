@@ -16,6 +16,7 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Map;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
@@ -55,7 +56,9 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
         }
 
         if (otelConfig.global() && !wasOtelGlobalSet) {
-            io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.global(result, otelConfig.service());
+            io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.global(result,
+                                                                        otelConfig.service(),
+                                                                        Map.of());
         }
         return result;
     }
