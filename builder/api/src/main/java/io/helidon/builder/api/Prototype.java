@@ -417,12 +417,21 @@ public final class Prototype {
     }
 
     /**
-     * Include default methods from the blueprint and its super types.
+     * Include default methods from the blueprint and its super types (interface methods declared as {@code default}).
      * <p>
      * If the value is specified, only methods with names matching the values are included, as long as they qualify as
      * blueprint methods (i.e. they have a non-void return type and zero parameters).
      * <p>
      * This can be used to define backward compatible changes.
+     * <p>
+     * Behavior for handling {@code default} methods on interfaces in blueprints:
+     * <ul>
+     *     <li>If this annotation is NOT present on a blueprint, methods declared as {@code default} are ignored</li>
+     *     <li>If this annotation is present on a blueprint and has empty value, all methods declared as {@code default} are
+     *          included as long as they are property getters (non-void, no parameters, not private)</li>
+     *     <li>If this annotation is present on a blueprint and has non-empty value, only methods with names matching a
+     *          value are included as long as they are property getters (non-void, no parameters, not private</li>
+     * </ul>
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -432,6 +441,7 @@ public final class Prototype {
          * This can be used for backward compatibility.
          *
          * @return names of methods, if left blank, all default methods are included
+         * @see IncludeDefaultMethods
          */
         String[] value() default {};
     }
