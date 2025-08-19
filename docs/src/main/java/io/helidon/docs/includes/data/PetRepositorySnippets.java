@@ -30,29 +30,29 @@ import io.helidon.data.Sort;
 public interface PetRepositorySnippets extends Data.GenericRepository<Pet, Integer> {
 
     // tag::qbmn_method[]
+    Optional<Keeper> findByName(String name);
     Number countByName(String name);
     long longCountByName(String name);
-    Long boxedLongCountByName(String name);
-    int intCountByName(String name);
-    Integer boxedIntCountByName(String name);
-    short shortCountByName(String name);
-    Short boxedShortCountByName(String name);
     // end::qbmn_method[]
 
+    // tag::qbmn_criteria_method[]
+    List<Keeper> listByAgeGreaterThan(int age);
+    // end::qbmn_criteria_method[]
+
     // tag::qbmn_sort_method[]
-    List<Keeper> findAllOrderByAgeAscName();
+    List<Keeper> listAllOrderByAgeAscName();
     // end::qbmn_sort_method[]
 
     // tag::qbmn_slice_method[]
-    Slice<Keeper> listOrderByName(PageRequest pageRequest);
+    Slice<Keeper> listAll(PageRequest pageRequest);
     // end::qbmn_slice_method[]
 
     // tag::qbmn_dynamic_sort_method[]
-    List<Keeper> findByAgeBetween(int min, int max, Sort sort);
+    List<Keeper> listByAgeBetween(int min, int max, Sort sort);
     // end::qbmn_dynamic_sort_method[]
 
     // tag::qbmn_dual_sort_method[]
-    List<Keeper> findByAgeBetweenOrderByAge(int min, int max, Sort sort);
+    List<Keeper> listByAgeBetweenOrderByAge(int min, int max, Sort sort);
     // end::qbmn_dual_sort_method[]
 
     // tag::selectKeeper_method[]

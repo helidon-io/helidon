@@ -35,5 +35,13 @@ public class PetService {
                 .getResultList());
     }
 
+    public void updateKeeperName(String name, int id) {
+        repository.run(em -> em.createQuery("UPDATE Keeper k SET k.name = :name WHERE k.id = :id",
+                                            Keeper.class)
+                .setParameter("name", name)
+                .setParameter("id", id)
+                .executeUpdate());
+    }
+
 }
 // end::session_access[]
