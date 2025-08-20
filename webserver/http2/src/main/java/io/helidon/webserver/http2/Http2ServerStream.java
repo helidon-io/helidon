@@ -18,7 +18,6 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;

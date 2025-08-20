@@ -22,10 +22,8 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
@@ -650,7 +648,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void handleRequestException(RequestException e) {
-        // gather error handling properties
+         // gather error handling properties
         ErrorHandling errorHandling = ctx.listenerContext()
                 .config()
                 .errorHandling();
