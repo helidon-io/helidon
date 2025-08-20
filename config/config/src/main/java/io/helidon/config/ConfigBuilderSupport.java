@@ -33,7 +33,7 @@ import io.helidon.service.registry.ServiceRegistry;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
-    // matches string between ${ } with a negative lookbehind if there is not backslash
+    // matches string between ${ } with a negative lookbehind if there is no backslash
     private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}:]+)(:.+?)?}";
     private static final Pattern PATTERN_REFERENCE = Pattern.compile(REGEX_REFERENCE);
     // matches a backslash with a positive lookahead if it is the backslash that encodes ${}
