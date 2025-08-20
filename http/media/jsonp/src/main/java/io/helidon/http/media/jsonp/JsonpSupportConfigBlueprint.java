@@ -18,8 +18,6 @@ package io.helidon.http.media.jsonp;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
-import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 import jakarta.json.JsonReaderFactory;
