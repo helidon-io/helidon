@@ -30,10 +30,10 @@ public final class Configurability {
     /**
      * Create an assignment for an expression that can use configuration references.
      *
-     * @param contentBuilder builder of content to add lines to
+     * @param contentBuilder     builder of content to add lines to
      * @param configVariableName name of the config variable (i.e. {@code config})
-     * @param variableName name of the variable to assign to (i.e. {@code uri})
-     * @param expression the expression to resolve, probably from annotation option
+     * @param variableName       name of the variable to assign to (i.e. {@code uri})
+     * @param expression         the expression to resolve, probably from annotation option
      */
     public static void assignResolveExpression(ContentBuilder<?> contentBuilder,
                                                String configVariableName,
@@ -53,9 +53,9 @@ public final class Configurability {
     /**
      * Create an in-lined expression resolution that can use configuration references.
      *
-     * @param contentBuilder builder of content to add lines to
+     * @param contentBuilder     builder of content to add lines to
      * @param configVariableName name of the config variable (i.e. {@code config})
-     * @param expression the expression to resolve, probably from annotation option
+     * @param expression         the expression to resolve, probably from annotation option
      */
     public static void resolveExpression(ContentBuilder<?> contentBuilder,
                                          String configVariableName,
