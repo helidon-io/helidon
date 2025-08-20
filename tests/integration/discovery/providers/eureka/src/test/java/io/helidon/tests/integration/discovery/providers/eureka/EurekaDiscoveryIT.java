@@ -30,14 +30,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 @TestMethodOrder(OrderAnnotation.class)
 class EurekaDiscoveryIT {
 
     private static final URI defaultValue = URI.create("http://example.com/nonexistent");
-    
+
     private static EurekaDiscovery d;
 
     EurekaDiscoveryIT() {
@@ -62,7 +64,7 @@ class EurekaDiscoveryIT {
     void testInitialDiscoverNoApplications() throws InterruptedException {
         // No applications registered. Make sure the default value is returned.
         SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(1));
+        assertThat(uris, hasSize(1));
         assertThat(uris.getFirst().uri(), is(defaultValue));
     }
 
@@ -98,12 +100,7 @@ class EurekaDiscoveryIT {
             assertThat(response.status().code(), is(204));
         }
 
-        // Wait for the server to refresh its response cache and for us to update our own cache. We've artificially
-        // shortened this interval in both cases to make this test run faster.
-        Thread.sleep(1100L);
-
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(2));
+        SequencedSet<DiscoveredUri> uris = assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue), hasSize(2));
         assertThat(uris.getLast().uri(), is(defaultValue));
         assertThat(uris.getFirst().uri(), is(URI.create("http://localhost:80")));
     }
@@ -117,12 +114,7 @@ class EurekaDiscoveryIT {
             assertThat(response.status().code(), is(200));
         }
 
-        // Wait for the server to update its response cache. The default is 30 seconds, but we've changed that in
-        // configuration so this test runs more quickly.
-        Thread.sleep(2000L);
-
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(1));
+        SequencedSet<DiscoveredUri> uris = assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue), hasSize(1));
         assertThat(uris.getLast().uri(), is(defaultValue));
     }
 
