@@ -18,6 +18,8 @@ package io.helidon.docs.includes.data;
 import java.util.List;
 
 import io.helidon.data.Data;
+import io.helidon.service.registry.Service;
+import io.helidon.transaction.Tx;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
@@ -48,5 +50,38 @@ public class SimpleSnippets {
             extends Data.GenericRepository<Keeper, Integer>, Data.SessionRepository<EntityManager> {
     }
     // end::session_repository[]
+
+    // tag::data_transaction_annotations[]
+    @Service.Singleton
+    public class PetService {
+        @Tx.Required
+        public void doSomething() {
+            // Method execution will always be within a transaction
+        }
+
+        @Tx.Never
+        public void doSomethingElse() {
+            // Method execution will never be within a transaction
+        }
+    }
+    // end::data_transaction_annotations[]
+
+    // tag::data_transaction_methods[]
+    public class KeeperService {
+        public void doSomething() {
+            Tx.transaction(Tx.Type.REQUIRED,
+                           () -> {
+                               // Method execution will always be within a transaction
+                           });
+        }
+
+        public void doSomethingElse() {
+            Tx.transaction(Tx.Type.NEVER,
+                           () -> {
+                               // Method execution will never be within a transaction
+                           });
+        }
+    }
+    // end::data_transaction_methods[]
 
 }

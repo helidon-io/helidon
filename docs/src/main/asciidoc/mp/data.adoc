@@ -37,6 +37,7 @@ include::{rootdir}/includes/mp.adoc[]
 -  <<Pagination, Pagination>>
 -  <<Dynamic Ordering, Dynamic Ordering>>
 -  <<Persistence Session Access, Persistence Session Access>>
+-  <<Transactions, Transactions>>
 
 == Overview
 
@@ -49,8 +50,8 @@ include::{rootdir}/includes/data.adoc[tag=data_config]
 
 == MP Application
 
-Data repository runtime initialization is handled by service registry. Repository interface instances can be obtained using
-`@Inject` annotation:
+The runtime initialization of the data repository is managed by the service registry. You can obtain repository
+interface instances using the `@Inject` annotation:
 
 [source,java]
 ----
@@ -67,3 +68,5 @@ include::{rootdir}/includes/data.adoc[tag=data_session_access_1]
 include::{sourcedir}/mp/data/PetService.java[tag=session_access, indent=0]
 ----
 include::{rootdir}/includes/data.adoc[tag=data_session_access_2]
+
+include::{rootdir}/includes/data.adoc[tag=data_transaction]
