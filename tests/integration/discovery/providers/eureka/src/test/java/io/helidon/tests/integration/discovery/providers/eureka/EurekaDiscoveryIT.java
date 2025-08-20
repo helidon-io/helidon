@@ -33,7 +33,7 @@ import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
 import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.contains;
 
 @TestMethodOrder(OrderAnnotation.class)
 class EurekaDiscoveryIT {
@@ -63,9 +63,7 @@ class EurekaDiscoveryIT {
     @Order(1)
     void testInitialDiscoverNoApplications() {
         // No applications registered. Make sure the default value is returned.
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris, hasSize(1));
-        assertThat(uris.getFirst().uri(), is(defaultValue));
+        assertThat(d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(), contains(defaultValue));
     }
 
     @Test
@@ -99,10 +97,8 @@ class EurekaDiscoveryIT {
              .submit(json)) {
             assertThat(response.status().code(), is(204));
         }
-
-        SequencedSet<DiscoveredUri> uris = assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue), hasSize(2));
-        assertThat(uris.getLast().uri(), is(defaultValue));
-        assertThat(uris.getFirst().uri(), is(URI.create("http://localhost:80")));
+        assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(),
+                            contains(URI.create("http://localhost:80"), defaultValue));
     }
 
     @Test
@@ -113,9 +109,8 @@ class EurekaDiscoveryIT {
              .request()) {
             assertThat(response.status().code(), is(200));
         }
-
-        SequencedSet<DiscoveredUri> uris = assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue), hasSize(1));
-        assertThat(uris.getLast().uri(), is(defaultValue));
+        assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(),
+                            contains(defaultValue));
     }
 
 }
