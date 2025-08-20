@@ -30,14 +30,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 @TestMethodOrder(OrderAnnotation.class)
 class EurekaDiscoveryIT {
 
     private static final URI defaultValue = URI.create("http://example.com/nonexistent");
-    
+
     private static EurekaDiscovery d;
 
     EurekaDiscoveryIT() {
@@ -59,16 +61,14 @@ class EurekaDiscoveryIT {
 
     @Test
     @Order(1)
-    void testInitialDiscoverNoApplications() throws InterruptedException {
+    void testInitialDiscoverNoApplications() {
         // No applications registered. Make sure the default value is returned.
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(1));
-        assertThat(uris.getFirst().uri(), is(defaultValue));
+        assertThat(d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(), contains(defaultValue));
     }
 
     @Test
     @Order(2)
-    void testRegisterAndDiscover() throws InterruptedException {
+    void testRegisterAndDiscover() {
         String json = """
             {
                 "instance": {
@@ -97,33 +97,20 @@ class EurekaDiscoveryIT {
              .submit(json)) {
             assertThat(response.status().code(), is(204));
         }
-
-        // Wait for the server to refresh its response cache and for us to update our own cache. We've artificially
-        // shortened this interval in both cases to make this test run faster.
-        Thread.sleep(1100L);
-
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(2));
-        assertThat(uris.getLast().uri(), is(defaultValue));
-        assertThat(uris.getFirst().uri(), is(URI.create("http://localhost:80")));
+        assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(),
+                            contains(URI.create("http://localhost:80"), defaultValue));
     }
 
     @Test
     @Order(3)
-    void testDeleteAndDiscover() throws InterruptedException {
+    void testDeleteAndDiscover() {
         try (var response = d.prototype().client().orElseThrow()
              .delete("/v2/apps/EXAMPLE/EXAMPLE_INSTANCE_ID")
              .request()) {
             assertThat(response.status().code(), is(200));
         }
-
-        // Wait for the server to update its response cache. The default is 30 seconds, but we've changed that in
-        // configuration so this test runs more quickly.
-        Thread.sleep(2000L);
-
-        SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
-        assertThat(uris.size(), is(1));
-        assertThat(uris.getLast().uri(), is(defaultValue));
+        assertThatWithRetry(() -> d.uris("EXAMPLE", defaultValue).stream().map(DiscoveredUri::uri).toList(),
+                            contains(defaultValue));
     }
 
 }
