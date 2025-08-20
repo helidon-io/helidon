@@ -33,7 +33,7 @@ interface JsonRpcHandlersBlueprint {
      *
      * @return a map of method names to handlers
      */
-    @Option.Singular("method")
+    @Option.Singular(value = "method", withPrefix = false)
     Map<String, JsonRpcHandler> handlersMap();
 
     /**

@@ -48,7 +48,7 @@ class JsonRpcRulesImpl implements JsonRpcRules, Iterable<JsonRpcRulesImpl.Rule> 
     @Override
     public JsonRpcRules register(String pathPattern, String method, JsonRpcHandler handler) {
         JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
-        builder.putMethod(method, handler);
+        builder.method(method, handler);
         return register(pathPattern, builder.build());
     }
 

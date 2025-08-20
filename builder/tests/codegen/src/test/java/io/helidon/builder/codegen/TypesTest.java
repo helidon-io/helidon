@@ -36,8 +36,8 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
 import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.RegistryBuilderSupport;
 import io.helidon.service.registry.Service;
@@ -84,6 +84,8 @@ public class TypesTest {
         }
 
         checkField(toCheck, checked, fields, "COMMON_CONFIG", Config.class);
+        checkField(toCheck, checked, fields, "CONFIG", io.helidon.config.Config.class);
+        checkField(toCheck, checked, fields, "CONFIG_BUILDER", io.helidon.config.Config.Builder.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);
         checkField(toCheck, checked, fields, "LINKED_HASH_MAP", LinkedHashMap.class);
@@ -110,6 +112,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER_DECORATOR", Prototype.BuilderDecorator.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CONSTANT", Prototype.Constant.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_SERVICE_REGISTRY", Prototype.RegistrySupport.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_INCLUDE_DEFAULTS", Prototype.IncludeDefaultMethods.class);
         checkField(toCheck, checked, fields, "GENERATED_EQUALITY_UTIL", GeneratedBuilder.EqualityUtil.class);
         checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPE", RuntimeType.PrototypedBy.class);
         checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPED_BY", RuntimeType.PrototypedBy.class);

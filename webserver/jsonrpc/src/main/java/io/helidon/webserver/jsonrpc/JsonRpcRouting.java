@@ -331,7 +331,7 @@ public class JsonRpcRouting implements HttpService {
          */
         public Builder register(String pathPattern, String method, JsonRpcHandler handler) {
             JsonRpcHandlers.Builder builder = JsonRpcHandlers.builder();
-            builder.putMethod(method, handler);
+            builder.method(method, handler);
             register(pathPattern, builder.build());
             return this;
         }

@@ -24,13 +24,13 @@ import io.helidon.messaging.connectors.mock.MockConnector;
 import io.helidon.messaging.connectors.mock.TestConnector;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddBeans;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddConfigs;
-import io.helidon.microprofile.testing.junit5.AddExtension;
-import io.helidon.microprofile.testing.junit5.AddExtensions;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddBeans;
+import io.helidon.microprofile.testing.AddConfig;
+import io.helidon.microprofile.testing.AddConfigs;
+import io.helidon.microprofile.testing.AddExtension;
+import io.helidon.microprofile.testing.AddExtensions;
+import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.inject.se.SeContainer;
@@ -43,8 +43,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -77,6 +75,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 public class AckMpTest extends AbstractMPTest {
 
     static final String TEST_QUEUE_ACK = "queue-ack";
+    static final Duration TIMEOUT = Duration.ofSeconds(15);
 
     private static final System.Logger LOGGER = System.getLogger(AckMpTest.class.getName());
     private static final Annotation TEST_CONNECTOR_ANNOTATION = MockConnector.class.getAnnotation(TestConnector.class);
@@ -99,24 +98,21 @@ public class AckMpTest extends AbstractMPTest {
     @Order(1)
     void resendAckTestPart1(SeContainer cdi) {
         MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
-        //Messages starting with NO_ACK is not acked by ChannelAck bean
+        //Messages starting with NO_ACK are not acked by ChannelAck bean
         List<String> testData = List.of("0", "1", "2", "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
         produce(TEST_QUEUE_ACK, testData, m -> {});
         mockConnector.outgoing("mock-conn-channel", String.class)
-                        .awaitPayloads(Duration.ofSeconds(5), testData.toArray(String[]::new));
+                        .awaitPayloads(TIMEOUT, testData.toArray(String[]::new));
     }
 
     @Test
     @Order(2)
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "https://github.com/helidon-io/helidon/issues/8509")
     void resendAckTestPart2(SeContainer cdi) {
             MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 
             //Check if not acked messages are redelivered
             mockConnector.outgoing("mock-conn-channel", String.class)
-                    .requestMax()
-                    .awaitCount(Duration.ofSeconds(5), 1)
-                    .awaitPayloads(Duration.ofSeconds(5), "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
+                    .awaitPayloads(TIMEOUT, "NO_ACK-1", "NO_ACK-2", "NO_ACK-3");
     }
 
     @AfterAll

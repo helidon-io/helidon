@@ -161,7 +161,7 @@ public final class Prototype {
 
     /**
      * A blueprint annotated with this annotation will create a prototype that can be created from a
-     * {@code io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
+     * {@code io.helidon.config.Config} instance. The builder will also have a method {@code config(Config)} that
      * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.
      */
     @Target(ElementType.TYPE)
@@ -313,7 +313,7 @@ public final class Prototype {
      *          {@code io.helidon.common.Builder}, that builds the prototype</li>
      *     <li>{@code static Prototype.Builder Prototype.builder(Prototype)} - a method that returns a builder populated from
      *          existing prototype instance</li>
-     *     <li>{@code static Prototype create(io.helidon.common.config.Config config)} - a method that creates a new instance of
+     *     <li>{@code static Prototype create(io.helidon.config.Config config)} - a method that creates a new instance of
      *          prototype from configuration</li>
      *     <li>{@code static Prototype create()} - a method that creates a new instance if there are no required fields</li>
      * </ul>
@@ -415,5 +415,36 @@ public final class Prototype {
          */
         boolean value() default true;
     }
+
+    /**
+     * Include default methods from the blueprint and its super types (interface methods declared as {@code default}).
+     * <p>
+     * If the value is specified, only methods with names matching the values are included, as long as they qualify as
+     * blueprint methods (i.e. they have a non-void return type and zero parameters).
+     * <p>
+     * This can be used to define backward compatible changes.
+     * <p>
+     * Behavior for handling {@code default} methods on interfaces in blueprints:
+     * <ul>
+     *     <li>If this annotation is NOT present on a blueprint, methods declared as {@code default} are ignored</li>
+     *     <li>If this annotation is present on a blueprint and has empty value, all methods declared as {@code default} are
+     *          included as long as they are property getters (non-void, no parameters, not private)</li>
+     *     <li>If this annotation is present on a blueprint and has non-empty value, only methods with names matching a
+     *          value are included as long as they are property getters (non-void, no parameters, not private</li>
+     * </ul>
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface IncludeDefaultMethods {
+        /**
+         * Names of default methods from super types or this blueprint to include as prototype properties.
+         * This can be used for backward compatibility.
+         *
+         * @return names of methods, if left blank, all default methods are included
+         * @see IncludeDefaultMethods
+         */
+        String[] value() default {};
+    }
+
 }
 

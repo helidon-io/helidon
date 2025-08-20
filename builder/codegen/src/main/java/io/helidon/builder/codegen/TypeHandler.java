@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG_BUILDER;
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
 import static io.helidon.builder.codegen.Types.SERVICES;
 import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
@@ -145,7 +148,8 @@ class TypeHandler {
 
     static boolean isConfigProperty(TypeHandler handler) {
         return "config".equals(handler.name())
-                && handler.actualType().equals(Types.COMMON_CONFIG);
+                && (handler.actualType().equals(CONFIG)
+                    || handler.actualType().equals(COMMON_CONFIG));
     }
 
     protected static TypeName collectionImplType(TypeName typeName) {
@@ -384,7 +388,7 @@ class TypeHandler {
             // this is a special case - we have a builder field
             if (configured.hasDefault()) {
                 method.addContent(".as(")
-                        .addContent(Types.COMMON_CONFIG)
+                        .addContent(CONFIG)
                         .addContent(".class).ifPresent(")
                         .addContent(name())
                         .addContentLine("::config);");
@@ -392,7 +396,7 @@ class TypeHandler {
                 // a bit dirty hack - we expect builder() method to exist on the class that owns the builder
                 int lastDot = fqName.lastIndexOf('.');
                 String builderMethod = fqName.substring(0, lastDot) + ".builder()";
-                method.addContentLine(".map(" + builderMethod + "::config).ifPresent(this::" + setterName() + ");");
+                method.addContentLine(".as(" + builderMethod + "::config).ifPresent(this::" + setterName() + ");");
             }
         } else {
             generateFromConfig(method, factoryMethods);
@@ -420,7 +424,7 @@ class TypeHandler {
         TypeName boxed = actualType().boxed();
         if (factoryMethod.isPresent()) {
             FactoryMethods.FactoryMethod fm = factoryMethod.get();
-            content.addContent(".map(")
+            content.addContent(".as(")
                     .addContent(fm.typeWithFactoryMethod().genericTypeName())
                     .addContent("::");
             if (!actualType().typeArguments().isEmpty()) {
@@ -481,6 +485,12 @@ class TypeHandler {
                         AnnotationDataOption configured,
                         TypeName returnType,
                         Javadoc blueprintJavadoc) {
+
+        if (skipBuilderConsumer(actualType())) {
+            // config has special handling
+            return;
+        }
+
         String argumentName = "consumer";
 
         List<String> paramLines = new ArrayList<>();
@@ -607,6 +617,10 @@ class TypeHandler {
                 .orElse(typeName);
     }
 
+    protected boolean skipBuilderConsumer(TypeName typeName) {
+        return typeName.equals(CONFIG) || typeName.equals(CONFIG_BUILDER);
+    }
+
     private static void checkTypeArgsSizeAndTypes(TypedElementInfo annotatedMethod,
                                                   TypeName returnType,
                                                   TypeName collectionType,
@@ -649,6 +663,10 @@ class TypeHandler {
             builderType = factoryMethod.factoryMethodReturnType();
         } else {
             builderType = TypeName.create(factoryMethod.factoryMethodReturnType().fqName() + ".Builder");
+        }
+
+        if (skipBuilderConsumer(builderType)) {
+            return;
         }
 
         String argumentName = "consumer";

@@ -18,7 +18,7 @@ package io.helidon.config.tests.service.registry;
 
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;

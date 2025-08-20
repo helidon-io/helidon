@@ -26,6 +26,8 @@ import io.helidon.common.types.TypeName;
 
 final class Types {
     static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
+    static final TypeName CONFIG_BUILDER = TypeName.create("io.helidon.config.Config.Builder");
     static final TypeName GENERATED = TypeName.create(Generated.class);
     static final TypeName DEPRECATED = TypeName.create(Deprecated.class);
     static final TypeName LINKED_HASH_MAP = TypeName.create(LinkedHashMap.class);
@@ -57,6 +59,7 @@ final class Types {
     static final TypeName PROTOTYPE_BUILDER_DECORATOR = TypeName.create("io.helidon.builder.api.Prototype.BuilderDecorator");
     static final TypeName PROTOTYPE_CONSTANT = TypeName.create("io.helidon.builder.api.Prototype.Constant");
     static final TypeName PROTOTYPE_SERVICE_REGISTRY = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
+    static final TypeName PROTOTYPE_INCLUDE_DEFAULTS = TypeName.create("io.helidon.builder.api.Prototype.IncludeDefaultMethods");
     static final TypeName GENERATED_EQUALITY_UTIL = TypeName.create("io.helidon.builder.api.GeneratedBuilder.EqualityUtil");
 
     static final TypeName RUNTIME_PROTOTYPE = TypeName.create("io.helidon.builder.api.RuntimeType.PrototypedBy");
@@ -86,9 +89,9 @@ final class Types {
     static final TypeName OPTION_DECORATOR = TypeName.create("io.helidon.builder.api.Option.Decorator");
 
     static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
-            "io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder");
+            "io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder");
     static final TypeName BUILDER_SUPPORT = TypeName.create("io.helidon.builder.api.BuilderSupport");
-    static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
+    static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.config.ConfigBuilderSupport");
 
     static final TypeName REGISTRY_BUILDER_SUPPORT = TypeName.create("io.helidon.service.registry.RegistryBuilderSupport");
 
