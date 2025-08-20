@@ -19,7 +19,7 @@
  */
 module io.helidon.data.sql.datasource.ucp {
 
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.builder.api;
     requires io.helidon.service.registry;
     requires io.helidon.data;

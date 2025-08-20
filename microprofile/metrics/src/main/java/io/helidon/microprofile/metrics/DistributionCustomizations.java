@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -241,14 +243,12 @@ class DistributionCustomizations {
             values = values(valuesExpression(), type, valueParser, valueChecker);
         }
 
-        protected T[] values() {
-            return values;
-        }
-
-        private T[] values(String valuesString,
-                           Class<T> type,
-                           Function<String, T> valueParser,
-                           Consumer<T> valueChecker) {
+        static <T extends Comparable<T>> ValuesResult<T> values(String valuesString,
+                                                                Class<T> type,
+                                                                Function<String, T> valueParser,
+                                                                Consumer<T> valueChecker,
+                                                                Supplier<String> namePrefix,
+                                                                Supplier<Boolean> hasTrailingWildcard) {
             String[] valueStrings = valuesString.split(",");
             T[] result = (T[]) Array.newInstance(type, valueStrings.length);
             int next = 0;
@@ -265,13 +265,13 @@ class DistributionCustomizations {
                         collector.get().warn("ignoring invalid value: " + ex.getMessage());
                         continue;
                     }
-                    valuesInOrder &= prev != null && prev.compareTo(value) < 0;
+                    valuesInOrder &= prev == null || prev.compareTo(value) < 0;
                     try {
                         valueChecker.accept(value);
                     } catch (Exception ex) {
                         collector.get().warn("ignoring value for "
-                                                     + namePrefix()
-                                                     + (hasTrailingWildcard() ? "*" : ": ")
+                                                     + namePrefix.get()
+                                                     + (hasTrailingWildcard.get() ? "*" : ": ")
                                                      + ex.getMessage());
                         continue;
                     }
@@ -281,16 +281,34 @@ class DistributionCustomizations {
             }
             if (!valuesInOrder) {
                 collector.get().warn("Values for "
-                                             + namePrefix()
-                                             + (hasTrailingWildcard() ? "*" : "")
+                                             + namePrefix.get()
+                                             + (hasTrailingWildcard.get() ? "*" : "")
                                              + "should be in strictly increasing order but are not: "
                                              + Arrays.toString(valueStrings));
             }
 
-            if (collector.isLoaded()) {
-                collector.get().collect().log(LOGGER);
-            }
-            return Arrays.copyOf(result, next);
+            return new ValuesResult<>(Arrays.copyOf(result, next),
+                                      collector.isLoaded()
+                                              ? Optional.of(collector.get())
+                                              : Optional.empty());
+        }
+
+        protected T[] values() {
+            return values;
+        }
+
+        private T[] values(String valuesString,
+                           Class<T> type,
+                           Function<String, T> valueParser,
+                           Consumer<T> valueChecker) {
+            var result = values(valuesString, type, valueParser, valueChecker, this::namePrefix, this::hasTrailingWildcard);
+
+            result.collector.ifPresent(c -> c.collect().log(LOGGER));
+            return result.values;
+        }
+
+        // Primarily to facilitate testing
+        record ValuesResult<T extends Comparable<T>>(T[] values, Optional<Errors.Collector> collector) {
         }
     }
 

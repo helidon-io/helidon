@@ -22,7 +22,7 @@ module io.helidon.data.jakarta.persistence {
     requires transitive jakarta.persistence;
     requires transitive io.helidon.service.registry;
 
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.data;
     requires io.helidon.data.sql.common;
     requires io.helidon.transaction;

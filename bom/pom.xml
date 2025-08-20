@@ -796,6 +796,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- telemetry -->
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- tracing -->
             <dependency>
                 <!-- to add tracer builder -->
@@ -1695,6 +1707,11 @@
             <dependency>
                 <groupId>io.helidon.discovery</groupId>
                 <artifactId>helidon-discovery</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.discovery.providers</groupId>
+                <artifactId>helidon-discovery-providers-eureka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

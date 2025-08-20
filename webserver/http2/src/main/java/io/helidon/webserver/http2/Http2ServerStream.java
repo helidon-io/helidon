@@ -92,6 +92,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final Http2Settings clientSettings;
     private final Http2StreamWriter writer;
     private final Router router;
+    private final Http2ConnectionChecks connectionAttackVectorMetrics;
     private final ArrayBlockingQueue<DataFrame> inboundData = new ArrayBlockingQueue<>(32);
     private final StreamFlowControl flowControl;
     private final Http2ConcurrentConnectionStreams streams;
@@ -132,7 +133,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
                       Http2Settings serverSettings,
                       Http2Settings clientSettings,
                       Http2StreamWriter writer,
-                      ConnectionFlowControl connectionFlowControl) {
+                      ConnectionFlowControl connectionFlowControl,
+                      Http2ConnectionChecks connectionAttackVectorMetrics) {
         this.ctx = ctx;
         this.streams = streams;
         this.routing = routing;
@@ -143,6 +145,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         this.clientSettings = clientSettings;
         this.writer = writer;
         this.router = ctx.router();
+        this.connectionAttackVectorMetrics = connectionAttackVectorMetrics;
         this.flowControl = connectionFlowControl.createStreamFlowControl(
                 streamId,
                 http2Config.initialWindowSize(),
@@ -218,12 +221,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (windowUpdate.windowSizeIncrement() == 0) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
             }
             //6.9.1/3
             long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
             if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
             }
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write window update", e);
@@ -254,6 +259,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             streams.remove(this.streamId);
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
             writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            connectionAttackVectorMetrics.madeYouResetCheck(streamId);
 
             try {
                 // we need to notify that there is no data coming

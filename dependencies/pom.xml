@@ -44,7 +44,7 @@
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.commons-io>2.16.1</version.lib.commons-io>
-        <version.lib.commons-lang>3.16.0</version.lib.commons-lang>
+        <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -108,8 +108,8 @@
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>1.1.0</version.lib.langchain4j>
-        <version.lib.langchain4j-community>1.1.0-beta7</version.lib.langchain4j-community>
+        <version.lib.langchain4j>1.3.0</version.lib.langchain4j>
+        <version.lib.langchain4j-community>1.3.0-beta9</version.lib.langchain4j-community>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
@@ -140,8 +140,8 @@
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
-        <version.lib.netty>4.1.118.Final</version.lib.netty>
-        <version.lib.oci>3.68.1</version.lib.oci>
+        <version.lib.netty>4.1.124.Final</version.lib.netty>
+        <version.lib.oci>3.70.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
@@ -149,10 +149,8 @@
         -->
         <version.lib.ojdbc>${version.lib.ojdbc.family}.6.0.24.10</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
-        <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
-        <version.lib.okio>3.4.0</version.lib.okio>
-        <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
-        <version.lib.okhttp3>4.11.0</version.lib.okhttp3>
+        <!-- Force upgrade okhttp3 for dependency convergence -->
+        <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.29.0-alpha</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.29.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry.opentracing.shim>1.29.0</version.lib.opentelemetry.opentracing.shim>
@@ -177,7 +175,7 @@
         <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
-        <version.lib.crac>1.4.0</version.lib.crac>
+        <version.lib.crac>1.5.0</version.lib.crac>
     </properties>
 
     <dependencyManagement>
@@ -977,13 +975,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
-            <!-- Langchain4j integration -->
-            <!-- Replace with community bom when issue #282 is fixed -->
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-community-oci-genai</artifactId>
-                <version>${version.lib.langchain4j-community}</version>
-            </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib</artifactId>
@@ -1198,27 +1189,25 @@
                 <version>${version.lib.groovy-all}</version>
             </dependency>
             <dependency>
-                <!-- required for dependency convergence, transitive dependency of both
-                commons-configuration (through hystrix-core)
-                org.apache.httpcomponents:httpclient (through health-tck)
-                -->
+                <!-- Required for dependency convergence google-api-client -->
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${version.lib.commons-logging}</version>
             </dependency>
             <dependency>
+                <!-- Required for dependency convergence google-api-client -->
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${version.lib.commons-codec}</version>
             </dependency>
             <dependency>
-                <!-- version managed to fix issues in third party dependency -->
+                <!-- Force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${version.lib.commons-compress}</version>
             </dependency>
             <dependency>
-                <!-- version managed to align with commons-compress version above -->
+                <!-- Force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lib.commons-lang}</version>
@@ -1257,16 +1246,10 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
+                <!-- Force upgrade okhttp3 for dependency convergence -->
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${version.lib.okhttp3}</version>
-            </dependency>
-            <dependency>
-                <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio</artifactId>
-                <version>${version.lib.okio}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
@@ -1495,6 +1478,13 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-bom</artifactId>
                 <version>${version.lib.langchain4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-bom</artifactId>
+                <version>${version.lib.langchain4j-community}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
