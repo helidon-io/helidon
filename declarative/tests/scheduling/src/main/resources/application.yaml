@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-override:
+overrides:
   cron: "0/1 * * * * ?"
   fixed:
     delay-by: "PT0S"

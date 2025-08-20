@@ -99,12 +99,12 @@ public class SchedulingTest {
         concurrentContenderCnt.decrementAndGet();
     }
 
-    @Scheduling.Cron("${override.cron:0 0 * * * ? *}")
+    @Scheduling.Cron("${overrides.cron:0 0 * * * ? *}")
     void overriddenValuesCron(CronInvocation inv) {
         overriddenCronFuture.complete(inv.cron());
     }
 
-    @Scheduling.FixedRate(delayBy = "${override.fixed.delay-by:PT500H}", value = "${override.fixed.interval:PT1H}")
+    @Scheduling.FixedRate(delayBy = "${overrides.fixed.delay-by:PT500H}", value = "${overrides.fixed.interval:PT1H}")
     void overriddenValuesFixed(FixedRateInvocation inv) {
         overriddenDelayByFuture.complete(inv.delayBy());
         overriddenIntervalFuture.complete(inv.interval());
