@@ -39,11 +39,7 @@ public final class DeclarativeTypes {
     /**
      * Common config type.
      */
-    public static final TypeName CONFIG = TypeName.create("io.helidon.common.config.Config");
-    /**
-     * Common config exception type.
-     */
-    public static final TypeName CONFIG_EXCEPTION = TypeName.create("io.helidon.common.config.ConfigException");
+    public static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
 
     /**
      * {@link java.lang.Throwable}.
@@ -71,9 +67,9 @@ public final class DeclarativeTypes {
     public static final TypeName EXECUTOR_SERVICE = TypeName.create(ExecutorService.class);
 
     /**
-     * Type name for {@code io.helidon.common.config.ConfigBuilderSupport}.
+     * Type name for {@code io.helidon.config.ConfigBuilderSupport}.
      */
-    public static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
+    public static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.config.ConfigBuilderSupport");
 
     private DeclarativeTypes() {
     }

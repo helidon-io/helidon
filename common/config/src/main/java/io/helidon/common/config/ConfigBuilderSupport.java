@@ -18,8 +18,6 @@ package io.helidon.common.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
@@ -34,13 +32,6 @@ import io.helidon.service.registry.ServiceRegistry;
 @Deprecated(forRemoval = true, since = "4.3.0")
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
-    // matches string between ${ } with a negative lookbehind if there is not backslash
-    private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}:]+)(:.+?)?}";
-    private static final Pattern PATTERN_REFERENCE = Pattern.compile(REGEX_REFERENCE);
-    // matches a backslash with a positive lookahead if it is the backslash that encodes ${}
-    private static final String REGEX_BACKSLASH = "\\\\(?=\\$\\{([^}]+)})";
-    private static final Pattern PATTERN_BACKSLASH = Pattern.compile(REGEX_BACKSLASH);
-
     private ConfigBuilderSupport() {
     }
 
@@ -253,44 +244,6 @@ public final class ConfigBuilderSupport {
                                             configType,
                                             allFromServiceLoader,
                                             existingValue);
-    }
-
-    /**
-     * Resolves an expression that may contain references to configuration values with possible default values.
-     * Nested expression are not allowed.
-     *
-     * @param config configuration instance
-     * @param expression expression to resolve, such as
-     *                   <pre>${service.scheme:http}://${service.host:localhost}:${service.port}</pre>, where
-     *                   {@code service.scheme} has a default value of {@code http},
-     *                   {@code service.host} has a default value of {@code localhost},
-     *                   and {@code service.port} does not have a default value, and will fail if not configured
-     * @return expression value with values retrieved from the {@code config} instance
-     */
-    public static String resolveExpression(Config config, String expression) {
-        Matcher m = PATTERN_REFERENCE.matcher(expression);
-
-        try {
-            StringBuilder sb = new StringBuilder();
-            while (m.find()) {
-                String configKey = m.group(1);
-                String defaultValue = m.group(2);
-
-                if (defaultValue == null) {
-                    m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().get()));
-                } else {
-                    // remove the :
-                    defaultValue = defaultValue.substring(1);
-                    m.appendReplacement(sb, Matcher.quoteReplacement(config.get(configKey).asString().orElse(defaultValue)));
-                }
-            }
-
-            m.appendTail(sb);
-            m = PATTERN_BACKSLASH.matcher(sb.toString());
-            return m.replaceAll("");
-        } catch (ConfigException e) {
-            throw new ConfigException("Failed to resolve expression: " + expression, e);
-        }
     }
 
     /**

@@ -25,11 +25,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigBuilderSupport;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
 
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.Test;
@@ -67,7 +66,6 @@ class DeclarativeCodegenTypesTest {
         checkField(toCheck, checked, fields, "COMMON_MAPPERS", Mappers.class);
         checkField(toCheck, checked, fields, "WEIGHT", Weight.class);
         checkField(toCheck, checked, fields, "CONFIG", Config.class);
-        checkField(toCheck, checked, fields, "CONFIG_EXCEPTION", ConfigException.class);
         checkField(toCheck, checked, fields, "THROWABLE", Throwable.class);
         checkField(toCheck, checked, fields, "EXECUTOR_SERVICE", ExecutorService.class);
         checkField(toCheck, checked, fields, "SET_OF_THROWABLES", Set.class);

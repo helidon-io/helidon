@@ -18,13 +18,13 @@ package io.helidon.config.tests;
 
 import java.util.Map;
 
-import io.helidon.common.config.ConfigException;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.config.ConfigBuilderSupport.resolveExpression;
+import static io.helidon.config.ConfigBuilderSupport.resolveExpression;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;

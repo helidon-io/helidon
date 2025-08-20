@@ -27,9 +27,9 @@ import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
-import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.scheduling.Cron;
