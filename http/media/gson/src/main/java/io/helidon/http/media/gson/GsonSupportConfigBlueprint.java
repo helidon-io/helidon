@@ -20,6 +20,9 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
+import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.spi.MediaSupportProvider;
 
 import com.google.gson.Gson;
 
@@ -28,7 +31,15 @@ import com.google.gson.Gson;
  */
 @Prototype.Blueprint(decorator = GsonSupport.Decorator.class)
 @Prototype.Configured(value = "gson", root = false)
-interface GsonSupportConfigBlueprint extends Prototype.Factory<GsonSupport> {
+interface GsonSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<GsonSupport> {
+
+    @Override
+    default MediaSupport create(Config config, String name) {
+        return GsonSupport.builder()
+                .config(config)
+                .name(name)
+                .build();
+    }
 
     /**
      * Name of the support. Default value is {@code gson}.

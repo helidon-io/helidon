@@ -20,6 +20,9 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
+import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.spi.MediaSupportProvider;
 
 import jakarta.json.bind.Jsonb;
 
@@ -28,7 +31,15 @@ import jakarta.json.bind.Jsonb;
  */
 @Prototype.Blueprint(decorator = JsonbSupport.Decorator.class)
 @Prototype.Configured(value = "jsonb", root = false)
-interface JsonbSupportConfigBlueprint extends Prototype.Factory<JsonbSupport> {
+interface JsonbSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<JsonbSupport> {
+
+    @Override
+    default MediaSupport create(Config config, String name) {
+        return JsonbSupport.builder()
+                .config(config)
+                .name(name)
+                .build();
+    }
 
     /**
      * Name of the support. Default value is {@code jsonb}.

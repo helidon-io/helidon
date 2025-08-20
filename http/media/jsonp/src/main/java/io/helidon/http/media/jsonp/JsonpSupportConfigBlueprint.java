@@ -18,6 +18,9 @@ package io.helidon.http.media.jsonp;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
+import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.spi.MediaSupportProvider;
 
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonWriterFactory;
@@ -26,7 +29,14 @@ import jakarta.json.JsonWriterFactory;
  * Configuration of the {@link JsonpSupport}.
  */
 @Prototype.Blueprint(decorator = JsonpSupport.Decorator.class)
-interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport> {
+interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<JsonpSupport> {
+
+    @Override
+    default MediaSupport create(Config config, String name) {
+        return JsonpSupport.builder()
+                .name(name)
+                .build();
+    }
 
     /**
      * Name of the support. Default value is {@code jsonp}.
