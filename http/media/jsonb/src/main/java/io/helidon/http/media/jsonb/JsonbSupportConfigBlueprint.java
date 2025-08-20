@@ -31,20 +31,8 @@ import jakarta.json.bind.Jsonb;
  */
 @Prototype.Blueprint(decorator = JsonbSupport.Decorator.class)
 @Prototype.Configured(value = "jsonb", root = false)
-interface JsonbSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<JsonbSupport> {
-
-    @Override
-    default MediaSupport create(Config config, String name) {
-        return JsonbSupport.builder()
-                .config(config)
-                .name(name)
-                .build();
-    }
-
-    @Override
-    default String configKey() {
-        return "jsonb";
-    }
+@Prototype.Provides(MediaSupportProvider.class)
+interface JsonbSupportConfigBlueprint extends Prototype.Factory<JsonbSupport> {
 
     /**
      * Name of the support. Default value is {@code jsonb}.

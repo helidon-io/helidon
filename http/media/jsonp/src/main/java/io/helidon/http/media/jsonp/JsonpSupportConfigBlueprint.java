@@ -29,19 +29,8 @@ import jakarta.json.JsonWriterFactory;
  * Configuration of the {@link JsonpSupport}.
  */
 @Prototype.Blueprint(decorator = JsonpSupport.Decorator.class)
-interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<JsonpSupport> {
-
-    @Override
-    default MediaSupport create(Config config, String name) {
-        return JsonpSupport.builder()
-                .name(name)
-                .build();
-    }
-
-    @Override
-    default String configKey() {
-        return "jsonp";
-    }
+@Prototype.Provides(MediaSupportProvider.class)
+interface JsonpSupportConfigBlueprint extends Prototype.Factory<JsonpSupport> {
 
     /**
      * Name of the support. Default value is {@code jsonp}.

@@ -31,20 +31,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Prototype.Blueprint(decorator = JacksonSupport.Decorator.class)
 @Prototype.Configured(value = "jackson", root = false)
-interface JacksonSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<JacksonSupport> {
-
-    @Override
-    default MediaSupport create(Config config, String name) {
-        return JacksonSupport.builder()
-                .config(config)
-                .name(name)
-                .build();
-    }
-
-    @Override
-    default String configKey() {
-        return "jackson";
-    }
+@Prototype.Provides(MediaSupportProvider.class)
+interface JacksonSupportConfigBlueprint extends Prototype.Factory<JacksonSupport> {
 
     /**
      * Name of the support. Default value is {@code jackson}.

@@ -31,20 +31,8 @@ import com.google.gson.Gson;
  */
 @Prototype.Blueprint(decorator = GsonSupport.Decorator.class)
 @Prototype.Configured(value = "gson", root = false)
-interface GsonSupportConfigBlueprint extends MediaSupportProvider, Prototype.Factory<GsonSupport> {
-
-    @Override
-    default MediaSupport create(Config config, String name) {
-        return GsonSupport.builder()
-                .config(config)
-                .name(name)
-                .build();
-    }
-
-    @Override
-    default String configKey() {
-        return "gson";
-    }
+@Prototype.Provides(MediaSupportProvider.class)
+interface GsonSupportConfigBlueprint extends Prototype.Factory<GsonSupport> {
 
     /**
      * Name of the support. Default value is {@code gson}.
