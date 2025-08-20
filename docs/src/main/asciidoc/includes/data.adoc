@@ -189,7 +189,7 @@ defined by the `@Data.Query` annotation:
 include::{sourcedir}/includes/data/PetRepository.java[tag=PetRepository_class, indent=0]
 ----
 
-==== Method with query defined by method name
+==== Method with Query Defined by Method Name
 
 This method type infers the query based on the method name and does not use a specific annotation.
 The method name must follow the _query-by-method-name_ syntax:
@@ -230,7 +230,7 @@ The method name must follow the _query-by-method-name_ syntax:
         direction    :: "Asc" | "Desc"
 ----
 
-===== Method name prefix and return type
+===== Method Name Prefix and Return Type
 
 A method can have a user-defined prefix. The prefix is a sequence of letters and digits that does not
 match any `<action-u>` keyword. This prefix has no influence on the query and can be used to distinguish
@@ -280,7 +280,7 @@ The return type depends on the action keyword:
 NOTE: Validation of the keyword–return type mapping is not fully enforced by the code generator,
 though this may change in future releases.
 
-===== Projection in method name
+===== Projection in Method Name
 
 The projection part is optional and follows directly after the return-type keyword. It consists
 of `expression` and `property` components:
@@ -323,7 +323,7 @@ translates to the JPQL query `SELECT p.keeper.name FROM Pet p`.
 include::{sourcedir}/includes/data/SimpleSnippets.java[tag=simple_model, indent=0]
 ----
 
-===== Criteria in method name
+===== Criteria in Method Name
 
 The criteria part of the method name is optional and represents the `WHERE` clause of the query.
 It is a logical expression composed of individual conditions joined by the `AND` and `OR` operators.
@@ -452,7 +452,7 @@ Logical operators:
 NOTE: In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1, section 4.6.6.
       The same rule applies to SQL.
 
-===== Ordering in method name
+===== Ordering in Method Name
 
 The ordering part of the method name is optional and represents the `ORDER BY` clause of the query.
 It is a list of ordering rules. A single ordering rule is the `property` optionally followed by
@@ -481,7 +481,7 @@ An example repository method with ordering:
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
 ----
 
-==== Method with query defined by `@Data.Query` annotation
+==== Method with Query Defined by `@Data.Query` Annotation
 
 This method type must be annotated with `@Data.Query`. The annotation takes a single `String` value containing
 the database query. Currently, JPQL is supported. Method arguments must match the query parameters:
@@ -590,3 +590,160 @@ NOTE: The session instance is valid only while `run` or `call` method is being e
       be stored and used after this method has ended.
 
 // end::data_session_access_2[]
+
+// tag::data_transaction[]
+
+== Transactions
+
+Transaction handling is available through Helidon Transaction API.
+
+To enable Helidon Transaction API, add the following dependency to your project’s `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>jakarta.transaction</groupId>
+    <artifactId>jakarta.transaction-api</artifactId>
+</dependency>
+----
+
+Helidon JTA Transaction support, such as Narayana, may be provided at runtime to enable `JTA` transaction type:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.transaction</groupId>
+    <artifactId>helidon-transaction-narayana</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+If JTA transaction support is not provided, Helidon Data runtime will use `RESOURCE_LOCAL` transaction type.
+
+=== Transaction Types
+
+The `Tx` class defines several ways how transactional support can be applied to transactional method executions.
+Those ways are defined in `Tx.Type` enum.
+
+==== Transaction Type Enum
+The `Tx.Type` enum is used to describe the possible ways in which transactional support must be applied
+to transactional method executions.
+
+===== Enum Values and Their Meanings
+
+The Type enum has six values, each representing a different transactional behavior:
+
+[cols=2*]
+|===
+|Name |Description
+
+|`MANDATORY`
+|A transaction must already be in effect when a method executes. If called outside a transaction
+ context, a `TxException` is thrown. If called inside a transaction context, method execution continues
+ under that context.
+
+|`NEW`
+|A new transaction is started when a method executes. If called outside a transaction context, a new
+ transaction is begun. If called inside a transaction context, the current transaction is suspended, a new
+ transaction is begun, and the method execution continues inside this new transaction context.
+
+|`NEVER`
+|No transaction must be in effect when a method executes. If called outside a transaction context, method
+ execution continues outside a transaction context. If called inside a transaction context, a `TxException`
+ is thrown.
+
+|`REQUIRED`
+|A transaction will be in effect when a method executes. If called outside a transaction context,
+ a new transaction is begun. If called inside a transaction context, method execution continues inside
+ that transaction context.
+
+|`SUPPORTED`
+|A transaction may optionally be in effect when a method executes. If called outside a transaction
+ context, method execution continues outside a transaction context. If called inside a transaction context,
+ method execution continues inside that transaction context.
+
+|`UNSUPPORTED`
+|No transaction will be in effect when a method executes. If called outside a transaction context, method
+ execution continues outside a transaction context. If called inside a transaction context, the current
+ transaction is suspended, method execution continues outside a transaction context, and the previously
+ suspended transaction is resumed after method execution completes.
+|===
+
+=== Transaction Annotations
+
+The `Tx` class defines several annotations that can be used to mark methods for transactional execution:
+
+[cols=2*]
+|===
+|Annotation |Description
+
+|`@Mandatory`
+|Indicates that a method will be executed with a managed transaction of type `MANDATORY`.
+
+|`@New`
+|Indicates that a method will be executed with a managed transaction of type `NEW`.
+
+|`@Never`
+|Indicates that a method will be executed with a managed transaction of type `NEVER`.
+
+|`@Required`
+|Indicates that a method will be executed with a managed transaction of type `REQUIRED`.
+
+|`@Supported`
+|Indicates that a method will be executed with a managed transaction of type `SUPPORTED`.
+
+|`@Unsupported`
+|Indicates that a method will be executed with a managed transaction of type `UNSUPPORTED`.
+|===
+
+=== Transaction Methods
+
+The `Tx` class provides several methods for executing tasks within a transaction:
+
+[cols=2*]
+|===
+|Annotation |Description
+
+|`transaction(Callable<T> task)`
+|Executes a task with a managed transaction of type `REQUIRED`.
+
+|`transaction(Type type, Callable<T> task)`
+|Executes a task with a managed transaction of the specified type.
+
+|`transaction(CheckedRunnable<Exception> task)`
+|Executes a task with a managed transaction of type `REQUIRED` without returning a result.
+
+|`transaction(Type type, CheckedRunnable<Exception> task)`
+|Executes a task with a managed transaction of the specified type without returning a result.
+|===
+
+=== Usage
+
+The `Tx.Type` enum is used to control the transactional behavior of methods. By specifying the desired transactional
+behavior using one of the enum values, developers can ensure that their methods are executed with the correct transactional
+context.
+For example, using `REQUIRED` ensures that a method is always executed within a transaction, while using `NEVER` ensures
+that a method is never executed within a transaction.
+
+In this example, the `doSomething()` method is annotated with `@Tx.Required`, ensuring that it is always executed within
+a transaction. The `doSomethingElse()` method is annotated with `@Tx.Never`, ensuring that it is never executed within
+a transaction:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=data_transaction_annotations, indent=0]
+----
+
+`PetService` class instance is obtained from service registry.
+
+In this example, lambda expression in the `doSomething()` method is executed using `Tx.transaction` method with
+`Tx.Type.REQUIRED` argument, ensuring that it is always executed within a transaction. Lambda expression
+in the `doSomethingElse()` method is executed  using `Tx.transaction` method with `Tx.Type.NEVER` argument, ensuring
+that it is never executed within a transaction:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=data_transaction_methods, indent=0]
+----
+
+// end::data_transaction[]
