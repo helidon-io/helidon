@@ -82,7 +82,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * Sets the timeout for initializing the client.
-     * The default value is 30 seconds.
+     * Overwrites the default timeout for initializing from langchain4j.
      *
      * @return initialization timout
      */
@@ -92,8 +92,8 @@ interface McpClientConfigBlueprint {
     /**
      * Sets the timeout for tool execution.
      * This value applies to each tool execution individually.
-     * The default value is 60 seconds.
      * A value of zero means no timeout.
+     * Overwrites the default timeout for tool execution from langchain4j.
      *
      * @return tool execution timout
      */
@@ -102,8 +102,8 @@ interface McpClientConfigBlueprint {
 
     /**
      * Sets the timeout for resource-related operations (listing resources as well as reading the contents of a resource).
-     * The default value is 60 seconds.
      * A value of zero means no timeout.
+     * Overwrites the default timeout for resource-related operations from langchain4j.
      *
      * @return resources timeout
      */
@@ -112,8 +112,8 @@ interface McpClientConfigBlueprint {
 
     /**
      * The timeout for prompt-related operations (listing prompts as well as rendering the contents of a prompt).
-     * The default value is 60 seconds.
      * A value of zero means no timeout.
+     * Overwrites the default timeout for prompt-related operations from langchain4j.
      *
      * @return prompts timeout
      */
@@ -122,7 +122,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * The timeout to apply when waiting for a ping response.
-     * The default timeout is 10 seconds.
+     * Overwrites the default timeout when waiting for a ping response from langchain4j.
      *
      * @return ping timeout
      */
@@ -131,7 +131,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * The delay before attempting to reconnect after a failed connection.
-     * The default is 5 seconds.
+     * Overwrites the default reconnect interval from langchain4j.
      *
      * @return reconnect interval
      */
@@ -140,7 +140,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * The error message to return when a tool execution times out.
-     * The default value is "There was a timeout executing the tool".
+     * Overwrites the default error message from langchain4j.
      *
      * @return time out error message
      */
