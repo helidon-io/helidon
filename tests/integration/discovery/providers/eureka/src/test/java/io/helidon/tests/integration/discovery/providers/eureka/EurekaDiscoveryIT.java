@@ -61,7 +61,7 @@ class EurekaDiscoveryIT {
 
     @Test
     @Order(1)
-    void testInitialDiscoverNoApplications() throws InterruptedException {
+    void testInitialDiscoverNoApplications() {
         // No applications registered. Make sure the default value is returned.
         SequencedSet<DiscoveredUri> uris = d.uris("EXAMPLE", defaultValue);
         assertThat(uris, hasSize(1));
@@ -70,7 +70,7 @@ class EurekaDiscoveryIT {
 
     @Test
     @Order(2)
-    void testRegisterAndDiscover() throws InterruptedException {
+    void testRegisterAndDiscover() {
         String json = """
             {
                 "instance": {
@@ -107,7 +107,7 @@ class EurekaDiscoveryIT {
 
     @Test
     @Order(3)
-    void testDeleteAndDiscover() throws InterruptedException {
+    void testDeleteAndDiscover() {
         try (var response = d.prototype().client().orElseThrow()
              .delete("/v2/apps/EXAMPLE/EXAMPLE_INSTANCE_ID")
              .request()) {
