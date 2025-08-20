@@ -42,8 +42,9 @@ interface GsonSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fac
     }
 
     @Override
-    @Option.Default("gson")
-    String configKey();
+    default String configKey() {
+        return "gson";
+    }
 
     /**
      * Name of the support. Default value is {@code gson}.

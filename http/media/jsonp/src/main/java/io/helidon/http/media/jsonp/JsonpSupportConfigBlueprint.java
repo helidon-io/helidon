@@ -39,8 +39,9 @@ interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fa
     }
 
     @Override
-    @Option.Default("jsonp")
-    String configKey();
+    default String configKey() {
+        return "jsonp";
+    }
 
     /**
      * Name of the support. Default value is {@code jsonp}.
