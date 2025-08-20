@@ -60,4 +60,7 @@ interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fa
      */
     JsonWriterFactory writerFactory();
 
+    @Option.Default("jsonp")
+    String configKey();
+
 }

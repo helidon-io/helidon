@@ -41,6 +41,9 @@ interface JsonbSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fa
                 .build();
     }
 
+    @Option.Default("jsonb")
+    String configKey();
+
     /**
      * Name of the support. Default value is {@code jsonb}.
      *

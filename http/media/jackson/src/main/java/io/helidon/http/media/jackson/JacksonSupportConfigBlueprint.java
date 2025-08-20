@@ -41,6 +41,9 @@ interface JacksonSupportConfigBlueprint extends MediaSupportProvider, Prototype.
                 .build();
     }
 
+    @Option.Default("jackson")
+    String configKey();
+
     /**
      * Name of the support. Default value is {@code jackson}.
      *
