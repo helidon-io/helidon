@@ -38,6 +38,10 @@ interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fa
                 .build();
     }
 
+    @Override
+    @Option.Default("jsonp")
+    String configKey();
+
     /**
      * Name of the support. Default value is {@code jsonp}.
      *
@@ -59,8 +63,5 @@ interface JsonpSupportConfigBlueprint extends MediaSupportProvider, Prototype.Fa
      * @return writer factory
      */
     JsonWriterFactory writerFactory();
-
-    @Option.Default("jsonp")
-    String configKey();
 
 }
