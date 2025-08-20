@@ -24,7 +24,7 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
@@ -64,7 +64,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final LazyValue<Http2ServerRequestEntity> entity;
     private final HttpSecurity security;
     private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
-    private final LimitOutcome limitOutcome;
+    private final LimitAlgorithm.Outcome limitOutcome;
 
     private HttpPrologue prologue;
     private RoutedPath path;
@@ -82,7 +82,7 @@ class Http2ServerRequest implements RoutingRequest {
                        ContentDecoder decoder,
                        int requestId,
                        Supplier<BufferData> entitySupplier,
-                       LimitOutcome limitOutcome) {
+                       LimitAlgorithm.Outcome limitOutcome) {
         this.ctx = ctx;
         this.security = security;
         this.originalPrologue = prologue;
@@ -108,7 +108,7 @@ class Http2ServerRequest implements RoutingRequest {
                                      ContentDecoder decoder,
                                      int streamId,
                                      Supplier<BufferData> entitySupplier,
-                                     LimitOutcome limitOutcome) {
+                                     LimitAlgorithm.Outcome limitOutcome) {
         return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier, limitOutcome);
     }
 

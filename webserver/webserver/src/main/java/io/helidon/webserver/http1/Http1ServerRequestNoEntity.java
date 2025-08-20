@@ -19,7 +19,7 @@ package io.helidon.webserver.http1;
 import java.io.InputStream;
 import java.util.function.UnaryOperator;
 
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.media.ReadableEntity;
@@ -32,7 +32,7 @@ class Http1ServerRequestNoEntity extends Http1ServerRequest {
                                HttpSecurity security, HttpPrologue prologue,
                                Headers headers,
                                int requestId,
-                               LimitOutcome limitOutcome) {
+                               LimitAlgorithm.Outcome limitOutcome) {
         super(ctx, security, prologue, headers, requestId, limitOutcome);
     }
 

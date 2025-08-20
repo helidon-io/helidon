@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
@@ -57,7 +57,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private final HttpSecurity security;
     private final int requestId;
     private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
-    private final LimitOutcome limitOutcome;
+    private final LimitAlgorithm.Outcome limitOutcome;
 
     private RoutedPath path;
     private WritableHeaders<?> writable;
@@ -71,7 +71,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                        HttpPrologue prologue,
                        Headers headers,
                        int requestId,
-                       LimitOutcome limitOutcome) {
+                       LimitAlgorithm.Outcome limitOutcome) {
         this.ctx = ctx;
         this.security = security;
         this.headers = ServerRequestHeaders.create(headers);
@@ -88,7 +88,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                                      HttpPrologue prologue,
                                      Headers headers,
                                      int requestId,
-                                     LimitOutcome limitOutcome) {
+                                     LimitAlgorithm.Outcome limitOutcome) {
         return new Http1ServerRequestNoEntity(ctx, security, prologue, headers, requestId, limitOutcome);
     }
 
@@ -107,7 +107,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                                      boolean expectContinue,
                                      CountDownLatch entityReadLatch,
                                      Supplier<BufferData> entitySupplier,
-                                     LimitOutcome limitOutcome) {
+                                     LimitAlgorithm.Outcome limitOutcome) {
         return new Http1ServerRequestWithEntity(ctx,
                                                 connection,
                                                 http1Config,

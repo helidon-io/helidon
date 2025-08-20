@@ -18,7 +18,6 @@ package io.helidon.common.concurrency.limits;
 
 import java.io.Serial;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -26,9 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome;
+import io.helidon.common.concurrency.limits.LimitAlgorithm.Result;
 import io.helidon.common.config.ConfigException;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
@@ -100,54 +100,53 @@ class AimdLimitImpl {
         return limit.get();
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = true)
     Optional<LimitAlgorithm.Token> tryAcquire(boolean wait) {
-        return doTryAcquire(wait, null);
+        return (doTryAcquire(wait) instanceof Outcome.Accepted accepted)
+                ? Optional.of((LimitAlgorithm.Token) accepted)
+                : Optional.empty();
     }
 
-    Optional<LimitAlgorithm.Token> tryAcquire(boolean wait,
-                                              Consumer<LimitOutcome> limitOutcomeConsumer) {
-        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
-        return doTryAcquire(wait, limitOutcomeConsumer);
+    Outcome tryAcquireOutcome(boolean wait) {
+        return doTryAcquire(wait);
     }
 
-    void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
+    Outcome run(Runnable runnable)
             throws Exception {
-        invoke(() -> {
+        return call(() -> {
             runnable.run();
             return null;
-        }, limitOutcomeConsumer);
+        }).outcome();
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = true)
     void invoke(Runnable runnable) throws Exception {
-        invoke(() -> {
-            runnable.run();
-            return null;
-        });
+        run(runnable);
     }
 
-    <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+    <T> Result<T> call(Callable<T> callable)
             throws Exception {
-        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listeners consumer cannot be null");
-        return doInvoke(callable, limitOutcomeConsumer);
+        return doCall(callable);
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = true)
     <T> T invoke(Callable<T> callable) throws Exception {
-        return doInvoke(callable, null);
+        return doCall(callable).result();
     }
 
-    private <T> T doInvoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+    private <T> Result<T> doCall(Callable<T> callable)
             throws Exception {
 
-        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitOutcomeConsumer);
-        if (optionalToken.isPresent()) {
-            LimitAlgorithm.Token token = optionalToken.get();
+        Outcome outcome = tryAcquireOutcome(true);
+        if (outcome instanceof Outcome.Accepted accepted) {
+            LimitAlgorithm.Token token = accepted.token();
             try {
                 T response = callable.call();
                 token.success();
-                return response;
+                return Result.create(response, outcome);
             } catch (IgnoreTaskException e) {
                 token.ignore();
-                return e.handle();
+                return Result.create(e.handle(), outcome);
             } catch (Throwable e) {
                 token.dropped();
                 throw e;
@@ -173,45 +172,40 @@ class AimdLimitImpl {
         setLimit(Math.min(maxLimit, Math.max(minLimit, currentLimit)));
     }
 
-    private Optional<LimitAlgorithm.Token> doTryAcquire(boolean wait,
-                                                        Consumer<LimitOutcome> limitOutcomeConsumer) {
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+    private Outcome doTryAcquire(boolean wait) {
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquireToken(false);
 
         if (token.isPresent()) {
-            LimitOutcomeImpl.processImmediateAcceptance(originName,
+            return Outcome.immediateAcceptance(originName,
                                                         AimdLimit.TYPE,
-                                                        token.get(),
-                                                        limitOutcomeConsumer);
-            return token;
+                                                        token.get());
         }
+        Outcome outcome;
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            token = handler.tryAcquire(true);
+            token = handler.tryAcquireToken(true);
             long endWait = clock.get();
             if (token.isPresent()) {
-                LimitOutcomeImpl.processDeferredAcceptance(originName,
+                outcome = Outcome.deferredAcceptance(originName,
                                                            AimdLimit.TYPE,
                                                            token.get(),
                                                            startWait,
-                                                           endWait,
-                                                           limitOutcomeConsumer);
+                                                           endWait);
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
                 }
-                return token;
+                return outcome;
             }
-            LimitOutcomeImpl.processDeferredRejection(originName,
+            outcome = Outcome.deferredRejection(originName,
                                                       AimdLimit.TYPE,
                                                       startWait,
-                                                      endWait,
-                                                      limitOutcomeConsumer);
+                                                      endWait);
         } else {
-            LimitOutcomeImpl.processImmediateRejection(originName,
-                                                       AimdLimit.TYPE,
-                                                       limitOutcomeConsumer);
+            outcome = Outcome.immediateRejection(originName,
+                                                       AimdLimit.TYPE);
         }
         rejectedRequests.getAndIncrement();
-        return token;
+        return outcome;
     }
 
     private void setLimit(int newLimit) {
@@ -324,7 +318,7 @@ class AimdLimitImpl {
         }
     }
 
-    private class AimdToken extends OutcomeAwareToken {
+    private class AimdToken implements LimitAlgorithm.Token {
         private final long startTime;
         private final int currentRequests;
 
@@ -333,29 +327,23 @@ class AimdLimitImpl {
             currentRequests = concurrentRequests.incrementAndGet();
         }
 
-        @Override
         public void dropped() {
             try {
-                super.dropped();
                 updateWithSample(startTime, clock.get(), currentRequests, false);
             } finally {
                 semaphore.release();
             }
         }
 
-        @Override
         public void ignore() {
-            super.ignore();
             concurrentRequests.decrementAndGet();
             semaphore.release();
         }
 
-        @Override
         public void success() {
             try {
                 updateWithSample(startTime, clock.get(), currentRequests, true);
                 concurrentRequests.decrementAndGet();
-                super.success();
 
             } finally {
                 semaphore.release();

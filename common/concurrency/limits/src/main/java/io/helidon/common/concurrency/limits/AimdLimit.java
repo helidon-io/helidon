@@ -16,7 +16,6 @@
 
 package io.helidon.common.concurrency.limits;
 
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
@@ -33,7 +32,7 @@ import io.helidon.common.config.Config;
  */
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(AimdLimitConfig.class)
-public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
+public class AimdLimit implements Limit, LimitAlgorithmDeprecatedImpls, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
 
     /**
      * Default length of the queue.
@@ -108,37 +107,32 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
                 .build();
     }
 
+    @Deprecated(since = "4.3.0", forRemoval = true)
     @Override
-    public <T> T invoke(Callable<T> callable) throws Exception {
-        return aimdLimitImpl.invoke(callable);
+    public <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
+        return call(callable);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    public Outcome doTryAcquireObs(boolean wait) {
+        return tryAcquireOutcome(wait);
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+    public <T> Result<T> call(Callable<T> callable) throws Exception {
+        return aimdLimitImpl.call(callable);
+    }
+
+    @Override
+    public Outcome run(Runnable runnable)
             throws Exception {
-        return aimdLimitImpl.invoke(callable, limitOutcomeConsumer);
+        return aimdLimitImpl.run(runnable);
     }
 
     @Override
-    public void invoke(Runnable runnable) throws Exception {
-        aimdLimitImpl.invoke(runnable);
-    }
-
-    @Override
-    public void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
-            throws Exception {
-        aimdLimitImpl.invoke(runnable, limitOutcomeConsumer);
-    }
-
-    @Override
-    public Optional<Token> tryAcquire(boolean wait) {
-        return aimdLimitImpl.tryAcquire(wait);
-    }
-
-    @Override
-    public Optional<Token> tryAcquire(boolean wait,
-                                      Consumer<LimitOutcome> limitOutcomeConsumer) {
-        return aimdLimitImpl.tryAcquire(wait, limitOutcomeConsumer);
+    public Outcome tryAcquireOutcome(boolean wait) {
+        return aimdLimitImpl.tryAcquireOutcome(wait);
     }
 
     @SuppressWarnings("removal")

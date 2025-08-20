@@ -31,7 +31,8 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
-import io.helidon.common.concurrency.limits.LimitOutcome;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
@@ -291,17 +292,17 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
 
         private void recordLimitWaitingSpan(RoutingRequest req, Tracer tracer, Optional<SpanContext> inboundSpanContext) {
 
-            req.context().get(LimitOutcome.class)
-                    .filter(oc -> oc instanceof LimitOutcome.Deferred)
-                    .map(oc -> (LimitOutcome.Deferred) oc)
+            req.context().get(LimitAlgorithm.Outcome.class)
+                    .filter(oc -> oc instanceof LimitAlgorithm.Outcome.Deferred)
+                    .map(oc -> (LimitAlgorithm.Outcome.Deferred) oc)
                     .ifPresent(deferred -> {
 
                         var spanBuilder = tracer.spanBuilder(deferred.originName() + "-" + deferred.algorithmType() + "-limit"
                                                                      + "-span");
                         inboundSpanContext.ifPresent(sc -> sc.asParent(spanBuilder));
-                        var span = spanBuilder.start(Instant.ofEpochSecond(0, deferred.waitStart()));
-                        Instant endInstant = Instant.ofEpochSecond(0, deferred.waitEnd());
-                        if (deferred instanceof LimitOutcome.Accepted) {
+                        var span = spanBuilder.start(Instant.ofEpochSecond(0, deferred.waitStartNanoTime()));
+                        Instant endInstant = Instant.ofEpochSecond(0, deferred.waitEndNanoTime());
+                        if (deferred instanceof LimitAlgorithm.Outcome.Accepted) {
                             span.end(endInstant);
                         } else {
                             span.status(Span.Status.ERROR);

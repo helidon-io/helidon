@@ -179,7 +179,7 @@ public class AimdLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            limit.invoke(() -> {});
+            limit.run(() -> {});
         }
     }
 
@@ -191,19 +191,11 @@ public class AimdLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            AtomicReference<LimitOutcome> limitOutcomeRef = new AtomicReference<>();
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, limitOutcomeRef::set);
-            assertThat(token, not(Optional.empty()));
-            token.get().success();
+            LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
+            assertThat("Outcome", outcome, instanceOf(LimitAlgorithm.Outcome.Accepted.class));
+            LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
 
-            // We expect immediate acceptances.
-            int index = 0;
-
-            assertThat("Limit outcome + " + i, limitOutcomeRef.get(), allOf(not(nullValue()),
-                                                                          instanceOf(LimitOutcome.Accepted.class)));
-            assertThat("Exec result " + index,
-                       ((LimitOutcome.Accepted) limitOutcomeRef.get()).executionResult(),
-                       is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
+            accepted.token().success();
         }
     }
 
@@ -225,13 +217,13 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
-        List<LimitOutcome> outcomes = Collections.synchronizedList(new ArrayList<>(concurrency));
+        List<LimitAlgorithm.Result<?>> results = Collections.synchronizedList(new ArrayList<>(concurrency));
 
         for (int i = 0; i < concurrency; i++) {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    results.add(limiter.call(() -> {
                         barrier.waitOn();
                         lock.lock();
                         try {
@@ -240,7 +232,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    }, outcomes::add);
+                    }));
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -264,19 +256,16 @@ public class AimdLimitTest {
         // and eventually run to completion
         assertThat(result.size(), is(5));
 
-        assertThat("Outcomes", outcomes, hasSize(5));
+        assertThat("Outcomes", results, hasSize(5));
         int deferredAccepts = 0;
         int immediateAccepts = 0;
         int index = 0;
-        for (LimitOutcome outcome : outcomes) {
-            if (outcome instanceof LimitOutcome.Deferred) {
+        for (LimitAlgorithm.Result<?> r : results) {
+            if (r.outcome() instanceof LimitAlgorithm.Outcome.Deferred) {
                 deferredAccepts++;
             } else {
                 immediateAccepts++;
             }
-            assertThat("Exec result " + index,
-                       ((LimitOutcome.Accepted) outcome).executionResult(),
-                       is(LimitOutcome.Accepted.ExecutionResult.SUCCEEDED));
             index++;
         }
 

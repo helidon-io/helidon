@@ -17,7 +17,6 @@
 package io.helidon.common.concurrency.limits;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -45,7 +44,7 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
  */
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(FixedLimitConfig.class)
-public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
+public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
 
     /**
      * Default limit, meaning unlimited execution.
@@ -167,44 +166,21 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     }
 
     @Override
-    public Optional<Token> tryAcquire(boolean wait) {
-        return doTryAcquire(wait, null);
+    public Outcome tryAcquireOutcome(boolean wait) {
+        return doTryAcquire(wait);
     }
 
     @Override
-    public Optional<Token> tryAcquire(boolean wait,
-                                      Consumer<LimitOutcome> limitOutcomeConsumer) {
-        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listener contexts consumer cannot be null");
-        return doTryAcquire(wait, limitOutcomeConsumer);
+    public <T> Result<T> call(Callable<T> callable) throws Exception {
+        return doInvoke(callable);
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
-            throws Exception {
-        Objects.requireNonNull(limitOutcomeConsumer, "limit algorithm listener contexts consumer cannot be null");
-        return doInvoke(callable, limitOutcomeConsumer);
-    }
-
-    @Override
-    public void invoke(Runnable runnable, Consumer<LimitOutcome> limitOutcomeConsumer)
-            throws Exception {
-        invoke(() -> {
+    public Outcome run(Runnable runnable) throws Exception {
+        return doInvoke(() -> {
             runnable.run();
             return null;
-        }, limitOutcomeConsumer);
-    }
-
-    @Override
-    public <T> T invoke(Callable<T> callable) throws Exception {
-        return doInvoke(callable, null);
-    }
-
-    @Override
-    public void invoke(Runnable runnable) throws Exception {
-        invoke(() -> {
-            runnable.run();
-            return null;
-        });
+        }).outcome();
     }
 
     @SuppressWarnings("removal")
@@ -305,55 +281,60 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
     }
 
-    private Optional<Token> doTryAcquire(boolean wait,
-                                         Consumer<LimitOutcome> limitOutcomeConsumer) {
+    void updateMetrics(long startTime, long endTime) {
+        long rtt = endTime - startTime;
+        if (rttTimer != null) {
+            rttTimer.record(rtt, TimeUnit.NANOSECONDS);
+        }
+    }
 
-        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+    // Remove when we retire the obsolete methods on LimitAlgorithm in 5.0.
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    public Outcome doTryAcquireObs(boolean wait) {
+        return doTryAcquire(wait);
+    }
+
+    private Outcome doTryAcquire(boolean wait) {
+
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquireToken(false);
 
         if (token.isPresent()) {
-            LimitOutcomeImpl.processImmediateAcceptance(originName,
-                                                        TYPE,
-                                                        token.get(),
-                                                        limitOutcomeConsumer);
-            return token;
+            return Outcome.immediateAcceptance(originName, TYPE, token.get());
+
         }
         if (wait && queueLength > 0) {
             long startWait = clock.get();
-            token = handler.tryAcquire(true);
+            token = handler.tryAcquireToken(true);
             long endWait = clock.get();
             if (token.isPresent()) {
-                LimitOutcomeImpl.processDeferredAcceptance(originName,
-                                                           TYPE,
-                                                           token.get(),
-                                                           startWait,
-                                                           endWait,
-                                                           limitOutcomeConsumer);
                 if (queueWaitTimer != null) {
                     queueWaitTimer.record(endWait - startWait, TimeUnit.NANOSECONDS);
                 }
-
-                return token;
+                return Outcome.deferredAcceptance(originName,
+                                                  TYPE,
+                                                  token.get(),
+                                                  startWait,
+                                                  endWait);
             }
-            LimitOutcomeImpl.processDeferredRejection(originName,
-                                                      TYPE,
-                                                      startWait,
-                                                      endWait,
-                                                      limitOutcomeConsumer);
-        } else {
-            LimitOutcomeImpl.processImmediateRejection(originName,
-                                                       TYPE,
-                                                       limitOutcomeConsumer);
+            return Outcome.deferredRejection(originName, TYPE, startWait, endWait);
         }
         rejectedRequests.getAndIncrement();
-        return token;
+        return Outcome.immediateRejection(originName, TYPE);
     }
 
-    private <T> T doInvoke(Callable<T> callable, Consumer<LimitOutcome> limitOutcomeConsumer)
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    public <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
+        return doInvoke(callable);
+    }
+
+    private <T> Result<T> doInvoke(Callable<T> callable)
             throws Exception {
 
-        Optional<LimitAlgorithm.Token> optionalToken = doTryAcquire(true, limitOutcomeConsumer);
-        if (optionalToken.isPresent()) {
-            LimitAlgorithm.Token token = optionalToken.get();
+        Outcome outcome = doTryAcquire(true);
+        if (outcome instanceof Outcome.Accepted accepted) {
+            LimitAlgorithm.Token token = accepted.token();
             try {
                 concurrentRequests.getAndIncrement();
                 long startTime = clock.get();
@@ -362,10 +343,10 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                     rttTimer.record(clock.get() - startTime, TimeUnit.NANOSECONDS);
                 }
                 token.success();
-                return response;
+                return Result.create(response, outcome);
             } catch (IgnoreTaskException e) {
                 token.ignore();
-                return e.handle();
+                return Result.create(e.handle(), outcome);
             } catch (Throwable e) {
                 token.dropped();
                 throw e;
@@ -377,7 +358,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
     }
 
-    private class FixedToken extends OutcomeAwareToken {
+    private class FixedToken implements Token {
         private final long startTime;
 
         private FixedToken(Supplier<Long> clock, AtomicInteger concurrentRequests) {
@@ -385,39 +366,26 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
             concurrentRequests.incrementAndGet();
         }
 
-        @Override
         public void dropped() {
             try {
-                super.dropped();
                 updateMetrics(startTime, clock.get());
             } finally {
                 semaphore.release();
             }
         }
 
-        @Override
         public void ignore() {
             concurrentRequests.decrementAndGet();
-            super.ignore();
             semaphore.release();
         }
 
-        @Override
         public void success() {
             try {
                 updateMetrics(startTime, clock.get());
                 concurrentRequests.decrementAndGet();
-                super.success();
             } finally {
                 semaphore.release();
             }
-        }
-    }
-
-    void updateMetrics(long startTime, long endTime) {
-        long rtt = endTime - startTime;
-        if (rttTimer != null) {
-            rttTimer.record(rtt, TimeUnit.NANOSECONDS);
         }
     }
 }

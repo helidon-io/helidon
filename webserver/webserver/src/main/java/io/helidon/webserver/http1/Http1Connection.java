@@ -35,7 +35,6 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
-import io.helidon.common.concurrency.limits.LimitOutcome;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -209,10 +208,20 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                AtomicReference<LimitOutcome> limitOutcomeRef = new AtomicReference<>();
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire(true, limitOutcomeRef::set);
+                LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
+                if (outcome instanceof LimitAlgorithm.Outcome.Accepted accepted) {
+                    LimitAlgorithm.Token permit = accepted.token();
 
-                if (token.isEmpty()) {
+                    try {
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                        route(prologue, headers, accepted);
+                        permit.success();
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                    } catch (Throwable e) {
+                        permit.dropped();
+                        throw e;
+                    }
+                } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
                             .setKeepAlive(false)
@@ -220,18 +229,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                             .type(EventType.OTHER)
                             .message("Too Many Concurrent Requests")
                             .build();
-                } else {
-                    LimitAlgorithm.Token permit = token.get();
-
-                    try {
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers, limitOutcomeRef.get());
-                        permit.success();
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                    } catch (Throwable e) {
-                        permit.dropped();
-                        throw e;
-                    }
                 }
             }
         } catch (CloseConnectionException e) {
@@ -505,7 +502,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
     private void route(HttpPrologue prologue,
                        WritableHeaders<?> headers,
-                       LimitOutcome limitOutcome) {
+                       LimitAlgorithm.Outcome limitOutcome) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
