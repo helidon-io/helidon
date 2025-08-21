@@ -145,9 +145,30 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>Reserve JMX port</id>
+                                <goals>
+                                    <goal>reserve-network-port</goal>
+                                </goals>
+                                <phase>pre-integration-test</phase>
+                                <configuration>
+                                    <portNames>
+                                        <portName>spring-boot.jmx-port</portName>
+                                    </portNames>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <version>3.4.3</version>
+                        <configuration>
+                          <jmxPort>${spring-boot.jmx-port}</jmxPort>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>Start Spring Eureka Server for integration tests</id>
