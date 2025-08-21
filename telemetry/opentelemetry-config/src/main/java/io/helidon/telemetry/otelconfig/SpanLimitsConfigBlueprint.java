@@ -18,6 +18,7 @@ package io.helidon.telemetry.otelconfig;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -34,6 +35,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max attributes
      */
+    @Option.Configured
     Optional<Integer> maxAttributes();
 
     /**
@@ -41,6 +43,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max events
      */
+    @Option.Configured
     Optional<Integer> maxEvents();
 
     /**
@@ -48,6 +51,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max links
      */
+    @Option.Configured
     Optional<Integer> maxLinks();
 
     /**
@@ -55,6 +59,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max attributes per event
      */
+    @Option.Configured
     Optional<Integer> maxAttributesPerEvent();
 
     /**
@@ -62,6 +67,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max attributes per link
      */
+    @Option.Configured
     Optional<Integer> maxAttributesPerLink();
 
     /**
@@ -69,6 +75,7 @@ interface SpanLimitsConfigBlueprint {
      *
      * @return max attribute value length
      */
+    @Option.Configured
     Optional<Integer> maxAttributeValueLength();
 
 }
