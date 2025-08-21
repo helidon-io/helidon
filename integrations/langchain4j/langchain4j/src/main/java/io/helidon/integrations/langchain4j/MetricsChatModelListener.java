@@ -79,8 +79,10 @@ public class MetricsChatModelListener implements ChatModelListener {
         final ChatRequest chatRequest = chatModelResponseContext.chatRequest();
         final ChatResponse chatResponse = chatModelResponseContext.chatResponse();
 
+        String requestModelName = chatRequest.modelName();
+        String responseModelName = chatRequest.modelName();
         DistributionSummary clientInputTokenUsage = responseInputTokenUsageByModelName.computeIfAbsent(
-                chatRequest.modelName(),
+                requestModelName,
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME,
                                 this.clientTokenUsageStatisticsConfigBuilder)
@@ -93,14 +95,17 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                        "chat"))
                                                                .addTag(Tag.create(
                                                                        "gen_ai.request.model",
-                                                                       chatRequest.modelName()))
+                                                                       requestModelName))
+                                                               .addTag(Tag.create(
+                                                                       "gen_ai.response.model",
+                                                                       responseModelName))
                                                                .addTag(Tag.create(
                                                                        "gen_ai.token.type",
                                                                        "input"))));
         clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
 
         DistributionSummary clientOutputTokenUsage = responseOutputTokenUsageByModelName.computeIfAbsent(
-                chatResponse.modelName(),
+                responseModelName,
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME,
                                 this.clientTokenUsageStatisticsConfigBuilder)
@@ -112,15 +117,18 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                        "gen_ai.operation.name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
+                                                                       "gen_ai.request.model",
+                                                                       requestModelName))
+                                                               .addTag(Tag.create(
                                                                        "gen_ai.response.model",
-                                                                       chatResponse.modelName()))
+                                                                       responseModelName))
                                                                .addTag(Tag.create(
                                                                        "gen_ai.token.type",
                                                                        "output"))));
         clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
 
         DistributionSummary clientOperationDuration = responseOperationDurationByModelName.computeIfAbsent(
-                chatResponse.modelName(),
+                responseModelName,
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_OPERATION_DURATION_METRICS_NAME,
                                 this.clientOperationDurationStatisticsConfigBuilder)
@@ -132,8 +140,14 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                        "gen_ai.operation.name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
+                                                                       "gen_ai.request.model",
+                                                                       requestModelName))
+                                                               .addTag(Tag.create(
                                                                        "gen_ai.response.model",
-                                                                       chatResponse.modelName()))));
+                                                                       responseModelName))
+                                                               .addTag(Tag.create(
+                                                                       "error.type",
+                                                                       ""))));
         clientOperationDuration.record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
     }
 
@@ -159,6 +173,9 @@ public class MetricsChatModelListener implements ChatModelListener {
                                              .addTag(Tag.create(
                                                      "gen_ai.request.model",
                                                      chatRequest.modelName()))
+                                             .addTag(Tag.create(
+                                                     "gen_ai.response.model",
+                                                     ""))
                                              .addTag(Tag.create(
                                                      "error.type",
                                                      chatModelErrorContext.error().getClass().getName()))));
