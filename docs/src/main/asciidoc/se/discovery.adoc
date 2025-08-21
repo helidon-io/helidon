@@ -35,14 +35,15 @@ include::{rootdir}/includes/se.adoc[]
 == Overview
 
 In Helidon, _discovery_ is the general process of finding named sets of advertised resources at a moment of an
-application's runtime. The advertised resources are often URIs microservice endpoints. In some environments, those
-endpoints might frequently come and go at unpredictable intervals, as microservices are started, stopped, and
-redeployed. The named applications they represent, however, are relatively static. Discovery helps link such a named
-application to its transient resources, so that clients can more easily contact it, knowing only its name.
+application's runtime. The advertised resources are often URIs representing microservice endpoints. In some
+environments, those endpoints might frequently come and go at unpredictable intervals, as microservices are started,
+stopped, and redeployed. The named applications they represent, however, are relatively static. Discovery helps link
+such a named application to its transient resources, so that clients can more easily contact it, knowing only its name.
 
-Helidon Discovery is a feature with a vendor- and implementation-independent API, and vendor-specific implementations of
-that API. A developer programs against the Discovery API, and packages a conformant Discovery implementation (a
-_provider_) with her application at deployment time. See <<Providers,Providers>> below.
+Helidon Discovery is a feature with a vendor- and implementation-independent API backed by vendor-specific
+implementations of that API known as _providers_. A developer programs against the Discovery API, and packages a
+(normally Helidon-supplied) conformant Discovery implementation (a provider) with her application at deployment
+time. See <<Providers,Providers>> below.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -67,8 +68,17 @@ more details.
 To use Helidon Discovery, you acquire an
 link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] and call
 its
-link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`uris(String, URI)`
-method] as needed.
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`uris(String,
+URI)` method] to find resources represented as
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`io.helidon.discovery.DiscoveredUri`
+instances].  You supply a _discovery name_, which is the name under which you expect to find advertised resources, and a
+_default value_, which is a link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] to use in case the provider does
+not supply any resources. In general,
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`]s you receive are ordered from
+more suitable to less suitable, where the definition of _suitable_ is up to the provider. Some providers will consider
+aspects like the health or uptime of an advertised resource when returning results. Others may not. Finally, a
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing the default
+value you supply will always be present as the last element in the set of resources you receive.
 
 === `Discovery` Acquisition
 
@@ -120,7 +130,12 @@ may have several URIs. The discovery name is the name that identifies the applic
 
 To discover a named application's URIs, call the
 link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
-URI)` method], passing it the discovery name and a `URI` to use as a default value. Both values must be non-`null`:
+URI)` method], passing it the discovery name and a `URI` to use as a default value. Both values must be non-`null`. You
+will receive an immutable link:{jdk-javadoc-url}/java.base/java/util/SequencedSet.html[`SequencedSet`] of
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`io.helidon.discovery.DiscoveredUri`
+instances] representing the URIs, ordered from the most to the least _suitable_, according to the provider. A
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing the default
+value will appear last in the set:
 
 [source,java]
 .Discovering URIs
@@ -142,9 +157,11 @@ include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_2,indent=0]
     link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] that was supplied as the default value.)
 <2> `EXAMPLE` is the discovery name for which URIs are being sought.
 <3> This link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] is a default value in case the Discovery provider
-    finds no URIs, or encounters an error.
-<4> This link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] is the discovered one, and may or may not be equal to
-    the supplied default value.
+    finds no URIs, or encounters an error. A
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing it will
+    appear last in the discovered set.
+<4> This link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] is the most suitable one for use, and may or may not
+    be equal to the supplied default value.
 
 == Providers
 
@@ -280,9 +297,9 @@ URI)` method] will be returned.)
 ----
 discovery: # <1>
   eureka: # <2>
-    enabled: true # <3>
+    enabled: false # <3>
 ----
 <1> `discovery` is the topmost key of the provider's logical configuration tree.
 <2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
 <3> `enabled` controls whether the provider is enabled at all (`true`) or completely disabled (`false`), in which case
-    all other configuration pertaining to it is irrelevant
+    all other configuration pertaining to it is irrelevant. `true` by default.
