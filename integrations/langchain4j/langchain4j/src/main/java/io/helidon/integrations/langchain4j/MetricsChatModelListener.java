@@ -45,12 +45,11 @@ public class MetricsChatModelListener implements ChatModelListener {
     private static final String GEN_AI_CLIENT_OPERATION_START_TIME = "GEN_AI_CLIENT_OPERATION_START_TIME";
     private static final String GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME = "gen_ai.client.token.usage";
     private static final String GEN_AI_CLIENT_OPERATION_DURATION_METRICS_NAME = "gen_ai.client.operation.duration";
-
     private final MeterRegistry meterRegistry;
     private final DistributionStatisticsConfig.Builder clientTokenUsageStatisticsConfigBuilder;
     private final DistributionStatisticsConfig.Builder clientOperationDurationStatisticsConfigBuilder;
-    private final Map<String, DistributionSummary> responseInputTokenUsageSByModelName = new ConcurrentHashMap<>();
-    private final Map<String, DistributionSummary> responseOutputTokenUsageSByModelName = new ConcurrentHashMap<>();
+    private final Map<String, DistributionSummary> responseInputTokenUsageByModelName = new ConcurrentHashMap<>();
+    private final Map<String, DistributionSummary> responseOutputTokenUsageByModelName = new ConcurrentHashMap<>();
     private final Map<String, DistributionSummary> responseOperationDurationByModelName = new ConcurrentHashMap<>();
     private final Map<String, DistributionSummary> errorOperationDurationByModelName = new ConcurrentHashMap<>();
 
@@ -59,11 +58,9 @@ public class MetricsChatModelListener implements ChatModelListener {
      */
     public MetricsChatModelListener() {
         this.meterRegistry = Metrics.globalRegistry();
-
         // Limits set based on https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage.
         this.clientTokenUsageStatisticsConfigBuilder = DistributionStatisticsConfig.builder()
                 .buckets(1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864);
-
         // Limits set based on https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclientoperationduration.
         this.clientOperationDurationStatisticsConfigBuilder =
                 DistributionStatisticsConfig.builder()
@@ -79,11 +76,10 @@ public class MetricsChatModelListener implements ChatModelListener {
     public void onResponse(ChatModelResponseContext chatModelResponseContext) {
         final long endTime = System.nanoTime();
         final long startTime = (Long) chatModelResponseContext.attributes().get(GEN_AI_CLIENT_OPERATION_START_TIME);
-
         final ChatRequest chatRequest = chatModelResponseContext.chatRequest();
         final ChatResponse chatResponse = chatModelResponseContext.chatResponse();
 
-        responseInputTokenUsageSByModelName.computeIfAbsent(
+        DistributionSummary clientInputTokenUsage = responseInputTokenUsageByModelName.computeIfAbsent(
                 chatRequest.modelName(),
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME,
@@ -101,9 +97,9 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai.token.type",
                                                                        "input"))));
-        responseInputTokenUsageSByModelName.get(chatRequest.modelName()).record(chatResponse.tokenUsage().inputTokenCount());
+        clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
 
-        responseOutputTokenUsageSByModelName.computeIfAbsent(
+        DistributionSummary clientOutputTokenUsage = responseOutputTokenUsageByModelName.computeIfAbsent(
                 chatResponse.modelName(),
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME,
@@ -121,9 +117,9 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai.token.type",
                                                                        "output"))));
-        responseOutputTokenUsageSByModelName.get(chatResponse.modelName()).record(chatResponse.tokenUsage().outputTokenCount());
+        clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
 
-        responseOperationDurationByModelName.computeIfAbsent(
+        DistributionSummary clientOperationDuration = responseOperationDurationByModelName.computeIfAbsent(
                 chatResponse.modelName(),
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
                                 GEN_AI_CLIENT_OPERATION_DURATION_METRICS_NAME,
@@ -136,46 +132,36 @@ public class MetricsChatModelListener implements ChatModelListener {
                                                                        "gen_ai.operation.name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.request.model",
-                                                                       chatRequest.parameters()
-                                                                               .modelName()))
-                                                               .addTag(Tag.create(
                                                                        "gen_ai.response.model",
                                                                        chatResponse.modelName()))));
-        responseOperationDurationByModelName.get(chatResponse.modelName())
-                .record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
+        clientOperationDuration.record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
     }
 
     @Override
     public void onError(ChatModelErrorContext chatModelErrorContext) {
         final long endTime = System.nanoTime();
         final long startTime = (Long) chatModelErrorContext.attributes().get(GEN_AI_CLIENT_OPERATION_START_TIME);
-
         final ChatRequest chatRequest = chatModelErrorContext.chatRequest();
 
-        String sb = chatModelErrorContext.error().getClass().getName()
-                + ";" + chatModelErrorContext.error().getLocalizedMessage();
-
-        errorOperationDurationByModelName.computeIfAbsent(
-                chatRequest.modelName(),
-                name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
-                                GEN_AI_CLIENT_OPERATION_DURATION_METRICS_NAME,
-                                this.clientOperationDurationStatisticsConfigBuilder)
-                                                               .scope(Meter.Scope.VENDOR)
-                                                               .baseUnit(Meter.BaseUnits.SECONDS)
-                                                               .description(
-                                                                       "GenAI operation duration")
-                                                               .addTag(Tag.create(
-                                                                       "gen_ai.operation.name",
-                                                                       "chat"))
-                                                               .addTag(Tag.create(
-                                                                       "gen_ai.request.model",
-                                                                       chatRequest.modelName()))
-                                                               .addTag(Tag.create(
-                                                                       "error.type",
-                                                                       sb))));
-        errorOperationDurationByModelName.get(chatRequest.modelName())
-                .record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
+        DistributionSummary errorOperationDuration = errorOperationDurationByModelName.computeIfAbsent(
+                chatRequest.modelName() + ":" + chatModelErrorContext.error().getClass().getName(),
+                name -> this.meterRegistry
+                        .getOrCreate(DistributionSummary.builder(
+                                        GEN_AI_CLIENT_OPERATION_DURATION_METRICS_NAME,
+                                        this.clientOperationDurationStatisticsConfigBuilder)
+                                             .scope(Meter.Scope.VENDOR)
+                                             .baseUnit(Meter.BaseUnits.SECONDS)
+                                             .description(
+                                                     "GenAI operation duration")
+                                             .addTag(Tag.create(
+                                                     "gen_ai.operation.name",
+                                                     "chat"))
+                                             .addTag(Tag.create(
+                                                     "gen_ai.request.model",
+                                                     chatRequest.modelName()))
+                                             .addTag(Tag.create(
+                                                     "error.type",
+                                                     chatModelErrorContext.error().getClass().getName()))));
+        errorOperationDuration.record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
     }
-
 }
