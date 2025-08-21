@@ -222,6 +222,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
+    public boolean resetStream() {
+        if (isSent || outputStream != null && outputStream.bytesWritten > 0) {
+            return false;
+        }
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
