@@ -42,11 +42,13 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CONTENT_RETRIEVER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MCP_CLIENTS;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MODERATION_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_RETRIEVER_AUGMENTOR;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_SERVICE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_STREAMING_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOLS;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOL_PROVIDER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AI_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_PROVIDER;
@@ -54,9 +56,12 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CONTENT_RETRIEVER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MCP_CLIENT;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MCP_TOOL_PROVIDER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MODERATION_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_RETRIEVAL_AUGMENTOR;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_STREAMING_CHAT_MODEL;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_TOOL_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
@@ -162,6 +167,46 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(");");
     }
 
+    private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, CodegenContext ctx) {
+        Optional<TypeInfo> mcpClientTypeInfo = ctx.typeInfo(LC_MCP_CLIENT);
+        if (mcpClientTypeInfo.isEmpty()) {
+            //McpClients annotation present. Dependency needs to be added.
+            throw new CodegenException("McpClients annotation is being used, "
+                                               + "but the required LC4J MCP dependency is missing. "
+                                               + "Please add: dev.langchain4j:langchain4j-mcp");
+        }
+        List<String> mcpClients = aiInterface.findAnnotation(AI_MCP_CLIENTS)
+                .flatMap(Annotation::stringValues)
+                .orElseGet(List::of);
+        List<String> mcpClientParameters = new ArrayList<>();
+        if (mcpClients.isEmpty()) {
+            builder.addParameter(tools -> tools
+                    .name("mcpClients")
+                    .type(listType(LC_MCP_CLIENT)));
+            mcpClientParameters.add("mcpClients");
+        } else {
+            int index = 1;
+            for (String clientName : mcpClients) {
+                String toolParameter = "mcpClient_" + index++;
+                builder.addParameter(param -> param
+                        .name(toolParameter)
+                        .type(LC_MCP_CLIENT)
+                        .addAnnotation(namedAnnotation(clientName)));
+                mcpClientParameters.add(toolParameter);
+            }
+        }
+        builder.addContent("var mcpToolProvider = ")
+                .addContent(LC_MCP_TOOL_PROVIDER)
+                .addContentLine(".builder()")
+                .increaseContentPadding()
+                .addContent(".mcpClients(")
+                .addContent(String.join(", ", mcpClientParameters))
+                .addContentLine(")")
+                .addContentLine(".build();")
+                .decreaseContentPadding();
+        builder.addContentLine("builder.toolProvider(mcpToolProvider);");
+    }
+
     private Annotation namedAnnotation(String modelName) {
         return Annotation.create(SERVICE_ANNOTATION_NAMED, modelName);
     }
@@ -243,6 +288,7 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_CONTENT_RETRIEVER,
                                         LC_CONTENT_RETRIEVER,
                                         "contentRetriever");
+                    aiMcpClientAndToolProvider(it, aiInterface, autoDiscovery, ctx);
                     aiServicesToolParameters(it,
                                              aiInterface);
                 })
@@ -260,6 +306,25 @@ class AiServiceCodegen implements CodegenExtension {
         );
 
         roundCtx.addGeneratedType(generatedType, classModel, aiInterfaceType, aiInterface.originatingElementValue());
+    }
+
+    private void aiMcpClientAndToolProvider(Constructor.Builder it,
+                                            TypeInfo aiInterface,
+                                            boolean autoDiscovery,
+                                            CodegenContext ctx) {
+        if (aiInterface.hasAnnotation(AI_TOOL_PROVIDER) && aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
+            throw new CodegenException("McpClients and ToolProvider annotations cannot be used at the same time.",
+                                       aiInterface.originatingElementValue());
+        } else if (aiInterface.hasAnnotation(AI_MCP_CLIENTS)) {
+            aiMcpClientParameter(it, aiInterface, ctx);
+        } else {
+            aiServicesParameter(it,
+                                autoDiscovery,
+                                aiInterface,
+                                AI_TOOL_PROVIDER,
+                                LC_TOOL_PROVIDER,
+                                "toolProvider");
+        }
     }
 
     private void aiServicesChatMemoryConstructor(Constructor.Builder ctr, boolean autoDiscovery, TypeInfo aiInterface) {
