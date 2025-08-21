@@ -80,7 +80,7 @@ public class MetricsChatModelListener implements ChatModelListener {
         final ChatResponse chatResponse = chatModelResponseContext.chatResponse();
 
         String requestModelName = chatRequest.modelName();
-        String responseModelName = chatRequest.modelName();
+        String responseModelName = chatResponse.modelName();
         DistributionSummary clientInputTokenUsage = responseInputTokenUsageByModelName.computeIfAbsent(
                 requestModelName,
                 name -> this.meterRegistry.getOrCreate(DistributionSummary.builder(
