@@ -19,6 +19,7 @@ package io.helidon.common.config;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Immutable tree-structured configuration.
@@ -177,6 +178,21 @@ public interface Config {
      * @return {@code true} if the node exists
      */
     boolean exists();
+
+    /**
+     * <strong>Iterative deepening depth-first traversal</strong> of the node
+     * and its subtree as a {@code Stream<Config>}.
+     * <p>
+     * If the config node does not exist or is a leaf the returned stream is
+     * empty.
+     * <p>
+     * Depending on the structure of the configuration the returned stream can
+     * deliver a mix of object, list, and leaf value nodes. The stream will
+     * include and traverse through object members and list elements.
+     *
+     * @return stream of deepening depth-first sub-nodes
+     */
+    Stream<? extends Config> traverse();
 
     /**
      * Returns {@code true} if this node exists and is a leaf node (has no

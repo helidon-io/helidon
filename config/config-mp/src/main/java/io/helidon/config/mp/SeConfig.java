@@ -167,8 +167,9 @@ class SeConfig implements Config {
                         .filter(predicate)
                         .map(node -> traverseSubNodes(node, predicate))
                         .reduce(Stream.empty(), Stream::concat))
-                .orElseThrow(MissingValueException.createSupplier(key()));
-
+                //Returns empty Stream as Javadoc describes:
+                //  If the config node does not exist or is a leaf the returned stream is empty.
+                .orElseGet(Stream::empty);
     }
 
     @Override

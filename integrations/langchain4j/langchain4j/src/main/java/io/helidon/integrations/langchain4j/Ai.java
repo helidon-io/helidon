@@ -232,6 +232,38 @@ public final class Ai {
     }
 
     /**
+     * Annotation to specify a ToolProvider for the service.
+     * This is mutually exclusive with the {@link McpClients}.
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface ToolProvider {
+        /**
+         * Name of the Tool provider to be used.
+         *
+         * @return name of the Tool provider
+         */
+        String value();
+    }
+
+    /**
+     * Annotation to specify an MCP Clients to be used in McpToolProvider.
+     * This is mutually exclusive with the {@link ToolProvider}.
+     * It requires to have {@code dev.langchain4j:langchain4j-mcp} dependency added on the classpath for it to work properly.
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface McpClients {
+        /**
+         * Names of the MCP Clients to be used in McpToolProvider creation.
+         * These names are mapped from the {@code key} values of the MCP Client.
+         *
+         * @return client names
+         */
+        String[] value() default {};
+    }
+
+    /**
      * Annotation to manually specify classes containing tools for the service.
      */
     @Target(TYPE)

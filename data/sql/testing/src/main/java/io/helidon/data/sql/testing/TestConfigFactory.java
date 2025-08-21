@@ -18,6 +18,7 @@ package io.helidon.data.sql.testing;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import io.helidon.common.Weight;
 import io.helidon.common.config.Config;
@@ -106,6 +107,11 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         @Override
         public boolean exists() {
             return factory.config().exists();
+        }
+
+        @Override
+        public Stream<? extends Config> traverse() {
+            return factory.config().traverse();
         }
 
         @Override

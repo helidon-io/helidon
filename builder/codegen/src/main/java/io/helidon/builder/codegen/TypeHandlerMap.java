@@ -119,9 +119,18 @@ class TypeHandlerMap extends TypeHandler {
                             AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         List<TypeName> typeArguments = declaredType().typeArguments();
-        if (TypeNames.STRING.equals(typeArguments.get(0)) && TypeNames.STRING.equals(typeArguments.get(1))) {
+        TypeName keyTypeName = typeArguments.get(0);
+        TypeName valueTypeName = typeArguments.get(1);
+        if (TypeNames.STRING.equals(keyTypeName) && TypeNames.STRING.equals(valueTypeName)) {
             // the special case of Map<String, String>
             method.addContentLine(configGet(configured) + ".detach().asMap().ifPresent(this::" + name() + ");");
+        } else if (configured.traverseConfig()){
+            method.addContent(configGet(configured) + ".detach().traverse().filter(")
+                    .addContent(Types.COMMON_CONFIG)
+                    .addContent("::hasValue).forEach(node -> "
+                                        + name() + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
+            generateFromConfig(method, factoryMethods);
+            method.addContentLine(".get()));");
         } else {
             method.addContent(configGet(configured)
                                       + ".asNodeList().ifPresent(nodes -> nodes.forEach"

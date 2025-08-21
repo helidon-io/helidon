@@ -19,7 +19,10 @@ package io.helidon.http.media.jsonp;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
@@ -40,7 +43,9 @@ import jakarta.json.JsonWriterFactory;
 /**
  * Media support implementation for JSON Processing media support.
  */
-public class JsonpSupport implements MediaSupport {
+@RuntimeType.PrototypedBy(JsonpSupportConfig.class)
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportConfig> {
     /**
      * Json object generic type.
      */
@@ -53,21 +58,25 @@ public class JsonpSupport implements MediaSupport {
     private static final JsonReaderFactory READER_FACTORY = Json.createReaderFactory(Map.of());
     private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Map.of());
 
-    private final JsonpReader reader = new JsonpReader(READER_FACTORY);
-    private final JsonpWriter writer = new JsonpWriter(WRITER_FACTORY);
+    private final JsonpReader reader;
+    private final JsonpWriter writer;
     private final String name;
+    private final JsonpSupportConfig jsonpSupportConfig;
 
-    private JsonpSupport(String name) {
-        this.name = name;
+    private JsonpSupport(JsonpSupportConfig jsonpSupportConfig) {
+        this.jsonpSupportConfig = jsonpSupportConfig;
+        this.name = jsonpSupportConfig.name();
+        this.reader = new JsonpReader(jsonpSupportConfig.readerFactory());
+        this.writer = new JsonpWriter(jsonpSupportConfig.writerFactory());
     }
 
     /**
-     * Creates a new named {@link JsonpSupport}.
+     * Creates a new {@link JsonpSupport}.
      *
      * @return a new {@link JsonpSupport}
      */
     public static MediaSupport create() {
-        return new JsonpSupport("jsonp");
+        return builder().build();
     }
 
     /**
@@ -90,8 +99,37 @@ public class JsonpSupport implements MediaSupport {
     public static MediaSupport create(Config config, String name) {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
+        return builder().name(name).build();
+    }
 
-        return new JsonpSupport(name);
+    /**
+     * Creates a new {@link JsonpSupport} based on the {@link JsonpSupportConfig}.
+     *
+     * @param jsonpSupportConfig must not be {@code null}
+     * @return a new {@link JsonpSupport}
+     */
+    public static JsonpSupport create(JsonpSupportConfig jsonpSupportConfig) {
+        Objects.requireNonNull(jsonpSupportConfig);
+        return new JsonpSupport(jsonpSupportConfig);
+    }
+
+    /**
+     * Creates a new customized {@link JsonpSupport}.
+     *
+     * @param consumer config builder consumer
+     * @return a new {@link JsonpSupport}
+     */
+    public static JsonpSupport create(Consumer<JsonpSupportConfig.Builder> consumer) {
+        return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a new builder.
+     *
+     * @return a new builder instance
+     */
+    public static JsonpSupportConfig.Builder builder() {
+        return JsonpSupportConfig.builder();
     }
 
     /**
@@ -193,6 +231,25 @@ public class JsonpSupport implements MediaSupport {
 
     <T> EntityWriter<T> writer() {
         return writer;
+    }
+
+    @Override
+    public JsonpSupportConfig prototype() {
+        return jsonpSupportConfig;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<JsonpSupportConfig.BuilderBase<?, ?>> {
+
+        @Override
+        public void decorate(JsonpSupportConfig.BuilderBase<?, ?> target) {
+            if (target.readerFactory().isEmpty()) {
+                target.readerFactory(READER_FACTORY);
+            }
+            if (target.writerFactory().isEmpty()) {
+                target.writerFactory(WRITER_FACTORY);
+            }
+        }
+
     }
 
 }
