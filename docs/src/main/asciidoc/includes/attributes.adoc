@@ -74,8 +74,9 @@ endif::[]
 :version-lib-jakarta-inject: 2.0
 
 // 3rd party
-:version-lib-eureka: 2.0.4
+:version-lib-eureka: 2.0.5
 :version-lib-eureka-client: {version-lib-eureka}
+:version-lib-eureka-server: {version-lib-eureka}
 :version-lib-jaeger: 1.22
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 4.0.2
@@ -204,6 +205,7 @@ endif::[]
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
+:discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
