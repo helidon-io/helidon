@@ -44,7 +44,7 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
  */
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(FixedLimitConfig.class)
-public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
+public class FixedLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
 
     /**
      * Default limit, meaning unlimited execution.
@@ -291,8 +291,14 @@ public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semapho
     // Remove when we retire the obsolete methods on LimitAlgorithm in 5.0.
     @Deprecated(since = "4.3.0", forRemoval = true)
     @Override
-    public Outcome doTryAcquireObs(boolean wait) {
+    Outcome doTryAcquireObs(boolean wait) {
         return doTryAcquire(wait);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
+        return doInvoke(callable);
     }
 
     private Outcome doTryAcquire(boolean wait) {
@@ -321,12 +327,6 @@ public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semapho
         }
         rejectedRequests.getAndIncrement();
         return Outcome.immediateRejection(originName, TYPE);
-    }
-
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    public <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
-        return doInvoke(callable);
     }
 
     private <T> Result<T> doInvoke(Callable<T> callable)

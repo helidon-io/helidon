@@ -32,7 +32,7 @@ import io.helidon.common.config.Config;
  */
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(AimdLimitConfig.class)
-public class AimdLimit implements Limit, LimitAlgorithmDeprecatedImpls, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
+public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
 
     /**
      * Default length of the queue.
@@ -107,18 +107,6 @@ public class AimdLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semaphor
                 .build();
     }
 
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    public <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
-        return call(callable);
-    }
-
-    @Deprecated(since = "4.3.0", forRemoval = true)
-    @Override
-    public Outcome doTryAcquireObs(boolean wait) {
-        return tryAcquireOutcome(wait);
-    }
-
     @Override
     public <T> Result<T> call(Callable<T> callable) throws Exception {
         return aimdLimitImpl.call(callable);
@@ -164,5 +152,17 @@ public class AimdLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semaphor
     @Override
     public void init(String socketName) {
         aimdLimitImpl.initMetrics(socketName, config);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
+        return call(callable);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    Outcome doTryAcquireObs(boolean wait) {
+        return tryAcquireOutcome(wait);
     }
 }

@@ -30,11 +30,12 @@ import java.util.concurrent.Callable;
  * @deprecated Remove this interface (and remove from the implementation classes the "implements" clauses that refer to this)
  * in 5.0 when we retire the {@link io.helidon.common.concurrency.limits.LimitAlgorithm} methods declared as obsolete.
  */
+@SuppressWarnings("removal")
 @Deprecated(since = "4.3.0", forRemoval = true)
-interface LimitAlgorithmDeprecatedImpls extends LimitAlgorithm {
+abstract class LimitAlgorithmDeprecatedBase implements LimitAlgorithm {
 
     @Override
-    default <T> T invoke(Callable<T> callable) throws Exception {
+    public <T> T invoke(Callable<T> callable) throws Exception {
         try {
             return doInvokeObs(callable).result();
         } catch (IgnoreTaskException e) {
@@ -43,12 +44,12 @@ interface LimitAlgorithmDeprecatedImpls extends LimitAlgorithm {
     }
 
     @Override
-    default void invoke(Runnable runnable) throws Exception {
+    public void invoke(Runnable runnable) throws Exception {
         run(runnable);
     }
 
     @Override
-    default Optional<Token> tryAcquire() {
+    public Optional<Token> tryAcquire() {
         Outcome outcome = tryAcquireOutcome(true);
         return (outcome instanceof Outcome.Accepted accepted)
                 ? Optional.of(accepted.token())
@@ -56,7 +57,7 @@ interface LimitAlgorithmDeprecatedImpls extends LimitAlgorithm {
     }
 
     @Override
-    default Optional<Token> tryAcquire(boolean wait) {
+    public Optional<Token> tryAcquire(boolean wait) {
         Outcome outcome = doTryAcquireObs(wait);
         return (outcome instanceof Outcome.Accepted accepted)
                 ? Optional.of(accepted.token())
@@ -70,7 +71,7 @@ interface LimitAlgorithmDeprecatedImpls extends LimitAlgorithm {
      * @param wait whether to wait or not
      * @return outcome
      */
-    Outcome doTryAcquireObs(boolean wait);
+    abstract Outcome doTryAcquireObs(boolean wait);
 
     /**
      * The implementation classes will need to declare their impls of this as public, but those implementation methods
@@ -79,5 +80,5 @@ interface LimitAlgorithmDeprecatedImpls extends LimitAlgorithm {
      * @param callable the callable to execute
      * @return result
      */
-     <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception;
+    abstract <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception;
 }
