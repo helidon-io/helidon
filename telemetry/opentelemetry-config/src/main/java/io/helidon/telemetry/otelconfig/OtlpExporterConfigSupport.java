@@ -78,6 +78,7 @@ class OtlpExporterConfigSupport {
             var zipkinConfig = ZipkinExporterConfig.create(config);
 
             zipkinConfig.compression().map(CompressionType::lowerCase).ifPresent(builder::setCompression);
+            zipkinConfig.encoder().ifPresent(builder::setEncoder);
             zipkinConfig.endpoint().map(URI::toASCIIString).ifPresent(builder::setEndpoint);
             zipkinConfig.timeout().ifPresent(builder::setReadTimeout);
             zipkinConfig.sender().ifPresent(builder::setSender);
