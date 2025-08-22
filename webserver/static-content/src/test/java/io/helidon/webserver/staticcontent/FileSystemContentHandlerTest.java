@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.LogConfig;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
@@ -49,6 +50,8 @@ class FileSystemContentHandlerTest {
 
     @BeforeEach
     public void createContent() throws IOException {
+        LogConfig.configureRuntime();
+
         // root
         Path root = folder.root().toPath();
         Files.writeString(root.resolve("index.html"), "Index HTML");
@@ -146,5 +149,19 @@ class FileSystemContentHandlerTest {
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(responseToString(response), is("A CSS"));
         assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.TEXT_PLAIN.toString()));
+    }
+
+    @Test
+    void badCharacters() throws InterruptedException, TimeoutException {
+        Routing routing = Routing.builder()
+                .register("/some", StaticContentSupport.create(folder.root().toPath()))
+                .build();
+        TestResponse response;
+
+        // /some/css/not.exists
+        response = TestClient.create(routing)
+                .path("/some/css/.%00/not.exists")
+                .get();
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 }
