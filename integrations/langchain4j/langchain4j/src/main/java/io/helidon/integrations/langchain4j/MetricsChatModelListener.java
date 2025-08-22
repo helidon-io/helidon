@@ -40,7 +40,7 @@ import dev.langchain4j.model.chat.response.ChatResponse;
  */
 @Service.Singleton
 @Service.Named("MetricsChatModelListener")
-public class MetricsChatModelListener implements ChatModelListener {
+class MetricsChatModelListener implements ChatModelListener {
 
     private static final String GEN_AI_CLIENT_OPERATION_START_TIME = "GEN_AI_CLIENT_OPERATION_START_TIME";
     private static final String GEN_AI_CLIENT_TOKEN_USAGE_METRICS_NAME = "gen_ai.client.token.usage";
@@ -56,7 +56,7 @@ public class MetricsChatModelListener implements ChatModelListener {
     /**
      * Constructs a {@code MetricsChatModelListener} instance.
      */
-    public MetricsChatModelListener() {
+    MetricsChatModelListener() {
         this.meterRegistry = Metrics.globalRegistry();
         // Limits set based on https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-metrics/#metric-gen_aiclienttokenusage.
         this.clientTokenUsageStatisticsConfigBuilder = DistributionStatisticsConfig.builder()
