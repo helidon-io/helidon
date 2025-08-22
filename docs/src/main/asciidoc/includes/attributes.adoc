@@ -82,6 +82,7 @@ endif::[]
 :version-lib-hibernate: 6.1
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
+:version-lib-opentelemetry: 1.29.0
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 3.1.2
 :version-lib-micrometer: 1.11.1
@@ -233,6 +234,7 @@ endif::[]
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
 :security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
 :service-registry-base-url: {javadoc-base-url}/io.helidon.service.registry
+:otel-config-javadoc-base-url: {javadoc-base-url}/io.helidon.telemetry.otelconfig
 :telemetry-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.telemetry
 :tracing-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing
 :tracing-otel-provider-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing.providers.opentelemetry
@@ -288,6 +290,7 @@ endif::[]
 :oracle-ucp-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjucp
 :oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
+:otel-exporter-doc-base-url: https://javadoc.io/static/io.opentelemetry/opentelemetry-exporter-otlp/{otel-version}/io/opentelemetry/exporter/otlp/trace/package-summary.html
 :micrometer-url: https://micrometer.io
 :micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer

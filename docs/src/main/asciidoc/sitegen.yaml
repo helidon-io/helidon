@@ -497,6 +497,12 @@ backend:
                   type: "icon"
                   value: "outbox"
               - type: "PAGE"
+                title: "Telemetry"
+                source: "open-telemetry.adoc"
+                glyph:
+                  type: "icon"
+                  value: "analytics"
+              - type: "PAGE"
                 title: "Testing"
                 source: "testing.adoc"
                 glyph:
