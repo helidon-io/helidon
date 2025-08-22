@@ -66,8 +66,8 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      * OpenTelemetry {@link io.opentelemetry.context.propagation.TextMapPropagator} instances added explicitly by the app.
      * <p>
      * Default: {@value ContextPropagationType#DEFAULT_NAMES}.
-     *
-     * @return explicitly-added
+     * @see io.helidon.telemetry.otelconfig.ContextPropagationType
+     * @return propagators
      */
     @Option.Configured
     @Option.Singular
@@ -101,6 +101,8 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     io.opentelemetry.api.OpenTelemetry openTelemetry();
 
     /**
+     * @hidden internal use only
+     * <p>
      * The {@link io.opentelemetry.sdk.OpenTelemetrySdk} to use (restricted visibility).
      *
      * @return the SDK
