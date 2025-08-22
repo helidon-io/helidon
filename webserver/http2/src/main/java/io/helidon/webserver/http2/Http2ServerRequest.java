@@ -24,6 +24,7 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
@@ -63,6 +64,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final LazyValue<Http2ServerRequestEntity> entity;
     private final HttpSecurity security;
     private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
+    private final LimitAlgorithm.Outcome limitOutcome;
 
     private HttpPrologue prologue;
     private RoutedPath path;
@@ -79,7 +81,8 @@ class Http2ServerRequest implements RoutingRequest {
                        Http2Headers headers,
                        ContentDecoder decoder,
                        int requestId,
-                       Supplier<BufferData> entitySupplier) {
+                       Supplier<BufferData> entitySupplier,
+                       LimitAlgorithm.Outcome limitOutcome) {
         this.ctx = ctx;
         this.security = security;
         this.originalPrologue = prologue;
@@ -87,6 +90,7 @@ class Http2ServerRequest implements RoutingRequest {
         this.headers = ServerRequestHeaders.create(headers.httpHeaders());
         this.requestId = requestId;
         this.authority = headers.authority();
+        this.limitOutcome = limitOutcome;
 
         this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
                                                                              decoder,
@@ -96,14 +100,16 @@ class Http2ServerRequest implements RoutingRequest {
                                                                              ctx.listenerContext().mediaContext()));
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static Http2ServerRequest create(ConnectionContext ctx,
                                      HttpSecurity security,
                                      HttpPrologue httpPrologue,
                                      Http2Headers headers,
                                      ContentDecoder decoder,
                                      int streamId,
-                                     Supplier<BufferData> entitySupplier) {
-        return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier);
+                                     Supplier<BufferData> entitySupplier,
+                                     LimitAlgorithm.Outcome limitOutcome) {
+        return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier, limitOutcome);
     }
 
     @Override
@@ -213,6 +219,9 @@ class Http2ServerRequest implements RoutingRequest {
                     .parent(ctx.listenerContext().context())
                     .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
+            if (limitOutcome != null) {
+                context.register(limitOutcome);
+            }
         }
         return context;
     }

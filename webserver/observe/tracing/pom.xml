@@ -46,6 +46,10 @@
             <artifactId>helidon-tracing-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>

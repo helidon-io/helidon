@@ -16,7 +16,6 @@
 
 package io.helidon.common.concurrency.limits;
 
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
@@ -33,7 +32,7 @@ import io.helidon.common.config.Config;
  */
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(AimdLimitConfig.class)
-public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
+public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
 
     /**
      * Default length of the queue.
@@ -109,18 +108,19 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable) throws Exception {
-        return aimdLimitImpl.invoke(callable);
+    public <T> Result<T> call(Callable<T> callable) throws Exception {
+        return aimdLimitImpl.call(callable);
     }
 
     @Override
-    public void invoke(Runnable runnable) throws Exception {
-        aimdLimitImpl.invoke(runnable);
+    public Outcome run(Runnable runnable)
+            throws Exception {
+        return aimdLimitImpl.run(runnable);
     }
 
     @Override
-    public Optional<Token> tryAcquire(boolean wait) {
-        return aimdLimitImpl.tryAcquire(wait);
+    public Outcome tryAcquireOutcome(boolean wait) {
+        return aimdLimitImpl.tryAcquireOutcome(wait);
     }
 
     @SuppressWarnings("removal")
@@ -152,5 +152,17 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     @Override
     public void init(String socketName) {
         aimdLimitImpl.initMetrics(socketName, config);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    <T> Result<T> doInvokeObs(Callable<T> callable) throws Exception {
+        return call(callable);
+    }
+
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    Outcome doTryAcquireObs(boolean wait) {
+        return tryAcquireOutcome(wait);
     }
 }

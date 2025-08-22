@@ -18,7 +18,6 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -576,25 +575,23 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 decoder = ContentDecoder.NO_OP;
             }
 
+            LimitAlgorithm.Outcome outcome = requestLimit.tryAcquireOutcome(true);
+
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
                                                                    routing.security(),
                                                                    prologue,
                                                                    headers,
                                                                    decoder,
                                                                    streamId,
-                                                                   this::readEntityFromPipeline);
+                                                                   this::readEntityFromPipeline,
+                                                                   outcome);
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire();
 
-                if (token.isEmpty()) {
-                    ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
-                    response.status(Status.SERVICE_UNAVAILABLE_503)
-                            .send("Too Many Concurrent Requests");
-                    response.commit();
-                } else {
-                    LimitAlgorithm.Token permit = token.get();
+                if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                    LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
+                    LimitAlgorithm.Token permit = accepted.token();
                     try {
                         routing.route(ctx, request, response);
                     } finally {
@@ -613,6 +610,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
                             }
                         }
                     }
+                } else {
+                    ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
+                    response.status(Status.SERVICE_UNAVAILABLE_503)
+                            .send("Too Many Concurrent Requests");
+                    response.commit();
                 }
             } finally {
                 request.content().consume();
