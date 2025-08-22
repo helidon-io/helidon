@@ -327,6 +327,7 @@ class AimdLimitImpl {
             currentRequests = concurrentRequests.incrementAndGet();
         }
 
+        @Override
         public void dropped() {
             try {
                 updateWithSample(startTime, clock.get(), currentRequests, false);
@@ -335,11 +336,13 @@ class AimdLimitImpl {
             }
         }
 
+        @Override
         public void ignore() {
             concurrentRequests.decrementAndGet();
             semaphore.release();
         }
 
+        @Override
         public void success() {
             try {
                 updateWithSample(startTime, clock.get(), currentRequests, true);

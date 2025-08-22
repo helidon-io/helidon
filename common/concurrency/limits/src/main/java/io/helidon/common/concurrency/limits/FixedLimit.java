@@ -366,6 +366,7 @@ public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semapho
             concurrentRequests.incrementAndGet();
         }
 
+        @Override
         public void dropped() {
             try {
                 updateMetrics(startTime, clock.get());
@@ -374,11 +375,13 @@ public class FixedLimit implements Limit, LimitAlgorithmDeprecatedImpls, Semapho
             }
         }
 
+        @Override
         public void ignore() {
             concurrentRequests.decrementAndGet();
             semaphore.release();
         }
 
+        @Override
         public void success() {
             try {
                 updateMetrics(startTime, clock.get());
