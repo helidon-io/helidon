@@ -207,7 +207,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
 
                 LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
-                if (outcome instanceof LimitAlgorithm.Outcome.Accepted accepted) {
+                if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                    LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();
 
                     try {

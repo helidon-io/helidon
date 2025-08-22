@@ -589,8 +589,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
             try {
 
-
-                if (outcome instanceof LimitAlgorithm.Outcome.Accepted accepted) {
+                if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                    LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();
                     try {
                         routing.route(ctx, request, response);
