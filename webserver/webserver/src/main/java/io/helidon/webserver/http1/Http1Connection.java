@@ -648,7 +648,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void handleRequestException(RequestException e) {
-         // gather error handling properties
+        // gather error handling properties
         ErrorHandling errorHandling = ctx.listenerContext()
                 .config()
                 .errorHandling();

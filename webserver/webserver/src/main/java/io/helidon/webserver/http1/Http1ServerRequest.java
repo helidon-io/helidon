@@ -149,9 +149,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                     .parent(ctx.listenerContext().context())
                     .id("[" + serverSocketId() + " " + socketId() + "] http/1.1: " + requestId)
                     .build());
-            if (limitOutcome != null) {
-                context.register(limitOutcome);
-            }
+            context.register(limitOutcome);
         }
         return context;
     }

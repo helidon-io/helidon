@@ -119,7 +119,9 @@ public interface LimitAlgorithm {
      * @deprecated Use {@link #run(Runnable)}.
      */
     @Deprecated(since = "4.3.0", forRemoval = true)
-    void invoke(Runnable runnable) throws LimitException, Exception;
+    default void invoke(Runnable runnable) throws LimitException, Exception {
+        run(runnable);
+    }
 
     /**
      * Invoke a runnable within the limits of this limiter, invoking the provided {@link java.util.function.Consumer} with the

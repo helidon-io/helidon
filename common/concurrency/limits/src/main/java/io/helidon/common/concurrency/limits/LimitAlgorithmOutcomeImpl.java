@@ -144,18 +144,6 @@ class LimitAlgorithmOutcomeImpl implements Outcome {
         return timing;
     }
 
-    private void junk(Outcome outcome) {
-        if (outcome instanceof Accepted accepted) {
-            System.out.println(accepted.token());
-        } else {
-            System.out.println("rejected");
-        }
-
-        if (outcome instanceof Deferred deferred) {
-            System.out.println("Total wait time (ns) was " + (deferred.waitEndNanoTime() - deferred.waitStartNanoTime()));
-        }
-    }
-
     static class Accepted extends LimitAlgorithmOutcomeImpl implements Outcome.Accepted {
 
         private final LimitAlgorithm.Token token;
