@@ -101,10 +101,11 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     io.opentelemetry.api.OpenTelemetry openTelemetry();
 
     /**
-     * @hidden internal use only
-     * <p>
+     * Share the prepared OpenTelemetry SDK.
+      * <p>
      * The {@link io.opentelemetry.sdk.OpenTelemetrySdk} to use (restricted visibility).
      *
+     * @hidden internal use only
      * @return the SDK
      */
     @Option.Access("")

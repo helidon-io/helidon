@@ -122,8 +122,9 @@ interface OpenTelemetryTracingConfigBlueprint {
     Map<String, Double> doubleAttributes();
 
     /**
-     * @hidden Internal use only to share information with the parent prototype.
+     * Share information with the parent prototype.
      *
+     * @hidden internal use only
      * @return shared tracer builder information
      */
     @Option.Access("")
