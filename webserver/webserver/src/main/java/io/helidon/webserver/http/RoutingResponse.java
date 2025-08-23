@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public interface RoutingResponse extends ServerResponse {
      * Return true if the underlying response buffers and headers can be reset and a new response can be sent.
      *
      * @return {@code true} if reset was successful and a new response can be created instead of the existing one,
-     *      {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
+     *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
      */
     boolean reset();
 
@@ -70,4 +70,18 @@ public interface RoutingResponse extends ServerResponse {
      * After this method is called, response cannot be {@link #reset()}.
      */
     void commit();
+
+    /**
+     * Return true if the underlying response buffers can be reset and a new response can be sent.
+     * <p>
+     * As opposed to {@link #reset()}, this method is not expected to reset headers already configured on the response
+     * <p>
+     * This method calls {@link #reset()} by default.
+     *
+     * @return {@code true} if reset was successful and a new response can be created instead of the existing one,
+     *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
+     */
+    default boolean resetStream() {
+        return reset();
+    }
 }
