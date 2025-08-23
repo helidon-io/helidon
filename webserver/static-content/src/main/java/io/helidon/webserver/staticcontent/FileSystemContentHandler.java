@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-
 /**
  * Serves files from the filesystem as a static WEB content.
  */
@@ -46,9 +46,13 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         if (requestedPath.isEmpty()) {
             resolved = root;
         } else {
-            resolved = root.resolve(requestedPath).normalize();
-            LOGGER.finest(() -> "Requested file: " + resolved.toAbsolutePath());
-            if (!resolved.startsWith(root)) {
+            try {
+                resolved = root.resolve(requestedPath).normalize();
+                LOGGER.finest(() -> "Requested file: " + resolved.toAbsolutePath());
+                if (!resolved.startsWith(root)) {
+                    return false;
+                }
+            } catch (InvalidPathException ex) {
                 return false;
             }
         }
