@@ -21,9 +21,8 @@
 :keywords: helidon, telemetry, tracing, observability
 :feature-name: OpenTelemetry Support
 :rootdir: {docdir}/..
-:version-lib-opentelemetry: 1.29.0
-:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/${version.lib.opentelemetry}/docs/http/http-spans.md#http-server-semantic-conventions
-
+:version-lib-opentelemetry: v1.29.0
+:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-lib-opentelemetry}/docs/http/http-spans.md#http-server
 include::{rootdir}/includes/se.adoc[]
 
 :helidon-otelcfg-javadoc: {otel-config-javadoc-base-url}/io/helidon/telemetry/otelconfig/
