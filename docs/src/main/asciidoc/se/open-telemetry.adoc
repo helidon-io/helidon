@@ -441,5 +441,5 @@ The link:[OpenTelemetry documentation] describes the defaults; see the "Proertie
 
 * link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[Settings and defaults]
 * link:https://opentelemetry.io/docs/languages/java/sdk[OpenTelemetry Java SDK reference]
-* link:https://opentelemetry.io/docs/specs/semconv/http/http-spans/[HTTP semantic conventions]
+* link:{semconv-link}[HTTP semantic conventions]
 * link:https://opentelemetry.io/docs/languages/java/intro/[Intro to OpenTelemetry Java]
