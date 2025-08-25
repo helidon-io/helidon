@@ -38,6 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 * <<AI Services, AI Services>>
     ** <<Creating AI Service, Creating AI Service>>
     ** <<Tools (Callback Functions), Tools (Callback Functions)>>
+    ** <<Observability (ChatModelListeners), Observability (ChatModelListeners)>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -55,7 +56,7 @@ LangChain4J integration is a preview feature. The APIs shown here are subject to
 +
 Automatically creates and registers selected LangChain4J components in the Helidon service registry based on configuration.
 
-- **Integration with CDI*
+- *Integration with CDI*
 +
 Thanks to the *Helidon Inject to CDI Bridge*, LangChain4J components can be used in CDI environments, including Helidon MP applications.
 
@@ -334,6 +335,12 @@ If you want to have your MCP clients created from the configuration, it should b
 These are all the MCP Client configuration options currently supported:
 
 include::{rootdir}/config/io_helidon_integrations_langchain4j_McpClientConfig.adoc[leveloffset=+2,tag=config]
+
+=== Observability (ChatModelListeners)
+
+While LangChain4J doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4J Documentation on Observability].
+
+Helidon provides `MetricsChatModelListener` which generates metrics that follow the https://opentelemetr.io/docs/specs/semconv/gen-ai/gen-ai-metrics[Semantic Conventions for GenAI Metrics]. This is done out-of-box for Chat API calls.
 
 == Additional Information
 
