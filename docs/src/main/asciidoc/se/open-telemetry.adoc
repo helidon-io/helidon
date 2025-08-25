@@ -21,10 +21,9 @@
 :keywords: helidon, telemetry, tracing, observability
 :feature-name: OpenTelemetry Support
 :rootdir: {docdir}/..
-:version-lib-opentelemetry: 1.29.0
-:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/${version.lib.opentelemetry}/docs/http/http-spans.md#http-server-semantic-conventions
-
 include::{rootdir}/includes/se.adoc[]
+:version-doc-opentelemetry: v{version-lib-opentelemetry}
+:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-doc-opentelemetry}/docs/http/http-spans.md#http-server
 
 :helidon-otelcfg-javadoc: {otel-config-javadoc-base-url}/io/helidon/telemetry/otelconfig/
 
@@ -37,7 +36,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Additional Information, Additional Information>>
 
 == Overview
-NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently an link:https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Incubating.html[incubating feature]. We intend to support it going forward, but we might withdraw the feature entirely or change its external API and behavior in backward-incompatible ways across dot releases.
+NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently an link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Incubating.html[incubating feature]. We intend to support it going forward, but we might withdraw the feature entirely or change its external API and behavior in backward-incompatible ways across dot releases.
 
 Helidon SE supports OpenTelemetry in several important ways:
 
@@ -169,7 +168,7 @@ OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If y
 ----
 
 === Specifying Additional OpenTelemetry Dependencies
-Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various span exporters individually. (See https://github.com/open-telemetry/opentelemetry-java/tree/{version-lib-opentelemetry}/exporters[this OpenTelemetry page] on span exporters in particular.)
+Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various span exporters individually. (See https://github.com/open-telemetry/opentelemetry-java/tree/{version-doc-opentelemetry}/exporters[this OpenTelemetry page] on span exporters in particular.)
 
 
 == Configuration
@@ -418,7 +417,7 @@ OpenTelemetry allows you to constrain certain aspects of the data it gathers in 
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_SpanLimitsConfig.adoc[tag=config,leveloffset=+2]
 
-The link:[OpenTelemetry documentation] describes the defaults; see the "Proerties for span limits" section there.
+The link:https://opentelemetry.io/docs/languages/java/sdk/#sampler[OpenTelemetry documentation] describes the defaults; see the "Properties for span limits" section there.
 
 .OpenTelemetry defaults for span limits
 [cols="1,4"]
@@ -442,5 +441,5 @@ The link:[OpenTelemetry documentation] describes the defaults; see the "Proertie
 
 * link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[Settings and defaults]
 * link:https://opentelemetry.io/docs/languages/java/sdk[OpenTelemetry Java SDK reference]
-* link:https://opentelemetry.io/docs/specs/semconv/http/http-spans/[HTTP semantic conventions]
+* link:{semconv-link}[HTTP semantic conventions]
 * link:https://opentelemetry.io/docs/languages/java/intro/[Intro to OpenTelemetry Java]
