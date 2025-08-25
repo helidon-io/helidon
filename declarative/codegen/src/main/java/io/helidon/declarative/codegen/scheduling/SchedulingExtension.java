@@ -27,7 +27,6 @@ import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
-import io.helidon.codegen.CodegenValidator;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Method;
@@ -39,6 +38,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
+import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.RunLevels;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -165,9 +165,6 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
         postConstruct.addContentLine("var taskManager = taskManagerSupplier.get();")
                 .addContentLine("var config = configSupplier.get();")
-                .addContent("var classConfig = config.get(\"")
-                .addContent(serviceType.fqName())
-                .addContentLine("\");")
                 .addContentLine("var service = serviceSupplier.get();")
                 .addContentLine("");
 
@@ -190,31 +187,13 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addContent(" = ");
         scheduled.createScheduledContent(postConstruct);
 
-        // config
-        // classConfig
-        String configVariable;
-        String configKey;
-        if (scheduled.configKey().isPresent()) {
-            // root config
-            configVariable = "config";
-            configKey = scheduled.configKey().get();
-        } else {
-            // class config + method name
-            configVariable = "classConfig";
-            configKey = scheduled.methodName() + ".schedule";
-        }
         postConstruct.increaseContentPadding()
                 .increaseContentPadding()
                 .addContentLine(".taskManager(taskManager)")
                 // ID must be configured before reading config, as config may modify it
                 .addContent(".id(\"")
                 .addContent(scheduled.id())
-                .addContentLine("\")")
-                .addContent(".config(")
-                .addContent(configVariable)
-                .addContent(".get(\"")
-                .addContent(configKey)
-                .addContentLine("\"))");
+                .addContentLine("\")");
 
         if (scheduled.hasParameter()) {
             postConstruct
@@ -326,9 +305,6 @@ class SchedulingExtension implements RegistryCodegenExtension {
         Optional<String> configKey = annotation.stringValue("configKey")
                 .filter(Predicate.not(String::isEmpty));
 
-        CodegenValidator.validateDuration(enclosingType, element, FIXED_RATE_ANNOTATION, "interval", rate);
-        CodegenValidator.validateDuration(enclosingType, element, FIXED_RATE_ANNOTATION, "delayBy", delayBy);
-
         // add for processing
         allScheduled.add(new FixedRate(element.elementName(),
                                        hasInvocationArgument,
@@ -420,8 +396,6 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
         void createScheduledContent(ContentBuilder<?> content);
 
-        Optional<String> configKey();
-
         String id();
     }
 
@@ -439,9 +413,11 @@ class SchedulingExtension implements RegistryCodegenExtension {
                     .addContentLine(".builder()")
                     .increaseContentPadding()
                     .increaseContentPadding()
-                    .addContent(".expression(\"")
-                    .addContent(expression)
-                    .addContentLine("\")");
+                    .addContent(".expression(");
+
+            DelcarativeConfigSupport.resolveExpression(content, "config", expression);
+
+            content.addContentLine(")");
 
             if (!concurrent) {
                 content.addContentLine(".concurrentExecution(false)");
@@ -467,16 +443,17 @@ class SchedulingExtension implements RegistryCodegenExtension {
                     .increaseContentPadding()
                     .addContent(".interval(")
                     .addContent(Duration.class)
-                    .addContent(".parse(\"")
-                    .addContent(rate)
-                    .addContentLine("\"))");
+                    .addContent(".parse(");
+
+            DelcarativeConfigSupport.resolveExpression(content, "config", rate);
+            content.addContentLine("))");
 
             if (!"PT0S".equals(delayBy)) {
                 content.addContent(".delayBy(")
                         .addContent(Duration.class)
-                        .addContent(".parse(\"")
-                        .addContent(delayBy)
-                        .addContentLine("\"))");
+                        .addContent(".parse(");
+                DelcarativeConfigSupport.resolveExpression(content, "config", delayBy);
+                content.addContentLine("))");
             }
             if (!"SINCE_PREVIOUS_START".equals(delayType)) {
                 content.addContent(".delayType(")

@@ -60,7 +60,6 @@ public class SchedulingTest {
     final CompletableFuture<Integer> noConcurrentExecFuture = new CompletableFuture<>();
     final CompletableFuture<Integer> concurrentExecFuture = new CompletableFuture<>();
     final CompletableFuture<String> overriddenCronFuture = new CompletableFuture<>();
-    final CompletableFuture<Boolean> overriddenConcurrentFuture = new CompletableFuture<>();
     final CompletableFuture<Duration> overriddenDelayByFuture = new CompletableFuture<>();
     final CompletableFuture<Duration> overriddenIntervalFuture = new CompletableFuture<>();
 
@@ -100,13 +99,12 @@ public class SchedulingTest {
         concurrentContenderCnt.decrementAndGet();
     }
 
-    @Scheduling.Cron("0 0 * * * ? *")
+    @Scheduling.Cron("${overrides.cron:0 0 * * * ? *}")
     void overriddenValuesCron(CronInvocation inv) {
         overriddenCronFuture.complete(inv.cron());
-        overriddenConcurrentFuture.complete(inv.concurrent());
     }
 
-    @Scheduling.FixedRate(delayBy = "PT500H", value = "PT1H")
+    @Scheduling.FixedRate(delayBy = "${overrides.fixed.delay-by:PT500H}", value = "${overrides.fixed.interval:PT1H}")
     void overriddenValuesFixed(FixedRateInvocation inv) {
         overriddenDelayByFuture.complete(inv.delayBy());
         overriddenIntervalFuture.complete(inv.interval());
@@ -153,8 +151,6 @@ public class SchedulingTest {
     void overriddenCron() throws InterruptedException, TimeoutException, ExecutionException {
         assertThat("Cron expression should have been overridden by config value",
                    overriddenCronFuture.get(5, TimeUnit.SECONDS), equalTo("0/2 * * * * ? *"));
-        assertThat("Concurrent flag should have been overridden by config value",
-                   overriddenConcurrentFuture.get(5, TimeUnit.SECONDS), equalTo(Boolean.FALSE));
     }
 
     @Test

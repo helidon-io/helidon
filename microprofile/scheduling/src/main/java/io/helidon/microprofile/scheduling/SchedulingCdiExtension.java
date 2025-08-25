@@ -26,11 +26,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.scheduling.Cron;
@@ -61,7 +60,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 @SuppressWarnings("removal")
 public class SchedulingCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(SchedulingCdiExtension.class.getName());
-    private static final Pattern CRON_PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{(?<key>[^\\}]+)\\}");
     private final Queue<AnnotatedMethod<?>> methods = new LinkedList<>();
     private final Map<AnnotatedMethod<?>, Bean<?>> beans = new HashMap<>();
     private final Queue<ScheduledExecutorService> executors = new LinkedList<>();
@@ -130,10 +128,10 @@ public class SchedulingCdiExtension implements Extension {
                         method.getName()));
             }
 
-            String defaultConfigKey = aClass.getName() + "." + method.getName() + ".schedule";
+            Config methodConfig = config.get(aClass.getName() + "." + method.getName() + ".schedule");
+
             if (am.isAnnotationPresent(FixedRate.class)) {
                 FixedRate annotation = am.getAnnotation(FixedRate.class);
-                Config methodConfig = config.get(defaultConfigKey);
 
                 Task task = io.helidon.scheduling.FixedRate.builder()
                         .initialDelay(annotation.initialDelay())
@@ -150,17 +148,10 @@ public class SchedulingCdiExtension implements Extension {
             } else if (am.isAnnotationPresent(Scheduling.FixedRate.class)) {
                 Scheduling.FixedRate annotation = am.getAnnotation(Scheduling.FixedRate.class);
 
-                Config methodConfig;
-                if (annotation.configKey().isBlank()) {
-                     methodConfig = config.get(defaultConfigKey);
-                } else {
-                    methodConfig = config.get(annotation.configKey());
-                }
                 Task task = io.helidon.scheduling.FixedRate.builder()
-                        .delayBy(Duration.parse(annotation.delayBy()))
+                        .delayBy(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.delayBy())))
                         .delayType(annotation.delayType())
-                        .interval(Duration.parse(annotation.value()))
-                        .config(methodConfig)
+                        .interval(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.value())))
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();
@@ -170,13 +161,11 @@ public class SchedulingCdiExtension implements Extension {
             } else if (am.isAnnotationPresent(Scheduled.class)) {
                 Scheduled annotation = am.getAnnotation(Scheduled.class);
 
-                Config methodConfig = config.get(defaultConfigKey);
-
                 Task task = Cron.builder()
                         .concurrentExecution(annotation.concurrentExecution())
                         .expression(DeprecatedConfig.get(methodConfig, "expression", "cron")
                                             .asString()
-                                            .orElseGet(() -> resolvePlaceholders(annotation.value(), config)))
+                                            .orElseGet(() -> ConfigBuilderSupport.resolveExpression(config, annotation.value())))
                         .config(methodConfig)
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
@@ -187,18 +176,9 @@ public class SchedulingCdiExtension implements Extension {
             } else if (am.isAnnotationPresent(Scheduling.Cron.class)) {
                 Scheduling.Cron annotation = am.getAnnotation(Scheduling.Cron.class);
 
-                Config methodConfig;
-                if (annotation.configKey().isBlank()) {
-                    methodConfig = config.get(defaultConfigKey);
-                } else {
-                    methodConfig = config.get(annotation.configKey());
-                }
                 Task task = Cron.builder()
                         .concurrentExecution(annotation.concurrent())
-                        .expression(DeprecatedConfig.get(methodConfig, "expression", "cron")
-                                            .asString()
-                                            .orElseGet(() -> resolvePlaceholders(annotation.value(), config)))
-                        .config(methodConfig)
+                        .expression(ConfigBuilderSupport.resolveExpression(config, annotation.value()))
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();
@@ -250,30 +230,6 @@ public class SchedulingCdiExtension implements Extension {
         } else {
             method.invoke(instance, invocation);
         }
-    }
-
-    static String resolvePlaceholders(String src, Config config) {
-        Matcher m = CRON_PLACEHOLDER_PATTERN.matcher(src);
-        StringBuilder result = new StringBuilder();
-        int index = 0;
-
-        while (m.find()) {
-            String key = m.group("key");
-            String value = config.get(key)
-                    .asString()
-                    .orElseThrow(() ->
-                            new IllegalArgumentException(String.format("Scheduling placeholder %s could not be resolved.", key))
-                    );
-
-            result.append(src, index, m.start()).append(value);
-            index = m.end();
-        }
-
-        if (index < src.length()) {
-            result.append(src, index, src.length());
-        }
-
-        return result.toString();
     }
 
     private boolean hasScheduleAnnotation(AnnotatedMethod<?> am) {
