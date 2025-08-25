@@ -23,8 +23,8 @@ import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG_BUILDER_SUP
 /**
  * Support to generate consistent configuration for declarative types.
  */
-public final class Configurability {
-    private Configurability() {
+public final class DelcarativeConfigSupport {
+    private DelcarativeConfigSupport() {
     }
 
     /**

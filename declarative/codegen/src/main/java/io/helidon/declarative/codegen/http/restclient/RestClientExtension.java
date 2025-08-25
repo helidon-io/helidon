@@ -43,7 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.Configurability;
+import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.model.http.ClientEndpoint;
@@ -555,10 +555,10 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
     }
 
     private void constructorUriHandling(Constructor.Builder ctr, ClientEndpoint endpoint) {
-        Configurability.assignResolveExpression(ctr,
-                                                "config",
-                                                "uri",
-                                                endpoint.uri());
+        DelcarativeConfigSupport.assignResolveExpression(ctr,
+                                                         "config",
+                                                         "uri",
+                                                         endpoint.uri());
 
         String path = endpoint.path().orElse("/");
         if (path.startsWith("/")) {

@@ -37,8 +37,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.Configurability;
 import io.helidon.declarative.codegen.DeclarativeTypes;
+import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.RunLevels;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -415,7 +415,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
                     .increaseContentPadding()
                     .addContent(".expression(");
 
-            Configurability.resolveExpression(content, "config", expression);
+            DelcarativeConfigSupport.resolveExpression(content, "config", expression);
 
             content.addContentLine(")");
 
@@ -445,14 +445,14 @@ class SchedulingExtension implements RegistryCodegenExtension {
                     .addContent(Duration.class)
                     .addContent(".parse(");
 
-            Configurability.resolveExpression(content, "config", rate);
+            DelcarativeConfigSupport.resolveExpression(content, "config", rate);
             content.addContentLine("))");
 
             if (!"PT0S".equals(delayBy)) {
                 content.addContent(".delayBy(")
                         .addContent(Duration.class)
                         .addContent(".parse(");
-                Configurability.resolveExpression(content, "config", delayBy);
+                DelcarativeConfigSupport.resolveExpression(content, "config", delayBy);
                 content.addContentLine("))");
             }
             if (!"SINCE_PREVIOUS_START".equals(delayType)) {
