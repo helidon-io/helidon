@@ -29,6 +29,7 @@
                             <value key="artifactId">opentelemetry-exporter-otlp</value>
                         </map>
                     </list>
+                    <value key="tracing.provider.otel">otlp</value>
                 </model>
             </output>
         </method>
@@ -41,6 +42,7 @@
                             <value key="artifactId">opentelemetry-exporter-zipkin</value>
                         </map>
                     </list>
+                    <value key="tracing.provider.otel">${tracing.provider}</value>
                 </model>
             </output>
         </method>

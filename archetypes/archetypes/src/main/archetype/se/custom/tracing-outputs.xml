@@ -48,10 +48,12 @@ tracing:
                 <map if="${tracing.provider} == 'jaeger'">
                     <value key="groupId">io.helidon.tracing.providers</value>
                     <value key="artifactId">helidon-tracing-providers-opentelemetry</value>
+                    <value key="tracing.provider.otel">otlp</value>
                 </map>
                 <map if="${tracing.provider} == 'zipkin'">
                     <value key="groupId">io.helidon.tracing.providers</value>
                     <value key="artifactId">helidon-tracing-providers-zipkin</value>
+                    <value key="tracing.provider.otel">${tracing.provider}</value>
                 </map>
             </list>
             <list key="Main-routing-builder">
