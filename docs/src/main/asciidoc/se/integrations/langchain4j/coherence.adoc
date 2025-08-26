@@ -91,12 +91,12 @@ Full list of configuration properties:
 
 === CoherenceChatMemoryStore
 
-To automatically create and add persistence support backed by Coherence to `CharMemory`, just specify `store="CoherenceChatMemoryStore"` as following:
+To automatically create and add persistence support backed by Coherence to `ChatMemory`, just specify `store="coherence"` as following:
 
 [source,java]
 ----
 @Ai.Service
-@Ai.ChatMemoryWindow(value=3,store="CoherenceChatMemoryStore")
+@Ai.ChatMemoryWindow(value=3,store="coherence")
 public interface ChatAiService {
     String chat(@UserMessage String question);
 }
