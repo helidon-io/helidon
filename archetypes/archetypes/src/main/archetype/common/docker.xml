@@ -63,8 +63,8 @@
                     <directory>files</directory>
                     <includes>
                         <include>Dockerfile.mustache</include>
-                        <include if="${native-image}">Dockerfile.native.mustache</include>
-                        <include if="${jlink-image}">Dockerfile.jlink.mustache</include>
+                        <include if="${docker.native-image}">Dockerfile.native.mustache</include>
+                        <include if="${docker.jlink-image}">Dockerfile.jlink.mustache</include>
                     </includes>
                 </templates>
                 <model>
@@ -100,7 +100,7 @@ docker run --rm -p 8080:8080 {{artifactId}}:latest
 Exercise the application as described above.
                                 ]]>
                         </value>
-                        <value template="mustache" if="${native-image}">
+                        <value template="mustache" if="${docker.native-image}">
                             <![CDATA[
 ## Building a Native Image
 
@@ -109,7 +109,7 @@ Exercise the application as described above.
 {{/native-sections}}
 ]]>
                         </value>
-                        <value order="40" template="mustache" if="${jlink-image}">
+                        <value order="40" template="mustache" if="${docker.jlink-image}">
                             <![CDATA[
 ## Building a Custom Runtime Image
 
