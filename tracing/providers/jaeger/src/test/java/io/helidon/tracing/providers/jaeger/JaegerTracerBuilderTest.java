@@ -75,7 +75,7 @@ class JaegerTracerBuilderTest {
         assertThat("Tags", jBuilder.tags(), is(Map.of()));
         assertThat("Protocol", jBuilder.protocol(), is("http"));
         assertThat("Host", jBuilder.host(), is("localhost"));
-        assertThat("Port", jBuilder.port(), is(14250));
+        assertThat("Port", jBuilder.port(), is(4317));
         assertThat("Path", jBuilder.path(), nullValue());
         assertThat("Enabled", jBuilder.isEnabled(), is(true));
         assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.CONSTANT));
