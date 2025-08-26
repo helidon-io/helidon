@@ -71,8 +71,8 @@ Full list of configuration properties:
 |`enabled` |boolean |If set to `false`, embedding store content retriever will be disabled even if configured.
 |`max-results` |int |Maximum number of results.
 |`min-score` |double |Minimum score threshold.
-|`embedding-model` |string |Service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean.
-|`embedding-store` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean.
+|`embedding-model` |string |Service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean. Use `@default` (the default option) to refer to the unnamed service.
+|`embedding-store` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. Use `embedding-model.service-registry.named: "serviceName"` to select a named service bean. Use `@default` (the default option) to refer to the unnamed service.
 
 |===
 

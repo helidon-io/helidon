@@ -91,16 +91,16 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .description(
                                                                        "Measures number of input and output tokens used")
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.operation.name",
+                                                                       "gen_ai_operation_name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.request.model",
+                                                                       "gen_ai_request_model",
                                                                        requestModelName))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.response.model",
+                                                                       "gen_ai_response_model",
                                                                        responseModelName))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.token.type",
+                                                                       "gen_ai_token_type",
                                                                        "input"))));
         clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
 
@@ -114,16 +114,16 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .description(
                                                                        "Measures number of input and output tokens used")
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.operation.name",
+                                                                       "gen_ai_operation_name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.request.model",
+                                                                       "gen_ai_request_model",
                                                                        requestModelName))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.response.model",
+                                                                       "gen_ai_response_model",
                                                                        responseModelName))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.token.type",
+                                                                       "gen_ai_token_type",
                                                                        "output"))));
         clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
 
@@ -137,16 +137,16 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .description(
                                                                        "GenAI operation duration")
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.operation.name",
+                                                                       "gen_ai_operation_name",
                                                                        "chat"))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.request.model",
+                                                                       "gen_ai_request_model",
                                                                        requestModelName))
                                                                .addTag(Tag.create(
-                                                                       "gen_ai.response.model",
+                                                                       "gen_ai_response_model",
                                                                        responseModelName))
                                                                .addTag(Tag.create(
-                                                                       "error.type",
+                                                                       "error_type",
                                                                        ""))));
         clientOperationDuration.record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
     }
@@ -168,16 +168,16 @@ class MetricsChatModelListener implements ChatModelListener {
                                              .description(
                                                      "GenAI operation duration")
                                              .addTag(Tag.create(
-                                                     "gen_ai.operation.name",
+                                                     "gen_ai_operation_name",
                                                      "chat"))
                                              .addTag(Tag.create(
-                                                     "gen_ai.request.model",
+                                                     "gen_ai_request_model",
                                                      chatRequest.modelName()))
                                              .addTag(Tag.create(
-                                                     "gen_ai.response.model",
+                                                     "gen_ai_response_model",
                                                      ""))
                                              .addTag(Tag.create(
-                                                     "error.type",
+                                                     "error_type",
                                                      chatModelErrorContext.error().getClass().getName()))));
         errorOperationDuration.record(TimeUnit.SECONDS.convert(endTime - startTime, TimeUnit.NANOSECONDS));
     }
