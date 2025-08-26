@@ -303,3 +303,8 @@ discovery: # <1>
 <2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
 <3> `enabled` controls whether the provider is enabled at all (`true`) or completely disabled (`false`), in which case
     all other configuration pertaining to it is irrelevant. `true` by default.
+
+==== Related Documentation
+
+Users of the Helidon Eureka Discovery provider may also be interested in the (related)
+xref:{docdir}/integrations/eureka/eureka-registration.adoc[Eureka Server Service Instance Registration] feature.
