@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -414,6 +415,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean pkceEnabled;
     private final PkceChallengeMethod pkceChallengeMethod;
     private final OidcOutboundType outboundType;
+    private final ClientCredentialsConfig clientCredentialsConfig;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -453,6 +455,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
         this.outboundType = builder.outboundType;
+        this.clientCredentialsConfig = builder.clientCredentialsConfig;
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
@@ -871,6 +874,15 @@ public final class OidcConfig extends TenantConfigImpl {
         return outboundType;
     }
 
+    /**
+     * Client credentials configuration.
+     *
+     * @return client credentials config
+     */
+    public ClientCredentialsConfig clientCredentialsConfig() {
+        return clientCredentialsConfig;
+    }
+
     Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
@@ -988,6 +1000,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean useHeader = DEFAULT_HEADER_USE;
         private boolean useParam = DEFAULT_PARAM_USE;
         private OidcOutboundType outboundType = OidcOutboundType.USER_JWT;
+        private ClientCredentialsConfig clientCredentialsConfig = ClientCredentialsConfig.create();
         private boolean pkceEnabled = DEFAULT_PKCE_ENABLED;
         private PkceChallengeMethod pkceChallengeMethod = PkceChallengeMethod.S256;
 
@@ -1035,6 +1048,13 @@ public final class OidcConfig extends TenantConfigImpl {
             if (useCookie && logoutEnabled) {
                 if (postLogoutUri == null) {
                     collector.fatal("post-logout-uri must be defined when logout is enabled.");
+                }
+            }
+            if (outboundType == OidcOutboundType.CLIENT_CREDENTIALS) {
+                if (clientCredentialsConfig.scope().isEmpty()
+                        && serverType().equals("idcs")) {
+                    collector.fatal("client-credential.scope must be defined when client credentials flow "
+                                            + "is set as an outbound type and \"idcs\" is the outbound server type");
                 }
             }
 
@@ -1172,6 +1192,8 @@ public final class OidcConfig extends TenantConfigImpl {
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
 
             config.get("outbound-type").as(OidcOutboundType.class).ifPresent(this::outboundType);
+            config.get("client-credentials").as(Config.class)
+                    .ifPresent(it -> clientCredentialsConfig(ClientCredentialsConfig.create(it)));
             config.get("pkce-enabled").asBoolean().ifPresent(this::pkceEnabled);
             config.get("pkce-challenge-method").as(PkceChallengeMethod.class).ifPresent(this::pkceChallengeMethod);
 
@@ -1906,5 +1928,19 @@ public final class OidcConfig extends TenantConfigImpl {
             webClientConfigBuilder.socketOptions(newSocketBuilder);
             return this;
         }
+
+        @ConfiguredOption
+        public Builder clientCredentialsConfig(ClientCredentialsConfig clientCredentialsConfig) {
+            this.clientCredentialsConfig = Objects.requireNonNull(clientCredentialsConfig);
+            return this;
+        }
+
+        public Builder clientCredentialsConfig(Consumer<ClientCredentialsConfig.Builder> builderConsumer) {
+            var builder = ClientCredentialsConfig.builder();
+            builderConsumer.accept(builder);
+            this.clientCredentialsConfig = builder.build();
+            return this;
+        }
+
     }
 }
