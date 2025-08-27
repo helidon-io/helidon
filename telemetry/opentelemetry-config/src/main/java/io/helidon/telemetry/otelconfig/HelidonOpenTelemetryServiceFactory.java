@@ -55,11 +55,6 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
             wasOtelGlobalSet = true;
         }
 
-        if (otelConfig.global() && !wasOtelGlobalSet) {
-            io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.global(result,
-                                                                        otelConfig.service(),
-                                                                        Map.of());
-        }
         return result;
     }
 }
