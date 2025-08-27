@@ -16,7 +16,6 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
