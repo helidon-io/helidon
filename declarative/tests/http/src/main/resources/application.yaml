@@ -27,3 +27,15 @@ server:
 
 greet-service.client:
   uri: "http://localhost:${test.server.port}"
+
+security:
+  providers:
+    - abac:
+    - http-basic-auth:
+        users:
+          - login: "john"
+            password: "changeit"
+            roles: ["admin"]
+          - login: "jack"
+            password: "changeit"
+            roles: ["user"]
