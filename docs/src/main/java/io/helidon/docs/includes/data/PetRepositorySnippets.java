@@ -35,9 +35,20 @@ public interface PetRepositorySnippets extends Data.GenericRepository<Pet, Integ
     long longCountByName(String name);
     // end::qbmn_method[]
 
-    // tag::qbmn_criteria_method[]
+    // tag::qbmn_criteria_methods[]
+    // Returns Keeper entity with keepr.name matching provided name
+    // or throws an exception when no such entity exists
+    Keeper getByName(String name);
+    // Returns list of Keeper entities with keepr.age > provided age value
     List<Keeper> listByAgeGreaterThan(int age);
-    // end::qbmn_criteria_method[]
+    // Checks whether at least one entity with keepr.age between provided
+    // min and max values exists
+    boolean existsByAgeBetween(int min, int max);
+    // end::qbmn_criteria_methods[]
+
+    // tag::qbmn_multiple_criteria_methods[]
+    Optional<Keeper> findByNameAndAge(String name, int age);
+    // end::qbmn_multiple_criteria_methods[]
 
     // tag::qbmn_sort_method[]
     List<Keeper> listAllOrderByAgeAscName();
