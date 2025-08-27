@@ -42,6 +42,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - Tracing: Add config support for retry policy on OTLP exporters [10590](https://github.com/helidon-io/helidon/pull/10590)
 - Tracing: Add missing assignment of value from config to OTel class for Zipkin exporter [10585](https://github.com/helidon-io/helidon/pull/10585)
 - Tracing: Allow configuring OpenTelemetry overall and tracing using Helidon builders and config [10548](https://github.com/helidon-io/helidon/pull/10548)
+- Tracing: Remove duplicate assignment of OTel global instance [10611](https://github.com/helidon-io/helidon/pull/10611)
 - Tracing: Make span limits configurable (add accidentally omitted `@Option.Configured` annotations) [10577](https://github.com/helidon-io/helidon/pull/10577)
 - Tracing: Record limit outcomes, using them to build limit-related spans with correct parent [10464](https://github.com/helidon-io/helidon/pull/10464)
 - WebClient: Content decoders are now properly used with chunked transfer [10448](https://github.com/helidon-io/helidon/pull/10448)
