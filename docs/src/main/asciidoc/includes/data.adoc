@@ -155,7 +155,7 @@ represents the type of the entity's primary key attribute. Composite primary key
 
 The `Data.GenericRepository` interface is extended by additional interfaces that add specific features:
 
-[cols=2*]
+[cols="20%,80%"]
 |===
 |Interface |Description
 
@@ -192,57 +192,27 @@ include::{sourcedir}/includes/data/PetRepository.java[tag=PetRepository_class, i
 ==== Method with Query Defined by Method Name
 
 This method type infers the query based on the method name and does not use a specific annotation.
-The method name must follow the _query-by-method-name_ syntax:
 
-[source,text]
-----
-        method-name  :: <query> | <delete>
+The general method name syntax is illustrated below:
 
-        query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
-                            | <all-action> "All" [ "OrderBy" <order> ]
-        delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
+image::data/qbmn_syntax.png[align="left",role="fit"]
 
-        action       :: <action-l> | <prefix> <action-u>
-        all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
-        del-action   :: "delete" | [ <prefix> ] "Delete"
-
-        prefix       :: [a-zA-Z0-9]*
-        action-l     :: "count" |  "exists" | "get" | <all-action-l>
-        action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
-        all-action-l :: "find" | "list" | "stream"
-        all-action-u :: "Find" | "List" | "Stream"
-
-        projection   :: [ <expression> ] [ <property> ]
-        expression   :: "First" <number> [ "Distinct" ] | "Distinct"
-                            | "Max" | "Min" | "Sum" | "Avg"
-        property     :: <identifier> [ "_" <identifier> ]
-        identifier   :: [a-zA-Z][a-zA-Z0-9]*
-        number       :: [0-9]+
-
-        criteria     :: <condition> { <logical-operator> <condition> }
-        condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
-        operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
-                            | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
-                            | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
-        logical-operator :: "And" | "Or"
-
-        order        :: <property> [ <direction> [ <order> ] ]
-        direction    :: "Asc" | "Desc"
-----
+All parts of the pattern are optional except the return type keyword, such as `get`, `find`, `list`,
+`stream`, `count` and `exists`.
 
 ===== Method Name Prefix and Return Type
 
 A method can have a user-defined prefix. The prefix is a sequence of letters and digits that does not
-match any `<action-u>` keyword. This prefix has no influence on the query and can be used to distinguish
-between methods that have the same query but different result types. If a prefix is used, the following
-query action keyword must start with a capital letter.
+match any return type keyword. This prefix has no influence on the query and can be used to distinguish
+between methods that have the same query but different return types. If a prefix is used, the following
+query return type keyword must start with a capital letter.
 
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_method, indent=0]
 ----
 
-The return type depends on the action keyword:
+The query return type depends on the return type keyword:
 
 [cols=3*]
 |===
@@ -341,7 +311,7 @@ Method arguments are consumed in the same order as the condition keywords appear
 
 Criteria modifiers:
 
-[cols=2*]
+[cols="10%,90%"]
 |===
 |Keyword |Description
 
@@ -429,16 +399,16 @@ Supported condition keywords:
 |The property value is `false`. Requires `boolean` or `Boolean` property.
 |===
 
-An example method that returns all entities whose `age` attribute is greater than the provided value:
+An example repository method with criteria:
 
 [source,java]
 ----
-include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_criteria_method, indent=0]
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_criteria_methods, indent=0]
 ----
 
 Logical operators:
 
-[cols=2*]
+[cols="10%,90%"]
 |===
 |Keyword |Description
 
@@ -448,6 +418,13 @@ Logical operators:
 |Or
 |Logical OR
 |===
+
+An example repository method with criteria and logical operator:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_multiple_criteria_methods, indent=0]
+----
 
 NOTE: In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1, section 4.6.6.
       The same rule applies to SQL.
@@ -461,7 +438,7 @@ keywords, so only the last keyword is optional.
 
 Ordering keywords:
 
-[cols=2*]
+[cols="10%,90%"]
 |===
 |Keyword |Description
 
@@ -479,6 +456,46 @@ An example repository method with ordering:
 [source,java]
 ----
 include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
+----
+
+===== Method Name Grammar
+
+The formal grammar for method names is as follows:
+
+[source,text]
+----
+        method-name  :: <query> | <delete>
+
+        query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
+                            | <all-action> "All" [ "OrderBy" <order> ]
+        delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
+
+        action       :: <action-l> | <prefix> <action-u>
+        all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
+        del-action   :: "delete" | [ <prefix> ] "Delete"
+
+        prefix       :: [a-zA-Z0-9]*
+        action-l     :: "count" |  "exists" | "get" | <all-action-l>
+        action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
+        all-action-l :: "find" | "list" | "stream"
+        all-action-u :: "Find" | "List" | "Stream"
+
+        projection   :: [ <expression> ] [ <property> ]
+        expression   :: "First" <number> [ "Distinct" ] | "Distinct"
+                            | "Max" | "Min" | "Sum" | "Avg"
+        property     :: <identifier> [ "_" <identifier> ]
+        identifier   :: [a-zA-Z][a-zA-Z0-9]*
+        number       :: [0-9]+
+
+        criteria     :: <condition> { <logical-operator> <condition> }
+        condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
+        operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
+                            | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
+                            | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
+        logical-operator :: "And" | "Or"
+
+        order        :: <property> [ <direction> [ <order> ] ]
+        direction    :: "Asc" | "Desc"
 ----
 
 ==== Method with Query Defined by `@Data.Query` Annotation
@@ -519,7 +536,7 @@ The `PageRequest` argument defines the page size and the page index, starting fr
 
 Returned page content types:
 
-[cols=2*]
+[cols="10%,90%"]
 |===
 |Name |Description
 
@@ -620,89 +637,62 @@ Helidon JTA Transaction support, such as Narayana, may be provided at runtime to
 
 If JTA transaction support is not provided, Helidon Data runtime will use `RESOURCE_LOCAL` transaction type.
 
-=== Transaction Types
+=== Transaction Types and Annotations
 
 The `Tx` class defines several ways how transactional support can be applied to transactional method executions.
 Those ways are defined in `Tx.Type` enum.
+The `Tx` class also defines annotations that can be used to mark methods for transactional execution
+based on `Tx.Type` enum.
 
-==== Transaction Type Enum
-The `Tx.Type` enum is used to describe the possible ways in which transactional support must be applied
-to transactional method executions.
-
-===== Enum Values and Their Meanings
-
-The Type enum has six values, each representing a different transactional behavior:
-
-[cols=2*]
+[cols=3*]
 |===
-|Name |Description
+|Enum |Annotation |Description
 
 |`MANDATORY`
+|`@Mandatory`
 |A transaction must already be in effect when a method executes. If called outside a transaction
  context, a `TxException` is thrown. If called inside a transaction context, method execution continues
  under that context.
 
 |`NEW`
+|`@New`
 |A new transaction is started when a method executes. If called outside a transaction context, a new
  transaction is begun. If called inside a transaction context, the current transaction is suspended, a new
  transaction is begun, and the method execution continues inside this new transaction context.
 
 |`NEVER`
+|`@Never`
 |No transaction must be in effect when a method executes. If called outside a transaction context, method
  execution continues outside a transaction context. If called inside a transaction context, a `TxException`
  is thrown.
 
 |`REQUIRED`
+|`@Required`
 |A transaction will be in effect when a method executes. If called outside a transaction context,
  a new transaction is begun. If called inside a transaction context, method execution continues inside
  that transaction context.
 
 |`SUPPORTED`
+|`@Supported`
 |A transaction may optionally be in effect when a method executes. If called outside a transaction
  context, method execution continues outside a transaction context. If called inside a transaction context,
  method execution continues inside that transaction context.
 
 |`UNSUPPORTED`
+|`@Unsupported`
 |No transaction will be in effect when a method executes. If called outside a transaction context, method
  execution continues outside a transaction context. If called inside a transaction context, the current
  transaction is suspended, method execution continues outside a transaction context, and the previously
  suspended transaction is resumed after method execution completes.
 |===
 
-=== Transaction Annotations
-
-The `Tx` class defines several annotations that can be used to mark methods for transactional execution:
-
-[cols=2*]
-|===
-|Annotation |Description
-
-|`@Mandatory`
-|Indicates that a method will be executed with a managed transaction of type `MANDATORY`.
-
-|`@New`
-|Indicates that a method will be executed with a managed transaction of type `NEW`.
-
-|`@Never`
-|Indicates that a method will be executed with a managed transaction of type `NEVER`.
-
-|`@Required`
-|Indicates that a method will be executed with a managed transaction of type `REQUIRED`.
-
-|`@Supported`
-|Indicates that a method will be executed with a managed transaction of type `SUPPORTED`.
-
-|`@Unsupported`
-|Indicates that a method will be executed with a managed transaction of type `UNSUPPORTED`.
-|===
-
 === Transaction Methods
 
 The `Tx` class provides several methods for executing tasks within a transaction:
 
-[cols=2*]
+[cols="20%,80%"]
 |===
-|Annotation |Description
+|Method |Description
 
 |`transaction(Callable<T> task)`
 |Executes a task with a managed transaction of type `REQUIRED`.
