@@ -124,6 +124,10 @@ class ConfigureMethodBuilder {
             line = "Optional.of(" + line + ")";
         }
 
+        if (propType.isMap() || propType.isList() || propType.isSet()) {
+            line += ".filter(c -> !c.isEmpty())";
+        }
+
         line += ".ifPresent(p -> modelBuilder." + propName + "(p))";
 
         confMethodBuilder.addContentLine(line + ";");
