@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -28,6 +29,7 @@ import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http.spi.Sink;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -126,22 +128,7 @@ public class JsonRpcRouting implements HttpService {
                         JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
                         JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
                         JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                        JsonRpcResponse jsonRes = new JsonRpcResponseImpl(rpcId, res) {
-                            @Override
-                            public void send() {
-                                try {
-                                    if (rpcId().isPresent()) {
-                                        res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
-                                        res.status(status()).send(asJsonObject());
-                                    } else {
-                                        res.status(status()).send();        // notification
-                                    }
-                                    sendCalled.set(true);
-                                } catch (Exception e) {
-                                    sendInternalError(res);
-                                }
-                            }
-                        };
+                        JsonRpcResponse jsonRes = new JsonRpcSingleResponse(rpcId, res, sendCalled);
 
                         // invoke single handler
                         try {
@@ -191,19 +178,7 @@ public class JsonRpcRouting implements HttpService {
                             JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
                             JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
                             JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                            JsonRpcResponse jsonRes = new JsonRpcResponseImpl(rpcId, res) {
-                                @Override
-                                public void send() {
-                                    try {
-                                        if (rpcId().isPresent()) {
-                                            res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
-                                            arrayBuilder.add(asJsonObject());
-                                        }
-                                    } catch (Exception e) {
-                                        sendInternalError(res);
-                                    }
-                                }
-                            };
+                            JsonRpcResponse jsonRes = new MyJsonRpcBatchResponse(rpcId, res, arrayBuilder);
 
                             // invoke handler
                             try {
@@ -334,6 +309,61 @@ public class JsonRpcRouting implements HttpService {
             builder.method(method, handler);
             register(pathPattern, builder.build());
             return this;
+        }
+    }
+
+    private class JsonRpcSingleResponse extends JsonRpcResponseImpl {
+        private final ServerResponse res;
+        private final AtomicBoolean sendCalled;
+
+        JsonRpcSingleResponse(JsonValue rpcId, ServerResponse res, AtomicBoolean sendCalled) {
+            super(rpcId, res);
+            this.res = res;
+            this.sendCalled = sendCalled;
+        }
+
+        @Override
+        public void send() {
+            try {
+                if (rpcId().isPresent()) {
+                    res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
+                    res.status(status()).send(asJsonObject());
+                } else {
+                    res.status(status()).send();        // notification
+                }
+                sendCalled.set(true);
+            } catch (Exception e) {
+                sendInternalError(res);
+            }
+        }
+
+        @Override
+        public <T extends Sink<?>> T sink(GenericType<T> sinkType) {
+            sendCalled.set(true);
+            return super.sink(sinkType);
+        }
+    }
+
+    private class MyJsonRpcBatchResponse extends JsonRpcResponseImpl {
+        private final ServerResponse res;
+        private final JsonArrayBuilder arrayBuilder;
+
+        MyJsonRpcBatchResponse(JsonValue rpcId, ServerResponse res, JsonArrayBuilder arrayBuilder) {
+            super(rpcId, res);
+            this.res = res;
+            this.arrayBuilder = arrayBuilder;
+        }
+
+        @Override
+        public void send() {
+            try {
+                if (rpcId().isPresent()) {
+                    res.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
+                    arrayBuilder.add(asJsonObject());
+                }
+            } catch (Exception e) {
+                sendInternalError(res);
+            }
         }
     }
 }
