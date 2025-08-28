@@ -340,7 +340,7 @@ include::{rootdir}/config/io_helidon_integrations_langchain4j_McpClientConfig.ad
 
 While LangChain4J doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4J Documentation on Observability].
 
-Helidon provides `MetricsChatModelListener` which generates metrics that follow the https://opentelemetr.io/docs/specs/semconv/gen-ai/gen-ai-metrics[Semantic Conventions for GenAI Metrics]. This is done out-of-box for Chat API calls.
+Helidon provides `MetricsChatModelListener` which generates metrics that follow the https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/gen-ai/gen-ai-metrics.md[OpenTelemetry Semantic Conventions for GenAI Metrics v1.36.0]. This is done out-of-box for Chat API calls.
 
 == Additional Information
 
