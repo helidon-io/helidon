@@ -75,9 +75,8 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
 
         @Override
         public String spanName() {
-            // Ideally, we would use {method-name} {matching-pattern} for the span name, but the matching pattern is not
-            // available here in a pre-matching filter.
-            return request.prologue().method().text();
+            methodText = request.prologue().method().text();
+            return methodText;
         }
 
         @Override
