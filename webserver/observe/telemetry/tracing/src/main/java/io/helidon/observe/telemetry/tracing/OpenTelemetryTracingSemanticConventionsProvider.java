@@ -16,8 +16,6 @@
 
 package io.helidon.observe.telemetry.tracing;
 
-import java.util.Optional;
-
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.HeaderNames;
 import io.helidon.service.registry.Service;
