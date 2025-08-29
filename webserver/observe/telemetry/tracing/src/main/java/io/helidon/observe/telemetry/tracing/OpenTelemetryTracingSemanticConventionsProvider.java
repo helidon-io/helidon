@@ -16,8 +16,6 @@
 
 package io.helidon.observe.telemetry.tracing;
 
-import java.util.Optional;
-
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.HeaderNames;
 import io.helidon.service.registry.Service;
@@ -65,7 +63,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         private final RoutingResponse response;
 
         private String methodText;
-        private Optional<String> matchingPattern;
 
         SemanticConventions(SpanTracingConfig spanTracingConfig,
                             String socketName,
@@ -79,10 +76,7 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         @Override
         public String spanName() {
             methodText = request.prologue().method().text();
-            matchingPattern = request.matchingPattern();
-            return methodText + matchingPattern
-                    .map(pattern -> " " + pattern)
-                    .orElse("");
+            return methodText;
         }
 
         @Override
@@ -93,7 +87,6 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                     .tag(HTTP_REQUEST_METHOD, methodText)
                     .tag(URL_PATH, uriInfo.path().path())
                     .tag(URL_SCHEME, uriInfo.scheme())
-                    .update(b -> matchingPattern.ifPresent(route -> b.tag(HTTP_ROUTE, route)))
                     .tag(SERVER_PORT, Integer.toString(request.localPeer().port()))
                     .update(b -> {
                         if (!request.query().isEmpty()) {
@@ -110,12 +103,18 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
 
         @Override
         public void beforeEnd(Span span) {
+            commonBeforeEnd(span);
             span.tag(HTTP_RESPONSE_STATUS_CODE, Integer.toString(response.status().code()));
         }
 
         @Override
         public void beforeEnd(Span span, Exception e) {
+            commonBeforeEnd(span);
             span.tag(ERROR_TYPE, e.getClass().getName());
+        }
+
+        private void commonBeforeEnd(Span span) {
+            request.matchingPattern().ifPresent(mp -> span.tag(HTTP_ROUTE, mp));
         }
     }
 }
