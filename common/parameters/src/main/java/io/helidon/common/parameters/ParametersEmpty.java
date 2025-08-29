@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
 class ParametersEmpty implements Parameters {
+    static final Mappers MAPPERS = Mappers.create();
+
     private final String component;
 
     ParametersEmpty(String component) {
@@ -74,6 +76,6 @@ class ParametersEmpty implements Parameters {
 
     @Override
     public OptionalValue<String> first(String name) {
-        return OptionalValue.create(MapperManager.global(), name, GenericType.STRING);
+        return OptionalValue.create(MAPPERS, name, GenericType.STRING);
     }
 }
