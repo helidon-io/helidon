@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,9 @@ final class CookieParser {
         if (allCookies.isEmpty()) {
             return EMPTY_COOKIES;
         }
-        return Parameters.create("http/cookies", allCookies);
+        // avoids splitting the component every single time parameters are created, which is
+        // for example for every single HTTP request
+        return Parameters.create("http/cookies", allCookies, "http", "cookies");
     }
 
     static Parameters empty() {

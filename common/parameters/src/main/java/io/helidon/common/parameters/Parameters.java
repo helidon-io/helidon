@@ -75,6 +75,19 @@ public interface Parameters {
     }
 
     /**
+     * Read only parameters based on a map.
+     *
+     * @param params     underlying map
+     * @param component  component of the parameters to correctly report errors
+     * @param qualifiers qualifiers to use when mapping to different types
+     * @return new named parameters with values based on the map
+     */
+    static Parameters create(String component, Map<String, List<String>> params, String... qualifiers) {
+        // this method is to avoid parsing of component into qualifiers on WebServer hot path
+        return new ParametersMap(ParametersEmpty.MAPPERS, component, params, qualifiers);
+    }
+
+    /**
      * Read only parameters based on a map with just a single value.
      *
      * @param component component of the parameters to correctly report errors
