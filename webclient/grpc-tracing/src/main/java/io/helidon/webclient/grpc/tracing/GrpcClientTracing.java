@@ -33,7 +33,9 @@ public class GrpcClientTracing implements GrpcClientService {
      * Create an instance from config.
      *
      * @param config the config
+     * @deprecated this constructor was left public by accident, please use #create(Config)
      */
+    @Deprecated(forRemoval = true)
     public GrpcClientTracing(Config config) {
         this.config = config;
     }
