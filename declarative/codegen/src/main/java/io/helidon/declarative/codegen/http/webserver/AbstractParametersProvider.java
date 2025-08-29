@@ -118,7 +118,7 @@ abstract class AbstractParametersProvider {
         }
 
         if (TypeNames.STRING.equals(type)) {
-            content.addContent("getString()");
+            content.addContent("get()");
             return;
         }
 
