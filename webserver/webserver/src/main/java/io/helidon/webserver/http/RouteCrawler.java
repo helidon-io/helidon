@@ -148,7 +148,10 @@ class RouteCrawler {
                 newParams.put(paramName, params.all(paramName));
             }
             newParams.replaceAll((name, values) -> List.copyOf(values));
-            RoutedPath result = new CrawlerRoutedPath(path, matchingElement, Parameters.create("http/path", newParams));
+            // this is called for each request, optimize qualifiers so the do not get parsed each time
+            RoutedPath result = new CrawlerRoutedPath(path,
+                                                      matchingElement,
+                                                      Parameters.create("http/path", newParams, "http", "path"));
             return new CrawlerItem(result, parent.path() + matchingElement, handler);
         }
 
