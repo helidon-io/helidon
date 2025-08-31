@@ -16,7 +16,10 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Map;
+
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -35,6 +38,15 @@ class HelidonOpenTelemetryImpl implements HelidonOpenTelemetry, RuntimeType.Api<
             try {
                 OpenTelemetry openTelemetry = prototype().openTelemetry();
                 GlobalOpenTelemetry.set(openTelemetry);
+                /*
+                Initialize the Helidon global tracer with the newly-set-up OpenTelemetry instance.
+                 */
+                Tracer globalHelidonTracer = io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry
+                        .create(openTelemetry,
+                                openTelemetry.getTracer(
+                                        prototype().service()),
+                                Map.of());
+                Tracer.global(globalHelidonTracer);
 
 
             } catch (Exception e) {

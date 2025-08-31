@@ -38,7 +38,6 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
     @Override
     public OpenTelemetry get() {
         OpenTelemetry result;
-        boolean wasOtelGlobalSet = false;
         var otelConfig = OpenTelemetryConfig.create(config.get(HelidonOpenTelemetry.CONFIG_KEY));
         try {
             result = HelidonOpenTelemetry.create(otelConfig)
@@ -51,7 +50,6 @@ class HelidonOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
             that retrieves it from our registry will use the actual OTel global instance.
              */
             result = GlobalOpenTelemetry.get();
-            wasOtelGlobalSet = true;
         }
 
         return result;
