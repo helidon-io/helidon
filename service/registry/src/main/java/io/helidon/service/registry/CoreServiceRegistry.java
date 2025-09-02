@@ -44,6 +44,7 @@ import io.helidon.service.registry.ServiceSupplies.ServiceSupplyList;
 
 import static io.helidon.service.registry.LookupTrace.traceLookup;
 import static io.helidon.service.registry.ServiceRegistryManager.SERVICE_INFO_COMPARATOR;
+import static java.util.function.Predicate.not;
 
 /**
  * Basic implementation of the service registry with simple dependency support.
@@ -74,6 +75,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     private final boolean cacheEnabled;
     private final LruCache<Lookup, List<ServiceInfo>> cache;
+    private final ReadWriteLock getCacheLock = new ReentrantReadWriteLock();
+    private final Map<Class<?>, Object> getCache = new IdentityHashMap<>();
 
     private final LazyValue<Scope> singletonScope = LazyValue
             .create(() -> createScope(Service.Singleton.TYPE, Optional::empty, id, Map.of()));
@@ -170,6 +173,37 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         });
 
         this.serviceManagerForInstanceName = new InstanceNameServiceManager(this);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T get(Class<T> contract) {
+        // we can cache the results for repeated calls safely, as the number of classes in a system is finite
+        getCacheLock.readLock().lock();
+        T instance;
+        try {
+            instance = (T) getCache.get(contract);
+        } finally {
+            getCacheLock.readLock().unlock();
+        }
+        if (instance == null) {
+            List<ServiceManager<Object>> serviceManagers = lookupManagers(Lookup.create(contract));
+            // all must be singletons, otherwise cannot cache
+            var nonSingletons = serviceManagers.stream()
+                    .filter(not(it -> it.descriptor().scope().equals(Service.Singleton.TYPE)))
+                    .findAny();
+            if (nonSingletons.isEmpty()) {
+                instance = get(TypeName.create(contract));
+                getCacheLock.writeLock().lock();
+                try {
+                    // we do not care if we write it twice - it is a singleton, it will be the same instance
+                    getCache.put(contract, instance);
+                } finally {
+                    getCacheLock.writeLock().unlock();
+                }
+            }
+        }
+        return instance;
     }
 
     @Override
