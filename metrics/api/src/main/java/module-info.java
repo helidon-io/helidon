@@ -24,7 +24,8 @@ import io.helidon.common.features.api.HelidonFlavor;
          description = "Metrics",
          in = HelidonFlavor.SE,
          path = {"Metrics"}
-)module io.helidon.metrics.api {
+)
+module io.helidon.metrics.api {
 
     requires static io.helidon.common.features.api;
 
