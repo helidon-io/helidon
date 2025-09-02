@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import io.helidon.webserver.http.ServerResponse;
  */
 class CorsServerResponseAdapter implements CorsResponseAdapter<ServerResponse> {
 
+    private static final System.Logger LOGGER = System.getLogger(CorsServerResponseAdapter.class.getName());
+
     private final ServerResponse serverResponse;
 
     CorsServerResponseAdapter(ServerResponse serverResponse) {
@@ -45,7 +47,8 @@ class CorsServerResponseAdapter implements CorsResponseAdapter<ServerResponse> {
 
     @Override
     public ServerResponse forbidden(String message) {
-        serverResponse.status(Status.create(Status.FORBIDDEN_403.code(), message));
+        serverResponse.status(Status.create(Status.FORBIDDEN_403.code()));
+        LOGGER.log(System.Logger.Level.TRACE, "Rejecting CORS request: " + message);
         return serverResponse;
     }
 
