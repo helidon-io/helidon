@@ -44,7 +44,6 @@ import io.helidon.service.registry.ServiceSupplies.ServiceSupplyList;
 
 import static io.helidon.service.registry.LookupTrace.traceLookup;
 import static io.helidon.service.registry.ServiceRegistryManager.SERVICE_INFO_COMPARATOR;
-import static java.util.function.Predicate.not;
 
 /**
  * Basic implementation of the service registry with simple dependency support.
@@ -191,12 +190,12 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
             List<ServiceManager<Object>> serviceManagers = lookupManagers(Lookup.create(contract));
             // all must be singletons, otherwise cannot cache
-            var hasNonSingleton = serviceManagers.stream()
+            var onlySingletons = serviceManagers.stream()
                     .map(ServiceManager::descriptor)
                     .map(ServiceInfo::scope)
-                    .anyMatch(not(Service.Singleton.TYPE::equals));
+                    .allMatch(Service.Singleton.TYPE::equals);
 
-            if (hasNonSingleton) {
+            if (onlySingletons) {
                 getCacheLock.writeLock().lock();
                 try {
                     // we do not care if we write it twice - it is a singleton, it will be the same instance
