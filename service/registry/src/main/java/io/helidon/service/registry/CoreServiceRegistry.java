@@ -187,13 +187,16 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             getCacheLock.readLock().unlock();
         }
         if (instance == null) {
+            instance = get(TypeName.create(contract));
+
             List<ServiceManager<Object>> serviceManagers = lookupManagers(Lookup.create(contract));
             // all must be singletons, otherwise cannot cache
-            var nonSingletons = serviceManagers.stream()
-                    .filter(not(it -> it.descriptor().scope().equals(Service.Singleton.TYPE)))
-                    .findAny();
-            if (nonSingletons.isEmpty()) {
-                instance = get(TypeName.create(contract));
+            var hasNonSingleton = serviceManagers.stream()
+                    .map(ServiceManager::descriptor)
+                    .map(ServiceInfo::scope)
+                    .anyMatch(not(Service.Singleton.TYPE::equals));
+
+            if (hasNonSingleton) {
                 getCacheLock.writeLock().lock();
                 try {
                     // we do not care if we write it twice - it is a singleton, it will be the same instance
