@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import static io.helidon.webserver.cors.CorsTestServices.SERVICE_2;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.core.IsNot.not;
 
 abstract class AbstractCorsTest extends CorsRouting {
@@ -110,7 +111,7 @@ abstract class AbstractCorsTest extends CorsRouting {
             status = response.status();
         }
         assertThat(status.code(), is(Status.FORBIDDEN_403.code()));
-        assertThat(status.reasonPhrase(), is("CORS origin is not in allowed list"));
+        assertThat(status.reasonPhrase(), is("Forbidden"));
     }
 
     @Test
@@ -146,7 +147,7 @@ abstract class AbstractCorsTest extends CorsRouting {
             status = response.status();
         }
         assertThat(status.code(), is(Status.FORBIDDEN_403.code()));
-        assertThat(status.reasonPhrase(), is("CORS origin is denied"));
+        assertThat(status.reasonPhrase(), is("Forbidden"));
     }
 
     @Test
@@ -161,7 +162,7 @@ abstract class AbstractCorsTest extends CorsRouting {
         try (Http1ClientResponse response = request.request()) {
             Status status = response.status();
             assertThat(status.code(), is(Status.FORBIDDEN_403.code()));
-            assertThat(status.reasonPhrase(), is("CORS headers not in allowed list"));
+            assertThat(status.reasonPhrase(), is("Forbidden"));
         }
     }
 
