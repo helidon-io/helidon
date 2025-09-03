@@ -16,7 +16,11 @@
 
 package io.helidon.webserver.utils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -263,10 +267,6 @@ public class SocketHttpClient implements AutoCloseable {
         pw.flush();
     }
 
-    private void println(PrintWriter pw, String line) {
-        pw.print(line + "\r\n");
-    }
-
     /**
      * Override this to send a specific payload.
      *
@@ -285,4 +285,9 @@ public class SocketHttpClient implements AutoCloseable {
     public void close() throws Exception {
         socket.close();
     }
+
+    private void println(PrintWriter pw, String line) {
+        pw.print(line + "\r\n");
+    }
+
 }
