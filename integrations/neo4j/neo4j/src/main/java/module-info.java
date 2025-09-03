@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Neo4j support module.
  */
-@Preview
+@Features.Preview
 @Features.Name("Neo4j integration")
 @Features.Description("Integration with Neo4j driver")
 @Features.Flavor(HelidonFlavor.SE)

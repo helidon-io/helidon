@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Helidon WebServer gRPC Support.
  */
-@Preview
+@Features.Preview
 @Features.Name("GRPC")
 @Features.Description("WebServer gRPC Support")
 @Features.Flavor(HelidonFlavor.SE)

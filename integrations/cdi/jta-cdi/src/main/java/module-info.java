@@ -26,7 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
  * underlying implementation.
  */
-@Aot(description = "Experimental support, tested on limited use cases")
+@Features.Aot(description = "Experimental support, tested on limited use cases")
 @Features.Name("JTA")
 @Features.Description("Jakarta transaction API support for Helidon MP")
 @Features.Flavor(HelidonFlavor.MP)

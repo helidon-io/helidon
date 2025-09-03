@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Integration with Micronaut Data.
  */
-@Preview
+@Features.Preview
 @Features.Name("Micronaut Data")
 @Features.Description("Micronaut Data integration")
 @Features.Flavor(HelidonFlavor.MP)

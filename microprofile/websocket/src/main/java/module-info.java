@@ -26,7 +26,7 @@ import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
 @Features.Description("Jakarta Websocket implementation")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("Websocket")
-@Aot(false)
+@Features.Aot(false)
 module io.helidon.microprofile.tyrus {
 
     requires io.helidon.common;

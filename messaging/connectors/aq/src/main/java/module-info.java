@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Reactive messaging connector for Oracle AQ")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Messaging", "OracleAQ"})
-@Aot(false)
+@Features.Aot(false)
 module io.helidon.messaging.connectors.aq {
 
     requires aqapi;

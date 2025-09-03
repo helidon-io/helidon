@@ -23,7 +23,7 @@ import io.helidon.common.features.api.Preview;
  *
  * @see io.helidon.dbclient.DbClient
  */
-@Preview
+@Features.Preview
 @Features.Name("Database Client")
 @Features.Description("Database Client API")
 @Features.Flavor(HelidonFlavor.SE)

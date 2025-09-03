@@ -30,7 +30,7 @@ import io.helidon.common.features.api.Preview;
 @Features.Description("Microstream Integration")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("Microstream")
-@Aot(false)
+@Features.Aot(false)
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.microstream.cdi {
 

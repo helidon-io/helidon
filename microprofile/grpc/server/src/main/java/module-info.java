@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Helidon gRPC MP server")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("gRPC")
-@Aot(false)
+@Features.Aot(false)
 module io.helidon.microprofile.grpc.server {
 
     requires io.helidon.common;

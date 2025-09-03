@@ -31,7 +31,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Hibernate support for Helidon MP")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path({"JPA", "Hibernate"})
-@Aot(description = "Experimental support, tested on limited use cases")
+@Features.Aot(description = "Experimental support, tested on limited use cases")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.hibernate {
 

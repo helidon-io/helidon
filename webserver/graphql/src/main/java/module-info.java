@@ -22,7 +22,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Helidon WebServer GraphQL Support.
  */
-@Preview
+@Features.Preview
 @Features.Name("GraphQL")
 @Features.Description("WebServer GraphQL support")
 @Features.Flavor(HelidonFlavor.SE)

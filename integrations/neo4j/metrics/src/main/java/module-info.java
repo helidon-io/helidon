@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Neo4j metrics support module.
  */
-@Preview
+@Features.Preview
 @Features.Name("Neo4j Metrics")
 @Features.Description("Metrics for Neo4j integration")
 @Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})

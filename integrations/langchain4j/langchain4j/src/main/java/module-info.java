@@ -26,8 +26,8 @@ import io.helidon.common.features.api.Preview;
 @Features.Description("Langchain4j Integration")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path("Langchain4j")
-@Aot(value = false, description = "Not yet supported in native image")
-@Preview
+@Features.Aot(value = false, description  = "Not yet supported in native image")
+@Features.Preview
 module io.helidon.integrations.langchain4j {
     requires static io.helidon.common.features.api;
 

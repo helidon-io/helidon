@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Support for Micrometer in Helidon MP.
  */
-@Preview
+@Features.Preview
 @Features.Name("Micrometer")
 @Features.Description("Micrometer integration")
 @Features.Flavor(HelidonFlavor.MP)

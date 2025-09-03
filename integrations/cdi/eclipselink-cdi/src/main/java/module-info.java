@@ -29,7 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("EclipseLink support for Helidon MP")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path({"JPA", "EclipseLink"})
-@Aot(false)
+@Features.Aot(false)
 @SuppressWarnings("deprecation")
 module io.helidon.integrations.cdi.eclipselink {
 

@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("MicroProfile GraphQL spec implementation")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("GraphQL")
-@Aot(description = "Experimental support, tested on limited use cases")
+@Features.Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.microprofile.graphql.server {
 
     requires com.graphqljava.extendedscalars;

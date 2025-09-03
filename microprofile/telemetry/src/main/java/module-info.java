@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * MicroProfile Telemetry support for Helidon.
  */
-@Preview
+@Features.Preview
 @Features.Name("Telemetry")
 @Features.Description("MP Telemetry support")
 @Features.Flavor(HelidonFlavor.MP)

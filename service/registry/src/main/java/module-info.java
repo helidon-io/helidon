@@ -25,7 +25,7 @@ import io.helidon.common.features.api.Preview;
 @Features.Description("Service Registry")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path("Registry")
-@Preview
+@Features.Preview
 module io.helidon.service.registry {
     requires static io.helidon.common.features.api;
 

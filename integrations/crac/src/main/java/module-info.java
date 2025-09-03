@@ -22,7 +22,7 @@ import io.helidon.common.resumable.ResumableSupport;
 /**
  * Helidon abstraction over CRaC API, replaces no-op implementation when this module is present on classpath.
  */
-@Preview
+@Features.Preview
 @Features.Name("CRaC")
 @Features.Description("Coordinated Restore at Checkpoint")
 @Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})

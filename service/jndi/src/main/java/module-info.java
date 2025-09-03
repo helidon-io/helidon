@@ -25,7 +25,7 @@ import io.helidon.common.features.api.Preview;
 @Features.Description("JNDI backed by Service Registry")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Registry", "JNDI"})
-@Preview
+@Features.Preview
 module io.helidon.service.jndi {
     requires static io.helidon.common.features.api;
 

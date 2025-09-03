@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Reactive messaging connector for JMS")
 @Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
 @Features.Path({"Messaging", "JMS"})
-@Aot(false)
+@Features.Aot(false)
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.jms {
 

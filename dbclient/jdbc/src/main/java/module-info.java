@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Database client over JDBC")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"DbClient", "JDBC"})
-@Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
+@Features.Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
 module io.helidon.dbclient.jdbc {
 
     requires java.sql;

@@ -27,7 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("MicroProfile REST client spec implementation")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("REST Client")
-@Aot(description = "Does not support execution of default methods on interfaces.")
+@Features.Aot(description = "Does not support execution of default methods on interfaces.")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.restclient {
 

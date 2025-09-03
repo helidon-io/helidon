@@ -29,7 +29,7 @@ import io.helidon.common.features.api.Preview;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path("Microstream")
 @Deprecated(forRemoval = true, since = "4.2.1")
-@Aot(false)
+@Features.Aot(false)
 module io.helidon.integrations.microstream {
     requires static io.helidon.common.features.api;
 
