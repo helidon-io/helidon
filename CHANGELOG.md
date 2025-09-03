@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.15]
+
+This is a bug fix release of Helidon 1 that contains dependency upgrades.
+
+### Fixes
+
+- Update netty to 4.1.118.Final [9817](https://github.com/helidon-io/helidon/pull/9817)
+- Update grpc-java to 1.65.1, protobuf to 3.25.5 [9817](https://github.com/helidon-io/helidon/pull/9817)
+
 ## [1.4.14]
 
 This is a bug fix release of Helidon 1 that contains dependency upgrades.
@@ -815,6 +824,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.15]: https://github.com/oracle/helidon/compare/1.4.14..1.4.15
 [1.4.14]: https://github.com/oracle/helidon/compare/1.4.13..1.4.14
 [1.4.13]: https://github.com/oracle/helidon/compare/1.4.12..1.4.13
 [1.4.12]: https://github.com/oracle/helidon/compare/1.4.11..1.4.12
