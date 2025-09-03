@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.buffers.LazyString;
+import io.helidon.common.mapper.Mappers;
+import io.helidon.service.registry.Services;
 
 /**
  * Values of commonly used headers.
@@ -92,7 +94,8 @@ public final class HeaderValues {
     /**
      * Cache control without any caching.
      */
-    public static final Header CACHE_NO_CACHE = create(HeaderNames.CACHE_CONTROL, "no-cache",
+    public static final Header CACHE_NO_CACHE = create(HeaderNames.CACHE_CONTROL,
+                                                       "no-cache",
                                                        "no-store",
                                                        "must-revalidate",
                                                        "no-transform");
@@ -159,7 +162,9 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header createCached(HeaderName name, String value) {
-        return new HeaderValueCached(name, false,
+        return new HeaderValueCached(Services.get(Mappers.class),
+                                     name,
+                                     false,
                                      false,
                                      value.getBytes(StandardCharsets.US_ASCII),
                                      value);
@@ -198,10 +203,24 @@ public final class HeaderValues {
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, LazyString value) {
+        return create(Services.get(Mappers.class), name, value);
+    }
+
+    /**
+     * Create a new header with a single value. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name  name of the header
+     * @param value lazy string with the value
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, LazyString value) {
+        Objects.requireNonNull(mappers);
         Objects.requireNonNull(name);
         Objects.requireNonNull(value);
 
-        return new HeaderValueLazy(name, false, false, value);
+        return new HeaderValueLazy(mappers, name, false, false, value);
     }
 
     /**
@@ -213,9 +232,23 @@ public final class HeaderValues {
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, int value) {
+        return create(Services.get(Mappers.class), name, value);
+    }
+
+    /**
+     * Create a new header with a single value. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name  name of the header
+     * @param value integer value of the header
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, int value) {
+        Objects.requireNonNull(mappers);
         Objects.requireNonNull(name);
 
-        return new HeaderValueSingle(name, false, false, String.valueOf(value));
+        return new HeaderValueSingle(mappers, name, false, false, String.valueOf(value));
     }
 
     /**
@@ -229,7 +262,23 @@ public final class HeaderValues {
     public static Header create(HeaderName name, long value) {
         Objects.requireNonNull(name);
 
-        return new HeaderValueSingle(name, false, false, String.valueOf(value));
+        return create(Services.get(Mappers.class), name, value);
+    }
+
+    /**
+     * Create a new header with a single value. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name  name of the header
+     * @param value long value of the header
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, long value) {
+        Objects.requireNonNull(mappers);
+        Objects.requireNonNull(name);
+
+        return new HeaderValueSingle(mappers, name, false, false, String.valueOf(value));
     }
 
     /**
@@ -241,10 +290,24 @@ public final class HeaderValues {
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, String value) {
+        return create(Services.get(Mappers.class), name, value);
+    }
+
+    /**
+     * Create a new header with a single value. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name  name of the header
+     * @param value value of the header
+     * @return a new header
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, String value) {
         Objects.requireNonNull(name, "HeaderName must not be null");
         Objects.requireNonNull(value, "HeaderValue must not be null");
 
-        return new HeaderValueSingle(name,
+        return new HeaderValueSingle(mappers,
+                                     name,
                                      false,
                                      false,
                                      value);
@@ -298,14 +361,28 @@ public final class HeaderValues {
      * @param name   name of the header
      * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, String... values) {
+        return create(Services.get(Mappers.class), name, values);
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name   name of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
+     * @return a new header
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, String... values) {
         if (values.length == 0) {
             throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
         }
-        return new HeaderValueArray(name, false, false, values);
+        return new HeaderValueArray(mappers, name, false, false, values);
     }
 
     /**
@@ -314,8 +391,8 @@ public final class HeaderValues {
      * @param name   name of the header
      * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(String name, String... values) {
         return create(HeaderNames.create(name), values);
@@ -327,14 +404,11 @@ public final class HeaderValues {
      * @param name   name of the header
      * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, Collection<String> values) {
-        if (values.isEmpty()) {
-            throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
-        }
-        return new HeaderValueList(name, false, false, values);
+        return create(Services.get(Mappers.class), name, values);
     }
 
     /**
@@ -343,8 +417,8 @@ public final class HeaderValues {
      * @param name   name of the header
      * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(String name, Collection<String> values) {
         return create(HeaderNames.create(name), values);
@@ -353,17 +427,50 @@ public final class HeaderValues {
     /**
      * Create a new header. This header is considered unchanging and not sensitive.
      *
+     * @param mappers   mappers to use when obtaining typed values from the created header
      * @param name   name of the header
-     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty String)
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, String name, Collection<String> values) {
+        return create(mappers, HeaderNames.create(name), values);
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param name   name of the header
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty
+     *               String)
+     * @return a new header
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(HeaderName name, Iterable<String> values) {
+        return create(Services.get(Mappers.class), name, values);
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name   name of the header
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty
+     *               String)
+     * @return a new header
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, HeaderName name, Iterable<String> values) {
         if (!values.iterator().hasNext()) {
             throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
         }
-        return new HeaderValueList(name, false, false,
+        return new HeaderValueList(mappers,
+                                   name,
+                                   false,
+                                   false,
                                    values instanceof Collection
                                            ? (Collection<String>) values
                                            : StreamSupport.stream(values.spliterator(), false).toList());
@@ -373,13 +480,29 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty String)
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty
+     *               String)
      * @return a new header
-     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
      */
     public static Header create(String name, Iterable<String> values) {
-        return create(HeaderNames.create(name), values);
+        return create(Services.get(Mappers.class), HeaderNames.create(name), values);
+    }
+
+    /**
+     * Create a new header. This header is considered unchanging and not sensitive.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name   name of the header
+     * @param values Iterable&lt;String&gt; type values of the header, must contain at least one value (which may be an empty
+     *               String)
+     * @return a new header
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
+     * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     */
+    public static Header create(Mappers mappers, String name, Iterable<String> values) {
+        return create(mappers, HeaderNames.create(name), values);
     }
 
     /**
@@ -393,7 +516,12 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
-        return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
+        return new HeaderValueCached(Services.get(Mappers.class),
+                                     name,
+                                     changing,
+                                     sensitive,
+                                     value.getBytes(StandardCharsets.UTF_8),
+                                     value);
     }
 
     /**
@@ -406,7 +534,7 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header create(HeaderName name, boolean changing, boolean sensitive, String... values) {
-        return new HeaderValueArray(name, changing, sensitive, values);
+        return create(Services.get(Mappers.class), name, changing, sensitive, values);
     }
 
     /**
@@ -419,7 +547,7 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header create(HeaderName name, boolean changing, boolean sensitive, int value) {
-        return create(name, changing, sensitive, String.valueOf(value));
+        return create(Services.get(Mappers.class), name, changing, sensitive, String.valueOf(value));
     }
 
     /**
@@ -432,6 +560,48 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header create(HeaderName name, boolean changing, boolean sensitive, long value) {
-        return create(name, changing, sensitive, String.valueOf(value));
+        return create(Services.get(Mappers.class), name, changing, sensitive, String.valueOf(value));
+    }
+
+    /**
+     * Create a new header.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name      name of the header
+     * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+     * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+     * @param values    value(s) of the header
+     * @return a new header
+     */
+    public static Header create(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, String... values) {
+        return new HeaderValueArray(mappers, name, changing, sensitive, values);
+    }
+
+    /**
+     * Create a new header.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name      name of the header
+     * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+     * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+     * @param value     value of the header
+     * @return a new header
+     */
+    public static Header create(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, int value) {
+        return create(mappers, name, changing, sensitive, String.valueOf(value));
+    }
+
+    /**
+     * Create a new header.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the created header
+     * @param name      name of the header
+     * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+     * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+     * @param value     value of the header
+     * @return a new header
+     */
+    public static Header create(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, long value) {
+        return create(mappers, name, changing, sensitive, String.valueOf(value));
     }
 }

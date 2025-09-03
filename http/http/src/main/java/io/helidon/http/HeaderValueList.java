@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import io.helidon.common.mapper.Mappers;
+
 class HeaderValueList extends HeaderWritableValueBase {
     private List<String> values;
 
-    HeaderValueList(HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {
-        super(name, changing, sensitive, values.iterator().next());
+    HeaderValueList(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {
+        super(mappers, name, changing, sensitive, values.iterator().next());
 
         this.values = new ArrayList<>(values);
     }

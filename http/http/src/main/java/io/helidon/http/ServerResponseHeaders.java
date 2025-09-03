@@ -22,7 +22,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.service.registry.Services;
 
 import static io.helidon.http.HeaderNames.EXPIRES;
 import static io.helidon.http.HeaderNames.LAST_MODIFIED;
@@ -37,10 +39,20 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     /**
      * Create a new instance of mutable server response headers.
      *
+     * @param mappers mappers to use when obtaining typed values from the headers
+     * @return new server response headers
+     */
+    static ServerResponseHeaders create(Mappers mappers) {
+        return new ServerResponseHeadersImpl(mappers);
+    }
+
+    /**
+     * Create a new instance of mutable server response headers.
+     *
      * @return new server response headers
      */
     static ServerResponseHeaders create() {
-        return new ServerResponseHeadersImpl();
+        return create(Services.get(Mappers.class));
     }
 
     /**
@@ -66,7 +78,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             MediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(HeaderValues.create(HeaderNames.ACCEPT_PATCH,
+        return add(HeaderValues.create(mappers(),
+                                       HeaderNames.ACCEPT_PATCH,
                                        values));
     }
 
@@ -134,7 +147,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
-        return set(HeaderValues.create(LAST_MODIFIED, true, false, dt.format(DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(mappers(), LAST_MODIFIED, true, false, dt.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -146,7 +159,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return this instance
      */
     default ServerResponseHeaders lastModified(ZonedDateTime modified) {
-        return set(HeaderValues.create(LAST_MODIFIED, true, false, modified.format(DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(mappers(), LAST_MODIFIED, true, false, modified.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -158,7 +171,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders location(URI location) {
-        return set(HeaderValues.create(LOCATION, true, false, location.toASCIIString()));
+        return set(HeaderValues.create(mappers(), LOCATION, true, false, location.toASCIIString()));
     }
 
     /**
@@ -170,7 +183,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(ZonedDateTime dateTime) {
-        return set(HeaderValues.create(EXPIRES, dateTime.format(DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(mappers(), EXPIRES, dateTime.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -182,7 +195,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(Instant dateTime) {
-        return set(HeaderValues.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
+        return set(HeaderValues.create(mappers(), EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
                 .format(DateTime.RFC_1123_DATE_TIME)));
     }
 }

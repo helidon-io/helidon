@@ -31,6 +31,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 import io.helidon.common.context.Context;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.RequestedUriDiscoveryContext;
@@ -48,6 +49,7 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
+@Prototype.RegistrySupport
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -431,4 +433,15 @@ interface ListenerConfigBlueprint {
      */
     @Option.Configured
     boolean ignoreInvalidNamedRouting();
+
+    /**
+     * Mappers to use for this listener.
+     * <p>
+     * Mappers are used for headers, query parameters etc., when type mapping is requireed.
+     *
+     * @return mappers instance, defaults to service registry singleton instance
+     */
+    @Option.Configured
+    @Option.RegistryService
+    Mappers mappers();
 }

@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 import io.helidon.http.HttpPrologue;
@@ -61,7 +62,8 @@ class RouteCrawler {
         this.parent = parent;
 
         HttpPrologue prologue = request.prologue();
-        this.prologue = HttpPrologue.create(prologue.rawProtocol(),
+        this.prologue = HttpPrologue.create(ctx.listenerContext().config().mappers(),
+                                            prologue.rawProtocol(),
                                             prologue.protocol(),
                                             prologue.protocolVersion(),
                                             prologue.method(),
@@ -113,7 +115,8 @@ class RouteCrawler {
                 PathMatchers.MatchResult accepts = nextRoute.accepts(prologue, request.headers());
                 if (accepts.accepted()) {
                     PathMatcher pathMatcher = nextRoute.pathMatcher().orElse(null);
-                    next = new CrawlerItem(accepts.path(),
+                    next = new CrawlerItem(ctx.listenerContext().config().mappers(),
+                                           accepts.path(),
                                            pathMatcher != null ? pathMatcher.matchingElement().orElse("") : null,
                                            nextRoute.handler());
 
@@ -135,8 +138,8 @@ class RouteCrawler {
         return result;
     }
 
-    record CrawlerItem(RoutedPath path, String matchingElement, Handler handler) {
-        public CrawlerItem parent(RoutedPath parent) {
+    record CrawlerItem(Mappers mappers, RoutedPath path, String matchingElement, Handler handler) {
+        CrawlerItem parent(RoutedPath parent) {
             Map<String, List<String>> newParams = new HashMap<>();
 
             Parameters params = parent.pathParameters();
@@ -151,8 +154,8 @@ class RouteCrawler {
             // this is called for each request, optimize qualifiers so the do not get parsed each time
             RoutedPath result = new CrawlerRoutedPath(path,
                                                       matchingElement,
-                                                      Parameters.create("http/path", newParams, "http", "path"));
-            return new CrawlerItem(result, parent.path() + matchingElement, handler);
+                                                      Parameters.create(mappers, "http/path", newParams, "http", "path"));
+            return new CrawlerItem(mappers, result, parent.path() + matchingElement, handler);
         }
 
         private static final class CrawlerRoutedPath implements RoutedPath {

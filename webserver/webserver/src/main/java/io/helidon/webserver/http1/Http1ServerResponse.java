@@ -99,8 +99,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.sendListener = sendListener;
         this.dataWriter = dataWriter;
         this.request = request;
-        this.headers = ServerResponseHeaders.create();
-        this.trailers = ServerResponseTrailers.create();
+        this.headers = ServerResponseHeaders.create(ctx.listenerContext().config().mappers());
+        this.trailers = ServerResponseTrailers.create(ctx.listenerContext().config().mappers());
         this.keepAlive = keepAlive;
         this.validateHeaders = validateHeaders;
     }
@@ -367,7 +367,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     writer.write(GenericType.STRING, str, outputStream, EMPTY_HEADERS, EMPTY_HEADERS);
                 } else {
                     GenericType<Object> type = GenericType.create(data);
-                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    WritableHeaders<?> resHeaders = WritableHeaders.create(this.headers.mappers());
                     resHeaders.set(HeaderNames.CONTENT_TYPE, mediaType.text());
                     EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
                     writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
@@ -741,7 +741,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
+                headers.set(HeaderValues.create(headers.mappers(),
+                                                HeaderNames.CONTENT_LENGTH,
+                                                String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
             isChunked = false;

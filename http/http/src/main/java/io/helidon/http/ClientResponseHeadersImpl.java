@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.media.type.ParserMode;
 
 class ClientResponseHeadersImpl implements ClientResponseHeaders {
@@ -80,5 +81,10 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     @Override
     public String toString() {
         return headers.toString();
+    }
+
+    @Override
+    public Mappers mappers() {
+        return headers.mappers();
     }
 }

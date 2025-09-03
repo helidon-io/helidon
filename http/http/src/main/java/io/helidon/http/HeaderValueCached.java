@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.mapper.Mappers;
 
 class HeaderValueCached extends HeaderValueBase {
     private final byte[] cached;
     private final String value;
     private final byte[] cachedHttp1Header;
 
-    HeaderValueCached(HeaderName name, boolean changing, boolean sensitive, byte[] cached, String value) {
-        super(name, changing, sensitive, value);
+    HeaderValueCached(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, byte[] cached, String value) {
+        super(mappers, name, changing, sensitive, value);
 
         this.value = value;
         this.cached = cached;

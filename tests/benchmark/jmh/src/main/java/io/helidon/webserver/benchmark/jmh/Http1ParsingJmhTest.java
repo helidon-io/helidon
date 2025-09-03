@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
@@ -51,6 +52,8 @@ public class Http1ParsingJmhTest {
                     User-Agent: curl/7.68.0\r
                     Accept: */*""".getBytes(StandardCharsets.UTF_8),
             "\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+
+    private static final Mappers MAPPERS = Mappers.create();
 
     private byte[] longMessage;
 
@@ -92,12 +95,12 @@ public class Http1ParsingJmhTest {
 
     private void readRequest(Blackhole bh, DataReader reader) {
         Http1Prologue prologue = new Http1Prologue(reader, 1024, false);
-        Http1Headers headers = new Http1Headers(reader, 4096, false);
+        Http1Headers headers = Http1Headers.create(MAPPERS, reader, 4096, false);
 
         HttpPrologue httpPrologue = prologue.readPrologue();
         WritableHeaders<?> httpHeaders = headers.readHeaders(httpPrologue);
         boolean hasContent = httpHeaders.contains(HeaderNames.CONTENT_LENGTH);
-        String authority = httpHeaders.get(HeaderNames.HOST).value();
+        String authority = httpHeaders.get(HeaderNames.HOST).get();
 
         bh.consume(hasContent);
         bh.consume(authority);

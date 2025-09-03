@@ -60,8 +60,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         this.ctx = stream.connectionContext();
         this.request = request;
         this.stream = stream;
-        this.headers = ServerResponseHeaders.create();
-        this.trailers = ServerResponseTrailers.create();
+        this.headers = ServerResponseHeaders.create(stream.connectionContext().listenerContext().config().mappers());
+        this.trailers = ServerResponseTrailers.create(stream.connectionContext().listenerContext().config().mappers());
     }
 
     @Override

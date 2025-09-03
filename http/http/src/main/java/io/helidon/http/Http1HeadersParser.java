@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package io.helidon.http;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.LazyString;
+import io.helidon.common.mapper.Mappers;
+import io.helidon.service.registry.Services;
 
 /**
  * Used by both HTTP server and client to parse headers from {@link io.helidon.common.buffers.DataReader}.
@@ -60,9 +63,27 @@ public final class Http1HeadersParser {
      * @param maxHeadersSize maximal size of all headers, in bytes
      * @param validate       whether to validate headers
      * @return a new mutable headers instance containing all headers parsed from reader
+     * @deprecated use {@link #readHeaders(io.helidon.common.mapper.Mappers, io.helidon.common.buffers.DataReader, int, boolean)}
+     *      instead
      */
     public static WritableHeaders<?> readHeaders(DataReader reader, int maxHeadersSize, boolean validate) {
-        WritableHeaders<?> headers = WritableHeaders.create();
+        return readHeaders(Services.get(Mappers.class), reader, maxHeadersSize, validate);
+    }
+
+    /**
+     * Read headers from the provided reader.
+     *
+     * @param mappers        mappers to use when obtaining typed values from the created headers
+     * @param reader         reader to pull data from
+     * @param maxHeadersSize maximal size of all headers, in bytes
+     * @param validate       whether to validate headers
+     * @return a new mutable headers instance containing all headers parsed from reader
+     */
+    public static WritableHeaders<?> readHeaders(Mappers mappers, DataReader reader, int maxHeadersSize, boolean validate) {
+        Objects.requireNonNull(mappers);
+        Objects.requireNonNull(reader);
+
+        WritableHeaders<?> headers = WritableHeaders.create(mappers);
         int maxLength = maxHeadersSize;
 
         while (true) {
@@ -80,11 +101,11 @@ public final class Http1HeadersParser {
             // optimization for Connection, as we always need to analyze it
             Header headerValue;
             if (header.equals(HeaderNames.CONNECTION)) {
-                headerValue = connectionHeaderValue(reader, eol);
+                headerValue = connectionHeaderValue(mappers, reader, eol);
             } else {
                 // we do not need the string until somebody asks for this header (unless validation is on)
                 LazyString value = reader.readLazyString(StandardCharsets.US_ASCII, eol);
-                headerValue = HeaderValues.create(header, value);
+                headerValue = HeaderValues.create(mappers, header, value);
             }
             reader.skip(2);
             maxLength -= eol + 1;
@@ -99,7 +120,7 @@ public final class Http1HeadersParser {
         }
     }
 
-    private static Header connectionHeaderValue(DataReader reader, int eol) {
+    private static Header connectionHeaderValue(Mappers mappers, DataReader reader, int eol) {
         byte[] bytes = reader.readBytes(eol);
 
         // space and `keep-alive`
@@ -113,7 +134,9 @@ public final class Http1HeadersParser {
             return HeaderValues.CONNECTION_CLOSE;
         }
         // some other (unexpected) combination
-        return HeaderValues.create(HeaderNames.CONNECTION, new LazyString(bytes, 0, bytes.length, StandardCharsets.US_ASCII));
+        return HeaderValues.create(mappers,
+                                   HeaderNames.CONNECTION,
+                                   new LazyString(bytes, 0, bytes.length, StandardCharsets.US_ASCII));
     }
 
     private static boolean isKeepAlive(byte[] buffer) {
@@ -131,8 +154,8 @@ public final class Http1HeadersParser {
                 | (buffer[1] & 0xff) << 8
                 | (buffer[2] & 0xff) << 16
                 | ((long) buffer[3] & 0xff) << 24
-                | ((long) buffer[4]  & 0xff) << 32
-                | ((long) buffer[5]  & 0xff) << 40;
+                | ((long) buffer[4] & 0xff) << 32
+                | ((long) buffer[5] & 0xff) << 40;
         return word == CLOSE_WORD;
     }
 

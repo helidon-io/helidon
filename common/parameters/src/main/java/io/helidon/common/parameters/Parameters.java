@@ -77,14 +77,15 @@ public interface Parameters {
     /**
      * Read only parameters based on a map.
      *
+     * @param mappers    mappers to use when obtaining typed values from the parameters instance
      * @param params     underlying map
      * @param component  component of the parameters to correctly report errors
      * @param qualifiers qualifiers to use when mapping to different types
      * @return new named parameters with values based on the map
      */
-    static Parameters create(String component, Map<String, List<String>> params, String... qualifiers) {
+    static Parameters create(Mappers mappers, String component, Map<String, List<String>> params, String... qualifiers) {
         // this method is to avoid parsing of component into qualifiers on WebServer hot path
-        return new ParametersMap(ParametersEmpty.MAPPERS, component, params, qualifiers);
+        return new ParametersMap(mappers, component, params, qualifiers);
     }
 
     /**
@@ -95,7 +96,20 @@ public interface Parameters {
      * @return new named parameters with values based on the map
      */
     static Parameters createSingleValueMap(String component, Map<String, String> params) {
-        return new ParametersSingleValueMap(ParametersEmpty.MAPPERS, component, params);
+        return new ParametersSingleValueMap(ParametersEmpty.MAPPERS, component, params, component.split("/"));
+    }
+
+    /**
+     * Read only parameters based on a map with just a single value.
+     *
+     * @param mappers   mappers to use when obtaining typed values from the parameters instance
+     * @param component component of the parameters to correctly report errors
+     * @param params    underlying map
+     * @param qualifiers qualifiers to use when mapping to different types
+     * @return new named parameters with values based on the map
+     */
+    static Parameters createSingleValueMap(Mappers mappers, String component, Map<String, String> params, String... qualifiers) {
+        return new ParametersSingleValueMap(mappers, component, params, qualifiers);
     }
 
     /**
@@ -243,9 +257,23 @@ public interface Parameters {
          *
          * @param mapperManager mapper manager
          * @return updated builder
+         * @deprecated use {@link #mappers(io.helidon.common.mapper.Mappers)} instead
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.3.0")
         public Builder mapperManager(MapperManager mapperManager) {
             this.mapperManager = mapperManager;
+            return this;
+        }
+
+        /**
+         * Configure mappers to use.
+         *
+         * @param mappers mappers
+         * @return updated builder
+         */
+        public Builder mappers(Mappers mappers) {
+            this.mapperManager = mappers;
             return this;
         }
 

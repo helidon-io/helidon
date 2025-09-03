@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.WritableHeaders;
@@ -33,13 +34,15 @@ class MultiPartImpl extends MultiPart {
     private final String endBoundary;
     private final int maxNewLine;
     private final DataReader dataReader;
+    private final Mappers mappers;
     private MediaContext context;
     private ReadablePartAbstract next;
     private ReadablePartAbstract inProgress;
     private boolean finished;
     private int index;
 
-    MultiPartImpl(MediaContext context, String boundary, InputStream stream) {
+    MultiPartImpl(Mappers mappers, MediaContext context, String boundary, InputStream stream) {
+        this.mappers = mappers;
         this.context = context;
         this.boundary = "--" + boundary;
         this.endBoundary = "--" + boundary + "--";
@@ -82,7 +85,7 @@ class MultiPartImpl extends MultiPart {
         String probablyBoundary = dataReader.readAsciiString(newLine);
         if (probablyBoundary.equals(boundary)) {
             dataReader.skip(2); // skip the new line after boundary
-            WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
+            WritableHeaders<?> headers = Http1HeadersParser.readHeaders(mappers, dataReader, 1024, true);
             if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 next = new ReadablePartLength(context,
                                               headers,

@@ -32,11 +32,11 @@ class ParametersSingleValueMap implements Parameters {
     private final Map<String, String> params;
     private final String[] qualifiers;
 
-    ParametersSingleValueMap(Mappers mapperManager, String component, Map<String, String> params) {
-        this.qualifiers = component.split("/");
+    ParametersSingleValueMap(Mappers mapperManager, String component, Map<String, String> params, String[] qualifiers) {
         this.mapperManager = mapperManager;
         this.component = component;
         this.params = params;
+        this.qualifiers = qualifiers;
     }
 
     @Override

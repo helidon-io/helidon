@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.Value;
 
 abstract class HeaderValueBase implements Header {
@@ -32,8 +32,10 @@ abstract class HeaderValueBase implements Header {
     private final String firstValue;
     private final boolean changing;
     private final boolean sensitive;
+    private final Mappers mappers;
 
-    HeaderValueBase(HeaderName name, boolean changing, boolean sensitive, String value) {
+    HeaderValueBase(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, String value) {
+        this.mappers = mappers;
         this.name = name;
         this.actualName = name.defaultCase();
         this.changing = changing;
@@ -58,12 +60,12 @@ abstract class HeaderValueBase implements Header {
 
     @Override
     public <T> T get(Class<T> type) {
-        return MapperManager.global().map(get(), String.class, type, QUALIFIER);
+        return mappers.map(get(), String.class, type, QUALIFIER);
     }
 
     @Override
     public <N> Value<N> as(Function<? super String, ? extends N> mapper) {
-        return Value.create(MapperManager.global(), name(), mapper.apply(get()), QUALIFIER);
+        return Value.create(mappers, name(), mapper.apply(get()), QUALIFIER);
     }
 
     @Override
@@ -73,7 +75,7 @@ abstract class HeaderValueBase implements Header {
 
     @Override
     public Value<String> asString() {
-        return Value.create(MapperManager.global(), name(), get(), GenericType.STRING, QUALIFIER);
+        return Value.create(mappers, name(), get(), GenericType.STRING, QUALIFIER);
     }
 
     @Override

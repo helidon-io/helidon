@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.tls.Tls;
 
 /**
@@ -29,6 +30,7 @@ import io.helidon.common.tls.Tls;
  */
 @Prototype.Configured
 @Prototype.Blueprint(builderPublic = false)
+@Prototype.RegistrySupport
 interface HttpConfigBaseBlueprint {
     /**
      * Whether to follow redirects.
@@ -106,4 +108,13 @@ interface HttpConfigBaseBlueprint {
     @Option.Configured
     @Option.Singular("property")
     Map<String, String> properties();
+
+    /**
+     * Mappers to be used by this client for mapping headers, query parameters etc.
+     *
+     * @return mappers instance, obtained from service registry if not configured
+     */
+    @Option.RegistryService
+    @Option.Configured
+    Mappers mappers();
 }

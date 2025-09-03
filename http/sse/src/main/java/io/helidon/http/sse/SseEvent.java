@@ -135,7 +135,7 @@ public class SseEvent {
             GenericType<T> type = GenericType.create(clazz);
             WritableHeaders<?> headers;
             if (!mediaType.equals(MediaTypes.WILDCARD)) {
-                headers = WritableHeaders.create();
+                headers = WritableHeaders.create(EMPTY_HEADERS.mappers());
                 headers.set(HeaderNames.CONTENT_TYPE, mediaType.text());
             } else {
                 headers = EMPTY_HEADERS;
