@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * JNDI support backed by service registry.
  */
-@Feature(value = "JNDI",
-         description = "JNDI backed by Service Registry",
-         in = HelidonFlavor.SE,
-         path = {"Registry", "JNDI"}
-)
+@Features.Name("JNDI")
+@Features.Description("JNDI backed by Service Registry")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Registry", "JNDI"})
 @Preview
 module io.helidon.service.jndi {
     requires static io.helidon.common.features.api;

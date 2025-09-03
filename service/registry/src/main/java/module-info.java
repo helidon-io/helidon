@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
  */
-@Feature(value = "Registry",
-         description = "Service Registry",
-         in = HelidonFlavor.SE,
-         path = "Registry"
-)
+@Features.Name("Registry")
+@Features.Description("Service Registry")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("Registry")
 @Preview
 module io.helidon.service.registry {
     requires static io.helidon.common.features.api;

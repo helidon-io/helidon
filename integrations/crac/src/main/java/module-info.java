@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 import io.helidon.common.resumable.ResumableSupport;
@@ -23,12 +23,11 @@ import io.helidon.common.resumable.ResumableSupport;
  * Helidon abstraction over CRaC API, replaces no-op implementation when this module is present on classpath.
  */
 @Preview
-@Feature(value = "CRaC",
-         description = "Coordinated Restore at Checkpoint",
-         in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         path = {"CRaC"},
-         since = "4.2.0"
-)
+@Features.Name("CRaC")
+@Features.Description("Coordinated Restore at Checkpoint")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"CRaC"})
+@Features.Since("4.2.0")
 module io.helidon.integrations.crac {
     requires static io.helidon.common.features.api; // @Feature
     requires transitive org.crac;

@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer.
  */
-@Feature(value = "WebServer",
-         description = "Helidon WebServer",
-         in = HelidonFlavor.SE
-)
+@Features.Name("WebServer")
+@Features.Description("Helidon WebServer")
+@Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver {
 
     requires io.helidon.builder.api;

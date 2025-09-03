@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon health checks.
  */
-@Feature(value = "Built-ins",
-        description = "Built in health checks",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"Health", "Builtins"}
-)
+@Features.Name("Built-ins")
+@Features.Description("Built in health checks")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Health", "Builtins"})
 module io.helidon.health.checks {
     requires static io.helidon.common.features.api;
 

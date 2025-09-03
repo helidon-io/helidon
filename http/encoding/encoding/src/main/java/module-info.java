@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Content encoding support.
  */
-@Feature(value = "Encoding",
-         description = "Content encoding support",
-         in = HelidonFlavor.SE,
-         path = "Encoding"
-)
+@Features.Name("Encoding")
+@Features.Description("Content encoding support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("Encoding")
 module io.helidon.http.encoding {
 
     requires io.helidon.builder.api;

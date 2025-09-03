@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -23,10 +23,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  * <p>
  * Log endpoint is protected by default and is available at {@code /observe/log} (configurable).
  */
-@Feature(value = "Log",
-         description = "WebServer Info observability support",
-         in = HelidonFlavor.SE,
-         path = {"Observe", "Log"})
+@Features.Name("Log")
+@Features.Description("WebServer Info observability support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Observe", "Log"})
 module io.helidon.webserver.observe.log {
     requires static io.helidon.common.features.api;
 

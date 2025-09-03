@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -23,10 +23,9 @@ import io.helidon.common.features.api.HelidonFlavor;
  * @see io.helidon.tracing.spi.TracerProvider
  * @see io.helidon.tracing.TracerBuilder
  */
-@Feature(value = "Tracing",
-        description = "Tracing support",
-        in = HelidonFlavor.SE
-)
+@Features.Name("Tracing")
+@Features.Description("Tracing support")
+@Features.Flavor(HelidonFlavor.SE)
 module io.helidon.tracing {
 
     requires static io.helidon.common.features.api;

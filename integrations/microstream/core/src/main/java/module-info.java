@@ -15,7 +15,7 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
@@ -24,11 +24,10 @@ import io.helidon.common.features.api.Preview;
  *
  * @deprecated Microstream is no longer maintained, the project has been renamed to Eclipse store
  */
-@Feature(value = "Microstream",
-        description = "Microstream Integration",
-        in = HelidonFlavor.SE,
-        path = "Microstream"
-)
+@Features.Name("Microstream")
+@Features.Description("Microstream Integration")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("Microstream")
 @Deprecated(forRemoval = true, since = "4.2.1")
 @Aot(false)
 module io.helidon.integrations.microstream {

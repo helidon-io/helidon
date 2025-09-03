@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon Database Client JDBC.
  */
-@Feature(value = "JDBC Database Client",
-         description = "Database client over JDBC",
-         in = HelidonFlavor.SE,
-         path = {"DbClient", "JDBC"}
-)
+@Features.Name("JDBC Database Client")
+@Features.Description("Database client over JDBC")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"DbClient", "JDBC"})
 @Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
 module io.helidon.dbclient.jdbc {
 

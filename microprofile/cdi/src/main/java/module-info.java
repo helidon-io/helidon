@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -22,11 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see jakarta.enterprise.context
  */
-@Feature(value = "CDI",
-         description = "Jakarta CDI implementation",
-         in = HelidonFlavor.MP,
-         path = "CDI"
-)
+@Features.Name("CDI")
+@Features.Description("Jakarta CDI implementation")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("CDI")
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.cdi {
 

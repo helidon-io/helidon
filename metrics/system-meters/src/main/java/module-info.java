@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon metrics system meters.
  */
-@Feature(value = "System meters",
-         description = "Built-in system meters",
-         in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         path = {"Metrics", "System Meters"}
-)
+@Features.Name("System meters")
+@Features.Description("Built-in system meters")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Metrics", "System Meters"})
 module io.helidon.metrics.systemmeters {
     requires io.helidon;
     requires io.helidon.common.features.api;

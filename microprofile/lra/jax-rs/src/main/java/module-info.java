@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -22,11 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see org.eclipse.microprofile.lra
  */
-@Feature(value = "Long Running Actions",
-        description = "MicroProfile Long Running Actions",
-        in = HelidonFlavor.MP,
-        path = "LRA"
-)
+@Features.Name("Long Running Actions")
+@Features.Description("MicroProfile Long Running Actions")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("LRA")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.lra {
     exports io.helidon.microprofile.lra;

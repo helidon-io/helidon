@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Microprofile messaging JMS connector.
  */
-@Feature(value = "JMS Connector",
-        description = "Reactive messaging connector for JMS",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"Messaging", "JMS"}
-)
+@Features.Name("JMS Connector")
+@Features.Description("Reactive messaging connector for JMS")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Messaging", "JMS"})
 @Aot(false)
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.jms {

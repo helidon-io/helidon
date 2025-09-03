@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Jaeger tracing support.
  */
-@Feature(value = "Jaeger",
-        description = "Jaeger tracer integration",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Tracing", "Jaeger"}
-)
+@Features.Name("Jaeger")
+@Features.Description("Jaeger tracer integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Tracing", "Jaeger"})
 module io.helidon.tracing.providers.jaeger {
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;

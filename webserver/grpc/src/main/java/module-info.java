@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
@@ -22,11 +22,10 @@ import io.helidon.common.features.api.Preview;
  * Helidon WebServer gRPC Support.
  */
 @Preview
-@Feature(value = "GRPC",
-         description = "WebServer gRPC Support",
-         in = HelidonFlavor.SE,
-         path = {"WebServer", "GRPC"}
-)
+@Features.Name("GRPC")
+@Features.Description("WebServer gRPC Support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebServer", "GRPC"})
 @SuppressWarnings({ "requires-automatic"})
 module io.helidon.webserver.grpc {
 

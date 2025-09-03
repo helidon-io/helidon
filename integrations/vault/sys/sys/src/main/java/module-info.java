@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -22,11 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see io.helidon.integrations.vault.sys.Sys
  */
-@Feature(value = "Sys",
-        description = "System operations",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"HCP Vault", "Sys"}
-)
+@Features.Name("Sys")
+@Features.Description("System operations")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"HCP Vault", "Sys"})
 module io.helidon.integrations.vault.sys {
 
     requires io.helidon.integrations.common.rest;

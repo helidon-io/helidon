@@ -15,18 +15,17 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * Langchain4j main integration module and API.
  */
-@Feature(value = "Langchain4j",
-         description = "Langchain4j Integration",
-         in = {HelidonFlavor.SE, HelidonFlavor.MP},
-         path = "Langchain4j"
-)
+@Features.Name("Langchain4j")
+@Features.Description("Langchain4j Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path("Langchain4j")
 @Aot(value = false, description = "Not yet supported in native image")
 @Preview
 module io.helidon.integrations.langchain4j {

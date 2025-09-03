@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon Fault Tolerance Support.
  */
-@Feature(value = "Fault Tolerance",
-         description = "Fault Tolerance support",
-         in = HelidonFlavor.SE,
-         path = "FT"
-)
+@Features.Name("Fault Tolerance")
+@Features.Description("Fault Tolerance support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("FT")
 module io.helidon.faulttolerance {
 
     requires io.helidon.common;

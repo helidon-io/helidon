@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * IDCS role mapper.
  */
-@Feature(value = "IDCS Role Mapper",
-        description = "Security provider role mapping - Oracle IDCS",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Security", "Provider", "IdcsRoleMapper"}
-)
+@Features.Name("IDCS Role Mapper")
+@Features.Description("Security provider role mapping - Oracle IDCS")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Security", "Provider", "IdcsRoleMapper"})
 @Aot(false)
 module io.helidon.security.providers.idcs.mapper {
 

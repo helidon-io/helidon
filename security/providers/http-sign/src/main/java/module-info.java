@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Http signature provider.
  */
-@Feature(value = "HTTP Signatures",
-        description = "Security provider for HTTP Signature authentication and outbound",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Security", "Provider", "HttpSign"}
-)
+@Features.Name("HTTP Signatures")
+@Features.Description("Security provider for HTTP Signature authentication and outbound")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Security", "Provider", "HttpSign"})
 module io.helidon.security.providers.httpsign {
 
     requires io.helidon.common.pki;

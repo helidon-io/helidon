@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Hikari Connection Pool Metrics.
  */
-@Feature(value = "Hikari Connection Pool Metrics",
-         description = "Hikari connection pool metrics support",
-         in = HelidonFlavor.SE,
-         path = {"DbClient", "Metrics-Hikari"}
-)
+@Features.Name("Hikari Connection Pool Metrics")
+@Features.Description("Hikari connection pool metrics support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"DbClient", "Metrics-Hikari"})
 module helidon.dbclient.metrics.hikari {
 
     requires transitive io.helidon.common.features.api;

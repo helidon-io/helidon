@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * JWT provider.
  */
-@Feature(value = "JWT",
-        description = "Security provider for JWT based authentication",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"Security", "Provider", "JWT"}
-)
+@Features.Name("JWT")
+@Features.Description("Security provider for JWT based authentication")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Security", "Provider", "JWT"})
 module io.helidon.security.providers.jwt {
 
     requires io.helidon.common;
