@@ -16,11 +16,7 @@
 
 package io.helidon.webserver.utils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -254,17 +250,21 @@ public class SocketHttpClient implements AutoCloseable {
         pw.print(method.name());
         pw.print(" ");
         pw.print(path);
-        pw.println(" HTTP/1.1");
-        pw.println("Host: 127.0.0.1");
+        println(pw, " HTTP/1.1");
+        println(pw, "Host: 127.0.0.1");
 
         for (String header : headers) {
-            pw.println(header);
+            println(pw, header);
         }
 
         sendPayload(pw, payload);
 
-        pw.println("");
+        println(pw, "");
         pw.flush();
+    }
+
+    private void println(PrintWriter pw, String line) {
+        pw.print(line + "\r\n");
     }
 
     /**
@@ -275,9 +275,9 @@ public class SocketHttpClient implements AutoCloseable {
      */
     protected void sendPayload(PrintWriter pw, String payload) {
         if (payload != null) {
-            pw.println("Content-Length: " + payload.length());
-            pw.println("");
-            pw.println(payload);
+            println(pw, "Content-Length: " + payload.length());
+            println(pw, "");
+            println(pw, payload);
         }
     }
 

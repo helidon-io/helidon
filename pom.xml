@@ -58,7 +58,7 @@
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
         <version.lib.classfilewriter>1.2.4.Final</version.lib.classfilewriter>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
+        <version.lib.jgit>6.10.1.202505221210-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.54.Final</version.lib.netty.tcnative>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -112,7 +112,7 @@
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
-        <version.plugin.dependency-check>12.1.0</version.plugin.dependency-check>
+        <version.plugin.dependency-check>12.1.3</version.plugin.dependency-check>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
