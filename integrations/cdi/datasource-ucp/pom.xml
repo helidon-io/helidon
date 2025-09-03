@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ucp11</artifactId>
+            <artifactId>ucp17</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>

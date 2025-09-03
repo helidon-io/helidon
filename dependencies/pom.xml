@@ -143,10 +143,6 @@
         <version.lib.netty>4.1.124.Final</version.lib.netty>
         <version.lib.oci>3.72.0</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
-        <!--
-            UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
-            Until this bug is fixed do not upgrade past version 21.9.0.0.
-        -->
         <version.lib.ojdbc>${version.lib.ojdbc.family}.9.0.25.07</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okhttp3 for dependency convergence -->
