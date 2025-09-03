@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Reactive messaging support")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path("Messaging")
-@Aot
+@Features.Aot
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging {
 
