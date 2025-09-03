@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -95,12 +95,6 @@ fi
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-# Hooks for version substitution work
-readonly PREPARE_HOOKS=( )
-
-# Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
-
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 # Resolve FULL_VERSION
@@ -151,12 +145,6 @@ update_version(){
         mv ${bfile}.tmp ${bfile}
     done
 
-    # Invoke prepare hook
-    if [ -n "${PREPARE_HOOKS}" ]; then
-        for prepare_hook in ${PREPARE_HOOKS} ; do
-            bash "${prepare_hook}"
-        done
-    fi
 }
 
 release_build(){
@@ -181,52 +169,19 @@ release_build(){
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
-    # Create the nexus staging repository
-    local STAGING_DESC="Helidon v${FULL_VERSION}"
-    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
-        -DstagingProfileId="6026dab46eed94" \
-        -DstagingDescription="${STAGING_DESC}"
-
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-        awk '{print $2" "$3}' | \
-        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-        head -1)
-    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
-
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
        -Prelease,archetypes \
-      -DskipTests \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DretryFailedDeploymentCount="10"
-
-    # Invoke perform hooks
-    if [ -n "${PERFORM_HOOKS}" ]; then
-      for perform_hook in ${PERFORM_HOOKS} ; do
-        bash "${perform_hook}"
-      done
-    fi
-
-    # Close the nexus staging repository
-    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DstagingDescription="${STAGING_DESC}"
+       -DskipTests  \
+       -DaltDeploymentRepository=":::file://${PWD}/staging"
 
     # Create and push a git tag
     git tag -f "${FULL_VERSION}"
-    if [ -n "${JENKINS_HOME}" ] ; then
-        # In Jenkins use SSH to access remote
-        local GIT_REMOTE=$(git config --get remote.origin.url | \
-            sed "s,https://\([^/]*\)/,git@\1:,")
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 
-        git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-        git remote set-url release "${GIT_REMOTE}"
-
-        git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
-    else
-        git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
-    fi
+    "${WS_DIR}/etc/scripts/upload.sh" upload_release \
+                --dir="staging" \
+                --description="Helidon v%{FULL_VERSION}"
 }
 
 # Invoke command
