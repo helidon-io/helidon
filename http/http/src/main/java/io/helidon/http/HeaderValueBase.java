@@ -59,6 +59,11 @@ abstract class HeaderValueBase implements Header {
     }
 
     @Override
+    public String getString() {
+        return get();
+    }
+
+    @Override
     public <T> T get(Class<T> type) {
         return mappers.map(get(), String.class, type, QUALIFIER);
     }
