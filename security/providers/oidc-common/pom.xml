@@ -67,14 +67,6 @@
             <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
             <optional>true</optional>
