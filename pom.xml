@@ -245,6 +245,7 @@
         <module>data</module>
         <module>transaction</module>
         <module>telemetry</module>
+        <module>json</module>
     </modules>
 
     <build>
