@@ -184,4 +184,26 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <!-- Remove the Helidon specific info from the effective pom. -->
+    <url>https://example.com</url>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <url>https://example.com</url>
+    </scm>
+    <inceptionYear/>
+    <organization/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <distributionManagement>
+        <!--suppress MavenModelInspection -->
+        <repository />
+        <!--suppress MavenModelInspection -->
+        <snapshotRepository />
+    </distributionManagement>
 </project>
