@@ -15,6 +15,7 @@
  */
 package io.helidon.security.abac.role;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import io.helidon.common.Weight;
@@ -23,6 +24,8 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.metadata.reflection.AnnotationFactory;
+import io.helidon.metadata.reflection.TypedElementFactory;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
@@ -37,7 +40,23 @@ public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
-        return AnalyzerResponse.abstain();
+        return analyze(TypeName.create(maybeAnnotated), AnnotationFactory.create(maybeAnnotated));
+    }
+
+    @Override
+    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
+        // these methods must be implemented, as otherwise the default behavior would occur
+        // will be removed in next major version
+        return analyze(TypeName.create(maybeAnnotated.getDeclaringClass()),
+                       TypedElementFactory.create(maybeAnnotated),
+                       previousResponse);
+    }
+
+    @Override
+    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
+        // these methods must be implemented, as otherwise the default behavior would occur
+        // will be removed in next major version
+        return analyze(TypeName.create(maybeAnnotated), AnnotationFactory.create(maybeAnnotated), previousResponse);
     }
 
     @Override

@@ -36,6 +36,7 @@ module io.helidon.security.abac.role {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security;
+    requires io.helidon.metadata.reflection;
 
     exports io.helidon.security.abac.role;
 

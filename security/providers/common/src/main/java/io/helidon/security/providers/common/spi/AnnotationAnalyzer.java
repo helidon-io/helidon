@@ -328,6 +328,17 @@ public interface AnnotationAnalyzer {
             return registry;
         }
 
+        @Override
+        public String toString() {
+            return "AnalyzerResponse{" +
+                    "parent=" + parent +
+                    ", atnResponse=" + atnResponse +
+                    ", atzResponse=" + atzResponse +
+                    ", authenticator='" + authenticator + '\'' +
+                    ", authorizer='" + authorizer + '\'' +
+                    '}';
+        }
+
         /**
          * Fluent API builder for {@link AnalyzerResponse}.
          */
