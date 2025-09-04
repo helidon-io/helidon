@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,16 +254,16 @@ public class SocketHttpClient implements AutoCloseable {
         pw.print(method.name());
         pw.print(" ");
         pw.print(path);
-        pw.println(" HTTP/1.1");
-        pw.println("Host: 127.0.0.1");
+        println(pw, " HTTP/1.1");
+        println(pw, "Host: 127.0.0.1");
 
         for (String header : headers) {
-            pw.println(header);
+            println(pw, header);
         }
 
         sendPayload(pw, payload);
 
-        pw.println("");
+        println(pw, "");
         pw.flush();
     }
 
@@ -275,9 +275,9 @@ public class SocketHttpClient implements AutoCloseable {
      */
     protected void sendPayload(PrintWriter pw, String payload) {
         if (payload != null) {
-            pw.println("Content-Length: " + payload.length());
-            pw.println("");
-            pw.println(payload);
+            println(pw, "Content-Length: " + payload.length());
+            println(pw, "");
+            println(pw, payload);
         }
     }
 
@@ -285,4 +285,9 @@ public class SocketHttpClient implements AutoCloseable {
     public void close() throws Exception {
         socket.close();
     }
+
+    private void println(PrintWriter pw, String line) {
+        pw.print(line + "\r\n");
+    }
+
 }
