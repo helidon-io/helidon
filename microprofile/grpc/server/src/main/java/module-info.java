@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * gRPC microprofile server module
  */
-@Feature(value = "gRPC",
-        description = "Helidon gRPC MP server",
-        in = HelidonFlavor.MP,
-        path = "gRPC"
-)
-@Aot(false)
+@Features.Name("gRPC")
+@Features.Description("Helidon gRPC MP server")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("gRPC")
+@Features.Aot(false)
 module io.helidon.microprofile.grpc.server {
 
     requires io.helidon.common;

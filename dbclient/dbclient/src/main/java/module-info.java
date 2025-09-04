@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
@@ -23,12 +23,11 @@ import io.helidon.common.features.api.Preview;
  *
  * @see io.helidon.dbclient.DbClient
  */
-@Preview
-@Feature(value = "Database Client",
-         description = "Database Client API",
-         in = HelidonFlavor.SE,
-         path = "DbClient"
-)
+@Features.Preview
+@Features.Name("Database Client")
+@Features.Description("Database Client API")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path("DbClient")
 module io.helidon.dbclient {
 
     requires java.sql;

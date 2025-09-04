@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Tracing integration with jersey (JAX-RS) client.
  */
-@Feature(value = "Jersey Client",
-        description = "Tracing integration with Jersey client",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"Tracing", "Integration", "JerseyClient"}
-)
+@Features.Name("Jersey Client")
+@Features.Description("Tracing integration with Jersey client")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Tracing", "Integration", "JerseyClient"})
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.jersey.client {
 

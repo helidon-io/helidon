@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebClient gRPC Support.
  */
-@Feature(value = "gRPC",
-         description = "WebClient gRPC support",
-         in = HelidonFlavor.SE,
-         path = {"WebClient", "gRPC"}
-)
+@Features.Name("gRPC")
+@Features.Description("WebClient gRPC support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebClient", "gRPC"})
 module io.helidon.webclient.grpc {
 
     requires static io.helidon.common.features.api;

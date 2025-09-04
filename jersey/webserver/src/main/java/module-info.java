@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Jersey integration for Helidon WebServer.
  */
-@Feature(value = "Jersey",
-         description = "Jersey on WebServer",
-         in = HelidonFlavor.SE,
-         path = {"WebServer", "Jersey"}
-)
+@Features.Name("Jersey")
+@Features.Description("Jersey on WebServer")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebServer", "Jersey"})
 module io.helidon.jersey.webserver {
 
     requires io.helidon.common.resumable;

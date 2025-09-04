@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -27,11 +27,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
-@Feature(value = "JPA",
-         description = "Jakarta persistence API support for Helidon MP",
-         in = HelidonFlavor.MP,
-         path = "JPA"
-)
+@Features.Name("JPA")
+@Features.Description("Jakarta persistence API support for Helidon MP")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("JPA")
 @SuppressWarnings({ "deprecation", "requires-automatic" })
 module io.helidon.integrations.cdi.jpa {
 

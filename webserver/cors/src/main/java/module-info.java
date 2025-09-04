@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer CORS Support.
  */
-@Feature(value = "CORS",
-        description = "WebServer CORS support",
-        in = HelidonFlavor.SE,
-        path = {"WebServer", "CORS"}
-)
+@Features.Name("CORS")
+@Features.Description("WebServer CORS support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebServer", "CORS"})
 module io.helidon.webserver.cors {
 
     requires io.helidon.webserver;

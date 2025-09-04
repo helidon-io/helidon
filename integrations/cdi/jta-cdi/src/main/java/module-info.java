@@ -15,7 +15,7 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -26,12 +26,11 @@ import io.helidon.common.features.api.HelidonFlavor;
  * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
  * underlying implementation.
  */
-@Aot(description = "Experimental support, tested on limited use cases")
-@Feature(value = "JTA",
-        description = "Jakarta transaction API support for Helidon MP",
-        in = HelidonFlavor.MP,
-        path = "JTA"
-)
+@Features.Aot(description = "Experimental support, tested on limited use cases")
+@Features.Name("JTA")
+@Features.Description("Jakarta transaction API support for Helidon MP")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("JTA")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jta.cdi {
 

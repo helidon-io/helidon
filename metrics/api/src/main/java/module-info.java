@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon metrics API.
  */
-@Feature(value = "Metrics",
-         description = "Metrics",
-         in = HelidonFlavor.SE,
-         path = {"Metrics"}
-)module io.helidon.metrics.api {
+@Features.Name("Metrics")
+@Features.Description("Metrics")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Metrics"})
+module io.helidon.metrics.api {
 
     requires static io.helidon.common.features.api;
 

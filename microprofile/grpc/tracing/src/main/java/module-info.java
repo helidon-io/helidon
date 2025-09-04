@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
-@Feature(value = "gRPC Tracing",
-         description = "Helidon gRPC MP Tracing",
-         in = HelidonFlavor.MP,
-         path = {"gRPC", "Tracing"}
-)
+@Features.Name("gRPC Tracing")
+@Features.Description("Helidon gRPC MP Tracing")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path({"gRPC", "Tracing"})
 module helidon.microprofile.grpc.tracing {
 
     requires io.helidon.config;

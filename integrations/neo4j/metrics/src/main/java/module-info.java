@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * Neo4j metrics support module.
  */
-@Preview
-@Feature(value = "Neo4j Metrics",
-        description = "Metrics for Neo4j integration",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"Neo4j", "Metrics"}
-)
+@Features.Preview
+@Features.Name("Neo4j Metrics")
+@Features.Description("Metrics for Neo4j integration")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"Neo4j", "Metrics"})
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.neo4j.metrics {
 

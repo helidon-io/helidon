@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * Support for Micrometer in Helidon MP.
  */
-@Preview
-@Feature(value = "Micrometer",
-        description = "Micrometer integration",
-        in = HelidonFlavor.MP,
-        path = "Micrometer"
-)
+@Features.Preview
+@Features.Name("Micrometer")
+@Features.Description("Micrometer integration")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("Micrometer")
 module io.helidon.integrations.micrometer.cdi {
 
     requires io.helidon.common;

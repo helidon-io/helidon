@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * MicroProfile Reactive Messaging Oracle AQ connector.
  */
-@Feature(value = "Oracle AQ Connector",
-        description = "Reactive messaging connector for Oracle AQ",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Messaging", "OracleAQ"}
-)
-@Aot(false)
+@Features.Name("Oracle AQ Connector")
+@Features.Description("Reactive messaging connector for Oracle AQ")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Messaging", "OracleAQ"})
+@Features.Aot(false)
 module io.helidon.messaging.connectors.aq {
 
     requires aqapi;

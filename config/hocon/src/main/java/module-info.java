@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.config.hocon.HoconConfigParser;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) Parser implementation.
  */
-@Feature(value = "HOCON",
-        description = "HOCON media type support for config",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"Config", "HOCON"}
-)
+@Features.Name("HOCON")
+@Features.Description("HOCON media type support for config")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Config", "HOCON"})
 module io.helidon.config.hocon {
 
     requires io.helidon.common;

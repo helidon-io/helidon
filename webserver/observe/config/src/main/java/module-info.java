@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Observability Config Support.
  */
-@Feature(value = "Config",
-         description = "WebServer Config observability support",
-         in = HelidonFlavor.SE,
-         path = {"Observe", "Config"})
+@Features.Name("Config")
+@Features.Description("WebServer Config observability support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Observe", "Config"})
 module io.helidon.webserver.observe.config {
     requires static io.helidon.common.features.api;
 
