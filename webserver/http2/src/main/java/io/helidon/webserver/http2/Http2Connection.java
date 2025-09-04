@@ -681,7 +681,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         headers.validateRequest();
         String path = headers.path();
         Method method = headers.method();
-        HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
+        HttpPrologue httpPrologue = HttpPrologue.create(ctx.listenerContext().config().mappers(),
+                                                        FULL_PROTOCOL,
                                                         PROTOCOL,
                                                         PROTOCOL_VERSION,
                                                         method,

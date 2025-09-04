@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,25 @@ package io.helidon.http.media.multipart;
 import java.io.InputStream;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 
 class MultiPartReader implements EntityReader<MultiPart> {
+    private final Mappers mappers;
     private final MediaContext context;
     private final String boundary;
 
-    MultiPartReader(MediaContext context, String boundary) {
+    MultiPartReader(Mappers mappers, MediaContext context, String boundary) {
+        this.mappers = mappers;
         this.context = context;
         this.boundary = boundary;
     }
 
     @Override
     public MultiPart read(GenericType<MultiPart> type, InputStream stream, Headers headers) {
-        return new MultiPartImpl(context, boundary, stream);
+        return new MultiPartImpl(mappers, context, boundary, stream);
     }
 
     @Override
@@ -42,6 +45,6 @@ class MultiPartReader implements EntityReader<MultiPart> {
                           InputStream stream,
                           Headers requestHeaders,
                           Headers responseHeaders) {
-        return new MultiPartImpl(context, boundary, stream);
+        return new MultiPartImpl(mappers, context, boundary, stream);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.service.registry.Services;
 
 /**
  * HTTP Query representation.
@@ -42,6 +44,19 @@ public interface UriQuery extends Parameters {
     }
 
     /**
+     * Create a new HTTP query from the query string.
+     * This method does not validate the raw query against specification.
+     *
+     * @param mappers mappers to use when obtaining typed values from the query
+     * @param query raw query string
+     * @return HTTP query instance
+     * @see #create(String, boolean)
+     */
+    static UriQuery create(Mappers mappers, String query) {
+        return create(mappers, query, false);
+    }
+
+    /**
      * Create a new HTTP query from the query string, validating if requested.
      *
      * @param query raw query string
@@ -49,6 +64,19 @@ public interface UriQuery extends Parameters {
      * @return HTTP query instance
      */
     static UriQuery create(String query, boolean validate) {
+        return create(Services.get(Mappers.class), query, validate);
+    }
+
+    /**
+     * Create a new HTTP query from the query string, validating if requested.
+     *
+     * @param mappers mappers to use when obtaining typed values from the query
+     * @param query raw query string
+     * @param validate whether to validate that the query is according to the specification
+     * @return HTTP query instance
+     */
+    static UriQuery create(Mappers mappers, String query, boolean validate) {
+        Objects.requireNonNull(mappers);
         Objects.requireNonNull(query, "Raw query string cannot be null, use create(URI) or empty()");
 
         if (query.isEmpty()) {
@@ -56,9 +84,9 @@ public interface UriQuery extends Parameters {
         }
 
         if (validate) {
-            return new UriQueryImpl(query).validate();
+            return new UriQueryImpl(mappers, query).validate();
         }
-        return new UriQueryImpl(query);
+        return new UriQueryImpl(mappers, query);
     }
 
     /**

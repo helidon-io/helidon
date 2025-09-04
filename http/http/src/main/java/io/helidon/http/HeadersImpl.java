@@ -27,6 +27,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.mapper.Mappers;
+
 @SuppressWarnings("unchecked")
 class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     static final int KNOWN_HEADER_SIZE = HeaderNameEnum.values().length;
@@ -34,15 +36,19 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
      Optimization for most commonly used header names
      */
     private final Header[] knownHeaders = new Header[KNOWN_HEADER_SIZE];
+    private final Mappers mappers;
+
     private IntSet knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
 
     // custom (unknown) headers are slower
     private Map<HeaderName, Header> customHeaders = null;
 
-    HeadersImpl() {
+    HeadersImpl(Mappers mappers) {
+        this.mappers = mappers;
     }
 
     HeadersImpl(Headers headers) {
+        this.mappers = headers.mappers();
         for (Header header : headers) {
             set(header);
         }
@@ -132,7 +138,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             if (headerValue instanceof HeaderWriteable hvw) {
                 writable = hvw;
             } else {
-                writable = HeaderWriteable.create(header);
+                writable = HeaderWriteable.create(mappers, header);
             }
             for (String value : header.allValues()) {
                 writable.addValue(value);
@@ -166,7 +172,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             // use it directly (lazy values are write once)
         } else if (header instanceof HeaderWriteable) {
             // we must create a new instance, as we risk modifying state of the provided header
-            usedHeader = new HeaderValueCopy(header);
+            usedHeader = new HeaderValueCopy(mappers, header);
         }
         int index = name.index();
         if (index == -1) {
@@ -224,6 +230,11 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public Mappers mappers() {
+        return mappers;
     }
 
     public Header doRemove(HeaderName name) {

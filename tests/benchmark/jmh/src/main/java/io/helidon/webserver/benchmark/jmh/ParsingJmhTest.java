@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.benchmark.jmh;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
@@ -52,6 +53,7 @@ public class ParsingJmhTest {
             Accept: text/plain,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7\r
             \r
             """.getBytes(StandardCharsets.US_ASCII);
+    private static final Mappers MAPPERS = Mappers.create();
 
     @Benchmark
     public void prologue(Blackhole bh) {
@@ -67,7 +69,7 @@ public class ParsingJmhTest {
     @Benchmark
     public void headers(Blackhole bh) {
         DataReader reader = new DataReader(() -> HEADERS);
-        Http1Headers p = new Http1Headers(reader, 1024, false);
+        Http1Headers p = Http1Headers.create(MAPPERS, reader, 1024, false);
         WritableHeaders<?> headers = p.readHeaders(PROLOGUE);
 
         bh.consume(headers);

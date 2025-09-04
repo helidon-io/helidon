@@ -112,7 +112,7 @@ public class Http2Headers {
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
-            return create(ServerRequestHeaders.create(WritableHeaders.create()),
+            return create(ServerRequestHeaders.create(WritableHeaders.create(headers.httpHeaders().mappers())),
                           new PseudoHeaders());
         }
 
@@ -585,7 +585,8 @@ public class Http2Headers {
             }
 
             if (!isPseudoHeader) {
-                headers.add(HeaderValues.create(headerName,
+                headers.add(HeaderValues.create(headers.mappers(),
+                                                headerName,
                                                 !approach.addToIndex,
                                                 approach.neverIndex,
                                                 value));

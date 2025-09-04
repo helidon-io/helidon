@@ -28,5 +28,10 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.webclient.api;
     requires io.helidon.faulttolerance;
 
+    // needed for generated binding
+    requires io.helidon.webserver.context;
+    requires io.helidon.webserver.cors;
+    requires io.helidon.webserver.observe;
+
     exports io.helidon.declarative.tests.http;
 }

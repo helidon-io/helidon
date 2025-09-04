@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 
 class ServerRequestHeadersImpl implements ServerRequestHeaders {
@@ -120,5 +121,10 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
             cacheCookies = ServerRequestHeaders.super.cookies();
         }
         return cacheCookies;
+    }
+
+    @Override
+    public Mappers mappers() {
+        return headers.mappers();
     }
 }

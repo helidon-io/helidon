@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -32,6 +33,8 @@ import io.helidon.webserver.http.DirectTransportRequest;
  * HTTP 1 prologue parsing support.
  */
 public final class Http1Prologue {
+    private static final Mappers DEFAULT_MAPPERS = Mappers.create();
+
     /*
     The string HTTP/1.1 (as used in protocol version in prologue's third section)
      */
@@ -79,6 +82,7 @@ public final class Http1Prologue {
     private final DataReader reader;
     private final int maxLength;
     private final boolean validatePath;
+    private final Mappers mappers;
 
     /**
      * Create a new prologue parser.
@@ -86,11 +90,31 @@ public final class Http1Prologue {
      * @param reader       data reader
      * @param maxLength    maximal prologue length
      * @param validatePath whether to validate path
+     * @deprecated use #create(io.helidon.common.mapper.Mappers, io.helidon.common.buffers.DataReader, int, boolean) instead
      */
+    @Deprecated(forRemoval = true)
     public Http1Prologue(DataReader reader, int maxLength, boolean validatePath) {
+        this(DEFAULT_MAPPERS, reader, maxLength, validatePath);
+    }
+
+    private Http1Prologue(Mappers mappers, DataReader reader, int maxLength, boolean validatePath) {
+        this.mappers = mappers;
         this.reader = reader;
         this.maxLength = maxLength;
         this.validatePath = validatePath;
+    }
+
+    /**
+     * Create an HTTP/1.1 prologue parser.
+     *
+     * @param mappers      mappers used to get typed values from the created path and query
+     * @param reader       data reader to get bytes from the request
+     * @param maxLength    maximal prologue length
+     * @param validatePath whether to validate path
+     * @return a new prologue parser instance
+     */
+    public static Http1Prologue create(Mappers mappers, DataReader reader, int maxLength, boolean validatePath) {
+        return new Http1Prologue(mappers, reader, maxLength, validatePath);
     }
 
     /**
@@ -231,7 +255,8 @@ public final class Http1Prologue {
         }
 
         try {
-            return HttpPrologue.create(protocol,
+            return HttpPrologue.create(mappers,
+                                       protocol,
                                        "HTTP",
                                        "1.1",
                                        method,

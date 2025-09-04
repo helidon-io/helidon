@@ -31,6 +31,7 @@ module io.helidon.http.media.multipart {
     requires io.helidon.http;
 
     requires static io.helidon.common.features.api;
+    requires io.helidon.service.registry;
 
     exports io.helidon.http.media.multipart;
 

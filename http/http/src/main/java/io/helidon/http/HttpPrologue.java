@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.util.Objects;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -28,6 +29,8 @@ import io.helidon.service.registry.Service;
  */
 @Service.Describe(Service.PerRequest.class)
 public class HttpPrologue {
+    private static final Mappers DEFAULT_MAPPERS = Mappers.create();
+
     private final String rawProtocol;
     private final String protocol;
     private final String protocolVersion;
@@ -35,6 +38,7 @@ public class HttpPrologue {
     private final UriPath uriPath;
     private final String rawQuery;
     private final String rawFragment;
+    private final Mappers mappers;
 
     private UriQuery query;
     private UriFragment fragment;
@@ -48,13 +52,15 @@ public class HttpPrologue {
      * @param rawFragment     fragment as received over the network; may be {@code null} when the prologue does not contain a
      *                        fragment
      */
-    private HttpPrologue(String rawProtocol,
+    private HttpPrologue(Mappers mappers,
+                         String rawProtocol,
                          String protocol,
                          String protocolVersion,
                          Method method,
                          UriPath path,
                          String rawQuery,
                          String rawFragment) {
+        this.mappers = mappers;
         this.rawProtocol = rawProtocol;
         this.protocol = protocol;
         this.protocolVersion = protocolVersion;
@@ -64,13 +70,15 @@ public class HttpPrologue {
         this.rawFragment = rawFragment;
     }
 
-    private HttpPrologue(String rawProtocol,
+    private HttpPrologue(Mappers mappers,
+                         String rawProtocol,
                          String protocol,
                          String protocolVersion,
                          Method httpMethod,
                          UriPath uriPath,
                          UriQuery uriQuery,
                          UriFragment uriFragment) {
+        this.mappers = mappers;
         this.rawProtocol = rawProtocol;
         this.protocol = protocol;
         this.protocolVersion = protocolVersion;
@@ -95,6 +103,29 @@ public class HttpPrologue {
      * @return a new prologue
      */
     public static HttpPrologue create(String rawProtocol,
+                                      String protocol,
+                                      String protocolVersion,
+                                      Method httpMethod,
+                                      String unresolvedPath,
+                                      boolean validatePath) {
+
+       return create(DEFAULT_MAPPERS, rawProtocol, protocol, protocolVersion, httpMethod, unresolvedPath, validatePath);
+    }
+
+    /**
+     * Create a new prologue.
+     *
+     * @param mappers         mappers to use when obtaining typed values from the created path and query
+     * @param rawProtocol     raw protocol string (full HTTP/1.1 or similar)
+     * @param protocol        protocol
+     * @param protocolVersion protocol version
+     * @param httpMethod      HTTP Method
+     * @param unresolvedPath  unresolved path
+     * @param validatePath    whether to validate path (that it contains only allowed characters)
+     * @return a new prologue
+     */
+    public static HttpPrologue create(Mappers mappers,
+                                      String rawProtocol,
                                       String protocol,
                                       String protocolVersion,
                                       Method httpMethod,
@@ -126,7 +157,8 @@ public class HttpPrologue {
             uriPath.validate();
         }
 
-        return new HttpPrologue(rawProtocol,
+        return new HttpPrologue(mappers,
+                                rawProtocol,
                                 protocol,
                                 protocolVersion,
                                 httpMethod,
@@ -154,7 +186,39 @@ public class HttpPrologue {
                                       UriPath uriPath,
                                       UriQuery uriQuery,
                                       UriFragment uriFragment) {
-        return new HttpPrologue(rawProtocol, protocol, protocolVersion, httpMethod, uriPath, uriQuery, uriFragment);
+        return create(DEFAULT_MAPPERS, rawProtocol, protocol, protocolVersion, httpMethod, uriPath, uriQuery, uriFragment);
+    }
+
+    /**
+     * Create a new prologue with decoded values.
+     *
+     * @param mappers         mappers to use when obtaining typed values from the created path and query
+     * @param rawProtocol     raw protocol string (full HTTP/1.1 or similar)
+     * @param protocol        protocol
+     * @param protocolVersion protocol version
+     * @param httpMethod      HTTP Method
+     * @param uriPath         resolved path
+     * @param uriQuery        resolved query
+     * @param uriFragment     resolved fragment
+     * @return a new prologue
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber") // all are needed
+    public static HttpPrologue create(Mappers mappers,
+                                      String rawProtocol,
+                                      String protocol,
+                                      String protocolVersion,
+                                      Method httpMethod,
+                                      UriPath uriPath,
+                                      UriQuery uriQuery,
+                                      UriFragment uriFragment) {
+        return new HttpPrologue(mappers,
+                                rawProtocol,
+                                protocol,
+                                protocolVersion,
+                                httpMethod,
+                                uriPath,
+                                uriQuery,
+                                uriFragment);
     }
 
     /**
@@ -209,7 +273,7 @@ public class HttpPrologue {
      */
     public UriQuery query() {
         if (query == null) {
-            query = rawQuery == null ? UriQuery.empty() : UriQuery.create(rawQuery);
+            query = rawQuery == null ? UriQuery.empty() : UriQuery.create(mappers, rawQuery);
         }
         return query;
     }

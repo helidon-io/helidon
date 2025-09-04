@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package io.helidon.http;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.mapper.Mappers;
+
 class HeaderValueSingle extends HeaderWritableValueBase {
     private final String value;
     private List<String> values;
 
-    HeaderValueSingle(HeaderName name, boolean changing, boolean sensitive, String value) {
-        super(name, changing, sensitive, value);
+    HeaderValueSingle(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, String value) {
+        super(mappers, name, changing, sensitive, value);
 
         this.value = value;
     }

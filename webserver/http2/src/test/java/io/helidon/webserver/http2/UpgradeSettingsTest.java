@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Base64;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -27,6 +28,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 
@@ -52,16 +54,23 @@ class UpgradeSettingsTest {
 
     public UpgradeSettingsTest() {
         ctx = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        ListenerConfig listenerConfig = mock(ListenerConfig.class);
+        when(listenerConfig.mappers())
+                .thenReturn(Mappers.create());
+        when(listenerContext.config())
+                .thenReturn(listenerConfig);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        DataWriter dataWriter = mock(DataWriter.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.dataWriter()).thenReturn(dataWriter);
+
         prologue = HttpPrologue.create("http/1.1",
                                        "http",
                                        "1.1",
                                        Method.GET,
                                        "/resource.txt",
                                        false);
-        DataWriter dataWriter = mock(DataWriter.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
-        when(ctx.dataWriter()).thenReturn(dataWriter);
     }
 
     @Test

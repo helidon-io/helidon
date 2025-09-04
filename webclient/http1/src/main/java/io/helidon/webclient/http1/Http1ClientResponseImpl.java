@@ -100,6 +100,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
         this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
+                clientConfig.mappers(),
                 connection.reader(),
                 protocolConfig.maxHeaderSize(),
                 protocolConfig.validateResponseHeaders()

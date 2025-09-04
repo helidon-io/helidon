@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
@@ -35,12 +35,14 @@ import static io.helidon.common.uri.UriEncoding.decodeQuery;
 
 // must be lazily populated to prevent perf overhead when queries are ignored
 final class UriQueryImpl implements UriQuery {
+    private final Mappers mappers;
     private final String query;
 
     private Map<String, List<String>> rawQueryParams;
     private Map<String, List<String>> decodedQueryParams;
 
-    UriQueryImpl(String query) {
+    UriQueryImpl(Mappers mappers, String query) {
+        this.mappers = mappers;
         this.query = query;
     }
 
@@ -130,7 +132,7 @@ final class UriQueryImpl implements UriQuery {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values.stream()
-                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .map(it -> Value.create(mappers, name, it, GenericType.STRING, "uri", "query"))
                 .collect(Collectors.toList());
     }
 
@@ -149,9 +151,9 @@ final class UriQueryImpl implements UriQuery {
         ensureDecoded();
         List<String> values = decodedQueryParams.get(name);
         if (values == null || values.isEmpty()) {
-            return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
+            return OptionalValue.create(mappers, name, GenericType.STRING, "uri", "query");
         }
-        return OptionalValue.create(MapperManager.global(), name, values.iterator().next(),
+        return OptionalValue.create(mappers, name, values.iterator().next(),
                 GenericType.STRING, "uri", "query");
     }
 

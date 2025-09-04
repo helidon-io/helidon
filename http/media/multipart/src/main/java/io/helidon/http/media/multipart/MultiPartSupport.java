@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
@@ -30,6 +31,7 @@ import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.service.registry.Services;
 
 /**
  * Media support implementation for support of multipart.
@@ -46,10 +48,14 @@ public class MultiPartSupport implements MediaSupport {
             .withParameter("boundary", DEFAULT_BOUNDARY);
 
     private final String name;
+    private final Mappers mappers;
+
     private MediaContext context;
+
 
     private MultiPartSupport(String name) {
         this.name = Objects.requireNonNull(name);
+        this.mappers = Services.get(Mappers.class);
     }
 
     /**
@@ -117,7 +123,8 @@ public class MultiPartSupport implements MediaSupport {
             }
             return ReaderResponse.unsupported();
         }
-        return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(context,
+        return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(mappers,
+                                                                                                        context,
                                                                                                         boundary));
     }
 
@@ -187,7 +194,8 @@ public class MultiPartSupport implements MediaSupport {
             }
             return ReaderResponse.unsupported();
         }
-        return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(context,
+        return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> (EntityReader<T>) new MultiPartReader(requestHeaders.mappers(),
+                                                                                                        context,
                                                                                                         boundary));
     }
 
