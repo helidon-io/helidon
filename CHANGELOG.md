@@ -9,6 +9,14 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.13]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum of Java 11.
+
+### CHANGES
+
+- Dependencies: Upgrade Netty to 4.1.126.Final [10638](https://github.com/helidon-io/helidon/pull/10638)
+
 ## [2.6.12]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
@@ -2308,6 +2316,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.13]: https://github.com/oracle/helidon/compare/2.6.12...2.6.13
 [2.6.12]: https://github.com/oracle/helidon/compare/2.6.11...2.6.12
 [2.6.11]: https://github.com/oracle/helidon/compare/2.6.10...2.6.11
 [2.6.10]: https://github.com/oracle/helidon/compare/2.6.9...2.6.10
