@@ -220,21 +220,23 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         }
 
         //Obtains Application level of security
-        List<LoginConfig> loginConfigs = providerRequest.endpointConfig().securityLevels().get(0)
-                .filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS);
+        List<io.helidon.common.types.Annotation> loginConfigs = providerRequest.endpointConfig()
+                .securityLevels()
+                .getFirst()
+                .filterAnnotations(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG, EndpointConfig.AnnotationScope.CLASS);
 
         try {
             return loginConfigs.stream()
                     .filter(JwtAuthAnnotationAnalyzer::isMpJwt)
                     .findFirst()
-                    .map(loginConfig -> authenticate(providerRequest, loginConfig))
+                    .map(loginConfig -> doAuthenticate(providerRequest))
                     .orElseGet(AuthenticationResponse::abstain);
         } catch (java.lang.SecurityException e) {
             return AuthenticationResponse.failed("Failed to process authentication header", e);
         }
     }
 
-    AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
+    AuthenticationResponse doAuthenticate(ProviderRequest providerRequest) {
         Optional<String> maybeToken;
         try {
             Map<String, List<String>> headers = providerRequest.env().headers();
@@ -531,6 +533,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * A custom object to configure specific handling of outbound calls.
      */
+    @SuppressWarnings("removal")
     public static class JwtOutboundTarget {
         private final TokenHandler outboundHandler;
         private final String jwtKid;
@@ -611,6 +614,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * Fluent API builder for {@link JwtAuthProvider}.
      */
+    @SuppressWarnings("removal")
     @Configured(description = "MP-JWT Auth configuration is defined by the spec (options prefixed with `mp.jwt.`), "
             + "and we add a few configuration options for the security provider (options prefixed with "
             + "`security.providers.mp-jwt-auth.`)")
