@@ -427,10 +427,6 @@ public class TestJunitExtension implements Extension,
     }
 
     private interface TestContext extends CloseableResource {
-        default boolean isPerMethod() {
-            return false;
-        }
-
         default void close() {
         }
 
@@ -446,12 +442,10 @@ public class TestJunitExtension implements Extension,
     private static class PerClassTestContext implements TestContext {
         private final Context context;
         private final ServiceRegistryManager manager;
-        private final ServiceRegistry registry;
 
-        private PerClassTestContext(Context context, ServiceRegistryManager manager, ServiceRegistry registry) {
+        private PerClassTestContext(Context context, ServiceRegistryManager manager) {
             this.context = context;
             this.manager = manager;
-            this.registry = registry;
         }
 
         @Override
@@ -478,7 +472,7 @@ public class TestJunitExtension implements Extension,
             // supply registry
             context.register("helidon-registry", registry);
 
-            return new PerClassTestContext(context, manager, registry);
+            return new PerClassTestContext(context, manager);
         }
     }
 
@@ -489,7 +483,6 @@ public class TestJunitExtension implements Extension,
 
         private volatile Context context;
         private volatile ServiceRegistryManager manager;
-        private volatile ServiceRegistry registry;
 
         private PerMethodTestContext(Class<?> testClass, Context testClassContext) {
             this.testClass = testClass;
@@ -508,11 +501,6 @@ public class TestJunitExtension implements Extension,
         }
 
         @Override
-        public boolean isPerMethod() {
-            return true;
-        }
-
-        @Override
         public Context context() {
             if (context == null) {
                 return testClassContext;
@@ -526,7 +514,6 @@ public class TestJunitExtension implements Extension,
                 manager.shutdown();
                 context = null;
                 manager = null;
-                registry = null;
             }
         }
 
@@ -548,7 +535,6 @@ public class TestJunitExtension implements Extension,
             testClassContext.register("helidon-registry-static-context", context);
 
             this.manager = manager;
-            this.registry = registry;
             this.context = context;
         }
 
