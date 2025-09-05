@@ -16,8 +16,14 @@
 
 package io.helidon.testing.junit5;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -32,12 +38,35 @@ TestClassDefault - expecting default (injected) value
  */
 @Testing.Test
 public class TestClassB {
+    private static final Set<Integer> INSTANCES = new HashSet<>();
+
+    @BeforeAll
+    public static void beforeAll() {
+        Services.set(TestService.class, new TestService("testB"));
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
+        assertThat("We should only use a single registry instance when annotated with @Testing.Test", INSTANCES.size(), is(1));
+    }
+
     @Test
     public void testRegistry() {
-        Services.set(TestService.class, new TestService("testB"));
-
         TestService testService = Services.get(TestService.class);
 
         assertThat(testService.message(), is("testB"));
+
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
+    }
+
+    @Test
+    public void testRegistry2() {
+        TestService testService = Services.get(TestService.class);
+
+        assertThat(testService.message(), is("testB"));
+
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
     }
 }
