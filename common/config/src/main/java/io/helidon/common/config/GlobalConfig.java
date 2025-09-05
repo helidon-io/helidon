@@ -47,6 +47,7 @@ public final class GlobalConfig {
     private static final System.Logger LOGGER = System.getLogger(GlobalConfig.class.getName());
     private static final AtomicBoolean LOGGED_REGISTERED = new AtomicBoolean(false);
     private static final Config EMPTY = Config.empty();
+    private static final AtomicBoolean GLOBAL_FROM_REGISTRY = new AtomicBoolean();
     private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(() -> {
         List<io.helidon.common.config.spi.ConfigProvider> providers =
                 HelidonServiceLoader.create(ServiceLoader.load(io.helidon.common.config.spi.ConfigProvider.class))
@@ -83,6 +84,10 @@ public final class GlobalConfig {
      */
     @Deprecated(forRemoval = true, since = "4.2.0")
     public static Config config() {
+        if (GLOBAL_FROM_REGISTRY.get()) {
+            return Services.get(Config.class);
+        }
+
         return configured() ? CONFIG.get() : DEFAULT_CONFIG.get();
     }
 
@@ -110,11 +115,15 @@ public final class GlobalConfig {
     public static Config config(Supplier<Config> config, boolean overwrite) {
         Objects.requireNonNull(config);
 
+        if (GLOBAL_FROM_REGISTRY.get()) {
+            return Services.get(Config.class);
+        }
+
         if (overwrite || !configured()) {
             // there is a certain risk we may do this twice, if two components try to set global config in parallel.
             // as the result was already unclear (as order matters), we do not need to be 100% thread safe here
             Config configInstance = config.get();
-            CONFIG.set(configInstance);
+            config(configInstance, false);
 
             try {
                 Services.set(Config.class, configInstance);
@@ -134,7 +143,20 @@ public final class GlobalConfig {
                 }
             }
         }
+
         return CONFIG.get();
+    }
+
+    /**
+     * This is a temporary method to allow backward compatibility. Please do not use this method.
+     *
+     * @param config config to set
+     * @param fromServiceRegistry whether the instance was explicitly configured by user, or obtained from service registry
+     */
+    @Deprecated(forRemoval = true, since = "4.3.0")
+    public static void config(Config config, boolean fromServiceRegistry) {
+        GLOBAL_FROM_REGISTRY.set(fromServiceRegistry);
+        CONFIG.set(config);
     }
 
     static Config create() {

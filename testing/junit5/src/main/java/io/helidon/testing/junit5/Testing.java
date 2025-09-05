@@ -39,5 +39,11 @@ public final class Testing {
     @Inherited
     @ExtendWith(TestJunitExtension.class)
     public @interface Test {
+        /**
+         * If set to {@code true}, service registry will be reset after each test method, instead after the whole test class.
+         *
+         * @return whether to reset registry after each test method
+         */
+        boolean perMethod() default false;
     }
 }

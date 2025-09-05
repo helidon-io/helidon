@@ -422,7 +422,7 @@ public interface Config extends io.helidon.common.config.Config {
             return BuilderImpl.GlobalConfigHolder.get();
         }
         Config config = Services.get(Config.class);
-        io.helidon.common.config.GlobalConfig.config(() -> config, true);
+        io.helidon.common.config.GlobalConfig.config(config, true);
         return config;
     }
 
@@ -437,7 +437,7 @@ public interface Config extends io.helidon.common.config.Config {
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.2.0")
     static void global(Config config) {
-        io.helidon.common.config.GlobalConfig.config(() -> config, true);
+        io.helidon.common.config.GlobalConfig.config(config, false);
         BuilderImpl.GlobalConfigHolder.set(config);
     }
 
