@@ -47,7 +47,7 @@ public final class GlobalConfig {
     private static final System.Logger LOGGER = System.getLogger(GlobalConfig.class.getName());
     private static final AtomicBoolean LOGGED_REGISTERED = new AtomicBoolean(false);
     private static final Config EMPTY = Config.empty();
-    private static final AtomicReference<Boolean> GLOBAL_FROM_REGISTRY = new AtomicReference<>();
+    private static final AtomicBoolean GLOBAL_FROM_REGISTRY = new AtomicBoolean();
     private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(() -> {
         List<io.helidon.common.config.spi.ConfigProvider> providers =
                 HelidonServiceLoader.create(ServiceLoader.load(io.helidon.common.config.spi.ConfigProvider.class))
@@ -84,7 +84,7 @@ public final class GlobalConfig {
      */
     @Deprecated(forRemoval = true, since = "4.2.0")
     public static Config config() {
-        if (Boolean.TRUE.equals(GLOBAL_FROM_REGISTRY.get())) {
+        if (GLOBAL_FROM_REGISTRY.get()) {
             return Services.get(Config.class);
         }
 
@@ -115,7 +115,7 @@ public final class GlobalConfig {
     public static Config config(Supplier<Config> config, boolean overwrite) {
         Objects.requireNonNull(config);
 
-        if (Boolean.TRUE.equals(GLOBAL_FROM_REGISTRY.get())) {
+        if (GLOBAL_FROM_REGISTRY.get()) {
             return Services.get(Config.class);
         }
 
