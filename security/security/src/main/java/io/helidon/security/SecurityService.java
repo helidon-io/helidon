@@ -18,21 +18,22 @@ package io.helidon.security;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
 class SecurityService implements Supplier<Security> {
-    private final Security delegate;
+    private final LazyValue<Security> delegate;
 
     SecurityService(Config config) {
-        this.delegate = Security.builder()
+        this.delegate = LazyValue.create(() -> Security.builder()
                 .config(config.get("security"))
-                .build();
+                .build());
     }
 
     @Override
     public Security get() {
-        return delegate;
+        return delegate.get();
     }
 }
