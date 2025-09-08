@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS;
@@ -45,6 +46,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isEmptyString;
 
 /**
  * Class CrossOriginTest.
@@ -201,6 +203,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
@@ -226,6 +229,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "POST")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
@@ -237,6 +241,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar, X-oops")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
