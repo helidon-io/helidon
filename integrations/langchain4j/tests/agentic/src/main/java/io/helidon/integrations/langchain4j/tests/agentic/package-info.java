@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.langchain4j.providers.mock;
-
-import io.helidon.service.registry.Qualifier;
-
 /**
- * Constants for 'mock' Lc4j provider.
+ * Test package for agentic integrations in Helidon LangChain4j.
+ *
+ * <p>This package contains test interfaces and classes that demonstrate
+ * the usage of AI agents and services within the Helidon integration
+ * with LangChain4j.</p>
  */
-class MockConstants {
-    static final String NAME = "mock";
-    static final Qualifier QUALIFIER = Qualifier.createNamed(NAME);
-
-    private MockConstants() {
-    }
-}
+package io.helidon.integrations.langchain4j.tests.agentic;

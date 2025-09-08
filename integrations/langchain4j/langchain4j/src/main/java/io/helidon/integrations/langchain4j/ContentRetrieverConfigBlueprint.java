@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,50 +21,50 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.store.embedding.EmbeddingStore;
-
-/**
- * Configuration class for {@link EmbeddingStoreContentRetrieverConfigBlueprint}.
- *
- * @see dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
- */
-@Prototype.Configured(EmbeddingStoreContentRetrieverConfigBlueprint.CONFIG_ROOT)
+@Prototype.Configured(ContentRetrieverConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-interface EmbeddingStoreContentRetrieverConfigBlueprint {
+interface ContentRetrieverConfigBlueprint {
     /**
      * The default configuration prefix.
      */
-    String CONFIG_ROOT = "langchain4j.rag.embedding-store-content-retriever";
+    String CONFIG_ROOT = "langchain4j.content-retrievers";
 
     /**
-     * If set to {@code false}, embedding store content retriever will be disabled even if configured.
+     * If set to {@code false}, component will be disabled even if configured.
      *
-     * @return whether the content retriever should be enabled
+     * @return whether the component should be enabled
      */
     @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean enabled();
+
+    @Option.Configured
+    @Option.Default("EMBEDDING_STORE_CONTENT_RETRIEVER")
+    @Option.AllowedValues({
+            @Option.AllowedValue(value = "embedding-store-content-retriever",
+                                 description = "Embedding store backed content retriever"),
+            @Option.AllowedValue(value = "web-search-content-retriever",
+                                 description = "Web search backed content retriever"),
+    })
+    Type type();
 
     /**
      * Embedding store to use in the content retriever.
      *
      * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
-     * can be used to select a named bean
+     *         can be used to select a named bean
      */
     @Option.Configured
-    @Option.RegistryService
-    EmbeddingStore<TextSegment> embeddingStore();
+    String embeddingStore();
 
     /**
      * Explicit embedding model to use in the content retriever.
      *
      * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
-     * can be used to select a named bean
+     *         can be used to select a named bean
      */
     @Option.Configured
-    @Option.RegistryService
-    Optional<EmbeddingModel> embeddingModel();
+    Optional<String> embeddingModel();
 
     /**
      * The display name.
@@ -89,4 +89,19 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
      */
     @Option.Configured
     Optional<Double> minScore();
+
+    enum Type {
+        EMBEDDING_STORE_CONTENT_RETRIEVER("embedding-store-content-retriever"),
+        WEB_SEARCH_CONTENT_RETRIEVER("web-search-content-retriever");
+        private final String name;
+
+        Type(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
 }

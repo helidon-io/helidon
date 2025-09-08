@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.langchain4j.openai;
+package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -22,13 +22,13 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
 import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
+import static io.helidon.integrations.langchain4j.providers.openai.OpenAiConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,10 +38,12 @@ import static org.hamcrest.Matchers.notNullValue;
 @Testing.Test
 class ChatModelConfigTest {
 
+    public static final String MODEL_NAME = "test-chat-model";
+
     @Test
     void testDefaultRoot() {
-        var config = OpenAiChatModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                .get(OpenAiChatModelConfig.CONFIG_ROOT));
+        var config = OpenAiChatModelConfig.create(
+                OpenAiConstants.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), is(true));
@@ -102,18 +104,18 @@ class ChatModelConfigTest {
     void testNamedClient(ServiceRegistry registry) {
 
         var yaml = """
-                langchain4j.open-ai:
-                  chat-model:
+                langchain4j.models:
+                  test-chat-model:
                     http-client-builder.service-registry.named: "namedHttpClient"
                 """;
 
         var config = OpenAiChatModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(yaml, MediaTypes.APPLICATION_X_YAML)
-                                .get(OpenAiChatModelConfig.CONFIG_ROOT))
+                .config(OpenAiConstants.create(Config.just(yaml, MediaTypes.APPLICATION_X_YAML), MODEL, MODEL_NAME))
                 .build();
 
-        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()), is(Optional.of("namedHttpClient")));
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()),
+                   is(Optional.of("namedHttpClient")));
     }
 
     @Test
@@ -124,6 +126,7 @@ class ChatModelConfigTest {
                 .config(Config.empty())
                 .build();
 
-        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()), is(Optional.of("defaultHttpClient")));
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()),
+                   is(Optional.of("defaultHttpClient")));
     }
 }
