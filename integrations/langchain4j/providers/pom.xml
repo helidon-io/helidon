@@ -41,6 +41,7 @@
         <module>jlama</module>
         <module>cohere</module>
         <module>coherence</module>
+        <module>mock</module>
     </modules>
 
     <build>

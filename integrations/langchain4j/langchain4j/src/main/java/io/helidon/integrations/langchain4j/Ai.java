@@ -104,6 +104,23 @@ public final class Ai {
     }
 
     /**
+     * Annotation that marks a type (typically a LangChain4j declarative service interface)
+     * as an **agent** and assigns it a logical name.
+     *
+     * @see dev.langchain4j.agentic.Agent
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface Agent {
+        /**
+         * The logical name of the agent.
+         *
+         * @return the agent name
+         */
+        String value();
+    }
+
+    /**
      * Annotation to specify a ChatModel for the service.
      */
     @Target(TYPE)

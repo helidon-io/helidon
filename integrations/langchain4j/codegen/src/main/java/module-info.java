@@ -29,7 +29,8 @@ module io.helidon.integrations.langchain4j.codegen {
     provides io.helidon.codegen.spi.CodegenExtensionProvider
             with io.helidon.integrations.langchain4j.codegen.AiServiceCodegenProvider,
                     io.helidon.integrations.langchain4j.codegen.ModelFactoryCodegenProvider,
-                    io.helidon.integrations.langchain4j.codegen.ModelConfigCodegenProvider;
+                    io.helidon.integrations.langchain4j.codegen.ModelConfigCodegenProvider,
+                    io.helidon.integrations.langchain4j.codegen.AgentCodegenProvider;
 
     provides io.helidon.codegen.spi.TypeMapperProvider
             with io.helidon.integrations.langchain4j.codegen.LcToolsMapperProvider;

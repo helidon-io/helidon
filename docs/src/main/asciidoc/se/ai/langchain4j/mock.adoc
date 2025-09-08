@@ -1,0 +1,78 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J Mock ChatModel Provider
+:description: LangChain4J Mock ChatModel
+:keywords: helidon, AI, LangChain4J, LC4J, Mock
+:feature-name: LangChain4J Mock ChatModel
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<MockChatModel, MockChatModel>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+The mock chat model enables deterministic testing of LangChain4j features such as agents, tools, and chat memory without invoking an external AI service.
+By configuring rule patterns, fixed responses, and templated replies, tests remain reproducible and stable across runs, allowing developers to verify interaction logic, component chaining, and error handling in isolation.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
+</dependency>
+----
+
+== Components
+
+=== MockChatModel
+
+To automatically create and add `MockChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  mock:
+    chat-model:
+      enabled: true
+      rules:
+        - pattern: .*create.*new Helidon project.*
+        - pattern: .*Helidon is cool.*
+          response: Cool Hello!
+        - pattern: .*Return this message:\s+'([^']+)'.*
+          template: "The message is: $1"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+include::{rootdir}/config/io_helidon_integrations_langchain4j_providers_mock_MockChatModel.adoc[tag=config,leveloffset=+1]
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4J Integration]
