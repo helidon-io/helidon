@@ -429,7 +429,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.increasePaddingLevel();
         for (InnerClass innerClass : innerClasses) {
             writer.write("\n");
-            innerClass.writeComponent(writer, declaredTokens, imports, this.classType);
+            innerClass.writeComponent(writer, declaredTokens, imports, innerClass.classType());
             writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();

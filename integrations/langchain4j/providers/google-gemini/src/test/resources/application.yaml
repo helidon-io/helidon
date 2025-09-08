@@ -14,30 +14,22 @@
 # limitations under the License.
 #
 
-langchain4j.google-gemini:
-  # ChatModel
-  chat-model:
-    api-key: TEST_KEY
-    enabled: true
-    model-name: model-name
-    base-url: base-url
-    temperature: 36.6
-    top-k: 5
-    top-p: 10
-    seed: 100
-    timeout: PT10M
-    max-retries: 3
-    log-requests: true
-    log-responses: true
-  # StreamingChatModel
-  streaming-chat-model:
-    api-key: TEST_KEY
-    model-name: model-name
-    base-url: base-url
-    temperature: 36.6
-    top-k: 5
-    top-p: 10
-    seed: 100
-    timeout: PT10M
-    log-requests: true
-    log-responses: true
+langchain4j:
+  models:
+    test-model:
+      provider: google-gemini
+
+  providers:
+    google-gemini:
+      api-key: TEST_KEY
+      enabled: true
+      model-name: model-name
+      base-url: base-url
+      temperature: 36.6
+      top-k: 5
+      top-p: 10
+      seed: 100
+      timeout: PT10M
+      max-retries: 3
+      log-requests: true
+      log-responses: true

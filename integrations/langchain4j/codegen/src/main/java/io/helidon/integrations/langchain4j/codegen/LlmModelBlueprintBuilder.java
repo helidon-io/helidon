@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -46,14 +49,23 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
         this.namePrefix = modelAnnotation.typeValue().map(TypeName::className)
                 .orElseThrow(() -> new CodegenException("Missing model class"));
 
-        String modelTypeKey = ModelType.forTypeInfo(modelType).configKey();
-        this.configRoot = "langchain4j." + providerKey + "." + modelTypeKey;
+        this.configRoot = "langchain4j.providers." + providerKey;
         TypeName blueprintTypeName = TypeName.builder()
                 .packageName(lc4jProviderTypeInfo.typeName().packageName())
                 .className(namePrefix + "ConfigBlueprint")
                 .build();
 
         initClassModel(blueprintTypeName, lc4jProviderTypeInfo.typeName(), Optional.of(lc4jProviderTypeInfo.typeName()));
+        classModelBuilder()
+                .addField(Field.builder()
+                                  .name("PROVIDER_KEY")
+                                  .isFinal(true)
+                                  .isStatic(true)
+                                  .type(TypeNames.STRING)
+                                  .accessModifier(AccessModifier.PUBLIC)
+                                  .addContentLiteral(providerKey)
+                                  .addDescriptionLine("AI provider config key.")
+                                  .build());
         addEnableProperty();
     }
 
@@ -76,12 +88,15 @@ class LlmModelBlueprintBuilder extends IntrospectionBlueprintBuilder {
         var methodBuilder = Method.builder()
                 .name("enabled")
                 .addAnnotation(Annotation.create(LangchainTypes.OPT_CONFIGURED))
+                .addAnnotation(Annotation.builder()
+                                       .typeName(LangchainTypes.OPT_DEFAULT_BOOLEAN)
+                                       .addProperties(Map.of("value", AnnotationProperty.create(true)))
+                                       .build())
                 .returnType(TypeNames.PRIMITIVE_BOOLEAN)
                 .javadoc(Javadoc.builder()
-                                 .add("If set to {@code false} (default), " + this.namePrefix + " will not be "
+                                 .add("If set to {@code false}, " + this.namePrefix + " will not be "
                                               + "available even if configured.")
-                                 .returnDescription("whether " + this.namePrefix + " is enabled, defaults to {@code"
-                                                            + " false}")
+                                 .returnDescription("whether " + this.namePrefix + " is enabled, defaults to {@code true}")
                                  .build());
 
         classModelBuilder().addMethod(methodBuilder.build());
