@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2017, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,40 +40,6 @@ rsa-current:
 
   passwords: [
     "${RSA-P=fXoVMRlWzlj4fUPnLYFm2h0hSqnKgJqzJLiSslSfmf5MLXRYxNT0MKDZfmGN1If1E4/TR0jeVW/myPUaAJnO3tpadi6AyWsyz6pmEt2mzXZ+yQa1Em0/6ORiqnR2NedyrtVkn8lWL2YIkWfqbNwHODB3jehJ/BPfXru0WNDNRw3jVlPA33FsLBJFeZSRPs+fu1jNu/SeSjvS23a0+rGHUR/zeDP+jqHGEEjiUb73RMRBgvaBxU3RPM2dJ4hWOMKssjYJeu6SOidc3Ej9HpL1XNw5lGfQrqU2u7Lkga1uKd7eW1hSQZQEypcAa6ZtXrKZS4sIXwKqyYt3mdPJaUnzOA==}"
-  ]
-
-aes-legacy:
-  # Secret in clear text - for non-prod environments, this is enough. Intentionally wrapped as password to protect for prod.
-  pwd1: "${CLEAR=known_password}"
-  # A reference to another property (and maybe in the future to a key in a "wallet" service)
-  pwd2: "${ALIAS=aes-legacy.pwd1}"
- # "master" password encrypted password
-  pwd4: "${AES=YbaZGjQfwOv0htF2nmRYaOMYp0+qY/IRQUlWHfRKeTw6Q2uy33Rp8ZhTwv0oDywE}"
-
-  # empty string
-  pwd6: "${AES=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}"
-  # encrypted alias
-  pwd7: "${ALIAS=aes-legacy.pwd4}"
-  # missing alias
-  pwd8: "${ALIAS=missing}"
-  # wrong encryption
-  pwd9: "${AES=not really encrypted}"
-
-  pwd11: "${ALIAS=aes-legacy.pwd2}"
-  pwd12: "${ALIAS=aes-legacy.pwd11}"
-
-  passwords: [
-    "${AES=LrbVVJOnn82fjl9ioV0pIDnYDhoNZp21KIEIjX8nTadlnlM8VQu2XXjJv8MFfHgm}",
-    "${AES=xAzTBAstoNzvq2qk7szFGreIEfdxNx4OkIuLZHMUO/+p2441Sd4DkdmqgFKv0zNx}"
-  ]
-
-  objects: [
-  {
-    pwd: "${AES=gMTQIU+zcu9UPkGY8IKpYoVV2sxPna4O6rtlgKXtkqspSyxbLJMiu+VgqZq7okMX}"
-  },
-  {
-    pwd: "${AES=DalgBVpVjvbqNgC+jCM5AmMG0rr4BlTf0XQbJVs85ukch/PsF8reJ1NqGHF1GqgN}"
-  }
   ]
 
   customEnc: "${URGH=argh}"

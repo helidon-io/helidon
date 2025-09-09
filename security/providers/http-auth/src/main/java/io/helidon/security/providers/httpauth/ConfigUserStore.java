@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class ConfigUserStore implements SecureUserStore {
      * {
      *   login = "jill"
      *   # master password is "jungle", password is "password"
-     *   password = "${AES=3XQ8A1RszE9JbXl+lUnnsX0gakuqjnTyp8YJWIAU1D3SiM2TaSnxd6U0/LjrdJYv}"
+     *   password = "${GCM=3XQ8A1RszE9JbXl+lUnnsX0gakuqjnTyp8YJWIAU1D3SiM2TaSnxd6U0/LjrdJYv}"
      *   roles = ["user"]
      * }
      * ]

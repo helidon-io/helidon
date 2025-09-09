@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,7 +242,7 @@ public class DemoTest {
         assertThat(appConfig.getPageSize(), is(20));
         assertThat(appConfig.getBasicRange(), contains(-20, 20));
         assertThat(appConfig.isStorageEnabled(), is(false));
-        assertThat(appConfig.getStoragePassphrase(), is("${AES=thisIsEncriptedPassphrase}"));
+        assertThat(appConfig.getStoragePassphrase(), is("${GCM=thisIsEncriptedPassphrase}"));
     }
 
     @Test
@@ -263,7 +263,7 @@ public class DemoTest {
         assertThat(appConfig.getPageSize(), is(20));
         assertThat(appConfig.getBasicRange(), contains(-20, 20));
         assertThat(appConfig.isStorageEnabled(), is(false));
-        assertThat(appConfig.getStoragePassphrase(), is("${AES=thisIsEncriptedPassphrase}"));
+        assertThat(appConfig.getStoragePassphrase(), is("${GCM=thisIsEncriptedPassphrase}"));
     }
 
     @Test
