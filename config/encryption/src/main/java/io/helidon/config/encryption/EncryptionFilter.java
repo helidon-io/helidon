@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import io.helidon.config.spi.ConfigFilter;
  * <p>
  * Password in properties must be stored as follows:
  * <ul>
- * <li>${AES=base64} - encrypted password using a master password (must be provided to prime through configuration, system
+ * <li>${GCM=base64} - encrypted password using a master password (must be provided to prime through configuration, system
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
  * its location must be provided to prime through configuration, system property or environment variable)</li>
@@ -46,7 +46,7 @@ import io.helidon.config.spi.ConfigFilter;
  * </ul>
  * Example:
  * <pre>
- * google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
+ * google_client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
  * service_password=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
  * another_password=${service_password}
  * cleartext_password=${CLEAR=known_password}
@@ -205,7 +205,7 @@ public final class EncryptionFilter implements ConfigFilter {
     }
 
     private String decryptAes(char[] masterPassword, String value) {
-        // google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
+        // google_client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
 
         if (value.startsWith(PREFIX_GCM)) {
             String b64Value = value.substring(PREFIX_GCM.length(), value.length() - 1);
