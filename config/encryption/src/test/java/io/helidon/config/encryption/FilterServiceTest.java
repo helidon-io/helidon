@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test for automatic filter loading.
  */
-class TestFilterService {
+class FilterServiceTest {
     @Test
     void testFiltering() {
         Config config = Config.create().get("aes-current");
