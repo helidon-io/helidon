@@ -403,7 +403,8 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
                 Path fileNamePath = file.getFileName();
                 String fileName = fileNamePath == null ? "" : fileNamePath.toString();
                 if (metadataFiles.contains(fileName)) {
-                    metadata.add(MetadataFileImpl.create(rootLocation + "/" + metaDir.relativize(file),
+                    String relativePath = metaDir.relativize(file).toString().replace('\\', '/');
+                    metadata.add(MetadataFileImpl.create(rootLocation + "/" + relativePath,
                                                          fileName,
                                                          file));
                 }
