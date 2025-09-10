@@ -56,6 +56,7 @@ import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -67,6 +68,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("deprecation")
+@Testing.Test
 class ServiceCodegenTypesTest {
     @SuppressWarnings("removal")
     @Test
