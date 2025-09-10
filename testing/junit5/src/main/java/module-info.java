@@ -17,7 +17,7 @@
 /**
  * See {@link io.helidon.testing.junit5}.
  */
-module io.helidon.testing.junit5 {
+open module io.helidon.testing.junit5 {
     requires org.junit.jupiter.api;
     requires io.helidon.service.registry;
     requires io.helidon.logging.common;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ module io.helidon.service.tests.codegen.test {
     requires hamcrest.all;
     requires org.junit.jupiter.api;
     requires io.helidon.service.metadata;
+    requires io.helidon.testing.junit5;
 
     opens io.helidon.service.tests.codegen to org.junit.platform.commons;
 }
