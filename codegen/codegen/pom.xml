@@ -40,6 +40,10 @@
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>

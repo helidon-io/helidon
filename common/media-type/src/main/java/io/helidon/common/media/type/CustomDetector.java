@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ package io.helidon.common.media.type;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
 import io.helidon.common.media.type.spi.MediaTypeDetector;
+import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataFile;
 
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
@@ -33,23 +33,21 @@ import static java.lang.System.Logger.Level.TRACE;
  * Detector for custom media type mappings.
  */
 class CustomDetector implements MediaTypeDetector {
-    private static final String MEDIA_TYPE_RESOURCE = "META-INF/helidon/media-types.properties";
     private static final System.Logger LOGGER = System.getLogger(CustomDetector.class.getName());
     private static final Map<String, MediaType> MAPPINGS = new HashMap<>();
 
     static {
         // look for configured mapping by a user
         // to override existing mappings from default
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        var resources = MetadataDiscovery.getInstance()
+                .list(MetadataDiscovery.MEDIA_TYPES_FILE);
 
         try {
-            Enumeration<URL> resources = classLoader.getResources(MEDIA_TYPE_RESOURCE);
-            while (resources.hasMoreElements()) {
-                URL url = resources.nextElement();
+            for (MetadataFile resource : resources) {
                 if (LOGGER.isLoggable(TRACE)) {
-                    LOGGER.log(TRACE, "Loading custom media type mapping from: " + url);
+                    LOGGER.log(TRACE, "Loading custom media type mapping from: " + resource.fileName());
                 }
-                try (InputStream is = url.openStream()) {
+                try (InputStream is = resource.inputStream()) {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String name : properties.stringPropertyNames()) {

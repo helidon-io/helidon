@@ -41,6 +41,7 @@
     <modules>
         <module>hson</module>
         <module>reflection</module>
+        <module>metadata</module>
     </modules>
 
     <build>

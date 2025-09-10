@@ -1,10 +1,10 @@
 {
     "resources": [
         {
-            "pattern": "META-INF/helidon/media-types.properties"
+            "pattern": "META-INF/helidon/.*/?media-types.properties$"
         },
         {
-            "pattern": "io/helidon/common/media/type/default-media-types.properties"
+            "pattern": "io/helidon/common/media/type/default-media-types.properties$"
         }
     ]
 }

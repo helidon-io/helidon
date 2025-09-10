@@ -46,6 +46,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.MetadataDiscovery;
 
 import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPE;
 
@@ -319,7 +320,11 @@ class BuilderCodegen implements CodegenExtension {
 
     private void updateServiceLoaderResource() {
         CodegenFiler filer = ctx.filer();
-        FilerTextResource serviceLoaderResource = filer.textResource("META-INF/helidon/service.loader");
+        String moduleName = ctx.moduleName().orElse(null);
+        String resourceLocation = MetadataDiscovery.LOCATION
+                + (moduleName == null ? "" : "/" + moduleName)
+                + "/" + MetadataDiscovery.SERVICE_LOADER_FILE;
+        FilerTextResource serviceLoaderResource = filer.textResource(resourceLocation);
         List<String> lines = new ArrayList<>(serviceLoaderResource.lines());
         if (lines.isEmpty()) {
             lines.add("# List of service contracts we want to support either from service registry, or from service loader");
@@ -335,6 +340,8 @@ class BuilderCodegen implements CodegenExtension {
         if (modified) {
             serviceLoaderResource.lines(lines);
             serviceLoaderResource.write();
+            filer.manifest()
+                    .add(resourceLocation);
         }
     }
 

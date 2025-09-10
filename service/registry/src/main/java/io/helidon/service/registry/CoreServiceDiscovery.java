@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,11 +34,12 @@ import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataFile;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.metadata.Descriptors;
 
-import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 
@@ -51,24 +51,23 @@ class CoreServiceDiscovery implements ServiceDiscovery {
     private CoreServiceDiscovery(ServiceRegistryConfig config) {
         Map<TypeName, DescriptorHandler> allDescriptors = new LinkedHashMap<>();
 
-        ClassLoader classLoader = classLoader();
-
         // each line is a type:service-descriptor:weight:contract,contract
         if (config.discoverServices()) {
-            classLoader.resources(SERVICE_REGISTRY_LOCATION)
-                    .forEach(url -> {
-                        loadServices(url)
-                                .map(DescriptorHandlerImpl::new)
-                                .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(),
-                                                                          it));
-                    });
+            MetadataDiscovery.getInstance()
+                    .list(MetadataDiscovery.SERVICE_REGISTRY_FILE)
+                    .stream()
+                    .flatMap(CoreServiceDiscovery::loadServices)
+                    .map(DescriptorHandlerImpl::new)
+                    .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
         }
 
         List<DescriptorHandler> result = new ArrayList<>(allDescriptors.values());
 
         if (config.discoverServicesFromServiceLoader()) {
             // each line is a provider type name (and may have zero or more implementations)
-            classLoader.resources(SERVICES_LOADER_RESOURCE)
+            MetadataDiscovery.getInstance()
+                    .list(MetadataDiscovery.SERVICE_LOADER_FILE)
+                    .stream()
                     .flatMap(CoreServiceDiscovery::loadLines)
                     .filter(not(Line::isEmpty))
                     .filter(not(Line::isComment))
@@ -105,8 +104,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                 return (Class) CoreServiceDiscovery.class.getClassLoader().loadClass(className.declaredName());
             } catch (ClassNotFoundException ex) {
                 var toThrow = new ServiceRegistryException("Resolution of type \"" + className.declaredName()
-                                                           + "\" to class failed.",
-                                                   ex);
+                                                                   + "\" to class failed.",
+                                                           ex);
                 toThrow.addSuppressed(e);
                 throw toThrow;
             }
@@ -130,17 +129,9 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private static ClassLoader classLoader() {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl == null) {
-            return CoreServiceDiscovery.class.getClassLoader();
-        }
-        return cl;
-    }
+    private static Stream<Line> loadLines(MetadataFile resource) {
 
-    private static Stream<Line> loadLines(URL url) {
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), UTF_8))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(resource.inputStream(), UTF_8))) {
             List<Line> lines = new ArrayList<>();
 
             String line;
@@ -148,12 +139,12 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
             while ((line = br.readLine()) != null) {
                 lineNumber++; // we want to start with 1
-                lines.add(new Line(url.toString(), line, lineNumber));
+                lines.add(new Line(resource.absoluteLocation(), line, lineNumber));
             }
 
             return lines.stream();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to read services from " + url, e);
+            LOGGER.log(Level.WARNING, "Failed to read services from " + resource.absoluteLocation(), e);
             return Stream.of();
         }
     }
@@ -178,19 +169,19 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                                          LazyValue.create(descriptor));
     }
 
-    private Stream<DescriptorMetadata> loadServices(URL url) {
+    private static Stream<DescriptorMetadata> loadServices(MetadataFile resource) {
 
         Hson.Array array;
 
-        try (var stream = url.openStream()) {
+        try (var stream = resource.inputStream()) {
             array = Hson.parse(stream)
                     .asArray();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to read services from " + url, e);
+            LOGGER.log(Level.WARNING, "Failed to read services from " + resource.absoluteLocation(), e);
             return Stream.of();
         }
 
-        return Descriptors.descriptors("classpath descriptor " + url,
+        return Descriptors.descriptors("classpath descriptor " + resource.absoluteLocation(),
                                        array)
                 .stream();
 

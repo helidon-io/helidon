@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.service.metadata;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.hson.Hson;
 
 /**
@@ -28,7 +29,8 @@ public class Descriptors {
     /**
      * Location of the Helidon service registry metadata file.
      */
-    public static final String SERVICE_REGISTRY_LOCATION = "META-INF/helidon/service-registry.json";
+    public static final String SERVICE_REGISTRY_LOCATION = MetadataDiscovery.LOCATION + "/"
+            + MetadataDiscovery.SERVICE_REGISTRY_FILE;
     private static final int CURRENT_REGISTRY_VERSION = 1;
     private static final int DEFAULT_REGISTRY_VERSION = 1;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.service.registry;
 
 import java.util.List;
 
+import io.helidon.metadata.MetadataDiscovery;
+
 /**
  * Access to discovered service metadata.
  */
@@ -28,7 +30,7 @@ public interface ServiceDiscovery {
      * the registry to be discoverable in addition to services defined in
      * {@link io.helidon.service.metadata.Descriptors#SERVICE_REGISTRY_LOCATION}.
      */
-    String SERVICES_LOADER_RESOURCE = "META-INF/helidon/service.loader";
+    String SERVICES_LOADER_RESOURCE = MetadataDiscovery.LOCATION + "/" + MetadataDiscovery.SERVICE_LOADER_FILE;
 
     /**
      * Create a new instance that discovers service descriptors from classpath.

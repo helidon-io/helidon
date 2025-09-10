@@ -49,6 +49,7 @@
         <module>codegen</module>
         <module>wildcard</module>
         <module>inheritance</module>
+        <module>metadata</module>
     </modules>
 
 </project>

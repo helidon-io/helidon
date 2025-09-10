@@ -44,6 +44,10 @@
             <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
