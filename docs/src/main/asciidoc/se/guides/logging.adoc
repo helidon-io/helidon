@@ -38,7 +38,7 @@ This guide describes various aspects of logging support in Helidon.
 Helidon modules use the Java Platform Logging API (`System.Logger`) for logging. Therefore,
 Helidon applications will use Java Util Logging (JUL) as the default log framework.
 
-If in your application you wish to use another logging framework such as log4j or slf4j,
+If you wish to use another logging framework such as log4j or slf4j,
 then you can do so. See section <<log4j and slf4j support,log4j and slf4j support>>
 
 == Customizing Logging with Java Util Logging
@@ -170,7 +170,7 @@ If you include tracing in your project, Helidon automatically provides the MDC k
 
 === Storing values in MDC
 
-To set your own values in the MDC you can use `io.helidon.logging.common.HelidonMdc` class:
+To set your own values in the MDC you can use the `io.helidon.logging.common.HelidonMdc` class:
 
 [source,java]
 ----
@@ -180,7 +180,7 @@ HelidonMdc.set("otherName", () -> retrieveStringValue()); // <2>
 <1> Stores an attribute named "name" with the fixed value "Joe" in the MDC.
 <2> Stores an attribute named "otherName" with the given `Supplier<String>`.
 
-The `set(<String, String>`) method associates the name with a fixed value. The `set(<String>, <Supplier<String>>) form associates the name with a lambda or method reference. This second form might be useful if your code (or Helidon) maintains the value you want to log in some context that your code can access and if that value changes as the server runs. In both cases, when your logging format refers to the name logging extracts the corresponding fixed value or invoked the supplier to obtain the value, using the result in log output.
+The `set(<String, String>)` method associates the name with a fixed value. The `set(<String>, <Supplier<String>>)` form associates the name with a lambda or method reference. This second form might be useful if your code (or Helidon) maintains the value you want to log in some context that your code can access and if that value changes as the server runs. In both cases, when your logging format refers to the name logging extracts the corresponding fixed value or invokes the supplier to obtain the value, using the result in log output.
 
 `HelidonMdc` works with the supported logging frameworks. But if you prefer, you can
 use a logging framework specific API. Such as `org.slf4j.MDC` or `org.apache.logging.log4j.ThreadContext` instead.
