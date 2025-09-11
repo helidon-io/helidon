@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.builder.tests</groupId>
-    <artifactId>helidon-builder-tests-project</artifactId>
+    <groupId>io.helidon.metadata.tests</groupId>
+    <artifactId>helidon-metadata-tests-project</artifactId>
 
-    <name>Helidon Builder Tests Project</name>
+    <name>Helidon Metadata Tests Project</name>
     <packaging>pom</packaging>
 
     <properties>
@@ -44,11 +44,6 @@
     </properties>
 
     <modules>
-        <module>common-types</module>
-        <module>builder</module>
-        <module>codegen</module>
-        <module>wildcard</module>
-        <module>inheritance</module>
+        <module>bad-manifest</module>
     </modules>
-
 </project>

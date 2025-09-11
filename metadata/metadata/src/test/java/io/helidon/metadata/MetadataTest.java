@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MetadataTest {
 
@@ -50,15 +49,9 @@ public class MetadataTest {
     }
 
     @Test
-    public void testInvalidManifest() {
-        // manifest contains reference to non-existent file
-        assertThrows(IllegalArgumentException.class,
-                     () -> MetadataDiscovery.create(config -> config.location("META-INF/unit1")));
-    }
-
-    @Test
     public void testClasspathScanning() {
-        MetadataDiscovery metadata = MetadataDiscoveryImpl.createFromClasspathScanning(MetadataDiscoveryConfig.create());
+        MetadataDiscovery metadata = MetadataDiscoveryImpl.
+                createFromClasspathScanning(MetadataDiscoveryContext.create(MetadataTest.class.getClassLoader()));
 
         var serviceLoaders = metadata.list("service.loader")
                 .stream()

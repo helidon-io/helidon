@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -50,6 +51,8 @@ import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 class MetadataDiscoveryImpl implements MetadataDiscovery {
+    static final String SYSTEM_PROPERTY_MODE = "io.helidon.metadata.mode";
+
     private static final System.Logger LOGGER = System.getLogger(MetadataDiscoveryImpl.class.getName());
 
     private final Map<String, List<MetadataFile>> metadata;
@@ -58,11 +61,12 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         this.metadata = metadata;
     }
 
-    static MetadataDiscovery create(MetadataDiscoveryConfig config) {
-        Mode mode = config.mode();
-
+    static MetadataDiscovery create(ClassLoader cl) {
+        String modeString = System.getProperty("io.helidon.metadata.mode", Mode.AUTO.name()).toUpperCase(Locale.ROOT);
+        Mode mode = Mode.valueOf(modeString);
+        var context = MetadataDiscoveryContext.create(cl);
         if (mode == Mode.AUTO) {
-            mode = guessMode(config);
+            mode = guessMode(context);
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -71,13 +75,17 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
 
         return switch (mode) {
             case AUTO -> throw new IllegalStateException("We have already guessed mode, this should never be reached");
-            case RESOURCES -> createFromResources(config);
-            case SCANNING -> createFromClasspathScanning(config);
+            case RESOURCES -> createFromResources(context);
+            case SCANNING -> createFromClasspathScanning(context);
             case NONE -> new MetadataDiscoveryImpl(Map.of());
         };
     }
 
-    static MetadataDiscovery createFromClasspathScanning(MetadataDiscoveryConfig config) {
+    static MetadataDiscovery create() {
+        return create(classLoader());
+    }
+
+    static MetadataDiscovery createFromClasspathScanning(MetadataDiscoveryContext ctx) {
 
         // all files and directories that are part of the current classpath/module path
         Set<Path> configuredClasspath = modules();
@@ -86,8 +94,8 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
 
         Deque<Path> pathStack = new ArrayDeque<>(configuredClasspath);
 
-        String location = config.location();
-        Set<String> metadataFiles = config.metadataFiles();
+        String location = ctx.location();
+        Set<String> metadataFiles = ctx.metadataFiles();
         while (!pathStack.isEmpty()) {
             Path path = pathStack.pop();
             if (!Files.exists(path)) {
@@ -156,15 +164,15 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
                 + '}';
     }
 
-    private static Mode guessMode(MetadataDiscoveryConfig config) {
+    private static Mode guessMode(MetadataDiscoveryContext ctx) {
         // check if there is more than one MANIFEST.MF on the classpath
-        if (isMultipleJars(config.classLoader())) {
+        if (isMultipleJars(ctx.classLoader())) {
             LOGGER.log(Level.TRACE, "Multiple jars on classpath, using resource discovery");
             return Mode.RESOURCES;
         }
         // use scanning unless we have merged metadata file
-        var manifests = config.classLoader()
-                .resources(config.location() + "/" + config.manifestFile())
+        var manifests = ctx.classLoader()
+                .resources(ctx.location() + "/" + ctx.manifestFile())
                 .distinct()
                 .toList();
 
@@ -245,7 +253,7 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         return modules;
     }
 
-    private static MetadataDiscovery createFromResources(MetadataDiscoveryConfig config) {
+    private static MetadataDiscovery createFromResources(MetadataDiscoveryContext config) {
         Map<String, List<MetadataFile>> metadataMap = new HashMap<>();
 
         /*
@@ -372,6 +380,14 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         }
     }
 
+    private static ClassLoader classLoader() {
+        var classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = MetadataDiscoveryImpl.class.getClassLoader();
+        }
+        return classLoader;
+    }
+
     private record FoundFile(String resourceDirectory, String fileName) {
     }
 
@@ -423,7 +439,7 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
 
             MetadataDiscovery instance;
             try {
-                instance = CACHE.computeIfAbsent(classLoader(), it -> MetadataDiscovery.builder().classLoader(it).build());
+                instance = CACHE.computeIfAbsent(classLoader(), MetadataDiscoveryImpl::create);
 
                 if (CACHE.size() > 10) {
                     var iterator = CACHE.entrySet().iterator();

@@ -17,9 +17,6 @@
 package io.helidon.metadata;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Helidon metadata discovery.
@@ -90,40 +87,15 @@ public interface MetadataDiscovery {
     String MANIFEST_ID_LINE = "#HELIDON MANIFEST#";
 
     /**
-     * Default metadata files to find.
-     * <p>
-     * The following files are currently supported:
-     * <ul>
-     * <li>{@code service-registry.json}</li>
-     * <li>{@code feature-registry.json}</li>
-     * <li>{@code config-metadata.json}</li>
-     * <li>{@code service.loader}</li>
-     * <li>{@code serial-config.properties}</li>
-     * <li>{@code media-types.properties}</li>
-     * <li>{@code default-media-types.properties}</li>
-     * </ul>
-     */
-    Set<String> METADATA_FILES = Set.of(SERVICE_REGISTRY_FILE,
-                                        FEATURE_REGISTRY_FILE,
-                                        CONFIG_METADATA_FILE,
-                                        SERVICE_LOADER_FILE,
-                                        SERIAL_CONFIG_FILE,
-                                        MEDIA_TYPES_FILE,
-                                        FEATURE_METADATA_FILE);
-
-    /**
      * Create a new metadata instance with default configuration - current context class-loader,
      * default manifest location, and default metadata file names.
      *
      * @return metadata instance
      * @see #LOCATION
      * @see #MANIFEST_FILE
-     * @see #METADATA_FILES
      */
     static MetadataDiscovery create() {
-        String modeString = System.getProperty("io.helidon.metadata.mode", Mode.AUTO.name()).toUpperCase(Locale.ROOT);
-        Mode mode = Mode.valueOf(modeString);
-        return create(config -> config.mode(mode));
+        return MetadataDiscoveryImpl.create();
     }
 
     /**
@@ -142,37 +114,6 @@ public interface MetadataDiscovery {
     }
 
     /**
-     * Create metadata using the provided configuration.
-     *
-     * @param metadataConfig configuration
-     * @return metadata instance
-     */
-    static MetadataDiscovery create(MetadataDiscoveryConfig metadataConfig) {
-        return MetadataDiscoveryImpl.create(metadataConfig);
-    }
-
-    /**
-     * Create metadata customizing its configuration.
-     *
-     * @param consumer configuration consumer
-     * @return metadata instance
-     */
-    static MetadataDiscovery create(Consumer<MetadataDiscoveryConfig.Builder> consumer) {
-        var builder = builder();
-        consumer.accept(builder);
-        return create(builder.buildPrototype());
-    }
-
-    /**
-     * Create a new fluent API builder.
-     *
-     * @return a new builder instance
-     */
-    static MetadataDiscoveryConfig.Builder builder() {
-        return MetadataDiscoveryConfig.builder();
-    }
-
-    /**
      * List all metadata instances by file name.
      *
      * @param fileName name of the file
@@ -183,6 +124,7 @@ public interface MetadataDiscovery {
 
     /**
      * Modes of discovery.
+     * Can be controlled through system property {@value MetadataDiscoveryImpl#SYSTEM_PROPERTY_MODE}.
      */
     enum Mode {
         /**

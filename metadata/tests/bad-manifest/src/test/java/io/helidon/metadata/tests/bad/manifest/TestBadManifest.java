@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.metadata;
+package io.helidon.metadata.tests.bad.manifest;
 
-import java.util.List;
+import io.helidon.metadata.MetadataDiscovery;
 
-public interface MetadataDiscovery {
-    String LOCATION = "";
-    List<String> METADATA_FILES = List.of();
-    String MANIFEST_FILE = "";
-    enum Mode {AUTO}
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class TestBadManifest {
+
+    @Test
+    public void testInvalidManifest() {
+        // manifest contains reference to non-existent file
+        assertThrows(IllegalArgumentException.class,
+                     MetadataDiscovery::create);
+    }
 }
