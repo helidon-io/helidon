@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Micrometer adapter for Helidon metrics API.
  */
+@Features.Name("Metrics")
+@Features.Description("Metrics")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Metrics"})
 module io.helidon.metrics.providers.micrometer {
+
+    requires static io.helidon.common.features.api;
+
     requires io.helidon.metrics.api;
     requires micrometer.core;
     requires static micrometer.registry.prometheus;
