@@ -11,6 +11,32 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+# [4.2.7]
+
+This release contains important bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- For MP CORS, suppress explanation of rejection in response; log it instead [10671](https://github.com/helidon-io/helidon/pull/10671)
+- Reduce text in CORS response status [10670](https://github.com/helidon-io/helidon/pull/10670)
+- Set addClasspath to true so config encryption jar is runnable [10669](https://github.com/helidon-io/helidon/pull/10669)
+- Upgrade jgit to 7.3.0 [10653](https://github.com/helidon-io/helidon/pull/10653)
+- Upgrade netty to 4.1.126.Final [10652](https://github.com/helidon-io/helidon/pull/10652)
+- Upgrade oci sdk to 3.72.0 [10652](https://github.com/helidon-io/helidon/pull/10652)
+
+# [4.2.6]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- WebServer: Connection checks update [10539](https://github.com/helidon-io/helidon/pull/10539)
+- Dependencies: Upgrade jaxb-core, -impl, -runtime [10537](https://github.com/helidon-io/helidon/pull/10537)
+- Build: Ensure aggregated javadocs are built as part of release profile [10536](https://github.com/helidon-io/helidon/pull/10536)
 
 ## [4.2.5]
 
@@ -1861,6 +1887,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.2.7]: https://github.com/oracle/helidon/compare/4.2.6...4.2.7
+[4.2.6]: https://github.com/oracle/helidon/compare/4.2.5...4.2.6
 [4.2.5]: https://github.com/oracle/helidon/compare/4.2.4...4.2.5
 [4.2.4]: https://github.com/oracle/helidon/compare/4.2.3...4.2.4
 [4.2.3]: https://github.com/oracle/helidon/compare/4.2.2...4.2.3
