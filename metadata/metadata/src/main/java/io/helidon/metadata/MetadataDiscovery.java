@@ -101,7 +101,8 @@ public interface MetadataDiscovery {
 
     /**
      * As metadata is based on classpath, it can be used statically.
-     * This method will provide an instance created using {@link #create()}.
+     * This method will provide an instance created using {@link #create(io.helidon.metadata.MetadataDiscovery.Mode)}
+     * with mode set to {@link Mode#AUTO}.
      * For custom based instance, make sure to re-use the instance yourself, to avoid multiple discoveries.
      * <p>
      * This method does a check that verifies the static instance is for the current context class loader, to avoid
