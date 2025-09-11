@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import jakarta.ws.rs.core.Response;
  * MP implementation of {@link CorsSupportBase}.
  */
 class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, CorsSupportMp, CorsSupportMp.Builder> {
+
+    private static final System.Logger LOGGER = System.getLogger(CorsSupportMp.class.getName());
 
     /**
      *
@@ -205,7 +207,8 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
         @Override
         public Response forbidden(String message) {
-            return Response.status(Response.Status.FORBIDDEN).entity(message).build();
+            LOGGER.log(System.Logger.Level.TRACE, "Rejecting CORS request: " + message);
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
 
         @Override
