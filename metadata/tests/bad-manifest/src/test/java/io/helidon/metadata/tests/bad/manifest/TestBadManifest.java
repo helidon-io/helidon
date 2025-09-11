@@ -28,6 +28,6 @@ public class TestBadManifest {
     public void testInvalidManifest() {
         // manifest contains reference to non-existent file
         assertThrows(IllegalArgumentException.class,
-                     MetadataDiscovery::create);
+                     () -> MetadataDiscovery.create(MetadataDiscovery.Mode.RESOURCES));
     }
 }

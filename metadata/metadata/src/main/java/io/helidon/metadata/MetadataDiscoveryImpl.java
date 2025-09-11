@@ -61,10 +61,11 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         this.metadata = metadata;
     }
 
-    static MetadataDiscovery create(ClassLoader cl) {
-        String modeString = System.getProperty("io.helidon.metadata.mode", Mode.AUTO.name()).toUpperCase(Locale.ROOT);
-        Mode mode = Mode.valueOf(modeString);
-        var context = MetadataDiscoveryContext.create(cl);
+    static MetadataDiscovery create(Mode mode) {
+        return create(mode, MetadataDiscoveryContext.create(classLoader()));
+    }
+
+    static MetadataDiscovery create(Mode mode, MetadataDiscoveryContext context) {
         if (mode == Mode.AUTO) {
             mode = guessMode(context);
         }
@@ -81,8 +82,11 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         };
     }
 
-    static MetadataDiscovery create() {
-        return create(classLoader());
+    static MetadataDiscovery create(ClassLoader cl) {
+        String modeString = System.getProperty("io.helidon.metadata.mode", Mode.AUTO.name()).toUpperCase(Locale.ROOT);
+        Mode mode = Mode.valueOf(modeString);
+        var context = MetadataDiscoveryContext.create(cl);
+        return create(mode, context);
     }
 
     static MetadataDiscovery createFromClasspathScanning(MetadataDiscoveryContext ctx) {

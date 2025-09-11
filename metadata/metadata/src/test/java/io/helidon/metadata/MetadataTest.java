@@ -27,7 +27,7 @@ public class MetadataTest {
 
     @Test
     public void testDefaultDiscovery() {
-        MetadataDiscovery metadata = MetadataDiscovery.create();
+        MetadataDiscovery metadata = MetadataDiscovery.create(MetadataDiscovery.Mode.RESOURCES);
 
         var serviceLoaders = metadata.list("service.loader")
                 .stream()

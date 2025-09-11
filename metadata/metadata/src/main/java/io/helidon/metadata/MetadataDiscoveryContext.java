@@ -27,7 +27,7 @@ record MetadataDiscoveryContext(ClassLoader classLoader, Set<String> metadataFil
                                                              MetadataDiscovery.MEDIA_TYPES_FILE,
                                                              MetadataDiscovery.FEATURE_METADATA_FILE);
 
-    public static MetadataDiscoveryContext create(ClassLoader cl) {
+    static MetadataDiscoveryContext create(ClassLoader cl) {
         return new MetadataDiscoveryContext(cl,
                                             METADATA_FILES,
                                             MetadataDiscovery.LOCATION,

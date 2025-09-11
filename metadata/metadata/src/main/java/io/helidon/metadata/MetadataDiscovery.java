@@ -90,12 +90,13 @@ public interface MetadataDiscovery {
      * Create a new metadata instance with default configuration - current context class-loader,
      * default manifest location, and default metadata file names.
      *
+     * @param mode mode of discovery, see {@link Mode} for details
      * @return metadata instance
      * @see #LOCATION
      * @see #MANIFEST_FILE
      */
-    static MetadataDiscovery create() {
-        return MetadataDiscoveryImpl.create();
+    static MetadataDiscovery create(Mode mode) {
+        return MetadataDiscoveryImpl.create(mode);
     }
 
     /**
@@ -107,7 +108,7 @@ public interface MetadataDiscovery {
      * problems in environments where the class loader may change (i.e. Maven build).
      *
      * @return an instance of metadata
-     * @see #create()
+     * @see #create(io.helidon.metadata.MetadataDiscovery.Mode)
      */
     static MetadataDiscovery getInstance() {
         return MetadataDiscoveryImpl.InstanceHolder.getInstance();

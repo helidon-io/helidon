@@ -37,6 +37,7 @@
         <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
