@@ -34,6 +34,7 @@ import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.MetadataFile;
 import io.helidon.metadata.hson.Hson;
@@ -53,8 +54,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
         // each line is a type:service-descriptor:weight:contract,contract
         if (config.discoverServices()) {
-            MetadataDiscovery.getInstance()
-                    .list(MetadataDiscovery.SERVICE_REGISTRY_FILE)
+            MetadataDiscovery.instance()
+                    .list(MetadataConstants.SERVICE_REGISTRY_FILE)
                     .stream()
                     .flatMap(CoreServiceDiscovery::loadServices)
                     .map(DescriptorHandlerImpl::new)
@@ -65,8 +66,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
         if (config.discoverServicesFromServiceLoader()) {
             // each line is a provider type name (and may have zero or more implementations)
-            MetadataDiscovery.getInstance()
-                    .list(MetadataDiscovery.SERVICE_LOADER_FILE)
+            MetadataDiscovery.instance()
+                    .list(MetadataConstants.SERVICE_LOADER_FILE)
                     .stream()
                     .flatMap(CoreServiceDiscovery::loadLines)
                     .filter(not(Line::isEmpty))

@@ -41,7 +41,7 @@ import io.helidon.common.features.metadata.Flavor;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 
 class FeatureCodegenExtension implements CodegenExtension {
@@ -78,9 +78,9 @@ class FeatureCodegenExtension implements CodegenExtension {
 
         CodegenFiler filer = ctx.filer();
         String moduleName = ctx.moduleName().orElseGet(() -> processedModules.getFirst().module());
-        String resourceLocation = MetadataDiscovery.LOCATION
+        String resourceLocation = MetadataConstants.LOCATION
                 + "/" + moduleName
-                + "/" + MetadataDiscovery.FEATURE_REGISTRY_FILE;
+                + "/" + MetadataConstants.FEATURE_REGISTRY_FILE;
 
         FilerResource resource = filer.resource(resourceLocation);
         resource.bytes(baos.toByteArray());

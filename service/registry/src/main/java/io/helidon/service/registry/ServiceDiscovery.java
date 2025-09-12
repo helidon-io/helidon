@@ -18,7 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.List;
 
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 
 /**
  * Access to discovered service metadata.
@@ -30,7 +30,7 @@ public interface ServiceDiscovery {
      * the registry to be discoverable in addition to services defined in
      * {@link io.helidon.service.metadata.Descriptors#SERVICE_REGISTRY_LOCATION}.
      */
-    String SERVICES_LOADER_RESOURCE = MetadataDiscovery.LOCATION + "/" + MetadataDiscovery.SERVICE_LOADER_FILE;
+    String SERVICES_LOADER_RESOURCE = MetadataConstants.LOCATION + "/" + MetadataConstants.SERVICE_LOADER_FILE;
 
     /**
      * Create a new instance that discovers service descriptors from classpath.

@@ -30,7 +30,7 @@ import java.util.TreeSet;
 
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.FilerResource;
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.metadata.Descriptors;
@@ -73,7 +73,7 @@ public class HelidonMetaInfServices {
      * @return a new instance of the service metadata manager
      */
     public static HelidonMetaInfServices create(CodegenFiler filer, String moduleName) {
-        String resourceLocation = MetadataDiscovery.LOCATION + "/" + moduleName + "/" + MetadataDiscovery.SERVICE_REGISTRY_FILE;
+        String resourceLocation = MetadataConstants.LOCATION + "/" + moduleName + "/" + MetadataConstants.SERVICE_REGISTRY_FILE;
         FilerResource serviceRegistryMetadata = filer.resource(resourceLocation);
         byte[] bytes = serviceRegistryMetadata.bytes();
 

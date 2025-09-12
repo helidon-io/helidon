@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import io.helidon.common.media.type.spi.MediaTypeDetector;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.MetadataFile;
 
@@ -39,8 +40,8 @@ class CustomDetector implements MediaTypeDetector {
     static {
         // look for configured mapping by a user
         // to override existing mappings from default
-        var resources = MetadataDiscovery.getInstance()
-                .list(MetadataDiscovery.MEDIA_TYPES_FILE);
+        var resources = MetadataDiscovery.instance()
+                .list(MetadataConstants.MEDIA_TYPES_FILE);
 
         try {
             for (MetadataFile resource : resources) {

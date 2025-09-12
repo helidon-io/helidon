@@ -29,6 +29,7 @@ import java.util.Properties;
 
 import io.helidon.common.features.metadata.FeatureMetadata;
 import io.helidon.common.features.metadata.FeatureRegistry;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.hson.Hson;
 
@@ -46,8 +47,8 @@ final class FeatureCatalog {
         Map<String, FeatureMetadata> features = new LinkedHashMap<>();
 
         try {
-            MetadataDiscovery.getInstance()
-                    .list(MetadataDiscovery.FEATURE_REGISTRY_FILE)
+            MetadataDiscovery.instance()
+                    .list(MetadataConstants.FEATURE_REGISTRY_FILE)
                     .forEach(metadatum -> {
                         Hson.Array hson;
                         try (InputStream in = metadatum.inputStream()) {

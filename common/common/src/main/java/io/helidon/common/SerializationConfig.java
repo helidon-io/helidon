@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.MetadataFile;
 
@@ -96,7 +97,7 @@ public final class SerializationConfig {
     static final String PROP_TRACE = "helidon.serialFilter.trace";
     static final String PROP_IGNORE_FILES = "helidon.serialFilter.ignoreFiles";
 
-    private static final String PROPERTY_FILE = MetadataDiscovery.LOCATION + "/" + MetadataDiscovery.SERIAL_CONFIG_FILE;
+    private static final String PROPERTY_FILE = MetadataConstants.LOCATION + "/" + MetadataConstants.SERIAL_CONFIG_FILE;
     private static final String REJECT_ALL_PATTERN = "!*";
     private static final System.Logger LOGGER = System.getLogger(SerializationConfig.class.getName());
     private static final AtomicReference<ConfigOptions> EXISTING_CONFIG = new AtomicReference<>();
@@ -532,8 +533,8 @@ public final class SerializationConfig {
             List<String> parts = new LinkedList<>();
 
             try {
-                var resources = MetadataDiscovery.getInstance()
-                        .list(MetadataDiscovery.SERIAL_CONFIG_FILE);
+                var resources = MetadataDiscovery.instance()
+                        .list(MetadataConstants.SERIAL_CONFIG_FILE);
 
                 for (MetadataFile resource : resources) {
                     Properties props = new Properties();

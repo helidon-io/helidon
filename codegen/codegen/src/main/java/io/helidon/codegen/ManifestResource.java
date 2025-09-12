@@ -19,7 +19,7 @@ package io.helidon.codegen;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 
 /**
  * Support for Helidon manifest file, that lists all manifest resources on the classpath.
@@ -41,12 +41,12 @@ public class ManifestResource {
      * @return a new instance of the manifest resource
      */
     public static ManifestResource create(CodegenFiler filer) {
-        FilerTextResource manifestResource = filer.textResource(MetadataDiscovery.LOCATION
-                                                                        + "/" + MetadataDiscovery.MANIFEST_FILE);
+        FilerTextResource manifestResource = filer.textResource(MetadataConstants.LOCATION
+                                                                        + "/" + MetadataConstants.MANIFEST_FILE);
         List<String> lines = new ArrayList<>(manifestResource.lines());
 
         if (lines.isEmpty()) {
-            lines.add(MetadataDiscovery.MANIFEST_ID_LINE);
+            lines.add(MetadataConstants.MANIFEST_ID_LINE);
         }
         return new ManifestResource(manifestResource, lines);
     }

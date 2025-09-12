@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 
 import static io.helidon.common.features.metadata.FeatureMetadataSupport.HSON_AOT;
@@ -49,8 +49,8 @@ public class FeatureRegistry {
     /**
      * Location of version 2 feature registry.
      */
-    public static final String FEATURE_REGISTRY_LOCATION_V2 = MetadataDiscovery.LOCATION
-            + "/" + MetadataDiscovery.FEATURE_REGISTRY_FILE;
+    public static final String FEATURE_REGISTRY_LOCATION_V2 = MetadataConstants.LOCATION
+            + "/" + MetadataConstants.FEATURE_REGISTRY_FILE;
     private static final int CURRENT_REGISTRY_VERSION = 2;
     private static final int DEFAULT_REGISTRY_VERSION = 2;
 

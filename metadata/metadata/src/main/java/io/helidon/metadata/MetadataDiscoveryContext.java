@@ -19,18 +19,19 @@ package io.helidon.metadata;
 import java.util.Set;
 
 record MetadataDiscoveryContext(ClassLoader classLoader, Set<String> metadataFiles, String location, String manifestFile) {
-    private static final Set<String> METADATA_FILES = Set.of(MetadataDiscovery.SERVICE_REGISTRY_FILE,
-                                                             MetadataDiscovery.FEATURE_REGISTRY_FILE,
-                                                             MetadataDiscovery.CONFIG_METADATA_FILE,
-                                                             MetadataDiscovery.SERVICE_LOADER_FILE,
-                                                             MetadataDiscovery.SERIAL_CONFIG_FILE,
-                                                             MetadataDiscovery.MEDIA_TYPES_FILE,
-                                                             MetadataDiscovery.FEATURE_METADATA_FILE);
+    @SuppressWarnings("removal")
+    private static final Set<String> METADATA_FILES = Set.of(MetadataConstants.SERVICE_REGISTRY_FILE,
+                                                             MetadataConstants.FEATURE_REGISTRY_FILE,
+                                                             MetadataConstants.CONFIG_METADATA_FILE,
+                                                             MetadataConstants.SERVICE_LOADER_FILE,
+                                                             MetadataConstants.SERIAL_CONFIG_FILE,
+                                                             MetadataConstants.MEDIA_TYPES_FILE,
+                                                             MetadataConstants.FEATURE_METADATA_FILE);
 
     static MetadataDiscoveryContext create(ClassLoader cl) {
         return new MetadataDiscoveryContext(cl,
                                             METADATA_FILES,
-                                            MetadataDiscovery.LOCATION,
-                                            MetadataDiscovery.MANIFEST_FILE);
+                                            MetadataConstants.LOCATION,
+                                            MetadataConstants.MANIFEST_FILE);
     }
 }

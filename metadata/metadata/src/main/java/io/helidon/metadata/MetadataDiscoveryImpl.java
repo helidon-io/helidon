@@ -24,7 +24,6 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.URL;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -70,8 +69,8 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
             mode = guessMode(context);
         }
 
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, "Metadata discovery mode: " + mode);
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Metadata discovery mode: " + mode);
         }
 
         return switch (mode) {
@@ -100,6 +99,14 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
 
         String location = ctx.location();
         Set<String> metadataFiles = ctx.metadataFiles();
+
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG,
+                       "Classpath configured: " + configuredClasspath
+                               + ", location: " + location
+                               + ", metadataFiles: " + metadataFiles);
+        }
+
         while (!pathStack.isEmpty()) {
             Path path = pathStack.pop();
             if (!Files.exists(path)) {
@@ -107,15 +114,30 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
             }
 
             if (Files.isDirectory(path)) {
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Analyzing directory: " + path);
+                }
+
                 try {
                     Files.walkFileTree(path, new MetadataFileVisitor(location, metadataFiles, path, metadatums));
                 } catch (IOException e) {
                     throw new UncheckedIOException("Failed to do classpath scanning on path: " + path, e);
                 }
             } else if (isZipFile(path)) {
-                try (var fs = zipFileSystem(path)) {
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Analyzing zip file: " + path);
+                }
+                try (var fs = FileSystems.newFileSystem(path, Map.of())) {
                     for (Path jarRoot : fs.getRootDirectories()) {
-                        Files.walkFileTree(jarRoot, new MetadataFileVisitor(location, metadataFiles, path, metadatums));
+                        if (LOGGER.isLoggable(Level.TRACE)) {
+                            LOGGER.log(Level.TRACE, "Analyzing zip root directory: " + jarRoot);
+                        }
+                        Files.walkFileTree(jarRoot,
+                                           new ZipMetadataFileVisitor(path,
+                                                                      location,
+                                                                      metadataFiles,
+                                                                      jarRoot,
+                                                                      metadatums));
                         Path mf = path.resolve("META-INF/MANIFEST.MF");
                         if (Files.exists(mf)) {
                             // jar files can reference classpath from manifest
@@ -195,7 +217,7 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
             boolean found = false;
             String line;
             while ((line = br.readLine()) != null) {
-                if (MetadataDiscovery.MANIFEST_ID_LINE.equals(line)) {
+                if (MetadataConstants.MANIFEST_ID_LINE.equals(line)) {
                     if (found) {
                         // if there is more than one id line, consider this file merged
                         LOGGER.log(Level.TRACE, "Manifest is merged, using resource discovery");
@@ -209,14 +231,6 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         }
         LOGGER.log(Level.TRACE, "Single jar file, unmerged manifest - using scanning");
         return Mode.SCANNING;
-    }
-
-    private static FileSystem zipFileSystem(Path path) {
-        try {
-            return FileSystems.newFileSystem(path, Map.of());
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to create file system for a zip file: " + path, e);
-        }
     }
 
     private static boolean isZipFile(Path path) {
@@ -411,27 +425,61 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
             if (metaDir.startsWith(dir) || dir.startsWith(metaDir)) {
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Visitor: continue with directory: " + dir);
+                }
                 return FileVisitResult.CONTINUE;
             } else {
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Visitor: ignore directory: " + dir);
+                }
                 return FileVisitResult.SKIP_SUBTREE;
             }
         }
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            if (LOGGER.isLoggable(Level.DEBUG)) {
+                LOGGER.log(Level.DEBUG, "Visitor: visit file: " + file);
+            }
             if (file.startsWith(metaDir)) {
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Visitor: found valid location: " + file);
+                }
                 Path fileNamePath = file.getFileName();
                 String fileName = fileNamePath == null ? "" : fileNamePath.toString();
                 if (metadataFiles.contains(fileName)) {
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "Visitor: found valid file: " + file);
+                    }
                     String relativePath = metaDir.relativize(file).toString().replace('\\', '/');
-                    metadata.add(MetadataFileImpl.create(rootLocation + "/" + relativePath,
-                                                         fileName,
-                                                         file));
+                    addMetadataFile(metadata, rootLocation + "/" + relativePath, fileName, file);
                 }
             }
             return FileVisitResult.CONTINUE;
         }
 
+        void addMetadataFile(Set<MetadataFile> metadata, String location, String fileName, Path file) {
+            metadata.add(MetadataFileImpl.create(location, fileName, file));
+        }
+    }
+
+    private static class ZipMetadataFileVisitor extends MetadataFileVisitor {
+        private final Path zipFile;
+
+        ZipMetadataFileVisitor(Path zipFile,
+                               String rootLocation,
+                               Set<String> metadataFiles,
+                               Path root,
+                               Set<MetadataFile> metadata) {
+            super(rootLocation, metadataFiles, root, metadata);
+            this.zipFile = zipFile;
+        }
+
+        @Override
+        void addMetadataFile(Set<MetadataFile> metadata, String location, String fileName, Path file) {
+            metadata.add(MetadataFileImpl.create(zipFile, location, fileName, file));
+        }
     }
 
     static class InstanceHolder {

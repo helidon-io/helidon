@@ -19,7 +19,7 @@ package io.helidon.service.metadata;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 
 /**
@@ -29,8 +29,8 @@ public class Descriptors {
     /**
      * Location of the Helidon service registry metadata file.
      */
-    public static final String SERVICE_REGISTRY_LOCATION = MetadataDiscovery.LOCATION + "/"
-            + MetadataDiscovery.SERVICE_REGISTRY_FILE;
+    public static final String SERVICE_REGISTRY_LOCATION = MetadataConstants.LOCATION + "/"
+            + MetadataConstants.SERVICE_REGISTRY_FILE;
     private static final int CURRENT_REGISTRY_VERSION = 1;
     private static final int DEFAULT_REGISTRY_VERSION = 1;
 
