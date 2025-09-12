@@ -91,119 +91,155 @@ public class JsonRpcRouting implements HttpService {
             JsonRpcErrorHandler errorHandler = handlers.errorHandler().orElse(null);
 
             httpRules.post(pathPattern, (req, res) -> {
+                // attempt to parse request as JSON
+                JsonStructure jsonRequest;
                 try {
-                    // attempt to parse request as JSON
-                    JsonStructure jsonRequest;
-                    try {
-                        jsonRequest = req.content().as(JsonStructure.class);
-                    } catch (JsonParsingException e) {
-                        JsonObject parseError = jsonRpcError(PARSE_ERROR_ERROR, res, null);
-                        res.status(Status.OK_200).send(parseError);
+                    jsonRequest = req.content().as(JsonStructure.class);
+                } catch (JsonParsingException e) {
+                    JsonObject parseError = jsonRpcError(PARSE_ERROR_ERROR, res, null);
+                    res.status(Status.OK_200).send(parseError);
+                    return;
+                }
+
+                // is this a single request?
+                if (jsonRequest instanceof JsonObject jsonObject) {
+                    // if request fails verification, return JSON-RPC error
+                    JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
+                    if (error != null) {
+                        // Use error if returned by error handler
+                        if (errorHandler != null) {
+                            Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
+                            if (userError.isPresent()) {
+                                res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject));
+                            } else {
+                                res.status(Status.OK_200).send();
+                            }
+                        } else {
+                            // otherwise return error
+                            JsonObject verifyError = jsonRpcError(error, res, jsonObject);
+                            res.status(Status.OK_200).send(verifyError);
+                        }
                         return;
                     }
 
-                    // is this a single request?
-                    if (jsonRequest instanceof JsonObject jsonObject) {
-                        // if request fails verification, return JSON-RPC error
+                    // prepare and call method handler
+                    AtomicBoolean sendCalled = new AtomicBoolean();
+                    JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
+                    JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
+                    JsonValue rpcId = jsonReq.rpcId().orElse(null);
+                    JsonRpcResponse jsonRes = new JsonRpcSingleResponse(rpcId, res, sendCalled);
+
+                    // invoke single handler
+                    try {
+                        handler.handle(jsonReq, jsonRes);
+                        // if send() not called, return empty HTTP response
+                        if (!sendCalled.get()) {
+                            res.status(jsonRes.status()).send();
+                        }
+                    } catch (Throwable throwable1) {
+                        try {
+                            // see if there is an exception handler defined
+                            Optional<JsonRpcError> mappedError = handleThrowable(handlers, jsonReq, jsonRes, throwable1);
+
+                            // use error if returned, otherwise internal error
+                            if (mappedError.isPresent()) {
+                                JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
+                                res.status(Status.OK_200).send(jsonRpcError);
+                                return;
+                            }
+                        } catch (Throwable throwable2) {
+                            // falls through
+                        }
+                        sendInternalError(res);
+                    }
+                } else if (jsonRequest instanceof JsonArray jsonArray) {
+                    // we must receive at least one request
+                    int size = jsonArray.size();
+                    if (size == 0) {
+                        sendInvalidRequest(res);
+                        return;
+                    }
+
+                    // process batch requests
+                    JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
+                    for (int i = 0; i < size; i++) {
+                        JsonValue jsonValue = jsonArray.get(i);
+
+                        // requests must be objects
+                        if (!(jsonValue instanceof JsonObject jsonObject)) {
+                            JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, null);
+                            arrayBuilder.add(invalidRequest);
+                            continue;       // skip bad request
+                        }
+
+                        // check if request passes validation before proceeding
                         JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
                         if (error != null) {
                             // Use error if returned by error handler
                             if (errorHandler != null) {
                                 Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
-                                if (userError.isPresent()) {
-                                    res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject));
-                                } else {
-                                    res.status(Status.OK_200).send();
-                                }
+                                userError.ifPresent(e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject)));
                             } else {
-                                // otherwise return error
                                 JsonObject verifyError = jsonRpcError(error, res, jsonObject);
-                                res.status(Status.OK_200).send(verifyError);
+                                arrayBuilder.add(verifyError);
                             }
-                            return;
+                            continue;
                         }
 
                         // prepare and call method handler
-                        AtomicBoolean sendCalled = new AtomicBoolean();
                         JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
                         JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
                         JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                        JsonRpcResponse jsonRes = new JsonRpcSingleResponse(rpcId, res, sendCalled);
+                        JsonRpcResponse jsonRes = new MyJsonRpcBatchResponse(rpcId, res, arrayBuilder);
 
-                        // invoke single handler
+                        // invoke handler
                         try {
                             handler.handle(jsonReq, jsonRes);
-                            // if send() not called, return empty HTTP response
-                            if (!sendCalled.get()) {
-                                res.status(jsonRes.status()).send();
-                            }
-                        } catch (Exception e) {
-                            sendInternalError(res);
-                        }
-                    } else if (jsonRequest instanceof JsonArray jsonArray) {
-                        // we must receive at least one request
-                        int size = jsonArray.size();
-                        if (size == 0) {
-                            sendInvalidRequest(res);
-                            return;
-                        }
-
-                        // process batch requests
-                        JsonArrayBuilder arrayBuilder = JSON_BUILDER_FACTORY.createArrayBuilder();
-                        for (int i = 0; i < size; i++) {
-                            JsonValue jsonValue = jsonArray.get(i);
-
-                            // requests must be objects
-                            if (!(jsonValue instanceof JsonObject jsonObject)) {
-                                JsonObject invalidRequest = jsonRpcError(INVALID_REQUEST_ERROR, res, null);
-                                arrayBuilder.add(invalidRequest);
-                                continue;       // skip bad request
-                            }
-
-                            // check if request passes validation before proceeding
-                            JsonRpcError error = verifyJsonRpc(jsonObject, handlersMap);
-                            if (error != null) {
-                                // Use error if returned by error handler
-                                if (errorHandler != null) {
-                                    Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
-                                    userError.ifPresent(e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject)));
-                                } else {
-                                    JsonObject verifyError = jsonRpcError(error, res, jsonObject);
-                                    arrayBuilder.add(verifyError);
-                                }
-                                continue;
-                            }
-
-                            // prepare and call method handler
-                            JsonRpcHandler handler = handlersMap.get(jsonObject.getString("method"));
-                            JsonRpcRequest jsonReq = new JsonRpcRequestImpl(req, jsonObject);
-                            JsonValue rpcId = jsonReq.rpcId().orElse(null);
-                            JsonRpcResponse jsonRes = new MyJsonRpcBatchResponse(rpcId, res, arrayBuilder);
-
-                            // invoke handler
+                        } catch (Throwable throwable1) {
                             try {
-                                handler.handle(jsonReq, jsonRes);
-                            } catch (Exception e) {
-                                sendInternalError(res);
-                                return;
-                            }
-                        }
+                                // see if there is an exception handler defined
+                                Optional<JsonRpcError> mappedError = handleThrowable(handlers, jsonReq, jsonRes, throwable1);
 
-                        // respond to batch request always with 200
-                        JsonArray result = arrayBuilder.build();
-                        if (result.isEmpty()) {
-                            res.status(Status.OK_200).send();
-                        } else {
-                            res.status(Status.OK_200).send(result);
+                                // use error if returned, otherwise internal error
+                                if (mappedError.isPresent()) {
+                                    JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
+                                    arrayBuilder.add(jsonRpcError);
+                                    continue;
+                                }
+                            } catch (Throwable throwable2) {
+                                // falls through
+                            }
+                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, null);
+                            arrayBuilder.add(internalError);
                         }
-                    } else {
-                        sendInvalidRequest(res);
                     }
-                } catch (Exception e) {
-                    sendInternalError(res);
+
+                    // respond to batch request always with 200
+                    JsonArray result = arrayBuilder.build();
+                    if (result.isEmpty()) {
+                        res.status(Status.OK_200).send();
+                    } else {
+                        res.status(Status.OK_200).send(result);
+                    }
+                } else {
+                    sendInvalidRequest(res);
                 }
             });
         }
+    }
+
+    private Optional<JsonRpcError> handleThrowable(JsonRpcHandlers handlers,
+                                                   JsonRpcRequest jsonReq,
+                                                   JsonRpcResponse jsonRes,
+                                                   Throwable throwable) throws Throwable {
+        // returned in registration order
+        for (Map.Entry<Class<? extends Throwable>, JsonRpcExceptionHandler> entry : handlers.exceptionMap().entrySet()) {
+            if (entry.getKey().isAssignableFrom(throwable.getClass())) {
+                JsonRpcExceptionHandler handler = entry.getValue();
+                return handler.handle(jsonReq, jsonRes, throwable);
+            }
+        }
+        throw throwable;        // could not handle exception
     }
 
     private JsonRpcError verifyJsonRpc(JsonObject object, Map<String, JsonRpcHandler> handlersMap) {

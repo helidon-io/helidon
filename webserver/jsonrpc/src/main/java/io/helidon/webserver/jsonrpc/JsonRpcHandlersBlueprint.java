@@ -29,7 +29,7 @@ import io.helidon.builder.api.Prototype;
 interface JsonRpcHandlersBlueprint {
 
     /**
-     * Return a map of method names to handles.
+     * Return a map of method names to handlers.
      *
      * @return a map of method names to handlers
      */
@@ -42,4 +42,12 @@ interface JsonRpcHandlersBlueprint {
      * @return the error handler or {@code null}
      */
     Optional<JsonRpcErrorHandler> errorHandler();
+
+    /**
+     * Return a map of throwable to exception handlers.
+     *
+     * @return a map of method names to handlers
+     */
+    @Option.Singular(value = "exception", withPrefix = false)
+    Map<Class<? extends Throwable>, JsonRpcExceptionHandler> exceptionMap();
 }
