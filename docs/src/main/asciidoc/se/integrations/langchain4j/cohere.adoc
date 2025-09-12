@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Cohere Provider
-:description: LangChain4J Cohere
-:keywords: helidon, AI, LangChain4J, LC4J, Cohere
-:feature-name: LangChain4J Integration
+= LangChain4j Cohere Provider
+:description: LangChain4j Cohere
+:keywords: helidon, AI, LangChain4j, LC4J, Cohere
+:feature-name: LangChain4j Integration
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -39,7 +39,7 @@ This module adds support for selected Cohere models.
 
 == Maven Coordinates
 
-In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4j core dependencies], you must add the following:
 
 [source,xml]
 ----
@@ -73,7 +73,7 @@ Full list of configuration properties:
 |Key |Type |Description
 
 |`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
-|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4j is used.
 |`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
 |`enabled` |boolean |If set to false (default), this component will not be available even if configured.
 |`input-type` |string |Input type.
@@ -108,7 +108,7 @@ Full list of configuration properties:
 |Key |Type |Description
 
 |`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
-|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4j is used.
 |`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
 |`enabled` |boolean |If set to false (default), this component will not be available even if configured.
 |`log-requests` |boolean |Whether to log API requests.
@@ -121,5 +121,5 @@ Full list of configuration properties:
 
 == Additional Information
 
-* xref:langchain4j.adoc[LangChain4J Integration]
-* https://docs.langchain4j.dev/integrations/embedding-models/cohere[LangChain4J Cohere Documentation]
+* xref:langchain4j.adoc[LangChain4j Integration]
+* https://docs.langchain4j.dev/integrations/embedding-models/cohere[LangChain4j Cohere Documentation]

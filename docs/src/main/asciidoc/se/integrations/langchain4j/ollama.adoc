@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Ollama Provider
-:description: LangChain4J Ollama
-:keywords: helidon, AI, LangChain4J, LC4J, Ollama
-:feature-name: LangChain4J Integration
+= LangChain4j Ollama Provider
+:description: LangChain4j Ollama
+:keywords: helidon, AI, LangChain4j, LC4J, Ollama
+:feature-name: LangChain4j Integration
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -41,7 +41,7 @@ This module adds support for selected https://ollama.ai/[Ollama] models.
 
 == Maven Coordinates
 
-In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4j core dependencies], you must add the following:
 
 [source,xml]
 ----
@@ -74,7 +74,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.
 |`enabled` |boolean |If set to false (default), the component will not be available even if configured.
 |`format` |string |Specifies the structure or style of the text produced by the model, such as plain text, JSON, or a custom format.
 |`log-requests` |boolean |Whether to log API requests.
@@ -113,7 +113,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.
 |`enabled` |boolean |If set to false (default), the component will not be available even if configured.
 |`log-requests` |boolean |Whether to log API requests.
 |`log-responses` |boolean |Whether to log API responses.
@@ -145,7 +145,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.
 |`enabled` |boolean |If set to false (default), the component will not be available even if configured.
 |`format` |string |Specifies the structure or style of the text produced by the model, such as plain text, JSON, or a custom format.
 |`log-requests` |boolean |Whether to log API requests.
@@ -185,7 +185,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4J is used.
+|`base-url` |string |The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.
 |`enabled` |boolean |If set to false (default), the component will not be available even if configured.
 |`format` |string |Specifies the structure or style of the text produced by the model, such as plain text, JSON, or a custom format.
 |`log-requests` |boolean |Whether to log API requests.
@@ -205,6 +205,6 @@ Full list of configuration properties:
 
 == Additional Information
 
-* xref:langchain4j.adoc[LangChain4J Integration]
-* https://docs.langchain4j.dev/integrations/language-models/ollama/[LangChain4J Ollama Documentation]
+* xref:langchain4j.adoc[LangChain4j Integration]
+* https://docs.langchain4j.dev/integrations/language-models/ollama/[LangChain4j Ollama Documentation]
 * https://ollama.ai/[Ollama Website]

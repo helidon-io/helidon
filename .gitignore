@@ -73,6 +73,9 @@ node/
 # Helidon examples repository
 helidon-examples
 
+# Oracle Code Assist
+.oca/
+
 # Other
 *~
 user.txt

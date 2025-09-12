@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Oracle Provider
-:description: LangChain4J Oracle
-:keywords: helidon, AI, LangChain4J, LC4J, Oracle
-:feature-name: LangChain4J Integration
+= LangChain4j Oracle Provider
+:description: LangChain4j Oracle
+:keywords: helidon, AI, LangChain4j, LC4J, Oracle
+:feature-name: LangChain4j Integration
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -39,7 +39,7 @@ This module adds support for the Oracle embedding store.
 
 == Maven Coordinates
 
-In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4j core dependencies], you must add the following:
 
 [source,xml]
 ----
@@ -103,5 +103,5 @@ Full list of configuration properties:
 
 == Additional Information
 
-* xref:langchain4j.adoc[LangChain4J Integration]
+* xref:langchain4j.adoc[LangChain4j Integration]
 * https://docs.langchain4j.dev/integrations/embedding-stores/oracle[langChain4J Oracle Embedding Store Documentation]

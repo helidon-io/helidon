@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4j
-:description:  LangChain4j Integration
-:keywords: Helidon, AI, LangChain4j, LC4J
+= Helidon MP LangChain4j Guide
+:description: LangChain4j in Helidon
+:keywords: helidon, langchain4j, ai, llm
 :rootdir: {docdir}/../..
+
+:project-tag: lc4j
 
 include::{rootdir}/includes/mp.adoc[]
 
-== LangChain4j Support
-
-Helidon SE includes native xref:{rootdir}/se/integrations/langchain4j/langchain4j.adoc[LangChain4j integration], which can also be used in Helidon MP thanks to *Helidon Inject to CDI bridge*. Refer to its xref:{rootdir}/se/integrations/langchain4j/langchain4j.adoc[documentation] for more details.
+include::{rootdir}/includes/guides/langchain4j.adoc[]

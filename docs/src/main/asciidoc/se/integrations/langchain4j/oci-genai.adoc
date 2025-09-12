@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J OCI GenAI Provider
-:description: LangChain4J Oracle Cloud Infrastructure GenAI
-:keywords: helidon, AI, LangChain4J, LC4J, OciGenAI
-:feature-name: LangChain4J OciGenAi
+= LangChain4j OCI GenAI Provider
+:description: LangChain4j Oracle Cloud Infrastructure GenAI
+:keywords: helidon, AI, LangChain4j, LC4J, OciGenAI
+:feature-name: LangChain4j OciGenAi
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -41,7 +41,7 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 == Maven Coordinates
 
-In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4j core dependencies], you must add the following:
 
 [source,xml]
 ----
@@ -331,6 +331,6 @@ Example: You are a travel advisor. Answer with a pirate tone.
 
 == Additional Information
 
-* xref:langchain4j.adoc[LangChain4J Integration]
-* https://docs.langchain4j.dev/integrations/language-models/oci-genai[LangChain4J OciGenAi Documentation]
+* xref:langchain4j.adoc[LangChain4j Integration]
+* https://docs.langchain4j.dev/integrations/language-models/oci-genai[LangChain4j OciGenAi Documentation]
 * https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/[Oracle Cloud Infrastructure GenAI Services]
