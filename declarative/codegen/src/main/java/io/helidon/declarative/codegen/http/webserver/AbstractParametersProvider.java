@@ -24,6 +24,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
+import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
 
 abstract class AbstractParametersProvider {
     void codegenFromParameters(ContentBuilder<?> contentBuilder, TypeName parameterType, String paramName, boolean optional) {
@@ -55,11 +56,26 @@ abstract class AbstractParametersProvider {
             contentBuilder
                     .addContent(".first(\"")
                     .addContent(paramName)
-                    .addContent("\").");
-            getMethod(contentBuilder, parameterType);
+                    .addContentLine("\")")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent(".");
+            asMethod(contentBuilder, parameterType);
+            // add .orElseThrow() in case the parameter is missing
+            contentBuilder.addContentLine("")
+                    .addContent(".orElseThrow(() -> new ")
+                    .addContent(BAD_REQUEST_EXCEPTION)
+                    .addContent("(\"")
+                    .addContent(providerType())
+                    .addContent(" ")
+                    .addContent(paramName)
+                    .addContentLine(" is not present in the request.\"));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
         }
-
     }
+
+    abstract String providerType();
 
     void asMethod(ContentBuilder<?> content, TypeName type) {
         TypeName boxed = type.boxed();

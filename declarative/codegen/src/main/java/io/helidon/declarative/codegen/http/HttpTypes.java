@@ -86,6 +86,10 @@ public final class HttpTypes {
      * HTTP media type.
      */
     public static final TypeName HTTP_MEDIA_TYPE = TypeName.create("io.helidon.http.HttpMediaType");
+    /**
+     * Bad request exception.
+     */
+    public static final TypeName BAD_REQUEST_EXCEPTION = TypeName.create("io.helidon.http.BadRequestException");
 
     private HttpTypes() {
     }

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -83,6 +84,7 @@ class DeclarativeCodegenHttpTypesTest {
         checkField(toCheck, checked, fields, "HTTP_ENTITY_ANNOTATION", Http.Entity.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_FUNCTION", Http.HeaderFunction.class);
         checkField(toCheck, checked, fields, "HTTP_MEDIA_TYPE", HttpMediaType.class);
+        checkField(toCheck, checked, fields, "BAD_REQUEST_EXCEPTION", BadRequestException.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

@@ -49,4 +49,9 @@ class ParamProviderHttpPathParam extends AbstractParametersProvider implements H
 
         return true;
     }
+
+    @Override
+    String providerType() {
+        return "Path parameter";
+    }
 }

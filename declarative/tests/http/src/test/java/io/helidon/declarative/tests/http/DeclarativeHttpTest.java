@@ -20,6 +20,9 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Lookup;
@@ -106,11 +109,53 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testCustomHeaderParamSuccess() {
+        HeaderName customHeader = HeaderNames.create("X-CUSTOM");
+
+        var response = client.get("/greet/custom-header")
+                .header(HeaderValues.create(customHeader, "Expected-value"))
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Expected-value"));
+    }
+
+    @Test
+    void testCustomHeaderParamFailure() {
+        var response = client.get("/greet/custom-header")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        // this requires configuration option server.error-handling.include-entity set to true
+        assertThat(response.entity(), is("Header X-CUSTOM is not present in the request."));
+    }
+
+    @Test
+    void testQueryParamSuccess() {
+        var response = client.get("/greet/query-param")
+                .queryParam("param", "Expected-value")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Expected-value"));
+    }
+
+    @Test
+    void testQueryParamFailure() {
+        var response = client.get("/greet/query-param")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        // this requires configuration option server.error-handling.include-entity set to true
+        assertThat(response.entity(), is("Query parameter param is not present in the request."));
+    }
+
+    @Test
     void testTypedClient() {
         GreetServiceClient typedClient = registry.get(Lookup.builder()
-                                                               .addContract(GreetServiceClient.class)
-                                                               .addQualifier(Qualifier.create(RestClient.Client.class))
-                                                               .build());
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
 
         String message = typedClient.getDefaultMessageHandlerPlain();
         assertThat(message, is("Hello World!"));

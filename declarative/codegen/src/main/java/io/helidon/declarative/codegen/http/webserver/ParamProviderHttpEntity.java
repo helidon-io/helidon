@@ -42,4 +42,9 @@ class ParamProviderHttpEntity extends AbstractParametersProvider implements Http
 
         return true;
     }
+
+    @Override
+    String providerType() {
+        return "Entity";
+    }
 }
