@@ -179,7 +179,7 @@ class DataWriterSseSink implements SseSink {
                     writer.write(GenericType.STRING, str, baos, EMPTY_HEADERS, EMPTY_HEADERS);
                 } else {
                     GenericType<Object> type = GenericType.create(object);
-                    WritableHeaders<?> resHeaders = WritableHeaders.create();
+                    WritableHeaders<?> resHeaders = WritableHeaders.create(ctx.listenerContext().config().mappers());
                     resHeaders.set(HeaderNames.CONTENT_TYPE, mediaType.text());
                     EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
                     writer.write(type, object, baos, EMPTY_HEADERS, resHeaders);

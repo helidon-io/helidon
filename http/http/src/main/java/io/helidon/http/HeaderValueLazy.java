@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.buffers.LazyString;
+import io.helidon.common.mapper.Mappers;
 
 class HeaderValueLazy extends HeaderWritableValueBase {
     private final LazyString value;
     private List<String> values;
 
-    HeaderValueLazy(HeaderName name, boolean changing, boolean sensitive, LazyString value) {
-        super(name, changing, sensitive, null);
+    HeaderValueLazy(Mappers mappers, HeaderName name, boolean changing, boolean sensitive, LazyString value) {
+        super(mappers, name, changing, sensitive, null);
 
         this.value = value;
     }

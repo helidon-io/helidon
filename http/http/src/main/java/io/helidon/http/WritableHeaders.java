@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package io.helidon.http;
 import java.util.Collection;
 import java.util.function.Consumer;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.service.registry.Services;
 
 /**
  * HTTP Headers that are mutable.
@@ -30,10 +32,20 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
     /**
      * Create a new instance of writable headers.
      *
+     * @param mappers   mappers to use when obtaining typed values from the created headers
+     * @return mutable HTTP headers
+     */
+    static WritableHeaders<?> create(Mappers mappers) {
+        return new HeadersImpl<>(mappers);
+    }
+
+    /**
+     * Create a new instance of writable headers.
+     *
      * @return mutable HTTP headers
      */
     static WritableHeaders<?> create() {
-        return new HeadersImpl<>();
+        return create(Services.get(Mappers.class));
     }
 
     /**
@@ -66,33 +78,33 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * Add a header or add a header value if the header is already present.
      *
      * @param header header name
-     * @param value header value(s)
+     * @param value  header value(s)
      * @return this instance
      */
     default B add(HeaderName header, String... value) {
-        return add(HeaderValues.create(header, value));
+        return add(HeaderValues.create(mappers(), header, value));
     }
 
     /**
      * Add a header or add a header value if the header is already present.
      *
      * @param header header name
-     * @param value header value
+     * @param value  header value
      * @return this instance
      */
     default B add(HeaderName header, int value) {
-        return add(HeaderValues.create(header, value));
+        return add(HeaderValues.create(mappers(), header, value));
     }
 
     /**
      * Add a header or add a header value if the header is already present.
      *
      * @param header header name
-     * @param value header value
+     * @param value  header value
      * @return this instance
      */
     default B add(HeaderName header, long value) {
-        return add(HeaderValues.create(header, value));
+        return add(HeaderValues.create(mappers(), header, value));
     }
 
     /**
@@ -106,7 +118,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
     /**
      * Remove a header.
      *
-     * @param name name of the header to remove
+     * @param name            name of the header to remove
      * @param removedConsumer consumer to be called with existing header; if the header did not exist, consumer will not be
      *                        called
      * @return this instance
@@ -120,7 +132,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentType(MediaType contentType) {
-        return set(HeaderValues.create(HeaderNameEnum.CONTENT_TYPE, contentType.text()));
+        return set(HeaderValues.create(mappers(), HeaderNameEnum.CONTENT_TYPE, contentType.text()));
     }
 
     /**
@@ -137,14 +149,13 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *
-     * @param name header name to set
+     * @param name   header name to set
      * @param values value(s) of the header
      * @return this instance
      */
     default B set(HeaderName name, String... values) {
-        return set(HeaderValues.create(name, true, false, values));
+        return set(HeaderValues.create(mappers(), name, true, false, values));
     }
-
 
     /**
      * Set a header and replace it if it already existed.
@@ -152,12 +163,12 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *
-     * @param name header name to set
+     * @param name  header name to set
      * @param value integer value of the header
      * @return this instance
      */
     default B set(HeaderName name, int value) {
-        return set(HeaderValues.create(name, true, false, value));
+        return set(HeaderValues.create(mappers(), name, true, false, value));
     }
 
     /**
@@ -166,12 +177,12 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *
-     * @param name header name to set
+     * @param name  header name to set
      * @param value long value of the header
      * @return this instance
      */
     default B set(HeaderName name, long value) {
-        return set(HeaderValues.create(name, true, false, value));
+        return set(HeaderValues.create(mappers(), name, true, false, value));
     }
 
     /**
@@ -180,12 +191,12 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *
-     * @param name header name to set
+     * @param name   header name to set
      * @param values value(s) of the header
      * @return this instance
      */
     default B set(HeaderName name, Collection<String> values) {
-        return set(HeaderValues.create(name, values));
+        return set(HeaderValues.create(mappers(), name, values));
     }
 
     /**
@@ -198,7 +209,8 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentLength(long length) {
-        return set(HeaderValues.create(HeaderNameEnum.CONTENT_LENGTH,
+        return set(HeaderValues.create(mappers(),
+                                       HeaderNameEnum.CONTENT_LENGTH,
                                        true,
                                        false,
                                        String.valueOf(length)));

@@ -25,9 +25,11 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
+import io.helidon.service.registry.Services;
 
 /**
  * Utility methods to create path matchers.
@@ -162,9 +164,9 @@ public final class PathMatchers {
         }
 
         if (checkPattern.contains("{")
-                || checkPattern.contains("[")
-                || checkPattern.contains("*")
-                || checkPattern.contains("\\")) {
+            || checkPattern.contains("[")
+            || checkPattern.contains("*")
+            || checkPattern.contains("\\")) {
             return pattern(pathPattern);
         }
 
@@ -434,6 +436,7 @@ public final class PathMatchers {
         private final Pattern leftPattern;
         private final String patternString;
         private final String sourcePattern;
+        private final Mappers mappers;
 
         PatternPathMatcher(String pattern, Map<String, String> paramToGroupName, String sourcePattern) {
             this.patternString = pattern;
@@ -441,6 +444,7 @@ public final class PathMatchers {
             this.leftPattern = Pattern.compile(pattern + "(?<" + RIGHT_PART_PARAM_NAME + ">/.+)?");
             this.paramToGroupName = paramToGroupName;
             this.sourcePattern = sourcePattern;
+            this.mappers = Services.get(Mappers.class);
         }
 
         @Override
@@ -499,7 +503,7 @@ public final class PathMatchers {
                     params.put(entry.getKey(), paramValue);
                 }
             }
-            return Parameters.createSingleValueMap("http/path", params);
+            return Parameters.createSingleValueMap(mappers, "http/path", params, "http", "path");
         }
     }
 

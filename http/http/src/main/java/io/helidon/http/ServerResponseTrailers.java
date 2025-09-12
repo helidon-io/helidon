@@ -16,6 +16,9 @@
 
 package io.helidon.http;
 
+import io.helidon.common.mapper.Mappers;
+import io.helidon.service.registry.Services;
+
 /**
  * Mutable trailers of a server response.
  */
@@ -24,10 +27,21 @@ public interface ServerResponseTrailers extends WritableHeaders<ServerResponseTr
     /**
      * Create a new instance of mutable server response trailers.
      *
+     * @param mappers mappers to use when obtaining typed values from the created trailers
+     * @return new server response trailers
+     */
+    static ServerResponseTrailers create(Mappers mappers) {
+        return new ServerResponseTrailersImpl(WritableHeaders.create(mappers));
+    }
+
+
+    /**
+     * Create a new instance of mutable server response trailers.
+     *
      * @return new server response trailers
      */
     static ServerResponseTrailers create() {
-        return new ServerResponseTrailersImpl(WritableHeaders.create());
+        return create(Services.get(Mappers.class));
     }
 
     /**

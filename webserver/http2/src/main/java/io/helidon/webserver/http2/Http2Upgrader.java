@@ -87,7 +87,8 @@ public class Http2Upgrader implements Http1Upgrader {
                        it -> http2Headers.authority(it.get()));
         http2Headers.scheme("http");
 
-        HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
+        HttpPrologue newPrologue = HttpPrologue.create(ctx.listenerContext().config().mappers(),
+                                                       Http2Connection.FULL_PROTOCOL,
                                                        prologue.protocol(),
                                                        Http2Connection.PROTOCOL_VERSION,
                                                        prologue.method(),

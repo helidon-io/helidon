@@ -181,7 +181,7 @@ public interface ServerRequestHeaders extends Headers {
      */
     default Parameters cookies() {
         if (contains(HeaderNames.COOKIE)) {
-            return CookieParser.parse(get(HeaderNames.COOKIE));
+            return CookieParser.parse(mappers(), get(HeaderNames.COOKIE));
         } else {
             return CookieParser.empty();
         }

@@ -134,7 +134,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * @return default headers
      */
     default ClientRequestHeaders defaultRequestHeaders() {
-        WritableHeaders<?> headers = WritableHeaders.create();
+        WritableHeaders<?> headers = WritableHeaders.create(mappers());
         headers().forEach(headers::set);
         return ClientRequestHeaders.create(headers);
     }

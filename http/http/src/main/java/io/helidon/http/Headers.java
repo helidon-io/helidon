@@ -26,8 +26,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.Services;
 
 /**
  * View of HTTP Headers.
@@ -232,5 +234,14 @@ public interface Headers extends Iterable<Header> {
      */
     default Stream<Header> stream() {
         return StreamSupport.stream(spliterator(), false);
+    }
+
+    /**
+     * Mappers used by header values created from default methods on this interface.
+     *
+     * @return mappers instance, default implementation returns the service registry singleton
+     */
+    default Mappers mappers() {
+        return Services.get(Mappers.class);
     }
 }

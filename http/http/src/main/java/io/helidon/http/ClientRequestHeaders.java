@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public interface ClientRequestHeaders extends ServerRequestHeaders,
             MediaType mediaType = accepted[i];
             values[i] = mediaType.text();
         }
-        set(HeaderValues.create(HeaderNames.ACCEPT, values));
+        set(HeaderValues.create(mappers(), HeaderNames.ACCEPT, values));
         return this;
     }
 }

@@ -22,12 +22,14 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.mapper.Mappers;
 
 class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> implements ServerResponseHeaders {
     private static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
             () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
 
-    ServerResponseHeadersImpl() {
+    ServerResponseHeadersImpl(Mappers mappers) {
+        super(mappers);
     }
 
     ServerResponseHeadersImpl(Headers existing) {

@@ -480,12 +480,19 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         Http2Headers http2Headers = Http2Headers.create(this,
                                                         connection.getInboundDynamicTable(),
                                                         decoder,
-                                                        mergeWithPrevious && currentHeaders != null
-                                                                ? currentHeaders
-                                                                : Http2Headers.create(WritableHeaders.create()),
+                                                        headersToRead(mergeWithPrevious, currentHeaders, http2ClientConfig),
                                                         continuationData.toArray(new Http2FrameData[0]));
         recvListener.headers(ctx, streamId, http2Headers);
         return http2Headers;
+    }
+
+    private Http2Headers headersToRead(boolean mergeWithPrevious,
+                                       Http2Headers currentHeaders,
+                                       Http2ClientConfig http2ClientConfig) {
+        if (mergeWithPrevious && currentHeaders != null) {
+            return currentHeaders;
+        }
+        return Http2Headers.create(WritableHeaders.create(http2ClientConfig.mappers()));
     }
 
     private void splitAndWrite(Http2FrameData frameData) {

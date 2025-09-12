@@ -125,12 +125,50 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.recvListener = http1Config.compositeReceiveListener();
         this.sendListener = http1Config.compositeSendListener();
         this.reader.listener(recvListener, ctx);
-        this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
-        this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
+        this.http1headers = Http1Headers.create(http1Config.mappers(),
+                                                reader,
+                                                http1Config.maxHeadersSize(),
+                                                http1Config.validateRequestHeaders());
+        this.http1prologue = Http1Prologue.create(http1Config.mappers(),
+                                                  reader,
+                                                  http1Config.maxPrologueLength(),
+                                                  http1Config.validatePath());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
         this.lastRequestTimestamp = DateTime.timestamp();
+    }
+
+    /**
+     * Only accept protocol upgrades if no entity is present. Otherwise, a successful
+     * upgrade may result in the request entity interpreted as part of the new protocol
+     * data, resulting in a failure.
+     *
+     * @param headers the HTTP headers in the prologue
+     * @return whether to accept or reject the upgrade
+     */
+    static boolean upgradeHasEntity(WritableHeaders<?> headers) {
+        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
+                || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+    }
+
+    static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
+        if (fullValidation) {
+            try {
+                doValidateHostHeader(prologue, headers);
+            } catch (IllegalArgumentException e) {
+                throw RequestException.builder()
+                        .type(EventType.BAD_REQUEST)
+                        .status(Status.BAD_REQUEST_400)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .setKeepAlive(false)
+                        .message("Invalid Host header: " + e.getMessage())
+                        .cause(e)
+                        .build();
+            }
+        } else {
+            simpleHostHeaderValidation(prologue, headers);
+        }
     }
 
     @Override
@@ -291,58 +329,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         currentEntitySizeRead = 0;
     }
 
-    /**
-     * Only accept protocol upgrades if no entity is present. Otherwise, a successful
-     * upgrade may result in the request entity interpreted as part of the new protocol
-     * data, resulting in a failure.
-     *
-     * @param headers the HTTP headers in the prologue
-     * @return whether to accept or reject the upgrade
-     */
-    static boolean upgradeHasEntity(WritableHeaders<?> headers) {
-        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
-                || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-    }
-
-    static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
-        if (fullValidation) {
-            try {
-                doValidateHostHeader(prologue, headers);
-            } catch (IllegalArgumentException e) {
-                throw RequestException.builder()
-                        .type(EventType.BAD_REQUEST)
-                        .status(Status.BAD_REQUEST_400)
-                        .request(DirectTransportRequest.create(prologue, headers))
-                        .setKeepAlive(false)
-                        .message("Invalid Host header: " + e.getMessage())
-                        .cause(e)
-                        .build();
-            }
-        } else {
-            simpleHostHeaderValidation(prologue, headers);
-        }
-    }
-
-    private void validatePrologue(HttpPrologue prologue) {
-        try {
-            // scheme is not validated, as it is fixed and validated by the prologue reader
-            UriValidator.validateQuery(prologue.query().rawValue());
-            if (prologue.fragment().hasValue()) {
-                UriValidator.validateFragment(prologue.fragment().rawValue());
-            }
-        } catch (IllegalArgumentException e) {
-            throw RequestException.builder()
-                    .type(EventType.BAD_REQUEST)
-                    .status(Status.BAD_REQUEST_400)
-                    .request(DirectTransportRequest.create(prologue, ServerRequestHeaders.create()))
-                    .setKeepAlive(false)
-                    .message(e.getMessage())
-                    .safeMessage(true)
-                    .cause(e)
-                    .build();
-        }
-    }
-
     private static void simpleHostHeaderValidation(HttpPrologue prologue, WritableHeaders<?> headers) {
         if (headers.contains(HeaderNames.HOST)) {
             String host = headers.get(HeaderNames.HOST).get();
@@ -444,6 +430,26 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
 
         UriValidator.validateNonIpLiteral(hostString);
+    }
+
+    private void validatePrologue(HttpPrologue prologue) {
+        try {
+            // scheme is not validated, as it is fixed and validated by the prologue reader
+            UriValidator.validateQuery(prologue.query().rawValue());
+            if (prologue.fragment().hasValue()) {
+                UriValidator.validateFragment(prologue.fragment().rawValue());
+            }
+        } catch (IllegalArgumentException e) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, ServerRequestHeaders.create()))
+                    .setKeepAlive(false)
+                    .message(e.getMessage())
+                    .safeMessage(true)
+                    .cause(e)
+                    .build();
+        }
     }
 
     private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.http;
 
 import java.util.List;
+
+import io.helidon.common.mapper.Mappers;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +74,7 @@ class ForwardedTest {
 
     @Test
     void testMultiValuesCommaSeparated() {
-        HeadersImpl<?> headers = new HeadersImpl<>();
+        HeadersImpl<?> headers = new HeadersImpl<>(Mappers.create());
         headers.add(HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10,by=\"192.0.2.60\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);
 
@@ -93,7 +95,7 @@ class ForwardedTest {
 
     @Test
     void testMultiValues() {
-        HeadersImpl<?> headers = new HeadersImpl<>();
+        HeadersImpl<?> headers = new HeadersImpl<>(Mappers.create());
         headers.add(HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
                     "by=\"192.0.2.60\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);
@@ -115,7 +117,7 @@ class ForwardedTest {
 
     @Test
     void testMultiValuesAndCommaSeparated() {
-        HeadersImpl<?> headers = new HeadersImpl<>();
+        HeadersImpl<?> headers = new HeadersImpl<>(Mappers.create());
         headers.add(HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
                     "by=\"192.0.2.60\",for=\"14.22.11.22\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);

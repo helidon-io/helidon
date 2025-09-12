@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.http;
 
+import io.helidon.common.mapper.Mappers;
+import io.helidon.service.registry.Services;
+
 /**
  * Mutable header value.
  */
@@ -27,7 +30,18 @@ public interface HeaderWriteable extends Header {
      * @return a new mutable header
      */
     static HeaderWriteable create(Header header) {
-        return new HeaderValueCopy(header);
+        return create(Services.get(Mappers.class), header);
+    }
+
+    /**
+     * Create a new mutable header from an existing header.
+     *
+     * @param mappers mappers to use when obtaining typed values from the created header
+     * @param header header to copy
+     * @return a new mutable header
+     */
+    static HeaderWriteable create(Mappers mappers, Header header) {
+        return new HeaderValueCopy(mappers, header);
     }
 
     /**

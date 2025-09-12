@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
@@ -81,7 +82,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                             serviceRequest,
                                                                             originalRequest(),
                                                                             whenSent,
-                                                                            whenComplete());
+                                                                            whenComplete(),
+                                                                            http1Client.prototype().mappers());
 
         boolean interrupted = false;
         try {
@@ -181,6 +183,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private final Http1ClientProtocolConfig protocolConfig;
         private final WritableHeaders<?> headers;
         private final BufferData prologue;
+        private final Mappers mappers;
 
         private boolean chunked;
         private BufferData firstPacket;
@@ -207,7 +210,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                              WebClientServiceRequest request,
                                              Http1ClientRequestImpl originalRequest,
                                              CompletableFuture<WebClientServiceRequest> whenSent,
-                                             CompletableFuture<WebClientServiceResponse> whenComplete) {
+                                             CompletableFuture<WebClientServiceResponse> whenComplete,
+                                             Mappers mappers) {
             this.connection = connection;
             this.ctx = connection.helidonSocket();
             this.writer = writer;
@@ -223,6 +227,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.lastRequest = originalRequest;
             this.whenSent = whenSent;
             this.whenComplete = whenComplete;
+            this.mappers = mappers;
         }
 
         @Override
@@ -410,7 +415,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 if (responseStatus == Status.CONTINUE_100) {
                     // there is the status and (usually) empty headers. We ignore such headers
-                    Http1HeadersParser.readHeaders(reader,
+                    Http1HeadersParser.readHeaders(mappers,
+                                                   reader,
                                                    protocolConfig.maxHeaderSize(),
                                                    protocolConfig.validateResponseHeaders());
                 }
@@ -419,7 +425,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
 
                 if (responseStatus != Status.CONTINUE_100) {
-                    WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
+                    WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(clientConfig.mappers(),
+                                                                                        reader,
                                                                                         protocolConfig.maxHeaderSize(),
                                                                                         protocolConfig.validateResponseHeaders());
                     connection.helidonSocket().log(LOGGER_RES_HEADERS,

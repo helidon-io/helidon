@@ -19,12 +19,14 @@ package io.helidon.http;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.mapper.Mappers;
+
 class HeaderValueCopy extends HeaderWritableValueBase {
     private final Header original;
     private List<String> values;
 
-    HeaderValueCopy(Header header) {
-        super(header.headerName(), header.changing(), header.sensitive(), header.get());
+    HeaderValueCopy(Mappers mappers, Header header) {
+        super(mappers, header.headerName(), header.changing(), header.sensitive(), header.get());
 
         this.original = header;
     }
