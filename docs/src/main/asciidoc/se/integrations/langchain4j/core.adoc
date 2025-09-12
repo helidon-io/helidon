@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Core Components
-:description: LangChain4J Core Components
-:keywords: helidon, AI, LangChain4J, LC4J
-:feature-name: LangChain4J Integration
+= LangChain4j Core Components
+:description: LangChain4j Core Components
+:keywords: helidon, AI, LangChain4j, LC4J
+:feature-name: LangChain4j Integration
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -34,11 +34,11 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-This module adds support for selected LangChain4J core components.
+This module adds support for selected LangChain4j core components.
 
 == Maven Coordinates
 
-No additional dependencies are required beyond the xref:langchain4j.adoc#maven-coordinates[LangChain4J integration core dependencies].
+No additional dependencies are required beyond the xref:langchain4j.adoc#maven-coordinates[LangChain4j integration core dependencies].
 
 == Components
 
@@ -78,4 +78,4 @@ Full list of configuration properties:
 
 == Additional Information
 
-* xref:langchain4j.adoc[LangChain4J Integration]
+* xref:langchain4j.adoc[LangChain4j Integration]

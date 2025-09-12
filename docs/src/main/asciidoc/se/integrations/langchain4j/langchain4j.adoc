@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J
-:description: Helidon LangChain4J Integration
-:keywords: helidon, AI, LangChain4J, LC4J
-:feature-name: LangChain4J Integration
+= LangChain4j
+:description: Helidon LangChain4j Integration
+:keywords: helidon, AI, LangChain4j, LC4J
+:feature-name: LangChain4j Integration
 :rootdir: {docdir}/../../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -28,7 +28,7 @@ include::{rootdir}/includes/se.adoc[]
 
 * <<Overview, Overview>>
 * <<Features, Features>>
-* <<Supported LangChain4J Components, Supported LangChain4J Components>>
+* <<Supported LangChain4j Components, Supported LangChain4j Components>>
 * <<Maven Coordinates, Maven Coordinates>>
 * <<General Concepts, General Concepts>>
     ** <<Creating Components, Creating Components>>
@@ -42,23 +42,25 @@ include::{rootdir}/includes/se.adoc[]
 * <<Additional Information, Additional Information>>
 
 == Overview
+// Referenced from the guide
+// tag::overview[]
+https://github.com/langchain4j/langchain4j[LangChain4j] is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services for easy model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
 
-https://github.com/langchain4j/langchain4j[LangChain4J] is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services for easy model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
-
-Helidon provides a LangChain4J integration module that simplifies the use of LangChain4J in Helidon applications.
+Helidon provides a LangChain4j integration module that simplifies the use of LangChain4j in Helidon applications.
 
 [NOTE]
-LangChain4J integration is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+LangChain4j integration is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+// end::overview[]
 
 === Features
 
 - *Integration with Helidon Inject*
 +
-Automatically creates and registers selected LangChain4J components in the Helidon service registry based on configuration.
+Automatically creates and registers selected LangChain4j components in the Helidon service registry based on configuration.
 
 - *Integration with CDI*
 +
-Thanks to the *Helidon Inject to CDI Bridge*, LangChain4J components can be used in CDI environments, including Helidon MP applications.
+Thanks to the *Helidon Inject to CDI Bridge*, LangChain4j components can be used in CDI environments, including Helidon MP applications.
 
 - *Convention Over Configuration*
 +
@@ -66,11 +68,11 @@ Simplifies configuration by offering sensible defaults, reducing manual setup fo
 
 - *Declarative AI Services*
 +
-Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Services] within the declarative programming model, allowing for clean, easy-to-manage code structures.
+Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4j's AI Services] within the declarative programming model, allowing for clean, easy-to-manage code structures.
 
-=== Supported LangChain4J Components
+=== Supported LangChain4j Components
 
-* xref:core.adoc[*LangChain4J Core*]
+* xref:core.adoc[*LangChain4j Core*]
     ** <<AI Services, AI Services>>
     ** xref:core.adoc#_embeddingstorecontentretriever[`EmbeddingStoreContentRetriever`]
     ** `MessageWindowChatMemory`
@@ -81,6 +83,11 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:open-ai.adoc#_openaiimagemodel[`OpenAiImageModel`]
     ** xref:open-ai.adoc#_openailanguagemodel[`OpenAiLanguageModel`]
     ** xref:open-ai.adoc#_openaimoderationmodel[`OpenAiModerationModel`]
+* xref:oci-genai.adoc[*OCI GenAI*]
+    ** xref:oci-genai.adoc#_ocigenaichatmodel[`OciGenAiChatModel`]
+    ** xref:oci-genai.adoc#_ocigenaistreamingchatmodel[`OciGenAiStreamingChatModel`]
+    ** xref:oci-genai.adoc#_ocigenaicoherechatmodel[`OciGenAiCohereChatModel`]
+    ** xref:oci-genai.adoc#_ocigenaicoherestreamingchatmodel[`OciGenAiCohereStreamingChatModel`]
 * xref:ollama.adoc[*Ollama*]
     ** xref:ollama.adoc#_ollamachatmodel[`OllamaChatModel`]
     ** xref:ollama.adoc#_ollamastreamingchatmodel[`OllamaStreamingChatModel`]
@@ -99,9 +106,9 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:jlama.adoc#_jlamastreamingchatmodel[`JlamaStreamingChatModel`]
     ** xref:jlama.adoc#_jlamaembeddingmodel[`JlamaEmbeddingModel`]
     ** xref:jlama.adoc#_jlamalanguagemodel[`JlamaLanguageModel`]
-* xref:codegen-provider.adoc[*LangChain4J Model Provider Generator*]
+* xref:codegen-provider.adoc[*LangChain4j Model Provider Generator*]
 
-NOTE: This integration does not limit the use of other LangChain4J components in your application. The components listed above receive special treatment, meaning they can be automatically created based on configuration.
+NOTE: This integration does not limit the use of other LangChain4j components in your application. The components listed above receive special treatment, meaning they can be automatically created based on configuration.
 
 We will extend the number of supported components in future releases.
 
@@ -114,6 +121,8 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-integrations-langchain4j</artifactId>
 </dependency>
 ----
+// Referenced from the guide
+// tag::annotation-processors[]
 
 Include the following annotation processors in the `<build><plugins>` section of `pom.xml`:
 
@@ -127,19 +136,23 @@ Include the following annotation processors in the `<build><plugins>` section of
             <path>
                 <groupId>io.helidon.codegen</groupId>
                 <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
             </path>
             <path>
                 <groupId>io.helidon.integrations.langchain4j</groupId>
                 <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+                <version>${helidon.version}</version>
             </path>
             <path>
                 <groupId>io.helidon.service</groupId>
                 <artifactId>helidon-service-codegen</artifactId>
+                <version>${helidon.version}</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
 </plugin>
 ----
+// end::annotation-processors[]
 
 Some features of the integration may require adding other dependencies. Check the corresponding sections for additional information.
 
@@ -147,7 +160,7 @@ Some features of the integration may require adding other dependencies. Check th
 
 === Creating Components
 
-<<Supported LangChain4J Components, Supported LangChain4J components>> are automatically created and registered in service registry if exists the corresponding configuration and `enabled` property is set to `true`.
+<<Supported LangChain4j Components, Supported LangChain4j components>> are automatically created and registered in service registry if exists the corresponding configuration and `enabled` property is set to `true`.
 
 For example, adding the following lines to `application.yaml` cause of automatic creating and registering `OpenAiChatModel`, which later can be injected in other classes of your application:
 
@@ -158,6 +171,7 @@ langchain4j:
     chat-model:
       enabled: true
       api-key: "demo"
+      base-url: "http://langchain4j.dev/demo/openai/v1"
       model-name: "gpt-4o-mini"
 ----
 
@@ -165,7 +179,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 === Supplier Factory
 
-Supplier Factory provide another way to create and register LangChain4J components. It is useful for creating components that are not yet natively supported by the integration. This method is not limited to LangChain4J and suitable for creating and registering other classes.
+Supplier Factory provide another way to create and register LangChain4j components. It is useful for creating components that are not yet natively supported by the integration. This method is not limited to LangChain4j and suitable for creating and registering other classes.
 
 Example below demonstrates a supplier factory for `AllMiniLmL6V2EmbeddingModel`.
 
@@ -222,9 +236,9 @@ In a CDI environment such as Helidon MP, Helidon Inject components are exposed a
 
 == AI Services
 
-LangChain4J AI Services provide a declarative and type-safe way to define AI-powered functionality. It allows combining chat models, retrieval-augmented generation (RAG), chat memory, and other building blocks to create sophisticated AI-driven workflows. Read more about it in https://docs.langchain4j.dev/tutorials/ai-services[LangChain4J documentation].
+LangChain4j AI Services provide a declarative and type-safe way to define AI-powered functionality. It allows combining chat models, retrieval-augmented generation (RAG), chat memory, and other building blocks to create sophisticated AI-driven workflows. Read more about it in https://docs.langchain4j.dev/tutorials/ai-services[LangChain4j documentation].
 
-Helidon's LangChain4J integration introduces a declarative Helidon Inject-based approach for creating AI Services. It supports the following components:
+Helidon's LangChain4j integration introduces a declarative Helidon Inject-based approach for creating AI Services. It supports the following components:
 
 * *Chat Model*:
     ** `dev.langchain4j.model.chat.ChatModel`
@@ -246,9 +260,9 @@ Helidon's LangChain4J integration introduces a declarative Helidon Inject-based 
 
 === Creating AI Service
 
-AI Service is defined by a Java interface. It's a pure LangChain4J component. Refer to https://docs.langchain4j.dev/tutorials/ai-services[LangChain4J documentation] to read more details about it.
+AI Service is defined by a Java interface. It's a pure LangChain4j component. Refer to https://docs.langchain4j.dev/tutorials/ai-services[LangChain4j documentation] to read more details about it.
 
-Helidon's LangChain4J integration provides a specialized set of annotations for creating, configuring, and using LangChain4J AI Services in Helidon applications.
+Helidon's LangChain4j integration provides a specialized set of annotations for creating, configuring, and using LangChain4j AI Services in Helidon applications.
 
 To create an AI Service define an interface and annotate it with `@AI.Service`.
 
@@ -260,7 +274,7 @@ public interface ChatAiService {
 }
 ----
 
-In this scenario all LangChain4J components from the list above are taken from the service registry. User still has an ability to manually control the process by putting any of the following annotations which specify a service name which must be used for this particular function instead of discovering it automatically.
+In this scenario all LangChain4j components from the list above are taken from the service registry. User still has an ability to manually control the process by putting any of the following annotations which specify a service name which must be used for this particular function instead of discovering it automatically.
 
 [cols="1,5"]
 |===
@@ -298,7 +312,7 @@ Since `Ai.ToolProvider` and `Ai.McpClients` are mutually exclusive, some clarifi
 
 === Tools (Callback Functions)
 
-In LangChain4J, tools are callback functions that the language model can invoke during a conversation to perform specific tasks, retrieve information, or execute external logic. These tools extend the model's capabilities beyond simple text generation, allowing it to dynamically interact with external systems. For instance, a tool might query a database, call an external API, or perform calculations. Based on user input, the model can decide to call a tool, interpret its response, and incorporate it into the conversation for a more context-aware and multi-step interaction.
+In LangChain4j, tools are callback functions that the language model can invoke during a conversation to perform specific tasks, retrieve information, or execute external logic. These tools extend the model's capabilities beyond simple text generation, allowing it to dynamically interact with external systems. For instance, a tool might query a database, call an external API, or perform calculations. Based on user input, the model can decide to call a tool, interpret its response, and incorporate it into the conversation for a more context-aware and multi-step interaction.
 
 To expose a method in a Helidon service as a tool, annotate it with the `@Tool` annotation from `dev.langchain4j.agent.tool.Tool`, as shown in the example below:
 
@@ -316,10 +330,10 @@ public class OrderService {
 
 NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI beans, you must annotate the CDI bean with the `@Ai.Tool` qualifier.
 
-For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4J Documentation on Tools].
+For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4j Documentation on Tools].
 
 === MCP Client
-In LangChain4J, an MCP (Model Context Protocol) client acts as a bridge between the language model and external services or resources that follow the MCP standard. Instead of directly embedding custom logic into the application, the MCP client enables the model to discover, connect to, and interact with external tools and data providers in a standardized way.
+In LangChain4j, an MCP (Model Context Protocol) client acts as a bridge between the language model and external services or resources that follow the MCP standard. Instead of directly embedding custom logic into the application, the MCP client enables the model to discover, connect to, and interact with external tools and data providers in a standardized way.
 
 To add MCP Clients to your AI Service, use the following:
 [source,java]
@@ -338,15 +352,15 @@ include::{rootdir}/config/io_helidon_integrations_langchain4j_McpClientConfig.ad
 
 === Observability (ChatModelListeners)
 
-While LangChain4J doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4J Documentation on Observability].
+While LangChain4j doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4j Documentation on Observability].
 
 Helidon provides `MetricsChatModelListener` which generates metrics that follow the https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/gen-ai/gen-ai-metrics.md[OpenTelemetry Semantic Conventions for GenAI Metrics v1.36.0]. This is done out-of-box for Chat API calls.
 
 == Additional Information
 
-* https://docs.langchain4j.dev/[LangChain4J documentation]
+* https://docs.langchain4j.dev/[LangChain4j documentation]
 * Components Reference
-** xref:core.adoc[Core LangChain4J Components]
+** xref:core.adoc[Core LangChain4j Components]
 ** xref:open-ai.adoc[Open AI]
 ** xref:ollama.adoc[Ollama]
 ** xref:cohere.adoc[Cohere]
