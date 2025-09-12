@@ -18,6 +18,7 @@ package io.helidon.webserver.tests.jsonrpc;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
@@ -30,7 +31,7 @@ import io.helidon.webserver.jsonrpc.JsonRpcRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import jakarta.json.Json;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +42,7 @@ class JsonRpcExceptionTest {
 
     private static final String MESSAGE1 = "message1";
     private static final String MESSAGE2 = "message2";
-    private static final CountDownLatch LATCH = new CountDownLatch(1);
+    private static final AtomicReference<CountDownLatch> LATCH = new AtomicReference<>();
 
     private final JsonRpcClient client;
 
@@ -52,23 +53,34 @@ class JsonRpcExceptionTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         JsonRpcHandlers jsonRpcHandlers = JsonRpcHandlers.builder()
+
+                // these ping methods all throw exceptions
                 .method("ping1", JsonRpcExceptionTest::ping1)
+                .method("ping2", JsonRpcExceptionTest::ping2)
+                .method("ping3", JsonRpcExceptionTest::ping3)
+
+                // these mappers apply to all methods and must be registered in order
                 .exception(CustomException1.class, (req, res, t) -> {
                     // verify message and update latch
                     assertThat(t.getMessage(), is(MESSAGE1));
-                    LATCH.countDown();
+                    LATCH.get().countDown();
 
-                    // mapp to a new JSON-RPC error
-                    return Optional.of(JsonRpcError.create(-10000, t.getMessage()));
+                    // map to a new JSON-RPC error
+                    return Optional.of(JsonRpcError.create(-10001, t.getMessage()));
                 })
-                .method("ping2", JsonRpcExceptionTest::ping2)
                 .exception(CustomException2.class, (req, res, t) -> {
                     // verify message and update latch
                     assertThat(t.getMessage(), is(MESSAGE2));
-                    LATCH.countDown();
+                    LATCH.get().countDown();
 
-                    // update response and do not return an error!
-                    res.result(Json.createValue(MESSAGE2));
+                    // map to a new JSON-RPC error
+                    return Optional.of(JsonRpcError.create(-10002, t.getMessage()));
+                })
+                .exception(Throwable.class, (req, res, t) -> {      // catch all exception handler
+                    // updates latch
+                    LATCH.get().countDown();
+
+                    // do not return an error, sends internal error
                     return Optional.empty();
                 })
                 .build();
@@ -78,28 +90,44 @@ class JsonRpcExceptionTest {
         builder.register("/", jsonRpcRouting);
     }
 
+    @BeforeEach
+    void beforeEach() {
+        LATCH.set(new CountDownLatch(1));
+    }
+
     @Test
-    void testCustomException1() throws InterruptedException {
+    void testPing1() throws InterruptedException {
         try (JsonRpcClientResponse res = client.rpcMethod("ping1")
                 .path("/rpc")
                 .submit()) {
             assertThat(res.error().isPresent(), is(true));
-            assertThat(res.error().get().code(), is(-10000));
+            assertThat(res.error().get().code(), is(-10001));
             assertThat(res.error().get().message(), is(MESSAGE1));
         }
-        assertThat(LATCH.await(10, TimeUnit.SECONDS), is(true));
+        assertThat(LATCH.get().await(10, TimeUnit.SECONDS), is(true));
     }
 
     @Test
-    void testCustomException2() throws InterruptedException {
+    void testPing2() throws InterruptedException {
         try (JsonRpcClientResponse res = client.rpcMethod("ping2")
                 .path("/rpc")
                 .submit()) {
-            assertThat(res.error().isPresent(), is(false));
-            assertThat(res.result().isPresent(), is(true));
-            assertThat(res.result().get().asJsonValue(), is(Json.createValue(MESSAGE2)));
+            assertThat(res.error().isPresent(), is(true));
+            assertThat(res.error().get().code(), is(-10002));
+            assertThat(res.error().get().message(), is(MESSAGE2));
         }
-        assertThat(LATCH.await(10, TimeUnit.SECONDS), is(true));
+        assertThat(LATCH.get().await(10, TimeUnit.SECONDS), is(true));
+    }
+
+    @Test
+    void testPing3() throws InterruptedException {
+        try (JsonRpcClientResponse res = client.rpcMethod("ping3")
+                .path("/rpc")
+                .submit()) {
+            assertThat(res.error().isPresent(), is(true));
+            assertThat(res.error().get().code(), is(JsonRpcError.INTERNAL_ERROR));
+        }
+        assertThat(LATCH.get().await(10, TimeUnit.SECONDS), is(true));
     }
 
     static void ping1(JsonRpcRequest jsonRpcRequest, JsonRpcResponse response) {
@@ -119,5 +147,9 @@ class JsonRpcExceptionTest {
         private CustomException2() {
             super(MESSAGE2);
         }
+    }
+
+    static void ping3(JsonRpcRequest jsonRpcRequest, JsonRpcResponse response) {
+        throw new RuntimeException("Oops");
     }
 }

@@ -141,16 +141,16 @@ public class JsonRpcRouting implements HttpService {
                             // see if there is an exception handler defined
                             Optional<JsonRpcError> mappedError = handleThrowable(handlers, jsonReq, jsonRes, throwable1);
 
-                            // use error if returned, otherwise use response
+                            // use error if returned, otherwise internal error
                             if (mappedError.isPresent()) {
                                 JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
                                 res.status(Status.OK_200).send(jsonRpcError);
-                            } else {
-                                res.status(jsonRes.status()).send(jsonRes.asJsonObject());     // use response as is
+                                return;
                             }
                         } catch (Throwable throwable2) {
-                            sendInternalError(res);
+                            // falls through
                         }
+                        sendInternalError(res);
                     }
                 } else if (jsonRequest instanceof JsonArray jsonArray) {
                     // we must receive at least one request
@@ -200,17 +200,17 @@ public class JsonRpcRouting implements HttpService {
                                 // see if there is an exception handler defined
                                 Optional<JsonRpcError> mappedError = handleThrowable(handlers, jsonReq, jsonRes, throwable1);
 
-                                // use error if returned, otherwise use response
+                                // use error if returned, otherwise internal error
                                 if (mappedError.isPresent()) {
                                     JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
                                     arrayBuilder.add(jsonRpcError);
-                                } else {
-                                    arrayBuilder.add(jsonRes.asJsonObject());     // use response as is
+                                    continue;
                                 }
                             } catch (Throwable throwable2) {
-                                JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, null);
-                                arrayBuilder.add(internalError);
+                                // falls through
                             }
+                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, null);
+                            arrayBuilder.add(internalError);
                         }
                     }
 
@@ -234,7 +234,7 @@ public class JsonRpcRouting implements HttpService {
                                                    Throwable throwable) throws Throwable {
         // returned in registration order
         for (Map.Entry<Class<? extends Throwable>, JsonRpcExceptionHandler> entry : handlers.exceptionMap().entrySet()) {
-            if (throwable.getClass().isAssignableFrom(entry.getKey())) {
+            if (entry.getKey().isAssignableFrom(throwable.getClass())) {
                 JsonRpcExceptionHandler handler = entry.getValue();
                 return handler.handle(jsonReq, jsonRes, throwable);
             }

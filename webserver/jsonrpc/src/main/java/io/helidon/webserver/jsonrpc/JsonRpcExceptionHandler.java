@@ -21,8 +21,8 @@ import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.ServerLifecycle;
 
 /**
- * An exception handler that can be registered to map exceptions thrown in JSON-RPC
- * method handlers.
+ * An exception handler that can be registered to map exceptions thrown in method
+ * handlers to {@code JsonRpcError}s.
  */
 @FunctionalInterface
 public interface JsonRpcExceptionHandler extends ServerLifecycle {
@@ -33,9 +33,9 @@ public interface JsonRpcExceptionHandler extends ServerLifecycle {
      * @param req the server request
      * @param res the server response
      * @param throwable the throwable thrown by the method handler
-     * @return an optional JSON-RPC error to be returned to the client. If empty,
-     *         then the response is sent back to the client as is after returning
-     *         from this exception handler.
+     * @return an optional JSON-RPC error to be returned to the client. If the returned
+     *         optional is empty, then an error with code {@link JsonRpcError#INTERNAL_ERROR}
+     *         is sent instead.
      * @throws Exception if an unexpected condition is found
      */
     Optional<JsonRpcError> handle(JsonRpcRequest req, JsonRpcResponse res, Throwable throwable) throws Exception;
