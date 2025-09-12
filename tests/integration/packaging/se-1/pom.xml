@@ -184,7 +184,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <includes combine.children="append">
-                                <include>**/*Jar*IT</include>
+                                <include>**/*JarClassPath*IT</include>
                             </includes>
                         </configuration>
                     </plugin>
