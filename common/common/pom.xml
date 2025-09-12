@@ -30,6 +30,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

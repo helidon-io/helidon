@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,10 @@ import java.util.TreeSet;
 
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.FilerResource;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.metadata.Descriptors;
-
-import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 
 /**
  * Support for reading and writing Helidon services to the resource.
@@ -48,11 +47,19 @@ import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
  * {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
 public class HelidonMetaInfServices {
+    private final CodegenFiler filer;
+    private final String resourceLocation;
     private final FilerResource services;
     private final String moduleName;
     private final Set<DescriptorMetadata> descriptors;
 
-    private HelidonMetaInfServices(FilerResource services, String moduleName, Set<DescriptorMetadata> descriptors) {
+    private HelidonMetaInfServices(CodegenFiler filer,
+                                   String resourceLocation,
+                                   FilerResource services,
+                                   String moduleName,
+                                   Set<DescriptorMetadata> descriptors) {
+        this.filer = filer;
+        this.resourceLocation = resourceLocation;
         this.services = services;
         this.moduleName = moduleName;
         this.descriptors = descriptors;
@@ -66,7 +73,8 @@ public class HelidonMetaInfServices {
      * @return a new instance of the service metadata manager
      */
     public static HelidonMetaInfServices create(CodegenFiler filer, String moduleName) {
-        FilerResource serviceRegistryMetadata = filer.resource(SERVICE_REGISTRY_LOCATION);
+        String resourceLocation = MetadataConstants.LOCATION + "/" + moduleName + "/" + MetadataConstants.SERVICE_REGISTRY_FILE;
+        FilerResource serviceRegistryMetadata = filer.resource(resourceLocation);
         byte[] bytes = serviceRegistryMetadata.bytes();
 
         Set<DescriptorMetadata> descriptors = new TreeSet<>(Comparator.comparing(DescriptorMetadata::descriptorType));
@@ -78,7 +86,7 @@ public class HelidonMetaInfServices {
                                                        moduleRegistry));
         }
 
-        return new HelidonMetaInfServices(serviceRegistryMetadata, moduleName, descriptors);
+        return new HelidonMetaInfServices(filer, resourceLocation, serviceRegistryMetadata, moduleName, descriptors);
     }
 
     /**
@@ -127,5 +135,6 @@ public class HelidonMetaInfServices {
 
         services.bytes(baos.toByteArray());
         services.write();
+        filer.manifest().add(resourceLocation);
     }
 }

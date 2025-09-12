@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package io.helidon.common;
 import java.io.IOException;
 import java.io.ObjectInputFilter;
 import java.lang.System.Logger.Level;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import io.helidon.metadata.MetadataConstants;
+import io.helidon.metadata.MetadataDiscovery;
+import io.helidon.metadata.MetadataFile;
 
 /**
  * <p>
@@ -95,7 +97,7 @@ public final class SerializationConfig {
     static final String PROP_TRACE = "helidon.serialFilter.trace";
     static final String PROP_IGNORE_FILES = "helidon.serialFilter.ignoreFiles";
 
-    private static final String PROPERTY_FILE = "META-INF/helidon/serial-config.properties";
+    private static final String PROPERTY_FILE = MetadataConstants.LOCATION + "/" + MetadataConstants.SERIAL_CONFIG_FILE;
     private static final String REJECT_ALL_PATTERN = "!*";
     private static final System.Logger LOGGER = System.getLogger(SerializationConfig.class.getName());
     private static final AtomicReference<ConfigOptions> EXISTING_CONFIG = new AtomicReference<>();
@@ -531,17 +533,19 @@ public final class SerializationConfig {
             List<String> parts = new LinkedList<>();
 
             try {
-                Enumeration<URL> resources = SerializationConfig.class
-                        .getClassLoader()
-                        .getResources(PROPERTY_FILE);
-                while (resources.hasMoreElements()) {
-                    URL url = resources.nextElement();
+                var resources = MetadataDiscovery.instance()
+                        .list(MetadataConstants.SERIAL_CONFIG_FILE);
+
+                for (MetadataFile resource : resources) {
                     Properties props = new Properties();
-                    props.load(url.openStream());
+
+                    try (var stream = resource.inputStream()) {
+                        props.load(stream);
+                    }
 
                     String pattern = props.getProperty("pattern");
                     if (pattern == null) {
-                        LOGGER.log(Level.WARNING, "Could not find 'pattern' property in " + url);
+                        LOGGER.log(Level.WARNING, "Could not find 'pattern' property in " + resource.absoluteLocation());
                     } else {
                         if (!pattern.isBlank()) {
                             parts.add(pattern);

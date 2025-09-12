@@ -35,6 +35,10 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
         </dependency>

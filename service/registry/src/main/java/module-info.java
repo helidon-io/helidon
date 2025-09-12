@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
@@ -37,6 +36,7 @@ module io.helidon.service.registry {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
     requires java.naming;
+    requires io.helidon.metadata;
 
     exports io.helidon.service.registry;
 

@@ -70,6 +70,11 @@ public abstract class ProcessRunner {
         CLASS_PATH,
 
         /**
+         * Execute processes using a single fat-jar.
+         */
+        FAT_JAR,
+
+        /**
          * Execute processes using module path.
          */
         MODULE_PATH,
@@ -99,6 +104,7 @@ public abstract class ProcessRunner {
     public static ProcessRunner of(ExecMode execMode) {
         return switch (execMode) {
             case CLASS_PATH -> new ClassPathRunner();
+            case FAT_JAR -> new FatJarRunner();
             case NATIVE -> new NativeImageRunner();
             case MODULE_PATH -> new ModulePathRunner();
             case JLINK_CLASS_PATH -> new JlinkRunner();
@@ -420,6 +426,19 @@ public abstract class ProcessRunner {
             return new CommandBuilder(javaExecutable())
                     .append(opts)
                     .append("-jar", Path.of("target/" + finalName + ".jar"))
+                    .append(args)
+                    .command();
+        }
+    }
+
+    private static final class FatJarRunner extends ProcessRunner {
+
+        @Override
+        protected List<String> command(List<String> opts, List<String> args) {
+            Objects.requireNonNull(finalName, "finalName is null");
+            return new CommandBuilder(javaExecutable())
+                    .append(opts)
+                    .append("-jar", Path.of("target/" + finalName + "-fat.jar"))
                     .append(args)
                     .command();
         }

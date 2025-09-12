@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,13 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.FilerResource;
 import io.helidon.codegen.FilerTextResource;
+import io.helidon.codegen.ManifestResource;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 
 class MavenFiler implements CodegenFiler {
+    private final LazyValue<ManifestResource> manifestResource;
     private final Path generatedSourceDir;
     private final Path outputDirectory;
     private boolean generatedSources;
@@ -40,6 +43,7 @@ class MavenFiler implements CodegenFiler {
     MavenFiler(Path generatedSourceDir, Path outputDirectory) {
         this.generatedSourceDir = generatedSourceDir;
         this.outputDirectory = outputDirectory;
+        this.manifestResource = LazyValue.create(() -> ManifestResource.create(this));
     }
 
     static MavenFiler create(Path generatedSourceDir, Path outputDirectory) {
@@ -128,6 +132,11 @@ class MavenFiler implements CodegenFiler {
         } else {
             return new MavenFilerResource(resourcePath);
         }
+    }
+
+    @Override
+    public ManifestResource manifest() {
+        return manifestResource.get();
     }
 
     boolean generatedSources() {

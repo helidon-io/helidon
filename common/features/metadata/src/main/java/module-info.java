@@ -20,6 +20,7 @@
 module io.helidon.common.features.metadata {
     requires io.helidon.builder.api;
     requires io.helidon.metadata.hson;
+    requires io.helidon.metadata;
 
     exports io.helidon.common.features.metadata;
 

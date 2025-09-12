@@ -18,6 +18,7 @@
  * Helidon Common library.
  */
 module io.helidon.common {
+    requires io.helidon.metadata;
 
     exports io.helidon.common;
 

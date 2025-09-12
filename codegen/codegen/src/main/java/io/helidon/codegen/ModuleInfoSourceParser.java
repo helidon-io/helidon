@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import io.helidon.common.types.TypeName;
 public final class ModuleInfoSourceParser {
     private static final String PROVIDES = "provides";
     private static final String OPENS = "opens";
-    private static final Pattern ANNOTATION = Pattern.compile("(@\\w+)(.*)");
+    private static final Pattern ANNOTATION = Pattern.compile("(@[\\w.]+)(.*)");
     private static final Pattern OPENS_PATTERN = Pattern.compile("opens (.*?)(?:\\s+to\\s+(.*?))?");
     private static final Pattern EXPORTS_PATTERN = Pattern.compile("exports (.*?)(?:\\s+to\\s+(.*?))?");
 
@@ -497,6 +497,10 @@ public final class ModuleInfoSourceParser {
 
     private void parseModule(ModuleInfo.Builder builder, String moduleString) {
         // module some.name
+        if (moduleString.startsWith("open")) {
+            builder.isOpen(true);
+            moduleString = moduleString.substring(4).trim();
+        }
         builder.name(moduleString.substring(6).trim());
         state = State.MODULE_CONTENT;
         outState = State.MODULE_CONTENT;

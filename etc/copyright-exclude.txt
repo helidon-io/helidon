@@ -70,3 +70,4 @@ src/test/resources/static/classpath/index.html
 service.loader
 .repo
 reflection.proto
+manifest

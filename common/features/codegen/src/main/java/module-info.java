@@ -22,6 +22,7 @@ module io.helidon.common.features.codegen {
     requires io.helidon.codegen;
     requires io.helidon.metadata.hson;
     requires io.helidon.common.features.metadata;
+    requires io.helidon.metadata;
 
     exports io.helidon.common.features.codegen;
 

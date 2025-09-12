@@ -128,6 +128,7 @@ public final class AptProcessor extends AbstractProcessor {
 
         if (roundEnv.processingOver()) {
             codegen.processingOver();
+            ctx.filer().manifest().write();
             return annotations.isEmpty();
         }
 
