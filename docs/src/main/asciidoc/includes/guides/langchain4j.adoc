@@ -120,7 +120,7 @@ annotate it with `@Ai.Service` so Helidon can make a superfast build time bean f
 
 [source,java]
 ----
-include::{sourcedir}/includes/integrations/lc4j/guide/base/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/includes/guides/lc4j/base/PirateService.java[tag=snippet_1, indent=0]
 ----
 
 ifdef::se-flavor[]
@@ -129,9 +129,9 @@ Next step is to add new Http POST handler to the webserver, you can do it by cha
 
 [source,java]
 ----
-include::{sourcedir}/se/integrations/lc4j/guide/base/Resource.java[tag=imports, indent=0]
+include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=imports, indent=0]
 
-include::{sourcedir}/se/integrations/lc4j/guide/base/Resource.java[tag=method, indent=0]
+include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=method, indent=0]
 ----
 // <1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
 
@@ -141,7 +141,7 @@ Next step is to add new Http POST JAX-RS resource, create new public class `Pira
 
 [source,java]
 ----
-include::{sourcedir}/mp/integrations/lc4j/guide/base/PirateResource.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/guides/lc4j/base/PirateResource.java[tag=snippet_1, indent=0]
 ----
 <1> Notice how we can inject the LangChain4j Ai service as Helidon declarative superfast build time bean directly in JAX-RS resource.
 endif::mp-flavor[]
@@ -167,7 +167,7 @@ https://docs.langchain4j.dev/tutorials/ai-services#usermessage[template argument
 
 [source,java]
 ----
-include::{sourcedir}/includes/integrations/lc4j/guide/template/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/includes/guides/lc4j/template/PirateService.java[tag=snippet_1, indent=0]
 ----
 
 Remember to fix the code calling the service.
@@ -175,15 +175,15 @@ Remember to fix the code calling the service.
 ifdef::se-flavor[]
 [source,java]
 ----
-include::{sourcedir}/se/integrations/lc4j/guide/template/Resource.java[tag=imports, indent=0]
+include::{sourcedir}/se/guides/lc4j/template/Resource.java[tag=imports, indent=0]
 
-include::{sourcedir}/se/integrations/lc4j/guide/template/Resource.java[tag=method, indent=0]
+include::{sourcedir}/se/guides/lc4j/template/Resource.java[tag=method, indent=0]
 ----
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,java]
 ----
-include::{sourcedir}/mp/integrations/lc4j/guide/template/PirateResource.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/guides/lc4j/template/PirateResource.java[tag=snippet_1, indent=0]
 ----
 endif::mp-flavor[]
 
@@ -208,14 +208,14 @@ so our memory works per conversation ID.
 
 [source,java]
 ----
-include::{sourcedir}/includes/integrations/lc4j/guide/memory/PirateMemoryProvider.java[tag=snippet_1, indent=0]
+include::{sourcedir}/includes/guides/lc4j/memory/PirateMemoryProvider.java[tag=snippet_1, indent=0]
 ----
 
 Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
 
 [source,java]
 ----
-include::{sourcedir}/includes/integrations/lc4j/guide/memory/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/includes/guides/lc4j/memory/PirateService.java[tag=snippet_1, indent=0]
 ----
 
 We will expect conversation id as a header on the webserver.
@@ -223,15 +223,15 @@ We will expect conversation id as a header on the webserver.
 ifdef::se-flavor[]
 [source,java]
 ----
-include::{sourcedir}/se/integrations/lc4j/guide/memory/Resource.java[tag=imports, indent=0]
+include::{sourcedir}/se/guides/lc4j/memory/Resource.java[tag=imports, indent=0]
 
-include::{sourcedir}/se/integrations/lc4j/guide/memory/Resource.java[tag=method, indent=0]
+include::{sourcedir}/se/guides/lc4j/memory/Resource.java[tag=method, indent=0]
 ----
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,java]
 ----
-include::{sourcedir}/mp/integrations/lc4j/guide/memory/PirateResource.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/guides/lc4j/memory/PirateResource.java[tag=snippet_1, indent=0]
 ----
 endif::mp-flavor[]
 

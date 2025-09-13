@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.includes.integrations.lc4j.guide.template;
+package io.helidon.docs.mp.guides.lc4j.template;
+
+import io.helidon.docs.includes.guides.lc4j.template.PirateService;
 // tag::snippet_1[]
-import io.helidon.integrations.langchain4j.Ai;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
-import dev.langchain4j.service.SystemMessage;
-import dev.langchain4j.service.UserMessage;
-import dev.langchain4j.service.V;
+@Path("/chat")
+public class PirateResource {
 
-@Ai.Service
-public interface PirateService {
+    @Inject
+    PirateService pirateService;
 
-    @SystemMessage("""
-            You are a pirate who like to tell stories about his time
-            at the sea with captain {{capt-name}}.
-            """)
-    String chat(@V("capt-name") String captName,
-                @UserMessage String prompt);
+    @POST
+    public String chat(String message) {
+        return pirateService.chat("Frank", message);
+    }
+
 }
 // end::snippet_1[]

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.se.integrations.lc4j.guide.base;
+package io.helidon.docs.se.guides.lc4j.base;
 
-import io.helidon.docs.includes.integrations.lc4j.guide.base.PirateService;
+import io.helidon.docs.includes.guides.lc4j.base.PirateService;
 // tag::imports[]
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpRouting;
@@ -29,7 +29,7 @@ public class Resource {
         routing.post("/chat", (req, res) -> {
             var prompt = req.content().as(String.class);
 
-            var response = Services.get(PirateService.class) //(1)
+            var response = Services.get(PirateService.class) //<1>
                     .chat(prompt);
 
             res.send(response);

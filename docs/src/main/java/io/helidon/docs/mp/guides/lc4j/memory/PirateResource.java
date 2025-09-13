@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.mp.integrations.lc4j.guide.template;
+package io.helidon.docs.mp.guides.lc4j.memory;
 
-import io.helidon.docs.includes.integrations.lc4j.guide.template.PirateService;
+import io.helidon.docs.includes.guides.lc4j.memory.PirateService;
 // tag::snippet_1[]
 import jakarta.inject.Inject;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 
@@ -29,9 +30,9 @@ public class PirateResource {
     PirateService pirateService;
 
     @POST
-    public String chat(String message) {
-        return pirateService.chat("Frank", message);
+    public String chat(@HeaderParam("conversation-id") String conversationId,
+                       String message) {
+        return pirateService.chat(conversationId, "Frank", message);
     }
-
 }
 // end::snippet_1[]

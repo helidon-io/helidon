@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.includes.integrations.lc4j.guide.base;
+package io.helidon.docs.includes.guides.lc4j.base;
 // tag::snippet_1[]
 
 import io.helidon.integrations.langchain4j.Ai;

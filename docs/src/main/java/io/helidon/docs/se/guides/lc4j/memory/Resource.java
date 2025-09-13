@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.se.integrations.lc4j.guide.memory;
+package io.helidon.docs.se.guides.lc4j.memory;
 
-import io.helidon.docs.includes.integrations.lc4j.guide.memory.PirateService;
+import io.helidon.docs.includes.guides.lc4j.memory.PirateService;
 // tag::imports[]
 import io.helidon.http.HeaderNames;
 import io.helidon.service.registry.Services;

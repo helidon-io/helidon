@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.includes.integrations.lc4j.guide.memory;
+package io.helidon.docs.includes.guides.lc4j.memory;
 // tag::snippet_1[]
 import java.util.function.Supplier;
 

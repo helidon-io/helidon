@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.includes.integrations.lc4j.guide.memory;
+package io.helidon.docs.includes.guides.lc4j.template;
 // tag::snippet_1[]
 import io.helidon.integrations.langchain4j.Ai;
 
-import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 @Ai.Service
-@Ai.ChatMemoryProvider(PirateMemoryProvider.NAME)
 public interface PirateService {
 
     @SystemMessage("""
             You are a pirate who like to tell stories about his time
             at the sea with captain {{capt-name}}.
             """)
-    String chat(@MemoryId String memoryId,
-                @V("capt-name") String captName,
+    String chat(@V("capt-name") String captName,
                 @UserMessage String prompt);
 }
 // end::snippet_1[]

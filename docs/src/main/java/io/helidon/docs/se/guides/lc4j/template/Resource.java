@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package io.helidon.docs.mp.integrations.lc4j.guide.base;
+package io.helidon.docs.se.guides.lc4j.template;
 
-import io.helidon.docs.includes.integrations.lc4j.guide.base.PirateService;
-// tag::snippet_1[]
-import jakarta.inject.Inject;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
+import io.helidon.docs.includes.guides.lc4j.template.PirateService;
+// tag::imports[]
+import io.helidon.service.registry.Services;
+import io.helidon.webserver.http.HttpRouting;
+// end::imports[]
 
-@Path("/chat")
-public class PirateResource {
+public class Resource {
 
-    @Inject
-    PirateService pirateService; //<1>
+    // tag::method[]
+    static void routing(HttpRouting.Builder routing) {
+        routing.post("/chat", (req, res) -> {
+            var prompt = req.content().as(String.class);
+            var response = Services.get(PirateService.class)
+                    .chat("Frank", prompt);
 
-    @POST
-    public String chat(String message) {
-        return pirateService.chat(message);
+            res.send(response);
+        });
     }
+    // end::method[]
 }
-// end::snippet_1[]
