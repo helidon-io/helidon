@@ -213,7 +213,11 @@ public final class ErrorHandlers {
                              ErrorHandler<Throwable> it) {
         // we are only interested in resetting the streams, headers are at the discretion of the error handler
         if (!response.resetStream()) {
-            ctx.log(LOGGER, System.Logger.Level.WARNING, "Unable to reset response for error handler.");
+            ctx.log(LOGGER,
+                    System.Logger.Level.WARNING,
+                    "Unable to reset response for error handler, at least part of entity already written. "
+                            + "Error handler cannot be invoked.",
+                    e);
             throw new CloseConnectionException(
                     "Cannot send response of a simple handler, status and headers already written", e);
         }
