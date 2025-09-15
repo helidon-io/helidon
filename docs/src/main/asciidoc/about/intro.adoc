@@ -35,7 +35,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 * Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon WebServer. Learn more: <<Helidon MP, Helidon MP>>
 
-* Java 21 is required to use Helidon 4.
+* Java 21 is required to use Helidon 4. Java 25+ is recommended.
 
 
 
