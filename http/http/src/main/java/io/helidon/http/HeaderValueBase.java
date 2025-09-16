@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,12 @@ abstract class HeaderValueBase implements Header {
     }
 
     @Override
+    public String getString() {
+        // optimize for string values, no need to use mapping
+        return get();
+    }
+
+    @Override
     public <T> T get(Class<T> type) {
         return MapperManager.global().map(get(), String.class, type, QUALIFIER);
     }
@@ -73,7 +79,7 @@ abstract class HeaderValueBase implements Header {
 
     @Override
     public Value<String> asString() {
-        return Value.create(MapperManager.global(), name(), get(), GenericType.STRING, QUALIFIER);
+        return new UnmappedValue<>(GenericType.STRING, name(), get());
     }
 
     @Override
@@ -146,5 +152,117 @@ abstract class HeaderValueBase implements Header {
                 + "values=" + allValues() + ", "
                 + "changing=" + changing + ", "
                 + "sensitive=" + sensitive + ']';
+    }
+
+    @SuppressWarnings("removal")
+    private static final class UnmappedValue<T> implements Value<T> {
+        private final String name;
+        private final T value;
+        private final GenericType<T> type;
+        private final boolean isClass;
+        private final Class<?> theClass;
+
+        private UnmappedValue(GenericType<T> type, String name, T value) {
+            this.type = type;
+            this.name = name;
+            this.value = value;
+            this.isClass = type.isClass();
+            this.theClass = type.rawType();
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public T get() {
+            return value;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <N> Value<N> as(Class<N> type) throws MapperException {
+            if (isType(type)) {
+                return (Value<N>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .as(type);
+        }
+
+        @Override
+        public <N> Value<N> as(GenericType<N> type) throws MapperException {
+            if (type.equals(this.type)) {
+                //noinspection unchecked
+                return (Value<N>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .as(type);
+        }
+
+        @Override
+        public <N> Value<N> as(Function<? super T, ? extends N> mapper) {
+            N value = mapper.apply(this.value);
+            return new UnmappedValue<>(GenericType.create(value), name, value);
+        }
+
+        @Override
+        public Optional<T> asOptional() throws MapperException {
+            return Optional.of(value);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Value<Boolean> asBoolean() {
+            if (isType(Boolean.class) || isType(boolean.class)) {
+                return (Value<Boolean>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .asBoolean();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Value<String> asString() {
+            if (isType(String.class)) {
+                return (Value<String>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .asString();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Value<Integer> asInt() {
+            if (isType(Integer.class) || isType(int.class)) {
+                return (Value<Integer>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .asInt();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Value<Long> asLong() {
+            if (isType(Long.class) || isType(long.class)) {
+                return (Value<Long>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .asLong();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Value<Double> asDouble() {
+            if (isType(Double.class) || isType(double.class)) {
+                return (Value<Double>) this;
+            }
+            return Value.create(MapperManager.global(), name, value, this.type, QUALIFIER)
+                    .asDouble();
+        }
+
+        private boolean isType(Class<?> desired) {
+            return isClass && desired == theClass;
+        }
     }
 }
