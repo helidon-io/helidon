@@ -281,11 +281,7 @@
         </profile>
         <profile>
             <id>fat-jar-image</id>
-            <!--
-            do nothing, to skip tests, as fat jar is not compatible with bean discovery
-            annotated discovers beans that should not be used, as they are added through an extension, as a result,
-            they get added twice and CDI fails
-            -->
+            <!-- Not supported-->
         </profile>
     </profiles>
 </project>

@@ -81,4 +81,3 @@ The following options are currently supported:
   compatibility)
 - `metadata-files` - list of file names of metadata files to find (comma separated list, defaults to all supported files)
 - `manifest-file` - location of the main manifest file
- 

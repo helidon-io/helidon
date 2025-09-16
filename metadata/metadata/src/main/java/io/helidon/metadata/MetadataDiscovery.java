@@ -24,26 +24,22 @@ import java.util.List;
 public interface MetadataDiscovery {
 
     /**
-     * Create a new metadata instance with default configuration - current context class-loader,
-     * default manifest location, and default metadata file names.
+     * Create a new metadata discovery instance with an explicit mode.
      *
      * @param mode mode of discovery, see {@link Mode} for details
      * @return metadata instance
-     * @see MetadataConstants#LOCATION
-     * @see MetadataConstants#MANIFEST_FILE
      */
     static MetadataDiscovery create(Mode mode) {
         return MetadataDiscoveryImpl.create(mode);
     }
 
     /**
-     * As metadata is based on classpath, it can be used statically.
-     * This method will provide an instance created using {@link #create(io.helidon.metadata.MetadataDiscovery.Mode)}
-     * with mode set to {@link Mode#AUTO}.
-     * For custom based instance, make sure to re-use the instance yourself, to avoid multiple discoveries.
+     * Get or create the metadata discovery instance for the current context classloader.
      * <p>
-     * This method does a check that verifies the static instance is for the current context class loader, to avoid
-     * problems in environments where the class loader may change (i.e. Maven build).
+     * Instances are created using {@link #create(io.helidon.metadata.MetadataDiscovery.Mode)},
+     * with mode set to {@link Mode#AUTO}.
+     * <p>
+     * If the current context classloader is {@code null}, the classloader for this class is used instead
      *
      * @return an instance of metadata
      * @see #create(io.helidon.metadata.MetadataDiscovery.Mode)

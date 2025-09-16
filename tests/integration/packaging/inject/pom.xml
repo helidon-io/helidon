@@ -215,7 +215,6 @@
             </build>
         </profile>
         <profile>
-            <!-- Please do not use this style of packaging -->
             <id>fat-jar-image</id>
             <build>
                 <plugins>

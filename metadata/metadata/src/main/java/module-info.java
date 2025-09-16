@@ -16,13 +16,10 @@
 
 /**
  * Metadata module, used to discover metadata of Helidon components.
+ *
  * @see io.helidon.metadata.MetadataDiscovery
  */
 module io.helidon.metadata {
-    /*
-    Developer's note:
-    This module must not depend on most other Helidon modules, as it is used by them, including helidon-common
-    As a result all code must be hand-crafted here.
-     */
+    // This module MUST be standalone, with zero dependencies
     exports io.helidon.metadata;
 }
