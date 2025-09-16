@@ -28,6 +28,7 @@ import io.helidon.service.codegen.DefaultsCodegen;
 import io.helidon.service.codegen.DefaultsParams;
 import io.helidon.service.codegen.FieldHandler;
 
+import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 
 class ParamProviderHttpHeader extends AbstractParametersProvider implements HttpParameterCodegenProvider {
@@ -62,17 +63,24 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
         String serverRequestParamName = ctx.serverRequestParamName();
 
+        // we always want `req.headers().find(HEADER_CONSTANT).map(it -> it.get(SomeType.class)`
         contentBuilder.addContent(serverRequestParamName)
-                .addContent(".headers()");
+                .addContent(".headers()")
+                .addContent(".find(")
+                .addContent(headerConstantName)
+                .addContentLine(")")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContent(".map(it -> it.");
+        getMethod(contentBuilder, realType);
+        contentBuilder.addContent(")");
 
         // add generated code to obtain the header from request
         if (parameterType.isOptional() || defaultCode.isPresent()) {
-            contentBuilder.addContent(".find(")
-                    .addContent(headerConstantName)
-                    .addContentLine(")")
-                    .addContent(".map(it -> it.");
-            getMethod(contentBuilder, realType);
-            contentBuilder.addContentLine(")");
+            // optional is what we expect
+            contentBuilder.addContentLine(";")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
 
             if (defaultCode.isPresent()) {
                 DefaultsCodegen.DefaultCode defaultInfo = defaultCode.get();
@@ -93,13 +101,24 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
                 contentBuilder.addContentLine(";");
             }
         } else {
-            contentBuilder.addContent(".get(")
+            // add .orElseThrow() in case the header is missing
+            contentBuilder.addContentLine("")
+                    .addContent(".orElseThrow(() -> new ")
+                    .addContent(BAD_REQUEST_EXCEPTION)
+                    .addContent("(\"Header \" + ")
                     .addContent(headerConstantName)
-                    .addContent(").");
-            getMethod(contentBuilder, parameterType);
-            contentBuilder.addContentLine(";");
+                    .addContent(".defaultCase() + ")
+                    .addContentLiteral(" is not present in the request.")
+                    .addContentLine("));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
         }
 
         return true;
+    }
+
+    @Override
+    String providerType() {
+        return "Header";
     }
 }

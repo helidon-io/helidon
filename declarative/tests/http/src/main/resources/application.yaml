@@ -20,6 +20,10 @@ app:
 server:
   port: 8080
   host: 0.0.0.0
+  error-handling:
+    # THIS MUST NOT BE USED IN PRODUCTION!
+    # exception message will be sent back over the network - this may give potential attackers information about your application
+    include-entity: true
 
 greet-service.client:
   uri: "http://localhost:${test.server.port}"

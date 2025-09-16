@@ -77,4 +77,8 @@ class ParamProviderHttpQuery extends AbstractParametersProvider implements HttpP
         return true;
     }
 
+    @Override
+    String providerType() {
+        return "Query parameter";
+    }
 }

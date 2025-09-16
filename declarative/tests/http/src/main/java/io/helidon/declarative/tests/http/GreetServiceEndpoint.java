@@ -73,6 +73,18 @@ class GreetServiceEndpoint implements GreetService {
         this.greeting.set(greeting);
     }
 
+    @Http.GET
+    @Http.Path("/custom-header")
+    String customHeaderParam(@Http.HeaderParam("X-CUSTOM") String header) {
+        return header;
+    }
+
+    @Http.GET
+    @Http.Path("/query-param")
+    String queryParam(@Http.QueryParam("param") String queryParam) {
+        return queryParam;
+    }
+
     /**
      * Return a worldly greeting message.
      */
