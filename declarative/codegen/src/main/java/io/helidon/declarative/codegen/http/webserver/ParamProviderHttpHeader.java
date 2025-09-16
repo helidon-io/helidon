@@ -107,7 +107,9 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
                     .addContent(BAD_REQUEST_EXCEPTION)
                     .addContent("(\"Header \" + ")
                     .addContent(headerConstantName)
-                    .addContentLine(".defaultCase() + \" is not present in the request.\"));")
+                    .addContent(".defaultCase() + ")
+                    .addContentLiteral(" is not present in the request.")
+                    .addContentLine("));")
                     .decreaseContentPadding()
                     .decreaseContentPadding();
         }
