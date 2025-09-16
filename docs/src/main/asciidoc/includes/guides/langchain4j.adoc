@@ -118,7 +118,7 @@ endif::mp-flavor[]
 Next we need to create LangChain4j https://docs.langchain4j.dev/tutorials/ai-services[Ai service] and
 annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
 
-[source,java]
+[source,java,subs="none"]
 ----
 include::{sourcedir}/includes/guides/lc4j/base/PirateService.java[tag=snippet_1, indent=0]
 ----
@@ -133,7 +133,7 @@ include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=imports, indent=0]
 
 include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=method, indent=0]
 ----
-// <1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
+<1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
 
 endif::se-flavor[]
 ifdef::mp-flavor[]
@@ -165,7 +165,7 @@ echo "Who are you?" | curl -d @- localhost:8080/chat
 Ofcourse all the features from LangChain4j Ai services are going to work, let's try to expand the example with
 https://docs.langchain4j.dev/tutorials/ai-services#usermessage[template arguments].
 
-[source,java]
+[source,java,subs="none"]
 ----
 include::{sourcedir}/includes/guides/lc4j/template/PirateService.java[tag=snippet_1, indent=0]
 ----
@@ -213,7 +213,7 @@ include::{sourcedir}/includes/guides/lc4j/memory/PirateMemoryProvider.java[tag=s
 
 Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
 
-[source,java]
+[source,java,subs="none"]
 ----
 include::{sourcedir}/includes/guides/lc4j/memory/PirateService.java[tag=snippet_1, indent=0]
 ----
