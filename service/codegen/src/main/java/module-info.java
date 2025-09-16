@@ -24,6 +24,7 @@ module io.helidon.service.codegen {
 
     requires io.helidon.metadata.hson;
     requires io.helidon.service.metadata;
+    requires io.helidon.metadata;
 
     exports io.helidon.service.codegen;
     exports io.helidon.service.codegen.spi;

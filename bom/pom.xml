@@ -1723,6 +1723,11 @@
             <!-- Metadata -->
             <dependency>
                 <groupId>io.helidon.metadata</groupId>
+                <artifactId>helidon-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metadata</groupId>
                 <artifactId>helidon-metadata-hson</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

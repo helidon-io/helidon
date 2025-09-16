@@ -36,12 +36,12 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.features.metadata.Aot;
 import io.helidon.common.features.metadata.Deprecation;
 import io.helidon.common.features.metadata.FeatureMetadata;
-import io.helidon.common.features.metadata.FeatureRegistry;
 import io.helidon.common.features.metadata.FeatureStatus;
 import io.helidon.common.features.metadata.Flavor;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 
 class FeatureCodegenExtension implements CodegenExtension {
@@ -77,9 +77,15 @@ class FeatureCodegenExtension implements CodegenExtension {
         }
 
         CodegenFiler filer = ctx.filer();
-        FilerResource resource = filer.resource(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V2);
+        String moduleName = ctx.moduleName().orElseGet(() -> processedModules.getFirst().module());
+        String resourceLocation = MetadataConstants.LOCATION
+                + "/" + moduleName
+                + "/" + MetadataConstants.FEATURE_REGISTRY_FILE;
+
+        FilerResource resource = filer.resource(resourceLocation);
         resource.bytes(baos.toByteArray());
         resource.write();
+        filer.manifest().add(resourceLocation);
     }
 
     private void process(ModuleTypeInfo module) {

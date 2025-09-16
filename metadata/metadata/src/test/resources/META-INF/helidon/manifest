@@ -1,0 +1,5 @@
+# The following line must be present in each manifest file exactly once, it is used to check if we are shaded
+#HELIDON MANIFEST#
+
+META-INF/helidon/io.helidon.metadata/service-registry.json
+META-INF/helidon/io.helidon.metadata/service.loader
