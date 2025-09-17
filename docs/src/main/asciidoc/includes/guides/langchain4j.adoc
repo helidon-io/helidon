@@ -87,7 +87,7 @@ ifdef::mp-flavor[]
 endif::mp-flavor[]
 following LangChain4j configuration for OpenAI provider.
 
-[WARNING]
+[TIP]
 Don't forget to enable your model with `enabled` set to `true`
 
 ifdef::se-flavor[]
@@ -120,7 +120,7 @@ annotate it with `@Ai.Service` so Helidon can make a superfast build time bean f
 
 [source,java,subs="none"]
 ----
-include::{sourcedir}/includes/guides/lc4j/base/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_ai_service, indent=0]
 ----
 
 ifdef::se-flavor[]
@@ -129,9 +129,7 @@ Next step is to add new Http POST handler to the webserver, you can do it by cha
 
 [source,java]
 ----
-include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=imports, indent=0]
-
-include::{sourcedir}/se/guides/lc4j/base/Resource.java[tag=method, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_resource, indent=0]
 ----
 <1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
 
@@ -141,7 +139,7 @@ Next step is to add new Http POST JAX-RS resource, create new public class `Pira
 
 [source,java]
 ----
-include::{sourcedir}/mp/guides/lc4j/base/PirateResource.java[tag=snippet_1, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_resource, indent=0]
 ----
 <1> Notice how we can inject the LangChain4j Ai service as Helidon declarative superfast build time bean directly in JAX-RS resource.
 endif::mp-flavor[]
@@ -150,7 +148,7 @@ When we build and run our Helidon AI-powered quickstart:
 
 [source:bash]
 ----
-mvn package && java -jar ./target/*.jar
+mvn package -DskipTests && java -jar ./target/*.jar
 ----
 
 We can test our pirate service with curl:
@@ -167,31 +165,21 @@ https://docs.langchain4j.dev/tutorials/ai-services#usermessage[template argument
 
 [source,java,subs="none"]
 ----
-include::{sourcedir}/includes/guides/lc4j/template/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=template_ai_service, indent=0]
 ----
 
 Remember to fix the code calling the service.
 
-ifdef::se-flavor[]
 [source,java]
 ----
-include::{sourcedir}/se/guides/lc4j/template/Resource.java[tag=imports, indent=0]
-
-include::{sourcedir}/se/guides/lc4j/template/Resource.java[tag=method, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=template_resource, indent=0]
 ----
-endif::se-flavor[]
-ifdef::mp-flavor[]
-[source,java]
-----
-include::{sourcedir}/mp/guides/lc4j/template/PirateResource.java[tag=snippet_1, indent=0]
-----
-endif::mp-flavor[]
 
 When we build and run our Helidon AI-powered quickstart:
 
 [source:bash]
 ----
-mvn package && java -jar ./target/*.jar
+mvn package -DskipTests && java -jar ./target/*.jar
 ----
 
 We can test our pirate service with curl:
@@ -208,36 +196,26 @@ so our memory works per conversation ID.
 
 [source,java]
 ----
-include::{sourcedir}/includes/guides/lc4j/memory/PirateMemoryProvider.java[tag=snippet_1, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_provider, indent=0]
 ----
 
 Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
 
 [source,java,subs="none"]
 ----
-include::{sourcedir}/includes/guides/lc4j/memory/PirateService.java[tag=snippet_1, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_ai_service, indent=0]
 ----
 
 We will expect conversation id as a header on the webserver.
 
-ifdef::se-flavor[]
 [source,java]
 ----
-include::{sourcedir}/se/guides/lc4j/memory/Resource.java[tag=imports, indent=0]
-
-include::{sourcedir}/se/guides/lc4j/memory/Resource.java[tag=method, indent=0]
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_resource, indent=0]
 ----
-endif::se-flavor[]
-ifdef::mp-flavor[]
-[source,java]
-----
-include::{sourcedir}/mp/guides/lc4j/memory/PirateResource.java[tag=snippet_1, indent=0]
-----
-endif::mp-flavor[]
 
 [source:bash]
 ----
-mvn package && java -jar ./target/*.jar
+mvn package -DskipTests && java -jar ./target/*.jar
 ----
 
 We can test our pirate service with curl:
