@@ -20,18 +20,36 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.telemetry.testing</groupId>
+        <artifactId>helidon-telemetry-testing-project</artifactId>
         <version>4.3.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
-    <groupId>io.helidon.telemetry</groupId>
-    <artifactId>helidon-telemetry-project</artifactId>
-    <name>Helidon Telemetry Project</name>
 
-    <modules>
-        <module>opentelemetry-config</module>
-        <module>testing</module>
-    </modules>
+    <artifactId>helidon-telemetry-testing-tracing</artifactId>
+
+    <name>Helidon Telemetry Tracing test utilities</name>
+
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-logging-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
