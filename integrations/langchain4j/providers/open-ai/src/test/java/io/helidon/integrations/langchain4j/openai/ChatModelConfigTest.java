@@ -28,7 +28,9 @@ import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
+import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -71,7 +73,8 @@ class ChatModelConfigTest {
         assertThat(config.logitBias().get("key1"), is(1));
         assertThat(config.logitBias().get("key2"), is(2));
         assertThat(config.responseFormat().isPresent(), is(true));
-        assertThat(config.responseFormat().get(), is("response-format"));
+        assertThat(config.responseFormat().get(), is("json-object"));
+        assertThat(config.supportedCapabilities(), contains(RESPONSE_FORMAT_JSON_SCHEMA));
         assertThat(config.strictJsonSchema().isPresent(), is(true));
         assertThat(config.strictJsonSchema().get(), is(false));
         assertThat(config.seed().isPresent(), is(true));

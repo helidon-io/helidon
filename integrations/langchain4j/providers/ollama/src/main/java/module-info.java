@@ -35,6 +35,7 @@ module io.helidon.integrations.langchain4j.providers.ollama {
     requires transitive io.helidon.integrations.langchain4j;
     requires transitive io.helidon.config;
     requires langchain4j.http.client;
+    requires org.slf4j;
 
     exports io.helidon.integrations.langchain4j.providers.ollama;
 }
