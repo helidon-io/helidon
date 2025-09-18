@@ -41,6 +41,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.common.types.AccessModifier.PACKAGE_PRIVATE;
 import static io.helidon.common.types.AccessModifier.PROTECTED;
 import static io.helidon.common.types.AccessModifier.PUBLIC;
 import static io.helidon.common.types.TypeNames.LIST;
@@ -171,7 +172,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                                                                factoryTypeName,
                                                                "1",
                                                                ""))
-                .accessModifier(PUBLIC)
+                .accessModifier(PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON))
                 .addAnnotation(Annotation.builder()
                                        .typeName(SERVICE_ANNOTATION_NAMED)
@@ -197,6 +198,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                                     .build());
 
         classModel.addConstructor(Constructor.builder()
+                                          .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                                           .description("Creates a new " + modelClassNamePrefix + "Factory.")
                                           .addContent("var configBuilder = ")
                                           .addTypeToContent(modelClassNamePrefix + "Config")
@@ -300,7 +302,7 @@ class ModelFactoryCodegen implements CodegenExtension {
     }
 
     /*
-      public static OciGenAiChatModel create(OciGenAiChatModelConfig config) {
+      static OciGenAiChatModel create(OciGenAiChatModelConfig config) {
           if (!config.enabled()) {
                   throw new IllegalStateException("Cannot create a model when the configuration is disabled.");
           }
@@ -310,7 +312,7 @@ class ModelFactoryCodegen implements CodegenExtension {
     private static Method createMethod(TypeName modelType, TypeName modelConfigTypeName) {
         return Method.builder()
                 .name("create")
-                .accessModifier(PUBLIC)
+                .accessModifier(PACKAGE_PRIVATE)
                 .isStatic(true)
                 .description("Creates a new model configured with the given configuration.")
                 .returnType(Returns.builder()
