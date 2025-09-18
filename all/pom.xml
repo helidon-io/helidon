@@ -593,6 +593,10 @@
             <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.telemetry.testing</groupId>
+            <artifactId>helidon-telemetry-testing-tracing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
             <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
         </dependency>
