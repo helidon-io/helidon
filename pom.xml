@@ -66,6 +66,10 @@
         <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
+        <!-- Force upgrade fourth party dependency of jlama langchain4j provider  -->
+        <version.lib.jinjava>2.8.1</version.lib.jinjava>
+        <!-- Dependencies convergence via jinjava -->
+        <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
         <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
@@ -1017,6 +1021,25 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <!-- Force upgrade. Used by jlama langchain4j provider  -->
+                <groupId>com.hubspot.jinjava</groupId>
+                <artifactId>jinjava</artifactId>
+                <version>${version.lib.jinjava}</version>
+                <exclusions>
+                    <!-- For dependency convergence -->
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- Dependency convergence. Used via jinjava -->
+                <groupId>com.hubspot.immutables</groupId>
+                <artifactId>immutables-exceptions</artifactId>
+                <version>${version.lib.immutables-exceptions}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>
