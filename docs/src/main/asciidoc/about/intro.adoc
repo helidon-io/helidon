@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 * Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Helidon WebServer. Learn more: <<Helidon MP, Helidon MP>>
 
-* Java 21 is required to use Helidon 4.
+* Java 21 is required to use Helidon 4. Java 25 or newer is recommended.
 
 
 

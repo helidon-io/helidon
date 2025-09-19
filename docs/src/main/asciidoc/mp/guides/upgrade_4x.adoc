@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ will help you upgrade a Helidon MP 3.x application to 4.x.
 
 == Java 21 Runtime
 
-Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
+Java 17 is no longer supported in Helidon 4. Java 21 or newer is required (Java 25 or newer recommended). Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 Helidon 4 no longer uses Netty. Helidon MP is now running on Helidon WebServer which is based on virtual threads technology, available in Java 21.
 

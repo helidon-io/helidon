@@ -30,7 +30,7 @@ This guide will help you upgrade a Helidon SE 3.x application to 4.x.
 
 == Java 21 Runtime
 
-Java 17 is no longer supported in Helidon 4. Java 21 or newer is required.
+Java 17 is no longer supported in Helidon 4. Java 21 or newer is required. Java 25 or newer is highly recommended.
 Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prerequisites] for proper installation.
 
 Helidon 4 no longer uses Netty.
