@@ -44,6 +44,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Events, Events>>
 - <<Programmatic Lookup, Programmatic Lookup>>
 - <<Startup, Startup>>
+- <<Declarative, Declarative>>
 
 == Overview
 
@@ -904,4 +905,190 @@ level1 created
 level2 created
 level2 destroyed
 level1 destroyed
+----
+
+== Declarative
+
+Helidon declarative programming model allows inversion of control style programming with all the performance benefits of Helidon SE.
+
+Our declarative approach has the following advantages:
+
+- Uses Helidon SE imperative code to implement features (i.e. performance is same as "pure" imperative application)
+- Generates all the necessary code at build-time, to avoid reflection and bytecode manipulation at runtime
+
+Helidon declarative is currently a preview feature, though we welcome feedback!
+
+To create a declarative application, use the annotations provided in our Helidon SE modules (details below), and the maven plugin
+described above to generate the binding.
+In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that
+generate the necessary code:
+
+[source,xml]
+----
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+</plugins>
+----
+
+The following features are currently implemented:
+
+- <<Dec-Config, Configuration>>
+- <<Dec-HTTP-Server, HTTP Server Endpoint>>
+- <<Dec-HTTP-Client, Typed HTTP Client>>
+- <<Dec-FT, Fault Tolerance>>
+- <<Dec-Scheduling, Scheduling>>
+
+
+[source,java]
+.Example of a declarative main class
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_1, indent=0]
+----
+
+=== Configuration [[Dec-Config]]
+
+Configuration can be injected as a whole into any service, or a specific configuration option can be injected using `@Configuration.Value`. Default values can be defined using annotations in `@Default`
+
+Services available for injection:
+
+- `io.helidon.config.Config`
+
+Annotations:
+
+- `io.helidon.config.Configuration.Value` - define the configuration key to inject, on constructor parameter
+- `io.helidon.common.Default.*` - define a default typed value, on the same constructor parameter
+
+Example of usage can be seen below in HTTP Server Endpoint example.
+
+=== HTTP Server Endpoint [[Dec-HTTP-Server]]
+
+To create an HTTP endpoint, simply annotate a class with `@RestServer.Endpoint`, and
+add at least one method annotated with one of the HTTP method annotations, such as `@Http.GET`.
+
+Services available for injection:
+
+N/A
+
+Supported method parameters (no annotation required):
+
+- `io.helidon.webserver.http.ServerRequest`
+- `io.helidon.webserver.http.ServerResponse`
+- `io.helidon.common.context.Context`
+- `io.helidon.common.security.SecurityContext`
+- `io.helidon.security.SecurityContext` - in case `helidon-security` module is on the classpath
+
+Annotations on endpoint type:
+
+- `io.helidon.webserver.http.RestServer.Endpoint` - required annotation
+- `io.helidon.webserver.http.RestServer.Listener` - to define the named listener this should be served on (named port/socket)
+- `io.helidon.webserver.http.RestServer.Header` - header to return with each response from this endpoint
+- `io.helidon.webserver.http.RestServer.ComputedHeader` - computed header to return with each response from this endpoint
+- `io.helidon.http.Http.Path` - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- `io.helidon.webserver.http.RestServer.Header` - header to return with each response from this method
+- `io.helidon.webserver.http.RestServer.ComputedHeader` - computed header to return with each response from this method
+- `io.helidon.webserver.http.RestServer.Status` - status to return (if a custom one is required)
+- `io.helidon.http.Http.Path` - path (context) this method will be available on (subpath of the endpoint path)
+- `io.helidon.http.Http.GET` (and other methods) - definition of HTTP method this method will serve
+- `io.helidon.http.Http.HttpMethod` - for custom HTTP method names (mutually exclusive with above)
+- `io.helidon.http.Http.Produces` - what media type this method produces (return entity content type)
+- `io.helidon.http.Http.Consumes` - what media type this method accepts (request entity content type)
+
+Annotations on method parameters:
+
+- `io.helidon.http.Http.Entity` - Request entity, a typed parameter is expected, will use HTTP media type modules to coerce into the correct type
+- `io.helidon.http.Http.HeaderParam` - Typed HTTP request header value
+- `io.helidon.http.Http.QueryParam` - Typed HTTP query value
+- `io.helidon.http.Http.PathParam` - Typed parameter from path template
+
+[source,java]
+.Example of an HTTP Server Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_2, indent=0]
+----
+
+=== Typed HTTP Client [[Dec-HTTP-Client]]
+
+To create a typed HTTP client, create an interface annotated with `RestClient.Endpoint`, and at least one method annotated
+with one fo the HTTP method annotations, such as `@Http.GET`. Methods can only have parameters annotated with one of the
+`Http` qualifiers.
+
+Annotations on endpoint type:
+
+- `io.helidon.webclient.api.RestClient.Endpoint` - required annotation
+- `io.helidon.http.Http.Path` - path (context) the server listens on
+- `io.helidon.webclient.api.RestClient.Header` - header to include in every request to the server
+- `io.helidon.webclient.api.RestClient.ComputedHeader` - header to compute and include in every request to the server
+
+Annotations on endpoint methods:
+
+- `io.helidon.webclient.api.RestClient.Header` - header to include in every request to the server
+- `io.helidon.webclient.api.RestClient.ComputedHeader` - header to compute and include in every request to the server
+- `io.helidon.http.Http.Path` - path (context) the server serves this endpoint method on
+- `io.helidon.http.Http.GET` (and other methods) - definition of HTTP method this method will invoke
+- `io.helidon.http.Http.HttpMethod` - for custom HTTP method names (mutually exclusive with above)
+- `io.helidon.http.Http.Produces` - what media type this method produces (content type of entity from the server)
+- `io.helidon.http.Http.Consumes` - what media type this method accepts (request entity content type)
+
+Annotations on method parameters:
+
+- `io.helidon.http.Http.Entity` - Request entity, a typed parameter is expected, will use HTTP media type modules to write to the request
+- `io.helidon.http.Http.HeaderParam` - Typed HTTP header value to send
+- `io.helidon.http.Http.QueryParam` - Typed HTTP query value to send
+- `io.helidon.http.Http.PathParam` - Typed parameter from path template to construct the request URI
+
+[source,java]
+.Example of a Typed HTTP Client
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
+----
+
+
+=== Fault Tolerance [[Dec-FT]]
+
+Fault tolerance annotation allow adding features to methods on services.
+The annotations can be added to any method that supports interception (i.e. methods that are not private).
+
+Method Annotations:
+
+- `io.helidon.faulttolerance.Ft.Retry` - allow retries
+- `io.helidon.faulttolerance.Ft.Fallback` - fallback to another method that provides
+- `io.helidon.faulttolerance.Ft.Async` - invoke method asynchronously
+- `io.helidon.faulttolerance.Ft.Timeout` - invoke method with a timeout
+- `io.helidon.faulttolerance.Ft.Bulkhead` - use bulkhead
+- `io.helidon.faulttolerance.Ft.CircuitBreaker` - use circuit breaker
+
+[source,java]
+.Example of Fault Tolerance Fallback
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_4, indent=0]
+----
+
+=== Scheduling [[Dec-Scheduling]]
+
+Scheduling allows service methods to be invoked periodically.
+
+Method annotations:
+
+- `io.helidon.scheduling.Scheduling.Cron` - execute with schedule defined by a CRON expression
+- `io.helidon.scheduling.Scheduling.FixedRate` - execute with a fixed interval
+
+[source,java]
+.Example of a fixed rate scheduled method
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_5, indent=0]
 ----
