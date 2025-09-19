@@ -256,6 +256,10 @@ class BuilderCodegen implements CodegenExtension {
                                               CustomMethods customMethods) {
         for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
             TypeName typeName = customMethod.declaredMethod().returnType();
+            if (typeName.isOptional()) {
+                //Content of the Optional
+                typeName = typeName.typeArguments().getFirst();
+            }
             // there is a chance the typeName does not have a package (if "forward referenced"),
             // in that case compare just by classname (leap of faith...)
             if (typeName.packageName().isBlank()) {
