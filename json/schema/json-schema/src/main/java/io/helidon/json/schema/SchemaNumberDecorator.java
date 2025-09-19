@@ -22,9 +22,6 @@ import io.helidon.builder.api.Prototype;
 
 class SchemaNumberDecorator implements Prototype.BuilderDecorator<SchemaNumber.BuilderBase<?, ?>> {
 
-    private SchemaNumberDecorator() {
-    }
-
     @Override
     public void decorate(SchemaNumber.BuilderBase<?, ?> target) {
         Optional<Double> minimum = target.minimum();

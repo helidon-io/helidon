@@ -20,9 +20,6 @@ import io.helidon.builder.api.Prototype;
 
 class SchemaObjectDecorator implements Prototype.BuilderDecorator<SchemaObject.BuilderBase<?, ?>> {
 
-    private SchemaObjectDecorator() {
-    }
-
     @Override
     public void decorate(SchemaObject.BuilderBase<?, ?> target) {
         target.integerProperties().forEach(target.properties()::putIfAbsent);
