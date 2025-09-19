@@ -33,6 +33,20 @@ public final class AiProvider {
     }
 
     /**
+     * Default config key used under langchain4j context for all model configs in the same class.
+     * Override provider key otherwise derived from class name prefix.
+     */
+    @Target({ElementType.TYPE})
+    public @interface ConfigKey {
+
+        /**
+         * Default config key used under langchain4j context for all model configs in the same class.
+         * @return string key
+         */
+        String value() default "";
+    }
+
+    /**
      * Annotation used to define a configuration for a specific LangChain4j model class.
      * This configuration is used during code generation for creating service bean providers
      * and configuration blueprints.

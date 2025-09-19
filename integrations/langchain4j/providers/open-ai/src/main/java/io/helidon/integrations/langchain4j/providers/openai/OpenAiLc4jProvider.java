@@ -16,20 +16,26 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
+import java.util.Optional;
+
+import io.helidon.builder.api.Option;
 import io.helidon.integrations.langchain4j.AiProvider;
 
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
-import dev.langchain4j.model.openai.OpenAiLanguageModel;
-import dev.langchain4j.model.openai.OpenAiModerationModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 @AiProvider.ModelConfig(value = OpenAiChatModel.class)
 @AiProvider.ModelConfig(value = OpenAiStreamingChatModel.class)
-@AiProvider.ModelConfig(value = OpenAiModerationModel.class)
 @AiProvider.ModelConfig(value = OpenAiImageModel.class)
-@AiProvider.ModelConfig(value = OpenAiEmbeddingModel.class)
-@AiProvider.ModelConfig(value = OpenAiLanguageModel.class)
 interface OpenAiLc4jProvider {
+
+    /**
+     * Enable a "JSON mode" in the model configuration. This way, the LLM will be forced to respond with a valid JSON.
+     * For newer models that support Structured Outputs use supported-capabilities.
+     *
+     * @return "json_object" to enable JSON mode on older models like gpt-3.5-turbo or gpt-4
+     */
+    @Option.Configured
+    Optional<String> responseFormat();
 }

@@ -36,6 +36,7 @@ module io.helidon.integrations.langchain4j.providers.openai {
     requires transitive io.helidon.config;
     requires org.apache.opennlp.tools;
     requires langchain4j.http.client;
+    requires org.slf4j;
 
     exports io.helidon.integrations.langchain4j.providers.openai;
 }
