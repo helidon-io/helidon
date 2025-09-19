@@ -23,7 +23,21 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.common.types.TypeName;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider},
+ * that code generates JSON Schema.
+ */
 public class SchemaCodegenProvider implements CodegenExtensionProvider {
+
+    /**
+     * Public constructor is required for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated please do not use directly
+     */
+    @Deprecated
+    public SchemaCodegenProvider() {
+    }
+
     @Override
     public CodegenExtension create(CodegenContext ctx, TypeName generatorType) {
         return new SchemaCodegen(ctx, generatorType);

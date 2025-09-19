@@ -33,6 +33,8 @@ import io.helidon.service.registry.Services;
 
 class SchemaCustomMethods {
 
+    private SchemaCustomMethods() {
+    }
 
     @Prototype.BuilderMethod
     static void rootFromSchema(Schema.BuilderBase<?, ?> target, Schema schema) {

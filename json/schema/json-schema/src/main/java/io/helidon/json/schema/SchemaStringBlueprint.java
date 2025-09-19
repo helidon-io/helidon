@@ -25,7 +25,7 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Json schema related to the strings.
  */
-@Prototype.Blueprint(decorator = SchemaStringDecorator.class)
+@Prototype.Blueprint
 interface SchemaStringBlueprint extends SchemaItemBlueprint {
 
     /**

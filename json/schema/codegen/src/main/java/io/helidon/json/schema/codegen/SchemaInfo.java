@@ -227,14 +227,15 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                 .toList();
 
         for (TypedElementInfo field : fields) {
-            if (field.hasAnnotation(Types.JSON_SCHEMA_IGNORE)
-                    || field.hasAnnotation(Types.JSONB_TRANSIENT)) {
-                continue;
-            }
             String name = field.findAnnotation(Types.JSON_SCHEMA_PROPERTY_NAME)
                     .or(() -> field.findAnnotation(Types.JSONB_PROPERTY))
                     .flatMap(it -> it.stringValue())
                     .orElse(field.elementName());
+            if (field.hasAnnotation(Types.JSON_SCHEMA_IGNORE)
+                    || field.hasAnnotation(Types.JSONB_TRANSIENT)) {
+                properties.remove(name);
+                continue;
+            }
             if (properties.containsKey(name)) {
                 //If property already exists, that means it has setter or was used in a creator,
                 //just add the field for more possible configurations

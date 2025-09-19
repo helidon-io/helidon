@@ -20,6 +20,9 @@ import io.helidon.builder.api.Prototype;
 
 class SchemaObjectCustomMethods {
 
+    private SchemaObjectCustomMethods() {
+    }
+
     @Prototype.BuilderMethod
     static void addSchema(SchemaObject.BuilderBase<?, ?> target, String name, Schema schema) {
         SchemaItem root = schema.root();

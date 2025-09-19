@@ -20,6 +20,9 @@ import io.helidon.builder.api.Prototype;
 
 class SchemaIntegerCustomMethods {
 
+    private SchemaIntegerCustomMethods() {
+    }
+
     /**
      * Value restriction to be a multiple of a given integer number.
      *
@@ -28,8 +31,8 @@ class SchemaIntegerCustomMethods {
      * @see SchemaInteger.BuilderBase#multipleOf()
      */
     @Prototype.BuilderMethod
-    static void multipleOf(SchemaInteger.BuilderBase<?,?> builder, int value) {
-        builder.multipleOf((long)value);
+    static void multipleOf(SchemaInteger.BuilderBase<?, ?> builder, int value) {
+        builder.multipleOf((long) value);
     }
 
     /**
@@ -42,8 +45,8 @@ class SchemaIntegerCustomMethods {
      * @see SchemaInteger.BuilderBase#minimum()
      */
     @Prototype.BuilderMethod
-    static void minimum(SchemaInteger.BuilderBase<?,?> builder, int value) {
-        builder.minimum((long)value);
+    static void minimum(SchemaInteger.BuilderBase<?, ?> builder, int value) {
+        builder.minimum((long) value);
     }
 
     /**
@@ -56,8 +59,8 @@ class SchemaIntegerCustomMethods {
      * @see SchemaInteger.BuilderBase#maximum()
      */
     @Prototype.BuilderMethod
-    static void maximum(SchemaInteger.BuilderBase<?,?> builder, int value) {
-        builder.maximum((long)value);
+    static void maximum(SchemaInteger.BuilderBase<?, ?> builder, int value) {
+        builder.maximum((long) value);
     }
 
     /**
@@ -70,8 +73,8 @@ class SchemaIntegerCustomMethods {
      * @see SchemaInteger.BuilderBase#exclusiveMaximum()
      */
     @Prototype.BuilderMethod
-    static void exclusiveMaximum(SchemaInteger.BuilderBase<?,?> builder, int value) {
-        builder.exclusiveMaximum((long)value);
+    static void exclusiveMaximum(SchemaInteger.BuilderBase<?, ?> builder, int value) {
+        builder.exclusiveMaximum((long) value);
     }
 
     /**
@@ -84,8 +87,8 @@ class SchemaIntegerCustomMethods {
      * @see SchemaInteger.BuilderBase#exclusiveMinimum()
      */
     @Prototype.BuilderMethod
-    static void exclusiveMinimum(SchemaInteger.BuilderBase<?,?> builder, int value) {
-        builder.exclusiveMinimum((long)value);
+    static void exclusiveMinimum(SchemaInteger.BuilderBase<?, ?> builder, int value) {
+        builder.exclusiveMinimum((long) value);
     }
 
 }

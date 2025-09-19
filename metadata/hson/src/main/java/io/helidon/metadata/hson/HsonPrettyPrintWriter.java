@@ -26,7 +26,7 @@ class HsonPrettyPrintWriter extends PrintWriter {
     private boolean inString = false;
     private boolean escape = false;
 
-    public HsonPrettyPrintWriter(Writer out) {
+    HsonPrettyPrintWriter(Writer out) {
         super(out);
     }
 

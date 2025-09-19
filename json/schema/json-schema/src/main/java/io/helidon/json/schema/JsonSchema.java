@@ -117,7 +117,6 @@ public final class JsonSchema {
     public @interface Ignore {
     }
 
-
     /**
      * How is the JSON property named in the JSON schema.
      */
@@ -277,7 +276,7 @@ public final class JsonSchema {
         public @interface Maximum {
 
             /**
-             * Maximum number value
+             * Maximum number value.
              *
              * @return selected maximum value
              */

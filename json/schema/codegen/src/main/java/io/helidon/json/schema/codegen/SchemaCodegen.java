@@ -36,7 +36,7 @@ class SchemaCodegen implements CodegenExtension {
     private final CodegenContext ctx;
     private final TypeName generatorType;
 
-    public SchemaCodegen(CodegenContext ctx, TypeName generatorType) {
+    SchemaCodegen(CodegenContext ctx, TypeName generatorType) {
         this.ctx = ctx;
         this.generatorType = generatorType;
     }
