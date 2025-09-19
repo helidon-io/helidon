@@ -24,7 +24,7 @@ This guide describes how to create a sample AI powered Helidon {flavor-uc} proje
 
 == Introduction
 
-include::{rootdir}/se/integrations/langchain4j/langchain4j.adoc[tag=overview]
+include::{rootdir}/se/ai/langchain4j/langchain4j.adoc[tag=overview]
 
 == What you need
 
@@ -74,7 +74,7 @@ Add necessary dependencies for LangChain4j integration and OpenAI provider in th
 
 You will also need extra annotation processors as LangChain4j AI services are handled as superfast build time beans.
 
-include::{rootdir}/se/integrations/langchain4j/langchain4j.adoc[tag=annotation-processors]
+include::{rootdir}/se/ai/langchain4j/langchain4j.adoc[tag=annotation-processors]
 
 == Configuration
 

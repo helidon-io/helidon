@@ -103,6 +103,15 @@ backend:
                   - "jbatch.adoc"
                   - "performance-tuning.adoc"
                   - "oci-guide.adoc"
+              - type: "MENU"
+                title: "AI"
+                glyph:
+                  type: "icon"
+                  value: "auto_awesome"
+                dir: "ai"
+                sources:
+                  - "langchain4j.adoc"
+                  - "mcp.adoc"
               - type: "PAGE"
                 title: "Bean Validation"
                 source: "beanvalidation.adoc"
@@ -164,7 +173,6 @@ backend:
                   type: "icon"
                   value: "filter_drama"
                 sources:
-                  - "langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
@@ -343,6 +351,15 @@ backend:
                   - "webclient.adoc"
                   - "dbclient.adoc"
                   - "performance-tuning.adoc"
+              - type: "MENU"
+                title: "AI"
+                glyph:
+                  type: "icon"
+                  value: "auto_awesome"
+                dir: "ai"
+                sources:
+                  - "langchain4j/langchain4j.adoc"
+                  - "mcp.adoc"
               - type: "PAGE"
                 title: "Builder"
                 source: "builder.adoc"
@@ -423,7 +440,6 @@ backend:
                   value: "filter_drama"
                 sources:
                   - "eureka/eureka-registration.adoc"
-                  - "langchain4j/langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"

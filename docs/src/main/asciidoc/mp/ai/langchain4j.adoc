@@ -18,11 +18,11 @@
 
 = LangChain4j
 :description:  LangChain4j Integration
-:keywords: Helidon, AI, LangChain4j, LC4J
+:keywords: Helidon, AI, LangChain4j, LC4j
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
 
 == LangChain4j Support
 
-Helidon SE includes native xref:{rootdir}/se/integrations/langchain4j/langchain4j.adoc[LangChain4j integration], which can also be used in Helidon MP thanks to *Helidon Inject to CDI bridge*. Refer to its xref:{rootdir}/se/integrations/langchain4j/langchain4j.adoc[documentation] for more details.
+Helidon SE includes native xref:{rootdir}/se/ai/langchain4j/langchain4j.adoc[LangChain4j integration], which can also be used in Helidon MP thanks to *Helidon Inject to CDI bridge*. Refer to its xref:{rootdir}/se/ai/langchain4j/langchain4j.adoc[documentation] for more details.
