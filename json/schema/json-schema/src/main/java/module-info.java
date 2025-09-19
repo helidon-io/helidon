@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * JSON Schema Helidon support.
+ */
 module io.helidon.json.schema {
     requires io.helidon.builder.api;
     requires io.helidon.service.registry;

@@ -38,7 +38,7 @@ class SchemaIntegerCustomMethods {
     /**
      * Minimal value of the integer number.
      * Cannot be higher than maximal configured value.
-     * Mutually exclusive to {@link SchemaInteger.BuilderBase##exclusiveMinimum()}.
+     * Mutually exclusive to {@link SchemaInteger.BuilderBase#exclusiveMinimum()}.
      *
      * @param value minimal value
      * @return updated builder instance

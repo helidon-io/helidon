@@ -36,6 +36,12 @@ class SchemaCustomMethods {
     private SchemaCustomMethods() {
     }
 
+    /**
+     * Take the root type of the provided schema and add it to the current builder.
+     *
+     * @param target builder
+     * @param schema schema
+     */
     @Prototype.BuilderMethod
     static void rootFromSchema(Schema.BuilderBase<?, ?> target, Schema schema) {
         SchemaItem root = schema.root();
@@ -63,7 +69,7 @@ class SchemaCustomMethods {
         try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
             generateObject(schema).writeFormatted(writer);
         }
-        return baos.toString();
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
     /**
@@ -79,7 +85,7 @@ class SchemaCustomMethods {
         try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
             generateObjectNoKeywords(schema).writeFormatted(writer);
         }
-        return baos.toString();
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
     /**
@@ -136,7 +142,7 @@ class SchemaCustomMethods {
     @Prototype.FactoryMethod
     static Schema parse(String jsonSchema) {
         Schema.Builder builder = Schema.builder();
-        try (InputStream is = new ByteArrayInputStream(jsonSchema.getBytes())) {
+        try (InputStream is = new ByteArrayInputStream(jsonSchema.getBytes(StandardCharsets.UTF_8))) {
             Hson.Value<?> parsed = Hson.parse(is);
             Hson.Struct struct = parsed.asStruct();
             struct.stringValue("$id").map(URI::create).ifPresent(builder::id);

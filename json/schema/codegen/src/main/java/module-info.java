@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * JSON Schema code generator.
+ */
 module io.helidon.json.schema.codegen {
     requires io.helidon.codegen;
     requires io.helidon.common.types;

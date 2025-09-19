@@ -158,7 +158,7 @@ public final class JsonSchema {
 
         /**
          * Minimum value of the integer number.
-         * Explanation: validated number >= minimum.
+         * Explanation: validated number {@literal >=} minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -175,7 +175,7 @@ public final class JsonSchema {
 
         /**
          * Maximum value of the integer number.
-         * Explanation: validated number <= maximum.
+         * Explanation: validated number {@literal <=} maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -192,7 +192,7 @@ public final class JsonSchema {
 
         /**
          * Exclusive maximum value of the integer number.
-         * Explanation: validated number < exclusive maximum.
+         * Explanation: validated number {@literal <} exclusive maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -209,7 +209,7 @@ public final class JsonSchema {
 
         /**
          * Exclusive minimum value of the integer number.
-         * Explanation: validated number > exclusive minimum.
+         * Explanation: validated number {@literal >} exclusive minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -251,7 +251,7 @@ public final class JsonSchema {
 
         /**
          * Minimum value of the validated number.
-         * Explanation: validated number >= minimum.
+         * Explanation: validated number {@literal >=} minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -268,7 +268,7 @@ public final class JsonSchema {
 
         /**
          * Maximum value of the validated number.
-         * Explanation: validated number <= maximum.
+         * Explanation: validated number {@literal <=} maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -285,7 +285,7 @@ public final class JsonSchema {
 
         /**
          * Exclusive maximum value of the number.
-         * Explanation: validated number < exclusive maximum.
+         * Explanation: validated number {@literal <} exclusive maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited
@@ -302,7 +302,7 @@ public final class JsonSchema {
 
         /**
          * Exclusive minimum value of the number.
-         * Explanation: validated number > exclusive minimum.
+         * Explanation: validated number {@literal >} exclusive minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
         @Inherited

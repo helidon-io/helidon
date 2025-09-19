@@ -23,6 +23,13 @@ class SchemaObjectCustomMethods {
     private SchemaObjectCustomMethods() {
     }
 
+    /**
+     * Add JSON schema property based on the provided schema root type.
+     *
+     * @param target builder
+     * @param name   property name
+     * @param schema schema
+     */
     @Prototype.BuilderMethod
     static void addSchema(SchemaObject.BuilderBase<?, ?> target, String name, Schema schema) {
         SchemaItem root = schema.root();

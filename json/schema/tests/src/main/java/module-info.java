@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * JSON Schema tests.
+ */
 module io.helidon.json.schema.tests {
     requires io.helidon.json.schema;
     requires io.helidon.service.registry;
