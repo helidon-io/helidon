@@ -43,48 +43,28 @@ import io.helidon.json.schema.SchemaString;
 
 import static java.util.function.Predicate.not;
 
-import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
-import static io.helidon.common.types.TypeNames.BOXED_BYTE;
-import static io.helidon.common.types.TypeNames.BOXED_CHAR;
-import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
-import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
-import static io.helidon.common.types.TypeNames.BOXED_INT;
-import static io.helidon.common.types.TypeNames.BOXED_LONG;
-import static io.helidon.common.types.TypeNames.BOXED_SHORT;
-import static io.helidon.common.types.TypeNames.BOXED_VOID;
-import static io.helidon.common.types.TypeNames.OBJECT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
-
 record SchemaInfo(TypeName generatedSchema, Schema schema) {
 
     private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
-            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
-            BOXED_BYTE, PRIMITIVE_BYTE,
-            BOXED_SHORT, PRIMITIVE_SHORT,
-            BOXED_INT, PRIMITIVE_INT,
-            BOXED_LONG, PRIMITIVE_LONG,
-            BOXED_CHAR, PRIMITIVE_CHAR,
-            BOXED_FLOAT, PRIMITIVE_FLOAT,
-            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
-            BOXED_VOID, PRIMITIVE_VOID
+            TypeNames.BOXED_BOOLEAN, TypeNames.PRIMITIVE_BOOLEAN,
+            TypeNames.BOXED_BYTE, TypeNames.PRIMITIVE_BYTE,
+            TypeNames.BOXED_SHORT, TypeNames.PRIMITIVE_SHORT,
+            TypeNames.BOXED_INT, TypeNames.PRIMITIVE_INT,
+            TypeNames.BOXED_LONG, TypeNames.PRIMITIVE_LONG,
+            TypeNames.BOXED_CHAR, TypeNames.PRIMITIVE_CHAR,
+            TypeNames.BOXED_FLOAT, TypeNames.PRIMITIVE_FLOAT,
+            TypeNames.BOXED_DOUBLE, TypeNames.PRIMITIVE_DOUBLE,
+            TypeNames.BOXED_VOID, TypeNames.PRIMITIVE_VOID
     );
 
-    private static final Set<TypeName> INTEGERS = Set.of(PRIMITIVE_BYTE,
-                                                         PRIMITIVE_SHORT,
-                                                         PRIMITIVE_INT,
-                                                         PRIMITIVE_LONG,
+    private static final Set<TypeName> INTEGERS = Set.of(TypeNames.PRIMITIVE_BYTE,
+                                                         TypeNames.PRIMITIVE_SHORT,
+                                                         TypeNames.PRIMITIVE_INT,
+                                                         TypeNames.PRIMITIVE_LONG,
                                                          Types.BIG_INTEGER);
 
-    private static final Set<TypeName> NUMBERS = Set.of(PRIMITIVE_FLOAT,
-                                                        PRIMITIVE_DOUBLE,
+    private static final Set<TypeName> NUMBERS = Set.of(TypeNames.PRIMITIVE_FLOAT,
+                                                        TypeNames.PRIMITIVE_DOUBLE,
                                                         Types.BIG_DECIMAL,
                                                         Types.NUMBER);
 
@@ -348,7 +328,7 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
         processArrayAnnotations(builder, ctx, element);
         TypeName typeName = elementTypeName;
         if (typeName.array()) {
-            typeName = typeName.componentType().orElse(OBJECT);
+            typeName = typeName.componentType().orElse(TypeNames.OBJECT);
         } else if (typeName.isList() || typeName.isSet()) {
             typeName = typeName.typeArguments().getFirst();
         }
