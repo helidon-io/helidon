@@ -331,6 +331,7 @@ backend:
                   - "config.adoc"
                   - "langchain4j.adoc"
                   - "health.adoc"
+                  - "logging.adoc"
                   - "metrics.adoc"
                   - "security-oidc.adoc"
                   - "tracing.adoc"
