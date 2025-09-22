@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -24,6 +25,7 @@ import io.helidon.common.types.Modifier;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * A described type (class, interface).
@@ -48,6 +50,11 @@ public class DescribedType {
         this.typeName = typeName;
         this.contracts = contracts;
         this.elements = elements;
+    }
+
+    Map<ResolvedType, Set<ResolvedType>> contractTypeSets() {
+        return Map.of(ResolvedType.create(TypeNames.STRING),
+                      Set.of(ResolvedType.create(TypeNames.STRING), ResolvedType.create(TypeName.create(CharSequence.class))));
     }
 
     boolean isAbstract() {

@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,8 +50,6 @@ import static io.helidon.service.registry.ServiceRegistryManager.SERVICE_INFO_CO
  * Basic implementation of the service registry with simple dependency support.
  */
 class CoreServiceRegistry implements ServiceRegistry, Scopes {
-    private static final ResolvedType COMMON_CONFIG = ResolvedType.create("io.helidon.common.config.Config");
-    private static final ResolvedType CONFIG = ResolvedType.create("io.helidon.config.Config");
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private final String id = String.valueOf(COUNTER.incrementAndGet());
@@ -71,6 +70,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     // map of qualifier annotations and resolved type combination to service info(s)
     private final Map<ServiceRegistryManager.TypedQualifiedProviderKey, Set<ServiceInfo>> typedQualifiedProviders;
     private final Map<ResolvedType, AtomicBoolean> accessedContracts;
+    private final Map<ResolvedType, Set<ResolvedType>> contractMap = new HashMap<>();
 
     private final boolean cacheEnabled;
     private final LruCache<Lookup, List<ServiceInfo>> cache;
@@ -168,6 +168,16 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                       provider,
                                                                       false,
                                                                       Activators.create(this, provider)));
+            }
+
+            for (ResolvedType contract : descriptor.contracts()) {
+                var typeSet = descriptor.typeSet(contract);
+                if (typeSet.isEmpty()) {
+                    continue;
+                }
+                var set = this.contractMap.computeIfAbsent(contract, it -> new HashSet<>());
+                set.addAll(typeSet);
+                set.add(contract);
             }
         });
 
@@ -577,7 +587,6 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         stateWriteLock.lock();
     }
 
-    @SuppressWarnings("unchecked")
     <T> void set(Class<T> contract, T[] instances) {
         if (!allowLateBinding) {
             throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
@@ -587,12 +596,13 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         stateWriteLock.lock();
         try {
             ResolvedType contractType = ResolvedType.create(contract);
-            if (contractType.equals(CONFIG)) {
-                // this is a temporary solution to our problem of two config interfaces, we want users to only set it once
-                doSet(CONFIG, instances);
-                doSet(COMMON_CONFIG, instances);
-            } else {
-                doSet(contractType, instances);
+            Set<ResolvedType> actualContracts = contractMap.get(contractType);
+            if (actualContracts == null) {
+                actualContracts = Set.of(contractType);
+            }
+            for (ResolvedType actualContract : actualContracts) {
+                // set for each type that is valid for this contract
+                doSet(actualContract, instances);
             }
         } finally {
             stateWriteLock.unlock();
