@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.EventConfigSource;
 import io.helidon.config.spi.LazyConfigSource;
 
 import org.junit.jupiter.api.Test;
@@ -33,6 +38,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class LazySourceTest {
     @Test
@@ -67,6 +74,45 @@ public class LazySourceTest {
         assertThat(testLazySource.requestedNodes, containsInAnyOrder("", "tree", "tree.node1", "tree.node2", "tree.node3"));
     }
 
+    @Test
+    void testLazyEventSource() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("tree.node2", "value2");
+
+        TestLazyEventSource testLazySource = new TestLazyEventSource(map);
+
+        Config config = Config.builder()
+                .addSource(testLazySource)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+
+        assertThat(testLazySource.changeListener, notNullValue());
+
+        var node = config.get("tree.node2");
+        assertThat(node.asString().get(), is("value2"));
+
+        AtomicReference<String> value = new AtomicReference<>();
+        node.onChange(it -> {
+            // changes are executed on an executor service
+            value.set(it.asString().get());
+            latch.countDown();
+        });
+
+        testLazySource.change("tree.node2", "value3");
+
+        // we should get the change almost immediately
+        if (latch.await(5, TimeUnit.SECONDS)) {
+
+            assertThat(value.get(), notNullValue());
+            assertThat(value.get(), is("value3"));
+        } else {
+            fail("Changed config was not received.");
+        }
+    }
+
     private static class TestLazySource implements LazyConfigSource, ConfigSource {
         private final List<String> requestedNodes = new ArrayList<>();
         private final Map<String, String> values;
@@ -80,6 +126,36 @@ public class LazySourceTest {
             requestedNodes.add(key);
             return Optional.ofNullable(values.get(key))
                     .map(ConfigNode.ValueNode::create);
+        }
+    }
+
+    private static class TestLazyEventSource implements LazyConfigSource, ConfigSource, EventConfigSource {
+        private final List<String> requestedNodes = new ArrayList<>();
+        private final Map<String, String> values;
+
+        private volatile BiConsumer<String, ConfigNode> changeListener;
+
+        private TestLazyEventSource(Map<String, String> values) {
+            this.values = values;
+        }
+
+        @Override
+        public Optional<ConfigNode> node(String key) {
+            requestedNodes.add(key);
+            return Optional.ofNullable(values.get(key))
+                    .map(ConfigNode.ValueNode::create);
+        }
+
+        @Override
+        public void onChange(BiConsumer<String, ConfigNode> changedNode) {
+            this.changeListener = changedNode;
+        }
+
+        private void change(String key, String value) {
+            values.put(key, value);
+            if (changeListener != null) {
+                changeListener.accept(key, ConfigNode.ValueNode.create(value));
+            }
         }
     }
 }
