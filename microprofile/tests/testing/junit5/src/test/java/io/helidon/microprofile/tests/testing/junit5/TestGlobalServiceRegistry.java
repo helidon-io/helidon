@@ -15,7 +15,9 @@
  */
 package io.helidon.microprofile.tests.testing.junit5;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.context.Contexts;
@@ -32,59 +34,64 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest
 class TestGlobalServiceRegistry {
-
+    private static final List<String> ORDER = new ArrayList<>();
     private static final Set<Integer> INSTANCES = new HashSet<>();
 
-    record MyService() {
-    }
-
-    static void invoke() {
-        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
-    }
-
     static {
-        invoke();
+        invoke("static-initializer");
     }
 
     TestGlobalServiceRegistry() {
-        invoke();
+        invoke("constructor");
+    }
+
+    static void invoke(String source) {
+        ORDER.add(source);
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
+        if (INSTANCES.size() > 1) {
+            fail(source + " added a new registry instance. Order: " + ORDER);
+        }
     }
 
     @BeforeAll
     static void beforeAll() {
-        invoke();
-    }
-
-    @BeforeEach
-    void beforeEach() {
-        invoke();
-    }
-
-    @Test
-    void firstTest() {
-        invoke();
-        assertThat(INSTANCES.size(), is(1));
-        assertThat(INSTANCES.iterator().next(),
-                is(not(System.identityHashCode(Contexts.globalContext()
-                        .get("helidon-registry", ServiceRegistry.class)
-                        .orElse(null)))));
-    }
-
-    @AfterEach
-    void afterEach() {
-        invoke();
+        invoke("beforeAll");
     }
 
     @AfterAll
     static void afterAll() {
         try {
-            invoke();
+            invoke("afterAll");
             assertThat(INSTANCES.size(), is(1));
         } finally {
             INSTANCES.clear();
         }
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        invoke("beforeEach");
+    }
+
+    @Test
+    void firstTest() {
+        invoke("firstTest");
+        assertThat(INSTANCES.size(), is(1));
+        assertThat(INSTANCES.iterator().next(),
+                   is(not(System.identityHashCode(Contexts.globalContext()
+                                                          .get("helidon-registry", ServiceRegistry.class)
+                                                          .orElse(null)))));
+    }
+
+    @AfterEach
+    void afterEach() {
+        invoke("afterEach");
+    }
+
+    record MyService() {
     }
 }
