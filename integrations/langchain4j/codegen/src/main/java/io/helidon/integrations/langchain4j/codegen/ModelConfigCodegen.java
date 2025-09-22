@@ -31,6 +31,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIGS_TYPE;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_KEY_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_TYPE;
 import static java.util.function.Predicate.not;
 
@@ -66,6 +67,8 @@ class ModelConfigCodegen implements CodegenExtension {
                 .collect(Collectors.toSet());
 
         var providerKey = modelAnnotation.stringValue("providerKey")
+                .filter(s -> !s.isEmpty())
+                .or(() -> type.findAnnotation(MODEL_CONFIG_KEY_TYPE).flatMap(Annotation::stringValue))
                 .filter(s -> !s.isEmpty())
                 .or(() -> Optional.of(ModelCodegenHelper.providerConfigKeyFromClassName(type)))
                 .filter(s -> !s.isEmpty())

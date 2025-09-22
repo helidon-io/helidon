@@ -30,7 +30,8 @@ langchain4j.open-ai:
     frequency-penalty: 0.2
     logit-bias.key1: 1
     logit-bias.key2: 2
-    response-format: response-format
+    response-format: json-object
+    supported-capabilities: [RESPONSE_FORMAT_JSON_SCHEMA]
     strict-json-schema: false
     seed: 100
     user: user
