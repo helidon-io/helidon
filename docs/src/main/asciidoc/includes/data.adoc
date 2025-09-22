@@ -120,8 +120,8 @@ include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, inden
 
 You must configure the data repository before using it.
 
-In the example below, Helidon Config sets up the data repository using the EclipseLink
-provider and a MySQL database:
+In the example below, Helidon Config sets up the data repository using the EclipseLink provider and a MySQL
+database as a custom connection:
 
 [source,yaml]
 ----
@@ -139,6 +139,31 @@ data:
             eclipselink.target-server: "None"
             jakarta.persistence.schema-generation.database.action: "none"
 ----
+
+In the next example, Helidon Config sets up the data repository using the Hibernate provider and a MySQL database
+as a Hikari `DataSource`:
+
+[source,yaml]
+----
+data:
+  sources:
+    sql:
+      - name: "example"
+        provider.hikari:
+          username: "user"
+          password: "changeit"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+  persistence-units:
+    jakarta:
+      - data-source: "example"
+        properties:
+          hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
+          jakarta.persistence.schema-generation.database.action: "drop-and-create"
+----
+
+`DataSource` is defined in a separate node, and its name is set to `"example"`. This name is referenced in the corresponding
+`persistence-units` configuration node.
 
 // end::data_config[]
 

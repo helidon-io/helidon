@@ -21,20 +21,22 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
 
 /**
  * {@link javax.sql.DataSource} configuration.
- * <p>This is the {@code data-source} configuration array member node of the {@code DataSource} configuration with {@code name}
+ * <p>This is the {@code data.sources} configuration array member node of the {@code DataSource} configuration with {@code name}
  * and {@code provider.<provider>} nodes:
  * <pre>
- *    data-source:
+ * data:
+ *   sources:
+ *     sql:
  *       - name: something
  *         provider.ucp:
- *             # provider configuration
- *             username: "test"
- *             password: "changeit"
- *             ...
+ *           # provider configuration
+ *           username: "test"
+ *           password: "changeit"
+ *           ...
  * </pre>
  */
 @Prototype.Blueprint
-@Prototype.Configured("data-source")
+@Prototype.Configured("data.sources.sql")
 @Prototype.RegistrySupport
 interface DataSourceConfigBlueprint {
 

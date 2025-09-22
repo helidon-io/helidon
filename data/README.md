@@ -51,13 +51,56 @@ Note that the PU must be of the same type as the Provider
 
 ## Configuration
 
-There are the following new nodes of configuration:
+There are following new nodes in the configuration:
 
-- `data-sources` - a section for data sources
 - `data.sources.sql` - a list of SQL data sources (implement `javax.sql.DataSource`)
-- `persistence-units` - a section for persistence units
-- `persistence-units.jakarta` - a list of JPA Persistence unit configurations
+- `data.persistence-units` - a section for persistence units
+- `data.persistence-units.jakarta` - a list of Jakarta Persistence units configurations
 
+### Persistence unit with custom connection
+
+An example of Helidon Data persistence unit with custom database connection. 
+
+```yaml
+data:
+  persistence-units:
+    jakarta:
+      - connection:
+          username: "user"
+          password: "changeit"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+        init-script: "init.sql"
+        properties:
+          eclipselink.target-database: "MySQL"
+          eclipselink.target-server: "None"
+          jakarta.persistence.schema-generation.database.action: "drop-and-create"
+```
+
+### Persistence unit with DataSource
+
+An example of Helidon Data persistence unit with DataSource. In this configuration, DataSource is defined in a separate node
+and persistence unit references just the name of this DataSource. Configured DataSource is available in the `ServiceRegistry`
+and also trough JNDI to be available for Jakarta Persistence provider, such as EclipseLink and Hibernate.
+
+```yaml
+data:
+  sources:
+    sql:
+      - name: "example"
+        provider.hikari:
+          username: "user"
+          password: "changeit"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+  persistence-units:
+    jakarta:
+      - data-source: "example"
+        init-script: "init.sql"
+        drop-script: "drop.sql"
+        properties:
+          jakarta.persistence.schema-generation.database.action: "drop-and-create"
+```
 
 ## Services in Service Registry
 
@@ -80,22 +123,23 @@ This will be supported by defining a single SQL data source, such as:
 ```yaml
 # this section is required for our testcontainer support
 test.database:
-    username: "test"  # will be honored
-    password: "changeit"  # will be honored
-    url: "jdbc:mysql://localhost:3306/testdb" # everything except port is honored
+  username: "test"
+  password: "changeit"
+  url: "jdbc:mysql://localhost:3306/testdb"
 
 # this section is the usual Helidon Data setup of data sources and persistence units
-data-sources:
-  sql:
-    - name: "test" # arbitrary name
-      provider.hikari: # any provider that extends `ConnectionConfig`
-        username: "${test.database.username}"
-        password: "${test.database.password}"
-        url: "${test.database.url}"
+data:
+  sources:
+    sql:
+      - name: "test"
+        provider.hikari:
+          username: "${test.database.username}"
+          password: "${test.database.password}"
+          url: "${test.database.url}"
+  persistence-units:
+    jakarta:
+      - data-source: "test"
 ```
 
 This information will be read by `io.helidon.data.sql.testing.SqlTestContainerConfig.configureContainer(io.helidon.common.config.Config, org.testcontainers.containers.JdbcDatabaseContainer<?>)` and a container will be initialized with it.
 The method returns a `TestContainerHandler` that can be used to start and stop the container, and to get the new mapped port. Its method `setConfig()` can be called to register the config instance with updated port numbers in ServiceRegistry
-
-
-
