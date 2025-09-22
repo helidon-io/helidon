@@ -137,7 +137,7 @@ final class ConfigSourcesRuntime {
 
         // config key is now "app.config.greeting", we want to get "greeting,config,app"
         LinkedList<String> path = new LinkedList<>();
-        while(!configKey.isRoot()) {
+        while (!configKey.isRoot()) {
             path.add(configKey.name());
             configKey = configKey.parent();
         }
