@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,11 +76,16 @@ final class ConfigSourcesRuntime {
     }
 
     Optional<ConfigNode> lazyValue(String key) {
-        // list of sources in `allSources` is final, there is no need to synchronize
-        for (ConfigSourceRuntimeImpl source : allSources) {
+        for (RuntimeWithData runtimeWithData : loadedData) {
+            var source = runtimeWithData.runtime;
             if (source.isLazy()) {
                 Optional<ConfigNode> node = source.node(key);
                 if (node.isPresent()) {
+                    var data = runtimeWithData.data;
+                    ObjectNode newNode = toRootNode(key, node.get());
+                    data = Optional.of(data.map(objectNode -> mergingStrategy.merge(List.of(newNode, objectNode)))
+                            .orElse(newNode));
+                    runtimeWithData.data = data;
                     return node;
                 }
             }
@@ -97,29 +102,63 @@ final class ConfigSourcesRuntime {
                 .filter(loaded -> loaded.runtime().changesSupported())
                 .forEach(loaded -> loaded.runtime()
                         .onChange((key, configNode) -> {
-                            loaded.data(processChange(loaded.data, key, configNode));
+                            processChange(loaded, key, configNode);
                             changeListener.accept(latest());
                         }));
     }
 
-    private Optional<ObjectNode> processChange(Optional<ObjectNode> oldData, String changedKey, ConfigNode changeNode) {
+    // update the runtime with the new data set
+    private void processChange(RuntimeWithData runtimeWithData, String changedKey, ConfigNode changeNode) {
         ConfigKeyImpl key = ConfigKeyImpl.of(changedKey);
         ObjectNode changeObjectNode = toObjectNode(changeNode);
 
         if (key.isRoot()) {
-            // we have a root, no merging with original data, just return it
-            return Optional.of(changeObjectNode);
+            // we have a root, no merging with original data, just set it
+            runtimeWithData.data = Optional.of(changeObjectNode);
+            return;
         }
 
-        ObjectNode newRootNode = ObjectNode.builder().addObject(changedKey, changeObjectNode).build();
+        ObjectNode newRootNode = toRootNode(changedKey, changeNode);
 
         // old data was empty, this is the only data we have
-        if (oldData.isEmpty()) {
-            return Optional.of(newRootNode);
+        if (runtimeWithData.data.isEmpty()) {
+            runtimeWithData.data = Optional.of(newRootNode);
         }
 
         // we had data, now we have new data (not on root), let's merge
-        return Optional.of(mergingStrategy.merge(List.of(newRootNode, oldData.get())));
+        runtimeWithData.data = Optional.of(mergingStrategy.merge(List.of(newRootNode, runtimeWithData.data.get())));
+    }
+
+    private ObjectNode toRootNode(String key, ConfigNode configNode) {
+        ConfigKeyImpl configKey = ConfigKeyImpl.of(key);
+        if (configKey.isRoot()) {
+            return toObjectNode(configNode);
+        }
+
+        // config key is now "app.config.greeting", we want to get "greeting,config,app"
+        LinkedList<String> path = new LinkedList<>();
+        while(!configKey.isRoot()) {
+            path.add(configKey.name());
+            configKey = configKey.parent();
+        }
+
+        /*
+        key: app.config.greeting, configNode: valueNode("hello")
+        path: greeting,config,app
+        what we want to get:
+            objectNode(app: objectNode(config: objectNode(greeting: valueNode("hello"))))
+         */
+        var currentBuilder = ObjectNode.builder();
+        var previousNode = configNode;
+
+        for (String pathElement : path) {
+            currentBuilder.addNode(pathElement, previousNode);
+            previousNode = currentBuilder.build();
+            currentBuilder = ObjectNode.builder();
+        }
+
+
+        return (ObjectNode) previousNode;
     }
 
     private ObjectNode toObjectNode(ConfigNode changeNode) {

@@ -129,7 +129,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                             }
                             return null;
                         });
-                sslSocket.startHandshake();
+                try {
+                    sslSocket.startHandshake();
+                } catch (Exception e) {
+                    sslSocket.close();
+                    throw e;
+                }
                 helidonSocket = TlsSocket.server(sslSocket, channelId, serverChannelId);
             } else {
                 helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
@@ -140,8 +145,17 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                                          helidonSocket,
                                          listenerConfig.writeQueueLength(),
                                          listenerConfig.smartAsyncWrites());
+        } catch (RuntimeException e) {
+            // these exceptions are thrown to the executor service
+            if (LOGGER.isLoggable(TRACE)) {
+                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            }
+            return;
         } catch (Exception e) {
-            throw e instanceof RuntimeException re ? re : new RuntimeException(e);      // see ServerListener
+            if (LOGGER.isLoggable(TRACE)) {
+                LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+            }
+            return;
         }
 
         // connection handling
