@@ -96,6 +96,8 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
         The registry needs a way to find out that `io.helidon.config.Config` has two contracts
         This method should provide a set of resolved types for each contract implemented by this service, so registry
         can create the full tree
+
+
          */
         return Set.of();
     }

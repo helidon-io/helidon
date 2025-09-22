@@ -25,7 +25,6 @@ import io.helidon.common.types.Modifier;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 
 /**
  * A described type (class, interface).
@@ -38,23 +37,24 @@ public class DescribedType {
     private final TypeName typeName;
     private final Set<ResolvedType> contracts;
     private final DescribedElements elements;
+    private final Map<ResolvedType, Set<ResolvedType>> contractTypes;
 
-    DescribedType(TypeInfo typeInfo, TypeName typeName, Set<ResolvedType> contracts, DescribedElements elements) {
+    DescribedType(TypeInfo typeInfo, TypeName typeName, Map<ResolvedType, Set<ResolvedType>> contractTypes, DescribedElements elements) {
         Objects.requireNonNull(typeInfo);
         Objects.requireNonNull(typeName);
-        Objects.requireNonNull(contracts);
+        Objects.requireNonNull(contractTypes);
         Objects.requireNonNull(elements);
 
         this.typeInfo = typeInfo;
         this.isAbstract = isAbstract(typeInfo);
         this.typeName = typeName;
-        this.contracts = contracts;
+        this.contracts = contractTypes.keySet();
+        this.contractTypes = contractTypes;
         this.elements = elements;
     }
 
     Map<ResolvedType, Set<ResolvedType>> contractTypeSets() {
-        return Map.of(ResolvedType.create(TypeNames.STRING),
-                      Set.of(ResolvedType.create(TypeNames.STRING), ResolvedType.create(TypeName.create(CharSequence.class))));
+        return contractTypes;
     }
 
     boolean isAbstract() {
