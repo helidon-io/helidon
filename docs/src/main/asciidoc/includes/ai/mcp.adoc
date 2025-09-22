@@ -19,12 +19,12 @@
 == Model Context Protocol (MCP) Server
 
 Helidon provides support for building Model Context Protocol (MCP) servers through a dedicated extension.
-The MCP Server is not part of the Helidon runtime itself – it is delivered as a separate project hosted in the
+The MCP Server feature is not part of the core Helidon Framework – it is delivered as a separate project hosted in the
 https://github.com/helidon-io/helidon-mcp[helidon-mcp GitHub repository].
 
 === What is MCP?
 
-The Model Context Protocol (MCP) is an open protocol designed to connect AI models with external tools, resources,
+The https://modelcontextprotocol.io[Model Context Protocol (MCP)] is an open protocol designed to connect AI models with external tools, resources,
 and data sources in a standardized way. An MCP server exposes resources, prompts, and tools that AI clients can
 discover and invoke dynamically, enabling more powerful and context-aware applications.
 
