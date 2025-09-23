@@ -31,7 +31,7 @@ ifndef::h1-prefix[:h1-prefix: SE]
 |=======
 // tag::prerequisites-table-rows[]
 // tag::prerequisites-table-rows-core[]
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}21] (http://jdk.java.net[Open{nbsp}JDK{nbsp}21]) |Helidon requires Java 21+.
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}21] (http://jdk.java.net[Open{nbsp}JDK{nbsp}21]) |Helidon requires Java 21+ (25+ recommended).
 // tag::prerequisites-table-rows-maven[]
 |https://maven.apache.org/download.cgi[Maven 3.8+]|Helidon requires Maven 3.8+.
 // end::prerequisites-table-rows-maven[]
