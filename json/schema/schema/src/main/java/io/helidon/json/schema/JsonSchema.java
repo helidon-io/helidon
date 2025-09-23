@@ -457,11 +457,11 @@ public final class JsonSchema {
         public @interface UniqueItems {
             /**
              * Whether the array must contain only the unique items.
-             * Default value is {@code false}.
+             * Default value is {@code true}.
              *
              * @return only unique values
              */
-            boolean value() default false;
+            boolean value() default true;
         }
     }
 
