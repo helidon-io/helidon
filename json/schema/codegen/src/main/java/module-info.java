@@ -20,8 +20,7 @@
 module io.helidon.json.schema.codegen {
     requires io.helidon.codegen;
     requires io.helidon.common.types;
-    requires io.helidon.builder.api;
-    requires io.helidon.json.schema;
+    requires io.helidon.metadata.hson;
 
     exports io.helidon.json.schema.codegen;
 

@@ -16,7 +16,6 @@
 
 package io.helidon.json.schema.codegen;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -34,17 +34,11 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.json.schema.Schema;
-import io.helidon.json.schema.SchemaArray;
-import io.helidon.json.schema.SchemaInteger;
-import io.helidon.json.schema.SchemaItem;
-import io.helidon.json.schema.SchemaNumber;
-import io.helidon.json.schema.SchemaObject;
-import io.helidon.json.schema.SchemaString;
+import io.helidon.metadata.hson.Hson;
 
 import static java.util.function.Predicate.not;
 
-record SchemaInfo(TypeName generatedSchema, Schema schema) {
+record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
 
     private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
             TypeNames.BOXED_BOOLEAN, TypeNames.PRIMITIVE_BOOLEAN,
@@ -76,66 +70,82 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                 .className(annotatedTypeName.className() + "__JsonSchema")
                 .build();
 
-        Schema.Builder builder = Schema.builder();
+        Hson.Struct.Builder schemaBuilder = Hson.structBuilder()
+                .set("$schema", "https://json-schema.org/draft/2020-12/schema");
         annotatedType.findAnnotation(Types.JSON_SCHEMA_ID)
                 .flatMap(it -> it.stringValue())
-                .map(URI::create)
-                .ifPresent(builder::id);
-        builder.rootObject(objectBuilder -> processObject(objectBuilder, annotatedType, ctx));
-        return new SchemaInfo(generatedTypeName, builder.build());
+                .ifPresent(it -> schemaBuilder.set("$id", it));
+        processObject(schemaBuilder, annotatedType, ctx, new AtomicBoolean());
+        return new SchemaInfo(generatedTypeName, schemaBuilder.build());
     }
 
-    private static void processCommonAnnotations(SchemaItem.BuilderBase<?, ?> builderBase, Annotated annotatedType) {
+    private static void processCommonAnnotations(Hson.Struct.Builder builder, Annotated annotatedType, AtomicBoolean required) {
         annotatedType.findAnnotation(Types.JSON_SCHEMA_TITLE)
                 .flatMap(it -> it.stringValue())
-                .ifPresent(builderBase::title);
+                .ifPresent(it -> builder.set("title", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_DESCRIPTION)
                 .flatMap(it -> it.stringValue())
-                .ifPresent(builderBase::description);
-        annotatedType.findAnnotation(Types.JSON_SCHEMA_REQUIRED).ifPresent(it -> builderBase.required(true));
+                .ifPresent(it -> builder.set("description", it));
+        annotatedType.findAnnotation(Types.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
     }
 
-    private static void processIntegerAnnotations(SchemaInteger.Builder integerBuilder, Annotated annotatedType) {
-        processCommonAnnotations(integerBuilder, annotatedType);
+    private static void processIntegerAnnotations(Hson.Struct.Builder builder, Annotated annotatedType, AtomicBoolean required) {
+        processCommonAnnotations(builder, annotatedType, required);
+        builder.set("type", "integer");
         annotatedType.findAnnotation(Types.JSON_SCHEMA_INTEGER_MINIMUM)
                 .flatMap(it -> it.longValue())
-                .ifPresent(integerBuilder::minimum);
+                .ifPresent(it -> builder.set("minimum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_INTEGER_MAXIMUM)
                 .flatMap(it -> it.longValue())
-                .ifPresent(integerBuilder::maximum);
+                .ifPresent(it -> builder.set("maximum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_INTEGER_MULTIPLE_OF)
                 .flatMap(it -> it.longValue())
-                .ifPresent(integerBuilder::multipleOf);
+                .ifPresent(it -> builder.set("multipleOf", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_INTEGER_EXCLUSIVE_MINIMUM)
                 .flatMap(it -> it.longValue())
-                .ifPresent(integerBuilder::exclusiveMinimum);
+                .ifPresent(it -> builder.set("exclusiveMinimum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_INTEGER_EXCLUSIVE_MAXIMUM)
                 .flatMap(it -> it.longValue())
-                .ifPresent(integerBuilder::exclusiveMaximum);
+                .ifPresent(it -> builder.set("exclusiveMaximum", it));
     }
 
-    private static void processStringAnnotations(SchemaString.Builder builder, Annotated annotated) {
-        processCommonAnnotations(builder, annotated);
+    private static void processStringAnnotations(Hson.Struct.Builder builder, Annotated annotated, AtomicBoolean required) {
+        builder.set("type", "string");
+        processCommonAnnotations(builder, annotated, required);
         annotated.findAnnotation(Types.JSON_SCHEMA_STRING_MIN_LENGTH)
                 .flatMap(it -> it.longValue())
-                .ifPresent(builder::minLength);
+                .ifPresent(it -> builder.set("minLength", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_STRING_MAX_LENGTH)
                 .flatMap(it -> it.longValue())
-                .ifPresent(builder::maxLength);
+                .ifPresent(it -> builder.set("maxLength", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_STRING_PATTERN)
                 .flatMap(it -> it.stringValue())
-                .ifPresent(builder::pattern);
+                .ifPresent(it -> builder.set("pattern", it));
     }
 
-    private static void processObject(SchemaObject.Builder builder,
+    private static void processObject(Hson.Struct.Builder builder,
                                       TypeInfo annotatedType,
-                                      CodegenContext ctx) {
-        processObjectAnnotations(builder, annotatedType);
+                                      CodegenContext ctx,
+                                      AtomicBoolean required) {
+        builder.set("type", "object");
+        processObjectAnnotations(builder, annotatedType, required);
         Map<String, List<SchemaObjectProperty>> objectProperties = obtainObjectProperties(annotatedType);
 
+        List<String> requiredProperties = new ArrayList<>();
+        Hson.Struct.Builder newBuilder = Hson.structBuilder();
         objectProperties.forEach((name, properties) -> {
-            processObjectElement(builder, ctx, properties, name);
+            AtomicBoolean requiredProperty = new AtomicBoolean();
+            processObjectElement(newBuilder, ctx, properties, name, requiredProperty);
+            if (requiredProperty.get()) {
+                requiredProperties.add(name);
+            }
         });
+        if (!objectProperties.isEmpty()) {
+            builder.set("properties", newBuilder.build());
+        }
+        if (!requiredProperties.isEmpty()) {
+            builder.setStrings("required", List.copyOf(requiredProperties));
+        }
     }
 
     private static Map<String, List<SchemaObjectProperty>> obtainObjectProperties(TypeInfo annotatedType) {
@@ -244,35 +254,31 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
         return properties;
     }
 
-    private static void processObjectElement(SchemaObject.Builder builder,
+    private static void processObjectElement(Hson.Struct.Builder builder,
                                              CodegenContext ctx,
                                              List<SchemaObjectProperty> properties,
-                                             String name) {
+                                             String name,
+                                             AtomicBoolean required) {
         SchemaObjectProperty last = properties.getLast();
         TypeName lastElementTypeName = last.typeName();
         TypeName parameterTypeName = BOXED_TO_PRIMITIVE.getOrDefault(lastElementTypeName, lastElementTypeName);
+        Hson.Struct.Builder newStructBuilder = Hson.structBuilder();
         if (INTEGERS.contains(parameterTypeName)) {
-            builder.addIntegerProperty(name, integerBuilder -> properties.forEach(
-                    it -> processIntegerAnnotations(integerBuilder, it.annotated())));
+            properties.forEach(it -> processIntegerAnnotations(newStructBuilder, it.annotated(), required));
         } else if (NUMBERS.contains(parameterTypeName)) {
-            builder.addNumberProperty(name, numberBuilder -> properties.forEach(
-                    it -> processNumberAnnotations(numberBuilder, it.annotated())));
+            properties.forEach(it -> processNumberAnnotations(newStructBuilder, it.annotated(), required));
         } else if (parameterTypeName.primitive()) {
             if (parameterTypeName.equals(TypeNames.PRIMITIVE_BOOLEAN)) {
-                builder.addBooleanProperty(name, booleanBuilder -> properties.forEach(
-                        it -> processCommonAnnotations(booleanBuilder, it.annotated())));
+                properties.forEach(it -> processCommonAnnotations(newStructBuilder, it.annotated(), required));
             } else {
-                builder.addStringProperty(name, stringBuilder -> properties.forEach(
-                        it -> processStringAnnotations(stringBuilder, it.annotated())));
+                properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
             }
         } else if (parameterTypeName.equals(TypeNames.STRING)) {
-            builder.addStringProperty(name, stringBuilder -> properties.forEach(
-                    it -> processStringAnnotations(stringBuilder, it.annotated())));
+            properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
         } else if (parameterTypeName.array()
                 || parameterTypeName.isList()
                 || parameterTypeName.isSet()) {
-            builder.addArrayProperty(name, arrayBuilder -> properties.forEach(
-                    it -> processArray(arrayBuilder, ctx, it.annotated(), parameterTypeName)));
+            properties.forEach(it -> processArray(newStructBuilder, ctx, it.annotated(), parameterTypeName, required));
         } else {
             boolean doNotInspect = properties.stream()
                     .anyMatch(it -> it.annotated().hasAnnotation(Types.JSON_SCHEMA_DO_NOT_INSPECT));
@@ -281,111 +287,114 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                     || doNotInspect) {
                 //Do not inspect java and javax package classes
                 //Only the annotations on the element should be processed
-                builder.addObjectProperty(name, objectBuilder -> properties.forEach(
-                        it -> processObjectAnnotations(objectBuilder, it.annotated())));
-                return;
-            }
-            TypeInfo typeInfo = ctx.typeInfo(parameterTypeName)
-                    .orElseThrow(() -> new IllegalStateException("Could not process required type: " + parameterTypeName));
-
-            builder.addObjectProperty(name, objectBuilder -> {
-                processObject(objectBuilder, typeInfo, ctx);
+                properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
+            } else {
+                TypeInfo typeInfo = ctx.typeInfo(parameterTypeName)
+                        .orElseThrow(() -> new IllegalStateException("Could not process required type: " + parameterTypeName));
+                processObject(newStructBuilder, typeInfo, ctx, required);
                 properties.forEach(it -> {
-                    //process annotations on the method so they override the defaults from the type
-                    processObjectAnnotations(objectBuilder, it.annotated());
+                    //process annotations on the method/field so they override the defaults from the type
+                    processObjectAnnotations(newStructBuilder, it.annotated(), required);
                 });
-            });
+            }
         }
+        builder.set(name, newStructBuilder.build());
     }
 
-    private static void processNumberAnnotations(SchemaNumber.Builder numberBuilder, Annotated annotatedType) {
-        processCommonAnnotations(numberBuilder, annotatedType);
+    private static void processNumberAnnotations(Hson.Struct.Builder numberBuilder,
+                                                 Annotated annotatedType,
+                                                 AtomicBoolean required) {
+        numberBuilder.set("type", "number");
+        processCommonAnnotations(numberBuilder, annotatedType, required);
         annotatedType.findAnnotation(Types.JSON_SCHEMA_NUMBER_MINIMUM)
                 .flatMap(it -> it.doubleValue())
-                .ifPresent(numberBuilder::minimum);
+                .ifPresent(it -> numberBuilder.set("minimum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_NUMBER_MAXIMUM)
                 .flatMap(it -> it.doubleValue())
-                .ifPresent(numberBuilder::maximum);
+                .ifPresent(it -> numberBuilder.set("maximum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_NUMBER_MULTIPLE_OF)
                 .flatMap(it -> it.doubleValue())
-                .ifPresent(numberBuilder::multipleOf);
+                .ifPresent(it -> numberBuilder.set("multipleOf", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_NUMBER_EXCLUSIVE_MINIMUM)
                 .flatMap(it -> it.doubleValue())
-                .ifPresent(numberBuilder::exclusiveMinimum);
+                .ifPresent(it -> numberBuilder.set("exclusiveMinimum", it));
         annotatedType.findAnnotation(Types.JSON_SCHEMA_NUMBER_EXCLUSIVE_MAXIMUM)
                 .flatMap(it -> it.doubleValue())
-                .ifPresent(numberBuilder::exclusiveMaximum);
+                .ifPresent(it -> numberBuilder.set("exclusiveMaximum", it));
     }
 
-    private static void processObjectAnnotations(SchemaObject.Builder builder, Annotated annotated) {
-        processCommonAnnotations(builder, annotated);
+    private static void processObjectAnnotations(Hson.Struct.Builder builder, Annotated annotated, AtomicBoolean required) {
+        processCommonAnnotations(builder, annotated, required);
         annotated.findAnnotation(Types.JSON_SCHEMA_OBJECT_MIN_PROPERTIES)
                 .flatMap(it -> it.intValue())
-                .ifPresent(builder::minProperties);
+                .ifPresent(it -> builder.set("minProperties", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_OBJECT_MAX_PROPERTIES)
                 .flatMap(it -> it.intValue())
-                .ifPresent(builder::maxProperties);
+                .ifPresent(it -> builder.set("maxProperties", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_OBJECT_ADDITIONAL_PROPERTIES)
                 .flatMap(it -> it.booleanValue())
-                .ifPresent(builder::additionalProperties);
+                .ifPresent(it -> builder.set("additionalProperties", it));
     }
 
-    private static void processArray(SchemaArray.Builder builder,
+    private static void processArray(Hson.Struct.Builder builder,
                                      CodegenContext ctx,
                                      Annotated element,
-                                     TypeName elementTypeName) {
-        processArrayAnnotations(builder, ctx, element);
+                                     TypeName elementTypeName,
+                                     AtomicBoolean required) {
+        builder.set("type", "array");
+        processArrayAnnotations(builder, element, required);
         TypeName typeName = elementTypeName;
         if (typeName.array()) {
             typeName = typeName.componentType().orElse(TypeNames.OBJECT);
         } else if (typeName.isList() || typeName.isSet()) {
             typeName = typeName.typeArguments().getFirst();
         }
+        Hson.Struct.Builder itemsBuilder = Hson.structBuilder();
         TypeName finalTypeName = BOXED_TO_PRIMITIVE.getOrDefault(typeName, typeName);
         if (INTEGERS.contains(finalTypeName)) {
-            builder.itemsInteger(integerBuilder -> processIntegerAnnotations(integerBuilder, element));
+            processIntegerAnnotations(itemsBuilder, element, required);
         } else if (NUMBERS.contains(finalTypeName)) {
-            builder.itemsNumber(numberBuilder -> processNumberAnnotations(numberBuilder, element));
+            processNumberAnnotations(itemsBuilder, element, required);
         } else if (finalTypeName.primitive()) {
             if (finalTypeName.equals(TypeNames.PRIMITIVE_BOOLEAN)) {
-                builder.itemsBoolean(booleanBuilder -> processCommonAnnotations(booleanBuilder, element));
+                processCommonAnnotations(itemsBuilder, element, required);
             } else {
-                builder.itemsString(stringBuilder -> processStringAnnotations(stringBuilder, element));
+                processStringAnnotations(itemsBuilder, element, required);
             }
         } else if (finalTypeName.equals(TypeNames.STRING)) {
-            builder.itemsString(stringBuilder -> processStringAnnotations(stringBuilder, element));
+            processStringAnnotations(itemsBuilder, element, required);
         } else if (finalTypeName.array()
                 || finalTypeName.isList()
                 || finalTypeName.isSet()) {
-            builder.itemsArray(arrayBuilder -> processArray(arrayBuilder, ctx, element, finalTypeName));
+            processArray(itemsBuilder, ctx, element, finalTypeName, required);
         } else {
             if (finalTypeName.packageName().startsWith("java")
                     || element.hasAnnotation(Types.JSON_SCHEMA_DO_NOT_INSPECT)) {
                 //Do not inspect java and javax package classes
                 //Only the annotations on the element should be processed
-                builder.itemsObject(objectBuilder -> processObjectAnnotations(objectBuilder, element));
+                processObjectAnnotations(itemsBuilder, element, required);
                 return;
             }
             TypeInfo typeInfo = ctx.typeInfo(finalTypeName)
                     .orElseThrow(() -> new IllegalStateException("Could not process required type: " + finalTypeName));
-
-            builder.itemsObject(objectBuilder -> processObject(objectBuilder, typeInfo, ctx));
+            processObject(itemsBuilder, typeInfo, ctx, required);
+            processObjectAnnotations(itemsBuilder, element, required);
         }
     }
 
-    private static void processArrayAnnotations(SchemaArray.Builder arrayBuilder,
-                                                CodegenContext ctx,
-                                                Annotated annotated) {
-        processCommonAnnotations(arrayBuilder, annotated);
+    private static void processArrayAnnotations(Hson.Struct.Builder arrayBuilder,
+                                                Annotated annotated,
+                                                AtomicBoolean required) {
+        processCommonAnnotations(arrayBuilder, annotated, required);
         annotated.findAnnotation(Types.JSON_SCHEMA_ARRAY_MIN_ITEMS)
                 .flatMap(it -> it.intValue())
-                .ifPresent(arrayBuilder::minItems);
+                .ifPresent(it -> arrayBuilder.set("minItems", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_ARRAY_MAX_ITEMS)
                 .flatMap(it -> it.intValue())
-                .ifPresent(arrayBuilder::maxItems);
+                .ifPresent(it -> arrayBuilder.set("maxItems", it));
         annotated.findAnnotation(Types.JSON_SCHEMA_ARRAY_UNIQUE_ITEMS)
                 .flatMap(it -> it.booleanValue())
-                .ifPresent(arrayBuilder::uniqueItems);
+                .ifPresent(it -> arrayBuilder.set("uniqueItems", it));
     }
 
 }

@@ -42,17 +42,19 @@
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-hson</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.json.schema</groupId>
-            <artifactId>helidon-json-schema</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.json.schema</groupId>-->
+<!--            <artifactId>helidon-json-schema</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.service</groupId>-->
+<!--            <artifactId>helidon-service-registry</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

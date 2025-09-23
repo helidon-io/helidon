@@ -16,6 +16,9 @@
 
 package io.helidon.json.schema.codegen;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 import io.helidon.codegen.CodegenContext;
@@ -30,7 +33,7 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.json.schema.Schema;
+import io.helidon.metadata.hson.Hson;
 
 class SchemaCodegen implements CodegenExtension {
 
@@ -57,8 +60,7 @@ class SchemaCodegen implements CodegenExtension {
         TypeName annotatedTypeName = schema.typeName();
         SchemaInfo schemaInfo = SchemaInfo.create(schema, ctx);
         TypeName typeName = schemaInfo.generatedSchema();
-        Schema helidonSchema = schemaInfo.schema();
-        String schemaJson = helidonSchema.generate();
+        Hson.Struct helidonSchema = schemaInfo.schema();
         TypeName returnType = TypeName.builder()
                 .type(Class.class)
                 .addTypeArgument(TypeArgument.create("?"))
@@ -78,7 +80,7 @@ class SchemaCodegen implements CodegenExtension {
                         .accessModifier(AccessModifier.PRIVATE)
                         .name("STRING_SCHEMA")
                         .type(String.class)
-                        .defaultValueContent("\"\"\"\n" + schemaJson + "\"\"\""))
+                        .defaultValueContent("\"\"\"\n" + generateSchemaString(helidonSchema) + "\"\"\""))
                 .addField(fieldBuilder -> fieldBuilder.isStatic(true)
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
@@ -105,6 +107,14 @@ class SchemaCodegen implements CodegenExtension {
                                       builder,
                                       annotatedTypeName,
                                       schema.originatingElement().orElse(annotatedTypeName));
+    }
+
+    private String generateSchemaString(Hson.Struct helidonSchema) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
+            helidonSchema.write(writer, true);
+        }
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
 }
