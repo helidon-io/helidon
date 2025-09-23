@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= MCP Server
-:description:  MCP Server
+= MCP
+:description:  MCP
 :keywords: Helidon, AI, MCP
 :rootdir: {docdir}/../..
 
