@@ -18,9 +18,10 @@
  * JSON Schema Helidon support.
  */
 module io.helidon.json.schema {
+    requires transitive io.helidon.service.registry;
+    requires transitive io.helidon.metadata.hson;
+
     requires io.helidon.builder.api;
-    requires io.helidon.service.registry;
-    requires io.helidon.metadata.hson;
 
     exports io.helidon.json.schema;
 }

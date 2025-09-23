@@ -25,4 +25,8 @@ public final class JsonSchemaException extends RuntimeException {
         super(s);
     }
 
+    JsonSchemaException(String s, Exception exception) {
+        super(s, exception);
+    }
+
 }

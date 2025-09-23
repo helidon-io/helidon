@@ -471,8 +471,12 @@ public final class Hson {
          *
          * @param writer writer to write to
          */
-        default void writeFormatted(PrintWriter writer) {
-            write(new HsonPrettyPrintWriter(writer));
+        default void write(PrintWriter writer, boolean formatted) {
+            if (formatted) {
+                write(new HsonPrettyPrintWriter(writer));
+            } else {
+                write(writer);
+            }
         }
 
         /**

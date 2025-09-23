@@ -27,6 +27,7 @@ interface SchemaNullBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("NULL")
+    @Override
     SchemaType schemaType();
 
 }

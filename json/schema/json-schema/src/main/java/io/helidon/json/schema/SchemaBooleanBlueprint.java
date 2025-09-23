@@ -27,6 +27,7 @@ interface SchemaBooleanBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("BOOLEAN")
+    @Override
     SchemaType schemaType();
 
 }

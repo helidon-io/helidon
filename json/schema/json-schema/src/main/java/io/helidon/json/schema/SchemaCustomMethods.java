@@ -67,7 +67,7 @@ class SchemaCustomMethods {
     static String generate(Schema schema) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-            generateObject(schema).writeFormatted(writer);
+            generateObject(schema).write(writer, true);
         }
         return baos.toString(StandardCharsets.UTF_8);
     }
@@ -83,7 +83,7 @@ class SchemaCustomMethods {
     static String generateNoKeywords(Schema schema) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-            generateObjectNoKeywords(schema).writeFormatted(writer);
+            generateObjectNoKeywords(schema).write(writer, true);
         }
         return baos.toString(StandardCharsets.UTF_8);
     }
@@ -94,7 +94,6 @@ class SchemaCustomMethods {
      * @param schema schema
      * @return struct object
      */
-    @Prototype.PrototypeMethod
     static Hson.Struct generateObject(Schema schema) {
         Hson.Struct.Builder builder = Hson.structBuilder();
         builder.set("$schema", "https://json-schema.org/draft/2020-12/schema");
@@ -110,7 +109,6 @@ class SchemaCustomMethods {
      * @param schema schema
      * @return struct object
      */
-    @Prototype.PrototypeMethod
     static Hson.Struct generateObjectNoKeywords(Schema schema) {
         Hson.Struct.Builder builder = Hson.structBuilder();
         schema.root().generate(builder);

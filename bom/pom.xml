@@ -1751,8 +1751,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.jsons.chema</groupId>
-                <artifactId>helidon-jsons-chema-codegen</artifactId>
+                <groupId>io.helidon.json.schema</groupId>
+                <artifactId>helidon-json-schema-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

@@ -51,6 +51,7 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("STRING")
+    @Override
     SchemaType schemaType();
 
     @Override

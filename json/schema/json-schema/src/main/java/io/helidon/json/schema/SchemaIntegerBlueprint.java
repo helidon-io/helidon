@@ -74,6 +74,7 @@ interface SchemaIntegerBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("INTEGER")
+    @Override
     SchemaType schemaType();
 
     @Override

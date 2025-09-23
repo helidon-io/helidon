@@ -73,6 +73,7 @@ interface SchemaNumberBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("NUMBER")
+    @Override
     SchemaType schemaType();
 
     @Override

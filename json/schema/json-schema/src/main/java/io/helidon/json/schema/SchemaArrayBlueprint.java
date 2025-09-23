@@ -109,6 +109,7 @@ interface SchemaArrayBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("ARRAY")
+    @Override
     SchemaType schemaType();
 
     @Override

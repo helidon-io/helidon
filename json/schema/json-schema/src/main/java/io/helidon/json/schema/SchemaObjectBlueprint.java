@@ -122,6 +122,7 @@ interface SchemaObjectBlueprint extends SchemaItemBlueprint {
 
     @Option.Access("")
     @Option.Default("OBJECT")
+    @Override
     SchemaType schemaType();
 
     @Override
