@@ -35,7 +35,6 @@ public final class JsonSchema {
      * Marker annotation for a codegen to generate JSON schema from the annotated type.
      */
     @Target(ElementType.TYPE)
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Schema {
     }
@@ -45,7 +44,6 @@ public final class JsonSchema {
      * This will be added only to a root JSON schema.
      */
     @Target(ElementType.TYPE)
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Id {
 
@@ -61,7 +59,6 @@ public final class JsonSchema {
      * Title of the JSON schema.
      */
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Title {
 
@@ -77,7 +74,6 @@ public final class JsonSchema {
      * Description of the JSON schema.
      */
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Description {
 
@@ -94,7 +90,6 @@ public final class JsonSchema {
      * Applicable to oll JSON properties.
      */
     @Target({ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Required {
     }
@@ -103,7 +98,6 @@ public final class JsonSchema {
      * Whether to avoid deeper inspection of the JSON property type.
      */
     @Target({ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface DoNotInspect {
     }
@@ -112,7 +106,6 @@ public final class JsonSchema {
      * Whether the class property should be ignored and not included into the schema.
      */
     @Target({ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Ignore {
     }
@@ -121,7 +114,6 @@ public final class JsonSchema {
      * How is the JSON property named in the JSON schema.
      */
     @Target({ElementType.METHOD, ElementType.FIELD})
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface PropertyName {
 
@@ -144,7 +136,6 @@ public final class JsonSchema {
          * All integer values should be multiples of the given number.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MultipleOf {
 
@@ -161,7 +152,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal >=} minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface Minimum {
 
@@ -178,7 +168,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal <=} maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface Maximum {
 
@@ -195,7 +184,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal <} exclusive maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface ExclusiveMaximum {
 
@@ -212,7 +200,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal >} exclusive minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface ExclusiveMinimum {
 
@@ -237,7 +224,6 @@ public final class JsonSchema {
          * All number values should be multiples of the given number.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MultipleOf {
 
@@ -254,7 +240,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal >=} minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface Minimum {
 
@@ -271,7 +256,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal <=} maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface Maximum {
 
@@ -288,7 +272,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal <} exclusive maximum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface ExclusiveMaximum {
 
@@ -305,7 +288,6 @@ public final class JsonSchema {
          * Explanation: validated number {@literal >} exclusive minimum.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface ExclusiveMinimum {
 
@@ -330,7 +312,6 @@ public final class JsonSchema {
          * Minimal length of the String value.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MinLength {
 
@@ -346,7 +327,6 @@ public final class JsonSchema {
          * Maximal length of the String value.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MaxLength {
 
@@ -362,7 +342,6 @@ public final class JsonSchema {
          * Regexp pattern the String value has to follow.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface Pattern {
 
@@ -388,7 +367,6 @@ public final class JsonSchema {
          * Minimal number of the object properties in the JSON.
          */
         @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MinProperties {
 
@@ -404,7 +382,6 @@ public final class JsonSchema {
          * Maximal number of the object properties in the JSON.
          */
         @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MaxProperties {
 
@@ -421,7 +398,6 @@ public final class JsonSchema {
          * When disabled, only explicitly mentioned properties in the {@code properties} JSON property will be allowed.
          */
         @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface AdditionalProperties {
 
@@ -448,7 +424,6 @@ public final class JsonSchema {
          * Maximum number of the items the array can have.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MaxItems {
 
@@ -464,7 +439,6 @@ public final class JsonSchema {
          * Minimum number of the items the array can have.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface MinItems {
 
@@ -480,7 +454,6 @@ public final class JsonSchema {
          * Whether the array must contain only the unique items.
          */
         @Target({ElementType.METHOD, ElementType.FIELD})
-        @Inherited
         @Retention(RetentionPolicy.CLASS)
         public @interface UniqueItems {
             /**

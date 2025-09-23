@@ -19,6 +19,7 @@ package io.helidon.json.schema.codegen;
 import java.util.Collection;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.TypeArgument;
@@ -43,7 +44,11 @@ class SchemaCodegen implements CodegenExtension {
     public void process(RoundContext roundContext) {
         Collection<TypeInfo> schemas = roundContext.annotatedTypes(Types.JSON_SCHEMA_SCHEMA);
         for (TypeInfo schema : schemas) {
-            generateSchema(roundContext, schema);
+            try {
+                generateSchema(roundContext, schema);
+            } catch (Throwable ex) {
+                throw new CodegenException("Failed to generate JSON schema for the type: " + schema, ex);
+            }
         }
 
     }

@@ -225,9 +225,10 @@ class SchemaCustomMethods {
         jsonObject.structValue("properties")
                 .ifPresent(properties -> {
                     List<String> requiredProperties = jsonObject.stringArray("required").orElse(List.of());
-                    properties.values()
-                            .forEach((key, value) -> {
-                                Hson.Struct object = value.asStruct();
+                    properties.keys()
+                            .forEach(key -> {
+                                Hson.Struct object = properties.structValue(key)
+                                        .orElseThrow(() -> new JsonSchemaException("Missing required property '" + key + "'"));
                                 String type = object.stringValue("type")
                                         .orElseThrow(() -> new JsonSchemaException(
                                                 "Missing required property 'type' missing in the object property"

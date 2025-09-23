@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Main entry point for Helidon metadata format parsing and writing.
@@ -282,11 +283,11 @@ public final class Hson {
         Optional<Array> arrayValue(String key);
 
         /**
-         * Get all keys and registered values of this struct.
+         * Get all keys of this struct.
          *
-         * @return keys and values
+         * @return keys
          */
-        Map<String, Value<?>> values();
+        Set<String> keys();
 
         /**
          * Fluent API builder for {@link io.helidon.metadata.hson.Hson.Struct}.

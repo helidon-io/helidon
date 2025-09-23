@@ -19,6 +19,7 @@ package io.helidon.json.schema.codegen;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,7 +69,7 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                                                         Types.BIG_DECIMAL,
                                                         Types.NUMBER);
 
-    public static SchemaInfo create(TypeInfo annotatedType, CodegenContext ctx) {
+    static SchemaInfo create(TypeInfo annotatedType, CodegenContext ctx) {
         TypeName annotatedTypeName = annotatedType.typeName();
         TypeName generatedTypeName = TypeName.builder()
                 .from(annotatedTypeName)
@@ -146,6 +147,8 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(not(ElementInfoPredicates::isPrivate))
                 .filter(not(ElementInfoPredicates::isStatic))
+                .filter(it -> it.parameterArguments().size() == 1)
+                .filter(it -> it.elementName().length() > 3)
                 .toList();
 
         for (TypedElementInfo method : methods) {
@@ -155,9 +158,7 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
             }
             String methodName = method.elementName();
             if (methodName.startsWith("set")
-                    && methodName.length() > 3
-                    && Character.isUpperCase(methodName.charAt(3))
-                    && method.parameterArguments().size() == 1) {
+                    && Character.isUpperCase(methodName.charAt(3))) {
                 String name = method.findAnnotation(Types.JSON_SCHEMA_PROPERTY_NAME)
                         .or(() -> method.findAnnotation(Types.JSONB_PROPERTY))
                         .flatMap(it -> it.stringValue())
@@ -184,20 +185,24 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                 .filter(it -> it.hasAnnotation(Types.JSONB_CREATOR))
                 .findFirst();
 
-        maybeCreator.ifPresent(creator -> {
-            List<TypedElementInfo> parameterArguments = creator.parameterArguments();
-            for (TypedElementInfo parameter : parameterArguments) {
-                String name = parameter.findAnnotation(Types.JSON_SCHEMA_PROPERTY_NAME)
-                        .or(() -> parameter.findAnnotation(Types.JSONB_PROPERTY))
-                        .flatMap(it -> it.stringValue())
-                        .orElse(parameter.elementName());
-                if (properties.containsKey(name)) {
-                    continue;
-                }
-                properties.computeIfAbsent(name, key -> new ArrayList<>())
-                        .add(new SchemaObjectProperty(parameter, parameter.typeName()));
-            }
-        });
+        Set<String> creatorParamNames = maybeCreator.map(creator -> {
+                    Set<String> creatorParams = new LinkedHashSet<>();
+                    List<TypedElementInfo> parameterArguments = creator.parameterArguments();
+                    for (TypedElementInfo parameter : parameterArguments) {
+                        String name = parameter.findAnnotation(Types.JSON_SCHEMA_PROPERTY_NAME)
+                                .or(() -> parameter.findAnnotation(Types.JSONB_PROPERTY))
+                                .flatMap(it -> it.stringValue())
+                                .orElse(parameter.elementName());
+                        creatorParams.add(name);
+                        if (properties.containsKey(name)) {
+                            continue;
+                        }
+                        properties.computeIfAbsent(name, key -> new ArrayList<>())
+                                .add(new SchemaObjectProperty(parameter, parameter.typeName()));
+                    }
+                    return creatorParams;
+                })
+                .orElse(Set.of());
 
         //Discover processable fields
         List<TypedElementInfo> fields = annotatedType.elementInfo()
@@ -213,6 +218,10 @@ record SchemaInfo(TypeName generatedSchema, Schema schema) {
                     .orElse(field.elementName());
             if (field.hasAnnotation(Types.JSON_SCHEMA_IGNORE)
                     || field.hasAnnotation(Types.JSONB_TRANSIENT)) {
+                if (creatorParamNames.contains(name)) {
+                    throw new RuntimeException("Ignored set on the field '" + name
+                                                       + "', but it is required as a creator parameter.");
+                }
                 properties.remove(name);
                 continue;
             }
