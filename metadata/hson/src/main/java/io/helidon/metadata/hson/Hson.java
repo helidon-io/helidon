@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -468,9 +467,10 @@ public final class Hson {
         void write(PrintWriter writer);
 
         /**
-         * Writes the HSON in a formatted output.
+         * Writes the HSON in a formatted output, if enabled.
          *
          * @param writer writer to write to
+         * @param formatted whether the output should be formatted
          */
         default void write(PrintWriter writer, boolean formatted) {
             if (formatted) {
