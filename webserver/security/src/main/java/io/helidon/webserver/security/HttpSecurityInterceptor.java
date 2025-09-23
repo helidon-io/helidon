@@ -523,10 +523,7 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
 
         securityAnnotations(methodSecurity, method.annotations());
         SecurityLevel currentLevel = methodSecurity.lastSecurityLevel();
-        /*
-        TODO check config if the same annotation in config, use config
 
-         */
         currentLevel = SecurityLevel.builder()
                 .from(currentLevel)
                 .methodName(method.elementName())
