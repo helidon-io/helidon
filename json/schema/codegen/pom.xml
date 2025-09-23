@@ -45,31 +45,6 @@
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.json.schema</groupId>-->
-<!--            <artifactId>helidon-json-schema</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.service</groupId>-->
-<!--            <artifactId>helidon-service-registry</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json.bind</groupId>
-            <artifactId>jakarta.json.bind-api</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
 </project>

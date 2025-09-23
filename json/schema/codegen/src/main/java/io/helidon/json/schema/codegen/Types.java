@@ -21,7 +21,7 @@ import java.math.BigInteger;
 
 import io.helidon.common.types.TypeName;
 
-class Types {
+final class Types {
 
     //Common annotations
     static final TypeName JSON_SCHEMA_SCHEMA = TypeName.create("io.helidon.json.schema.JsonSchema.Schema");

@@ -38,8 +38,14 @@ public class SchemaServiceRegistryTest {
                       "color": {
                          "description": "The color of my car",
                          "type": "string"
+                      },
+                      "spz": {
+                         "type": "string"
                       }
-                   }
+                   },
+                   "required": [
+                      "spz"
+                   ]
                 }""";
         Optional<Schema> optionalSchema = Schema.find(SchemaCar.class);
 

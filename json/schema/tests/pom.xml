@@ -25,8 +25,15 @@
         <version>4.3.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-json-schema-tests</artifactId>
-    <name>Helidon Json Schema Tests</name>
+    <groupId>io.helidon.json.schema.tests</groupId>
+    <artifactId>helidon-json-schema-tests-project</artifactId>
+    <name>Helidon Json Schema Tests Project</name>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>codegen</module>
+        <module>service-registry</module>
+    </modules>
 
     <properties>
         <helidon.services.skip>true</helidon.services.skip>
@@ -38,92 +45,5 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.json.schema</groupId>
-            <artifactId>helidon-json-schema</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.json.schema</groupId>
-                            <artifactId>helidon-json-schema-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.json.schema</groupId>
-                        <artifactId>helidon-json-schema-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
