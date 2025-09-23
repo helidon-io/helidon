@@ -57,7 +57,7 @@ fi
 # Otherwise OSS Index analyzer will be disabled
 # And yes, this option uses a lower case i while Username and Password has an upper case I
 OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=false"
-if [ ! -z "${OSS_INDEX_PASSWORD}" ] && [ ! -z "${OSS_INDEX_USERNAME}" ]; then
+if [ -n "${OSS_INDEX_PASSWORD}" ] && [ -n "${OSS_INDEX_USERNAME}" ]; then
     OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
 fi
 
