@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,13 +51,24 @@ if [ "${PIPELINE}" = "true" ] ; then
     mvn ${MAVEN_ARGS} -f "${WS_DIR}"/pom.xml clean install -DskipTests
 fi
 
+# The Sonatype OSS Index analyzer requires authentication
+# See https://ossindex.sonatype.org/doc/auth-required
+# Set OSS_INDEX_USERNAME and OSS_INDEX_PASSWORD to authenticate.
+# Otherwise OSS Index analyzer will be disabled
+# And yes, this option uses a lower case i while Username and Password has an upper case I
+OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=false"
+if [ ! -z "${OSS_INDEX_PASSWORD}" ] && [ ! -z "${OSS_INDEX_USERNAME}" ]; then
+    OSS_INDEX_OPTIONS="-DossindexAnalyzerEnabled=true -DossIndexUsername=${OSS_INDEX_USERNAME} -DossIndexPassword=${OSS_INDEX_PASSWORD}"
+fi
+
 # Setting NVD_API_KEY is not required but improves behavior of NVD API throttling
 
 # shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
         -f "${WS_DIR}"/pom.xml \
         -Dtop.parent.basedir="${WS_DIR}" \
-        -Dnvd-api-key="${NVD_API_KEY}" \
+        -DnvdApiKey="${NVD_API_KEY}" \
+        ${OSS_INDEX_OPTIONS} \
         > "${RESULT_FILE}" || die "Error running the Maven command"
 
 grep -i "One or more dependencies were identified with known vulnerabilities" "${RESULT_FILE}" \
