@@ -33,6 +33,7 @@ import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
 import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.TokenUsage;
 
 /**
  * Creates metrics that follow the
@@ -102,7 +103,9 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai_token_type",
                                                                        "input"))));
-        clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
+        if (chatResponse.tokenUsage() != null) {
+            clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
+        }
 
         DistributionSummary clientOutputTokenUsage = responseOutputTokenUsageByModelName.computeIfAbsent(
                 responseModelName,
@@ -125,7 +128,9 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai_token_type",
                                                                        "output"))));
-        clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
+        if (chatResponse.tokenUsage() != null) {
+            clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
+        }
 
         DistributionSummary clientOperationDuration = responseOperationDurationByModelName.computeIfAbsent(
                 responseModelName,
