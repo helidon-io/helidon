@@ -122,7 +122,16 @@ public final class Filters implements ServerLifecycle {
                 return;
             }
             if (filters.hasNext()) {
-                filters.next().filter(this, request, response);
+                var filter = filters.next();
+
+                FilterProceeder proceeder = new FilterProceeder(this);
+                filter.filter(proceeder, request, response);
+                if (!proceeder.proceeded && !response.isSent()) {
+                    throw new HttpException("Filter " + filter + ", class: " + filter.getClass().getName()
+                                                    + " neither called proceed() on filter chain, nor sent a response, "
+                                                    + " nor threw an exception. This is invalid filter behavior.",
+                                            Status.INTERNAL_SERVER_ERROR_500);
+                }
             } else {
                 errorHandlers.runWithErrorHandling(ctx, request, response, routingExecutor);
                 if (!response.isSent()) {
@@ -132,6 +141,21 @@ public final class Filters implements ServerLifecycle {
                                             Status.INTERNAL_SERVER_ERROR_500);
                 }
             }
+        }
+    }
+
+    private static class FilterProceeder implements FilterChain {
+        private final FilterChain realChain;
+        private boolean proceeded;
+
+        FilterProceeder(FilterChain realChain) {
+            this.realChain = realChain;
+        }
+
+        @Override
+        public void proceed() {
+            proceeded = true;
+            realChain.proceed();
         }
     }
 
