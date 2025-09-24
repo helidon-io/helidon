@@ -38,6 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 * <<AI Services, AI Services>>
     ** <<Creating AI Service, Creating AI Service>>
     ** <<Tools (Callback Functions), Tools (Callback Functions)>>
+    ** <<MCP Client, MCP Client>>
     ** <<Observability (ChatModelListeners), Observability (ChatModelListeners)>>
 * <<Additional Information, Additional Information>>
 
