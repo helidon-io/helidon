@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@ package io.helidon.metadata.hson;
 
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -133,6 +136,13 @@ final class HsonStruct implements Hson.Struct {
     }
 
     @Override
+    public Set<String> keys() {
+        Set<String> keys = new LinkedHashSet<>(values.keySet());
+        // we want to preserve order of the keys, cannot use Set.copyOf
+        return Collections.unmodifiableSet(keys);
+    }
+
+    @Override
     public void write(PrintWriter writer) {
         Objects.requireNonNull(writer);
 
@@ -143,7 +153,8 @@ final class HsonStruct implements Hson.Struct {
             writeNext(writer, first);
             writer.write('\"');
             writer.write(key);
-            writer.write("\":");
+            writer.write('\"');
+            writer.write(':');
             value.write(writer);
         });
 

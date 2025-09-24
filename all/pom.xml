@@ -1305,6 +1305,14 @@
             <groupId>io.helidon.discovery.providers</groupId>
             <artifactId>helidon-discovery-providers-eureka</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.json.schema</groupId>
+            <artifactId>helidon-json-schema</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json.schema</groupId>
+            <artifactId>helidon-json-schema-codegen</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

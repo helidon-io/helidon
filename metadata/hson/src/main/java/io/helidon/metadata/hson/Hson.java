@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Main entry point for Helidon metadata format parsing and writing.
@@ -281,6 +282,13 @@ public final class Hson {
         Optional<Array> arrayValue(String key);
 
         /**
+         * Get all keys of this struct.
+         *
+         * @return keys
+         */
+        Set<String> keys();
+
+        /**
          * Fluent API builder for {@link io.helidon.metadata.hson.Hson.Struct}.
          *
          * @see #build()
@@ -457,6 +465,20 @@ public final class Hson {
          * @param writer writer to write to
          */
         void write(PrintWriter writer);
+
+        /**
+         * Writes the HSON in a formatted output, if enabled.
+         *
+         * @param writer writer to write to
+         * @param formatted whether the output should be formatted
+         */
+        default void write(PrintWriter writer, boolean formatted) {
+            if (formatted) {
+                write(new HsonPrettyPrintWriter(writer));
+            } else {
+                write(writer);
+            }
+        }
 
         /**
          * Value.

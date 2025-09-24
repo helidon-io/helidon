@@ -1754,6 +1754,18 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Json schema -->
+            <dependency>
+                <groupId>io.helidon.json.schema</groupId>
+                <artifactId>helidon-json-schema</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json.schema</groupId>
+                <artifactId>helidon-json-schema-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 </project>
