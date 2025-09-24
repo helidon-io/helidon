@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
@@ -229,8 +230,9 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
             if (field.hasAnnotation(Types.JSON_SCHEMA_IGNORE)
                     || field.hasAnnotation(Types.JSONB_TRANSIENT)) {
                 if (creatorParamNames.contains(name)) {
-                    throw new RuntimeException("Ignored set on the field '" + name
-                                                       + "', but it is required as a creator parameter.");
+                    throw new CodegenException("Ignored set on the field '" + name
+                                                       + "', but it is required as a creator parameter.",
+                                               field);
                 }
                 properties.remove(name);
                 continue;
@@ -290,7 +292,8 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
             } else {
                 TypeInfo typeInfo = ctx.typeInfo(parameterTypeName)
-                        .orElseThrow(() -> new IllegalStateException("Could not process required type: " + parameterTypeName));
+                        .orElseThrow(() -> new CodegenException("Could not process required type: " + parameterTypeName,
+                                                                last.annotated()));
                 processObject(newStructBuilder, typeInfo, ctx, required);
                 properties.forEach(it -> {
                     //process annotations on the method/field so they override the defaults from the type
@@ -376,7 +379,8 @@ record SchemaInfo(TypeName generatedSchema, Hson.Struct schema) {
                 return;
             }
             TypeInfo typeInfo = ctx.typeInfo(finalTypeName)
-                    .orElseThrow(() -> new IllegalStateException("Could not process required type: " + finalTypeName));
+                    .orElseThrow(() -> new CodegenException("Could not process required type: " + finalTypeName,
+                                                            element));
             processObject(itemsBuilder, typeInfo, ctx, required);
             processObjectAnnotations(itemsBuilder, element, required);
         }

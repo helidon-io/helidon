@@ -15,9 +15,8 @@
  */
 
 /**
- * JSON Schema annotations and lookup.
+ * JSON Schema SPI.
  *
- * @see io.helidon.json.schema.JsonSchema
- * @see io.helidon.json.schema.Schema
+ * @see io.helidon.json.schema.spi.JsonSchemaProvider
  */
-package io.helidon.json.schema;
+package io.helidon.json.schema.spi;

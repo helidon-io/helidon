@@ -16,6 +16,10 @@
 
 package io.helidon.json.schema;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * Json schema type.
  */
@@ -24,36 +28,71 @@ public enum SchemaType {
     /**
      * Json schema object type.
      */
-    OBJECT,
+    OBJECT("object"),
 
     /**
      * Json schema array type.
      */
-    ARRAY,
+    ARRAY("array"),
 
     /**
      * Json schema string type.
      */
-    STRING,
+    STRING("string"),
 
     /**
      * Json schema number type.
      */
-    NUMBER,
+    NUMBER("number"),
 
     /**
      * Json schema integer type.
      */
-    INTEGER,
+    INTEGER("integer"),
 
     /**
      * Json schema boolean type.
      */
-    BOOLEAN,
+    BOOLEAN("boolean"),
 
     /**
      * Json schema null type.
      */
-    NULL
+    NULL("null"),;
 
+    private static final Map<String, SchemaType> TYPE_TO_ENUM;
+    static {
+        Map<String, SchemaType> map = new HashMap<>();
+        for (SchemaType type : SchemaType.values()) {
+            map.put(type.type(), type);
+        }
+        TYPE_TO_ENUM = Map.copyOf(map);
+    }
+    private final String type;
+
+    SchemaType(String type) {
+        this.type = type;
+    }
+
+    /**
+     * Type as used in JSON Schema.
+     *
+     * @return type string
+     */
+    String type() {
+        return type;
+    }
+
+    /**
+     * Create a  {@link io.helidon.json.schema.SchemaType} from
+     * the schema type string.
+     *
+     * @param type as used in JSON Schema
+     * @return a schema type instance
+     * @throws io.helidon.json.schema.JsonSchemaException in case the type is not valid
+     */
+    static SchemaType fromType(String type) {
+        return Optional.ofNullable(TYPE_TO_ENUM.get(type))
+                .orElseThrow(() -> new JsonSchemaException("Unsupported type in schema: " + type));
+    }
 }

@@ -18,7 +18,9 @@ package io.helidon.metadata.hson;
 
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -135,7 +137,9 @@ final class HsonStruct implements Hson.Struct {
 
     @Override
     public Set<String> keys() {
-        return Set.copyOf(values.keySet());
+        Set<String> keys = new LinkedHashSet<>(values.keySet());
+        // we want to preserve order of the keys, cannot use Set.copyOf
+        return Collections.unmodifiableSet(keys);
     }
 
     @Override

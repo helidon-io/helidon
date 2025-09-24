@@ -29,7 +29,7 @@ final class Types {
     static final TypeName JSON_SCHEMA_TITLE = TypeName.create("io.helidon.json.schema.JsonSchema.Title");
     static final TypeName JSON_SCHEMA_DESCRIPTION = TypeName.create("io.helidon.json.schema.JsonSchema.Description");
     static final TypeName JSON_SCHEMA_REQUIRED = TypeName.create("io.helidon.json.schema.JsonSchema.Required");
-    static final TypeName JSON_SCHEMA_PROVIDER = TypeName.create("io.helidon.json.schema.JsonSchemaProvider");
+    static final TypeName JSON_SCHEMA_PROVIDER = TypeName.create("io.helidon.json.schema.spi.JsonSchemaProvider");
     static final TypeName JSON_SCHEMA_DO_NOT_INSPECT = TypeName.create("io.helidon.json.schema.JsonSchema.DoNotInspect");
     static final TypeName JSON_SCHEMA_IGNORE = TypeName.create("io.helidon.json.schema.JsonSchema.Ignore");
     static final TypeName JSON_SCHEMA_PROPERTY_NAME =

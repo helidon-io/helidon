@@ -29,8 +29,8 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Json schema related to the objects.
  */
-@Prototype.Blueprint(decorator = SchemaObjectDecorator.class)
-@Prototype.CustomMethods(SchemaObjectCustomMethods.class)
+@Prototype.Blueprint(decorator = SchemaSupport.SchemaObjectDecorator.class)
+@Prototype.CustomMethods(SchemaSupport.SchemaObjectCustomMethods.class)
 interface SchemaObjectBlueprint extends SchemaItemBlueprint {
 
     /**

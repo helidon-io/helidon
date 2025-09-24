@@ -50,7 +50,7 @@ class SchemaCodegen implements CodegenExtension {
             try {
                 generateSchema(roundContext, schema);
             } catch (Throwable ex) {
-                throw new CodegenException("Failed to generate JSON schema for the type: " + schema, ex);
+                throw new CodegenException("Failed to generate JSON schema for the type: " + schema, ex, schema);
             }
         }
 

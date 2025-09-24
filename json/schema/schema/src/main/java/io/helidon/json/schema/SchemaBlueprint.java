@@ -25,8 +25,8 @@ import io.helidon.builder.api.Prototype;
 /**
  * Json schema object.
  */
-@Prototype.Blueprint(decorator = SchemaDecorator.class, createEmptyPublic = false)
-@Prototype.CustomMethods(SchemaCustomMethods.class)
+@Prototype.Blueprint(decorator = SchemaSupport.SchemaDecorator.class, createEmptyPublic = false)
+@Prototype.CustomMethods(SchemaSupport.SchemaCustomMethods.class)
 interface SchemaBlueprint {
 
     /**

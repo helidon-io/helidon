@@ -25,7 +25,7 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Json schema related to the numbers.
  */
-@Prototype.Blueprint(decorator = SchemaNumberDecorator.class)
+@Prototype.Blueprint(decorator = SchemaSupport.SchemaNumberDecorator.class)
 interface SchemaNumberBlueprint extends SchemaItemBlueprint {
 
     /**

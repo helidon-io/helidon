@@ -15,13 +15,17 @@
  */
 
 /**
- * JSON Schema Helidon support.
+ * JSON Schema annotations and lookup.
+ *
+ * @see io.helidon.json.schema.JsonSchema
+ * @see io.helidon.json.schema.Schema
  */
 module io.helidon.json.schema {
     requires transitive io.helidon.metadata.hson;
+    requires transitive io.helidon.builder.api;
 
     requires io.helidon.service.registry;
-    requires io.helidon.builder.api;
 
     exports io.helidon.json.schema;
+    exports io.helidon.json.schema.spi;
 }

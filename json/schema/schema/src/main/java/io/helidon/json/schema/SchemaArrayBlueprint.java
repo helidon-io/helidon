@@ -25,7 +25,7 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Json schema related to the array.
  */
-@Prototype.Blueprint(decorator = SchemaArrayDecorator.class)
+@Prototype.Blueprint(decorator = SchemaSupport.SchemaArrayDecorator.class)
 interface SchemaArrayBlueprint extends SchemaItemBlueprint {
 
     /**

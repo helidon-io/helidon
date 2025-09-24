@@ -25,8 +25,8 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Json schema related to the integer numbers.
  */
-@Prototype.Blueprint(decorator = SchemaIntegerDecorator.class)
-@Prototype.CustomMethods(SchemaIntegerCustomMethods.class)
+@Prototype.Blueprint(decorator = SchemaSupport.SchemaIntegerDecorator.class)
+@Prototype.CustomMethods(SchemaSupport.SchemaIntegerCustomMethods.class)
 interface SchemaIntegerBlueprint extends SchemaItemBlueprint {
 
     /**

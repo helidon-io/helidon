@@ -16,17 +16,31 @@
 
 package io.helidon.json.schema;
 
+import java.util.Objects;
+
 /**
  * Json schema related exception.
  */
 public final class JsonSchemaException extends RuntimeException {
-
-    JsonSchemaException(String s) {
-        super(s);
+    /**
+     * Create a new schema exception with the provided message.
+     *
+     * @param message descriptive error message
+     * @throws java.lang.NullPointerException if the message is null
+     */
+    public JsonSchemaException(String message) {
+        super(Objects.requireNonNull(message));
     }
 
-    JsonSchemaException(String s, Exception exception) {
-        super(s, exception);
+    /**
+     * Create a new schema exception with the provided message and a cause.
+     *
+     * @param message descriptive error message
+     * @param cause   the cause of this exception
+     * @throws java.lang.NullPointerException if either message or cause is null
+     */
+    public JsonSchemaException(String message, Throwable cause) {
+        super(Objects.requireNonNull(message),
+              Objects.requireNonNull(cause));
     }
-
 }

@@ -26,8 +26,8 @@ import java.util.Set;
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.json.schema.JsonSchema;
-import io.helidon.json.schema.JsonSchemaProvider;
 import io.helidon.json.schema.Schema;
+import io.helidon.json.schema.spi.JsonSchemaProvider;
 import io.helidon.service.registry.Service;
 
 import jakarta.json.bind.annotation.JsonbCreator;
