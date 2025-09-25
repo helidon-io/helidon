@@ -1054,7 +1054,7 @@ public final class OidcConfig extends TenantConfigImpl {
                 if (clientCredentialsConfig.scope().isEmpty()
                         && serverType().equals("idcs")) {
                     collector.fatal("client-credential.scope must be defined when client credentials flow "
-                                            + "is set as an outbound type and \"idcs\" is the outbound server type");
+                                            + "is set as an outbound type and \"idcs\" is the server type");
                 }
             }
 
