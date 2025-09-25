@@ -18,6 +18,7 @@ package io.helidon.security.providers.oidc;
 
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -69,16 +70,26 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  *
  * IDCS specific notes:
  * <ul>
- * <li>If you want to use JWK to validate tokens, you must give access to the endpoint (by default only admin can access it)</li>
- * <li>If you want to use introspect endpoint to validate tokens, you must give rights to the application to do so (Client
+ * <li>If you want to use JWK to validate tokens, you must give access to the
+ * endpoint (by default only admin can access it)</li>
+ * <li>If you want to use introspect endpoint to validate tokens, you must give
+ * rights to the application to do so (Client
  * Configuration/Allowed Operations)</li>
- * <li>If you want to retrieve groups when using IDCS, you must add "Client Credentials" in "Allowed Grant Types" in
- * application configuration, as well as "Grant the client access to Identity Cloud Service Admin APIs." configured to "User
+ * <li>If you want to retrieve groups when using IDCS, you must add "Client
+ * Credentials" in "Allowed Grant Types" in
+ * application configuration, as well as "Grant the client access to Identity
+ * Cloud Service Admin APIs." configured to "User
  * Administrator"</li>
  * </ul>
  */
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(OidcProvider.class.getName());
+
+    private record CachedToken(String accessToken, Instant expiration) {
+        boolean isValid() {
+            return accessToken != null && Instant.now().isBefore(expiration);
+        }
+    }
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -88,6 +99,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
     private final LruCache<String, TenantAuthenticationHandler> tenantAuthHandlers = LruCache.create();
+    private final ReentrantLock tokenLock = new ReentrantLock();
+    private volatile CachedToken cachedToken;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.optional = builder.optional;
@@ -159,9 +172,9 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
                     .orElse(oidcConfig.tenantConfig(tenantId));
             Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
             TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
-                                                                                  tenant,
-                                                                                  useJwtGroups,
-                                                                                  optional);
+                    tenant,
+                    useJwtGroups,
+                    optional);
             return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get()
                     .authenticate(tenantId, providerRequest);
         }
@@ -192,8 +205,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         } else {
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG,
-                           "Missing tenant id, could not find in either of: " + missingLocations
-                                   + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
+                        "Missing tenant id, could not find in either of: " + missingLocations
+                                + "Falling back to the default tenant id: " + DEFAULT_TENANT_ID);
             }
             return DEFAULT_TENANT_ID;
         }
@@ -201,8 +214,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     @Override
     public boolean isOutboundSupported(ProviderRequest providerRequest,
-                                       SecurityEnvironment outboundEnv,
-                                       EndpointConfig outboundConfig) {
+            SecurityEnvironment outboundEnv,
+            EndpointConfig outboundConfig) {
         if (!propagate) {
             return false;
         }
@@ -212,8 +225,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
     @Override
     public OutboundSecurityResponse outboundSecurity(ProviderRequest providerRequest,
-                                                     SecurityEnvironment outboundEnv,
-                                                     EndpointConfig outboundEndpointConfig) {
+            SecurityEnvironment outboundEnv,
+            EndpointConfig outboundEndpointConfig) {
         return switch (oidcConfig.outboundType()) {
             case USER_JWT -> propagateAccessToken(providerRequest, outboundEnv);
             case CLIENT_CREDENTIALS -> clientCredentials(providerRequest, outboundEnv);
@@ -221,7 +234,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private OutboundSecurityResponse propagateAccessToken(ProviderRequest providerRequest,
-                                                                 SecurityEnvironment outboundEnv) {
+            SecurityEnvironment outboundEnv) {
         Optional<Subject> user = providerRequest.securityContext().user();
 
         if (user.isPresent()) {
@@ -245,44 +258,70 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         return OutboundSecurityResponse.empty();
     }
 
-    private OutboundSecurityResponse clientCredentials(ProviderRequest providerRequest, SecurityEnvironment outboundEnv) {
+    private OutboundSecurityResponse clientCredentials(ProviderRequest providerRequest,
+            SecurityEnvironment outboundEnv) {
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
-            Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
-                    .add("grant_type", "client_credentials");
-
-            if (!oidcConfig.baseScopes().isEmpty()) {
-                formBuilder.add("scope", oidcConfig.baseScopes());
+            CachedToken token = cachedToken;
+            if (token != null && token.isValid()) {
+                Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                target.tokenHandler.header(headers, token.accessToken());
+                return OutboundSecurityResponse.withHeaders(headers);
             }
 
-            HttpClientRequest postRequest = oidcConfig.appWebClient()
-                    .post()
-                    .uri(oidcConfig.tokenEndpointUri());
+            tokenLock.lock();
 
-            OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder, postRequest);
-
-            try (var response = postRequest.submit(formBuilder.build())) {
-                if (response.status().family() == Status.Family.SUCCESSFUL) {
-                    JsonObject jsonObject = response.as(JsonObject.class);
-                    String accessToken = jsonObject.getString("access_token");
-
+            try {
+                token = cachedToken;
+                if (token != null && token.isValid()) {
                     Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-                    target.tokenHandler.header(headers, accessToken);
+                    target.tokenHandler.header(headers, token.accessToken());
                     return OutboundSecurityResponse.withHeaders(headers);
-                } else {
+                }
+
+                Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
+                        .add("grant_type", "client_credentials");
+
+                if (!oidcConfig.baseScopes().isEmpty()) {
+                    formBuilder.add("scope", oidcConfig.baseScopes());
+                }
+
+                HttpClientRequest postRequest = oidcConfig.appWebClient()
+                        .post()
+                        .uri(oidcConfig.tokenEndpointUri());
+
+                OidcUtil.updateRequest(OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN, oidcConfig, formBuilder,
+                        postRequest);
+
+                try (var response = postRequest.submit(formBuilder.build())) {
+                    if (response.status().family() == Status.Family.SUCCESSFUL) {
+                        JsonObject jsonObject = response.as(JsonObject.class);
+                        String accessToken = jsonObject.getString("access_token");
+                        long expiresIn = jsonObject.getInt("expires_in", 3600);
+                        this.cachedToken = new CachedToken(accessToken, Instant.now().plusSeconds(expiresIn - 30));
+                        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
+                        target.tokenHandler.header(headers, accessToken);
+                        return OutboundSecurityResponse.withHeaders(headers);
+                    } else {
+                        this.cachedToken = null;
+                        return OutboundSecurityResponse.builder()
+                                .status(SecurityResponse.SecurityStatus.FAILURE)
+                                .description("Could not obtain access token from the identity server")
+                                .build();
+                    }
+                } catch (Exception e) {
+                    this.cachedToken = null;
                     return OutboundSecurityResponse.builder()
                             .status(SecurityResponse.SecurityStatus.FAILURE)
-                            .description("Could not obtain access token from the identity server")
+                            .description("An error occurred while obtaining access token from the identity server")
+                            .throwable(e)
                             .build();
                 }
-            } catch (Exception e) {
-                return OutboundSecurityResponse.builder()
-                        .status(SecurityResponse.SecurityStatus.FAILURE)
-                        .description("An error occurred while obtaining access token from the identity server")
-                        .throwable(e)
-                        .build();
+            } finally {
+                tokenLock.unlock();
             }
+
         }
         return OutboundSecurityResponse.empty();
     }
@@ -290,9 +329,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     /**
      * Builder for {@link OidcProvider}.
      */
-    @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY,
-                description = "Open ID Connect security provider",
-                provides = {AuthenticationProvider.class, SecurityProvider.class})
+    @Configured(prefix = OidcProviderService.PROVIDER_CONFIG_KEY, description = "Open ID Connect security provider", provides = {
+            AuthenticationProvider.class, SecurityProvider.class })
     public static final class Builder implements io.helidon.common.Builder<Builder, OidcProvider> {
 
         private static final int BUILDER_WEIGHT = 300;
@@ -308,7 +346,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         private OidcConfig oidcConfig;
         private List<TenantIdFinder> tenantIdFinders;
         private List<TenantConfigFinder> tenantConfigFinders;
-        // identity propagation is disabled by default. In general we should not reuse the same token
+        // identity propagation is disabled by default. In general we should not reuse
+        // the same token
         // for outbound calls, unless it is the same audience
         private Boolean propagate;
         private boolean useJwtGroups = true;
@@ -351,28 +390,34 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
          * <table class="config">
          * <caption>Optional configuration parameters</caption>
          * <tr>
-         *     <th>key</th>
-         *     <th>default value</th>
-         *     <th>description</th>
+         * <th>key</th>
+         * <th>default value</th>
+         * <th>description</th>
          * </tr>
          * <tr>
-         *     <td>&nbsp;</td>
-         *     <td>&nbsp;</td>
-         *     <td>The current config node is used to construct {@link io.helidon.security.providers.oidc.common.OidcConfig}.</td>
+         * <td>&nbsp;</td>
+         * <td>&nbsp;</td>
+         * <td>The current config node is used to construct
+         * {@link io.helidon.security.providers.oidc.common.OidcConfig}.</td>
          * </tr>
          * <tr>
-         *     <td>propagate</td>
-         *     <td>false</td>
-         *     <td>Whether to propagate token (overall configuration). If set to false, propagation will
-         *     not be done at all.</td>
+         * <td>propagate</td>
+         * <td>false</td>
+         * <td>Whether to propagate token (overall configuration). If set to false,
+         * propagation will
+         * not be done at all.</td>
          * </tr>
          * <tr>
-         *     <td>outbound</td>
-         *     <td>&nbsp;</td>
-         *     <td>Configuration of {@link io.helidon.security.providers.common.OutboundConfig}.
-         *     In addition you can use {@code propagate} to disable propagation for an outbound target,
-         *     and {@code token} to configure outbound {@link io.helidon.security.util.TokenHandler} for an
-         *     outbound target. Default token handler uses {@code Authorization} header with a {@code bearer } prefix</td>
+         * <td>outbound</td>
+         * <td>&nbsp;</td>
+         * <td>Configuration of
+         * {@link io.helidon.security.providers.common.OutboundConfig}.
+         * In addition you can use {@code propagate} to disable propagation for an
+         * outbound target,
+         * and {@code token} to configure outbound
+         * {@link io.helidon.security.util.TokenHandler} for an
+         * outbound target. Default token handler uses {@code Authorization} header with
+         * a {@code bearer } prefix</td>
          * </tr>
          * </table>
          *
@@ -389,7 +434,8 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             }
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             if (null == outboundConfig) {
-                // the OutboundConfig.create() expects the provider configuration, not the outbound configuration
+                // the OutboundConfig.create() expects the provider configuration, not the
+                // outbound configuration
                 Config outboundConfig = config.get("outbound");
                 if (outboundConfig.exists()) {
                     outboundConfig(OutboundConfig.create(config));
@@ -455,9 +501,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
         /**
          * Claim {@code groups} from JWT will be used to automatically add
-         *  groups to current subject (may be used with {@link jakarta.annotation.security.RolesAllowed} annotation).
+         * groups to current subject (may be used with
+         * {@link jakarta.annotation.security.RolesAllowed} annotation).
          *
-         * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve roles
+         * @param useJwtGroups whether to use {@code groups} claim from JWT to retrieve
+         *                     roles
          * @return updated builder instance
          */
         @ConfiguredOption("true")
@@ -490,7 +538,6 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
             return this;
         }
 
-
         /**
          * Add specific {@link TenantConfigFinder} implementation.
          * Priority {@link #BUILDER_WEIGHT} is used.
@@ -503,10 +550,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
 
         /**
-         * Add specific {@link TenantConfigFinder} implementation with specific priority.
+         * Add specific {@link TenantConfigFinder} implementation with specific
+         * priority.
          *
          * @param configFinder config finder implementation
-         * @param priority finder priority
+         * @param priority     finder priority
          * @return updated builder instance
          */
         public Builder addTenantConfigFinder(TenantConfigFinder configFinder, int priority) {
@@ -590,4 +638,3 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         }
     }
 }
-
