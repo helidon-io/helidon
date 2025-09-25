@@ -247,7 +247,7 @@ public class ServiceDescriptorCodegen {
         // the basic fields and methods
         serviceTypeMethod(classModel, service, fieldHandler);
         providedTypeMethod(classModel, service, fieldHandler);
-        descriptorTypeMethod(classModel, service);
+        descriptorTypeMethod(classModel, service, fieldHandler);
         scopeMethod(classModel, service);
         contractsMethod(classModel, service, contracts, factoryContracts, fieldHandler);
         typeSetMethod(classModel, serviceDescriptor, fieldHandler);
@@ -375,7 +375,7 @@ public class ServiceDescriptorCodegen {
         FieldHandler fieldHandler = FieldHandler.create(classModel, Constructor.builder());
         serviceTypeMethod(classModel, service, fieldHandler);
         providedTypeMethod(classModel, service, fieldHandler);
-        descriptorTypeMethod(classModel, service);
+        descriptorTypeMethod(classModel, service, fieldHandler);
         scopeMethod(classModel, service);
         contractsMethod(classModel, service, contracts, Set.of(), fieldHandler);
         typeSetMethod(classModel, serviceDescriptor, fieldHandler);
@@ -1564,20 +1564,16 @@ public class ServiceDescriptorCodegen {
                 .addContentLine(";"));
     }
 
-    private void descriptorTypeMethod(ClassModel.Builder classModel, DescribedService service) {
-        classModel.addField(field -> field
-                .isStatic(true)
-                .isFinal(true)
-                .accessModifier(AccessModifier.PRIVATE)
-                .type(TypeNames.TYPE_NAME)
-                .name("TYPE")
-                .addContentCreate(service.descriptorType().genericTypeName()));
+    private void descriptorTypeMethod(ClassModel.Builder classModel, DescribedService service, FieldHandler fieldHandler) {
+        String constant = typeConstant(fieldHandler, service.descriptorType().genericTypeName(), "DESCRIPTOR_TYPE");
 
         // TypeName descriptorType()
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                 .returnType(TypeNames.TYPE_NAME)
                 .name("descriptorType")
-                .addContentLine("return TYPE;"));
+                .addContent("return ")
+                .addContent(constant)
+                .addContentLine(";"));
     }
 
     private void contractsMethod(ClassModel.Builder classModel,
