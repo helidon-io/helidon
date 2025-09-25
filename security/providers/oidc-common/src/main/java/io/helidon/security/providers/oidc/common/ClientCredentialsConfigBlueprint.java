@@ -30,7 +30,7 @@ interface ClientCredentialsConfigBlueprint {
 
     /**
      * Scope used when obtaining access token in the client credentials flow.
-     * It is required to set when {@code server-type} is set as an {@code idcs}.
+     * It is required to set when {@code server-type} is set to {@code idcs}.
      *
      * @return client credentials scope
      */
