@@ -443,12 +443,15 @@ backend:
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Injection"
-                source: "injection.adoc"
+                dir: "injection"
                 glyph:
                   type: "icon"
                   value: "colorize"
+                sources:
+                  - "injection.adoc"
+                  - "declarative.adoc"
               - type: "MENU"
                 title: "JSON-RPC"
                 dir: "jsonrpc"

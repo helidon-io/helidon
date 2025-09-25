@@ -82,11 +82,11 @@ value you supply will always be present as the last element in the set of resour
 
 === `Discovery` Acquisition
 
-==== `Discovery` Acquisition Using xref:injection.adoc#_injection_points[Helidon Inject]
+==== `Discovery` Acquisition Using xref:injection/injection.adoc#_injection_points[Helidon Inject]
 
 You can acquire a
 link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] by
-xref:injection.adoc#_injection_points[injecting] it into your Helidon SE application:
+xref:injection/injection.adoc#_injection_points[injecting] it into your Helidon SE application:
 
 [source,java]
 .Acquiring a `Discovery` object using Helidon Inject
@@ -97,16 +97,16 @@ include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_0,indent=0]
 ----
 <1> Use the
     link:{service-registry-base-url}/io/helidon/service/registry/Service.Inject.html[`io.helidon.service.registry.Service.Inject`
-    annotation] to indicate that this constructor has an xref:injection.adoc#_injection_points[injection point].
+    annotation] to indicate that this constructor has an xref:injection/injection.adoc#_injection_points[injection point].
 <2> Here, the `discovery` constructor parameter is the injection point and will receive a non-`null`
     link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[instance of `io.helidon.discovery.Discovery`].
 <3> The constructor explicitly assigns the injected reference to the `discovery` instance field.
 
-==== `Discovery` Acquisition Using the Helidon xref:injection.adoc#_programmatic_lookup[Service Registry]
+==== `Discovery` Acquisition Using the Helidon xref:injection/injection.adoc#_programmatic_lookup[Service Registry]
 
 You can acquire a
 link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] by
-xref:injection.adoc#_programmatic_lookup[using the Helidon Service Registry] via the
+xref:injection/injection.adoc#_programmatic_lookup[using the Helidon Service Registry] via the
 link:{service-registry-base-url}/io/helidon/service/registry/Services.html[`io.helidon.service.registry.Services`
 fa&ccedil;ade]:
 
