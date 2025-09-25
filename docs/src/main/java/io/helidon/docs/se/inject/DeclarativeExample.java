@@ -53,7 +53,7 @@ public class DeclarativeExample {
     // end::snippet_3[]
 
     // tag::snippet_1[]
-    @Service.GenerateBinding
+    @Service.GenerateBinding // generated binding to bypass discovery and runtime binding
     public static class Main {
         public static void main(String[] args) {
             // configure logging
@@ -66,20 +66,22 @@ public class DeclarativeExample {
     // end::snippet_1[]
 
     // tag::snippet_2[]
-    @RestServer.Endpoint
-    @Http.Path("/greet")
-    @Service.Singleton
+    @RestServer.Endpoint // identifies this class as a server endpoint
+    @Http.Path("/greet") // serve this endpoint on /greet context root (path)
+    @Service.Singleton   // a singleton service (single instance within a service registry)
     static class GreetEndpoint {
         private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
         private final String greeting;
 
+        // inject app.greeting configuration value, use "Hello" if not configured
         GreetEndpoint(@Configuration.Value("app.greeting") @Default.Value("Hello") String greeting) {
             this.greeting = greeting;
         }
 
-        @Http.GET
-        @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+        @Http.GET   // HTTP GET endpoint
+        @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE) // produces entity of application/json media type
         public JsonObject getDefaultMessageHandler() {
+            // build the JSON object (requires `helidon-http-media-jsonp` on classpath)
             return JSON.createObjectBuilder()
                     .add("message", greeting + " World!")
                     .build();
@@ -96,6 +98,7 @@ public class DeclarativeExample {
             return "some-algorithm";
         }
 
+        // method that would be called if #algorithm fails with an IOException
         String fallbackAlgorithm()  {
             return "default";
         }
