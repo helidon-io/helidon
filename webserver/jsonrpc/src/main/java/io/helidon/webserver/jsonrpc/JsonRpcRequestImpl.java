@@ -15,17 +15,24 @@
  */
 package io.helidon.webserver.jsonrpc;
 
+import java.io.InputStream;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
-import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.jsonrpc.core.JsonRpcParams;
-import io.helidon.webserver.http.HttpRequest;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.http.HttpSecurity;
+import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonStructure;
@@ -36,10 +43,10 @@ import jakarta.json.JsonValue;
  */
 class JsonRpcRequestImpl implements JsonRpcRequest {
 
-    private final HttpRequest delegate;
+    private final ServerRequest delegate;
     private final JsonObject request;
 
-    JsonRpcRequestImpl(HttpRequest delegate, JsonObject request) {
+    JsonRpcRequestImpl(ServerRequest delegate, JsonObject request) {
         this.delegate = delegate;
         this.request = request;
     }
@@ -74,6 +81,36 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
+    public Context context() {
+        return delegate.context();
+    }
+
+    @Override
+    public ListenerContext listenerContext() {
+        return delegate.listenerContext();
+    }
+
+    @Override
+    public HttpSecurity security() {
+        return delegate.security();
+    }
+
+    @Override
+    public boolean continueSent() {
+        return delegate.continueSent();
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<InputStream> filterFunction) {
+        delegate.streamFilter(filterFunction);
+    }
+
+    @Override
+    public Optional<ProxyProtocolData> proxyProtocolData() {
+        return delegate.proxyProtocolData();
+    }
+
+    @Override
     public HttpPrologue prologue() {
         return delegate.prologue();
     }
@@ -84,8 +121,33 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
-    public UriPath path() {
+    public void reset() {
+        delegate.reset();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return delegate.isSecure();
+    }
+
+    @Override
+    public RoutedPath path() {
         return delegate.path();
+    }
+
+    @Override
+    public ReadableEntity content() {
+        return delegate.content();
+    }
+
+    @Override
+    public String socketId() {
+        return delegate.socketId();
+    }
+
+    @Override
+    public String serverSocketId() {
+        return delegate.serverSocketId();
     }
 
     @Override
