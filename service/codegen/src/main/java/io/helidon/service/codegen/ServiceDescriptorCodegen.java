@@ -1214,7 +1214,7 @@ public class ServiceDescriptorCodegen {
                                 .addContent(param.fieldId())
                                 .addContentLine("\")")
                                 .addContentLine(".service(SERVICE_TYPE)")
-                                .addContentLine(".descriptor(TYPE)")
+                                .addContentLine(".descriptor(DESCRIPTOR_TYPE)")
                                 .addContent(".descriptorConstant(\"")
                                 .addContent(param.constantName())
                                 .addContentLine("\")")
