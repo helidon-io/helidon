@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -1929,12 +1928,24 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
+        /**
+         * Set the configuration related to the client credentials flow.
+         *
+         * @param clientCredentialsConfig client credentials configuration
+         * @return updated builder instance
+         */
         @ConfiguredOption
         public Builder clientCredentialsConfig(ClientCredentialsConfig clientCredentialsConfig) {
             this.clientCredentialsConfig = Objects.requireNonNull(clientCredentialsConfig);
             return this;
         }
 
+        /**
+         * Client credentials configuration builder consumer.
+         *
+         * @param builderConsumer builder consumer
+         * @return updated builder instance
+         */
         public Builder clientCredentialsConfig(Consumer<ClientCredentialsConfig.Builder> builderConsumer) {
             var builder = ClientCredentialsConfig.builder();
             builderConsumer.accept(builder);
