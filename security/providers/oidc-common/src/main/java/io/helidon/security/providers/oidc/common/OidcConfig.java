@@ -1941,7 +1941,7 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Client credentials configuration builder consumer.
+         * Configure client credentials configuration over the builder consumer.
          *
          * @param builderConsumer builder consumer
          * @return updated builder instance
