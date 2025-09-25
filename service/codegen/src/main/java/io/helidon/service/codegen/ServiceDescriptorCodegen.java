@@ -18,6 +18,7 @@ package io.helidon.service.codegen;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -490,7 +491,7 @@ public class ServiceDescriptorCodegen {
         String typeSetsConstant = fieldHandler.constant("TYPE_SETS",
                                                         MAP_RESOLVED_TO_SET_OF_RESOLVED,
                                                         "TYPE_SETS",
-                                                        it -> createTypeSets(fieldHandler, typeSetMap, it));
+                                                        it -> createTypeSets(classModel, fieldHandler, typeSetMap, it));
 
         classModel.addMethod(typeSet -> typeSet
                 .addAnnotation(Annotations.OVERRIDE)
@@ -509,41 +510,67 @@ public class ServiceDescriptorCodegen {
         );
     }
 
-    private void createTypeSets(FieldHandler fieldHandler,
+    private void createTypeSets(ClassModel.Builder classModel,
+                                FieldHandler fieldHandler,
                                 Map<ResolvedType, Set<ResolvedType>> typeSetMap,
-                                ContentBuilder<?> contentBuilder) {
-        contentBuilder.addContent(Map.class)
-                .addContent(".of(");
+                                ContentBuilder<?> constantBuilder) {
 
         if (typeSetMap.isEmpty()) {
-            contentBuilder.addContent(")");
+            // empty is simple
+            constantBuilder.addContent(Map.class)
+                    .addContent(".of()");
             return;
         }
+        if (typeSetMap.size() == 1) {
+            // single value is OK in Map.of()
+            String keyConstant = resolvedTypeConstant(fieldHandler, typeSetMap.keySet().iterator().next());
 
-        boolean notFirst = false;
-        for (var entry : typeSetMap.entrySet()) {
-            String keyConstant = resolvedTypeConstant(fieldHandler, entry.getKey());
-            if (notFirst) {
-                contentBuilder.addContentLine(",")
-                        .increaseContentPadding()
-                        .increaseContentPadding();
-            } else {
-                notFirst = true;
-            }
-            contentBuilder.addContent(keyConstant)
+            // add the key, and Set.of(
+            constantBuilder.addContent(Map.class)
+                    .addContent(".of(")
+                    .addContent(keyConstant)
                     .addContent(", ")
                     .addContent(Set.class)
                     .addContent(".of(");
 
-            contentBuilder.addContent(entry.getValue()
-                                              .stream()
-                                              .map(it -> resolvedTypeConstant(fieldHandler, it))
-                                              .collect(Collectors.joining(", ")));
+            // and the values
+            constantBuilder.addContent(typeSetMap.values().iterator().next()
+                                               .stream()
+                                               .map(it -> resolvedTypeConstant(fieldHandler, it))
+                                               .collect(Collectors.joining(", ")));
 
-            contentBuilder.addContent(")");
+            constantBuilder.addContent("))");
+            return;
         }
 
-        contentBuilder.addContent(")");
+        // more than one value deserves a static block (as Map.of() is not using a vararg, but has limited number of
+        // key/value pairs; also it becomes hard to read really fast
+        classModel.staticInitializer(contentBuilder -> {
+            contentBuilder.addContent("var typeSetsMap = new ")
+                    .addContent(HashMap.class)
+                    .addContentLine("();");
+
+            for (var entry : typeSetMap.entrySet()) {
+                String keyConstant = resolvedTypeConstant(fieldHandler, entry.getKey());
+
+                contentBuilder.addContent("typeSetsMap.put(")
+                        .addContent(keyConstant)
+                        .addContent(", ")
+                        .addContent(Set.class)
+                        .addContent(".of(");
+
+                contentBuilder.addContent(entry.getValue()
+                                                  .stream()
+                                                  .map(it -> resolvedTypeConstant(fieldHandler, it))
+                                                  .collect(Collectors.joining(", ")));
+
+                contentBuilder.addContentLine("));");
+            }
+
+            contentBuilder.addContent("TYPE_SETS = ")
+                    .addContent(Map.class)
+                    .addContentLine(".copyOf(typeSetsMap);");
+        });
     }
 
     private void notifyIpObservers(RegistryRoundContext roundContext, DescribedService service, List<ParamDefinition> params) {
