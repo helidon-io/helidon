@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static java.lang.reflect.Modifier.isPublic;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -150,6 +152,35 @@ class ProviderTest {
                 .from(value)
                 .build();
         assertThat(copy.listDiscover(), is(List.of()));
+    }
+
+    @Test
+    void testPackagePrivateAccess() throws NoSuchMethodException {
+        var clazz = WithProvider.BuilderBase.class;
+        /*
+        Option.Access("") on blueprint method should ensure that:
+        - builder setter is package private
+        - builder getter is package private
+
+         */
+        assertThat("Method listNoImplDiscoverNoConfig should not be public on builder base,"
+                           + " as it is marked with package private access in blueprint",
+                   isPublic(clazz.getDeclaredMethod("listNoImplDiscoverNoConfig").getModifiers()),
+                   not(true));
+        assertThat("Method listNoImplDiscoverNoConfigDiscoverServices(boolean)"
+                           + " should not be public on builder base,"
+                           + " as it is marked with package private access in blueprint",
+                   isPublic(clazz.getDeclaredMethod("listNoImplDiscoverNoConfigDiscoverServices", boolean.class)
+                                    .getModifiers()),
+                   not(true));
+        assertThat("Method listNoImplDiscoverNoConfig(List) should not be public on builder base,"
+                           + " as it is marked with package private access in blueprint",
+                   isPublic(clazz.getDeclaredMethod("listNoImplDiscoverNoConfig", List.class).getModifiers()),
+                   not(true));
+        assertThat("Method addListNoImplDiscoverNoConfig(List) should not be public on builder base,"
+                           + " as it is marked with package private access in blueprint",
+                   isPublic(clazz.getDeclaredMethod("addListNoImplDiscoverNoConfig", List.class).getModifiers()),
+                   not(true));
     }
 
     private static class DummyService implements SomeProvider.SomeService {
