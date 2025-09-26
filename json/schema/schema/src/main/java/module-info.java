@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+
 /**
  * JSON Schema annotations and lookup.
  *
  * @see io.helidon.json.schema.JsonSchema
  * @see io.helidon.json.schema.Schema
  */
+@Features.Name("JSON Schema")
+@Features.Since("4.3.0")
+@Features.Path({"JSON", "Schema"})
+@Features.Description("JSON - Schema")
+@Features.Incubating
 module io.helidon.json.schema {
+    requires static io.helidon.common.features.api;
     requires transitive io.helidon.metadata.hson;
     requires transitive io.helidon.builder.api;
 
