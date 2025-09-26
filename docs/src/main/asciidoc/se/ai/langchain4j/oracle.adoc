@@ -29,7 +29,7 @@ include::{rootdir}/includes/se.adoc[]
 * <<Overview, Overview>>
 * <<Maven Coordinates, Maven Coordinates>>
 * <<Components, Components>>
-** <<OracleEmbeddingModel, OracleEmbeddingModel>>
+** <<OracleEmbeddingStore, OracleEmbeddingStore>>
 *** <<OracleEmbeddingTable, OracleEmbeddingTable>>
 * <<Additional Information, Additional Information>>
 
@@ -51,9 +51,9 @@ In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration w
 
 == Components
 
-=== OracleEmbeddingModel
+=== OracleEmbeddingStore
 
-To automatically create and add `OracleEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OracleEmbeddingStore` to the service registry add the following lines to `application.yaml`:
 
 [source,yaml]
 ----
