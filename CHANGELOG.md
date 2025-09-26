@@ -20,8 +20,10 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 ### NOTABLE CHANGES
 
-- Helidon Declarative Preview with support for HTTP, Fault Tolerance and Scheduling
-- Helidon Data Preview
+Helidon 4.3.0 introduces new preview features (as preview features these APIs are subject to change):
+
+- Helidon Declarative for HTTP, Fault Tolerance and Scheduling 
+- Helidon Data 
 - LC4J 1.5.0 support with additional providers
 - JSON-RPC support
 - Eureka Discovery support
