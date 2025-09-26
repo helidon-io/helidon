@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 package io.helidon.security.providers.abac;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityLevel;
@@ -57,15 +56,9 @@ public class Attrib1Validator implements AbacValidator<Attrib1Validator.Attrib1C
     public Attrib1Config fromAnnotations(EndpointConfig endpointConfig) {
         for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
             for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-                List<Annotation> annotations = new ArrayList<>();
-                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                    List<? extends Annotation> list = securityLevel.filterAnnotations(annotation, value);
-                    annotations.addAll(list);
-                }
-                for (Annotation annotation : annotations) {
-                    if (annotation instanceof Attrib1) {
-                        return new Attrib1Config(((Attrib1) annotation).value());
-                    }
+                var annotations = securityLevel.filterAnnotations(TypeName.create(Attrib1.class), value);
+                for (io.helidon.common.types.Annotation annotation : annotations) {
+                    return new Attrib1Config(annotation.booleanValue().orElse(true));
                 }
             }
         }

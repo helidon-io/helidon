@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.abac.time;
 
-import java.lang.annotation.Annotation;
 import java.time.DayOfWeek;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
@@ -24,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.Errors;
+import io.helidon.common.types.Annotation;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
@@ -50,14 +50,18 @@ public class TimeValidatorTest {
         validator = TimeValidator.create();
         EndpointConfig ep = mock(EndpointConfig.class);
 
-        TimeValidator.TimeOfDay tod = mock(TimeValidator.TimeOfDay.class);
-        when(tod.from()).thenReturn("08:15:00");
-        when(tod.to()).thenReturn("12:00");
+        Annotation tod = Annotation.builder()
+                .typeName(TimeValidator.TimeOfDay.TYPE)
+                .putValue("from", "08:15:00")
+                .putValue("to", "12:00")
+                .build();
         annotations.add(tod);
 
-        TimeValidator.TimeOfDay tod2 = mock(TimeValidator.TimeOfDay.class);
-        when(tod2.from()).thenReturn("12:30:00");
-        when(tod2.to()).thenReturn("17:30");
+        Annotation tod2 = Annotation.builder()
+                .typeName(TimeValidator.TimeOfDay.TYPE)
+                .putValue("from", "12:30:00")
+                .putValue("to", "17:30")
+                .build();
         annotations.add(tod2);
 
         SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
@@ -67,19 +71,21 @@ public class TimeValidatorTest {
         securityLevels.add(classSecurityLevel);
 
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(classSecurityLevel.filterAnnotations(TimeValidator.TimeOfDay.class, EndpointConfig.AnnotationScope.CLASS))
+        when(classSecurityLevel.filterAnnotations(TimeValidator.TimeOfDay.TYPE, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(List.of(tod, tod2));
 
-        TimeValidator.DaysOfWeek dow = mock(TimeValidator.DaysOfWeek.class);
-        when(dow.value()).thenReturn(new DayOfWeek[] {
-                DayOfWeek.MONDAY,
-                DayOfWeek.TUESDAY,
-                DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY
-        });
+        Annotation dow = Annotation.builder()
+                .typeName(TimeValidator.DaysOfWeek.TYPE)
+                .putValue("value", List.of(
+                        DayOfWeek.MONDAY,
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.WEDNESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY
+                ))
+                .build();
         annotations.add(dow);
-        when(classSecurityLevel.filterAnnotations(TimeValidator.DaysOfWeek.class, EndpointConfig.AnnotationScope.CLASS))
+        when(classSecurityLevel.filterAnnotations(TimeValidator.DaysOfWeek.TYPE, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(List.of(dow));
 
 

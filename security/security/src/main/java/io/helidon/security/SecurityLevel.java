@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,37 +17,70 @@
 package io.helidon.security;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
+import io.helidon.common.Errors;
+import io.helidon.common.types.TypeName;
+import io.helidon.metadata.reflection.AnnotationFactory;
 
 /**
  * Security level stores annotations bound to the specific class and method.
- *
- * The first level represents {@link EndpointConfig.AnnotationScope#APPLICATION} level annotations.
+ * <p>
+ * The first level represents {@link io.helidon.security.EndpointConfig.AnnotationScope#APPLICATION} level annotations.
  * Other levels are representations of resource, sub-resource and method used on path to get to the target method.
  */
 public class SecurityLevel {
 
-    private final String className;
+    private final TypeName typeName;
     private final String methodName;
-    private final Map<Class<? extends Annotation>, List<Annotation>> classLevelAnnotations;
-    private final Map<Class<? extends Annotation>, List<Annotation>> methodLevelAnnotations;
+    private final Map<TypeName, List<io.helidon.common.types.Annotation>> classLevelAnnotations;
+    private final Map<TypeName, List<io.helidon.common.types.Annotation>> methodLevelAnnotations;
+
+    private SecurityLevel(SecurityLevelBuilder builder) {
+        this.typeName = builder.typeName;
+        this.methodName = builder.methodName;
+
+        Map<TypeName, List<io.helidon.common.types.Annotation>> clazz = new HashMap<>();
+        builder.classAnnots.forEach((key, value) -> clazz.put(key, Collections.unmodifiableList(value)));
+        this.classLevelAnnotations = Map.copyOf(clazz);
+
+        Map<TypeName, List<io.helidon.common.types.Annotation>> method = new HashMap<>();
+        builder.methodAnnots.forEach((key, value) -> method.put(key, Collections.unmodifiableList(value)));
+        this.methodLevelAnnotations = Map.copyOf(method);
+    }
+
+    /**
+     * Create a new fluent API builder for this type.
+     *
+     * @return a new builder
+     */
+    public static SecurityLevelBuilder builder() {
+        return new SecurityLevelBuilder();
+    }
 
     /**
      * Creates builder for security levels based on class name.
      *
      * @param className class name
      * @return new builder
+     * @see io.helidon.common.types.TypeName#create(String)
+     * @deprecated use {@link #builder()}
+     *         and {@link io.helidon.security.SecurityLevel.SecurityLevelBuilder#type(io.helidon.common.types.TypeName)}
+     *         instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public static SecurityLevelBuilder create(String className) {
         Objects.requireNonNull(className);
-        return new SecurityLevelBuilder(className);
+        return builder().type(TypeName.create(className));
     }
 
     /**
@@ -55,23 +88,30 @@ public class SecurityLevel {
      *
      * @param copyFrom existing security level
      * @return new builder
+     * @deprecated use {@link #builder()} and
+     *         {@link io.helidon.security.SecurityLevel.SecurityLevelBuilder#from(io.helidon.security.SecurityLevel)}
+     *         instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public static SecurityLevelBuilder create(SecurityLevel copyFrom) {
         Objects.requireNonNull(copyFrom);
-        return new SecurityLevelBuilder(copyFrom);
+        return builder().from(copyFrom);
     }
 
-    private SecurityLevel(SecurityLevelBuilder builder) {
-        this.className = builder.className;
-        this.methodName = builder.methodName;
-
-        Map<Class<? extends Annotation>, List<Annotation>> m = new HashMap<>();
-        builder.classAnnotations.forEach((key, value) -> m.put(key, Collections.unmodifiableList(value)));
-        this.classLevelAnnotations = Collections.unmodifiableMap(m);
-
-        Map<Class<? extends Annotation>, List<Annotation>> meth = new HashMap<>();
-        builder.methodAnnotations.forEach((key, value) -> meth.put(key, Collections.unmodifiableList(value)));
-        this.methodLevelAnnotations = Collections.unmodifiableMap(meth);
+    /**
+     * Filters out all annotations of the specific type in the specific scope.
+     *
+     * @param annotationType type of the annotation
+     * @param scope          desired scope
+     * @return list of annotations
+     */
+    public List<io.helidon.common.types.Annotation> filterAnnotations(TypeName annotationType,
+                                                                      EndpointConfig.AnnotationScope scope) {
+        return switch (scope) {
+            case CLASS -> classLevelAnnotations.getOrDefault(annotationType, List.of());
+            case METHOD -> methodLevelAnnotations.getOrDefault(annotationType, List.of());
+            default -> List.of();
+        };
     }
 
     /**
@@ -81,17 +121,26 @@ public class SecurityLevel {
      * @param scope          desired scope
      * @param <T>            annotation type
      * @return list of annotations
+     * @see TypeName#create(String)
+     * @deprecated use
+     *         {@link #filterAnnotations(io.helidon.common.types.TypeName, io.helidon.security.EndpointConfig.AnnotationScope)}
+     *         instead
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public <T extends Annotation> List<T> filterAnnotations(Class<T> annotationType, EndpointConfig.AnnotationScope scope) {
-        switch (scope) {
-        case CLASS:
-            return (List<T>) classLevelAnnotations.getOrDefault(annotationType, List.of());
-        case METHOD:
-            return (List<T>) methodLevelAnnotations.getOrDefault(annotationType, List.of());
-        default:
-            return List.of();
-        }
+        return switch (scope) {
+            case CLASS -> classLevelAnnotations.getOrDefault(TypeName.create(annotationType), List.of())
+                    .stream()
+                    .map(AnnotationFactory::<T>synthesize)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toUnmodifiableList());
+            case METHOD -> methodLevelAnnotations.getOrDefault(TypeName.create(annotationType), List.of())
+                    .stream()
+                    .map(AnnotationFactory::<T>synthesize)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toUnmodifiableList());
+            default -> List.of();
+        };
     }
 
     /**
@@ -101,7 +150,12 @@ public class SecurityLevel {
      * @param scopes         desired scopes
      * @param <T>            annotation type
      * @return list of annotations
+     * @deprecated use
+     *         {@link #combineAnnotations(io.helidon.common.types.TypeName,
+     *         io.helidon.security.EndpointConfig.AnnotationScope...)}
+     *         instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationType, EndpointConfig.AnnotationScope... scopes) {
         List<T> result = new LinkedList<>();
         for (EndpointConfig.AnnotationScope scope : scopes) {
@@ -111,20 +165,51 @@ public class SecurityLevel {
     }
 
     /**
-     * Returns class level and method level annotations together in one {@link Map}.
+     * Combines all the annotations of the specific type across all the requested scopes.
+     *
+     * @param annotationType type of the annotation
+     * @param scopes         desired scopes
+     * @return list of annotations
+     */
+    public List<io.helidon.common.types.Annotation> combineAnnotations(TypeName annotationType,
+                                                                       EndpointConfig.AnnotationScope... scopes) {
+        List<io.helidon.common.types.Annotation> result = new LinkedList<>();
+        for (EndpointConfig.AnnotationScope scope : scopes) {
+            result.addAll(filterAnnotations(annotationType, scope));
+        }
+        return result;
+    }
+
+    /**
+     * Returns class level and method level annotations together in one {@link java.util.Map}.
      *
      * @return map with class and method level annotations
+     * @deprecated use {@link #annotations()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public Map<Class<? extends Annotation>, List<Annotation>> allAnnotations() {
-        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>(classLevelAnnotations);
-        methodLevelAnnotations.forEach((key, value) -> {
-            List<Annotation> anno = new LinkedList<>();
-            if (result.containsKey(key)) {
-                anno.addAll(result.get(key));
-            }
-            anno.addAll(value);
-            result.put(key, anno);
-        });
+        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
+
+        annotations()
+                .stream()
+                .map(AnnotationFactory::synthesize)
+                .flatMap(Optional::stream)
+                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
+
+        return result;
+    }
+
+    /**
+     * Returns all class level and method level annotations.
+     *
+     * @return list with class and method level annotations
+     */
+    public List<io.helidon.common.types.Annotation> annotations() {
+        List<io.helidon.common.types.Annotation> result = new ArrayList<>();
+        classLevelAnnotations.values()
+                .forEach(result::addAll);
+        methodLevelAnnotations.values()
+                .forEach(result::addAll);
         return result;
     }
 
@@ -132,17 +217,40 @@ public class SecurityLevel {
      * Returns the name of the class which this level represents.
      *
      * @return class name
+     * @see io.helidon.common.types.TypeName#fqName()
+     * @deprecated use {@link #typeName()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public String getClassName() {
-        return className;
+        return typeName.fqName();
+    }
+
+    /**
+     * Type of the class this level represents (such as a JAX-RS resource class, Rest endpoint).
+     *
+     * @return the type name
+     */
+    public TypeName typeName() {
+        return typeName;
     }
 
     /**
      * Returns the name of the method which this level represents.
      *
      * @return method name
+     * @deprecated use {@link #methodName()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public String getMethodName() {
+        return methodName;
+    }
+
+    /**
+     * Name of the method this level represents, or {@code Unknown} if this level does not represent a method.
+     *
+     * @return method name
+     */
+    public String methodName() {
         return methodName;
     }
 
@@ -150,42 +258,147 @@ public class SecurityLevel {
      * Returns class level annotations.
      *
      * @return map of annotations
+     * @deprecated use {@link #classAnnotations()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public Map<Class<? extends Annotation>, List<Annotation>> getClassLevelAnnotations() {
-        return classLevelAnnotations;
+        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
+
+        classAnnotations()
+                .stream()
+                .map(AnnotationFactory::synthesize)
+                .flatMap(Optional::stream)
+                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
+
+        return result;
     }
 
     /**
      * Returns method level annotations.
      *
      * @return map of annotations
+     * @deprecated use {@link #methodAnnotations()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public Map<Class<? extends Annotation>, List<Annotation>> getMethodLevelAnnotations() {
-        return methodLevelAnnotations;
+        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
+
+        methodAnnotations()
+                .stream()
+                .map(AnnotationFactory::synthesize)
+                .flatMap(Optional::stream)
+                .forEach(a -> result.computeIfAbsent(a.annotationType(), it -> new ArrayList<>()).add(a));
+
+        return result;
+    }
+
+    /**
+     * Annotations on the class.
+     *
+     * @return list of class annotations
+     */
+    public List<io.helidon.common.types.Annotation> classAnnotations() {
+        List<io.helidon.common.types.Annotation> result = new ArrayList<>();
+        classLevelAnnotations.values().forEach(result::addAll);
+        return result;
+    }
+
+    /**
+     * Annotations on the method.
+     *
+     * @return list of method annotations
+     */
+    public List<io.helidon.common.types.Annotation> methodAnnotations() {
+        List<io.helidon.common.types.Annotation> result = new ArrayList<>();
+        methodLevelAnnotations.values().forEach(result::addAll);
+        return result;
     }
 
     @Override
     public String toString() {
-        return className + (methodName.isEmpty() ? methodName : "." + methodName);
+        return typeName + (methodName.isEmpty() ? methodName : "." + methodName);
     }
 
     /**
-     *  Builder for {@link SecurityLevel} class.
+     * Builder for {@link io.helidon.security.SecurityLevel} class.
      */
     public static class SecurityLevelBuilder implements Builder<SecurityLevelBuilder, SecurityLevel> {
-
-        private String className;
+        private TypeName typeName;
         private String methodName;
-        private Map<Class<? extends Annotation>, List<Annotation>> classAnnotations;
-        private Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations;
         private SecurityLevel copyFrom;
+        private Map<TypeName, List<io.helidon.common.types.Annotation>> classAnnots;
+        private Map<TypeName, List<io.helidon.common.types.Annotation>> methodAnnots;
 
-        private SecurityLevelBuilder(String className) {
-            this.className = className;
+        private SecurityLevelBuilder() {
         }
 
-        private SecurityLevelBuilder(SecurityLevel copyFrom) {
-            this.copyFrom = copyFrom;
+        @Override
+        public SecurityLevel build() {
+            // make sure we copy stuff that was not configured here
+            if (copyFrom != null) {
+                if (typeName == null) {
+                    type(copyFrom.typeName());
+                }
+                if (methodName == null) {
+                    methodName(copyFrom.methodName());
+                }
+                if (classAnnots == null) {
+                    classAnnotations(copyFrom.classAnnotations());
+                }
+                if (methodAnnots == null) {
+                    methodAnnotations(copyFrom.methodAnnotations());
+                }
+            }
+
+            this.methodName = methodName == null ? "Unknown" : methodName;
+            this.classAnnots = classAnnots == null ? Map.of() : classAnnots;
+            this.methodAnnots = methodAnnots == null ? Map.of() : methodAnnots;
+
+            Errors.Collector collector = Errors.collector();
+            if (this.typeName == null) {
+                collector.fatal(getClass(), "Property \"className\" is required, but not set");
+            }
+            collector.collect().checkValid();
+
+            return new SecurityLevel(this);
+        }
+
+        /**
+         * The analyzed type.
+         *
+         * @param type class of the type
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder type(Class<?> type) {
+            Objects.requireNonNull(type);
+
+            return type(TypeName.create(type));
+        }
+
+        /**
+         * The analyzed type.
+         *
+         * @param typeName the type
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder type(TypeName typeName) {
+            Objects.requireNonNull(typeName);
+
+            this.typeName = typeName;
+            return this;
+        }
+
+        /**
+         * Use the provided level as defaults for components not explicitly set on this builder.
+         *
+         * @param level to read information from
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder from(SecurityLevel level) {
+            Objects.requireNonNull(level);
+
+            this.copyFrom = level;
+            return this;
         }
 
         /**
@@ -193,8 +406,24 @@ public class SecurityLevel {
          *
          * @param methodName new method name
          * @return updated builder instance
+         * @deprecated use {@link #methodName(String)} instead
          */
+        @Deprecated(forRemoval = true, since = "4.2.0")
         public SecurityLevelBuilder withMethodName(String methodName) {
+            Objects.requireNonNull(methodName);
+
+            return methodName(methodName);
+        }
+
+        /**
+         * Method name of the method being secured.
+         *
+         * @param methodName new method name
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder methodName(String methodName) {
+            Objects.requireNonNull(methodName);
+
             this.methodName = methodName;
             return this;
         }
@@ -204,9 +433,93 @@ public class SecurityLevel {
          *
          * @param classAnnotations new class level annotations
          * @return updated builder instance
+         * @see io.helidon.metadata.reflection.AnnotationFactory
+         * @deprecated use {@link #classAnnotations(java.util.List)} instead
          */
+        @Deprecated(forRemoval = true, since = "4.2.0")
         public SecurityLevelBuilder withClassAnnotations(Map<Class<? extends Annotation>, List<Annotation>> classAnnotations) {
-            this.classAnnotations = classAnnotations;
+            return classAnnotations(classAnnotations.values()
+                                            .stream()
+                                            .flatMap(List::stream)
+                                            .map(AnnotationFactory::create)
+                                            .collect(Collectors.toUnmodifiableList()));
+        }
+
+        /**
+         * Add a class annotation to the list of annotations already configured.
+         *
+         * @param annotation to add
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder addClassAnnotation(Annotation annotation) {
+            Objects.requireNonNull(annotation);
+
+            return addClassAnnotation(AnnotationFactory.create(annotation));
+        }
+
+        /**
+         * Add a class annotation to the list of annotations already configured.
+         *
+         * @param annotation to add
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder addClassAnnotation(io.helidon.common.types.Annotation annotation) {
+            Objects.requireNonNull(annotation);
+
+            if (this.classAnnots == null) {
+                this.classAnnots = new HashMap<>();
+            }
+            this.classAnnots.computeIfAbsent(annotation.typeName(),
+                                             it -> new ArrayList<>())
+                    .add(annotation);
+            return this;
+        }
+
+        /**
+         * Add a method annotation to the list of annotations already configured.
+         *
+         * @param annotation to add
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder addMethodAnnotation(Annotation annotation) {
+            Objects.requireNonNull(annotation);
+
+            return addMethodAnnotation(AnnotationFactory.create(annotation));
+        }
+
+        /**
+         * Add a method annotation to the list of annotations already configured.
+         *
+         * @param annotation to add
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder addMethodAnnotation(io.helidon.common.types.Annotation annotation) {
+            Objects.requireNonNull(annotation);
+
+            if (this.methodAnnots == null) {
+                this.methodAnnots = new HashMap<>();
+            }
+            this.methodAnnots.computeIfAbsent(annotation.typeName(),
+                                             it -> new ArrayList<>())
+                    .add(annotation);
+            return this;
+        }
+
+        /**
+         * Class annotation of the analyzed type.
+         *
+         * @param annotations to set
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder classAnnotations(List<io.helidon.common.types.Annotation> annotations) {
+            Objects.requireNonNull(annotations);
+
+            this.classAnnots = new HashMap<>();
+
+            for (io.helidon.common.types.Annotation annotation : annotations) {
+                classAnnots.computeIfAbsent(annotation.typeName(), it -> new ArrayList<>())
+                        .add(annotation);
+            }
             return this;
         }
 
@@ -215,31 +528,33 @@ public class SecurityLevel {
          *
          * @param methodAnnotations new method level annotations
          * @return updated builder instance
+         * @deprecated use {@link #methodAnnotations(java.util.List)} instead
          */
+        @Deprecated(forRemoval = true, since = "4.2.0")
         public SecurityLevelBuilder withMethodAnnotations(Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations) {
-            this.methodAnnotations = methodAnnotations;
-            return this;
+            return methodAnnotations(methodAnnotations.values()
+                                             .stream()
+                                             .flatMap(List::stream)
+                                             .map(AnnotationFactory::create)
+                                             .collect(Collectors.toUnmodifiableList()));
         }
 
-        @Override
-        public SecurityLevel build() {
-            this.className = this.className == null ? copyFrom.getClassName() : className;
-            this.methodName = this.methodName == null
-                    ? (copyFrom == null
-                               ? "Unknown"
-                               : copyFrom.getMethodName())
-                    : methodName;
-            this.classAnnotations = this.classAnnotations == null
-                    ? (copyFrom == null
-                               ? new HashMap<>()
-                               : copyFrom.getClassLevelAnnotations())
-                    : classAnnotations;
-            this.methodAnnotations = this.methodAnnotations == null
-                    ? (copyFrom == null
-                               ? new HashMap<>()
-                               : copyFrom.getMethodLevelAnnotations())
-                    : methodAnnotations;
-            return new SecurityLevel(this);
+        /**
+         * Set list of method annotations.
+         *
+         * @param annotations annotations of the analyzed method
+         * @return updated builder instance
+         */
+        public SecurityLevelBuilder methodAnnotations(List<io.helidon.common.types.Annotation> annotations) {
+            Objects.requireNonNull(annotations);
+
+            this.methodAnnots = new HashMap<>();
+
+            for (io.helidon.common.types.Annotation annotation : annotations) {
+                methodAnnots.computeIfAbsent(annotation.typeName(), it -> new ArrayList<>())
+                        .add(annotation);
+            }
+            return this;
         }
     }
 
