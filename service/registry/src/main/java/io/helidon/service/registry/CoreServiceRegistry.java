@@ -486,7 +486,18 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             stateWriteLock.unlock();
         }
     }
-
+/*
+TODO add and add qualified also must use all contracts
+            ResolvedType contractType = ResolvedType.create(contract);
+            Set<ResolvedType> actualContracts = contractMap.get(contractType);
+            if (actualContracts == null) {
+                actualContracts = Set.of(contractType);
+            }
+            for (ResolvedType actualContract : actualContracts) {
+                // set for each type that is valid for this contract
+                doSet(actualContract, instances);
+            }
+ */
     <T> void add(Class<T> contract, double weight, T instance) {
         if (!allowLateBinding) {
             throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
