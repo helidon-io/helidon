@@ -285,6 +285,7 @@ jobs:
           artifact-name: archetypes-${{ matrix.group }}-${{ matrix.packaging }}-projects
           artifact-path: |
             archetypes/**/target/tests/**
+            !archetypes/**/target/tests/*/target/**
           run: |
             mvn ${MVN_ARGS} \
               -f archetypes/archetypes/pom.xml \
@@ -308,6 +309,7 @@ jobs:
           artifact-name: archetypes-legacy-projects
           artifact-path: |
             archetypes/**/target/tests/**
+            !archetypes/**/target/tests/*/target/**
           run: |
             mvn ${MVN_ARGS} \
               -f archetypes/pom.xml \
