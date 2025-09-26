@@ -378,7 +378,7 @@ jobs:
       - uses: actions/upload-artifact/merge@v4
         with:
           name: archetype-projects
-          pattern: "archetype-*-projects"
+          pattern: "archetypes-*-projects"
   test-results:
     runs-on: ubuntu-22.04
     needs: [ _tests, _tck, packaging, _native-image ]
