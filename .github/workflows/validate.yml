@@ -282,7 +282,9 @@ jobs:
         with:
           build-cache: read-only
           native-image: ${{ matrix.packaging == 'native' }}
-          test-artifact-name: tests-archetypes-${{ matrix.group }}-${{ matrix.packaging }}
+          artifact-name: archetypes-${{ matrix.group }}-${{ matrix.packaging }}-projects
+          artifact-path: |
+            archetypes/**/target/tests/**
           run: |
             mvn ${MVN_ARGS} \
               -f archetypes/archetypes/pom.xml \
@@ -303,7 +305,9 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-legacy-archetypes
+          artifact-name: archetypes-legacy-projects
+          artifact-path: |
+            archetypes/**/target/tests/**
           run: |
             mvn ${MVN_ARGS} \
               -f archetypes/pom.xml \
@@ -366,9 +370,18 @@ jobs:
               -Pnative-image \
               -am \
               verify
+  archetype-results:
+    runs-on: ubuntu-22.04
+    needs: [ archetypes, legacy-archetypes ]
+    name: archetype/results
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: archetype-projects
+          pattern: "archetype-*-projects"
   test-results:
     runs-on: ubuntu-22.04
-    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
+    needs: [ _tests, _tck, packaging, _native-image ]
     name: tests/results
     steps:
       - uses: actions/upload-artifact/merge@v4
@@ -377,7 +390,7 @@ jobs:
           pattern: "tests-*"
   gate:
     runs-on: ubuntu-22.04
-    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
+    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, archetype-results, test-results ]
     steps:
       - shell: bash
         run: |
