@@ -250,7 +250,7 @@ We expect this situation to be rare. If you have implemented a configured builde
 - Dependencies: Upgrades ojdbc* and ucp* artifacts to 23.9.0.25.07 [10620](https://github.com/helidon-io/helidon/pull/10620)
 - Dependencies: Upgrades protobuf dependency to 4.31.1 [10462](https://github.com/helidon-io/helidon/pull/10462)
 - Dependencies: Upgrades to gRPC 1.73.0 and removes reflection proto files [10412](https://github.com/helidon-io/helidon/pull/10412)
-- Dependencies: Uptake build-tools 4.0.22 [10597](https://github.com/helidon-io/helidon/pull/10597)
+- Dependencies: Uptake build-tools 4.0.23 [10721](https://github.com/helidon-io/helidon/pull/10721)
 - Dependencies: uses the 17 variants of ojdbc and ucp artifacts [10640](https://github.com/helidon-io/helidon/pull/10640)
 - Docs: Adds documentation for Discovery [10569](https://github.com/helidon-io/helidon/pull/10569)
 - Docs: Adds documentation for new JSON-RPC client and server APIs [10389](https://github.com/helidon-io/helidon/pull/10389)
