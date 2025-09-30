@@ -62,6 +62,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     private URI tokenEndpointUri;
     private Duration clientTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
     private JwkKeys signJwk;
+    private JwkKeys contentKeyDecryptionKeys;
     private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
     private URI introspectUri;
     private String scopeAudience;
@@ -123,6 +124,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("logout-endpoint-uri").as(URI.class).ifPresent(this::logoutEndpointUri);
 
         config.get("sign-jwk.resource").map(Resource::create).ifPresent(this::signJwk);
+        config.get("decryption-keys.resource").map(Resource::create).ifPresent(this::decryptionKeys);
 
         config.get("introspect-endpoint-uri").as(URI.class).ifPresent(this::introspectEndpointUri);
         DeprecatedConfig.get(config, "validate-jwt-with-jwk", "validate-with-jwk")
@@ -456,6 +458,29 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         return identity();
     }
 
+    /**
+     * A resource pointing to JWK with private keys used for JWE content key decryption.
+     *
+     * @param resource Resource pointing to the JWK
+     * @return updated builder instance
+     */
+    @ConfiguredOption(key = "decryption-keys.resource")
+    public B decryptionKeys(Resource resource) {
+        this.contentKeyDecryptionKeys = JwkKeys.builder().resource(resource).build();
+        return identity();
+    }
+
+    /**
+     * Set {@link JwkKeys} used for JWE content key decryption.
+     *
+     * @param contentKeyDecryptionKeys JwkKeys instance to get private key for JWE content key decryption
+     * @return updated builder instance
+     */
+    public B decryptionKeys(JwkKeys contentKeyDecryptionKeys) {
+        this.contentKeyDecryptionKeys = contentKeyDecryptionKeys;
+        return identity();
+    }
+
     private void clientTimeoutMillis(long millis) {
         this.clientTimeout(Duration.ofMillis(millis));
     }
@@ -544,4 +569,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         return TenantConfigFinder.DEFAULT_TENANT_ID;
     }
 
+    JwkKeys contentKeyDecryptionKeys() {
+        return contentKeyDecryptionKeys;
+    }
 }

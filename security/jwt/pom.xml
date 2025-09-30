@@ -69,5 +69,12 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- For JWE testing -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>10.4</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

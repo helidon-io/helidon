@@ -22,6 +22,7 @@ module io.helidon.security.providers.oidc.common {
     requires io.helidon.common.context;
     requires io.helidon.common.crypto;
     requires io.helidon.common.parameters;
+    requires io.helidon.common.pki;
     requires io.helidon.cors;
     requires io.helidon.http.media.jsonp;
     requires io.helidon.security.providers.common;
