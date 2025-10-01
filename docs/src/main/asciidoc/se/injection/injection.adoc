@@ -22,7 +22,7 @@
 :keywords: helidon, se, injection
 :h1Prefix: SE
 :feature-name: Injection
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
 
@@ -91,6 +91,8 @@ For example, instead of manually managing dependencies,
 you declare that a class should be injectable using annotations like
 link:{service-registry-base-url}/io/helidon/service/registry/Service.Singleton.html[`@Service.Singleton`]
 (More about that later).
+
+See xref:declarative.adoc#Overview[Helidon Declarative]
 
 === Service registry
 A service registry is a tool that enables declarative programming by supporting inversion of control (IoC).
@@ -822,7 +824,7 @@ must be shut down, once it is not needed.
 include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_2, indent=0]
 ----
 
-== Startup
+== Startup [[generate-binding]]
 
 Helidon provides a Maven plugin (`io.helidon.service:helidon-service-maven-plugin`, goal `create-application`) to generate
 build time bindings, that can be used to start the service registry without any classpath discovery and reflection.

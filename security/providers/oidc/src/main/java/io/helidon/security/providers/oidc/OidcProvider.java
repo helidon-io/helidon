@@ -47,6 +47,7 @@ import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
+import io.helidon.security.providers.oidc.common.ClientCredentialsConfig;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
@@ -249,12 +250,11 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         OidcOutboundTarget target = outboundConfig.findTarget(outboundEnv);
         boolean enabled = target.propagate;
         if (enabled) {
+            ClientCredentialsConfig clientCredentialsConfig = oidcConfig.clientCredentialsConfig();
             Parameters.Builder formBuilder = Parameters.builder("oidc-form-params")
                     .add("grant_type", "client_credentials");
 
-            if (!oidcConfig.baseScopes().isEmpty()) {
-                formBuilder.add("scope", oidcConfig.baseScopes());
-            }
+            clientCredentialsConfig.scope().ifPresent(scope -> formBuilder.add("scope", scope));
 
             HttpClientRequest postRequest = oidcConfig.appWebClient()
                     .post()

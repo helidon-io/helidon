@@ -293,6 +293,7 @@ final class GenerateAbstractBuilder {
             }
              */
             Method.Builder method = Method.builder()
+                    .accessModifier(child.configuredOption().accessModifier())
                     .name(getterName)
                     .returnType(child.builderGetterType());
             child.builderGetter(method);

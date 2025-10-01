@@ -88,7 +88,7 @@
                         <configuration>
                             <generateTests>false</generateTests>
                             <externalValues>
-                                <artifactId>myproject</artifactId>
+                                <artifactId>test-project</artifactId>
                             </externalValues>
                         </configuration>
                     </execution>

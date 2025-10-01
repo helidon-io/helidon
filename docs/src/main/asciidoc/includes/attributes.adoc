@@ -205,6 +205,7 @@ endif::[]
 :config-git-javadoc-base-url: {javadoc-base-url}/io.helidon.config.git
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
+:context-javadoc-base-url: {javadoc-base-url}/io.helidon.common.context
 :cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
 :discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
@@ -233,6 +234,7 @@ endif::[]
 :openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
+:scheduling-se-javadoc-base-url: {javadoc-base-url}/io.helidon.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
 :security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
 :service-registry-base-url: {javadoc-base-url}/io.helidon.service.registry
@@ -243,10 +245,12 @@ endif::[]
 :types-javadoc-base-url: {javadoc-base-url}/io.helidon.common.types
 
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
+:webclient-api-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient.api
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
 :graphql-javadoc-base-url: {javadoc-base-url}/io.helidon.graphql.server
+:security-javadoc-base-url: {javadoc-base-url}/io.helidon.security
 :security-provider-oidc-base-url: {javadoc-base-url}/io.helidon.security.providers.oidc
 :security-provider-httpauth-base-url: {javadoc-base-url}/io.helidon.security.providers.httpauth
 :security-provider-header-base-url: {javadoc-base-url}/io.helidon.security.providers.header

@@ -1,7 +1,8 @@
 # Archetypes Development
 
-Helidon provides a set of archetypes to bootstrap end user's application development journey. They are implemented here based on 
-[Archetype V2 engine] (https://github.com/helidon-io/helidon-build-tools/wiki/Archetype-Engine-V2)
+Helidon provides a set of archetypes to bootstrap end user's application development journey.
+
+See https://github.com/helidon-io/helidon-build-tools/wiki/Archetype-Engine-V2
 
 ## Build
 
@@ -11,24 +12,26 @@ From the root `archetypes` directory, just issue
 mvn clean install
 ```
 
-This will build all archetypes (including legacy) and run tests. To save time, during development cycle, you can skip test using
+This will build all archetypes (including legacy) and run tests.
 
+To save time, during development cycle, you can skip test using:
 ```bash
-mvn clean install  -Darchetype.test.skip=true
+mvn clean install -DskipTests -e
 ```
 
-## Test
+The build output shows instructions on how to use the archetypes locally.
 
-Archetypes build generates `cli-data` that you can provide to installed [Helidon CLI](../README.md#helidon-cli).
+## Smoke Tests
 
-```bash
-helidon init --reset --url file:///<path-to>/helidon/archetypes/helidon/target/cli-data
+Generate the projects and validate the pom files.
+```shell
+mvn clean install -Darchetype.test.testGoal=clean -e
 ```
 
-Once the archetype is selected the other options have defaults (and allows user to make selections) and the project is generated in a directory named after the `artifactId` value.
-
-```bash
-cd `artifactId`
+Download the previous archetype test projects and diff them:
+```shell
+.projects-diff.sh \
+  --actual=./target/tests \
+  --orig=$HOME/Download/archetype-tests \
+  diff_projects
 ```
-
-Now, just follow instructions in the generated README file.

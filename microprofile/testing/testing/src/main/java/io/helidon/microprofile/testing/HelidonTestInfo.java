@@ -334,7 +334,9 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
                    || descriptor.disableDiscovery()
                    || descriptor.addJaxRs()
                    || !descriptor.addBeans().isEmpty()
-                   || !descriptor.addExtensions().isEmpty();
+                   || !descriptor.addExtensions().isEmpty()
+                   || !descriptor.addConfigs().isEmpty()
+                   || !descriptor.addConfigBlocks().isEmpty();
         }
 
         @Override

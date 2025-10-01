@@ -1,0 +1,229 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Declarative
+
+:description: Helidon SE Declarative
+:keywords: helidon, se, injection, declarative
+:h1Prefix: SE
+:feature-name: Declarative
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Usage, Usage>>
+- <<Features, Features>>
+
+== Overview
+
+Helidon declarative programming model allows inversion of control style programming with all the performance benefits of Helidon SE.
+
+Our declarative approach has the following advantages:
+
+- Uses Helidon SE imperative code to implement features (i.e. performance is same as "pure" imperative application)
+- Generates all the necessary code at build-time, to avoid reflection and bytecode manipulation at runtime
+- It is based on xref:injection.adoc#Overview[Helidon Injection]
+- Declarative features are in the same modules as Helidon SE features (i.e. does not require additional dependencies)
+
+[NOTE]
+Helidon Declarative is an incubating feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+
+== Usage
+
+To create a declarative application, use the annotations provided in our Helidon SE modules (details under <<Features, Features>>), and the maven plugin
+described in xref:injection.adoc#generate-binding[Injection: Startup] to generate the binding.
+
+In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
+
+[source,xml]
+----
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+</plugins>
+----
+
+
+== Features
+
+The following features are currently implemented:
+
+- <<Dec-Config, Configuration>>
+- <<Dec-HTTP-Server, HTTP Server Endpoint>>
+- <<Dec-HTTP-Client, Typed HTTP Client>>
+- <<Dec-FT, Fault Tolerance>>
+- <<Dec-Scheduling, Scheduling>>
+
+A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
+The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
+
+[source,java]
+.Example of a declarative main class
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_1, indent=0]
+----
+
+=== Configuration [[Dec-Config]]
+
+Configuration can be injected as a whole into any service, or a specific configuration option can be injected using `@Configuration.Value`. Default values can be defined using annotations in `@Default`
+
+Services available for injection:
+
+- link:{config-javadoc-base-url}/io/helidon/config/Config.html[`io.helidon.config.Config`]
+
+Annotations:
+
+- link:{config-javadoc-base-url}/io/helidon/config/Configuration.html[`io.helidon.config.Configuration.Value`] - define the configuration key to inject, on constructor parameter
+- Annotations defined in link:{common-javadoc-base-url}/io/helidon/common/Default.html[`io.helidon.common.Default`] - define a default typed value, on the same constructor parameter
+
+Example of usage can be seen below in HTTP Server Endpoint example.
+
+=== HTTP Server Endpoint [[Dec-HTTP-Server]]
+
+To create an HTTP endpoint, simply annotate a class with `@RestServer.Endpoint`, and
+add at least one method annotated with one of the HTTP method annotations, such as `@Http.GET`.
+
+Services available for injection:
+
+N/A
+
+Supported method parameters (no annotation required):
+
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/ServerRequest.html[`io.helidon.webserver.http.ServerRequest`]
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/ServerResponse.html[`io.helidon.webserver.http.ServerResponse`]
+- link:{context-javadoc-base-url}/io/helidon/common/context/Context.html[`io.helidon.common.context.Context`]
+- `io.helidon.common.security.SecurityContext`
+- link:{security-javadoc-base-url}/io/helidon/security/SecurityContext.html`[`io.helidon.security.SecurityContext] - in case `helidon-security` module is on the classpath
+
+Annotations on endpoint type:
+
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.html[`io.helidon.webserver.http.RestServer.Endpoint`] - required annotation
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Listener.html[`io.helidon.webserver.http.RestServer.Listener`] - to define the named listener this should be served on (named port/socket)
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Header.html[`io.helidon.webserver.http.RestServer.Header`] - header to return with each response from this endpoint
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.ComputedHeader.html[`io.helidon.webserver.http.RestServer.ComputedHeader`] - computed header to return with each response from this endpoint
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Header.html[`io.helidon.webserver.http.RestServer.Header`] - header to return with each response from this method
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.ComputedHeader.html[`io.helidon.webserver.http.RestServer.ComputedHeader`] - computed header to return with each response from this method
+- link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Status.html[`io.helidon.webserver.http.RestServer.Status`] - status to return (if a custom one is required)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this method will be available on (subpath of the endpoint path)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.GET.html[`io.helidon.http.Http.GET`] (and other methods) - definition of HTTP method this method will serve
+- link:{http-javadoc-base-url}/io/helidon/http/Http.HttpMethod.html[`io.helidon.http.Http.HttpMethod`] - for custom HTTP method names (mutually exclusive with above)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (return entity content type)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type)
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Entity.html[`io.helidon.http.Http.Entity`] - Request entity, a typed parameter is expected, will use HTTP media type modules to coerce into the correct type
+- link:{http-javadoc-base-url}/io/helidon/http/Http.HeaderParam.html[`io.helidon.http.Http.HeaderParam`] - Typed HTTP request header value
+- link:{http-javadoc-base-url}/io/helidon/http/Http.QueryParam.html[`io.helidon.http.Http.QueryParam`] - Typed HTTP query value
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template
+
+[source,java]
+.Example of an HTTP Server Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_2, indent=0]
+----
+
+=== Typed HTTP Client [[Dec-HTTP-Client]]
+
+To create a typed HTTP client, create an interface annotated with `RestClient.Endpoint`, and at least one method annotated
+with one fo the HTTP method annotations, such as `@Http.GET`. Methods can only have parameters annotated with one of the
+`Http` qualifiers.
+
+Annotations on endpoint type:
+
+- link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.Endpoint.html[`io.helidon.webclient.api.RestClient.Endpoint`] - required annotation
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) the server listens on
+- link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.Header.html[`io.helidon.webclient.api.RestClient.Header`] - header to include in every request to the server
+- link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.ComputedHeader.html[`io.helidon.webclient.api.RestClient.ComputedHeader`] - header to compute and include in every request to the server
+
+Annotations on endpoint methods:
+
+- link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.Header.html[`io.helidon.webclient.api.RestClient.Header`] - header to include in every request to the server
+- link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.ComputedHeader.html[`io.helidon.webclient.api.RestClient.ComputedHeader`] - header to compute and include in every request to the server
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) the server serves this endpoint method on
+- link:{http-javadoc-base-url}/io/helidon/http/Http.GET.html[`io.helidon.http.Http.GET`] (and other methods) - definition of HTTP method this method will invoke
+- link:{http-javadoc-base-url}/io/helidon/http/Http.HttpMethod.html[`io.helidon.http.Http.HttpMethod`] - for custom HTTP method names (mutually exclusive with above)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (content type of entity from the server)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type)
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Entity.html[`io.helidon.http.Http.Entity`] - Request entity, a typed parameter is expected, will use HTTP media type modules to write to the request
+- link:{http-javadoc-base-url}/io/helidon/http/Http.HeaderParam.html[`io.helidon.http.Http.HeaderParam`] - Typed HTTP header value to send
+- link:{http-javadoc-base-url}/io/helidon/http/Http.QueryParam.html[`io.helidon.http.Http.QueryParam`] - Typed HTTP query value to send
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template to construct the request URI
+
+[source,java]
+.Example of a Typed HTTP Client
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
+----
+
+
+=== Fault Tolerance [[Dec-FT]]
+
+Fault tolerance annotation allow adding features to methods on services.
+The annotations can be added to any method that supports interception (i.e. methods that are not private).
+
+Method Annotations:
+
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.Retry.html[`io.helidon.faulttolerance.Ft.Retry`] - allow retries
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.Fallback.html[`io.helidon.faulttolerance.Ft.Fallback`] - fallback to another method that provides
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.Async.html[`io.helidon.faulttolerance.Ft.Async`] - invoke method asynchronously
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.Timeout.html[`io.helidon.faulttolerance.Ft.Timeout`] - invoke method with a timeout
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.Bulkhead.html[`io.helidon.faulttolerance.Ft.Bulkhead`] - use bulkhead
+- link:{faulttolerance-javadoc-base-url}/io/helidon/faulttolerance/Ft.CircuitBreaker.html[`io.helidon.faulttolerance.Ft.CircuitBreaker`] - use circuit breaker
+
+[source,java]
+.Example of Fault Tolerance Fallback
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_4, indent=0]
+----
+
+=== Scheduling [[Dec-Scheduling]]
+
+Scheduling allows service methods to be invoked periodically.
+
+Method annotations:
+
+- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.Cron.html[`io.helidon.scheduling.Scheduling.Cron`] - execute with schedule defined by a CRON expression
+- link:{scheduling-se-javadoc-base-url}/io/helidon/scheduling/Scheduling.FixedRate.html[`io.helidon.scheduling.Scheduling.FixedRate`] - execute with a fixed interval
+
+[source,java]
+.Example of a fixed rate scheduled method
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_5, indent=0]
+----
