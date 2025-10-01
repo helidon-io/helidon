@@ -110,7 +110,7 @@ public class JsonRpcRouting implements HttpService {
                         if (errorHandler != null) {
                             Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
                             if (userError.isPresent()) {
-                                res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject));
+                                res.status(Status.OK_200).send(jsonRpcError(userError.get(), res, jsonObject.get("id")));
                             } else {
                                 res.status(Status.OK_200).send();
                             }
@@ -143,14 +143,14 @@ public class JsonRpcRouting implements HttpService {
 
                             // use error if returned, otherwise internal error
                             if (mappedError.isPresent()) {
-                                JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
+                                JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, jsonObject.get("id"));
                                 res.status(Status.OK_200).send(jsonRpcError);
                                 return;
                             }
                         } catch (Throwable throwable2) {
                             // falls through
                         }
-                        sendInternalError(res);
+                        sendInternalError(res, jsonObject.get("id"));
                     }
                 } else if (jsonRequest instanceof JsonArray jsonArray) {
                     // we must receive at least one request
@@ -178,9 +178,10 @@ public class JsonRpcRouting implements HttpService {
                             // Use error if returned by error handler
                             if (errorHandler != null) {
                                 Optional<JsonRpcError> userError = errorHandler.handle(req, jsonObject);
-                                userError.ifPresent(e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject)));
+                                userError.ifPresent(
+                                        e -> arrayBuilder.add(jsonRpcError(e, res, jsonObject.get("id"))));
                             } else {
-                                JsonObject verifyError = jsonRpcError(error, res, jsonObject);
+                                JsonObject verifyError = jsonRpcError(error, res, jsonObject.get("id"));
                                 arrayBuilder.add(verifyError);
                             }
                             continue;
@@ -202,14 +203,14 @@ public class JsonRpcRouting implements HttpService {
 
                                 // use error if returned, otherwise internal error
                                 if (mappedError.isPresent()) {
-                                    JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, null);
+                                    JsonObject jsonRpcError = jsonRpcError(mappedError.get(), res, jsonObject.get("id"));
                                     arrayBuilder.add(jsonRpcError);
                                     continue;
                                 }
                             } catch (Throwable throwable2) {
                                 // falls through
                             }
-                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, null);
+                            JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, jsonObject.get("id"));
                             arrayBuilder.add(internalError);
                         }
                     }
@@ -260,10 +261,10 @@ public class JsonRpcRouting implements HttpService {
         }
     }
 
-    private JsonObject jsonRpcError(JsonRpcError error, ServerResponse res, JsonObject jsonObject) {
+    private JsonObject jsonRpcError(JsonRpcError error, ServerResponse res, JsonValue id) {
         JsonRpcResponse rpcRes = new JsonRpcResponseImpl(JsonValue.NULL, res);
-        if (jsonObject != null && jsonObject.containsKey("id")) {
-            rpcRes.rpcId(jsonObject.get("id"));
+        if (id != null) {
+            rpcRes.rpcId(id);
         }
         if (error.data().isEmpty()) {
             rpcRes.error(error.code(), error.message());
@@ -273,8 +274,8 @@ public class JsonRpcRouting implements HttpService {
         return rpcRes.asJsonObject();
     }
 
-    private void sendInternalError(ServerResponse res) {
-        JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, null);
+    private void sendInternalError(ServerResponse res, JsonValue id) {
+        JsonObject internalError = jsonRpcError(INTERNAL_ERROR_ERROR, res, id);
         res.status(Status.OK_200).send(internalError);
     }
 
@@ -369,7 +370,7 @@ public class JsonRpcRouting implements HttpService {
                 }
                 sendCalled.set(true);
             } catch (Exception e) {
-                sendInternalError(res);
+                sendInternalError(res, rpcId().orElse(null));
             }
         }
 
@@ -398,7 +399,7 @@ public class JsonRpcRouting implements HttpService {
                     arrayBuilder.add(asJsonObject());
                 }
             } catch (Exception e) {
-                sendInternalError(res);
+                sendInternalError(res, rpcId().orElse(null));
             }
         }
     }
