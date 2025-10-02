@@ -42,7 +42,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-@Disabled
 class SseClientTest extends SseBaseTest {
 
     private final Http1Client client;
@@ -89,6 +88,7 @@ class SseClientTest extends SseBaseTest {
     }
 
     @Test
+    @Disabled
     void testSseString1() throws InterruptedException {
         try (Http1ClientResponse r = client.get("/sseString1").header(ACCEPT_EVENT_STREAM).request()) {
             CountDownLatch latch = new CountDownLatch(1);
