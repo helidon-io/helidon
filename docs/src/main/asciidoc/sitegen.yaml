@@ -453,6 +453,14 @@ backend:
                   - "injection.adoc"
                   - "declarative.adoc"
               - type: "MENU"
+                title: "JSON"
+                dir: "json"
+                glyph:
+                  type: "icon"
+                  value: "data_object"
+                sources:
+                  - "schema.adoc"
+              - type: "MENU"
                 title: "JSON-RPC"
                 dir: "jsonrpc"
                 glyph:
