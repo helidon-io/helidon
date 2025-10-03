@@ -33,7 +33,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
@@ -88,7 +87,6 @@ class SseClientTest extends SseBaseTest {
     }
 
     @Test
-    @Disabled
     void testSseString1() throws InterruptedException {
         try (Http1ClientResponse r = client.get("/sseString1").header(ACCEPT_EVENT_STREAM).request()) {
             CountDownLatch latch = new CountDownLatch(1);
