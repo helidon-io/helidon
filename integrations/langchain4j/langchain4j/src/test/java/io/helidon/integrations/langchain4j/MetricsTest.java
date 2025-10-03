@@ -37,9 +37,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class MetricsTest {
+    private static final String MODEL_NAME = "heli-model";
+    private static final String METER_NAME = "gen_ai.client.token.usage";
+    private static final Tag TAG_REQ_MODEL = Tag.create("gen_ai_request_model", MODEL_NAME);
+    private static final Tag TAG_RES_MODEL = Tag.create("gen_ai_response_model", MODEL_NAME);
+    private static final Tag TAG_INPUT = Tag.create("gen_ai_token_type", "input");
+    private static final Tag TAG_OUTPUT = Tag.create("gen_ai_token_type", "output");
+    private static final List<Tag> INPUT_TAGS = List.of(TAG_REQ_MODEL, TAG_RES_MODEL, TAG_INPUT);
+    private static final List<Tag> OUTPUT_TAGS = List.of(TAG_REQ_MODEL, TAG_RES_MODEL, TAG_OUTPUT);
+    private static final ChatRequest CHAT_REQ = ChatRequest.builder()
+            .modelName(MODEL_NAME)
+            .messages(List.of(UserMessage.from("test")))
+            .build();
+
     private final MeterRegistry meterRegistry = Metrics.globalRegistry();
 
     @BeforeEach
@@ -53,38 +65,15 @@ public class MetricsTest {
         MetricsChatModelListener listener = new MetricsChatModelListener();
 
         Map<Object, Object> ctx = new HashMap<>();
-        listener.onRequest(new ChatModelRequestContext(
-                ChatRequest.builder()
-                        .messages(List.of(UserMessage.from("test"))).build(),
-                null,
-                ctx));
+        listener.onRequest(new ChatModelRequestContext(CHAT_REQ, null, ctx));
+        listener.onResponse(createResponseCtx(111, 333, ctx));
 
-        listener.onResponse(new ChatModelResponseContext(
-                ChatResponse.builder()
-                        .aiMessage(AiMessage.builder().build())
-                        .modelName("test")
-                        .tokenUsage(new TokenUsage(111, 333))
-                        .build(),
-                ChatRequest.builder().modelName("test")
-                        .messages(UserMessage.from("test")).build(),
-                null, ctx));
-
-        DistributionSummary promptCounter = (DistributionSummary) meterRegistry
-                .meters()
-                .stream()
-                .filter(meter -> meter.id().name().equals("gen_ai.client.token.usage"))
-                .findFirst()
-                .orElseThrow();
-
-        assertNotNull(promptCounter);
-        assertEquals(111,
-                     meterRegistry.meter(DistributionSummary.class,
-                                         "gen_ai.client.token.usage",
-                                         List.of(Tag.create("gen_ai_token_type", "input"))).orElseThrow().totalAmount());
-        assertEquals(333,
-                     meterRegistry.meter(DistributionSummary.class,
-                                         "gen_ai.client.token.usage",
-                                         List.of(Tag.create("gen_ai_token_type", "output"))).orElseThrow().totalAmount());
+        assertEquals(111, meterRegistry.meter(DistributionSummary.class, METER_NAME, INPUT_TAGS)
+                .orElseThrow()
+                .totalAmount());
+        assertEquals(333, meterRegistry.meter(DistributionSummary.class, METER_NAME, OUTPUT_TAGS)
+                .orElseThrow()
+                .totalAmount());
     }
 
     @Test
@@ -92,37 +81,24 @@ public class MetricsTest {
         MetricsChatModelListener listener = new MetricsChatModelListener();
 
         Map<Object, Object> ctx = new HashMap<>();
-        listener.onRequest(new ChatModelRequestContext(
-                ChatRequest.builder()
-                        .messages(List.of(UserMessage.from("test"))).build(),
-                null,
-                ctx));
+        listener.onRequest(new ChatModelRequestContext(CHAT_REQ, null, ctx));
+        listener.onResponse(createResponseCtx(null, null, ctx));
 
-        listener.onResponse(new ChatModelResponseContext(
-                ChatResponse.builder()
-                        .aiMessage(AiMessage.builder().build())
-                        .modelName("test")
-                        .tokenUsage(new TokenUsage(null, null))
-                        .build(),
-                ChatRequest.builder().modelName("test")
-                        .messages(UserMessage.from("test")).build(),
-                null, ctx));
+        assertEquals(0, meterRegistry.meter(DistributionSummary.class, METER_NAME, INPUT_TAGS)
+                .orElseThrow()
+                .totalAmount());
+        assertEquals(0, meterRegistry.meter(DistributionSummary.class, METER_NAME, OUTPUT_TAGS)
+                .orElseThrow()
+                .totalAmount());
+    }
 
-        DistributionSummary promptCounter = (DistributionSummary) meterRegistry
-                .meters()
-                .stream()
-                .filter(meter -> meter.id().name().equals("gen_ai.client.token.usage"))
-                .findFirst()
-                .orElseThrow();
-
-        assertNotNull(promptCounter);
-        assertEquals(0,
-                     meterRegistry.meter(DistributionSummary.class,
-                                         "gen_ai.client.token.usage",
-                                         List.of(Tag.create("gen_ai_token_type", "input"))).orElseThrow().totalAmount());
-        assertEquals(0,
-                     meterRegistry.meter(DistributionSummary.class,
-                                         "gen_ai.client.token.usage",
-                                         List.of(Tag.create("gen_ai_token_type", "output"))).orElseThrow().totalAmount());
+    private static ChatModelResponseContext createResponseCtx(Integer inputTokenCount,
+                                                              Integer outputTokenCount,
+                                                              Map<Object, Object> ctx) {
+        return new ChatModelResponseContext(ChatResponse.builder()
+                                                    .aiMessage(AiMessage.builder().build())
+                                                    .modelName(MODEL_NAME)
+                                                    .tokenUsage(new TokenUsage(inputTokenCount, outputTokenCount))
+                                                    .build(), CHAT_REQ, null, ctx);
     }
 }
