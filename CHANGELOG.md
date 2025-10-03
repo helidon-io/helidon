@@ -11,6 +11,19 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.3.1]
+
+This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Config: Use requires transitive for service.registry [10744](https://github.com/helidon-io/helidon/pull/10744)
+- JSON-RPC: Include the JSON-RPC ID in all error responses when available [10740](https://github.com/helidon-io/helidon/pull/10740)
+- LC4J: Add JSON Schema and lc4j codegens to apt bundle #10723 [10747](https://github.com/helidon-io/helidon/pull/10747)
+- Dependencies: Bump lc4j to 1.6.0 [10746](https://github.com/helidon-io/helidon/pull/10746)
+
 ## [4.3.0]
 
 This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
@@ -2167,6 +2180,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.3.1]: https://github.com/oracle/helidon/compare/4.3.0...4.3.1
 [4.3.0]: https://github.com/oracle/helidon/compare/4.2.7...4.3.0
 [4.2.7]: https://github.com/oracle/helidon/compare/4.2.6...4.2.7
 [4.2.6]: https://github.com/oracle/helidon/compare/4.2.5...4.2.6
