@@ -31,8 +31,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Usage, Usage>>
 ** <<Imperative Schema Creation, Imperative Schema Creation>>
 ** <<Declarative Schema Creation, Declarative Schema Creation>>
-- <<Configuration, Configuration>>
-- <<Examples, Examples>>
 
 == Overview
 
