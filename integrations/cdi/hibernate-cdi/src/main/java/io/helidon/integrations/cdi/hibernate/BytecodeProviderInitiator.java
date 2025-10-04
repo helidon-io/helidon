@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package io.helidon.integrations.cdi.hibernate;
 
+import java.util.Map;
 import java.util.function.Predicate;
 
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
 import org.hibernate.bytecode.spi.BytecodeProvider;
+import org.hibernate.service.spi.ServiceRegistryImplementor;
 
 /**
  * In native image, we force the usage of the no-op bytecode provider so no bytecode
@@ -34,8 +36,13 @@ final class BytecodeProviderInitiator {
     }
 
     @Substitute
-    public static BytecodeProvider buildBytecodeProvider(String providerName) {
+    public static BytecodeProvider buildDefaultBytecodeProvider() {
         return new org.hibernate.bytecode.internal.none.BytecodeProviderImpl();
+    }
+
+    @Substitute
+    public BytecodeProvider initiateService(Map<String, Object> configurationValues, ServiceRegistryImplementor registry) {
+        return buildDefaultBytecodeProvider();
     }
 
     static class SubstituteOnlyIfPresent implements Predicate<String> {
@@ -44,7 +51,8 @@ final class BytecodeProviderInitiator {
         public boolean test(String type) {
             try {
                 Class<?> clazz = Class.forName(type, false, getClass().getClassLoader());
-                clazz.getDeclaredMethod("buildBytecodeProvider", String.class);
+                clazz.getDeclaredMethod("buildDefaultBytecodeProvider");
+                clazz.getDeclaredMethod("initiateService", Map.class, ServiceRegistryImplementor.class);
                 return true;
             } catch (ClassNotFoundException | NoClassDefFoundError | NoSuchMethodException ex) {
                 return false;
