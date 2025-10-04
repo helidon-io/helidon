@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,8 +81,20 @@ public final class SecurityTracing extends CommonTracing {
     public static SecurityTracing get() {
         Optional<Context> context = Contexts.context();
 
-        return tracing(context)
+        return context.flatMap(SecurityTracing::tracing)
                 .orElseGet(() -> createTracing(context));
+    }
+
+    /**
+     * Get an instance from the provided {@link io.helidon.common.context.Context}
+     *  or create a new instance, register it, and start the security span.
+     *
+     * @param context context to check for existence of the security tracing
+     * @return existing or a new tracing instance to be used for tracing security events
+     */
+    public static SecurityTracing get(Context context) {
+        return tracing(context)
+                .orElseGet(() -> createTracing(Optional.of(context)));
     }
 
     private static SecurityTracing createTracing(Optional<Context> context) {
@@ -121,8 +133,8 @@ public final class SecurityTracing extends CommonTracing {
                 });
     }
 
-    private static Optional<SecurityTracing> tracing(Optional<Context> context) {
-        return context.flatMap(ctx -> ctx.get(SecurityTracing.class));
+    private static Optional<SecurityTracing> tracing(Context ctx) {
+        return ctx.get(SecurityTracing.class);
     }
 
     private static Optional<Span> newSpan(SpanTracingConfig spanConfig,

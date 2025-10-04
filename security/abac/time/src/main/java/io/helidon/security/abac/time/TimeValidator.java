@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.Set;
 
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityLevel;
@@ -54,6 +55,9 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  */
 public final class TimeValidator implements AbacValidator<TimeValidator.TimeConfig> {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final TypeName DAYS_OF_WEEK = TypeName.create(DaysOfWeek.class);
+    private static final TypeName TIME_OF_DAY = TypeName.create(TimeOfDay.class);
+    private static final TypeName TIMES_OF_DAY = TypeName.create(TimesOfDay.class);
 
     private TimeValidator() {
     }
@@ -88,26 +92,22 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
 
         for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
             for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
-                List<Annotation> annotations = new ArrayList<>();
+                List<io.helidon.common.types.Annotation> annotations = new ArrayList<>();
                 for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                    annotations.addAll(securityLevel.filterAnnotations(TypeName.create(annotation), scope));
                 }
-                for (Annotation annotation : annotations) {
-                    if (annotation instanceof DaysOfWeek) {
-                        DaysOfWeek daw = (DaysOfWeek) annotation;
-                        for (DayOfWeek dayOfWeek : daw.value()) {
-                            builder.addDaysOfWeek(dayOfWeek);
-                        }
-                    } else if (annotation instanceof TimesOfDay) {
-                        TimesOfDay tods = (TimesOfDay) annotation;
-                        for (TimeOfDay tod : tods.value()) {
-                            builder.addBetween(LocalTime.parse(tod.from()),
-                                               LocalTime.parse(tod.to()));
-                        }
-                    } else if (annotation instanceof TimeOfDay) {
-                        TimeOfDay tod = (TimeOfDay) annotation;
-                        builder.addBetween(LocalTime.parse(tod.from()),
-                                           LocalTime.parse(tod.to()));
+                for (var annotation : annotations) {
+                    TypeName typeName = annotation.typeName();
+                    if (DAYS_OF_WEEK.equals(typeName)) {
+                        annotation.enumValues(DayOfWeek.class)
+                                .orElseGet(List::of)
+                                .forEach(builder::addDaysOfWeek);
+                    } else if (TIMES_OF_DAY.equals(typeName)) {
+                        annotation.annotationValues()
+                                .orElseGet(List::of)
+                                .forEach(it -> addTimeOfDay(builder, it));
+                    } else if (TIME_OF_DAY.equals(typeName)) {
+                        addTimeOfDay(builder, annotation);
                     }
                 }
             }
@@ -126,6 +126,11 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
         return Set.of(TimesOfDay.class, TimeOfDay.class, DaysOfWeek.class);
     }
 
+    private void addTimeOfDay(TimeConfig.Builder builder, io.helidon.common.types.Annotation annotation) {
+        builder.addBetween(LocalTime.parse(annotation.stringValue("from").orElse(TimeOfDay.DEFAULT_FROM)),
+                           LocalTime.parse(annotation.stringValue("to").orElse(TimeOfDay.DEFAULT_TO)));
+    }
+
     /**
      * Constraint for a time of day.
      */
@@ -137,18 +142,31 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
     @Repeatable(TimesOfDay.class)
     public @interface TimeOfDay {
         /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(TimeOfDay.class);
+        /**
+         * Default from time.
+         */
+        String DEFAULT_FROM = "00:00:00";
+        /**
+         * Default to time.
+         */
+        String DEFAULT_TO = "23:59:59.999";
+
+        /**
          * Time after which this resource is accessible within a day.
          *
          * @return String formatted as "HH:mm:ss.SSS" - hours, minutes, seconds and milliseconds, or "HH:mm:ss", or "HH:mm"
          */
-        String from() default "00:00:00";
+        String from() default DEFAULT_FROM;
 
         /**
          * Time before which this resource is accessible within a day.
          *
          * @return String formatted as "HH:mm:ss.SSS" - hours, minutes, seconds and milliseconds, or "HH:mm:ss", or "HH:mm"
          */
-        String to() default "23:59:59.999";
+        String to() default DEFAULT_TO;
     }
 
     /**
@@ -177,6 +195,10 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
     @Inherited
     @AbacAnnotation
     public @interface DaysOfWeek {
+        /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(DaysOfWeek.class);
         /**
          * Return days of week this resource should be accessible on.
          *

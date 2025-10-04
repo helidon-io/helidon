@@ -44,6 +44,7 @@ module io.helidon.microprofile.security {
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
     requires transitive jersey.common;
+    requires io.helidon.metadata.reflection;
 
     exports io.helidon.microprofile.security;
     exports io.helidon.microprofile.security.spi;
