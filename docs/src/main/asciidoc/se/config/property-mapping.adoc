@@ -38,7 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 Although config values are originally text, you can use the config system's
 built-in conversions or add your own to translate text
 into Java primitive types and simple objects (such as `Double`), into `enum` values, and to
-express parts of the config tree as complex types (`List`, `Map`, and
+express parts of the config tree as complex types (`Collection`, `Map`, and
 custom types specific to your application). This section introduces how to
 use the built-in mappings and your own custom ones to convert to simple and
 complex types.
@@ -185,7 +185,7 @@ of a config tree to complex Java types.
 === Built-in Conversions to `List` and `Map`
 
 The `Config` class exposes several methods for mapping a structured config node
-to a Java `List` or `Map`. The link:{config-javadoc-base-url}/io/helidon/config/Config.html[JavaDoc]
+to a Java `Collection` or `Map`. The link:{config-javadoc-base-url}/io/helidon/config/Config.html[JavaDoc]
 contains complete details, but briefly your application can convert a structured `Config` node into:
 
 * a `List<T>` of a given type

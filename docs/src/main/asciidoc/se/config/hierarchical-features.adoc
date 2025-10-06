@@ -208,7 +208,7 @@ methods on the `Config` class to do this.
 |===
 |Method |Usage
 
-|`asNodeList()` |Returns a ConfigValue<List<Config>>. For nodes of type `OBJECT` contains child nodes as a `List`.
+|`asNodeList()` |Returns a ConfigValue<List<Config>>. For nodes of type `OBJECT` contains child nodes as a `Collection`.
 |`hasValue()` |For any node reports if the node has a value. This can be true for
 any node type except `MISSING`.
 |`isLeaf()` |Reports whether the node has no child nodes. Leaf nodes have no children
@@ -238,7 +238,7 @@ include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_3, 
 ----
 include::{sourcedir}/se/config/HierarchicalFeaturesSnippets.java[tag=snippet_4, indent=0]
 ----
-<1> Get child nodes of the `data.providers` _list_ node as a `List` of `Config` instances.
+<1> Get child nodes of the `data.providers` _list_ node as a `Collection` of `Config` instances.
 <2> Check that the list contains the expected child nodes with keys
 `data.providers.0` and `data.providers.1`.
 

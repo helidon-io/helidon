@@ -1766,6 +1766,12 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+
+            <dependency>
+                <groupId>io.helidon.validation</groupId>
+                <artifactId>helidon-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

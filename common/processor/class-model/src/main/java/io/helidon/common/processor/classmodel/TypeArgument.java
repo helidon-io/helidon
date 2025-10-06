@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -229,6 +230,16 @@ public final class TypeArgument extends Type implements TypeName {
     @Override
     public boolean vararg() {
         return false;
+    }
+
+    @Override
+    public List<Annotation> annotations() {
+        return List.of();
+    }
+
+    @Override
+    public List<Annotation> inheritedAnnotations() {
+        return List.of();
     }
 
     /**

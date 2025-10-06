@@ -193,7 +193,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                                                Element v,
                                                                                Elements elements,
                                                                                boolean varargType) {
-        TypeName type = AptTypeFactory.createTypeName(v).orElse(null);
+        TypeName type = AptTypeFactory.createTypeName(elements, v).orElse(null);
         TypeMirror typeMirror = null;
         String defaultValue = null;
         List<TypedElementInfo> params = List.of();
