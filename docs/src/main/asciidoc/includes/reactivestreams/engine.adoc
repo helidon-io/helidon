@@ -84,7 +84,7 @@ include::{sourcedir}/includes/reactivestreams/EngineSnippets.java[tag=snippet_2,
 |observeOn|Re-emit the upstream's signals to the downstream on the given executor's thread.
 |forEach|Terminal stage, invokes provided consumer for every item in the stream with no backpressure.
 |forEachCompletionStage|Terminal stage, invokes provided function for every item in the stream with strict backpressure, requests another item only when previous operation is finished.
-|collectList|Collect the items of this `Multi` instance into a `Single` of `List`.
+|collectList|Collect the items of this `Multi` instance into a `Single` of `Collection`.
 |collect|Collect the items of this `Multi` instance into a `Single`.
 |collect|Collect the items of this `Multi` into a collection provided via a `Supplier` and mutated by a `BiConsumer` callback.
 |collectStream|Collects up upstream items with the help of the callbacks of a `java.util.stream.Collector`.

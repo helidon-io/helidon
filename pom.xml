@@ -250,6 +250,7 @@
         <module>transaction</module>
         <module>telemetry</module>
         <module>json</module>
+        <module>validation</module>
     </modules>
 
     <build>

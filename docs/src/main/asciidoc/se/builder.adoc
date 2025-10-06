@@ -78,7 +78,7 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
 - Automatic Javadoc generation.
 - Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
 - Optional generation of factory, prototype, and builder methods.
-- Supports `List`, `Set`, and `Map` collections.
+- Supports `Collection`, `Set`, and `Map` collections.
 - Explicit default value support for common types (`String`, `int`, `long`, `boolean`, etc.).
 - Enumeration support.
 
