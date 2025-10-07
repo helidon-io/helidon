@@ -39,16 +39,12 @@ class TestLogWarningFix {
     void testLogWarningAbsent() {
         var testHandler = new MonitoringHandler();
         SNAKE_YAML_INTROSPECTOR_LOGGER.addHandler(testHandler);
-        String originalSetting = System.setProperty("openapi.parsing.warnings.enabled", "true");
         try {
 
             OpenAPI openAPI = parse("/openapi-greeting.yml");
             assertThat("Warning messages", testHandler.messages(), is(Collections.emptyList()));
 
         } finally {
-            if  (originalSetting != null) {
-                System.setProperty("openapi.parsing.warnings.enabled", "false");
-            }
             SNAKE_YAML_INTROSPECTOR_LOGGER.removeHandler(testHandler);
         }
     }
