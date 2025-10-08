@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.common.types.TypeName;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,5 +59,35 @@ class ImportOrganizerTest {
 
         List<String> imports = io.imports();
         assertThat(imports, empty());
+    }
+
+    @Test
+    void testImportDoubleInnerType() throws IOException {
+        TypeName typeNameLevel = TypeName.create("io.helidon.service.registry.Interception.Interceptor.Chain");
+        TypeName parentType = TypeName.create("io.helidon.service.registry.Interception.Interceptor");
+
+        assertThat(typeNameLevel.className(), is("Chain"));
+        assertThat(typeNameLevel.enclosingNames(), hasItems("Interception", "Interceptor"));
+        assertThat(typeNameLevel.packageName(), is("io.helidon.service.registry"));
+
+        Type type = Type.fromTypeName(typeNameLevel);
+        assertThat(type.packageName(), is("io.helidon.service.registry"));
+        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(parentType))));
+        assertThat(type.innerClass(), is(true));
+
+        ImportOrganizer io = ImportOrganizer.builder()
+                .typeName("io.helidon.NotImportant")
+                .packageName("io.helidon")
+                .addImport(type)
+                .build();
+        StringWriter writer = new StringWriter();
+        ModelWriter modelWriter = new ModelWriter(writer, "");
+        type.writeComponent(modelWriter, Set.of(), io, ClassType.CLASS);
+
+        String written = writer.toString();
+        assertThat(written, is("Interception.Interceptor.Chain"));
+
+        List<String> imports = io.imports();
+        assertThat(imports, hasItem("io.helidon.service.registry.Interception"));
     }
 }

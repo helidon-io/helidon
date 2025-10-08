@@ -1313,6 +1313,10 @@
             <groupId>io.helidon.json.schema</groupId>
             <artifactId>helidon-json-schema-codegen</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.validation</groupId>
+            <artifactId>helidon-validation</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

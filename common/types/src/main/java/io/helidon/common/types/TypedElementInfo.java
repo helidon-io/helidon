@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
@@ -61,6 +62,183 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
      * @return provides the {typeName}{space}{elementName}
      */
     String toDeclaration();
+
+    /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Override
+    Optional<String> description();
+
+    /**
+     * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+     * the method.
+     *
+     * @return the type name of the element
+     */
+    @Override
+    TypeName typeName();
+
+    /**
+     * The element (e.g., method, field, etc) name.
+     *
+     * @return the name of the element
+     */
+    @Override
+    String elementName();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#kind()} instead
+     * @see io.helidon.common.types.TypeInfo
+     */
+    @Override
+    String elementTypeKind();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     * @see io.helidon.common.types.ElementKind
+     */
+    @Override
+    ElementKind kind();
+
+    /**
+     * The default value assigned to the element, represented as a string.
+     *
+     * @return the default value as a string
+     */
+    @Override
+    Optional<String> defaultValue();
+
+    /**
+     * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
+     *
+     * @return the list of annotations on this element's (return) type.
+     */
+    @Override
+    List<Annotation> elementTypeAnnotations();
+
+    /**
+     * Returns the component type names describing the element.
+     *
+     * @return the component type names of the element
+     */
+    @Override
+    List<TypeName> componentTypes();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @deprecated use {@link io.helidon.common.types.TypedElementInfo#elementModifiers()} instead
+     * @see io.helidon.common.types.TypeInfo
+     */
+    @Override
+    Set<String> modifiers();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @see io.helidon.common.types.Modifier
+     * @see #accessModifier()
+     */
+    @Override
+    Set<Modifier> elementModifiers();
+
+    /**
+     * Access modifier of the element.
+     *
+     * @return access modifier
+     */
+    @Override
+    AccessModifier accessModifier();
+
+    /**
+     * The enclosing type name for this typed element. Applicable when this instance represents a
+     * {@link io.helidon.common.types.ElementKind#FIELD}, or
+     * {@link io.helidon.common.types.ElementKind#METHOD}, or
+     * {@link io.helidon.common.types.ElementKind#PARAMETER}
+     *
+     * @return the enclosing type element
+     */
+    @Override
+    Optional<TypeName> enclosingType();
+
+    /**
+     * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.ElementKind#METHOD}.
+     * Each instance of this list
+     * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
+     *
+     * @return the list of parameters belonging to this method if applicable
+     */
+    @Override
+    List<TypedElementInfo> parameterArguments();
+
+    /**
+     * List of all thrown types that are checked ({@link java.lang.Exception} and {@link java.lang.Error}).
+     *
+     * @return set of thrown checked types
+     */
+    @Override
+    Set<TypeName> throwsChecked();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment we are in - it may be an {@code Element} in annotation processing,
+     * or a {@code MethodInfo} (and such) when using classpath scanning.
+     *
+     * @return originating element
+     */
+    @Override
+    Optional<Object> originatingElement();
+
+    /**
+     * Signature of this element.
+     *
+     * @return signature of this element
+     * @see io.helidon.common.types.ElementSignature
+     */
+    @Override
+    ElementSignature signature();
+
+    /**
+     * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+     * this would return the generic type {@code T} with no upper or lower bounds.
+     *
+     * @return list of type parameters of this element
+     */
+    @Override
+    List<TypeName> typeParameters();
+
+    /**
+     * List of declared and known annotations for this element.
+     * Note that "known" implies that the annotation is visible, which depends
+     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+     *
+     * @return the list of annotations declared on this element
+     */
+    @Override
+    List<Annotation> annotations();
+
+    /**
+     * List of all inherited annotations for this element. Inherited annotations are annotations declared
+     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+     * <p>
+     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+     * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
+     *
+     * @return list of all meta annotations of this element
+     */
+    @Override
+    List<Annotation> inheritedAnnotations();
 
     /**
      * Fluent API builder base for {@link TypedElementInfo}.
@@ -1225,21 +1403,21 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
              * @param builder extending builder base of this prototype
              */
             protected TypedElementInfoImpl(TypedElementInfo.BuilderBase<?, ?> builder) {
-                this.description = builder.description();
+                this.description = builder.description().map(Function.identity());
                 this.typeName = builder.typeName().get();
                 this.elementName = builder.elementName().get();
                 this.elementTypeKind = builder.elementTypeKind().get();
                 this.kind = builder.kind().get();
-                this.defaultValue = builder.defaultValue();
+                this.defaultValue = builder.defaultValue().map(Function.identity());
                 this.elementTypeAnnotations = List.copyOf(builder.elementTypeAnnotations());
                 this.componentTypes = List.copyOf(builder.componentTypes());
                 this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
                 this.elementModifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.elementModifiers()));
                 this.accessModifier = builder.accessModifier().get();
-                this.enclosingType = builder.enclosingType();
+                this.enclosingType = builder.enclosingType().map(Function.identity());
                 this.parameterArguments = List.copyOf(builder.parameterArguments());
                 this.throwsChecked = Collections.unmodifiableSet(new LinkedHashSet<>(builder.throwsChecked()));
-                this.originatingElement = builder.originatingElement();
+                this.originatingElement = builder.originatingElement().map(Function.identity());
                 this.signature = builder.signature().get();
                 this.typeParameters = List.copyOf(builder.typeParameters());
                 this.annotations = List.copyOf(builder.annotations());
@@ -1366,9 +1544,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                         && Objects.equals(parameterArguments, other.parameterArguments())
                         && Objects.equals(throwsChecked, other.throwsChecked())
                         && Objects.equals(signature, other.signature())
-                        && Objects.equals(typeParameters, other.typeParameters())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                        && Objects.equals(typeParameters, other.typeParameters());
             }
 
             @Override
@@ -1380,9 +1556,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                                     parameterArguments,
                                     throwsChecked,
                                     signature,
-                                    typeParameters,
-                                    annotations,
-                                    inheritedAnnotations);
+                                    typeParameters);
             }
 
         }

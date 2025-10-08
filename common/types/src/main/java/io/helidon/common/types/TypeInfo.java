@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
@@ -56,6 +57,199 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     static TypeInfo.Builder builder(TypeInfo instance) {
         return TypeInfo.builder().from(instance);
     }
+
+    /**
+     * The type name.
+     * This type name represents the type usage of this type
+     * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+     * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
+     *
+     * @return the type name
+     */
+    @Override
+    TypeName typeName();
+
+    /**
+     * The raw type name. This is a unique identification of a type, containing ONLY:
+     * <ul>
+     *  <li>{@link TypeName#packageName()}</li>
+     *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+     *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+     * </ul>
+     *
+     * @return raw type of this type info
+     */
+    @Override
+    TypeName rawType();
+
+    /**
+     * The declared type name, including type parameters.
+     *
+     * @return type name with declared type parameters
+     */
+    @Override
+    TypeName declaredType();
+
+    /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Override
+    Optional<String> description();
+
+    /**
+     * The type element kind.
+     * <p>
+     * Such as
+     * <ul>
+     *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
+     *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
+     *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
+     * </ul>
+     *
+     * @return the type element kind.
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
+     * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
+     */
+    @Override
+    String typeKind();
+
+    /**
+     * The kind of this type.
+     * <p>
+     * Such as:
+     * <ul>
+     *     <li>{@link io.helidon.common.types.ElementKind#CLASS}</li>
+     *     <li>{@link io.helidon.common.types.ElementKind#INTERFACE}</li>
+     *     <li>{@link io.helidon.common.types.ElementKind#ANNOTATION_TYPE}</li>
+     * </ul>
+     *
+     * @return element kind of this type
+     */
+    @Override
+    ElementKind kind();
+
+    /**
+     * The elements that make up the type that are relevant for processing.
+     *
+     * @return the elements that make up the type that are relevant for processing
+     */
+    @Override
+    List<TypedElementInfo> elementInfo();
+
+    /**
+     * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
+     * processing.
+     *
+     * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
+     */
+    @Override
+    List<TypedElementInfo> otherElementInfo();
+
+    /**
+     * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+     * type arguments will have
+     * its annotations added here. Note that this only applies to non-built-in types.
+     *
+     * @return all referenced types
+     */
+    @Override
+    Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations();
+
+    /**
+     * Populated if the (external) module name containing the type is known.
+     *
+     * @return type names to its associated defining module name
+     */
+    @Override
+    Map<TypeName, String> referencedModuleNames();
+
+    /**
+     * The parent/super class for this type info.
+     *
+     * @return the super type
+     */
+    @Override
+    Optional<TypeInfo> superTypeInfo();
+
+    /**
+     * The interface classes for this type info.
+     *
+     * @return the interface type info
+     */
+    @Override
+    List<TypeInfo> interfaceTypeInfo();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
+     * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
+     */
+    @Override
+    Set<String> modifiers();
+
+    /**
+     * Type modifiers.
+     *
+     * @return set of modifiers that are present on the type (and that we understand)
+     * @see io.helidon.common.types.Modifier
+     * @see #accessModifier()
+     */
+    @Override
+    Set<Modifier> elementModifiers();
+
+    /**
+     * Access modifier.
+     *
+     * @return access modifier
+     */
+    @Override
+    AccessModifier accessModifier();
+
+    /**
+     * Module of this type, if available.
+     *
+     * @return module name
+     */
+    @Override
+    Optional<String> module();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
+     *
+     * @return originating element
+     */
+    @Override
+    Optional<Object> originatingElement();
+
+    /**
+     * List of declared and known annotations for this element.
+     * Note that "known" implies that the annotation is visible, which depends
+     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+     *
+     * @return the list of annotations declared on this element
+     */
+    @Override
+    List<Annotation> annotations();
+
+    /**
+     * List of all inherited annotations for this element. Inherited annotations are annotations declared
+     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+     * <p>
+     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+     * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
+     *
+     * @return list of all meta annotations of this element
+     */
+    @Override
+    List<Annotation> inheritedAnnotations();
 
     /**
      * Fluent API builder base for {@link TypeInfo}.
@@ -545,6 +739,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          * This method replaces all values with the new ones.
          *
          * @param referencedTypeNamesToAnnotations all referenced types
@@ -560,6 +757,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          * This method keeps existing values, then puts all new values into the map.
          *
          * @param referencedTypeNamesToAnnotations all referenced types
@@ -574,6 +774,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          * This method adds a new value to the map value, or creates a new value.
          *
          * @param key key to add to
@@ -593,6 +796,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          * This method adds a new value to the map value, or creates a new value.
          *
          * @param key key to add to
@@ -612,6 +818,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
          * @param key key to add or replace
@@ -627,13 +836,14 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Populated if the (external) module name containing the type is known.
          * This method replaces all values with the new ones.
          *
          * @param referencedModuleNames type names to its associated defining module name
          * @return updated builder instance
          * @see #referencedModuleNames()
          */
-        public BUILDER referencedModuleNames(Map<? extends TypeName, ? extends String> referencedModuleNames) {
+        public BUILDER referencedModuleNames(Map<? extends TypeName, String> referencedModuleNames) {
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.clear();
             this.referencedModuleNames.putAll(referencedModuleNames);
@@ -641,19 +851,21 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Populated if the (external) module name containing the type is known.
          * This method keeps existing values, then puts all new values into the map.
          *
          * @param referencedModuleNames type names to its associated defining module name
          * @return updated builder instance
          * @see #referencedModuleNames()
          */
-        public BUILDER addReferencedModuleNames(Map<? extends TypeName, ? extends String> referencedModuleNames) {
+        public BUILDER addReferencedModuleNames(Map<? extends TypeName, String> referencedModuleNames) {
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.putAll(referencedModuleNames);
             return self();
         }
 
         /**
+         * Populated if the (external) module name containing the type is known.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
          * @param key key to add or replace
@@ -772,7 +984,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER modifiers(Set<? extends String> modifiers) {
+        public BUILDER modifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
@@ -786,7 +998,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER addModifiers(Set<? extends String> modifiers) {
+        public BUILDER addModifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.addAll(modifiers);
             return self();
@@ -1416,7 +1628,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.typeName = builder.typeName().get();
                 this.rawType = builder.rawType().get();
                 this.declaredType = builder.declaredType().get();
-                this.description = builder.description();
+                this.description = builder.description().map(Function.identity());
                 this.typeKind = builder.typeKind().get();
                 this.kind = builder.kind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
@@ -1424,13 +1636,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.referencedTypeNamesToAnnotations =
                         Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedTypeNamesToAnnotations()));
                 this.referencedModuleNames = Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedModuleNames()));
-                this.superTypeInfo = builder.superTypeInfo();
+                this.superTypeInfo = builder.superTypeInfo().map(Function.identity());
                 this.interfaceTypeInfo = List.copyOf(builder.interfaceTypeInfo());
                 this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
                 this.elementModifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.elementModifiers()));
                 this.accessModifier = builder.accessModifier().get();
-                this.module = builder.module();
-                this.originatingElement = builder.originatingElement();
+                this.module = builder.module().map(Function.identity());
+                this.originatingElement = builder.originatingElement().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
@@ -1563,9 +1775,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         && Objects.equals(superTypeInfo, other.superTypeInfo())
                         && Objects.equals(elementModifiers, other.elementModifiers())
                         && Objects.equals(accessModifier, other.accessModifier())
-                        && Objects.equals(module, other.module())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                        && Objects.equals(module, other.module());
             }
 
             @Override
@@ -1578,9 +1788,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                                     superTypeInfo,
                                     elementModifiers,
                                     accessModifier,
-                                    module,
-                                    annotations,
-                                    inheritedAnnotations);
+                                    module);
             }
 
         }
