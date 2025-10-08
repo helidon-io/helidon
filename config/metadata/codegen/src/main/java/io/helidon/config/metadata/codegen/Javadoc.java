@@ -18,6 +18,12 @@ package io.helidon.config.metadata.codegen;
 
 import java.util.regex.Pattern;
 
+import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.RoundContext;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
+
 import static io.helidon.codegen.CodegenUtil.capitalize;
 
 /*
@@ -38,8 +44,8 @@ final class Javadoc {
     }
 
     // for existing usages
-    static String parse(String javadoc) {
-        return parse(javadoc, true);
+    static String parse(RoundContext roundContext, TypeInfo currentType, String javadoc) {
+        return parse(roundContext, currentType, javadoc, true);
     }
 
     /**
@@ -60,7 +66,7 @@ final class Javadoc {
      * @param docComment "raw" javadoc from the source code
      * @return description of the option
      */
-    static String parse(String docComment, boolean includeReturn) {
+    static String parse(RoundContext roundContext, TypeInfo currentType, String docComment, boolean includeReturn) {
         if (docComment == null) {
             return "";
         }
@@ -77,7 +83,8 @@ final class Javadoc {
         // replace all {@link ...} with just the name
         javadoc = JAVADOC_LINKPLAIN.matcher(javadoc).replaceAll(it -> javadocLink(it.group(1)));
         // replace all {@value ...} with just the reference
-        javadoc = JAVADOC_VALUE.matcher(javadoc).replaceAll(it -> javadocValue(it.group(1)));
+        javadoc = JAVADOC_VALUE.matcher(javadoc)
+                .replaceAll(it -> javadocConstantValue(roundContext, currentType, it.group(1)));
 
         int count = 9;
         index = javadoc.indexOf(" @return");
@@ -133,5 +140,55 @@ final class Javadoc {
             return originalValue.substring(1);
         }
         return originalValue.replace('#', '.');
+    }
+
+    private static String javadocConstantValue(RoundContext roundContext, TypeInfo currentType, String originalValue) {
+        if (originalValue.startsWith("#")) {
+            // constant is in this class
+            String constantName = originalValue.substring(1);
+
+            return constantValue(currentType, originalValue, constantName);
+        } else {
+            int separator = originalValue.lastIndexOf('#');
+            if (separator < 0) {
+                return javadocValue(originalValue);
+            }
+            TypeName typeName = TypeName.create(originalValue.substring(0, separator));
+            if (typeName.packageName().isEmpty()) {
+                typeName = TypeName.builder(typeName)
+                        .packageName(currentType.typeName().packageName())
+                        .build();
+            }
+            String constantName = originalValue.substring(separator + 1);
+            // constant is in a different class, if there is no package information, we are in trouble - we will consider
+            // this to be in this package, otherwise we will just use the value as present in the javadoc
+            var constantType = roundContext.typeInfo(typeName);
+            if (constantType.isEmpty()) {
+                return javadocValue(originalValue);
+            }
+
+            return constantValue(constantType.get(), originalValue, constantName);
+        }
+    }
+
+    private static String constantValue(TypeInfo currentType, String originalValue, String constantName) {
+        var fieldValue = currentType.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isField)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates.elementName(constantName))
+                .findFirst()
+                .flatMap(TypedElementInfo::defaultValue);
+
+        if (fieldValue.isEmpty()) {
+            return javadocValue(originalValue);
+        }
+        var constantValue = fieldValue.get();
+        // this is a value
+        // if it contains `, we must replace it
+        // if it contains $, we must escape it
+        constantValue = constantValue.replace('`', '"');
+        constantValue = constantValue.replaceAll("\\$", "\\\\\\$");
+        return "`" + constantValue + "`";
     }
 }

@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -59,7 +60,7 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
     - return type is the one to use
      */
     @Override
-    public TypeHandlerResult handle() {
+    public TypeHandlerResult handle(RoundContext roundContext) {
         TypeName prototype = prototype(blueprintType);
         TypeName builderType = TypeName.builder(prototype)
                 .className("Builder")
@@ -95,7 +96,9 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .filter(Predicate.not(ElementInfoPredicates::isDefault))
                 .filter(ElementInfoPredicates.hasAnnotation(OPTION_CONFIGURED))
-                .forEach(it -> processBlueprintMethod(builderType,
+                .forEach(it -> processBlueprintMethod(roundContext,
+                                                      blueprint,
+                                                      builderType,
                                                       type,
                                                       it));
 
@@ -125,6 +128,12 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                 addSuperClasses(type, interfaceInfo, requiredAnnotation);
             }
         }
+    }
+
+    // for blueprints, we only want the description, not the return information (as it duplicates information)
+    @Override
+    String javadoc(RoundContext roundContext, TypeInfo currentType, String docComment) {
+        return Javadoc.parse(roundContext, currentType, docComment, false);
     }
 
     private static TypeName prototype(TypeName blueprintType) {
@@ -170,13 +179,13 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         if (returnType.isOptional()) {
             // may be an optional of list etc.
             if (!(returnType.isMap() || returnType.isSet() || returnType.isList())) {
-                return new OptionType(returnType.typeArguments().get(0), "VALUE");
+                return new OptionType(returnType.typeArguments().getFirst(), "VALUE");
             }
-            returnType = returnType.typeArguments().get(0);
+            returnType = returnType.typeArguments().getFirst();
         }
 
         if (returnType.isList() || returnType.isSet()) {
-            return new OptionType(returnType.typeArguments().get(0), "LIST");
+            return new OptionType(returnType.typeArguments().getFirst(), "LIST");
         }
 
         if (returnType.isMap()) {
@@ -186,12 +195,16 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         return new OptionType(returnType.boxed(), annotation.kind());
     }
 
-    private void processBlueprintMethod(TypeName typeName, ConfiguredType configuredType, TypedElementInfo elementInfo) {
+    private void processBlueprintMethod(RoundContext roundContext,
+                                        TypeInfo currentType,
+                                        TypeName typeName,
+                                        ConfiguredType configuredType,
+                                        TypedElementInfo elementInfo) {
         // we always have exactly one option per method
         ConfiguredOptionData data = ConfiguredOptionData.createBuilder(elementInfo);
 
         String name = key(elementInfo, data);
-        String description = description(elementInfo, data);
+        String description = description(roundContext, currentType, elementInfo, data);
         String defaultValue = defaultValue(data.defaultValue());
         boolean experimental = data.experimental();
         OptionType type = typeForBlueprintFromSignature(elementInfo, data);
@@ -206,9 +219,9 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         if (enumType.isPresent() && defaultValue != null) {
             // prefix the default value with the enum name to make it more readable
             defaultValue = type.elementType().className() + "." + defaultValue;
-            allowedValues = allowedValuesEnum(data, enumType.get());
+            allowedValues = allowedValuesEnum(roundContext, data, enumType.get());
         } else {
-            allowedValues = allowedValues(data, type.elementType());
+            allowedValues = allowedValues(roundContext, data, type.elementType());
         }
 
         List<TypeName> paramTypes = List.of(elementInfo.typeName());
@@ -232,11 +245,5 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                                                                                            data.merge(),
                                                                                            allowedValues);
         configuredType.addProperty(property);
-    }
-
-    // for blueprints, we only want the description, not the return information (as it duplicates information)
-    @Override
-    String javadoc(String docComment) {
-        return Javadoc.parse(docComment, false);
     }
 }
