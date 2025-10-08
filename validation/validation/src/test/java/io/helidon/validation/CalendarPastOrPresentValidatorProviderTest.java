@@ -43,6 +43,7 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -61,7 +62,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeName.create(Date.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Date.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         var response = validator.check(ctx, null);
 
@@ -70,7 +72,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Date.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Date.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past date
         var pastDate = new Date(fixedClock.instant().minus(1, ChronoUnit.DAYS).toEpochMilli());
@@ -86,12 +89,14 @@ public class CalendarPastOrPresentValidatorProviderTest {
         var futureDate = new Date(fixedClock.instant().plus(1, ChronoUnit.DAYS).toEpochMilli());
         response = validator.check(ctx, futureDate);
         assertThat(response.failed(), is(true));
-        assertThat(response.message(), is("Tue Jan 16 13:00:00 CET 2024 must be past or present date/time"));
+        // cannot use equals, as Date uses the default time zone, which messes the whole thing up
+        assertThat(response.message(), containsString("2024 must be past or present date/time"));
     }
 
     @Test
     public void testCalendarPastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Calendar.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Calendar.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past calendar
         var pastCalendar = Calendar.getInstance();
@@ -114,7 +119,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testInstantPastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Instant.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Instant.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past instant
         var pastInstant = fixedClock.instant().minus(1, ChronoUnit.DAYS);
@@ -134,7 +140,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalDate.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalDate.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past local date
         var pastDate = LocalDate.now(fixedClock).minusDays(1);
@@ -154,7 +161,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalDateTimePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past local date time
         var pastDateTime = LocalDateTime.now(fixedClock).minusDays(1);
@@ -174,7 +182,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalTimePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalTime.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalTime.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past local time
         var pastTime = LocalTime.now(fixedClock).minusHours(1);
@@ -194,7 +203,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testMonthDayPastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(MonthDay.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(MonthDay.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past month day (earlier in year) - January 14th should be past relative to January 15th
         var pastMonthDay = MonthDay.of(1, 14); // January 14th
@@ -214,7 +224,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testOffsetDateTimePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past offset date time
         var pastOffsetDateTime = OffsetDateTime.now(fixedClock).minusDays(1);
@@ -234,7 +245,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testOffsetTimePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(OffsetTime.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(OffsetTime.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past offset time
         var pastOffsetTime = OffsetTime.now(fixedClock).minusHours(1);
@@ -254,7 +266,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testYearPastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Year.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Year.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past year
         var pastYear = Year.now(fixedClock).minusYears(1);
@@ -274,7 +287,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testYearMonthPastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(YearMonth.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(YearMonth.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past year month
         var pastYearMonth = YearMonth.now(fixedClock).minusMonths(1);
@@ -294,7 +308,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testZonedDateTimePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past zoned date time
         var pastZonedDateTime = ZonedDateTime.now(fixedClock).minusDays(1);
@@ -314,7 +329,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testHijrahDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(HijrahDate.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(HijrahDate.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past hijrah date
         var pastHijrahDate = HijrahDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -334,7 +350,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testJapaneseDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past japanese date
         var pastJapaneseDate = JapaneseDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -354,7 +371,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testMinguoDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(MinguoDate.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(MinguoDate.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past minguo date
         var pastMinguoDate = MinguoDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -374,7 +392,8 @@ public class CalendarPastOrPresentValidatorProviderTest {
 
     @Test
     public void testThaiBuddhistDatePastOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class), Annotation.create(Check.Calendar.PastOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class),
+                                                 Annotation.create(Check.Calendar.PastOrPresent.class));
 
         // Past thai buddhist date
         var pastThaiBuddhistDate = ThaiBuddhistDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);
