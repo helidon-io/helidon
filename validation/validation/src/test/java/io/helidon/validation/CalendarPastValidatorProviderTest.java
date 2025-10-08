@@ -43,6 +43,7 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -81,7 +82,8 @@ public class CalendarPastValidatorProviderTest {
         var futureDate = new Date(fixedClock.instant().plus(1, ChronoUnit.DAYS).toEpochMilli());
         response = validator.check(ctx, futureDate);
         assertThat(response.failed(), is(true));
-        assertThat(response.message(), is("Tue Jan 16 13:00:00 CET 2024 must be past date/time"));
+        // cannot use equals, as Date uses the default time zone, which messes the whole thing up
+        assertThat(response.message(), containsString("2024 must be past date/time"));
     }
 
     @Test
@@ -133,7 +135,8 @@ public class CalendarPastValidatorProviderTest {
 
     @Test
     public void testLocalDateTimePast() {
-        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class), Annotation.create(Check.Calendar.Past.class));
+        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class),
+                                                 Annotation.create(Check.Calendar.Past.class));
 
         // Past local date time
         var pastDateTime = LocalDateTime.now(fixedClock).minusDays(1);
@@ -178,7 +181,8 @@ public class CalendarPastValidatorProviderTest {
 
     @Test
     public void testOffsetDateTimePast() {
-        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class), Annotation.create(Check.Calendar.Past.class));
+        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class),
+                                                 Annotation.create(Check.Calendar.Past.class));
 
         // Past offset date time
         var pastOffsetDateTime = OffsetDateTime.now(fixedClock).minusDays(1);
@@ -238,7 +242,8 @@ public class CalendarPastValidatorProviderTest {
 
     @Test
     public void testZonedDateTimePast() {
-        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class), Annotation.create(Check.Calendar.Past.class));
+        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class),
+                                                 Annotation.create(Check.Calendar.Past.class));
 
         // Past zoned date time
         var pastZonedDateTime = ZonedDateTime.now(fixedClock).minusDays(1);
@@ -268,7 +273,8 @@ public class CalendarPastValidatorProviderTest {
 
     @Test
     public void testJapaneseDatePast() {
-        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class), Annotation.create(Check.Calendar.Past.class));
+        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class),
+                                                 Annotation.create(Check.Calendar.Past.class));
 
         // Past japanese date
         var pastJapaneseDate = JapaneseDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -298,7 +304,8 @@ public class CalendarPastValidatorProviderTest {
 
     @Test
     public void testThaiBuddhistDatePast() {
-        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class), Annotation.create(Check.Calendar.Past.class));
+        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class),
+                                                 Annotation.create(Check.Calendar.Past.class));
 
         // Past thai buddhist date
         var pastThaiBuddhistDate = ThaiBuddhistDate.now(fixedClock).minus(1, java.time.temporal.ChronoUnit.DAYS);

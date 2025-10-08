@@ -43,6 +43,7 @@ import io.helidon.validation.spi.ConstraintValidatorProvider;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -61,7 +62,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeName.create(Date.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Date.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         var response = validator.check(ctx, null);
 
@@ -70,7 +72,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Date.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Date.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future date
         var futureDate = new Date(fixedClock.instant().plus(1, ChronoUnit.DAYS).toEpochMilli());
@@ -86,12 +89,14 @@ public class CalendarFutureOrPresentValidatorProviderTest {
         var pastDate = new Date(fixedClock.instant().minus(1, ChronoUnit.DAYS).toEpochMilli());
         response = validator.check(ctx, pastDate);
         assertThat(response.failed(), is(true));
-        assertThat(response.message(), is("Sun Jan 14 13:00:00 CET 2024 must be present or future date/time"));
+        // cannot use equals, as Date uses the default time zone, which messes the whole thing up
+        assertThat(response.message(), containsString("2024 must be present or future date/time"));
     }
 
     @Test
     public void testCalendarFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Calendar.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Calendar.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future calendar
         var futureCalendar = Calendar.getInstance();
@@ -114,7 +119,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testInstantFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Instant.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Instant.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future instant
         var futureInstant = fixedClock.instant().plus(1, ChronoUnit.DAYS);
@@ -134,7 +140,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalDate.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalDate.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future local date
         var futureDate = LocalDate.now(fixedClock).plusDays(1);
@@ -154,7 +161,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalDateTimeFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalDateTime.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future local date time
         var futureDateTime = LocalDateTime.now(fixedClock).plusDays(1);
@@ -174,7 +182,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testLocalTimeFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(LocalTime.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(LocalTime.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future local time
         var futureTime = LocalTime.now(fixedClock).plusHours(1);
@@ -194,7 +203,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testMonthDayFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(MonthDay.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(MonthDay.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future month day (later in year) - February should be future in January
         var futureMonthDay = MonthDay.of(2, 15); // February 15th
@@ -214,7 +224,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testOffsetDateTimeFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(OffsetDateTime.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future offset date time
         var futureOffsetDateTime = OffsetDateTime.now(fixedClock).plusDays(1);
@@ -234,7 +245,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testOffsetTimeFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(OffsetTime.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(OffsetTime.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future offset time
         var futureOffsetTime = OffsetTime.now(fixedClock).plusHours(1);
@@ -254,7 +266,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testYearFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(Year.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(Year.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future year
         var futureYear = Year.now(fixedClock).plusYears(1);
@@ -274,7 +287,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testYearMonthFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(YearMonth.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(YearMonth.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future year month
         var futureYearMonth = YearMonth.now(fixedClock).plusMonths(1);
@@ -294,7 +308,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testZonedDateTimeFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(ZonedDateTime.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future zoned date time
         var futureZonedDateTime = ZonedDateTime.now(fixedClock).plusDays(1);
@@ -314,7 +329,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testHijrahDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(HijrahDate.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(HijrahDate.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future hijrah date
         var futureHijrahDate = HijrahDate.now(fixedClock).plus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -334,7 +350,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testJapaneseDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(JapaneseDate.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future japanese date
         var futureJapaneseDate = JapaneseDate.now(fixedClock).plus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -354,7 +371,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testMinguoDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(MinguoDate.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(MinguoDate.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future minguo date
         var futureMinguoDate = MinguoDate.now(fixedClock).plus(1, java.time.temporal.ChronoUnit.DAYS);
@@ -374,7 +392,8 @@ public class CalendarFutureOrPresentValidatorProviderTest {
 
     @Test
     public void testThaiBuddhistDateFutureOrPresent() {
-        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class), Annotation.create(Check.Calendar.FutureOrPresent.class));
+        var validator = validatorProvider.create(TypeName.create(ThaiBuddhistDate.class),
+                                                 Annotation.create(Check.Calendar.FutureOrPresent.class));
 
         // Future thai buddhist date
         var futureThaiBuddhistDate = ThaiBuddhistDate.now(fixedClock).plus(1, java.time.temporal.ChronoUnit.DAYS);
