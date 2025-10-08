@@ -25,24 +25,35 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONSTRAINT;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALIDATED;
 
+/**
+ * Java {@link java.util.ServiceLoader} provider implementation for
+ * {@link io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider} that generates required
+ * services to handle declarative validation.
+ */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 public class ValidationExtensionProvider implements RegistryCodegenExtensionProvider {
+    /**
+     * Default constructor.
+     *
+     * @deprecated required by Java {@link java.util.ServiceLoader}
+     */
+    @Deprecated
     public ValidationExtensionProvider() {
     }
 
     @Override
     public Set<TypeName> supportedAnnotations() {
         return Set.of(VALIDATION_VALIDATED,
-                      VALIDATION_VALID);
+                      CHECK_VALID);
     }
 
     @Override
     public Set<TypeName> supportedMetaAnnotations() {
-        return Set.of(CONSTRAINT);
+        return Set.of(VALIDATION_CONSTRAINT);
     }
 
     @Override

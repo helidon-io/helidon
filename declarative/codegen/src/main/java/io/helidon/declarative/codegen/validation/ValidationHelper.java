@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.declarative.codegen.validation;
 
 import java.util.ArrayList;
@@ -14,18 +30,18 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.FieldHandler;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VALIDATOR;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VALIDATOR_PROVIDER;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONSTANT_VALIDATOR_PROVIDER;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONSTRAINT_VALIDATOR;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_TYPE_VALIDATOR;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.TYPE_VALIDATOR;
 
-class ValidationHelper {
+final class ValidationHelper {
     private ValidationHelper() {
     }
 
     static String addTypeValidator(FieldHandler fieldHandler, TypeName validatedType) {
-        TypeName validatorType = TypeName.builder(VALIDATION_TYPE_VALIDATOR)
+        TypeName validatorType = TypeName.builder(TYPE_VALIDATOR)
                 .addTypeArgument(validatedType)
                 .build();
 
@@ -69,7 +85,6 @@ class ValidationHelper {
                                              ContentBuilder<?> contentBuilder,
                                              FieldHandler fieldHandler,
                                              TypedElementInfo element,
-                                             String location,
                                              String localVariableName) {
         TypeName typeName = element.typeName();
 
@@ -78,121 +93,24 @@ class ValidationHelper {
                 || typeName.equals(TypeNames.LIST)
                 || typeName.equals(TypeNames.COLLECTION)
                 || typeName.equals(TypeNames.OPTIONAL)) {
-            // handle collection type argument annotations
-            if (!typeName.typeArguments().isEmpty()) {
-                boolean isOptional = typeName.equals(TypeNames.OPTIONAL);
-                TypeName maybeAnnotated = typeName.typeArguments().getFirst();
-                boolean hasValid = maybeAnnotated.hasAnnotation(VALIDATION_VALID);
-                List<Annotation> constraints = new ArrayList<>();
-
-                // now for each constraint annotation...
-                for (TypeName constraintAnnotation : constraintAnnotations) {
-                    maybeAnnotated.findAnnotation(constraintAnnotation).ifPresent(constraints::add);
-                }
-
-                if (hasValid || !constraints.isEmpty()) {
-                    // need to go through the collection/optional
-                    contentBuilder.addContent("if (")
-                            .addContent(localVariableName)
-                            .addContentLine(" != null) {");
-                    if (isOptional) {
-                        contentBuilder.addContent("if (")
-                                .addContent(localVariableName)
-                                .addContentLine(".isPresent()) {")
-                                .addContent("var validation__element = ")
-                                .addContent(localVariableName)
-                                .addContentLine(".get();");
-                    } else {
-                        contentBuilder.addContent("for (var validation__element : ")
-                                .addContent(localVariableName)
-                                .addContentLine(") {");
-                    }
-
-                    if (hasValid) {
-                        String validatorField = addTypeValidator(fieldHandler, maybeAnnotated);
-                        addValidationOfValid(contentBuilder, validatorField, location, "validation__element");
-                    }
-
-                    for (Annotation constraint : constraints) {
-                        addValidationOfConstraint(generatedType,
-                                                  fieldHandler,
-                                                  contentBuilder,
-                                                  constraint,
-                                                  location,
-                                                  element,
-                                                  "validation__element");
-                    }
-
-                    contentBuilder.addContentLine("}");
-                    contentBuilder.addContentLine("}");
-                }
-
-            }
+            addValidationForSingleTypeArgument(generatedType,
+                                               constraintAnnotations,
+                                               contentBuilder,
+                                               fieldHandler,
+                                               element,
+                                               localVariableName,
+                                               typeName);
         } else if (typeName.equals(TypeNames.MAP)) {
-            // handle map keys and values
-            if (typeName.typeArguments().size() == 2) {
-                TypeName keyType = typeName.typeArguments().get(0);
-                TypeName valueType = typeName.typeArguments().get(1);
-
-                boolean keyHasValid = keyType.hasAnnotation(VALIDATION_VALID);
-                List<Annotation> keyConstraints = new ArrayList<>();
-                boolean valueHasValid = valueType.hasAnnotation(VALIDATION_VALID);
-                List<Annotation> valueConstraints = new ArrayList<>();
-
-                // now for each constraint annotation...
-                for (TypeName constraintAnnotation : constraintAnnotations) {
-                    keyType.findAnnotation(constraintAnnotation).ifPresent(keyConstraints::add);
-                }
-                for (TypeName constraintAnnotation : constraintAnnotations) {
-                    valueType.findAnnotation(constraintAnnotation).ifPresent(valueConstraints::add);
-                }
-
-                if (keyHasValid || valueHasValid || !keyConstraints.isEmpty() || !valueConstraints.isEmpty()) {
-                    // need to go through the collection/optional
-                    contentBuilder.addContent("if (")
-                            .addContent(localVariableName)
-                            .addContentLine(" != null) {");
-
-                    contentBuilder.addContent("for (var validation__entry : ")
-                            .addContent(localVariableName)
-                            .addContentLine(".entrySet()) {")
-                            .addContentLine("var validation__key = validation__entry.getKey();")
-                            .addContentLine("var validation__value = validation__entry.getValue();");
-
-                    if (keyHasValid) {
-                        String validatorField = addTypeValidator(fieldHandler, keyType);
-                        addValidationOfValid(contentBuilder, validatorField, location, "validation__key");
-                    }
-                    if (valueHasValid) {
-                        String validatorField = addTypeValidator(fieldHandler, valueType);
-                        addValidationOfValid(contentBuilder, validatorField, location, "validation__value");
-                    }
-
-                    for (Annotation constraint : keyConstraints) {
-                        addValidationOfConstraint(generatedType,
-                                                  fieldHandler,
-                                                  contentBuilder,
-                                                  constraint,
-                                                  location,
-                                                  element,
-                                                  "validation__key");
-                    }
-                    for (Annotation constraint : valueConstraints) {
-                        addValidationOfConstraint(generatedType,
-                                                  fieldHandler,
-                                                  contentBuilder,
-                                                  constraint,
-                                                  location,
-                                                  element,
-                                                  "validation__value");
-                    }
-
-                    contentBuilder.addContentLine("}");
-                    contentBuilder.addContentLine("}");
-                }
-            }
+            addValidationOfMap(generatedType,
+                               constraintAnnotations,
+                               contentBuilder,
+                               fieldHandler,
+                               element,
+                               localVariableName,
+                               typeName);
         }
     }
+
     /**
      *
      * @param generatedType  type of the generated class
@@ -217,7 +135,7 @@ class ValidationHelper {
                                                       constraint.typeName(),
                                                       it -> it.addContentLiteral(constraint.typeName().fqName()));
 
-        String validator = fieldHandler.field(VALIDATION_CONSTRAINT_VALIDATOR,
+        String validator = fieldHandler.field(CONSTRAINT_VALIDATOR,
                                               "constraintValidator",
                                               AccessModifier.PRIVATE,
                                               constraint,
@@ -228,7 +146,7 @@ class ValidationHelper {
                                                                   .name(name + "_provider")
                                                                   .addAnnotation(namedByConstant(generatedType,
                                                                                                  constraintType))
-                                                                  .type(VALIDATION_CONSTANT_VALIDATOR_PROVIDER))
+                                                                  .type(CONSTRAINT_VALIDATOR_PROVIDER))
                                                           .addContent("this.")
                                                           .addContent(name)
                                                           .addContent(" = ")
@@ -243,21 +161,40 @@ class ValidationHelper {
         checkAndMerge(contentBuilder, location, validator, varName);
     }
 
-    private static void checkAndMerge(ContentBuilder<?> contentBuilder, String location, String validatorVar, String validatedVar) {
-        updateLocation(contentBuilder, location);
-        contentBuilder.addContent("validation__res = validation__res.merge(")
-                .addContent(validatorVar)
-                .addContent(".check(validation__ctx, ")
-                .addContent(validatedVar)
-                .addContentLine("));");
-    }
+    static boolean needsWork(Collection<TypeName> constraintAnnotations, TypedElementInfo element) {
+        // the element itself is annotated either with valid or one of the constraints
+        // a type parameter is annotated in the same way (only first level)
 
-    private static void updateLocation(ContentBuilder<?> contentBuilder, String location) {
-        contentBuilder.addContent("validation__ctx.location(")
-                .addContent(CONSTRAINT_VIOLATION_LOCATION)
-                .addContent(".")
-                .addContent(location)
-                .addContentLine(");");
+        if (element.hasAnnotation(CHECK_VALID)) {
+            return true;
+        }
+        for (TypeName constraintAnnotation : constraintAnnotations) {
+            if (element.hasAnnotation(constraintAnnotation)) {
+                return true;
+            }
+        }
+
+        // now type parameters of the element itself, or its parameters
+        // (valid only for methods, but not present on fields so no problem to check)
+        TypeName elementType = element.typeName();
+        for (TypeName typeName : elementType.typeArguments()) {
+            if (typeName.hasAnnotation(CHECK_VALID)) {
+                return true;
+            }
+            for (TypeName constraintAnnotation : constraintAnnotations) {
+                if (typeName.hasAnnotation(constraintAnnotation)) {
+                    return true;
+                }
+            }
+        }
+
+        for (TypedElementInfo param : element.parameterArguments()) {
+            if (needsWork(constraintAnnotations, param)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static Annotation namedByConstant(TypeName type, String constantName) {
@@ -265,5 +202,178 @@ class ValidationHelper {
                 .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED)
                 .putProperty("value", AnnotationProperty.create("", type, constantName))
                 .build();
+    }
+
+    private static void addValidationOfMap(TypeName generatedType,
+                                           Collection<TypeName> constraintAnnotations,
+                                           ContentBuilder<?> contentBuilder,
+                                           FieldHandler fieldHandler,
+                                           TypedElementInfo element,
+                                           String localVariableName,
+                                           TypeName typeName) {
+        // handle map keys and values
+        if (typeName.typeArguments().size() == 2) {
+            TypeName keyType = typeName.typeArguments().get(0);
+            TypeName valueType = typeName.typeArguments().get(1);
+
+            boolean keyHasValid = keyType.hasAnnotation(CHECK_VALID);
+            List<Annotation> keyConstraints = new ArrayList<>();
+            boolean valueHasValid = valueType.hasAnnotation(CHECK_VALID);
+            List<Annotation> valueConstraints = new ArrayList<>();
+
+            // now for each constraint annotation...
+            for (TypeName constraintAnnotation : constraintAnnotations) {
+                keyType.findAnnotation(constraintAnnotation).ifPresent(keyConstraints::add);
+            }
+            for (TypeName constraintAnnotation : constraintAnnotations) {
+                valueType.findAnnotation(constraintAnnotation).ifPresent(valueConstraints::add);
+            }
+
+            if (keyHasValid || valueHasValid || !keyConstraints.isEmpty() || !valueConstraints.isEmpty()) {
+                // need to go through the collection/optional
+                contentBuilder.addContent("if (")
+                        .addContent(localVariableName)
+                        .addContentLine(" != null) {");
+
+                contentBuilder.addContent("for (var validation__entry : ")
+                        .addContent(localVariableName)
+                        .addContentLine(".entrySet()) {")
+                        .addContentLine("var validation__key = validation__entry.getKey();")
+                        .addContentLine("var validation__value = validation__entry.getValue();");
+
+                if (keyHasValid || !keyConstraints.isEmpty()) {
+                    contentBuilder.addContent("validation__ctx.enter(")
+                            .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                            .addContent(".KEY, ")
+                            .addContentLiteral("key")
+                            .addContentLine(");");
+                }
+                if (keyHasValid) {
+                    String validatorField = addTypeValidator(fieldHandler, keyType);
+                    addValidationOfValid(contentBuilder, validatorField, "KEY", "validation__key");
+                }
+                for (Annotation constraint : keyConstraints) {
+                    addValidationOfConstraint(generatedType,
+                                              fieldHandler,
+                                              contentBuilder,
+                                              constraint,
+                                              "KEY",
+                                              element,
+                                              "validation__key");
+                }
+
+                if (keyHasValid || !keyConstraints.isEmpty()) {
+                    contentBuilder.addContentLine("// leave map key");
+                    contentBuilder.addContentLine("validation__ctx.leave();");
+                }
+
+                if (valueHasValid || !valueConstraints.isEmpty()) {
+                    contentBuilder.addContent("validation__ctx.enter(")
+                            .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                            .addContent(".ELEMENT, ")
+                            .addContentLiteral("value")
+                            .addContentLine(");");
+                }
+                if (valueHasValid) {
+                    String validatorField = addTypeValidator(fieldHandler, valueType);
+                    addValidationOfValid(contentBuilder, validatorField, "ELEMENT", "validation__value");
+                }
+
+                for (Annotation constraint : valueConstraints) {
+                    addValidationOfConstraint(generatedType,
+                                              fieldHandler,
+                                              contentBuilder,
+                                              constraint,
+                                              "ELEMENT",
+                                              element,
+                                              "validation__value");
+                }
+
+                if (valueHasValid || !valueConstraints.isEmpty()) {
+                    contentBuilder.addContentLine("// leave map value");
+                    contentBuilder.addContentLine("validation__ctx.leave();");
+                }
+
+                contentBuilder.addContentLine("}");
+                contentBuilder.addContentLine("}");
+            }
+        }
+    }
+
+    private static void addValidationForSingleTypeArgument(TypeName generatedType,
+                                                           Collection<TypeName> constraintAnnotations,
+                                                           ContentBuilder<?> contentBuilder,
+                                                           FieldHandler fieldHandler,
+                                                           TypedElementInfo element,
+                                                           String localVariableName,
+                                                           TypeName typeName) {
+        // handle collection type argument annotations
+        if (!typeName.typeArguments().isEmpty()) {
+            boolean isOptional = typeName.equals(TypeNames.OPTIONAL);
+            TypeName maybeAnnotated = typeName.typeArguments().getFirst();
+            boolean hasValid = maybeAnnotated.hasAnnotation(CHECK_VALID);
+            List<Annotation> constraints = new ArrayList<>();
+
+            // now for each constraint annotation...
+            for (TypeName constraintAnnotation : constraintAnnotations) {
+                maybeAnnotated.findAnnotation(constraintAnnotation).ifPresent(constraints::add);
+            }
+
+            if (hasValid || !constraints.isEmpty()) {
+                // need to go through the collection/optional
+                contentBuilder.addContent("if (")
+                        .addContent(localVariableName)
+                        .addContentLine(" != null) {");
+                if (isOptional) {
+                    contentBuilder.addContent("if (")
+                            .addContent(localVariableName)
+                            .addContentLine(".isPresent()) {")
+                            .addContent("var validation__element = ")
+                            .addContent(localVariableName)
+                            .addContentLine(".get();");
+                } else {
+                    contentBuilder.addContent("for (var validation__element : ")
+                            .addContent(localVariableName)
+                            .addContentLine(") {");
+                }
+                contentBuilder.addContent("validation__ctx.enter(")
+                        .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                        .addContent(".")
+                        .addContent("ELEMENT")
+                        .addContentLine(", \"element\");");
+
+                if (hasValid) {
+                    String validatorField = addTypeValidator(fieldHandler, maybeAnnotated);
+                    addValidationOfValid(contentBuilder, validatorField, "ELEMENT", "validation__element");
+                }
+
+                for (Annotation constraint : constraints) {
+                    addValidationOfConstraint(generatedType,
+                                              fieldHandler,
+                                              contentBuilder,
+                                              constraint,
+                                              "ELEMENT",
+                                              element,
+                                              "validation__element");
+                }
+
+                contentBuilder.addContentLine("// leave element");
+                contentBuilder.addContentLine("validation__ctx.leave();");
+
+                contentBuilder.addContentLine("}");
+                contentBuilder.addContentLine("}");
+            }
+        }
+    }
+
+    private static void checkAndMerge(ContentBuilder<?> contentBuilder,
+                                      String location,
+                                      String validatorVar,
+                                      String validatedVar) {
+        contentBuilder.addContent("validation__res = validation__res.merge(")
+                .addContent(validatorVar)
+                .addContent(".check(validation__ctx, ")
+                .addContent(validatedVar)
+                .addContentLine("));");
     }
 }

@@ -1,10 +1,28 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.declarative.codegen.validation;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -28,8 +46,10 @@ import static io.helidon.declarative.codegen.validation.ValidationHelper.addType
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfConstraint;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfTypeArguments;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfValid;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VALIDATION_CONTEXT;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONTEXT;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALIDATED;
 
 class InterceptorGenerator {
     private static final TypeName GENERATOR = TypeName.create(InterceptorGenerator.class);
@@ -49,6 +69,16 @@ class InterceptorGenerator {
         // injected fields
         // constructor that is injected
         // methods (non-private)
+        if (!isService(type)) {
+            if (!type.hasAnnotation(VALIDATION_VALIDATED)) {
+                throw new CodegenException(VALIDATION_VALIDATED.fqName()
+                                                   + " annotation is required on non-service type that has constraints "
+                                                   + "or valid checks.",
+                                           type);
+            }
+            // we only generate interceptors for services, it does not make sense for any other type
+            return;
+        }
 
         // we will make this bold assumption the user knows what they are doing, and not validate the
         // fact this is a service - the reason is that the generated interceptor will just be ignored if it is not
@@ -97,11 +127,30 @@ class InterceptorGenerator {
                 });
     }
 
+    private boolean isService(TypeInfo type) {
+        // must be annotated with @Service.Provider, or @Service.Scope
+        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
+            return true;
+        }
+        if (type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE)) {
+            return true;
+        }
+        for (Annotation annotation : type.annotations()) {
+            if (annotation.hasMetaAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER)) {
+                return true;
+            }
+            if (annotation.hasMetaAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void generateInterceptor(TypeInfo interceptedType,
                                      AtomicInteger interceptorCounter,
                                      TypedElementInfo element,
                                      String location) {
-        if (!needsWork(element)) {
+        if (!ValidationHelper.needsWork(constraintAnnotations, element)) {
             return;
         }
 
@@ -152,10 +201,15 @@ class InterceptorGenerator {
                                       .build()))
                 .addThrows(thrown -> thrown.type(Exception.class))
                 .addContent("var validation__ctx = ")
-                .addContent(CONSTRAINT_VALIDATION_CONTEXT)
+                .addContent(VALIDATION_CONTEXT)
                 .addContent(".create(")
                 .addContent(typeName)
                 .addContentLine(".class, interception__ctx.serviceInstance().orElse(null));")
+                .addContent("validation__ctx.enter(")
+                .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                .addContent(".TYPE, ")
+                .addContent(typeName)
+                .addContentLine(".class.getName());")
                 .addContentLine("var validation__res = validation__ctx.response();")
                 .addContentLine("");
 
@@ -166,12 +220,19 @@ class InterceptorGenerator {
                     .addContentLine(" = interception__args[0];");
             addValidators(generatedType, proceedMethod, fieldHandler, element, location, name);
         } else {
+            proceedMethod.addContent("validation__ctx.enter(")
+                    .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                    .addContent(".")
+                    .addContent(location)
+                    .addContent(", ")
+                    .addContentLiteral(element.signature().text())
+                    .addContentLine(");");
             // constructor or method
             var params = element.parameterArguments();
             for (int i = 0; i < params.size(); i++) {
                 var param = params.get(i);
-                if (needsWork(param)) {
-                    String name = element.elementName();
+                if (ValidationHelper.needsWork(constraintAnnotations, param)) {
+                    String name = param.elementName();
                     proceedMethod.addContent("var ")
                             .addContent(name)
                             .addContent(" = (")
@@ -179,9 +240,12 @@ class InterceptorGenerator {
                             .addContent(") interception__args[")
                             .addContent(String.valueOf(i))
                             .addContentLine("];");
+
                     addValidators(generatedType, proceedMethod, fieldHandler, param, "PARAMETER", name);
                 }
             }
+            proceedMethod.addContentLine("// leave " + element.signature().text());
+            proceedMethod.addContentLine("validation__ctx.leave();");
         }
 
         proceedMethod.addContentLine("")
@@ -193,13 +257,28 @@ class InterceptorGenerator {
                 .addContentLine("");
 
         if (element.kind() == ElementKind.METHOD) {
+            // re-enter method
+            proceedMethod.addContent("validation__ctx.enter(")
+                    .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                    .addContent(".")
+                    .addContent(location)
+                    .addContent(", ")
+                    .addContentLiteral(element.signature().text())
+                    .addContentLine(");");
             addValidators(generatedType,
                           proceedMethod,
                           fieldHandler,
                           element,
-                          "METHOD",
+                          "RETURN_VALUE",
                           "interception__res");
+            // leave method on response
+            proceedMethod.addContentLine("// leave method " + element.signature().text());
+            proceedMethod.addContentLine("validation__ctx.leave();");
         }
+
+        // leave type on response
+        proceedMethod.addContentLine("// leave type " + typeName.classNameWithEnclosingNames());
+        proceedMethod.addContentLine("validation__ctx.leave();");
 
         classModel.addConstructor(constructor);
         classModel.addMethod(proceedMethod.addContentLine("")
@@ -217,8 +296,18 @@ class InterceptorGenerator {
                                TypedElementInfo element,
                                String location,
                                String localVariableName) {
+        proceedMethod.addContent("validation__ctx.enter(")
+                .addContent(CONSTRAINT_VIOLATION_LOCATION)
+                .addContent(".")
+                .addContent(location)
+                .addContent(", ")
+                .addContentLiteral("RETURN_VALUE".equals(location)
+                                           ? element.typeName().classNameWithEnclosingNames()
+                                           : localVariableName)
+                .addContentLine(");");
+
         // start with annotations on the element itself
-        if (element.hasAnnotation(VALIDATION_VALID)) {
+        if (element.hasAnnotation(CHECK_VALID)) {
             String fieldName = addTypeValidator(fieldHandler, element.typeName());
             addValidationOfValid(proceedMethod, fieldName, location, localVariableName);
         }
@@ -239,43 +328,10 @@ class InterceptorGenerator {
                                      proceedMethod,
                                      fieldHandler,
                                      element,
-                                     location,
                                      localVariableName);
+
+        proceedMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.elementName());
+        proceedMethod.addContentLine("validation__ctx.leave();");
     }
 
-    private boolean needsWork(TypedElementInfo element) {
-        // the element itself is annotated either with valid or one of the constraints
-        // a type parameter is annotated in the same way (only first level)
-
-        if (element.hasAnnotation(VALIDATION_VALID)) {
-            return true;
-        }
-        for (TypeName constraintAnnotation : constraintAnnotations) {
-            if (element.hasAnnotation(constraintAnnotation)) {
-                return true;
-            }
-        }
-
-        // now type parameters of the element itself, or its parameters
-        // (valid only for methods, but not present on fields so no problem to check)
-        TypeName elementType = element.typeName();
-        for (TypeName typeName : elementType.typeArguments()) {
-            if (typeName.hasAnnotation(VALIDATION_VALID)) {
-                return true;
-            }
-            for (TypeName constraintAnnotation : constraintAnnotations) {
-                if (typeName.hasAnnotation(constraintAnnotation)) {
-                    return true;
-                }
-            }
-        }
-
-        for (TypedElementInfo param : element.parameterArguments()) {
-            if (needsWork(param)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

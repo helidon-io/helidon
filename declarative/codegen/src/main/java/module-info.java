@@ -24,7 +24,6 @@ module io.helidon.declarative.codegen {
     requires io.helidon.declarative.codegen.model;
     requires io.helidon.common;
     requires io.helidon.common.types;
-
     exports io.helidon.declarative.codegen;
 
     exports io.helidon.declarative.codegen.http;
@@ -38,6 +37,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
     exports io.helidon.declarative.codegen.scheduling;
+    // validation
+    exports io.helidon.declarative.codegen.validation;
 
     uses io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 

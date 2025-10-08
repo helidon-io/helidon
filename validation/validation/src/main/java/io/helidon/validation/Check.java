@@ -1,15 +1,67 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.validation;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import io.helidon.service.registry.Interception;
+
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
+
 /**
- * Container class fpr various constraint annotations.
+ * Container class for various constraint annotations.
+ * <p>
+ * <b>Important note:</b>
+ * When handling number constraints, we consider bytes to be unsigned values (i.e. it is always between 0 and 255 inclusive).
  */
-public final class Constraints {
-    private Constraints() {
+public final class Check {
+    private Check() {
     }
 
+    /**
+     * Mark an element as validated even when no explicit constraints are added on it to validate
+     * the nested object structure.
+     * <p>
+     * Each object must be annotated with {@link io.helidon.validation.Validation.Validated}, as otherwise
+     * we cannot know what to do (Helidon only supports build-time generated validations, we do not use
+     * reflection to analyze types).
+     */
+    @Retention(CLASS)
+    @Target({METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE})
+    @Interception.Intercepted
+    public @interface Valid {
+        /**
+         * Can be set to {@code false} to explicitly disable all validations on this element.
+         *
+         * @return whether to validate an element (deep validation)
+         */
+        boolean value() default true;
+    }
+
+    /**
+     * Value must not be {@code null}.
+     */
     @Target({
             ElementType.METHOD, // return type
             ElementType.PARAMETER,  // parameter of a method
@@ -29,6 +81,9 @@ public final class Constraints {
         java.lang.String message() default "";
     }
 
+    /**
+     * Value must be {@code null}.
+     */
     @Target({
             ElementType.METHOD, // return type
             ElementType.PARAMETER,  // parameter of a method
@@ -79,6 +134,12 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must not be blank.
+         * A blank value is either empty or contains only whitespace characters.
+         *
+         * @see java.lang.String#isBlank()
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -86,7 +147,6 @@ public final class Constraints {
                 ElementType.TYPE_USE, // Map<Key, @NotNull Value>
                 ElementType.RECORD_COMPONENT // components of a record
         })
-
         @Validation.Constraint
         public @interface NotBlank {
             /**
@@ -99,6 +159,11 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must not be empty.
+         *
+         * @see java.lang.String#isEmpty()
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -118,6 +183,9 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value's length must be between {@link #min()} and {@link #value()} characters (inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -135,6 +203,7 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
             /**
              * Minimal length of the char sequence. Defaults to zero.
              *
@@ -150,6 +219,9 @@ public final class Constraints {
             int value() default java.lang.Integer.MAX_VALUE;
         }
 
+        /**
+         * The value must match the given regular expression.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -167,6 +239,7 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
             /**
              * The regular expression.
              *
@@ -177,10 +250,14 @@ public final class Constraints {
             /**
              * Pattern flags to use.
              *
-             * @return flags to add when creatign the pattern
+             * @return flags to add when creating the pattern
              */
             Flag[] flags() default {};
 
+            /**
+             * Enumeration of regular expression flags, that maps to the correct constants on
+             * {@link java.util.regex.Pattern}, such as {@link java.util.regex.Pattern#CASE_INSENSITIVE}.
+             */
             enum Flag {
                 /**
                  * Enables Unix lines mode.
@@ -238,6 +315,8 @@ public final class Constraints {
                 }
 
                 /**
+                 * The regular expression flags to use when creating the {@link java.util.regex.Pattern}.
+                 *
                  * @return flag value as defined in {@link java.util.regex.Pattern}
                  */
                 public int value() {
@@ -252,6 +331,14 @@ public final class Constraints {
      * {@link java.lang.String}, {@link java.lang.CharSequence} etc.
      */
     public static final class Number {
+        private Number() {
+        }
+
+        /**
+         * The value must be negative.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -271,6 +358,11 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must be negative or zero.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -290,6 +382,11 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must be positive.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -309,6 +406,13 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must be positive or zero.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         * <p>
+         * A value of negative zero (possible for long data type) is considered a zero.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -328,6 +432,11 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must be the specified {@link #value()} or higher.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -345,9 +454,20 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Minimal value. This value will be converted to a {@link java.math.BigDecimal}, so it must match its rules.
+             *
+             * @return the minimal value
+             */
             java.lang.String value();
         }
 
+        /**
+         * The value must be the specified {@link #value()} or lower.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -365,9 +485,20 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Maximal value. This value will be converted to a {@link java.math.BigDecimal}, so it must match its rules.
+             *
+             * @return the maximal value
+             */
             java.lang.String value();
         }
 
+        /**
+         * The value must have the at most he defined number of {@link #integer()} and {@link #fraction()} digits.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -387,26 +518,37 @@ public final class Constraints {
             java.lang.String message() default "";
 
             /**
-             * Maximal scale of the number.
+             * Maximal number of digits to the left of the decimal mark.
+             * If this is set to 2, the maximal number supported is 99.
              *
-             * @return maximal scale, not validated by default
+             * @return maximal number of integer digits, not validated by default
              */
-            int scale() default -1;
+            int integer() default -1;
 
             /**
-             * Maximal precision of the number.
+             * Maximal number of digits to the right of the decimal mark.
+             * If this is set to 2, the values can be {@code 0.01}, but not {@code 0.001}.
              *
-             * @return maximal precision, not validated by default
+             * @return maximal number of fraction digits, not validated by default
              */
-            int precision() default -1;
+            int fraction() default -1;
         }
 
     }
 
+    /**
+     * Integer constraints, to allow use of int constants with values.
+     * These are convenience constraints and could be replaced with constraints in {@link io.helidon.validation.Check.Number}.
+     */
     public static final class Integer {
         private Integer() {
         }
 
+        /**
+         * The value must be the specified {@link #value()} or higher.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -424,9 +566,20 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Minimal value.
+             *
+             * @return minimal value
+             */
             int value();
         }
 
+        /**
+         * The value must be the specified {@link #value()} or lower.
+         * <p>
+         * Bytes are considered unsigned values (always between 0 and 255 inclusive).
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -444,14 +597,30 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Maximal value.
+             *
+             * @return maximal value
+             */
             int value();
         }
     }
 
+    /**
+     * Integer constraints, to allow use of long constants with values.
+     * These are convenience constraints and could be replaced with constraints in {@link io.helidon.validation.Check.Number}.
+     * <p>
+     * NOTE: long constraints are only allowed on long values (or boxed {@link io.helidon.validation.Check.Long}) and will
+     * fail on any other type.
+     */
     public static final class Long {
         private Long() {
         }
 
+        /**
+         * The value must be the specified {@link #value()} or higher.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -469,9 +638,18 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Minimal value.
+             *
+             * @return min value
+             */
             long value();
         }
 
+        /**
+         * The value must be the specified {@link #value()} or lower.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -489,14 +667,28 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
+            /**
+             * Maximal value.
+             *
+             * @return max value
+             */
             long value();
         }
     }
 
+    /**
+     * Boolean constraints.
+     * <p>
+     * NOTE: only valid for boolean (and boxed {@link java.lang.Boolean}) types.
+     */
     public static final class Boolean {
         private Boolean() {
         }
 
+        /**
+         * The value must be true.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -516,6 +708,9 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The value must be false.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -536,11 +731,39 @@ public final class Constraints {
         }
     }
 
-    // all calendar validators must be implemented
+    /**
+     * Calendar constraints.
+     * <p>
+     * All constraints in this class support the following types:
+     * <ul>
+     *     <li>{@code java.util.Date}</li>
+     *     <li>{@code java.util.Calendar}</li>
+     *     <li>{@code java.time.Instant}</li>
+     *     <li>{@code java.time.LocalDate}</li>
+     *     <li>{@code java.time.LocalDateTime}</li>
+     *     <li>{@code java.time.LocalTime}</li>
+     *     <li>{@code java.time.MonthDay}</li>
+     *     <li>{@code java.time.OffsetDateTime}</li>
+     *     <li>{@code java.time.OffsetTime}</li>
+     *     <li>{@code java.time.Year}</li>
+     *     <li>{@code java.time.YearMonth}</li>
+     *     <li>{@code java.time.ZonedDateTime}</li>
+     *     <li>{@code java.time.chrono.HijrahDate}</li>
+     *     <li>{@code java.time.chrono.JapaneseDate}</li>
+     *     <li>{@code java.time.chrono.MinguoDate}</li>
+     *     <li>{@code java.time.chrono.ThaiBuddhistDate}</li>
+     * </ul>
+     */
     public static final class Calendar {
         private Calendar() {
         }
 
+        /**
+         * The annotated element must be in the future.
+         * <p>
+         * The definition of future depends on annotated type - for example, for a {@link java.time.Year},
+         * future is next year (even in January), but for {@link java.time.Instant}, future is already the next millisecond.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -560,6 +783,12 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The annotated element must be in the future or present.
+         * <p>
+         * The definition of future depends on annotated type - for example, for a {@link java.time.Year},
+         * future is next year (even in January), but for {@link java.time.Instant}, future is already the next millisecond.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -579,6 +808,12 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The annotated element must be in the past.
+         * <p>
+         * The definition of past depends on annotated type - for example, for a {@link java.time.Year},
+         * past is last year (even in December), but for {@link java.time.Instant}, past was already the previous millisecond.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -598,6 +833,12 @@ public final class Constraints {
             java.lang.String message() default "";
         }
 
+        /**
+         * The annotated element must be in the past or present.
+         * <p>
+         * The definition of past depends on annotated type - for example, for a {@link java.time.Year},
+         * past is last year (even in December), but for {@link java.time.Instant}, past was already the previous millisecond.
+         */
         @Target({
                 ElementType.METHOD, // return type
                 ElementType.PARAMETER,  // parameter of a method
@@ -618,7 +859,9 @@ public final class Constraints {
         }
     }
 
-    // all collection validators must be implemented
+    /**
+     * Collection constraints.
+     */
     public static final class Collection {
         private Collection() {
         }
@@ -643,6 +886,7 @@ public final class Constraints {
              * @return message to describe the constraint validation error
              */
             java.lang.String message() default "";
+
             /**
              * Minimal size of the collection. Defaults to zero.
              *
