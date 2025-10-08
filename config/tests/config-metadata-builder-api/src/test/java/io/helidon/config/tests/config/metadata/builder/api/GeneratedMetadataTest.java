@@ -181,7 +181,7 @@ class GeneratedMetadataTest {
                 "`technical`", // {@code technical}
                 "MyTarget.ignored()", // {@link MyTarget#ignored()}
                 "MyTarget.ignored()", // {@linkplain MyTarget#ignored()}
-                "CONSTANT", // {@value #CONSTANT}
+                "`42`", // {@value #CONSTANT}
                 "See MyTarget.message()" // @see MyTarget#message()
         ));
     }
