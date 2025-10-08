@@ -21,6 +21,8 @@ import java.util.Map;
 
 import io.helidon.common.Default;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Configuration;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
@@ -30,6 +32,12 @@ import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
+import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorResponse;
+import io.helidon.validation.spi.ConstraintValidator;
+import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.webclient.api.RestClient;
 import io.helidon.webserver.http.RestServer;
 
@@ -114,6 +122,76 @@ public class DeclarativeExample {
         }
     }
     // end::snippet_5[]
+
+
+    // tag::snippet_6[]
+    @Validation.Validated
+    record MyType(@Check.String.Pattern(".*valid.*") @Check.NotNull String validString,
+                  @Check.Integer.Min(42) int validInt) {
+    }
+    // end::snippet_6[]
+
+    // tag::snippet_7[]
+    @Service.Singleton
+    static class ValidatedService {
+        @Check.String.NotBlank // validates the response
+        String process(@Check.Valid @Check.NotNull MyType myType) {
+            // result of the logic
+            return "some result";
+        }
+    }
+    // end::snippet_7[]
+
+    // tag::snippet_8[]
+    @Check.NotNull
+    @Check.String.NotBlank
+    public @interface NonNullNotBlank {
+    }
+    // end::snippet_8[]
+
+    // tag::snippet_9[]
+    @Check.NotNull // will add not-null constraint as well
+    @Validation.Constraint
+    public @interface CustomConstraint {
+    }
+    // end::snippet_9[]
+
+    // tag::snippet_10[]
+    @Service.Singleton
+    @Service.NamedByType(CustomConstraint.class)
+    static class CustomConstraintValidatorProvider implements ConstraintValidatorProvider {
+        @Override
+        public ConstraintValidator create(TypeName typeName, Annotation constraintAnnotation) {
+            // we could check the type here, but we don't need to - depends on constraint
+            return new CustomValidator(constraintAnnotation);
+        }
+
+        private static class CustomValidator implements ConstraintValidator {
+            private final Annotation annotation;
+
+            private CustomValidator(Annotation annotation) {
+                this.annotation = annotation;
+            }
+
+            @Override
+            public ValidatorResponse check(ValidationContext context, Object value) {
+                if (value == null) {
+                    // we leave the `not-null` check to the "meta-annotation" on CustomConstraint
+                    return context.response();
+                }
+
+                // if string, and the value is "good", it is OK
+                if (value instanceof String str) {
+                    if (str.equals("good")) {
+                        return context.response();
+                    }
+                }
+
+                return context.response(annotation, "Must be \"good\" string", value);
+            }
+        }
+    }
+    // end::snippet_10[]
 
 
     private static class ApplicationBinding {
