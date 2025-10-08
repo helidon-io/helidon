@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ class ConfigMetadataCodegenExtension implements CodegenExtension {
                               .map(it -> TypeHandlerBuilderApi.create(ctx, it)),
                       typesToProcess(configMetadata)
                               .map(it -> TypeHandlerMetaApi.create(ctx, it)))
-                .map(TypeHandler::handle)
+                .map(it -> it.handle(roundContext))
                 .forEach(it -> {
                     TypeName targetType = it.targetType();
                     newOptions.put(targetType, it.configuredType());

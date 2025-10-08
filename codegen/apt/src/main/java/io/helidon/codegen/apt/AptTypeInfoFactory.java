@@ -263,6 +263,11 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             }
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
+            Object variableDefault = ve.getConstantValue();
+            // configure default value for constants
+            if (variableDefault != null) {
+                defaultValue = String.valueOf(variableDefault);
+            }
         }
 
         if (typeMirror != null) {
