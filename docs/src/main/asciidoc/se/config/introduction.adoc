@@ -254,7 +254,7 @@ ConfigValue<T> can be used to obtain:
 * the `T` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
 * a complex Java type _from a subtree_ of the config tree.
 +
-The config system automatically knows how to return `Collection` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
+The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever
 Java types your application needs.
 
 See xref:property-mapping.adoc[Property Mapping] page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.

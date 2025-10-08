@@ -260,7 +260,7 @@ The query return type depends on the return type keyword:
 |Zero or single result that throws an exception if there are multiple results
 
 |list
-|`Collection` or `Collection`
+|`Collection` or `List`
 |All matching rows
 
 |list
@@ -546,7 +546,7 @@ include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=selectKeeper_m
 Supported return types include:
 
 * the query row type such as an entity class, an entity attribute, or a custom projection
-* `Collection`, `Collection`, `Stream`, or `Optional` with the query row type as the generic parameter
+* `List`, `Collection`, `Stream`, or `Optional` with the query row type as the generic parameter
 * `Page` or `Slice` with the query row type as the generic parameter
 
 // end::data_repository_interface[]
@@ -566,10 +566,10 @@ Returned page content types:
 |Name |Description
 
 |Slice
-|Contains the page data as a `Collection` or `Stream` and a `PageRequest` to retrieve this page.
+|Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page.
 
 |Page
-|Contains the page data as a `Collection` or `Stream`, the total result size across all pages, and a `PageRequest`
+|Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest`
  to retrieve this page.
 |===
 
