@@ -42,4 +42,9 @@ public class ValidatedService {
     // TODO ignored valid now that Size was added
     void process(@Check.Collection.Size(2) List<@Check.Valid ValidatedType> list) {
     }
+    // custom group adds non-null and non-blank
+    // custom constraint just checks it is "good"
+    void process(@CustomGroup String validateCustomGroup, @CustomConstraint String validateCustomConstraint) {
+
+    }
 }

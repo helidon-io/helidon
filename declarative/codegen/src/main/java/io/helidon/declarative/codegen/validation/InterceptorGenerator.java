@@ -46,6 +46,8 @@ import static io.helidon.declarative.codegen.validation.ValidationHelper.addType
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfConstraint;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfTypeArguments;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfValid;
+import static io.helidon.declarative.codegen.validation.ValidationHelper.findMetaAnnotations;
+import static io.helidon.declarative.codegen.validation.ValidationHelper.metaAnnotated;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONTEXT;
@@ -69,6 +71,11 @@ class InterceptorGenerator {
         // injected fields
         // constructor that is injected
         // methods (non-private)
+        if (type.kind() == ElementKind.ANNOTATION_TYPE) {
+            // ignore annotations, these are good
+            return;
+        }
+
         if (!isService(type)) {
             if (!type.hasAnnotation(VALIDATION_VALIDATED)) {
                 throw new CodegenException(VALIDATION_VALIDATED.fqName()
@@ -244,7 +251,7 @@ class InterceptorGenerator {
                     addValidators(generatedType, proceedMethod, fieldHandler, param, "PARAMETER", name);
                 }
             }
-            proceedMethod.addContentLine("// leave " + element.signature().text());
+            proceedMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.signature().text());
             proceedMethod.addContentLine("validation__ctx.leave();");
         }
 
@@ -307,7 +314,7 @@ class InterceptorGenerator {
                 .addContentLine(");");
 
         // start with annotations on the element itself
-        if (element.hasAnnotation(CHECK_VALID)) {
+        if (element.hasAnnotation(CHECK_VALID) || metaAnnotated(element, CHECK_VALID)) {
             String fieldName = addTypeValidator(fieldHandler, element.typeName());
             addValidationOfValid(proceedMethod, fieldName, location, localVariableName);
         }
@@ -321,6 +328,15 @@ class InterceptorGenerator {
                                                                location,
                                                                element,
                                                                localVariableName));
+            for (var annotation : findMetaAnnotations(element.annotations(), constraintAnnotation)) {
+                addValidationOfConstraint(generatedType,
+                                          fieldHandler,
+                                          proceedMethod,
+                                          annotation,
+                                          location,
+                                          element,
+                                          localVariableName);
+            }
         }
 
         addValidationOfTypeArguments(generatedType,
@@ -333,5 +349,4 @@ class InterceptorGenerator {
         proceedMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.elementName());
         proceedMethod.addContentLine("validation__ctx.leave();");
     }
-
 }

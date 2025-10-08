@@ -396,6 +396,20 @@ Important types:
 - `ConstraintValidator` - created for each annotated element using the type of the element and the constraint annotation
 - `validators` package contains built-in constraint validator providers
 
+Supported concepts:
+- any service method annotated with a constraint annotation will be intercepted and validated
+- any service method that has parameters with at least one constraint annotation will be intercepted and validated
+- for identification of "what to validate", `@Check.Valid` is a constraint annotation
+- annotations on type arguments of method parameters and method return type are supported, as long as they are on 
+    `Optional`, `Map`, `Collection` - i.e. `List<@Check.Valid String>` will trigger an interceptor and will be validated
+- types annotated with `@Validation.Validated` will be validated when used in a method or constructor that uses `@Check.Valid` on the typed parameter
+- same rules as for generation of interceptors apply for type validation: constraints are honored, including getters,
+    fields, and type arguments
+- a user may create a "compound annotation" - an annotation that has one or more constraint annotations, these will be honored as
+    if the element was directly annotated with the constraints
+- a user may create a custom constraint annotation (annotation meta-annotated with `@Validation.Constraint`), such annotations
+    may also be meta-annotated with additional constraints; a custom constraint annotation requires a custom validator provider
+
 ## Template
 
 ### Declaration
