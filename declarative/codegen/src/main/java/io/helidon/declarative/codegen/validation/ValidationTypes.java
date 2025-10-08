@@ -19,24 +19,21 @@ package io.helidon.declarative.codegen.validation;
 import io.helidon.common.types.TypeName;
 
 final class ValidationTypes {
-    static final TypeName CONSTRAINT = TypeName.create("io.helidon.validation.Validation.Constraint");
-    static final TypeName CONSTRAINT_NOT_NULL = TypeName.create("io.helidon.validation.Constraints.NotNull");
 
-    static final TypeName CONSTRAINT_STRING_NOT_BLANK = TypeName.create("io.helidon.validation.Constraints.String.NotBlank");
-    static final TypeName CONSTRAINT_STRING_PATTERN = TypeName.create("io.helidon.validation.Constraints.String.Pattern");
-    static final TypeName CONSTRAINT_VALIDATION_CONTEXT = TypeName.create("io.helidon.validation.ConstraintValidatorContext");
+    static final TypeName CHECK_VALID = TypeName.create("io.helidon.validation.Check.Valid");
+
+    static final TypeName VALIDATION_CONTEXT = TypeName.create("io.helidon.validation.ValidationContext");
+    static final TypeName VALIDATION_CONSTRAINT = TypeName.create("io.helidon.validation.Validation.Constraint");
     static final TypeName CONSTRAINT_VIOLATION_LOCATION = TypeName.create("io.helidon.validation.ConstraintViolation.Location");
-
-    static final TypeName INTEGER_MIN = TypeName.create("io.helidon.validation.Constraints.Integer.Min");
-
-    static final TypeName VALIDATION_VALID = TypeName.create("io.helidon.validation.Validation.Valid");
     static final TypeName VALIDATION_VALIDATED = TypeName.create("io.helidon.validation.Validation.Validated");
-    static final TypeName VALIDATION_TYPE_VALIDATOR = TypeName.create("io.helidon.validation.Validation.TypeValidator");
-    static final TypeName VALIDATION_CONSTRAINT_VALIDATOR = TypeName.create("io.helidon.validation.Validation"
-                                                                                    + ".ConstraintValidator");
-    static final TypeName VALIDATION_CONSTANT_VALIDATOR_PROVIDER = TypeName.create(
-            "io.helidon.validation.Validation.ConstraintValidatorProvider");
-    static final TypeName VALIDATOR_RESPONSE = TypeName.create("io.helidon.validation.Validation.ValidatorResponse");
+
+    static final TypeName VALIDATION_EXCEPTION = TypeName.create("io.helidon.validation.ValidationException");
+    static final TypeName VALIDATOR_RESPONSE = TypeName.create("io.helidon.validation.ValidatorResponse");
+
+    static final TypeName TYPE_VALIDATOR = TypeName.create("io.helidon.validation.spi.TypeValidator");
+    static final TypeName CONSTRAINT_VALIDATOR = TypeName.create("io.helidon.validation.spi.ConstraintValidator");
+    static final TypeName CONSTRAINT_VALIDATOR_PROVIDER =
+            TypeName.create("io.helidon.validation.spi.ConstraintValidatorProvider");
 
     private ValidationTypes() {
     }

@@ -1,48 +1,30 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.validation;
 
+import java.util.List;
 import java.util.Optional;
 
-class ConstraintViolationImpl implements ConstraintViolation {
-    private final Class<?> rootType;
-    private final Object rootObject;
-    private final Location currentLocation;
-    private final Object invalidValue;
-    private final String message;
+import io.helidon.common.types.Annotation;
 
-    ConstraintViolationImpl(Class<?> rootType,
-                            Object rootObject,
-                            Location currentLocation,
-                            Object invalidValue,
-                            String message) {
-        this.rootType = rootType;
-        this.rootObject = rootObject;
-        this.currentLocation = currentLocation;
-        this.invalidValue = invalidValue;
-        this.message = message;
-    }
-
-    @Override
-    public String message() {
-        return message;
-    }
-
-    @Override
-    public Location location() {
-        return currentLocation;
-    }
-
-    @Override
-    public Optional<Object> rootObject() {
-        return Optional.ofNullable(rootObject);
-    }
-
-    @Override
-    public Class<?> rootType() {
-        return rootType;
-    }
-
-    @Override
-    public Object invalidValue() {
-        return invalidValue;
-    }
+record ConstraintViolationImpl(Class<?> rootType,
+                               Optional<Object> rootObject,
+                               List<PathElement> location,
+                               Object invalidValue,
+                               String message,
+                               Annotation annotation) implements ConstraintViolation {
 }

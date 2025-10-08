@@ -445,7 +445,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getSimpleName()}.
+         * Functions similar to {@link Class#getSimpleName()}.
          *
          * @param className the simple class name
          * @return updated builder instance
@@ -825,7 +825,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Clear the existing value of this property.
+         * Clear existing value of this property.
          *
          * @return updated builder instance
          * @see #componentType()
@@ -1378,14 +1378,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                     && Objects.equals(enclosingNames, other.enclosingNames())
                     && primitive == other.primitive()
                     && array == other.array()
-                    && Objects.equals(componentType, other.componentType())
-                    && Objects.equals(annotations, other.annotations())
-                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                    && Objects.equals(componentType, other.componentType());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(packageName, className, enclosingNames, primitive, array, componentType, annotations, inheritedAnnotations);
+                return Objects.hash(packageName, className, enclosingNames, primitive, array, componentType);
             }
 
         }

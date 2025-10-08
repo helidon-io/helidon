@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ final class Interception {
     private boolean hasDirectInterceptTriggerAnnotation(TypeInfo typeInfo, Annotated element) {
         for (Annotation annotation : element.annotations()) {
             if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), INTERCEPTION_INTERCEPTED)) {
+                if (annotation.hasMetaAnnotation(INTERCEPTION_INTERCEPTED)) {
                     return true;
                 }
             }

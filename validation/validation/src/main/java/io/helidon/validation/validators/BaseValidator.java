@@ -1,15 +1,33 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.validation.validators;
 
 import java.util.function.Predicate;
 
 import io.helidon.common.types.Annotation;
-import io.helidon.validation.ConstraintValidatorContext;
-import io.helidon.validation.Validation;
+import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorResponse;
+import io.helidon.validation.spi.ConstraintValidator;
 
-public class BaseValidator implements Validation.ConstraintValidator {
+class BaseValidator implements ConstraintValidator {
     private final Predicate<Object> check;
     private final String messageFormat;
     private final boolean sendNulls;
+    private final Annotation annotation;
 
     /**
      * Create a validator that will not receive {@code null} values - these are considered valid.
@@ -19,10 +37,7 @@ public class BaseValidator implements Validation.ConstraintValidator {
      * @param check          predicate that returns {@code true} if the value is valid, {@code false} otherwise
      */
     protected BaseValidator(Annotation annotation, String defaultMessage, Predicate<Object> check) {
-        this.messageFormat = annotation.stringValue("message")
-                .orElse(defaultMessage);
-        this.check = check;
-        sendNulls = false;
+        this(annotation, defaultMessage, check, false);
     }
 
     /**
@@ -35,13 +50,15 @@ public class BaseValidator implements Validation.ConstraintValidator {
      */
     protected BaseValidator(Annotation annotation, String defaultMessage, Predicate<Object> check, boolean sendNulls) {
         this.messageFormat = annotation.stringValue("message")
+                .filter(Predicate.not(String::isBlank))
                 .orElse(defaultMessage);
         this.check = check;
         this.sendNulls = sendNulls;
+        this.annotation = annotation;
     }
 
     @Override
-    public Validation.ValidatorResponse check(ConstraintValidatorContext context, Object value) {
+    public ValidatorResponse check(ValidationContext context, Object value) {
         if (value == null && !sendNulls) {
             return context.response();
         }
@@ -50,7 +67,7 @@ public class BaseValidator implements Validation.ConstraintValidator {
             return context.response();
         }
 
-        return context.response(value, formatMessage(convertValue(value)));
+        return context.response(annotation, formatMessage(convertValue(value)), value);
     }
 
     /**
@@ -71,5 +88,14 @@ public class BaseValidator implements Validation.ConstraintValidator {
      */
     protected Object convertValue(Object object) {
         return object;
+    }
+
+    /**
+     * The constraint annotation.
+     *
+     * @return annotation
+     */
+    protected Annotation annotation() {
+        return annotation;
     }
 }
