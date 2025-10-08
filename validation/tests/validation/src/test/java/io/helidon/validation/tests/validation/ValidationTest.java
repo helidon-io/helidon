@@ -175,4 +175,85 @@ public class ValidationTest {
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
         assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.Pattern.class)));
     }
+
+    @Test
+    public void testCustomGroup() {
+        // make sure good values pass
+        service.process("valid", "good");
+
+        var t = assertThrows(ValidationException.class, () -> service.process("", "good"));
+        var violations = t.violations();
+
+        assertThat(violations, hasSize(1));
+        var violation = violations.getFirst();
+        List<PathElement> location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD, "process(java.lang.String,java.lang.String)"),
+                                      PathElement.create(Location.PARAMETER, "validateCustomGroup")));
+        assertThat(violation.message(), containsString("is blank"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.NotBlank.class)));
+
+        t = assertThrows(ValidationException.class, () -> service.process("\t\n", "good"));
+        violations = t.violations();
+        assertThat(violations, hasSize(1));
+        violation = violations.getFirst();
+        location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD, "process(java.lang.String,java.lang.String)"),
+                                      PathElement.create(Location.PARAMETER, "validateCustomGroup")));
+        assertThat(violation.message(), containsString("is blank"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.NotBlank.class)));
+
+        t = assertThrows(ValidationException.class, () -> service.process(null, "good"));
+        violations = t.violations();
+        assertThat(violations, hasSize(1));
+        violation = violations.getFirst();
+        location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD, "process(java.lang.String,java.lang.String)"),
+                                      PathElement.create(Location.PARAMETER, "validateCustomGroup")));
+        assertThat(violation.message(), containsString("is null"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.NotNull.class)));
+    }
+
+    @Test
+    public void testCustomConstraint() {
+        // make sure good values pass
+        service.process("valid", "good");
+
+        var t = assertThrows(ValidationException.class, () -> service.process("valid", "bad"));
+        var violations = t.violations();
+
+        assertThat(violations, hasSize(1));
+        var violation = violations.getFirst();
+        List<PathElement> location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD, "process(java.lang.String,java.lang.String)"),
+                                      PathElement.create(Location.PARAMETER, "validateCustomConstraint")));
+        assertThat(violation.message(), containsString("Must be \"good\" string"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(CustomConstraint.class)));
+
+        t = assertThrows(ValidationException.class, () -> service.process("valid", null));
+        violations = t.violations();
+        assertThat(violations, hasSize(1));
+        violation = violations.getFirst();
+        location = violation.location();
+        assertThat(location, contains(PathElement.create(Location.TYPE, ValidatedService.class.getName()),
+                                      PathElement.create(Location.METHOD, "process(java.lang.String,java.lang.String)"),
+                                      PathElement.create(Location.PARAMETER, "validateCustomConstraint")));
+        assertThat(violation.message(), containsString("is null"));
+        assertThat(violation.rootObject(), is(Optional.of(service)));
+        assertThat(violation.rootType(), sameInstance(ValidatedService.class));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.NotNull.class)));
+
+
+    }
 }

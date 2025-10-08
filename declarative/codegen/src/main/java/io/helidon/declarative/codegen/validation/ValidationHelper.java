@@ -173,6 +173,9 @@ final class ValidationHelper {
                 return true;
             }
         }
+        if (needsWork(constraintAnnotations, element.annotations())) {
+            return true;
+        }
 
         // now type parameters of the element itself, or its parameters
         // (valid only for methods, but not present on fields so no problem to check)
@@ -186,6 +189,9 @@ final class ValidationHelper {
                     return true;
                 }
             }
+            if (needsWork(constraintAnnotations, typeName.annotations())) {
+                return true;
+            }
         }
 
         for (TypedElementInfo param : element.parameterArguments()) {
@@ -197,11 +203,52 @@ final class ValidationHelper {
         return false;
     }
 
+    static boolean needsWork(Collection<TypeName> constraintAnnotations, List<Annotation> annotations) {
+        for (Annotation annotation : annotations) {
+            if (annotation.hasMetaAnnotation(CHECK_VALID)) {
+                return true;
+            }
+            for (TypeName constraintAnnotation : constraintAnnotations) {
+                if (annotation.hasMetaAnnotation(constraintAnnotation)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     static Annotation namedByConstant(TypeName type, String constantName) {
         return Annotation.builder()
                 .typeName(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED)
                 .putProperty("value", AnnotationProperty.create("", type, constantName))
                 .build();
+    }
+
+    static List<Annotation> findMetaAnnotations(List<Annotation> annotations, TypeName constraintAnnotation) {
+        // we only care about meta-annotations, as direct annotations are already processed
+        List<Annotation> response = new ArrayList<>();
+
+        for (Annotation annotation : annotations) {
+            var metaAnnotations = annotation.metaAnnotations();
+            for (Annotation metaAnnotation : metaAnnotations) {
+                if (metaAnnotation.typeName().equals(constraintAnnotation)) {
+                    response.add(metaAnnotation);
+                }
+                response.addAll(findMetaAnnotations(metaAnnotation.metaAnnotations(), constraintAnnotation));
+            }
+        }
+
+        return response;
+    }
+
+    static boolean metaAnnotated(TypedElementInfo element, TypeName checkValid) {
+        for (Annotation annotation : element.annotations()) {
+            if (annotation.hasMetaAnnotation(checkValid)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void addValidationOfMap(TypeName generatedType,
@@ -311,12 +358,14 @@ final class ValidationHelper {
         if (!typeName.typeArguments().isEmpty()) {
             boolean isOptional = typeName.equals(TypeNames.OPTIONAL);
             TypeName maybeAnnotated = typeName.typeArguments().getFirst();
-            boolean hasValid = maybeAnnotated.hasAnnotation(CHECK_VALID);
+            boolean hasValid = maybeAnnotated.hasAnnotation(CHECK_VALID)
+                    || !findMetaAnnotations(maybeAnnotated.annotations(), CHECK_VALID).isEmpty();
             List<Annotation> constraints = new ArrayList<>();
 
             // now for each constraint annotation...
             for (TypeName constraintAnnotation : constraintAnnotations) {
                 maybeAnnotated.findAnnotation(constraintAnnotation).ifPresent(constraints::add);
+                constraints.addAll(findMetaAnnotations(maybeAnnotated.annotations(), constraintAnnotation));
             }
 
             if (hasValid || !constraints.isEmpty()) {
