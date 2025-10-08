@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,6 +118,7 @@ final class OpenApiSerializer {
 
         CustomRepresenter(Map<Class<?>, ExpandedTypeDescription> types, DumperOptions dumperOptions, ScalarStyle stringStyle) {
             super(dumperOptions);
+            setPropertyUtils(ExpandedTypeDescription.PROPERTY_UTILS);
             this.stringStyle = stringStyle;
             types.values().stream()
                     .map(ImplTypeDescription::new)
@@ -147,6 +148,15 @@ final class OpenApiSerializer {
                                                                  represent(v));
                         tuples.add(extensionTuple);
                     });
+                }
+            }
+            if (mapping instanceof Reference<?> reference) {
+                List<NodeTuple> tuples = ((MappingNode) result).getValue();
+                String ref = reference.getRef();
+                if (ref != null) {
+                    NodeTuple refTuple = new NodeTuple(new ScalarNode(Tag.STR, "$ref", null, null, stringStyle),
+                                                       represent(ref));
+                    tuples.add(refTuple);
                 }
             }
             return result;
