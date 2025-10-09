@@ -64,6 +64,7 @@ import io.helidon.security.jwt.jwk.JwkRSA;
  */
 public final class EncryptedJwt {
 
+    private static final byte[] EMPTY_BYTES = new byte[0];
     private static final Map<SupportedEncryption, AesAlgorithm> CONTENT_ENCRYPTION;
 
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
@@ -403,7 +404,7 @@ public final class EncryptedJwt {
             System.arraycopy(decryptedKey, keySizeInBytes, encKey, 0, keySizeInBytes);
         } else {
             encKey = decryptedKey;
-            macKey = new byte[0];
+            macKey = EMPTY_BYTES;
         }
         //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
         EncryptionParts encryptionParts = new EncryptionParts(encKey,
@@ -722,7 +723,6 @@ public final class EncryptedJwt {
 
     private static class AesAlgorithm {
 
-        private static final byte[] EMPTY_BYTES = new byte[0];
         private final String cipher;
         private final int keySize;
         private final int ivSize;
