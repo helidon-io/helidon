@@ -722,6 +722,7 @@ public final class EncryptedJwt {
 
     private static class AesAlgorithm {
 
+        private static final byte[] EMPTY_BYTES = new byte[0];
         private final String cipher;
         private final int keySize;
         private final int ivSize;
@@ -739,12 +740,12 @@ public final class EncryptedJwt {
                 SecretKey secretKey = kgen.generateKey();
                 byte[] iv = new byte[ivSize];
                 RANDOM.get().nextBytes(iv);
-                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), new byte[0], iv, aad, null, null);
+                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), EMPTY_BYTES, iv, aad, null, null);
                 Cipher cipher = Cipher.getInstance(this.cipher);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey, createParameterSpec(encryptionParts));
                 postCipherConstruct(cipher, encryptionParts);
                 byte[] encryptedContent = cipher.doFinal(plainContent);
-                return new EncryptionParts(secretKey.getEncoded(), new byte[0], iv, aad, encryptedContent, null);
+                return new EncryptionParts(secretKey.getEncoded(), EMPTY_BYTES, iv, aad, encryptedContent, null);
             } catch (Exception e) {
                 throw new JwtException("Exception during content encryption", e);
             }
