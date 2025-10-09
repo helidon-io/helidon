@@ -30,6 +30,8 @@ module io.helidon.security {
 
     requires io.helidon.common.context;
     requires io.helidon.common.uri;
+    requires io.helidon.service.registry;
+    requires io.helidon.metadata.reflection;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
@@ -40,6 +42,7 @@ module io.helidon.security {
     requires transitive io.helidon.config;
     requires transitive io.helidon.security.util;
     requires transitive io.helidon.tracing;
+    requires transitive io.helidon.common.types;
 
     exports io.helidon.security;
     exports io.helidon.security.spi;
