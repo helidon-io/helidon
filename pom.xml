@@ -110,7 +110,7 @@
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
         <version.lib.groovy>2.4.16</version.lib.groovy>
-        <version.lib.nimbus.jose.jwt>2.4.16</version.lib.nimbus.jose.jwt>
+        <version.lib.nimbus.jose.jwt>10.4</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
         -->
