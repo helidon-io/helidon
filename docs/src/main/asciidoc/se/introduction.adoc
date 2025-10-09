@@ -85,6 +85,15 @@ Expose health statuses of your applications.
 --
 Use of the Helidon injection in your applications.
 --
+
+//JSON Schema
+[CARD]
+.JSON Schema
+[icon=colorize,link=json/schema.adoc]
+--
+Creation of the JSON Schema in your applications.
+--
+
 //Metrics
 [CARD]
 .Metrics
