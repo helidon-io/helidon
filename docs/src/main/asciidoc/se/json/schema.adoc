@@ -105,32 +105,25 @@ include::{sourcedir}/se/json/JsonSchemaSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Schema defining annotation. Without this annotation the class/record will not be processed as a JSON schema
 
-We will need to extend the list of annotation processors with JSON schema codegen,
-otherwise the annotations would not be processed:
+In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
+
 [source,xml]
 ----
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-compiler-plugin</artifactId>
-    <configuration>
-        <annotationProcessorPaths>
-            <!-- Other annotation processors -->
-
-            <!-- Service Registry codegen needed for automatic discovery of the generated schema -->
-            <path>
-                <groupId>io.helidon.service</groupId>
-                <artifactId>helidon-service-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-            <!-- JSON Schema codegen -->
-            <path>
-                <groupId>io.helidon.json.schema</groupId>
-                <artifactId>helidon-json-schema-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-        </annotationProcessorPaths>
-    </configuration>
-</plugin>
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+</plugins>
 ----
 
 Once compiled, the class with the following name will be generated `ExampleSchema__JsonSchema`.
