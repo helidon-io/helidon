@@ -527,7 +527,8 @@ class TenantAuthenticationHandler {
                 if (tenantConfig.contentKeyDecryptionKeys().isEmpty()
                         || tenantConfig.contentKeyDecryptionKeys().get().keys().isEmpty()) {
                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured.");
+                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured "
+                                + "for the tenant: " + tenantId);
                     }
                     return AuthenticationResponse.failed("Failed to decrypt ID Token");
                 }
@@ -599,7 +600,8 @@ class TenantAuthenticationHandler {
                 if (tenantConfig.contentKeyDecryptionKeys().isEmpty()
                         || tenantConfig.contentKeyDecryptionKeys().get().keys().isEmpty()) {
                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured.");
+                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured "
+                                + "for the tenant: " + tenantId);
                     }
                     return AuthenticationResponse.failed("Failed to decrypt Access Token");
                 }

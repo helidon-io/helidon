@@ -110,6 +110,7 @@
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
         <version.lib.groovy>2.4.16</version.lib.groovy>
+        <version.lib.nimbus.jose.jwt>2.4.16</version.lib.nimbus.jose.jwt>
         <!--
         !Version statement! - end
         -->
@@ -1432,6 +1433,12 @@
                 <groupId>org.apiguardian</groupId>
                 <artifactId>apiguardian-api</artifactId>
                 <version>${version.lib.apiguardian.api}</version>
+            </dependency>
+            <!-- For JWE testing -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${version.lib.nimbus.jose.jwt}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

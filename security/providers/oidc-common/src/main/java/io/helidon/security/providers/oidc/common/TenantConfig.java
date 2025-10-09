@@ -198,7 +198,9 @@ public interface TenantConfig {
      *
      * @return content encryption key decryption keys
      */
-    Optional<JwkKeys> contentKeyDecryptionKeys();
+    default Optional<JwkKeys> contentKeyDecryptionKeys() {
+        return Optional.empty();
+    }
 
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.
