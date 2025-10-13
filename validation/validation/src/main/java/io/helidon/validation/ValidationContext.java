@@ -84,6 +84,10 @@ public interface ValidationContext {
      */
     ValidatorResponse response();
 
+    /*
+    TODO: can we hide enter/leave from the user
+     */
+
     /**
      * Enter a new location.
      * The validation context internally maintains a path used to create constraint violations.

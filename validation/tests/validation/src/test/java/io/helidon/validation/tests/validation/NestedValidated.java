@@ -22,16 +22,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.validation.Check;
 import io.helidon.validation.Validation;
 
 @Validation.Validated
 class NestedValidated {
-    @Check.NotNull final String value;
-    final Optional<@Check.Valid ValidatedType> validatedType;
-    final Set<@Check.String.NotBlank @Check.String.Length(4) String> validatedSet = new HashSet<>();
-    final Map<@Check.String.NotBlank @Check.String.Length(4) String,
-            @Check.String.NotBlank @Check.String.Length(7) String> validatedMap = new HashMap<>();
+    @Validation.NotNull final String value;
+    final Optional<@Validation.Valid ValidatedType> validatedType;
+    final Set<@Validation.String.NotBlank @Validation.String.Length(4) String> validatedSet = new HashSet<>();
+    final Map<@Validation.String.NotBlank @Validation.String.Length(4) String,
+            @Validation.String.NotBlank @Validation.String.Length(7) String> validatedMap = new HashMap<>();
     final String notValidated = "Hello World!";
 
     private final long bigNumber;
@@ -42,12 +41,12 @@ class NestedValidated {
         this.validatedType = Optional.ofNullable(validatedType);
     }
 
-    @Check.Long.Max(14569L)
+    @Validation.Long.Max(14569L)
     public long bigNumber() {
         return bigNumber;
     }
 
-    @Check.Long.Min(0L)
+    @Validation.Long.Min(0L)
     public long getOtherNumber() {
         return bigNumber;
     }
