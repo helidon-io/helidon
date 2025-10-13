@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package io.helidon.webserver.observe;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.config.Config;
 
 /**
  * Base configuration for any observer that exposes an endpoint.
@@ -41,4 +44,11 @@ interface ObserverConfigBaseBlueprint {
      */
     @Option.Required
     String name();
+
+    /**
+     * The config instance used to configure this observer.
+     *
+     * @return config
+     */
+    Optional<Config> config();
 }

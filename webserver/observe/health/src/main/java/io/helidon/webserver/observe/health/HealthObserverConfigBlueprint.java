@@ -17,11 +17,9 @@
 package io.helidon.webserver.observe.health;
 
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.observe.spi.ObserveProvider;
@@ -77,13 +75,6 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean useSystemServices();
-
-    /**
-     * Config provided by the user (if any).
-     *
-     * @return configuration
-     */
-    Optional<Config> config();
 
     /**
      * Health check names to exclude in computing the overall health of the server.
