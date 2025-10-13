@@ -28,9 +28,10 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.DisabledObserverFeature;
@@ -57,6 +58,10 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
                     .map(provider -> provider.healthChecks(cfg))
                     .flatMap(Collection::stream)
                     .forEach(checks::add);
+
+            // also lookup all health check from the service registry
+            // our own implementation are currently not services, so this should not duplicate them
+            checks.addAll(Services.all(HealthCheck.class));
         }
         // Omit any checks requested to be excluded by name.
         this.all = checks.stream()
