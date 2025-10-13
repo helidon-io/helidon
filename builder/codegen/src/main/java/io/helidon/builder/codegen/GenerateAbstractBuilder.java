@@ -313,7 +313,7 @@ final class GenerateAbstractBuilder {
         }
 
         if (configured.configured()) {
-            TypeName configType = configType(typeContext.propertyData()).orElse(COMMON_CONFIG);
+            TypeName configType = typeContext.configuredData().configType();
 
             TypeName configReturnType = TypeName.builder()
                     .type(Optional.class)
@@ -328,21 +328,6 @@ final class GenerateAbstractBuilder {
                     .addContentLine(".ofNullable(config);");
             classBuilder.addMethod(method);
         }
-    }
-
-    private static Optional<TypeName> configType(TypeContext.PropertyData propertyData) {
-        for (PrototypeProperty property : propertyData.properties()) {
-            if (TypeHandler.isConfigProperty(property.typeHandler())) {
-                return Optional.of(property.typeHandler().actualType());
-            }
-        }
-        for (PrototypeProperty overridingProperty : propertyData.overridingProperties()) {
-            if (TypeHandler.isConfigProperty(overridingProperty.typeHandler())) {
-                return Optional.of(overridingProperty.typeHandler().actualType());
-            }
-        }
-
-        return Optional.empty();
     }
 
     private static void serviceRegistrySetter(InnerClass.Builder classBuilder) {
