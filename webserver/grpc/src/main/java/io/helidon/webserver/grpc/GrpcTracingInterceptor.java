@@ -45,8 +45,14 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 
 /**
- * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
+ * A {@link ServerInterceptor} that adds tracing to gRPC service calls. Use the
+ * {@link io.helidon.webserver.grpc.spi.GrpcServerService} SPI to load this class
+ * by adding a dependency on
+ * {@code io.helidon.webserver:io.helidon.webserver.grpc-tracing} instead.
+ *
+ * @deprecated to be moved to  {@code io.helidon.webserver.grpc.tracing}.
  */
+@Deprecated(forRemoval = true, since = "4.3.2")
 @Weight(InterceptorWeights.TRACING)
 public class GrpcTracingInterceptor implements ServerInterceptor {
 

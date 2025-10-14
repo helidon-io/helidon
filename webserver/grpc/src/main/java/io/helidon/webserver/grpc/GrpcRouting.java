@@ -23,11 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.grpc.spi.GrpcServerService;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
@@ -37,7 +40,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 /**
- * GRPC specific routing.
+ * gRPC specific routing.
  */
 public class GrpcRouting implements Routing {
     private static final GrpcRouting EMPTY = GrpcRouting.builder().build();
@@ -135,6 +138,13 @@ public class GrpcRouting implements Routing {
         private Builder() {
             // always add the context setting interceptor
             interceptors.add(ContextSettingServerInterceptor.instance());
+
+            // add all the interceptor from server services SPI
+            Config config = Services.get(Config.class);
+            GrpcConfig grpcConfig = GrpcConfig.create(config.get(GrpcProtocolProvider.CONFIG_NAME));
+            for (GrpcServerService serverService : grpcConfig.grpcServices()) {
+                interceptors.merge(serverService.interceptors());
+            }
         }
 
         @Override

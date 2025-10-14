@@ -16,8 +16,12 @@
 
 package io.helidon.webserver.grpc;
 
+import java.util.List;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.webserver.grpc.spi.GrpcServerService;
+import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -61,4 +65,14 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enableCompression();
+
+    /**
+     * gRPC server services. These services will be discovered automatically.
+     *
+     * @return services to use
+     */
+    @Option.Singular
+    @Option.Configured("services")
+    @Option.Provider(value = GrpcServerServiceProvider.class)
+    List<GrpcServerService> grpcServices();
 }
