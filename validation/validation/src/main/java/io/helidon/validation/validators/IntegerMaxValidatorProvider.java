@@ -24,12 +24,12 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 import io.helidon.validation.ValidationException;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Check.Integer.Max.class)
+@Service.NamedByType(Validation.Integer.Max.class)
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class IntegerMaxValidatorProvider implements ConstraintValidatorProvider {

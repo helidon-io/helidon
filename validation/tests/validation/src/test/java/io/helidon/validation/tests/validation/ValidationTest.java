@@ -21,9 +21,9 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.testing.junit5.Testing;
-import io.helidon.validation.Check;
 import io.helidon.validation.ConstraintViolation.Location;
 import io.helidon.validation.ConstraintViolation.PathElement;
+import io.helidon.validation.Validation;
 import io.helidon.validation.ValidationException;
 
 import org.junit.jupiter.api.Test;
@@ -70,7 +70,7 @@ public class ValidationTest {
         assertThat(violation.invalidValue(), is(""));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.NotBlank.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.NotBlank.class)));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is less than 42"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.Integer.Min.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.Integer.Min.class)));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("pattern"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.Pattern.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.Pattern.class)));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("pattern"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.Pattern.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.Pattern.class)));
 
         violation = violations.get(1);
         location = violation.location();
@@ -149,7 +149,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is less than 42"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.Integer.Min.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.Integer.Min.class)));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class ValidationTest {
         assertThat(violation.invalidValue(), is("invalid_text"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.Pattern.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.Pattern.class)));
     }
 
     @Test
@@ -193,7 +193,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is blank"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.NotBlank.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.NotBlank.class)));
 
         t = assertThrows(ValidationException.class, () -> service.process("\t\n", "good"));
         violations = t.violations();
@@ -206,7 +206,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is blank"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.String.NotBlank.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.String.NotBlank.class)));
 
         t = assertThrows(ValidationException.class, () -> service.process(null, "good"));
         violations = t.violations();
@@ -219,7 +219,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is null"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.NotNull.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.NotNull.class)));
     }
 
     @Test
@@ -252,7 +252,7 @@ public class ValidationTest {
         assertThat(violation.message(), containsString("is null"));
         assertThat(violation.rootObject(), is(Optional.of(service)));
         assertThat(violation.rootType(), sameInstance(ValidatedService.class));
-        assertThat(violation.annotation().typeName(), is(TypeName.create(Check.NotNull.class)));
+        assertThat(violation.annotation().typeName(), is(TypeName.create(Validation.NotNull.class)));
 
 
     }

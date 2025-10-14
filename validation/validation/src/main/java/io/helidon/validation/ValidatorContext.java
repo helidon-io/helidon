@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.validation.validators;
+package io.helidon.validation;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.time.Clock;
 
-final class NumberHelper {
-    private NumberHelper() {
-    }
-
-    static BigDecimal toBigDecimal(Number number) {
-        if (number instanceof BigDecimal bd) {
-            return bd.stripTrailingZeros();
-        } else if (number instanceof BigInteger bi) {
-            return new BigDecimal(bi);
-        } else if (number instanceof Byte b) {
-            return new BigDecimal(b & 0xFF);
-        } else {
-            return new BigDecimal(String.valueOf(number.doubleValue())).stripTrailingZeros();
-        }
-    }
+/**
+ * Context of a ConstraintValidator.
+ */
+public interface ValidatorContext {
+    /**
+     * Clock to use for validation of calendar constraints.
+     *
+     * @return the configured clock, or the system clock if none was configured
+     */
+    Clock clock();
 }

@@ -34,142 +34,142 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class NumberMinValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     NumberMinValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.Number.Min.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(NumberMinValidatorProviderTest.class, this);
+                                                   Validation.Number.Min.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testValidNumbers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Valid cases - numbers >= min
-        assertThat(validator.check(ctx, 10.0).failed(), is(false));
-        assertThat(validator.check(ctx, 15.5).failed(), is(false));
-        assertThat(validator.check(ctx, 100.0).failed(), is(false));
-        assertThat(validator.check(ctx, Integer.MAX_VALUE).failed(), is(false));
-        assertThat(validator.check(ctx, Long.MAX_VALUE).failed(), is(false));
-        assertThat(validator.check(ctx, new BigDecimal("15.5")).failed(), is(false));
-        assertThat(validator.check(ctx, new BigInteger("15")).failed(), is(false));
+        assertThat(validator.check(ctx, 10.0).valid(), is(true));
+        assertThat(validator.check(ctx, 15.5).valid(), is(true));
+        assertThat(validator.check(ctx, 100.0).valid(), is(true));
+        assertThat(validator.check(ctx, Integer.MAX_VALUE).valid(), is(true));
+        assertThat(validator.check(ctx, Long.MAX_VALUE).valid(), is(true));
+        assertThat(validator.check(ctx, new BigDecimal("15.5")).valid(), is(true));
+        assertThat(validator.check(ctx, new BigInteger("15")).valid(), is(true));
     }
 
     @Test
     public void testInvalidNumbers() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Invalid cases - numbers < min
-        assertThat(validator.check(ctx, 9.9).failed(), is(true));
-        assertThat(validator.check(ctx, 5.0).failed(), is(true));
-        assertThat(validator.check(ctx, 0.0).failed(), is(true));
-        assertThat(validator.check(ctx, -10.0).failed(), is(true));
-        assertThat(validator.check(ctx, Integer.MIN_VALUE).failed(), is(true));
-        assertThat(validator.check(ctx, Long.MIN_VALUE).failed(), is(true));
-        assertThat(validator.check(ctx, new BigDecimal("9.9")).failed(), is(true));
+        assertThat(validator.check(ctx, 9.9).valid(), is(false));
+        assertThat(validator.check(ctx, 5.0).valid(), is(false));
+        assertThat(validator.check(ctx, 0.0).valid(), is(false));
+        assertThat(validator.check(ctx, -10.0).valid(), is(false));
+        assertThat(validator.check(ctx, Integer.MIN_VALUE).valid(), is(false));
+        assertThat(validator.check(ctx, Long.MIN_VALUE).valid(), is(false));
+        assertThat(validator.check(ctx, new BigDecimal("9.9")).valid(), is(false));
     }
 
     @Test
     public void testStringNumbers() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Valid string numbers
-        assertThat(validator.check(ctx, "10.0").failed(), is(false));
-        assertThat(validator.check(ctx, "15.5").failed(), is(false));
-        assertThat(validator.check(ctx, "100").failed(), is(false));
+        assertThat(validator.check(ctx, "10.0").valid(), is(true));
+        assertThat(validator.check(ctx, "15.5").valid(), is(true));
+        assertThat(validator.check(ctx, "100").valid(), is(true));
 
         // Invalid string numbers
-        assertThat(validator.check(ctx, "9.9").failed(), is(true));
-        assertThat(validator.check(ctx, "5").failed(), is(true));
-        assertThat(validator.check(ctx, "invalid").failed(), is(true));
-        assertThat(validator.check(ctx, "").failed(), is(true));
+        assertThat(validator.check(ctx, "9.9").valid(), is(false));
+        assertThat(validator.check(ctx, "5").valid(), is(false));
+        assertThat(validator.check(ctx, "invalid").valid(), is(false));
+        assertThat(validator.check(ctx, "").valid(), is(false));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .putValue("message", "Number must be at least 10")
                 .build());
 
         var response = validator.check(ctx, 5.0);
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("Number must be at least 10"));
     }
 
     @Test
     public void testNonNumberValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Non-number values should fail validation
-        assertThat(validator.check(ctx, "hello").failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
+        assertThat(validator.check(ctx, "hello").valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testDifferentNumberTypes() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 10.0)
                 .build());
 
         // Test different number types
-        assertThat(validator.check(ctx, (byte) 10).failed(), is(false));
-        assertThat(validator.check(ctx, (byte) 15).failed(), is(false));
-        assertThat(validator.check(ctx, (byte) 5).failed(), is(true));
-        assertThat(validator.check(ctx, (short) 10).failed(), is(false));
-        assertThat(validator.check(ctx, (short) 15).failed(), is(false));
-        assertThat(validator.check(ctx, (short) 5).failed(), is(true));
-        assertThat(validator.check(ctx, 10).failed(), is(false));
-        assertThat(validator.check(ctx, 15).failed(), is(false));
-        assertThat(validator.check(ctx, 5).failed(), is(true));
-        assertThat(validator.check(ctx, 10L).failed(), is(false));
-        assertThat(validator.check(ctx, 15L).failed(), is(false));
-        assertThat(validator.check(ctx, 5L).failed(), is(true));
-        assertThat(validator.check(ctx, 10.0f).failed(), is(false));
-        assertThat(validator.check(ctx, 15.0f).failed(), is(false));
-        assertThat(validator.check(ctx, 5.0f).failed(), is(true));
+        assertThat(validator.check(ctx, (byte) 10).valid(), is(true));
+        assertThat(validator.check(ctx, (byte) 15).valid(), is(true));
+        assertThat(validator.check(ctx, (byte) 5).valid(), is(false));
+        assertThat(validator.check(ctx, (short) 10).valid(), is(true));
+        assertThat(validator.check(ctx, (short) 15).valid(), is(true));
+        assertThat(validator.check(ctx, (short) 5).valid(), is(false));
+        assertThat(validator.check(ctx, 10).valid(), is(true));
+        assertThat(validator.check(ctx, 15).valid(), is(true));
+        assertThat(validator.check(ctx, 5).valid(), is(false));
+        assertThat(validator.check(ctx, 10L).valid(), is(true));
+        assertThat(validator.check(ctx, 15L).valid(), is(true));
+        assertThat(validator.check(ctx, 5L).valid(), is(false));
+        assertThat(validator.check(ctx, 10.0f).valid(), is(true));
+        assertThat(validator.check(ctx, 15.0f).valid(), is(true));
+        assertThat(validator.check(ctx, 5.0f).valid(), is(false));
     }
 
     @Test
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_DOUBLE, Annotation.builder()
-                .typeName(TypeName.create(Check.Number.Min.class))
+                .typeName(TypeName.create(Validation.Number.Min.class))
                 .putValue("value", 0.0)
                 .build());
 
         // Edge cases
-        assertThat(validator.check(ctx, 0.0).failed(), is(false)); // Exactly equal
+        assertThat(validator.check(ctx, 0.0).valid(), is(true)); // Exactly equal
         // Exactly equal (BigDecimal does not have negative zero)
-        assertThat(validator.check(ctx, -0.0).failed(), is(false));
-        assertThat(validator.check(ctx, Double.MIN_VALUE).failed(), is(false)); // Smallest negative double
-        assertThat(validator.check(ctx, -Double.MIN_VALUE).failed(), is(true)); // Highest positive double
+        assertThat(validator.check(ctx, -0.0).valid(), is(true));
+        assertThat(validator.check(ctx, Double.MIN_VALUE).valid(), is(true)); // Smallest negative double
+        assertThat(validator.check(ctx, -Double.MIN_VALUE).valid(), is(false)); // Highest positive double
     }
 }

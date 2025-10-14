@@ -20,12 +20,12 @@ import io.helidon.common.types.TypeName;
 
 final class ValidationTypes {
 
-    static final TypeName CHECK_VALID = TypeName.create("io.helidon.validation.Check.Valid");
-
     static final TypeName VALIDATION_CONTEXT = TypeName.create("io.helidon.validation.ValidationContext");
     static final TypeName VALIDATION_CONSTRAINT = TypeName.create("io.helidon.validation.Validation.Constraint");
-    static final TypeName CONSTRAINT_VIOLATION_LOCATION = TypeName.create("io.helidon.validation.ConstraintViolation.Location");
     static final TypeName VALIDATION_VALIDATED = TypeName.create("io.helidon.validation.Validation.Validated");
+    static final TypeName VALIDATION_VALID = TypeName.create("io.helidon.validation.Validation.Valid");
+
+    static final TypeName CONSTRAINT_VIOLATION_LOCATION = TypeName.create("io.helidon.validation.ConstraintViolation.Location");
 
     static final TypeName VALIDATION_EXCEPTION = TypeName.create("io.helidon.validation.ValidationException");
     static final TypeName VALIDATOR_RESPONSE = TypeName.create("io.helidon.validation.ValidatorResponse");

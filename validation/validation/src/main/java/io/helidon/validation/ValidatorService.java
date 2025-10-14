@@ -34,27 +34,34 @@ class ValidatorService implements Validator {
     }
 
     @Override
-    public <T> ValidatorResponse validate(Class<T> type, T object) {
+    public <T> ValidationResponse validate(Class<T> type, T object) {
         var validator = validator(type);
 
-        return validator.check(new ConstraintValidatorContextImpl(type, object),
-                               object);
+        var ctx = ValidationContext.create(type, object);
+        validator.check(ctx, object);
+        return ctx.response();
     }
 
     @Override
-    public <T> ValidatorResponse validate(Class<T> type, T object, String propertyName) {
-        return validator(type)
-                .check(new ConstraintValidatorContextImpl(type, object),
+    public <T> ValidationResponse validate(Class<T> type, T object, String propertyName) {
+        var ctx = ValidationContext.create(type, object);
+        validator(type)
+                .check(ctx,
                        object,
                        propertyName);
+
+        return ctx.response();
     }
 
     @Override
-    public ValidatorResponse validateProperty(Class<?> type, String propertyName, Object value) {
-        return validator(type)
-                .checkProperty(new ConstraintValidatorContextImpl(type, null),
+    public ValidationResponse validateProperty(Class<?> type, String propertyName, Object value) {
+        var ctx = ValidationContext.create(type);
+        validator(type)
+                .checkProperty(ctx,
                                propertyName,
                                value);
+
+        return ctx.response();
     }
 
     private <T> TypeValidator<T> validator(Class<T> type) {

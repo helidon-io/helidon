@@ -31,90 +31,90 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class StringNotBlankValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     StringNotBlankValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.String.NotBlank.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(StringNotBlankValidatorProviderTest.class, this);
+                                                   Validation.String.NotBlank.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testValidStrings() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // Valid cases - non-blank strings
-        assertThat(validator.check(ctx, "hello").failed(), is(false));
-        assertThat(validator.check(ctx, "a").failed(), is(false));
-        assertThat(validator.check(ctx, "123").failed(), is(false));
-        assertThat(validator.check(ctx, "hello world").failed(), is(false));
-        assertThat(validator.check(ctx, "  hello  ").failed(), is(false)); // Has content despite leading/trailing spaces
+        assertThat(validator.check(ctx, "hello").valid(), is(true));
+        assertThat(validator.check(ctx, "a").valid(), is(true));
+        assertThat(validator.check(ctx, "123").valid(), is(true));
+        assertThat(validator.check(ctx, "hello world").valid(), is(true));
+        assertThat(validator.check(ctx, "  hello  ").valid(), is(true)); // Has content despite leading/trailing spaces
     }
 
     @Test
     public void testInvalidStrings() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // Invalid cases - blank strings
-        assertThat(validator.check(ctx, "").failed(), is(true));
-        assertThat(validator.check(ctx, "   ").failed(), is(true));
-        assertThat(validator.check(ctx, "\t").failed(), is(true));
-        assertThat(validator.check(ctx, "\n").failed(), is(true));
-        assertThat(validator.check(ctx, "\r").failed(), is(true));
-        assertThat(validator.check(ctx, " \t\n ").failed(), is(true));
-        assertThat(validator.check(ctx, "\u0009").failed(), is(true)); // Tab character
-        assertThat(validator.check(ctx, "\u0020").failed(), is(true)); // Space character
+        assertThat(validator.check(ctx, "").valid(), is(false));
+        assertThat(validator.check(ctx, "   ").valid(), is(false));
+        assertThat(validator.check(ctx, "\t").valid(), is(false));
+        assertThat(validator.check(ctx, "\n").valid(), is(false));
+        assertThat(validator.check(ctx, "\r").valid(), is(false));
+        assertThat(validator.check(ctx, " \t\n ").valid(), is(false));
+        assertThat(validator.check(ctx, "\u0009").valid(), is(false)); // Tab character
+        assertThat(validator.check(ctx, "\u0020").valid(), is(false)); // Space character
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.NotBlank.class))
+                .typeName(TypeName.create(Validation.String.NotBlank.class))
                 .putValue("message", "String cannot be blank")
                 .build());
 
         var response = validator.check(ctx, "   ");
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("String cannot be blank"));
     }
 
     @Test
     public void testNonStringValues() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // Non-string values should fail validation
-        assertThat(validator.check(ctx, 123).failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
+        assertThat(validator.check(ctx, 123).valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testStringBuilder() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // StringBuilder should work as it implements CharSequence
-        assertThat(validator.check(ctx, new StringBuilder("hello")).failed(), is(false));
-        assertThat(validator.check(ctx, new StringBuilder("   ")).failed(), is(true));
-        assertThat(validator.check(ctx, new StringBuilder("")).failed(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("hello")).valid(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("   ")).valid(), is(false));
+        assertThat(validator.check(ctx, new StringBuilder("")).valid(), is(false));
     }
 
     @Test
     public void testMixedWhitespace() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.NotBlank.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.NotBlank.class));
 
         // Various combinations of whitespace characters
-        assertThat(validator.check(ctx, " \t ").failed(), is(true));
-        assertThat(validator.check(ctx, "\n\r").failed(), is(true));
-        assertThat(validator.check(ctx, "\u0009\u0020").failed(), is(true)); // Tab + Space
-        assertThat(validator.check(ctx, "hello\tworld").failed(), is(false)); // Contains non-whitespace
+        assertThat(validator.check(ctx, " \t ").valid(), is(false));
+        assertThat(validator.check(ctx, "\n\r").valid(), is(false));
+        assertThat(validator.check(ctx, "\u0009\u0020").valid(), is(false)); // Tab + Space
+        assertThat(validator.check(ctx, "hello\tworld").valid(), is(true)); // Contains non-whitespace
     }
 }

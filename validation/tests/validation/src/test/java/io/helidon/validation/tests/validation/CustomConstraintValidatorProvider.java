@@ -19,7 +19,7 @@ package io.helidon.validation.tests.validation;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
@@ -40,18 +40,18 @@ public class CustomConstraintValidatorProvider implements ConstraintValidatorPro
         }
 
         @Override
-        public ValidatorResponse check(ValidationContext context, Object value) {
+        public ValidatorResponse check(ValidatorContext context, Object value) {
             if (value == null) {
-                return context.response();
+                return ValidatorResponse.create();
             }
 
             if (value instanceof String str) {
                 if (str.equals("good")) {
-                    return context.response();
+                    return ValidatorResponse.create();
                 }
             }
 
-            return context.response(annotation, "Must be \"good\" string", value);
+            return ValidatorResponse.create(annotation, "Must be \"good\" string", value);
         }
     }
 }

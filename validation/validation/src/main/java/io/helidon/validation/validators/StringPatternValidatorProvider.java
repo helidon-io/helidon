@@ -24,11 +24,11 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Check.String.Pattern.class)
+@Service.NamedByType(Validation.String.Pattern.class)
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class StringPatternValidatorProvider implements ConstraintValidatorProvider {
@@ -37,10 +37,10 @@ class StringPatternValidatorProvider implements ConstraintValidatorProvider {
         int flags = 0;
         String regexp = constraintAnnotation.value().orElseThrow();
         var annotationFlags = constraintAnnotation.enumValues("flags",
-                                                              Check.String.Pattern.Flag.class)
+                                                              Validation.String.Pattern.Flag.class)
                 .orElseGet(List::of);
 
-        for (Check.String.Pattern.Flag annotationFlag : annotationFlags) {
+        for (Validation.String.Pattern.Flag annotationFlag : annotationFlags) {
             flags |= annotationFlag.value();
         }
 

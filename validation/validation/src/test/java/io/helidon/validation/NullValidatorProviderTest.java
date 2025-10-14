@@ -31,54 +31,54 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class NullValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     NullValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   "io.helidon.validation.Check.Null");
-        this.ctx = new ConstraintValidatorContextImpl(NullValidatorProviderTest.class, this);
+                                                   "io.helidon.validation.Validation.Null");
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Check.Null.class));
+        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Validation.Null.class));
 
         var response = validator.check(ctx, null);
 
-        assertThat(response.failed(), is(false));
+        assertThat(response.valid(), is(true));
     }
 
     @Test
     public void testNonNullValue() {
-        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Check.Null.class));
+        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Validation.Null.class));
 
         var response = validator.check(ctx, "is not null");
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("is not null"));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.builder()
-                .typeName(TypeName.create(Check.Null.class))
+                .typeName(TypeName.create(Validation.Null.class))
                 .putValue("message", "Value must be null")
                 .build());
 
         var response = validator.check(ctx, "not null");
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("Value must be null"));
     }
 
     @Test
     public void testDifferentTypes() {
-        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Check.Null.class));
+        var validator = validatorProvider.create(TypeNames.OBJECT, Annotation.create(Validation.Null.class));
 
         // Test with different non-null types
-        assertThat(validator.check(ctx, 42).failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
-        assertThat(validator.check(ctx, "").failed(), is(true));
+        assertThat(validator.check(ctx, 42).valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
+        assertThat(validator.check(ctx, "").valid(), is(false));
     }
 }

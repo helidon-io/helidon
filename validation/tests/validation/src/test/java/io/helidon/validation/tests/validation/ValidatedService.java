@@ -20,16 +20,16 @@ import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 
 @Service.Singleton
 public class ValidatedService {
     @Service.Inject
-    @Check.NotNull
+    @Validation.NotNull
     Config config;
 
-    @Check.String.NotBlank
-    String process(@Check.Valid @Check.NotNull ValidatedType type) {
+    @Validation.String.NotBlank
+    String process(@Validation.Valid @Validation.NotNull ValidatedType type) {
         if (type.second() == 42) {
             return "Good";
         }
@@ -40,7 +40,7 @@ public class ValidatedService {
     }
 
     // TODO ignored valid now that Size was added
-    void process(@Check.Collection.Size(2) List<@Check.Valid ValidatedType> list) {
+    void process(@Validation.Collection.Size(2) List<@Validation.Valid ValidatedType> list) {
     }
     // custom group adds non-null and non-blank
     // custom constraint just checks it is "good"

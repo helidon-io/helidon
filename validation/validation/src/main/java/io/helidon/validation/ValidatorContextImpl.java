@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.validation.validators;
+package io.helidon.validation;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.time.Clock;
 
-final class NumberHelper {
-    private NumberHelper() {
+class ValidatorContextImpl implements ValidatorContext {
+    private final Clock clock;
+
+    ValidatorContextImpl() {
+        this.clock = Clock.systemDefaultZone();
     }
 
-    static BigDecimal toBigDecimal(Number number) {
-        if (number instanceof BigDecimal bd) {
-            return bd.stripTrailingZeros();
-        } else if (number instanceof BigInteger bi) {
-            return new BigDecimal(bi);
-        } else if (number instanceof Byte b) {
-            return new BigDecimal(b & 0xFF);
-        } else {
-            return new BigDecimal(String.valueOf(number.doubleValue())).stripTrailingZeros();
-        }
+    ValidatorContextImpl(Clock clock) {
+        this.clock = clock;
+    }
+
+    @Override
+    public Clock clock() {
+        return clock;
     }
 }

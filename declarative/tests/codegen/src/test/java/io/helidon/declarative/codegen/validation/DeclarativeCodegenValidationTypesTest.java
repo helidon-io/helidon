@@ -24,12 +24,11 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.validation.Check;
 import io.helidon.validation.ConstraintViolation;
 import io.helidon.validation.Validation;
 import io.helidon.validation.ValidationContext;
 import io.helidon.validation.ValidationException;
-import io.helidon.validation.ValidatorResponse;
+import io.helidon.validation.ValidationResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.validation.spi.TypeValidator;
@@ -68,12 +67,12 @@ class DeclarativeCodegenValidationTypesTest {
 
         checkField(toCheck, checked, fields, "VALIDATION_CONTEXT", ValidationContext.class);
         checkField(toCheck, checked, fields, "CONSTRAINT_VIOLATION_LOCATION", ConstraintViolation.Location.class);
-        checkField(toCheck, checked, fields, "CHECK_VALID", Check.Valid.class);
+        checkField(toCheck, checked, fields, "VALIDATION_VALID", Validation.Valid.class);
         checkField(toCheck, checked, fields, "VALIDATION_CONSTRAINT", Validation.Constraint.class);
         checkField(toCheck, checked, fields, "VALIDATION_VALIDATED", Validation.Validated.class);
         checkField(toCheck, checked, fields, "VALIDATION_EXCEPTION", ValidationException.class);
 
-        checkField(toCheck, checked, fields, "VALIDATOR_RESPONSE", ValidatorResponse.class);
+        checkField(toCheck, checked, fields, "VALIDATOR_RESPONSE", ValidationResponse.class);
         checkField(toCheck, checked, fields, "TYPE_VALIDATOR", TypeValidator.class);
         checkField(toCheck, checked, fields, "CONSTRAINT_VALIDATOR", ConstraintValidator.class);
         checkField(toCheck, checked, fields, "CONSTRAINT_VALIDATOR_PROVIDER", ConstraintValidatorProvider.class);

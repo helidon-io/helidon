@@ -16,11 +16,10 @@
 
 package io.helidon.validation.tests.validation;
 
-import io.helidon.validation.Check;
 import io.helidon.validation.Validation;
 
 @Validation.Validated
-record ValidatedType(@Check.String.Pattern(".*test.*") String first,
-                     @Check.Integer.Min(42) int second) {
+record ValidatedType(@Validation.String.Pattern(".*test.*") String first,
+                     @Validation.Integer.Min(42) int second) {
 
 }

@@ -25,8 +25,8 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONSTRAINT;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALIDATED;
 
 /**
@@ -48,7 +48,7 @@ public class ValidationExtensionProvider implements RegistryCodegenExtensionProv
     @Override
     public Set<TypeName> supportedAnnotations() {
         return Set.of(VALIDATION_VALIDATED,
-                      CHECK_VALID);
+                      VALIDATION_VALID);
     }
 
     @Override

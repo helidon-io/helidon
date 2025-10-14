@@ -16,16 +16,48 @@
 
 package io.helidon.validation;
 
-import java.time.Clock;
-import java.util.Objects;
+import java.util.function.Consumer;
 
-import io.helidon.common.types.Annotation;
+import io.helidon.builder.api.RuntimeType;
+import io.helidon.validation.spi.ConstraintValidator;
 
 /**
- * Context of {@link io.helidon.validation.spi.ConstraintValidator#check(ValidationContext, Object)}
- * and {@link io.helidon.validation.spi.TypeValidator#check(ValidationContext, Object)} and similar methods.
+ * Context of {@link io.helidon.validation.spi.TypeValidator#check(ValidationContext, Object)}, also used to validate
+ * constraints using #check(ConstraintValidator, Object).
  */
-public interface ValidationContext {
+@RuntimeType.PrototypedBy(ValidationContextConfig.class)
+public interface ValidationContext extends RuntimeType.Api<ValidationContextConfig> {
+    /**
+     * Create a new fluent api builder for a {@link ValidationContext}.
+     *
+     * @return a new builder
+     */
+    static ValidationContextConfig.Builder builder() {
+        return ValidationContextConfig.builder();
+    }
+
+    /**
+     * Create a new validation context from a configuration.
+     *
+     * @param config configuration to use
+     * @return a new validation context
+     */
+    static ValidationContext create(ValidationContextConfig config) {
+        return new ValidationContextImpl(config);
+    }
+
+    /**
+     * Create a new validation context customizing its configuration.
+     *
+     * @param builderConsumer consumer to update the builder
+     * @return a new validation context
+     */
+    static ValidationContext create(Consumer<ValidationContextConfig.Builder> builderConsumer) {
+        return builder()
+                .update(builderConsumer)
+                .build();
+    }
+
     /**
      * Create a new validation context for a given root type, where we do not have an instance to serve as root.
      *
@@ -33,8 +65,9 @@ public interface ValidationContext {
      * @return a new validation context
      */
     static ValidationContext create(Class<?> rootType) {
-        Objects.requireNonNull(rootType, "rootType is null");
-        return new ConstraintValidatorContextImpl(rootType, null);
+        return builder()
+                .rootType(rootType)
+                .build();
     }
 
     /**
@@ -45,67 +78,62 @@ public interface ValidationContext {
      * @return a new validation context
      */
     static ValidationContext create(Class<?> rootType, Object rootObject) {
-        Objects.requireNonNull(rootType, "rootType is null");
-        Objects.requireNonNull(rootObject, "rootObject is null");
-
-        return new ConstraintValidatorContextImpl(rootType, rootObject);
+        return builder()
+                .rootType(rootType)
+                .rootObject(rootObject)
+                .build();
     }
 
     /**
-     * Create a new validation context for a given root type and object, and with the specified clock.
+     * The overall validation response current available on this context.
+     * Calling this method will clear the current response.
+     * <p>
+     * Alternative method to clear the current response is {@link #throwOnFailure()}.
      *
-     * @param rootType   type of the root validation object
-     * @param rootObject instance of the root validation object
-     * @param clock      clock to use for validation of calendar constraints
-     * @return a new validation context
+     * @return the response combined from all
+     *         {@link #check(io.helidon.validation.spi.ConstraintValidator, Object)}
+     *         calls.
      */
-    static ValidationContext create(Class<?> rootType, Object rootObject, Clock clock) {
-        Objects.requireNonNull(rootType, "rootType is null");
-        Objects.requireNonNull(rootObject, "rootObject is null");
-        Objects.requireNonNull(clock, "clock is null");
+    ValidationResponse response();
 
-        return new ConstraintValidatorContextImpl(rootType, rootObject, clock);
+    /**
+     * Throws a Validation exception in case the current response is not valid, returns normally otherwise.
+     * Calling this method will clear the current response.
+     */
+    default void throwOnFailure() {
+        var res = response();
+        if (res.valid()) {
+            return;
+        }
+        throw res.toException();
     }
 
     /**
-     * Create a new failed validation response with the current path.
+     * Run the provided {@code check} on the provided {@code object}.
+     * Adds the validator response to this context's validation response.
      *
-     * @param annotation   annotation that caused this failure (a constraint annotation)
-     * @param message      message describing the failure
-     * @param invalidValue the value that was not valid, may be {@code null}!
-     * @return a new failed validation response
+     * @param validator the type validator or constraint validator to run
+     * @param object    the object to check
+     * @param <T>       type of the object to check
      */
-    ValidatorResponse response(Annotation annotation, String message, Object invalidValue);
+    <T> void check(ConstraintValidator validator, T object);
 
     /**
-     * Create a new success response.
-     *
-     * @return a new success response
-     */
-    ValidatorResponse response();
-
-    /*
-    TODO: can we hide enter/leave from the user
-     */
-
-    /**
-     * Enter a new location.
+     * Enter a new scope.
      * The validation context internally maintains a path used to create constraint violations.
      *
      * @param location the location we are entering
      * @param name     name of the location (i.e. class name for type, method signature for method)
+     * @return a new scope, should be used with try with resources to run any checks nested within the scope
+     * @see ConstraintViolation#location()
      */
-    void enter(ConstraintViolation.Location location, String name);
+    Scope scope(ConstraintViolation.Location location, String name);
 
     /**
-     * Leave the current location.
+     * Scope of a validation operation.
      */
-    void leave();
-
-    /**
-     * Clock to use for validation of calendar constraints.
-     *
-     * @return the configured clock, or the system clock if none was configured
-     */
-    Clock clock();
+    interface Scope extends AutoCloseable {
+        @Override
+        void close();
+    }
 }

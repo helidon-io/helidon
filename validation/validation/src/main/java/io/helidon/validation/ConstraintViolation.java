@@ -132,7 +132,7 @@ public interface ConstraintViolation {
          * @return a new path element
          */
         static PathElement create(Location location, String name) {
-            return new ConstraintValidatorContextImpl.PathImpl(location, name);
+            return new ValidationContextImpl.PathImpl(location, name);
         }
 
         /**

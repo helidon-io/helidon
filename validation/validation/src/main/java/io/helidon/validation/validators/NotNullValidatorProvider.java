@@ -24,11 +24,11 @@ import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Check.NotNull.class)
+@Service.NamedByType(Validation.NotNull.class)
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class NotNullValidatorProvider implements ConstraintValidatorProvider {

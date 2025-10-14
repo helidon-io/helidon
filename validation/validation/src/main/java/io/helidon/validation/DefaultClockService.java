@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.validation.validators;
+package io.helidon.validation;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeName;
+import java.time.Clock;
+import java.util.function.Supplier;
+
+import io.helidon.common.LazyValue;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Validation;
-import io.helidon.validation.spi.ConstraintValidator;
-import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Validation.Calendar.Past.class)
 @Service.Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 30)
-class CalendarPastValidatorProvider implements ConstraintValidatorProvider {
+class DefaultClockService implements Supplier<Clock> {
+    private final LazyValue<Clock> clock = LazyValue.create(Clock::systemDefaultZone);
+
+    DefaultClockService() {
+    }
+
     @Override
-    public ConstraintValidator create(TypeName type, Annotation constraintAnnotation) {
-        return CalendarHelper.validator(type, constraintAnnotation, false, false);
+    public Clock get() {
+        return clock.get();
     }
 }

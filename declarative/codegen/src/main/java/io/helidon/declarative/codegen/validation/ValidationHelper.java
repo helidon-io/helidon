@@ -30,11 +30,11 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.FieldHandler;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VALIDATOR;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VALIDATOR_PROVIDER;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.TYPE_VALIDATOR;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
 
 final class ValidationHelper {
     private ValidationHelper() {
@@ -76,8 +76,11 @@ final class ValidationHelper {
                                   });
     }
 
-    static void addValidationOfValid(ContentBuilder<?> contentBuilder, String validatorField, String location, String varName) {
-        checkAndMerge(contentBuilder, location, validatorField, varName);
+    static void addValidationOfValid(ContentBuilder<?> contentBuilder, String validatorField, String varName) {
+        contentBuilder.addContent(validatorField)
+                .addContent(".check(validation__ctx, ")
+                .addContent(varName)
+                .addContentLine(");");
     }
 
     static void addValidationOfTypeArguments(TypeName generatedType,
@@ -158,14 +161,18 @@ final class ValidationHelper {
                                                           .addContentLine(");");
                                               });
 
-        checkAndMerge(contentBuilder, location, validator, varName);
+        contentBuilder.addContent("validation__ctx.check(")
+                .addContent(validator)
+                .addContent(", ")
+                .addContent(varName)
+                .addContentLine(");");
     }
 
     static boolean needsWork(Collection<TypeName> constraintAnnotations, TypedElementInfo element) {
         // the element itself is annotated either with valid or one of the constraints
         // a type parameter is annotated in the same way (only first level)
 
-        if (element.hasAnnotation(CHECK_VALID)) {
+        if (element.hasAnnotation(VALIDATION_VALID)) {
             return true;
         }
         for (TypeName constraintAnnotation : constraintAnnotations) {
@@ -181,7 +188,7 @@ final class ValidationHelper {
         // (valid only for methods, but not present on fields so no problem to check)
         TypeName elementType = element.typeName();
         for (TypeName typeName : elementType.typeArguments()) {
-            if (typeName.hasAnnotation(CHECK_VALID)) {
+            if (typeName.hasAnnotation(VALIDATION_VALID)) {
                 return true;
             }
             for (TypeName constraintAnnotation : constraintAnnotations) {
@@ -205,7 +212,7 @@ final class ValidationHelper {
 
     static boolean needsWork(Collection<TypeName> constraintAnnotations, List<Annotation> annotations) {
         for (Annotation annotation : annotations) {
-            if (annotation.hasMetaAnnotation(CHECK_VALID)) {
+            if (annotation.hasMetaAnnotation(VALIDATION_VALID)) {
                 return true;
             }
             for (TypeName constraintAnnotation : constraintAnnotations) {
@@ -263,9 +270,9 @@ final class ValidationHelper {
             TypeName keyType = typeName.typeArguments().get(0);
             TypeName valueType = typeName.typeArguments().get(1);
 
-            boolean keyHasValid = keyType.hasAnnotation(CHECK_VALID);
+            boolean keyHasValid = keyType.hasAnnotation(VALIDATION_VALID);
             List<Annotation> keyConstraints = new ArrayList<>();
-            boolean valueHasValid = valueType.hasAnnotation(CHECK_VALID);
+            boolean valueHasValid = valueType.hasAnnotation(VALIDATION_VALID);
             List<Annotation> valueConstraints = new ArrayList<>();
 
             // now for each constraint annotation...
@@ -289,15 +296,15 @@ final class ValidationHelper {
                         .addContentLine("var validation__value = validation__entry.getValue();");
 
                 if (keyHasValid || !keyConstraints.isEmpty()) {
-                    contentBuilder.addContent("validation__ctx.enter(")
+                    contentBuilder.addContent("try (var scope__mapkey = validation__ctx.scope(")
                             .addContent(CONSTRAINT_VIOLATION_LOCATION)
                             .addContent(".KEY, ")
                             .addContentLiteral("key")
-                            .addContentLine(");");
+                            .addContentLine(")) {");
                 }
                 if (keyHasValid) {
                     String validatorField = addTypeValidator(fieldHandler, keyType);
-                    addValidationOfValid(contentBuilder, validatorField, "KEY", "validation__key");
+                    addValidationOfValid(contentBuilder, validatorField, "validation__key");
                 }
                 for (Annotation constraint : keyConstraints) {
                     addValidationOfConstraint(generatedType,
@@ -310,20 +317,19 @@ final class ValidationHelper {
                 }
 
                 if (keyHasValid || !keyConstraints.isEmpty()) {
-                    contentBuilder.addContentLine("// leave map key");
-                    contentBuilder.addContentLine("validation__ctx.leave();");
+                    contentBuilder.addContentLine("}");
                 }
 
                 if (valueHasValid || !valueConstraints.isEmpty()) {
-                    contentBuilder.addContent("validation__ctx.enter(")
+                    contentBuilder.addContent("try (var scope__mapelement = validation__ctx.scope(")
                             .addContent(CONSTRAINT_VIOLATION_LOCATION)
                             .addContent(".ELEMENT, ")
                             .addContentLiteral("value")
-                            .addContentLine(");");
+                            .addContentLine(")) {");
                 }
                 if (valueHasValid) {
                     String validatorField = addTypeValidator(fieldHandler, valueType);
-                    addValidationOfValid(contentBuilder, validatorField, "ELEMENT", "validation__value");
+                    addValidationOfValid(contentBuilder, validatorField, "validation__value");
                 }
 
                 for (Annotation constraint : valueConstraints) {
@@ -337,8 +343,7 @@ final class ValidationHelper {
                 }
 
                 if (valueHasValid || !valueConstraints.isEmpty()) {
-                    contentBuilder.addContentLine("// leave map value");
-                    contentBuilder.addContentLine("validation__ctx.leave();");
+                    contentBuilder.addContentLine("}");
                 }
 
                 contentBuilder.addContentLine("}");
@@ -358,8 +363,8 @@ final class ValidationHelper {
         if (!typeName.typeArguments().isEmpty()) {
             boolean isOptional = typeName.equals(TypeNames.OPTIONAL);
             TypeName maybeAnnotated = typeName.typeArguments().getFirst();
-            boolean hasValid = maybeAnnotated.hasAnnotation(CHECK_VALID)
-                    || !findMetaAnnotations(maybeAnnotated.annotations(), CHECK_VALID).isEmpty();
+            boolean hasValid = maybeAnnotated.hasAnnotation(VALIDATION_VALID)
+                    || !findMetaAnnotations(maybeAnnotated.annotations(), VALIDATION_VALID).isEmpty();
             List<Annotation> constraints = new ArrayList<>();
 
             // now for each constraint annotation...
@@ -385,15 +390,15 @@ final class ValidationHelper {
                             .addContent(localVariableName)
                             .addContentLine(") {");
                 }
-                contentBuilder.addContent("validation__ctx.enter(")
+                contentBuilder.addContent("try (var scope__element = validation__ctx.scope(")
                         .addContent(CONSTRAINT_VIOLATION_LOCATION)
                         .addContent(".")
                         .addContent("ELEMENT")
-                        .addContentLine(", \"element\");");
+                        .addContentLine(", \"element\")) {");
 
                 if (hasValid) {
                     String validatorField = addTypeValidator(fieldHandler, maybeAnnotated);
-                    addValidationOfValid(contentBuilder, validatorField, "ELEMENT", "validation__element");
+                    addValidationOfValid(contentBuilder, validatorField, "validation__element");
                 }
 
                 for (Annotation constraint : constraints) {
@@ -406,23 +411,10 @@ final class ValidationHelper {
                                               "validation__element");
                 }
 
-                contentBuilder.addContentLine("// leave element");
-                contentBuilder.addContentLine("validation__ctx.leave();");
-
+                contentBuilder.addContentLine("}");
                 contentBuilder.addContentLine("}");
                 contentBuilder.addContentLine("}");
             }
         }
-    }
-
-    private static void checkAndMerge(ContentBuilder<?> contentBuilder,
-                                      String location,
-                                      String validatorVar,
-                                      String validatedVar) {
-        contentBuilder.addContent("validation__res = validation__res.merge(")
-                .addContent(validatorVar)
-                .addContent(".check(validation__ctx, ")
-                .addContent(validatedVar)
-                .addContentLine("));");
     }
 }

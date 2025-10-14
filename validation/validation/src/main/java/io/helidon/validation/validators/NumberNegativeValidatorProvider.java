@@ -24,11 +24,11 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Check.Number.Negative.class)
+@Service.NamedByType(Validation.Number.Negative.class)
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class NumberNegativeValidatorProvider implements ConstraintValidatorProvider {

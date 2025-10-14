@@ -31,93 +31,93 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class StringEmailValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     StringEmailValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.String.Email.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(StringEmailValidatorProviderTest.class, this);
+                                                   Validation.String.Email.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testValidEmails() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // Valid email addresses
-        assertThat(validator.check(ctx, "user@example.com").failed(), is(false));
-        assertThat(validator.check(ctx, "test.email@domain.org").failed(), is(false));
-        assertThat(validator.check(ctx, "user+tag@example.co.uk").failed(), is(false));
-        assertThat(validator.check(ctx, "firstname.lastname@company.com").failed(), is(false));
-        assertThat(validator.check(ctx, "user123@test-domain.com").failed(), is(false));
-        assertThat(validator.check(ctx, "a@b.c").failed(), is(false));
-        assertThat(validator.check(ctx, "user@subdomain.example.com").failed(), is(false));
+        assertThat(validator.check(ctx, "user@example.com").valid(), is(true));
+        assertThat(validator.check(ctx, "test.email@domain.org").valid(), is(true));
+        assertThat(validator.check(ctx, "user+tag@example.co.uk").valid(), is(true));
+        assertThat(validator.check(ctx, "firstname.lastname@company.com").valid(), is(true));
+        assertThat(validator.check(ctx, "user123@test-domain.com").valid(), is(true));
+        assertThat(validator.check(ctx, "a@b.c").valid(), is(true));
+        assertThat(validator.check(ctx, "user@subdomain.example.com").valid(), is(true));
     }
 
     @Test
     public void testInvalidEmails() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // Invalid email addresses
-        assertThat(validator.check(ctx, "invalid-email").failed(), is(true));
-        assertThat(validator.check(ctx, "@example.com").failed(), is(true));
-        assertThat(validator.check(ctx, "user@").failed(), is(true));
-        assertThat(validator.check(ctx, "user@.com").failed(), is(true));
-        assertThat(validator.check(ctx, "user@example.").failed(), is(true));
-        assertThat(validator.check(ctx, "user@example.com.").failed(), is(true));
-        assertThat(validator.check(ctx, "user name@example.com").failed(), is(true));
-        assertThat(validator.check(ctx, "user@example com").failed(), is(true));
+        assertThat(validator.check(ctx, "invalid-email").valid(), is(false));
+        assertThat(validator.check(ctx, "@example.com").valid(), is(false));
+        assertThat(validator.check(ctx, "user@").valid(), is(false));
+        assertThat(validator.check(ctx, "user@.com").valid(), is(false));
+        assertThat(validator.check(ctx, "user@example.").valid(), is(false));
+        assertThat(validator.check(ctx, "user@example.com.").valid(), is(false));
+        assertThat(validator.check(ctx, "user name@example.com").valid(), is(false));
+        assertThat(validator.check(ctx, "user@example com").valid(), is(false));
         // Empty string causes exception in validator, skip this test
-        assertThat(validator.check(ctx, "").failed(), is(true));
+        assertThat(validator.check(ctx, "").valid(), is(false));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Email.class))
+                .typeName(TypeName.create(Validation.String.Email.class))
                 .putValue("message", "Invalid email format")
                 .build());
 
         var response = validator.check(ctx, "invalid-email");
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("Invalid email format"));
     }
 
     @Test
     public void testNonStringValues() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // Non-string values should fail validation
-        assertThat(validator.check(ctx, 123).failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
+        assertThat(validator.check(ctx, 123).valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testStringBuilder() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // StringBuilder should work as it implements CharSequence
-        assertThat(validator.check(ctx, new StringBuilder("user@example.com")).failed(), is(false));
-        assertThat(validator.check(ctx, new StringBuilder("invalid-email")).failed(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("user@example.com")).valid(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("invalid-email")).valid(), is(false));
     }
 
     @Test
     public void testEdgeCases() {
-        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Check.String.Email.class));
+        var validator = validatorProvider.create(TypeNames.STRING, Annotation.create(Validation.String.Email.class));
 
         // Edge cases
-        assertThat(validator.check(ctx, "a@b").failed(), is(true)); // No TLD
-        assertThat(validator.check(ctx, "user@domain-with-dash.com").failed(), is(false));
+        assertThat(validator.check(ctx, "a@b").valid(), is(false)); // No TLD
+        assertThat(validator.check(ctx, "user@domain-with-dash.com").valid(), is(true));
         // Underscore in domain - not allowed by RFC 1035
-        assertThat(validator.check(ctx, "user@domain_with_underscore.com").failed(), is(true));
+        assertThat(validator.check(ctx, "user@domain_with_underscore.com").valid(), is(false));
     }
 }

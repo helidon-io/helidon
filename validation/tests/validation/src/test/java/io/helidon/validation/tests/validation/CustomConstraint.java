@@ -16,10 +16,9 @@
 
 package io.helidon.validation.tests.validation;
 
-import io.helidon.validation.Check;
 import io.helidon.validation.Validation;
 
-@Check.NotNull
+@Validation.NotNull
 @Validation.Constraint
 public @interface CustomConstraint {
 }

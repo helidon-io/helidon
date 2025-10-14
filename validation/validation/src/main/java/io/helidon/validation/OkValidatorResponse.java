@@ -14,11 +14,28 @@
  * limitations under the License.
  */
 
-/**
- * Validation API.
- * <p>
- * For more details, see the module documentation.
- *
- * @see io.helidon.validation.Validation
- */
 package io.helidon.validation;
+
+import io.helidon.common.types.Annotation;
+
+class OkValidatorResponse implements ValidatorResponse {
+    @Override
+    public boolean valid() {
+        return true;
+    }
+
+    @Override
+    public Annotation annotation() {
+        throw new IllegalStateException("Cannot get annotation for a check that did not fail");
+    }
+
+    @Override
+    public String message() {
+        throw new IllegalStateException("Cannot get message for a check that did not fail");
+    }
+
+    @Override
+    public Object invalidValue() {
+        throw new IllegalStateException("Cannot get ínvalid value for a check that did not fail");
+    }
+}

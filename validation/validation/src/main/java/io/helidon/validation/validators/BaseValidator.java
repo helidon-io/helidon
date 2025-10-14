@@ -19,7 +19,7 @@ package io.helidon.validation.validators;
 import java.util.function.Predicate;
 
 import io.helidon.common.types.Annotation;
-import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 
@@ -58,16 +58,16 @@ class BaseValidator implements ConstraintValidator {
     }
 
     @Override
-    public ValidatorResponse check(ValidationContext context, Object value) {
+    public ValidatorResponse check(ValidatorContext context, Object value) {
         if (value == null && !sendNulls) {
-            return context.response();
+            return ValidatorResponse.create();
         }
 
         if (check.test(value)) {
-            return context.response();
+            return ValidatorResponse.create();
         }
 
-        return context.response(annotation, formatMessage(convertValue(value)), value);
+        return ValidatorResponse.create(annotation, formatMessage(convertValue(value)), value);
     }
 
     /**

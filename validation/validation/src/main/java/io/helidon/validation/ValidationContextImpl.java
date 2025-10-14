@@ -16,61 +16,68 @@
 
 package io.helidon.validation;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.Annotation;
+import io.helidon.validation.spi.ConstraintValidator;
 
-class ConstraintValidatorContextImpl implements ValidationContext {
+class ValidationContextImpl implements ValidationContext {
+    private final Stack<ConstraintViolation.PathElement> pathStack = new Stack<>();
     private final Object rootObject;
     private final Class<?> rootType;
-    private final Clock clock;
-    private final Stack<ConstraintViolation.PathElement> pathStack = new Stack<>();
+    private final ValidatorContext validatorContext;
+    private final ValidationContextConfig config;
 
-    ConstraintValidatorContextImpl(Class<?> rootType, Object rootObject) {
-        this(rootType, rootObject, Clock.systemUTC());
-    }
+    private ValidatorResponseHidden response = OkResponse.INSTANCE;
 
-    ConstraintValidatorContextImpl(Class<?> rootType, Object rootObject, Clock clock) {
-        this.rootType = rootType;
-        this.rootObject = rootObject;
-        this.clock = clock;
+    ValidationContextImpl(ValidationContextConfig config) {
+        this.config = config;
+        this.rootType = config.rootType();
+        this.rootObject = config.rootObject().orElse(null);
+
+        this.validatorContext = new ValidatorContextImpl(config.clock());
     }
 
     @Override
-    public ValidatorResponse response(Annotation annotation, String message, Object invalidValue) {
+    public ValidationContextConfig prototype() {
+        return config;
+    }
+
+    @Override
+    public ValidationResponse response() {
+        var toReturn = response;
+        this.response = OkResponse.INSTANCE;
+        return toReturn;
+    }
+
+    @Override
+    public Scope scope(ConstraintViolation.Location location, String name) {
+        this.pathStack.push(new PathImpl(location, name));
+        return this.pathStack::pop;
+    }
+
+    @Override
+    public <T> void check(ConstraintValidator validator, T object) {
+        var checkerResponse = validator.check(validatorContext, object);
+        if (checkerResponse.valid()) {
+            return;
+        }
+
         ConstraintViolation violation = new ConstraintViolationImpl(rootType,
                                                                     Optional.ofNullable(rootObject),
                                                                     new ArrayList<>(pathStack),
-                                                                    invalidValue,
-                                                                    message,
-                                                                    annotation);
-        return new FailedResponse(violation);
+                                                                    checkerResponse.invalidValue(),
+                                                                    checkerResponse.message(),
+                                                                    checkerResponse.annotation());
 
+        this.response = this.response.merge(new FailedResponse(violation));
     }
 
-    @Override
-    public ValidatorResponse response() {
-        return OkResponse.INSTANCE;
-    }
-
-    @Override
-    public void enter(ConstraintViolation.Location location, String name) {
-        this.pathStack.push(new PathImpl(location, name));
-    }
-
-    @Override
-    public void leave() {
-        this.pathStack.pop();
-    }
-
-    @Override
-    public Clock clock() {
-        return clock;
+    private interface ValidatorResponseHidden extends ValidationResponse {
+        ValidatorResponseHidden merge(ValidatorResponseHidden other);
     }
 
     record PathImpl(ConstraintViolation.Location location, String name) implements ConstraintViolation.PathElement {
@@ -80,7 +87,7 @@ class ConstraintValidatorContextImpl implements ValidationContext {
         }
     }
 
-    private static class FailedResponse implements ValidatorResponse {
+    private static class FailedResponse implements ValidatorResponseHidden {
 
         private final List<ConstraintViolation> violations;
 
@@ -98,8 +105,8 @@ class ConstraintValidatorContextImpl implements ValidationContext {
         }
 
         @Override
-        public boolean failed() {
-            return true;
+        public boolean valid() {
+            return false;
         }
 
         @Override
@@ -110,7 +117,7 @@ class ConstraintValidatorContextImpl implements ValidationContext {
         }
 
         @Override
-        public ValidatorResponse merge(ValidatorResponse other) {
+        public ValidatorResponseHidden merge(ValidatorResponseHidden other) {
             List<ConstraintViolation> violations = new ArrayList<>(this.violations);
             violations.addAll(other.violations());
             return new FailedResponse(violations);
@@ -134,15 +141,15 @@ class ConstraintValidatorContextImpl implements ValidationContext {
         }
     }
 
-    private static class OkResponse implements ValidatorResponse {
+    private static class OkResponse implements ValidatorResponseHidden {
         private static final OkResponse INSTANCE = new OkResponse();
 
         private OkResponse() {
         }
 
         @Override
-        public boolean failed() {
-            return false;
+        public boolean valid() {
+            return true;
         }
 
         @Override
@@ -151,7 +158,7 @@ class ConstraintValidatorContextImpl implements ValidationContext {
         }
 
         @Override
-        public ValidatorResponse merge(ValidatorResponse other) {
+        public ValidatorResponseHidden merge(ValidatorResponseHidden other) {
             return other;
         }
 

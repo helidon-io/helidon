@@ -24,14 +24,14 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 import io.helidon.validation.ValidationException;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
 import static io.helidon.validation.validators.IntegerMaxValidatorProvider.charToString;
 
-@Service.NamedByType(Check.Integer.Min.class)
+@Service.NamedByType(Validation.Integer.Min.class)
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 class IntegerMinValidatorProvider implements ConstraintValidatorProvider {

@@ -31,105 +31,105 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class LongMaxValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     LongMaxValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.Long.Max.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(LongMaxValidatorProviderTest.class, this);
+                                                   Validation.Long.Max.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testValidLongs() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 100L)
                 .build());
 
         // Valid cases - longs <= max
-        assertThat(validator.check(ctx, 100L).failed(), is(false));
-        assertThat(validator.check(ctx, 50L).failed(), is(false));
-        assertThat(validator.check(ctx, 0L).failed(), is(false));
-        assertThat(validator.check(ctx, -10L).failed(), is(false));
-        assertThat(validator.check(ctx, Long.MIN_VALUE).failed(), is(false));
+        assertThat(validator.check(ctx, 100L).valid(), is(true));
+        assertThat(validator.check(ctx, 50L).valid(), is(true));
+        assertThat(validator.check(ctx, 0L).valid(), is(true));
+        assertThat(validator.check(ctx, -10L).valid(), is(true));
+        assertThat(validator.check(ctx, Long.MIN_VALUE).valid(), is(true));
     }
 
     @Test
     public void testInvalidLongs() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 100L)
                 .build());
 
         // Invalid cases - longs > max
-        assertThat(validator.check(ctx, 101L).failed(), is(true));
-        assertThat(validator.check(ctx, 150L).failed(), is(true));
-        assertThat(validator.check(ctx, 1000L).failed(), is(true));
-        assertThat(validator.check(ctx, Long.MAX_VALUE).failed(), is(true));
+        assertThat(validator.check(ctx, 101L).valid(), is(false));
+        assertThat(validator.check(ctx, 150L).valid(), is(false));
+        assertThat(validator.check(ctx, 1000L).valid(), is(false));
+        assertThat(validator.check(ctx, Long.MAX_VALUE).valid(), is(false));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 100L)
                 .putValue("message", "Long must be at most 100")
                 .build());
 
         var response = validator.check(ctx, 150L);
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("Long must be at most 100"));
     }
 
     @Test
     public void testNonLongValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 100L)
                 .build());
 
         // Non-long values should fail validation
-        assertThat(validator.check(ctx, "hello").failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
-        assertThat(validator.check(ctx, 100.5).failed(), is(true));
+        assertThat(validator.check(ctx, "hello").valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
+        assertThat(validator.check(ctx, 100.5).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 100L)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testEdgeCases() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 0L)
                 .build());
 
         // Edge cases
-        assertThat(validator.check(ctx, 0L).failed(), is(false)); // Exactly equal
-        assertThat(validator.check(ctx, -1L).failed(), is(false)); // Just below
-        assertThat(validator.check(ctx, 1L).failed(), is(true)); // Just above
+        assertThat(validator.check(ctx, 0L).valid(), is(true)); // Exactly equal
+        assertThat(validator.check(ctx, -1L).valid(), is(true)); // Just below
+        assertThat(validator.check(ctx, 1L).valid(), is(false)); // Just above
     }
 
     @Test
     public void testLargeValues() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_LONG, Annotation.builder()
-                .typeName(TypeName.create(Check.Long.Max.class))
+                .typeName(TypeName.create(Validation.Long.Max.class))
                 .putValue("value", 2000000000L)
                 .build());
 
         // Test with large values
-        assertThat(validator.check(ctx, 2000000000L).failed(), is(false));
-        assertThat(validator.check(ctx, 1000000000L).failed(), is(false));
-        assertThat(validator.check(ctx, 2000000001L).failed(), is(true));
+        assertThat(validator.check(ctx, 2000000000L).valid(), is(true));
+        assertThat(validator.check(ctx, 1000000000L).valid(), is(true));
+        assertThat(validator.check(ctx, 2000000001L).valid(), is(false));
     }
 }

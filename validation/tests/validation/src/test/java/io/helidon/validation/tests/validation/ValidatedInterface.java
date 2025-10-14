@@ -16,16 +16,15 @@
 
 package io.helidon.validation.tests.validation;
 
-import io.helidon.validation.Check;
 import io.helidon.validation.Validation;
 
 @Validation.Validated
 interface ValidatedInterface {
-    @Check.Valid
+    @Validation.Valid
     ValidatedType validatedType();
 
-    @Check.String.NotBlank
-    @Check.NotNull
+    @Validation.String.NotBlank
+    @Validation.NotNull
     String getStringValue();
 
     int notValidated();

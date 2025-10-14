@@ -47,13 +47,12 @@ import static io.helidon.declarative.codegen.validation.ValidationHelper.addVali
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfTypeArguments;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfValid;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.needsWork;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.TYPE_VALIDATOR;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONTEXT;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_EXCEPTION;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALIDATED;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATOR_RESPONSE;
 
 class ValidatedTypeGenerator {
     private static final TypeName GENERATOR = TypeName.create(ValidatedTypeGenerator.class);
@@ -96,21 +95,19 @@ class ValidatedTypeGenerator {
         Method.Builder checkMethod = Method.builder()
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PUBLIC)
-                .returnType(VALIDATOR_RESPONSE)
                 .name("check")
                 .addParameter(context -> context.name("validation__ctx")
                         .type(VALIDATION_CONTEXT))
                 .addParameter(instance -> instance.name("validation__instance")
                         .type(triggerType))
-                .addContentLine("var validation__res = validation__ctx.response();")
                 .addContentLine("");
 
-        // now we can add all the fields necessary to validate this type
-        checkMethod.addContent("validation__ctx.enter(")
+        // now we can add all the fields necessary to validate this type, within the type scope
+        checkMethod.addContent("try (var validation__typeScope = validation__ctx.scope(")
                 .addContent(CONSTRAINT_VIOLATION_LOCATION)
                 .addContent(".TYPE, ")
                 .addContent(triggerType)
-                .addContentLine(".class.getName());")
+                .addContentLine(".class.getName())) {")
                 .addContentLine();
 
         if (typeInfo.kind() == ElementKind.RECORD) {
@@ -129,10 +126,10 @@ class ValidatedTypeGenerator {
         }
 
         // leave from type check
-        checkMethod.addContentLine("// leave type " + triggerType.classNameWithEnclosingNames());
-        checkMethod.addContentLine("validation__ctx.leave();");
+        checkMethod.addContentLine("}");
         classModel.addConstructor(constructor);
-        classModel.addMethod(checkMethod.addContentLine("return validation__res;"));
+        classModel.addMethod(checkMethod);
+
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
     }
 
@@ -153,11 +150,10 @@ class ValidatedTypeGenerator {
                     Property property = new Property(propertyName, "check" + capitalize(propertyName), element.typeName());
                     recordComponents.add(property);
 
-                    checkMethod.addContent("validation__res = validation__res.merge(")
-                            .addContent(property.checkMethodName())
+                    checkMethod.addContent(property.checkMethodName())
                             .addContent("(validation__ctx, validation__instance.")
                             .addContent(propertyName)
-                            .addContentLine("()));");
+                            .addContentLine("());");
 
                     addCheckMethod(generatedType,
                                    classModel,
@@ -208,11 +204,10 @@ class ValidatedTypeGenerator {
 
                     properties.add(property);
 
-                    checkMethod.addContent("validation__res = validation__res.merge(")
-                            .addContent(property.checkMethodName())
+                    checkMethod.addContent(property.checkMethodName())
                             .addContent("(validation__ctx, validation__instance.")
                             .addContent(element.elementName())
-                            .addContentLine("()));");
+                            .addContentLine("());");
 
                     addCheckMethod(generatedType,
                                    classModel,
@@ -238,11 +233,10 @@ class ValidatedTypeGenerator {
                                                      false);
                     properties.add(property);
 
-                    checkMethod.addContent("validation__res = validation__res.merge(")
-                            .addContent(property.checkMethodName())
+                    checkMethod.addContent(property.checkMethodName())
                             .addContent("(validation__ctx, validation__instance.")
                             .addContent(propertyName)
-                            .addContentLine("));");
+                            .addContentLine(");");
 
                     addCheckMethod(generatedType,
                                    classModel,
@@ -289,11 +283,10 @@ class ValidatedTypeGenerator {
                                                      element.elementName());
                     properties.add(property);
 
-                    checkMethod.addContent("validation__res = validation__res.merge(")
-                            .addContent(property.checkMethodName())
+                    checkMethod.addContent(property.checkMethodName())
                             .addContent("(validation__ctx, validation__instance.")
                             .addContent(element.elementName())
-                            .addContentLine("()));");
+                            .addContentLine("());");
 
                     addCheckMethod(generatedType,
                                    classModel,
@@ -319,14 +312,13 @@ class ValidatedTypeGenerator {
                 .name("check")
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
-                .returnType(VALIDATOR_RESPONSE)
                 .addParameter(context -> context.name("ctx")
                         .type(VALIDATION_CONTEXT))
                 .addParameter(instance -> instance.name("instance")
                         .type(triggerType))
                 .addParameter(propertyName -> propertyName.name("propertyName")
                         .type(TypeNames.STRING))
-                .addContentLine("return switch (propertyName) {");
+                .addContentLine("switch (propertyName) {");
 
         for (Property property : properties) {
             checkProperty.addContent("case ")
@@ -356,14 +348,13 @@ class ValidatedTypeGenerator {
                 .name("checkProperty")
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
-                .returnType(VALIDATOR_RESPONSE)
                 .addParameter(context -> context.name("ctx")
                         .type(VALIDATION_CONTEXT))
                 .addParameter(propertyName -> propertyName.name("propertyName")
                         .type(TypeNames.STRING))
                 .addParameter(value -> value.name("value")
                         .type(TypeNames.OBJECT))
-                .addContentLine("return switch (propertyName) {");
+                .addContentLine("switch (propertyName) {");
 
         for (Property property : properties) {
             checkPropertyValue.addContent("case ")
@@ -395,7 +386,6 @@ class ValidatedTypeGenerator {
         classModel.addMethod(propertyCheck -> propertyCheck
                 .name("check" + capitalize(propertyName))
                 .accessModifier(AccessModifier.PRIVATE)
-                .returnType(VALIDATOR_RESPONSE)
                 .addParameter(context -> context.name("validation__ctx")
                         .type(VALIDATION_CONTEXT))
                 .addParameter(value -> value.name("value")
@@ -416,16 +406,14 @@ class ValidatedTypeGenerator {
                                          String location,
                                          TypedElementInfo element) {
 
-        checkMethod.addContent("validation__ctx.enter(")
+        checkMethod.addContent("try (var scope__" + location.toLowerCase(Locale.ROOT) + capitalize(element.elementName())
+                                       + " = validation__ctx.scope(")
                 .addContent(CONSTRAINT_VIOLATION_LOCATION)
                 .addContent(".")
                 .addContent(location)
                 .addContent(", ")
                 .addContentLiteral(element.elementName())
-                .addContentLine(");");
-
-        checkMethod.addContentLine()
-                .addContentLine("var validation__res = validation__ctx.response();");
+                .addContentLine(")) {");
 
         TypeName typeName = element.typeName();
 
@@ -436,11 +424,11 @@ class ValidatedTypeGenerator {
                                      element,
                                      "value");
 
-        if (element.hasAnnotation(CHECK_VALID)) {
+        if (element.hasAnnotation(VALIDATION_VALID)) {
 
             // add valid lookup
             String validatorField = addTypeValidator(fieldHandler, typeName);
-            addValidationOfValid(checkMethod, validatorField, location, "value");
+            addValidationOfValid(checkMethod, validatorField, "value");
         }
 
         for (TypeName constraintAnnotation : constraintAnnotations) {
@@ -454,9 +442,7 @@ class ValidatedTypeGenerator {
                                                                        "value"));
         }
 
-        checkMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.elementName())
-                .addContentLine("validation__ctx.leave();")
-                .addContentLine("return validation__res;");
+        checkMethod.addContentLine("}");
 
     }
 

@@ -16,50 +16,62 @@
 
 package io.helidon.validation;
 
-import java.util.List;
+import io.helidon.common.types.Annotation;
 
 /**
- * Response from a {@link io.helidon.validation.spi.ConstraintValidator} or {@link io.helidon.validation.spi.TypeValidator}.
- * Responses are created from {@link ValidationContext#response()} for successful validations,
- * and from {@link ValidationContext#response(io.helidon.common.types.Annotation, String, Object)}
- * for validation failures.
+ * A response returned by a
+ * {@link io.helidon.validation.spi.ConstraintValidator#check(io.helidon.validation.ValidatorContext, Object)}.
  */
 public interface ValidatorResponse {
-
     /**
-     * True if this is a failed validation response.
+     * Create a new valid response.
      *
-     * @return {@code true} if this is a failed validation response, {@code false} otherwise
+     * @return a new valid response
      */
-    boolean failed();
+    static ValidatorResponse create() {
+        return new OkValidatorResponse();
+    }
 
     /**
-     * Message describing the validation failure(s).
+     * Create a new failed response.
      *
-     * @return message describing the validation failure(s)
+     * @param annotation annotation that triggered the check
+     * @param message message describing the failure
+     * @param invalidValue the value that triggered the failure
+     * @return a new failed response
+     */
+    static ValidatorResponse create(Annotation annotation, String message, Object invalidValue) {
+        return new FailedValidatorResponse(annotation, message, invalidValue);
+    }
+
+    /**
+     * Whether the response was valid.
+     *
+     * @return if valid
+     */
+    boolean valid();
+
+    /**
+     * Annotation that triggered the check.
+     *
+     * @return annotation of the check
+     * @throws java.lang.IllegalStateException in case the response is valid
+     */
+    Annotation annotation();
+
+    /**
+     * Error message describing the failure.
+     *
+     * @return error message
+     * @throws java.lang.IllegalStateException in case the response is valid
      */
     String message();
 
     /**
-     * All violations of this response.
+     * The value that triggered the failure.
      *
-     * @return list of violations
+     * @return the value
+     * @throws java.lang.IllegalStateException in case the response is valid
      */
-    List<ConstraintViolation> violations();
-
-    /**
-     * Merge with another response.
-     *
-     * @param other response to merge with
-     * @return a validator response that contains all violations of both responses, and if either was failed, the result is failed
-     */
-    ValidatorResponse merge(ValidatorResponse other);
-
-    /**
-     * Convert this response to a {@link ValidationException}.
-     *
-     * @return a new exception with all violations from this response
-     * @throws IllegalStateException if this response is not failed
-     */
-    ValidationException toException();
+    Object invalidValue();
 }

@@ -18,7 +18,6 @@ package io.helidon.validation.spi;
 
 import io.helidon.service.registry.Service;
 import io.helidon.validation.ValidationContext;
-import io.helidon.validation.ValidatorResponse;
 
 /**
  * A (usually generated) validator for a specific type.
@@ -31,31 +30,34 @@ import io.helidon.validation.ValidatorResponse;
 @Service.Contract
 public interface TypeValidator<T> {
     /**
-     * Check the object instance that it is valid.
+     * Validation the object instance that it is valid.
      *
      * @param context  validation context
      * @param instance instance to validate
-     * @return validation response
+     * @see io.helidon.validation.ValidationContext#response()
+     * @see io.helidon.validation.ValidationContext#throwOnFailure()
      */
-    ValidatorResponse check(ValidationContext context, T instance);
+    void check(ValidationContext context, T instance);
 
     /**
-     * Check a single property only.
+     * Validation a single property only.
      *
      * @param context      validation context
      * @param instance     instance to validate
      * @param propertyName name of the property to validate
-     * @return validation response
+     * @see io.helidon.validation.ValidationContext#response()
+     * @see io.helidon.validation.ValidationContext#throwOnFailure()
      */
-    ValidatorResponse check(ValidationContext context, T instance, String propertyName);
+    void check(ValidationContext context, T instance, String propertyName);
 
     /**
-     * Check a single property value.
+     * Validation a single property value.
      *
      * @param context      validation context
      * @param propertyName name of the property to validate
      * @param value        value of the property to validate
-     * @return validation response
+     * @see io.helidon.validation.ValidationContext#response()
+     * @see io.helidon.validation.ValidationContext#throwOnFailure()
      */
-    ValidatorResponse checkProperty(ValidationContext context, String propertyName, Object value);
+    void checkProperty(ValidationContext context, String propertyName, Object value);
 }

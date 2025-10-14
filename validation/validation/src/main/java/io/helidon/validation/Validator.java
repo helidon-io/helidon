@@ -35,8 +35,8 @@ public interface Validator {
      * @return validator response
      * @throws io.helidon.validation.ValidationException in case the type is not validated
      */
-    <T> ValidatorResponse validate(Class<T> type,
-                                   T object);
+    <T> ValidationResponse validate(Class<T> type,
+                                    T object);
 
     /**
      * Validate a specific property of an object that is annotated with {@link io.helidon.validation.Validation.Validated}.
@@ -57,9 +57,9 @@ public interface Validator {
      * @return validator response
      * @throws io.helidon.validation.ValidationException in case the type is not validated
      */
-    <T> ValidatorResponse validate(Class<T> type,
-                                   T object,
-                                   String propertyName);
+    <T> ValidationResponse validate(Class<T> type,
+                                    T object,
+                                    String propertyName);
 
     /**
      * Validate a value against a specific property of an object that is annotated with
@@ -77,7 +77,7 @@ public interface Validator {
      * @param value        value to check
      * @return validator response
      */
-    ValidatorResponse validateProperty(Class<?> type,
-                                       String propertyName,
-                                       Object value);
+    ValidationResponse validateProperty(Class<?> type,
+                                        String propertyName,
+                                        Object value);
 }

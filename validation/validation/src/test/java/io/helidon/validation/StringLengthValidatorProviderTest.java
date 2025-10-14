@@ -31,117 +31,117 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class StringLengthValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     StringLengthValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.String.Length.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(StringLengthValidatorProviderTest.class, this);
+                                                   Validation.String.Length.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testMinLengthOnly() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 5)
                 .build());
 
         // Valid cases
-        assertThat(validator.check(ctx, "hello").failed(), is(false));
-        assertThat(validator.check(ctx, "hello world").failed(), is(false));
+        assertThat(validator.check(ctx, "hello").valid(), is(true));
+        assertThat(validator.check(ctx, "hello world").valid(), is(true));
 
         // Invalid cases
-        assertThat(validator.check(ctx, "hi").failed(), is(true));
-        assertThat(validator.check(ctx, "test").failed(), is(true));
-        assertThat(validator.check(ctx, "").failed(), is(true));
+        assertThat(validator.check(ctx, "hi").valid(), is(false));
+        assertThat(validator.check(ctx, "test").valid(), is(false));
+        assertThat(validator.check(ctx, "").valid(), is(false));
     }
 
     @Test
     public void testMaxLengthOnly() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("value", 5)
                 .build());
 
         // Valid cases
-        assertThat(validator.check(ctx, "hello").failed(), is(false));
-        assertThat(validator.check(ctx, "hi").failed(), is(false));
-        assertThat(validator.check(ctx, "").failed(), is(false));
+        assertThat(validator.check(ctx, "hello").valid(), is(true));
+        assertThat(validator.check(ctx, "hi").valid(), is(true));
+        assertThat(validator.check(ctx, "").valid(), is(true));
 
         // Invalid cases
-        assertThat(validator.check(ctx, "hello world").failed(), is(true));
-        assertThat(validator.check(ctx, "testing").failed(), is(true));
+        assertThat(validator.check(ctx, "hello world").valid(), is(false));
+        assertThat(validator.check(ctx, "testing").valid(), is(false));
     }
 
     @Test
     public void testMinAndMaxLength() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 3)
                 .putValue("value", 7)
                 .build());
 
         // Valid cases
-        assertThat(validator.check(ctx, "hello").failed(), is(false));
-        assertThat(validator.check(ctx, "test").failed(), is(false));
-        assertThat(validator.check(ctx, "testing").failed(), is(false));
+        assertThat(validator.check(ctx, "hello").valid(), is(true));
+        assertThat(validator.check(ctx, "test").valid(), is(true));
+        assertThat(validator.check(ctx, "testing").valid(), is(true));
 
         // Invalid cases - too short
-        assertThat(validator.check(ctx, "hi").failed(), is(true));
-        assertThat(validator.check(ctx, "").failed(), is(true));
+        assertThat(validator.check(ctx, "hi").valid(), is(false));
+        assertThat(validator.check(ctx, "").valid(), is(false));
 
         // Invalid cases - too long
-        assertThat(validator.check(ctx, "hello world").failed(), is(true));
-        assertThat(validator.check(ctx, "testing123").failed(), is(true));
+        assertThat(validator.check(ctx, "hello world").valid(), is(false));
+        assertThat(validator.check(ctx, "testing123").valid(), is(false));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 5)
                 .putValue("message", "String too short")
                 .build());
 
         var response = validator.check(ctx, "hi");
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("String too short"));
     }
 
     @Test
     public void testNonStringValues() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 5)
                 .build());
 
         // Non-string values should fail validation
-        assertThat(validator.check(ctx, 123).failed(), is(true));
-        assertThat(validator.check(ctx, true).failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
+        assertThat(validator.check(ctx, 123).valid(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 5)
                 .build());
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testStringBuilder() {
         var validator = validatorProvider.create(TypeNames.STRING, Annotation.builder()
-                .typeName(TypeName.create(Check.String.Length.class))
+                .typeName(TypeName.create(Validation.String.Length.class))
                 .putValue("min", 5)
                 .build());
 
         // StringBuilder should work as it implements CharSequence
-        assertThat(validator.check(ctx, new StringBuilder("hello")).failed(), is(false));
-        assertThat(validator.check(ctx, new StringBuilder("hi")).failed(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("hello")).valid(), is(true));
+        assertThat(validator.check(ctx, new StringBuilder("hi")).valid(), is(false));
     }
 }

@@ -16,7 +16,7 @@
 
 package io.helidon.validation.spi;
 
-import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
 
 /**
@@ -24,11 +24,11 @@ import io.helidon.validation.ValidatorResponse;
  */
 public interface ConstraintValidator {
     /**
-     * Check the value against the configured constraint.
+     * Validation the value against the configured constraint.
      *
      * @param context validation context
      * @param value   value to validate, may be null
      * @return validation response
      */
-    ValidatorResponse check(ValidationContext context, Object value);
+    ValidatorResponse check(ValidatorContext context, Object value);
 }

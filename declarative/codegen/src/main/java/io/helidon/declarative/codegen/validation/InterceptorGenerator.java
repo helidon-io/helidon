@@ -48,9 +48,9 @@ import static io.helidon.declarative.codegen.validation.ValidationHelper.addVali
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfValid;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.findMetaAnnotations;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.metaAnnotated;
-import static io.helidon.declarative.codegen.validation.ValidationTypes.CHECK_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONTEXT;
+import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALID;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_VALIDATED;
 
 class InterceptorGenerator {
@@ -212,13 +212,11 @@ class InterceptorGenerator {
                 .addContent(".create(")
                 .addContent(typeName)
                 .addContentLine(".class, interception__ctx.serviceInstance().orElse(null));")
-                .addContent("validation__ctx.enter(")
+                .addContent("try (var scope__type = validation__ctx.scope(")
                 .addContent(CONSTRAINT_VIOLATION_LOCATION)
                 .addContent(".TYPE, ")
                 .addContent(typeName)
-                .addContentLine(".class.getName());")
-                .addContentLine("var validation__res = validation__ctx.response();")
-                .addContentLine("");
+                .addContentLine(".class.getName())) {");
 
         if (element.kind() == ElementKind.FIELD) {
             String name = element.elementName();
@@ -227,13 +225,13 @@ class InterceptorGenerator {
                     .addContentLine(" = interception__args[0];");
             addValidators(generatedType, proceedMethod, fieldHandler, element, location, name);
         } else {
-            proceedMethod.addContent("validation__ctx.enter(")
+            proceedMethod.addContent("try (var scope__" + location.toLowerCase(Locale.ROOT) + " = validation__ctx.scope(")
                     .addContent(CONSTRAINT_VIOLATION_LOCATION)
                     .addContent(".")
                     .addContent(location)
                     .addContent(", ")
                     .addContentLiteral(element.signature().text())
-                    .addContentLine(");");
+                    .addContentLine(")) {");
             // constructor or method
             var params = element.parameterArguments();
             for (int i = 0; i < params.size(); i++) {
@@ -251,27 +249,24 @@ class InterceptorGenerator {
                     addValidators(generatedType, proceedMethod, fieldHandler, param, "PARAMETER", name);
                 }
             }
-            proceedMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.signature().text());
-            proceedMethod.addContentLine("validation__ctx.leave();");
+            proceedMethod.addContentLine("}");
         }
 
         proceedMethod.addContentLine("")
-                .addContentLine("if (validation__res.failed()) {")
-                .addContentLine("throw validation__res.toException();")
-                .addContentLine("}")
+                .addContentLine("validation__ctx.throwOnFailure();")
                 .addContentLine("")
                 .addContentLine("var interception__res = interception__chain.proceed(interception__args);")
                 .addContentLine("");
 
         if (element.kind() == ElementKind.METHOD) {
             // re-enter method
-            proceedMethod.addContent("validation__ctx.enter(")
+            proceedMethod.addContent("try (var scope__" + location.toLowerCase(Locale.ROOT) + " = validation__ctx.scope(")
                     .addContent(CONSTRAINT_VIOLATION_LOCATION)
                     .addContent(".")
                     .addContent(location)
                     .addContent(", ")
                     .addContentLiteral(element.signature().text())
-                    .addContentLine(");");
+                    .addContentLine(")) {");
             addValidators(generatedType,
                           proceedMethod,
                           fieldHandler,
@@ -279,21 +274,17 @@ class InterceptorGenerator {
                           "RETURN_VALUE",
                           "interception__res");
             // leave method on response
-            proceedMethod.addContentLine("// leave method " + element.signature().text());
-            proceedMethod.addContentLine("validation__ctx.leave();");
+            proceedMethod.addContentLine("}");
         }
 
+        proceedMethod.addContentLine("validation__ctx.throwOnFailure();")
+                .addContentLine("")
+                .addContentLine("return interception__res;");
         // leave type on response
-        proceedMethod.addContentLine("// leave type " + typeName.classNameWithEnclosingNames());
-        proceedMethod.addContentLine("validation__ctx.leave();");
+        proceedMethod.addContentLine("}");
 
         classModel.addConstructor(constructor);
-        classModel.addMethod(proceedMethod.addContentLine("")
-                                     .addContentLine("if (validation__res.failed()) {")
-                                     .addContentLine("throw validation__res.toException();")
-                                     .addContentLine("}")
-                                     .addContentLine("")
-                                     .addContentLine("return interception__res;"));
+        classModel.addMethod(proceedMethod.addContentLine(""));
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
     }
 
@@ -303,20 +294,20 @@ class InterceptorGenerator {
                                TypedElementInfo element,
                                String location,
                                String localVariableName) {
-        proceedMethod.addContent("validation__ctx.enter(")
+        proceedMethod.addContent("try (var scope__" + location.toLowerCase(Locale.ROOT) + " = validation__ctx.scope(")
                 .addContent(CONSTRAINT_VIOLATION_LOCATION)
                 .addContent(".")
                 .addContent(location)
                 .addContent(", ")
-                .addContentLiteral("RETURN_VALUE".equals(location)
+                .addContentLiteral("RETURN_VALUE" .equals(location)
                                            ? element.typeName().classNameWithEnclosingNames()
                                            : localVariableName)
-                .addContentLine(");");
+                .addContentLine(")) {");
 
         // start with annotations on the element itself
-        if (element.hasAnnotation(CHECK_VALID) || metaAnnotated(element, CHECK_VALID)) {
+        if (element.hasAnnotation(VALIDATION_VALID) || metaAnnotated(element, VALIDATION_VALID)) {
             String fieldName = addTypeValidator(fieldHandler, element.typeName());
-            addValidationOfValid(proceedMethod, fieldName, location, localVariableName);
+            addValidationOfValid(proceedMethod, fieldName, localVariableName);
         }
 
         for (TypeName constraintAnnotation : constraintAnnotations) {
@@ -346,7 +337,6 @@ class InterceptorGenerator {
                                      element,
                                      localVariableName);
 
-        proceedMethod.addContentLine("// leave " + location.toLowerCase(Locale.ROOT) + " " + element.elementName());
-        proceedMethod.addContentLine("validation__ctx.leave();");
+        proceedMethod.addContentLine("}");
     }
 }

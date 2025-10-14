@@ -16,9 +16,9 @@
 
 package io.helidon.validation.tests.validation;
 
-import io.helidon.validation.Check;
+import io.helidon.validation.Validation;
 
-@Check.NotNull
-@Check.String.NotBlank
+@Validation.NotNull
+@Validation.String.NotBlank
 public @interface CustomGroup {
 }

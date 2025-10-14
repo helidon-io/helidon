@@ -31,98 +31,98 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 public class BooleanTrueValidatorProviderTest {
     private final ConstraintValidatorProvider validatorProvider;
-    private final ConstraintValidatorContextImpl ctx;
+    private final ValidatorContext ctx;
 
     BooleanTrueValidatorProviderTest() {
         this.validatorProvider = Services.getNamed(ConstraintValidatorProvider.class,
-                                                   Check.Boolean.True.class.getName().replace('$', '.'));
-        this.ctx = new ConstraintValidatorContextImpl(BooleanTrueValidatorProviderTest.class, this);
+                                                   Validation.Boolean.True.class.getName().replace('$', '.'));
+        this.ctx = new ValidatorContextImpl();
     }
 
     @Test
     public void testValidBooleans() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // Valid cases - true values
-        assertThat(validator.check(ctx, true).failed(), is(false));
-        assertThat(validator.check(ctx, Boolean.TRUE).failed(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(true));
+        assertThat(validator.check(ctx, Boolean.TRUE).valid(), is(true));
     }
 
     @Test
     public void testValidBooleansBoxed() {
-        var validator = validatorProvider.create(TypeNames.BOXED_BOOLEAN, Annotation.create(Check.Boolean.False.class));
+        var validator = validatorProvider.create(TypeNames.BOXED_BOOLEAN, Annotation.create(Validation.Boolean.False.class));
 
         // Valid cases - false values
-        assertThat(validator.check(ctx, true).failed(), is(false));
-        assertThat(validator.check(ctx, Boolean.TRUE).failed(), is(false));
+        assertThat(validator.check(ctx, true).valid(), is(true));
+        assertThat(validator.check(ctx, Boolean.TRUE).valid(), is(true));
     }
 
     @Test
     public void testInvalidBooleans() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // Invalid cases - false values
-        assertThat(validator.check(ctx, false).failed(), is(true));
+        assertThat(validator.check(ctx, false).valid(), is(false));
 
         var response = validator.check(ctx, Boolean.FALSE);
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("must be true"));
     }
 
     @Test
     public void testCustomMessage() {
         var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.builder()
-                .typeName(TypeName.create(Check.Boolean.True.class))
+                .typeName(TypeName.create(Validation.Boolean.True.class))
                 .putValue("message", "Value must be true")
                 .build());
 
         var response = validator.check(ctx, false);
 
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("Value must be true"));
     }
 
     @Test
     public void testNonBooleanValues() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // Non-boolean values should fail validation
-        assertThat(validator.check(ctx, "true").failed(), is(true));
-        assertThat(validator.check(ctx, "false").failed(), is(true));
-        assertThat(validator.check(ctx, 1).failed(), is(true));
-        assertThat(validator.check(ctx, 0).failed(), is(true));
-        assertThat(validator.check(ctx, "hello").failed(), is(true));
-        assertThat(validator.check(ctx, new Object()).failed(), is(true));
+        assertThat(validator.check(ctx, "true").valid(), is(false));
+        assertThat(validator.check(ctx, "false").valid(), is(false));
+        assertThat(validator.check(ctx, 1).valid(), is(false));
+        assertThat(validator.check(ctx, 0).valid(), is(false));
+        assertThat(validator.check(ctx, "hello").valid(), is(false));
+        assertThat(validator.check(ctx, new Object()).valid(), is(false));
     }
 
     @Test
     public void testNullValue() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // Null values should be considered valid (not sent to validator)
-        assertThat(validator.check(ctx, null).failed(), is(false));
+        assertThat(validator.check(ctx, null).valid(), is(true));
     }
 
     @Test
     public void testStringRepresentations() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // String representations should not be automatically converted
-        assertThat(validator.check(ctx, "true").failed(), is(true));
-        assertThat(validator.check(ctx, "TRUE").failed(), is(true));
-        assertThat(validator.check(ctx, "1").failed(), is(true));
-        assertThat(validator.check(ctx, "yes").failed(), is(true));
+        assertThat(validator.check(ctx, "true").valid(), is(false));
+        assertThat(validator.check(ctx, "TRUE").valid(), is(false));
+        assertThat(validator.check(ctx, "1").valid(), is(false));
+        assertThat(validator.check(ctx, "yes").valid(), is(false));
     }
 
     @Test
     public void testNumericValues() {
-        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Check.Boolean.True.class));
+        var validator = validatorProvider.create(TypeNames.PRIMITIVE_BOOLEAN, Annotation.create(Validation.Boolean.True.class));
 
         // Numeric values should not be automatically converted
-        assertThat(validator.check(ctx, 1).failed(), is(true));
-        assertThat(validator.check(ctx, 0).failed(), is(true));
-        assertThat(validator.check(ctx, -1).failed(), is(true));
-        assertThat(validator.check(ctx, 1.0).failed(), is(true));
-        assertThat(validator.check(ctx, 0.0).failed(), is(true));
+        assertThat(validator.check(ctx, 1).valid(), is(false));
+        assertThat(validator.check(ctx, 0).valid(), is(false));
+        assertThat(validator.check(ctx, -1).valid(), is(false));
+        assertThat(validator.check(ctx, 1.0).valid(), is(false));
+        assertThat(validator.check(ctx, 0.0).valid(), is(false));
     }
 }

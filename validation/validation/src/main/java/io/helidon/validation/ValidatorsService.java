@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.validation.validators;
+package io.helidon.validation;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.Service;
-import io.helidon.validation.Validation;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 
-@Service.NamedByType(Validation.Calendar.Past.class)
 @Service.Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 30)
-class CalendarPastValidatorProvider implements ConstraintValidatorProvider {
-    @Override
-    public ConstraintValidator create(TypeName type, Annotation constraintAnnotation) {
-        return CalendarHelper.validator(type, constraintAnnotation, false, false);
+class ValidatorsService {
+    private final ConstraintValidator notNullValidator;
+
+    ValidatorsService(@Service.NamedByType(Validation.NotNull.class) ConstraintValidatorProvider notNullProvider) {
+        this.notNullValidator = notNullProvider.create(TypeNames.OBJECT,
+                                                       Annotation.create(Validation.NotNull.class));
+    }
+
+    void validateNotNull(ValidationContext ctx, Object value) {
+        ctx.check(notNullValidator, value);
     }
 }

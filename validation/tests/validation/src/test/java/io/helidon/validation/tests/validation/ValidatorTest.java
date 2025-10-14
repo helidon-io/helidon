@@ -17,8 +17,8 @@
 package io.helidon.validation.tests.validation;
 
 import io.helidon.testing.junit5.Testing;
+import io.helidon.validation.ValidationResponse;
 import io.helidon.validation.Validator;
-import io.helidon.validation.ValidatorResponse;
 
 import org.junit.jupiter.api.Test;
 
@@ -37,32 +37,32 @@ public class ValidatorTest {
     public void validateType() {
         ValidatedType validatedType = new ValidatedType("test_value", 42);
 
-        ValidatorResponse response = validator.validate(ValidatedType.class, validatedType);
-        assertThat(response.failed(), is(false));
+        ValidationResponse response = validator.validate(ValidatedType.class, validatedType);
+        assertThat(response.valid(), is(true));
 
         validatedType = new ValidatedType("test_value", 41);
         response = validator.validate(ValidatedType.class, validatedType);
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("41 is less than 42"));
     }
 
     @Test
     public void validateTypeProperty() {
         var response = validator.validate(ValidatedType.class, new ValidatedType("test_value", 43), "first");
-        assertThat(response.failed(), is(false));
+        assertThat(response.valid(), is(true));
 
         response = validator.validate(ValidatedType.class, new ValidatedType("bad_value", 43), "first");
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("does not match pattern \".*test.*\" with flags 0"));
     }
 
     @Test
     public void validateTypePropertyValue() {
         var response = validator.validateProperty(ValidatedType.class, "first", "test_value");
-        assertThat(response.failed(), is(false));
+        assertThat(response.valid(), is(true));
 
         response = validator.validateProperty(ValidatedType.class, "first", "bad_value");
-        assertThat(response.failed(), is(true));
+        assertThat(response.valid(), is(false));
         assertThat(response.message(), is("does not match pattern \".*test.*\" with flags 0"));
     }
 }
