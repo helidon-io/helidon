@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,19 @@ class DynamicTableTest {
         assertThat(table.currentTableSize(), is(69));
         testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "c", "de");
         testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 2, "b", "c");
+    }
+
+    @Test
+    void testIssue10472() {
+        Http2Settings settings = Http2Settings.builder()
+                .add(Http2Setting.HEADER_TABLE_SIZE, 35L)
+                .build();
+
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(settings);
+        table.add(HeaderNames.create("a"), "aa"); // 35
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "a", "aa");
+        // This triggers the infinite loop
+        table.maxTableSize(0L);
     }
 
     private void testRecord(Http2Headers.DynamicTable table,
