@@ -86,7 +86,7 @@ runs:
         git config --global core.eol lf
     - if: ${{ inputs.setup-maven == 'true' }}
       name: Cache Maven Installation
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4.2.4
       with:
         path: .tools/apache-maven-*/**
         enableCrossOsArchive: true
@@ -127,7 +127,7 @@ runs:
         version: stable
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
-      uses: actions/cache@v4.2.3
+      uses: actions/cache@v4.2.4
       with:
         # See https://github.com/actions/toolkit/issues/713
         # Include must not match top level directories
@@ -152,7 +152,7 @@ runs:
           local-maven-
     - name: Build cache (read-write)
       if: ${{ inputs.build-cache == 'read-write' }}
-      uses: actions/cache@v4.2.3
+      uses: actions/cache@v4.2.4
       with:
         path: |
           ./**/target/**
@@ -164,7 +164,7 @@ runs:
           build-cache-${{ github.run_id }}-
     - name: Build cache (write-only)
       if: ${{ inputs.build-cache == 'write-only' }}
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4.2.4
       with:
         path: |
           ./**/target/**
