@@ -141,7 +141,7 @@ runs:
           local-maven-
     - name: Cache local Maven repository (read-only)
       if: ${{ inputs.maven-cache == 'read-only' }}
-      uses: actions/cache/restore@v4.2.3
+      uses: actions/cache/restore@v4.2.4
       with:
         path: |
           .m2/repository/**/*.*
@@ -173,7 +173,7 @@ runs:
         key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
     - name: Build cache (read-only)
       if: ${{ inputs.build-cache == 'read-only' }}
-      uses: actions/cache/restore@v4.2.3
+      uses: actions/cache/restore@v4.2.4
       with:
         path: |
           ./**/target/**
