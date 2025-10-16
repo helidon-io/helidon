@@ -26,7 +26,7 @@ The following section lists all services and modules that provide them, grouped 
 
 Note: this is a work in progress, not listing the full set of contracts yet!
 
-- <<helidon-common-config>, Common Config>>
+- <<helidon-common-config, Common Config>>
 - <<helidon-scheduling, Scheduling>>
 - <<helidon-validation, Validation>>
 
