@@ -1,0 +1,151 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JSON Schema
+:description: Helidon JSON Schema
+:keywords: helidon, json, schema, java, se
+:feature-name: JSON Schema
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+** <<Imperative Schema Creation, Imperative Schema Creation>>
+** <<Declarative Schema Creation, Declarative Schema Creation>>
+
+== Overview
+
+JSON Schema is a specification for describing the structure and validation rules of JSON data.
+It lets you define what properties are required, their types, allowed values, and more.
+By using JSON Schema, you can validate that incoming or outgoing JSON matches the expected contract,
+provide clear documentation for APIs, and enable tooling support such as code generation and
+auto-completion.
+
+Helidon provides two complementary ways to work with JSON Schema.
+
+* In the declarative approach, you describe the schema using annotations in a
+link:{json-schema-base-url}/io/helidon/json/schema/JsonSchema.html[`JsonSchema`] class.
+* In the imperative approach, you build the schema programmatically with the fluent
+link:{json-schema-base-url}/io/helidon/json/schema/Schema.html[`Schema`] builder API.
+
+Helidon currently supports only schema generation.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.json.schema</groupId>
+    <artifactId>helidon-json-schema</artifactId>
+</dependency>
+----
+
+== Usage
+
+=== Imperative Schema Creation
+The entry point for each runtime JSON schema creation is a
+link:{json-schema-base-url}/io/helidon/json/schema/Schema.html[`Schema`] class.
+The imperative approach gives you full programmatic control over JSON Schema creation.
+Using the fluent Schema builder API, you can construct schemas step by step, configure properties,
+and apply constraints directly in code.
+This is useful when schemas need to be generated dynamically or when fine-grained customization is required.
+
+[source,java]
+----
+include::{sourcedir}/se/json/JsonSchemaSnippets.java[tag=snippet_1, indent=0]
+----
+
+Once the link:{json-schema-base-url}/io/helidon/json/schema/Schema.html[`Schema`] object is created,
+you can generate the JSON Schema as a String. The result looks like this:
+
+[source,json]
+----
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Example JSON Schema",
+    "type": "object",
+    "properties": {
+        "exampleProperty": {
+            "type": "integer",
+            "minimum": 0
+        }
+    }
+}
+----
+
+=== Declarative Schema Creation
+The declarative approach lets you define JSON Schema through annotations in a
+link:{json-schema-base-url}/io/helidon/json/schema/JsonSchema.html[`JsonSchema`] class.
+At compile time, the `helidon-json-schema-codegen` generator processes these annotations and produces a class containing the schema definition.
+This approach keeps your schema definitions close to your data model and ensures schemas are
+generated automatically without manual coding.
+
+[source,java]
+----
+include::{sourcedir}/se/json/JsonSchemaSnippets.java[tag=snippet_2, indent=0]
+----
+<1> Schema defining annotation. Without this annotation the class/record will not be processed as a JSON schema
+
+In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
+
+[source,xml]
+----
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+</plugins>
+----
+
+Once compiled, the class with the following name will be generated `ExampleSchema__JsonSchema`.
+This class contains the String format of the schema and is automatically discovered via ServiceRegistry.
+Because of that, it is possible to inject the
+link:{json-schema-base-url}/io/helidon/json/schema/Schema.html[`Schema`] with the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`] and
+desired class (such as `ExampleSchema.class`) as a value.
+
+[source,java]
+----
+public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
+    //...
+}
+----
+
+Or obtain it over the static `find` method on the
+link:{json-schema-base-url}/io/helidon/json/schema/Schema.html[`Schema`] class. This methods searches the ServiceRegistry
+for a Schema bound to the provided class over the parameter.
+
+[source,java]
+----
+Schema.find(MyClass.class);
+----
+
