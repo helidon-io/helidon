@@ -17,8 +17,8 @@
 package io.helidon.validation.tests.validation;
 
 import io.helidon.testing.junit5.Testing;
+import io.helidon.validation.TypeValidation;
 import io.helidon.validation.ValidationResponse;
-import io.helidon.validation.Validator;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,10 +26,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
-public class ValidatorTest {
-    private final Validator validator;
+public class TypeValidationTest {
+    private final TypeValidation validator;
 
-    public ValidatorTest(Validator validator) {
+    public TypeValidationTest(TypeValidation validator) {
         this.validator = validator;
     }
 

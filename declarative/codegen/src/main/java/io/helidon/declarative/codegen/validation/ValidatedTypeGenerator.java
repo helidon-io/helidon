@@ -189,13 +189,8 @@ class ValidatedTypeGenerator {
                 .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
-                    if (propertyName.startsWith("get") && propertyName.length() > 3) {
-                        propertyName = propertyName.substring(3);
-                        if (propertyName.length() == 1) {
-                            propertyName = propertyName.toLowerCase(Locale.ROOT);
-                        } else if (!Character.isUpperCase(propertyName.charAt(1))) {
-                            propertyName = propertyName.substring(0, 1).toLowerCase(Locale.ROOT) + propertyName.substring(1);
-                        }
+                    if (isPropertyGetter(propertyName)) {
+                        propertyName = nameFromPropertyGetter(propertyName);
                     }
                     Property property = new Property(propertyName,
                                                      "check" + capitalize(propertyName),
@@ -269,13 +264,8 @@ class ValidatedTypeGenerator {
                 .filter(it -> needsWork(constraintAnnotations, it))
                 .forEach(element -> {
                     String propertyName = element.elementName();
-                    if (propertyName.startsWith("get") && propertyName.length() > 3) {
-                        propertyName = propertyName.substring(3);
-                        if (propertyName.length() == 1) {
-                            propertyName = propertyName.toLowerCase(Locale.ROOT);
-                        } else if (!Character.isUpperCase(propertyName.charAt(1))) {
-                            propertyName = propertyName.substring(0, 1).toLowerCase(Locale.ROOT) + propertyName.substring(1);
-                        }
+                    if (isPropertyGetter(propertyName)) {
+                        propertyName = nameFromPropertyGetter(propertyName);
                     }
                     Property property = new Property(propertyName,
                                                      "check" + capitalize(propertyName),
@@ -300,6 +290,33 @@ class ValidatedTypeGenerator {
         checkMethod.addContentLine();
 
         addCheckWithPropertyNameMethods(classModel, type.typeName(), properties);
+    }
+
+    private static boolean isPropertyGetter(String propertyName) {
+        // getSomething -> OK
+        // getHTTPS -> OK
+        // getting -> not OK
+        return propertyName.startsWith("get")
+                && propertyName.length() > 3
+                && Character.isUpperCase(propertyName.charAt(3));
+    }
+
+    private static String nameFromPropertyGetter(String propertyName) {
+        // getSomething -> Something
+        // getHTTPS -> HTTPS
+        // getX -> X
+        propertyName = propertyName.substring(3);
+        var firstChar = propertyName.charAt(0);
+
+        if (propertyName.length() == 1) {
+            // i.e. X -> x
+            return String.valueOf(Character.toLowerCase(firstChar));
+        } else if (!Character.isUpperCase(propertyName.charAt(1))) {
+            // i.e. Something -> something
+            return Character.toLowerCase(firstChar) + propertyName.substring(1);
+        }
+        // i.e. HTTPS -> HTTPS
+        return propertyName;
     }
 
     private void addCheckWithPropertyNameMethods(ClassModel.Builder classModel,

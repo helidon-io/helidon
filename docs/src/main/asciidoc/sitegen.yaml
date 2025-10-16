@@ -573,6 +573,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "sync_alt"
+              - type: "PAGE"
+                title: "Validation"
+                source: "validation.adoc"
+                glyph:
+                  type: "icon"
+                  value: "receipt"
         - type: "HEADER"
           title: "Additional resources"
         - type: "LINK"
@@ -584,6 +590,12 @@ backend:
         - type: "PAGE"
           title: "Config Reference"
           source: "config/config_reference.adoc"
+          glyph:
+            type: "icon"
+            value: "library_books"
+        - type: "PAGE"
+          title: "Service Reference"
+          source: "service-registry/service_reference.adoc"
           glyph:
             type: "icon"
             value: "library_books"

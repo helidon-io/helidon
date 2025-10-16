@@ -74,13 +74,17 @@ public interface ValidationContext extends RuntimeType.Api<ValidationContextConf
      * Create a new validation context for a given root type and object.
      *
      * @param rootType   type of the root validation object
-     * @param rootObject instance of the root validation object
+     * @param rootObject instance of the root validation object, note that this may be {@code null}
      * @return a new validation context
      */
     static ValidationContext create(Class<?> rootType, Object rootObject) {
         return builder()
                 .rootType(rootType)
-                .rootObject(rootObject)
+                .update(it -> {
+                    if (rootObject != null) {
+                        it.rootObject(rootObject);
+                    }
+                })
                 .build();
     }
 

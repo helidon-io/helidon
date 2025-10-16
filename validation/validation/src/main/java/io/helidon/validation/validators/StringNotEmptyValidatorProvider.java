@@ -37,7 +37,7 @@ class StringNotEmptyValidatorProvider implements ConstraintValidatorProvider {
     private static class NotEmptyValidator extends BaseValidator {
         private NotEmptyValidator(Annotation annotation) {
             super(annotation,
-                  "is blank",
+                  "is empty",
                   NotEmptyValidator::validate);
         }
 

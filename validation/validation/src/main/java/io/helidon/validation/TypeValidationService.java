@@ -18,18 +18,21 @@ package io.helidon.validation;
 
 import java.util.Optional;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.validation.spi.TypeValidator;
 
 @Service.Singleton
-class ValidatorService implements Validator {
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
+class TypeValidationService implements TypeValidation {
     private static final TypeName TYPE_VALIDATOR = TypeName.create(TypeValidator.class);
     private final ServiceRegistry registry;
 
     @Service.Inject
-    ValidatorService(ServiceRegistry registry) {
+    TypeValidationService(ServiceRegistry registry) {
         this.registry = registry;
     }
 
@@ -40,6 +43,15 @@ class ValidatorService implements Validator {
         var ctx = ValidationContext.create(type, object);
         validator.check(ctx, object);
         return ctx.response();
+    }
+
+    @Override
+    public <T> void check(Class<T> type, T object) {
+        var validator = validator(type);
+
+        var ctx = ValidationContext.create(type, object);
+        validator.check(ctx, object);
+        ctx.throwOnFailure();
     }
 
     @Override
@@ -54,6 +66,16 @@ class ValidatorService implements Validator {
     }
 
     @Override
+    public <T> void check(Class<T> type, T object, String propertyName) {
+        var ctx = ValidationContext.create(type, object);
+        validator(type)
+                .check(ctx,
+                       object,
+                       propertyName);
+        ctx.throwOnFailure();
+    }
+
+    @Override
     public ValidationResponse validateProperty(Class<?> type, String propertyName, Object value) {
         var ctx = ValidationContext.create(type);
         validator(type)
@@ -64,12 +86,23 @@ class ValidatorService implements Validator {
         return ctx.response();
     }
 
+    @Override
+    public void checkProperty(Class<?> type, String propertyName, Object value) {
+        var ctx = ValidationContext.create(type);
+        validator(type)
+                .checkProperty(ctx,
+                               propertyName,
+                               value);
+
+        ctx.throwOnFailure();
+    }
+
     private <T> TypeValidator<T> validator(Class<T> type) {
         TypeName typeName = TypeName.builder(TYPE_VALIDATOR)
                 .addTypeArgument(TypeName.create(type))
                 .build();
 
         Optional<TypeValidator<T>> validator = registry.firstNamed(typeName, type.getName());
-        return validator.orElseThrow(() -> new ValidationException("No validator for type " + type.getName()));
+        return validator.orElseThrow(() -> new IllegalArgumentException("No validator for type " + type.getName()));
     }
 }

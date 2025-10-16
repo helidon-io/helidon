@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.validation;
-
-import java.time.Clock;
-import java.util.function.Supplier;
-
-import io.helidon.common.LazyValue;
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
-import io.helidon.service.registry.Service;
-
-@Service.Singleton
-@Weight(Weighted.DEFAULT_WEIGHT - 10)
-class DefaultClockService implements Supplier<Clock> {
-    private final LazyValue<Clock> clock = LazyValue.create(Clock::systemDefaultZone);
-
-    DefaultClockService() {
-    }
-
-    @Override
-    public Clock get() {
-        return clock.get();
-    }
-}
+/**
+ * A WebServer feature that adds error handling for {@link io.helidon.validation.ValidationException}.
+ */
+package io.helidon.webserver.validation;

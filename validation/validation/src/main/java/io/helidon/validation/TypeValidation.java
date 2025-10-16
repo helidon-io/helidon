@@ -24,7 +24,7 @@ import io.helidon.service.registry.Service;
  * Validator allows programmatic validation of instances, properties and values.
  */
 @Service.Contract
-public interface Validator {
+public interface TypeValidation {
     /**
      * Validate an object that is annotated with {@link io.helidon.validation.Validation.Validated}.
      *
@@ -33,10 +33,23 @@ public interface Validator {
      * @param object object instance to validate
      * @param <T>    type of the validated object, i.e. the type annotated with {@link io.helidon.validation.Validation.Validated}
      * @return validator response
-     * @throws io.helidon.validation.ValidationException in case the type is not validated
+     * @throws java.lang.IllegalArgumentException in case the type is not validated
      */
     <T> ValidationResponse validate(Class<T> type,
                                     T object);
+
+    /**
+     * Validate an object that is annotated with {@link io.helidon.validation.Validation.Validated}.
+     *
+     * @param type   type annotated with {@link io.helidon.validation.Validation.Validated} to use for validation of the
+     *               provided object
+     * @param object object instance to validate
+     * @param <T>    type of the validated object, i.e. the type annotated with {@link io.helidon.validation.Validation.Validated}
+     * @throws java.lang.IllegalArgumentException        in case the type is not validated
+     * @throws io.helidon.validation.ValidationException in case the type is not validated or validation fails
+     */
+    <T> void check(Class<T> type,
+                   T object);
 
     /**
      * Validate a specific property of an object that is annotated with {@link io.helidon.validation.Validation.Validated}.
@@ -55,11 +68,34 @@ public interface Validator {
      *                     @param <T> type of the validated object, i.e. the type annotated with
      *                     {@link io.helidon.validation.Validation.Validated}
      * @return validator response
-     * @throws io.helidon.validation.ValidationException in case the type is not validated
+     * @throws java.lang.IllegalArgumentException in case the type is not validated
      */
     <T> ValidationResponse validate(Class<T> type,
                                     T object,
                                     String propertyName);
+
+    /**
+     * Validate a specific property of an object that is annotated with {@link io.helidon.validation.Validation.Validated}.
+     * <p>
+     * A property is considered to be one of the following:
+     * <ul>
+     *     <li>A record component with constraint annotation(s)</li>
+     *     <li>A method with constraint annotation(s) that matches getter pattern - non-void return type, no parameters</li>
+     *     <li>Non-private field with constraint annotation(s)</li>
+     * </ul>
+     *
+     * @param type         type annotated with {@link io.helidon.validation.Validation.Validated} to use for validation of the
+     *                     provided object
+     * @param object       object instance to validate
+     * @param propertyName name of the property
+     *                     @param <T> type of the validated object, i.e. the type annotated with
+     *                     {@link io.helidon.validation.Validation.Validated}
+     * @throws java.lang.IllegalArgumentException        in case the type is not validated
+     * @throws io.helidon.validation.ValidationException in case the type is not validated or validation fails
+     */
+    <T> void check(Class<T> type,
+                   T object,
+                   String propertyName);
 
     /**
      * Validate a value against a specific property of an object that is annotated with
@@ -76,8 +112,30 @@ public interface Validator {
      * @param propertyName name of the property
      * @param value        value to check
      * @return validator response
+     * @throws java.lang.IllegalArgumentException in case the type is not validated
      */
     ValidationResponse validateProperty(Class<?> type,
                                         String propertyName,
                                         Object value);
+
+    /**
+     * Validate a value against a specific property of an object that is annotated with
+     * {@link io.helidon.validation.Validation.Validated}.
+     * <p>
+     * A property is considered to be one of the following:
+     * <ul>
+     *     <li>A record component with constraint annotation(s)</li>
+     *     <li>A method with constraint annotation(s) that matches getter pattern - non-void return type, no parameters</li>
+     *     <li>Non-private field with constraint annotation(s)</li>
+     * </ul>
+     *
+     * @param type         type annotated with {@link io.helidon.validation.Validation.Validated}
+     * @param propertyName name of the property
+     * @param value        value to check
+     * @throws java.lang.IllegalArgumentException        in case the type is not validated
+     * @throws io.helidon.validation.ValidationException in case the type is not validated or validation fails
+     */
+    void checkProperty(Class<?> type,
+                       String propertyName,
+                       Object value);
 }

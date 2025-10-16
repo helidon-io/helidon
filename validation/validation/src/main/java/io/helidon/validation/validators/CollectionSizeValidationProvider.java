@@ -19,6 +19,7 @@ package io.helidon.validation.validators;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -42,7 +43,7 @@ class CollectionSizeValidationProvider implements ConstraintValidatorProvider {
         String message = message(minLength, maxLength);
 
         if (type.array()) {
-            return new BaseValidator(constraintAnnotation,
+            return new CollectionSizeValidator(constraintAnnotation,
                                      message,
                                      it -> {
                                          var len = Array.getLength(it);
@@ -50,19 +51,29 @@ class CollectionSizeValidationProvider implements ConstraintValidatorProvider {
                                      });
         } else {
             // we do not have the option to correctly guess what type we have, so instance check it is....
-            return new BaseValidator(constraintAnnotation,
+            return new CollectionSizeValidator(constraintAnnotation,
                                      message,
                                      it -> {
-                                         var len = switch (it) {
-                                             case Collection<?> c -> c.size();
-                                             case Map<?, ?> m -> m.size();
-                                             default -> throw new ValidationException(
-                                                     "Collection size constraint is only valid on an array, collection, or a "
-                                                             + "map.");
-                                         };
+                                         var len = len(it);
                                          return len >= minLength && len <= maxLength;
                                      });
         }
+    }
+
+    private static int len(Object object) {
+        if (object instanceof Collection<?> c) {
+            return c.size();
+        }
+        if (object instanceof Map<?, ?> m) {
+            return m.size();
+        }
+        if (object.getClass().isArray()) {
+            return Array.getLength(object);
+        }
+
+        throw new ValidationException(
+                "Collection size constraint is only valid on an array, collection, or a "
+                        + "map.");
     }
 
     private static String message(int minLength, int maxLength) {
@@ -77,5 +88,16 @@ class CollectionSizeValidationProvider implements ConstraintValidatorProvider {
             return "size (%d) should be at most " + maxLength;
         }
         return "size (%d) should be between " + minLength + " and " + maxLength;
+    }
+
+    private static class CollectionSizeValidator extends BaseValidator {
+        protected CollectionSizeValidator(Annotation annotation, String defaultMessage, Predicate<Object> check) {
+            super(annotation, defaultMessage, check);
+        }
+
+        @Override
+        protected Object convertValue(Object object) {
+            return len(object);
+        }
     }
 }

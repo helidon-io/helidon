@@ -32,9 +32,8 @@ import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.validation.Check;
 import io.helidon.validation.Validation;
-import io.helidon.validation.ValidationContext;
+import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
@@ -117,25 +116,23 @@ public class DeclarativeExample {
     @Service.Singleton
     static class CacheService {
         @Scheduling.FixedRate("PT5S")
-        void checkCache()  {
+        void ValidationCache()  {
             // do something every 5 seconds
         }
     }
     // end::snippet_5[]
 
 
-    // tag::snippet_6[]
     @Validation.Validated
-    record MyType(@Check.String.Pattern(".*valid.*") @Check.NotNull String validString,
-                  @Check.Integer.Min(42) int validInt) {
+    record MyType(@Validation.String.Pattern(".*valid.*") @Validation.NotNull String validString,
+                  @Validation.Integer.Min(42) int validInt) {
     }
-    // end::snippet_6[]
 
     // tag::snippet_7[]
     @Service.Singleton
     static class ValidatedService {
-        @Check.String.NotBlank // validates the response
-        String process(@Check.Valid @Check.NotNull MyType myType) {
+        @Validation.String.NotBlank // validates the response
+        String process(@Validation.Valid @Validation.NotNull MyType myType) {
             // result of the logic
             return "some result";
         }
@@ -143,14 +140,14 @@ public class DeclarativeExample {
     // end::snippet_7[]
 
     // tag::snippet_8[]
-    @Check.NotNull
-    @Check.String.NotBlank
+    @Validation.NotNull
+    @Validation.String.NotBlank
     public @interface NonNullNotBlank {
     }
     // end::snippet_8[]
 
     // tag::snippet_9[]
-    @Check.NotNull // will add not-null constraint as well
+    @Validation.NotNull // will add not-null constraint as well
     @Validation.Constraint
     public @interface CustomConstraint {
     }
@@ -162,7 +159,7 @@ public class DeclarativeExample {
     static class CustomConstraintValidatorProvider implements ConstraintValidatorProvider {
         @Override
         public ConstraintValidator create(TypeName typeName, Annotation constraintAnnotation) {
-            // we could check the type here, but we don't need to - depends on constraint
+            // we could Validation the type here, but we don't need to - depends on constraint
             return new CustomValidator(constraintAnnotation);
         }
 
@@ -174,20 +171,20 @@ public class DeclarativeExample {
             }
 
             @Override
-            public ValidatorResponse check(ValidationContext context, Object value) {
+            public ValidatorResponse check(ValidatorContext context, Object value) {
                 if (value == null) {
-                    // we leave the `not-null` check to the "meta-annotation" on CustomConstraint
-                    return context.response();
+                    // we leave the `not-null` Validation to the "meta-annotation" on CustomConstraint
+                    return ValidatorResponse.create();
                 }
 
                 // if string, and the value is "good", it is OK
                 if (value instanceof String str) {
                     if (str.equals("good")) {
-                        return context.response();
+                        return ValidatorResponse.create();
                     }
                 }
 
-                return context.response(annotation, "Must be \"good\" string", value);
+                return ValidatorResponse.create(annotation, "Must be \"good\" string", value);
             }
         }
     }

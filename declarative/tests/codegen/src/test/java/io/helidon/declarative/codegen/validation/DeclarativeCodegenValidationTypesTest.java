@@ -28,7 +28,7 @@ import io.helidon.validation.ConstraintViolation;
 import io.helidon.validation.Validation;
 import io.helidon.validation.ValidationContext;
 import io.helidon.validation.ValidationException;
-import io.helidon.validation.ValidationResponse;
+import io.helidon.validation.ValidatorResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.validation.spi.TypeValidator;
@@ -72,7 +72,7 @@ class DeclarativeCodegenValidationTypesTest {
         checkField(toCheck, checked, fields, "VALIDATION_VALIDATED", Validation.Validated.class);
         checkField(toCheck, checked, fields, "VALIDATION_EXCEPTION", ValidationException.class);
 
-        checkField(toCheck, checked, fields, "VALIDATOR_RESPONSE", ValidationResponse.class);
+        checkField(toCheck, checked, fields, "VALIDATOR_RESPONSE", ValidatorResponse.class);
         checkField(toCheck, checked, fields, "TYPE_VALIDATOR", TypeValidator.class);
         checkField(toCheck, checked, fields, "CONSTRAINT_VALIDATOR", ConstraintValidator.class);
         checkField(toCheck, checked, fields, "CONSTRAINT_VALIDATOR_PROVIDER", ConstraintValidatorProvider.class);

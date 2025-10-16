@@ -1317,6 +1317,10 @@
             <groupId>io.helidon.validation</groupId>
             <artifactId>helidon-validation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-validation</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
