@@ -60,7 +60,7 @@ class ValidationContextImpl implements ValidationContext {
     }
 
     @Override
-    public <T> void check(ConstraintValidator validator, T object) {
+    public void check(ConstraintValidator validator, Object object) {
         var checkerResponse = validator.check(validatorContext, object);
         if (checkerResponse.valid()) {
             return;
