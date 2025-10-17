@@ -17,7 +17,7 @@
 /**
  * Helidon WebClient gRPC Tracing Support.
  */
-module io.helidon.webclient.grpc.tracing {
+module io.helidon.webserver.grpc.tracing {
 
     requires io.helidon.common.config;
     requires io.helidon.webserver.grpc;

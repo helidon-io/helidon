@@ -57,7 +57,7 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**
      * Whether to support compression if requested by a client. If explicitly
-     * disabled, no compression will be ever be used by the server even if a
+     * disabled, no compression will ever be used by the server even if a
      * client-compatible compressor is found.
      *
      * @return true if compression is enabled
@@ -67,12 +67,12 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     boolean enableCompression();
 
     /**
-     * gRPC server services. These services will be discovered automatically.
+     * gRPC server services. These services will not be discovered automatically.
      *
      * @return services to use
      */
     @Option.Singular
-    @Option.Configured("services")
-    @Option.Provider(value = GrpcServerServiceProvider.class)
+    @Option.Configured
+    @Option.Provider(value = GrpcServerServiceProvider.class, discoverServices = false)
     List<GrpcServerService> grpcServices();
 }

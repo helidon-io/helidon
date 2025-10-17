@@ -50,7 +50,7 @@ import io.grpc.ServerInterceptor;
  * by adding a dependency on
  * {@code io.helidon.webserver:io.helidon.webserver.grpc-tracing} instead.
  *
- * @deprecated to be moved to  {@code io.helidon.webserver.grpc.tracing}.
+ * @deprecated to be moved to {@code io.helidon.webserver.grpc.tracing}.
  */
 @Deprecated(forRemoval = true, since = "4.3.2")
 @Weight(InterceptorWeights.TRACING)

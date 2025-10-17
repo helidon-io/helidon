@@ -26,19 +26,19 @@ import io.grpc.ServerInterceptor;
 
 class GrpcTracingService implements GrpcServerService {
 
-    static GrpcTracingService create(GrpcTracingConfig config) {
-        return new GrpcTracingService(config);
-    }
-
     private final GrpcTracingConfig config;
 
     private GrpcTracingService(GrpcTracingConfig config) {
         this.config = config;
     }
 
+    static GrpcTracingService create(GrpcTracingConfig config) {
+        return new GrpcTracingService(config);
+    }
+
     @Override
     public String type() {
-        return "grpc-tracing";
+        return "tracing";
     }
 
     @Override

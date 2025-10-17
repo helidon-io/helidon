@@ -139,7 +139,7 @@ public class GrpcRouting implements Routing {
             // always add the context setting interceptor
             interceptors.add(ContextSettingServerInterceptor.instance());
 
-            // add all the interceptor from server services SPI
+            // add all the interceptors from server services SPI
             Config config = Services.get(Config.class);
             GrpcConfig grpcConfig = GrpcConfig.create(config.get(GrpcProtocolProvider.CONFIG_NAME));
             for (GrpcServerService serverService : grpcConfig.grpcServices()) {
