@@ -118,9 +118,8 @@ public interface ValidationContext extends RuntimeType.Api<ValidationContextConf
      *
      * @param validator the type validator or constraint validator to run
      * @param object    the object to check
-     * @param <T>       type of the object to check
      */
-    <T> void check(ConstraintValidator validator, T object);
+    void check(ConstraintValidator validator, Object object);
 
     /**
      * Enter a new scope.
