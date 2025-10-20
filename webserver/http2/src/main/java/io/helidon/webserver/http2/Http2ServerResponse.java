@@ -130,6 +130,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS)
                     || headers.contains(HeaderNames.TRAILER);
 
+            beforeSend();
+
             http2Headers.validateResponse();
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
                                                         BufferData.create(actualBytes, actualPosition, actualLength),
@@ -169,6 +171,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
             headers.add(STREAM_TRAILERS);
         }
+
+        beforeSend();
 
         outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
