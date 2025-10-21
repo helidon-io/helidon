@@ -65,6 +65,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
+    private final List<Runnable> beforeSend = new ArrayList<>(5);
     private final List<Runnable> whenSent = new ArrayList<>(5);
     private final int maxInMemory;
 
@@ -123,6 +124,12 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         } catch (UnsupportedTypeException e) {
             throw new HttpException(e.getMessage(), Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
         }
+    }
+
+    @Override
+    public ServerResponse beforeSend(Runnable listener) {
+        beforeSend.add(listener);
+        return (T) this;
     }
 
     @Override
@@ -267,6 +274,13 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             return encoder.apply(outputStream);
         }
         return outputStream;
+    }
+
+    /**
+     * Execute before send runnables.
+     */
+    protected void beforeSend() {
+        beforeSend.forEach(Runnable::run);
     }
 
     /**

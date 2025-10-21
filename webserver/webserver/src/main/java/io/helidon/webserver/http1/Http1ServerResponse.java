@@ -204,6 +204,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         // send bytes to writer
+        beforeSend();
+
         if (outputStreamFilter == null && !headers.contains(HeaderNames.TRAILER)) {
             byte[] entity = entityBytes(bytes, position, length);
             BufferData bufferData = (bytes != entity) ? responseBuffer(entity)
@@ -221,6 +223,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to write response", e);
             }
+            // after send is part of the output stream handling
         }
     }
 
@@ -231,6 +234,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
+        beforeSend();
         return outputStream(false);
     }
 
