@@ -139,6 +139,29 @@ final class Javadoc {
         if (originalValue.startsWith("#")) {
             return originalValue.substring(1);
         }
+        // Do not replace # in href links, such as
+        // <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+        int index = 0;
+        StringBuilder result = new StringBuilder();
+        while(true) {
+            int indexOfHref = originalValue.indexOf("href=\"", index);
+            if (indexOfHref == -1) {
+                result.append(removeHash(originalValue.substring(index)));;
+                break;
+            }
+            int endOfHref = originalValue.indexOf('\"', indexOfHref + 6);
+            if (endOfHref == -1) {
+                // broken link, just append the rest
+                result.append(originalValue.substring(index));
+                break;
+            }
+            result.append(originalValue, index, endOfHref + 1);
+            index = endOfHref + 1;
+        }
+        return result.toString();
+    }
+
+    private static String removeHash(String originalValue) {
         return originalValue.replace('#', '.');
     }
 
