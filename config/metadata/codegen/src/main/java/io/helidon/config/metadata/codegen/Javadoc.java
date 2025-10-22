@@ -143,10 +143,10 @@ final class Javadoc {
         // <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
         int index = 0;
         StringBuilder result = new StringBuilder();
-        while(true) {
+        while (true) {
             int indexOfHref = originalValue.indexOf("href=\"", index);
             if (indexOfHref == -1) {
-                result.append(removeHash(originalValue.substring(index)));;
+                result.append(removeHash(originalValue.substring(index)));
                 break;
             }
             int endOfHref = originalValue.indexOf('\"', indexOfHref + 6);
