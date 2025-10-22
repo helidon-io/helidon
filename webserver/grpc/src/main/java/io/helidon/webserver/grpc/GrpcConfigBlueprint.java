@@ -28,6 +28,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = GrpcProtocolProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
+@Prototype.IncludeDefaultMethods("grpcServices")
 interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**
@@ -74,5 +75,7 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     @Option.Singular
     @Option.Configured
     @Option.Provider(value = GrpcServerServiceProvider.class, discoverServices = false)
-    List<GrpcServerService> grpcServices();
+    default List<GrpcServerService> grpcServices() {
+        return List.of();
+    }
 }
