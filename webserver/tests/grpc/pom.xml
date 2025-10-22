@@ -34,6 +34,10 @@
             <artifactId>helidon-webserver-grpc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-tracing</artifactId>
+        </dependency>
+        <dependency>
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
         </dependency>
