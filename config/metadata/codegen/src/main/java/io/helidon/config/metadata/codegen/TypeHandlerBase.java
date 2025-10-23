@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -79,8 +80,8 @@ abstract class TypeHandlerBase {
         return result.toString();
     }
 
-    String javadoc(String docComment) {
-        return Javadoc.parse(docComment);
+    String javadoc(RoundContext roundContext, TypeInfo currentType, String docComment) {
+        return Javadoc.parse(roundContext, currentType, docComment);
     }
 
     String key(TypedElementInfo elementInfo, ConfiguredOptionData configuredOption) {
@@ -91,10 +92,13 @@ abstract class TypeHandlerBase {
         return name;
     }
 
-    String description(TypedElementInfo elementInfo, ConfiguredOptionData configuredOption) {
+    String description(RoundContext roundContext,
+                       TypeInfo typeInfo,
+                       TypedElementInfo elementInfo,
+                       ConfiguredOptionData configuredOption) {
         String desc = configuredOption.description();
         if (desc == null) {
-            return javadoc(elementInfo.description().orElse(null));
+            return javadoc(roundContext, typeInfo, elementInfo.description().orElse(null));
         }
         return desc;
     }
@@ -103,13 +107,15 @@ abstract class TypeHandlerBase {
         return UNCONFIGURED_OPTION.equals(defaultValue) ? null : defaultValue;
     }
 
-    List<ConfiguredOptionData.AllowedValue> allowedValues(ConfiguredOptionData configuredOption, TypeName type) {
+    List<ConfiguredOptionData.AllowedValue> allowedValues(RoundContext roundContext,
+                                                          ConfiguredOptionData configuredOption,
+                                                          TypeName type) {
         if (type.equals(configuredOption.type()) || !configuredOption.allowedValues().isEmpty()) {
             // this was already processed due to an explicit type defined in the annotation
             // or allowed values explicitly configured in annotation
             return configuredOption.allowedValues();
         }
-        return allowedValues(type);
+        return allowedValues(roundContext, type);
     }
 
     CodegenContext ctx() {
@@ -156,25 +162,27 @@ abstract class TypeHandlerBase {
         }
     }
 
-    List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(ConfiguredOptionData data, TypeInfo enumInfo) {
+    List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(RoundContext roundContext,
+                                                              ConfiguredOptionData data,
+                                                              TypeInfo enumInfo) {
         if (!data.allowedValues().isEmpty()) {
             // this was already processed due to an explicit type defined in the annotation
             // or allowed values explicitly configured in annotation
             return data.allowedValues();
         }
-        return allowedValuesEnum(enumInfo);
+        return allowedValuesEnum(roundContext, enumInfo);
     }
 
-    private List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(TypeInfo enumInfo) {
+    private List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(RoundContext roundContext, TypeInfo enumInfo) {
         List<ConfiguredOptionData.AllowedValue> values = new ArrayList<>();
-        ConfiguredOptionData.enumAllowedValues(values, enumInfo);
+        ConfiguredOptionData.enumAllowedValues(roundContext, values, enumInfo);
         return values;
     }
 
-    private List<ConfiguredOptionData.AllowedValue> allowedValues(TypeName type) {
+    private List<ConfiguredOptionData.AllowedValue> allowedValues(RoundContext roundContext, TypeName type) {
         return ctx().typeInfo(type)
                 .filter(it -> it.kind() == ENUM)
-                .map(this::allowedValuesEnum)
+                .map(it -> allowedValuesEnum(roundContext, it))
                 .orElseGet(List::of);
 
     }

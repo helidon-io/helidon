@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -58,7 +59,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
     }
 
     @Override
-    public TypeHandlerResult handle() {
+    public TypeHandlerResult handle(RoundContext roundContext) {
         TypeInfo targetType;
         boolean isBuilder;
         String module;
@@ -102,39 +103,40 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
 
         if (isBuilder) {
             // builder
-            processBuilderType(typeInfo, type, typeName, targetType);
+            processBuilderType(roundContext, typeInfo, type, typeName, targetType);
         } else {
             // standalone class with create method(s), or interface/abstract class
-            processTargetType(typeInfo, type, typeName, type.standalone());
+            processTargetType(roundContext, typeInfo, type, typeName, type.standalone());
         }
 
         return new TypeHandlerResult(targetType.typeName(), module, type);
     }
 
-    List<ConfiguredOptionData> findConfiguredOptionAnnotations(TypedElementInfo elementInfo) {
+    List<ConfiguredOptionData> findConfiguredOptionAnnotations(RoundContext roundContext, TypedElementInfo elementInfo) {
         if (elementInfo.hasAnnotation(META_OPTIONS)) {
             Annotation metaOptions = elementInfo.annotation(META_OPTIONS);
             return metaOptions.annotationValues()
                     .stream()
                     .flatMap(List::stream)
-                    .map(it -> ConfiguredOptionData.createMeta(ctx(), it))
+                    .map(it -> ConfiguredOptionData.createMeta(ctx(), roundContext, it))
                     .toList();
         }
 
         if (elementInfo.hasAnnotation(META_OPTION)) {
             Annotation metaOption = elementInfo.annotation(META_OPTION);
-            return List.of(ConfiguredOptionData.createMeta(ctx(), metaOption));
+            return List.of(ConfiguredOptionData.createMeta(ctx(), roundContext, metaOption));
         }
 
         return List.of();
     }
 
-    void processBuilderMethod(TypeName typeName,
+    void processBuilderMethod(RoundContext roundContext,
+                              TypeName typeName,
                               ConfiguredType configuredType,
                               TypedElementInfo elementInfo,
                               BiFunction<TypedElementInfo, ConfiguredOptionData, OptionType> optionTypeMethod,
                               BiFunction<TypedElementInfo, OptionType, List<TypeName>> builderParamsMethod) {
-        List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(elementInfo);
+        List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(roundContext, elementInfo);
         if (options.isEmpty()) {
             return;
         }
@@ -144,13 +146,13 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                 continue;
             }
             String name = key(elementInfo, data);
-            String description = description(elementInfo, data);
+            String description = description(roundContext, typeInfo, elementInfo, data);
             String defaultValue = defaultValue(data.defaultValue());
             boolean experimental = data.experimental();
             OptionType type = optionTypeMethod.apply(elementInfo, data);
             boolean optional = defaultValue != null || data.optional();
             boolean deprecated = data.deprecated();
-            List<ConfiguredOptionData.AllowedValue> allowedValues = allowedValues(data, type.elementType());
+            List<ConfiguredOptionData.AllowedValue> allowedValues = allowedValues(roundContext, data, type.elementType());
 
             List<TypeName> paramTypes = builderParamsMethod.apply(elementInfo, type);
 
@@ -177,7 +179,11 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
     }
 
     // annotated type or type methods (not a builder)
-    private void processTargetType(TypeInfo typeInfo, ConfiguredType type, TypeName typeName, boolean standalone) {
+    private void processTargetType(RoundContext roundContext,
+                                   TypeInfo typeInfo,
+                                   ConfiguredType type,
+                                   TypeName typeName,
+                                   boolean standalone) {
         // go through all methods, find all create methods and create appropriate configured producers for them
         // if there is a builder, add the builder producer as well
 
@@ -230,7 +236,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
 
             // now let's find all methods with @ConfiguredOption
             for (TypedElementInfo validMethod : validMethods) {
-                List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(validMethod);
+                List<ConfiguredOptionData> options = findConfiguredOptionAnnotations(roundContext, validMethod);
 
                 if (options.isEmpty()) {
                     continue;
@@ -289,12 +295,16 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                     .filter(Predicate.not(ElementInfoPredicates::isPrivate)) // public, package or protected
                     .filter(Predicate.not(ElementInfoPredicates::isStatic)) // not static
                     .filter(TypeHandlerMetaApi.isMine(typeName)) // declared on this type
-                    .forEach(it -> processBuilderMethod(typeName, type, it));
+                    .forEach(it -> processBuilderMethod(roundContext, typeName, type, it));
         }
     }
 
     // annotated builder methods
-    private void processBuilderType(TypeInfo typeInfo, ConfiguredType type, TypeName typeName, TypeInfo targetType) {
+    private void processBuilderType(RoundContext roundContext,
+                                    TypeInfo typeInfo,
+                                    ConfiguredType type,
+                                    TypeName typeName,
+                                    TypeInfo targetType) {
         type.addProducer(new ProducerMethod(false, typeName, "build", List.of()));
 
         TypeName targetTypeName = targetType.typeName();
@@ -321,15 +331,18 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate)) // not private
                 .filter(TypeHandlerMetaApi.isMine(typeName)) // declared on this type
                 .filter(it -> it.hasAnnotation(META_OPTION) || it.hasAnnotation(META_OPTIONS))
-                .forEach(it -> processBuilderMethod(typeName, type, it));
+                .forEach(it -> processBuilderMethod(roundContext, typeName, type, it));
     }
 
     private List<TypeName> builderMethodParams(TypedElementInfo elementInfo, OptionType type) {
         return params(elementInfo);
     }
 
-    private void processBuilderMethod(TypeName typeName, ConfiguredType configuredType, TypedElementInfo elementInfo) {
-        processBuilderMethod(typeName, configuredType, elementInfo, this::optionType, this::builderMethodParams);
+    private void processBuilderMethod(RoundContext roundContext,
+                                      TypeName typeName,
+                                      ConfiguredType configuredType,
+                                      TypedElementInfo elementInfo) {
+        processBuilderMethod(roundContext, typeName, configuredType, elementInfo, this::optionType, this::builderMethodParams);
     }
 
     private OptionType optionType(TypedElementInfo elementInfo, ConfiguredOptionData annotation) {
@@ -343,11 +356,11 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                                                    + "yet it does not have explicit type, or exactly one parameter",
                                            typeInfo.originatingElementValue());
             } else {
-                TypedElementInfo parameter = parameters.iterator().next();
+                TypedElementInfo parameter = parameters.getFirst();
                 TypeName paramType = parameter.typeName();
 
                 if (paramType.isList() || paramType.isSet()) {
-                    return new OptionType(paramType.typeArguments().get(0), "LIST");
+                    return new OptionType(paramType.typeArguments().getFirst(), "LIST");
                 }
 
                 if (paramType.isMap()) {

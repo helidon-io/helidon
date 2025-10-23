@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -63,7 +64,7 @@ final class ConfiguredOptionData {
     private TypeName providerType;
 
     // create from @ConfiguredOption in config-metadata
-    static ConfiguredOptionData createMeta(CodegenContext ctx, Annotation option) {
+    static ConfiguredOptionData createMeta(CodegenContext ctx, RoundContext roundContext, Annotation option) {
         ConfiguredOptionData result = new ConfiguredOptionData();
 
         option.booleanValue("configured").ifPresent(result::configured);
@@ -90,7 +91,7 @@ final class ConfiguredOptionData {
                     .map(TypeName::create)
                     .flatMap(ctx::typeInfo)
                     .filter(it -> it.kind() == ENUM)
-                    .ifPresent(it -> enumAllowedValues(result.allowedValues(), it));
+                    .ifPresent(it -> enumAllowedValues(roundContext, result.allowedValues(), it));
         }
 
         return result;
@@ -151,13 +152,13 @@ final class ConfiguredOptionData {
         return result;
     }
 
-    static void enumAllowedValues(List<AllowedValue> allowedValues, TypeInfo typeInfo) {
+    static void enumAllowedValues(RoundContext roundContext, List<AllowedValue> allowedValues, TypeInfo typeInfo) {
         typeInfo.elementInfo()
                 .stream()
                 .filter(it -> it.kind() == ENUM_CONSTANT)
                 .forEach(it -> {
                     allowedValues.add(new AllowedValue(it.elementName(), it.description()
-                            .map(Javadoc::parse)
+                            .map(javadoc -> Javadoc.parse(roundContext, typeInfo, javadoc))
                             .orElse("")));
                 });
     }

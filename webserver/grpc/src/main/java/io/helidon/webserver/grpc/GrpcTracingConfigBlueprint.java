@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,14 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.grpc.core.GrpcTracingName;
 
+/**
+ * Grpc tracing config.
+ *
+ * @deprecated to be moved to {@code io.helidon.webserver.grpc.tracing}.
+ */
 @Prototype.Blueprint
 @Prototype.Configured
+@Deprecated(forRemoval = true, since = "4.3.2")
 interface GrpcTracingConfigBlueprint {
 
     /**

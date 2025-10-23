@@ -1095,6 +1095,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-sse</artifactId>
         </dependency>
         <dependency>

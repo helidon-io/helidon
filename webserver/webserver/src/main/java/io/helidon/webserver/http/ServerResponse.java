@@ -166,9 +166,24 @@ public interface ServerResponse {
     long bytesWritten();
 
     /**
+     * Executed right before the first byte is written to the socket (including response status and headers).
+     * Response can be modified (i.e. headers, status) at this point, though modifying the entity may not be done, as
+     * this method is most likely called from within one of the {@link #send()} methods.
+     * <p>
+     * Note: this method is implemented as a default method that does nothing, for backward compatibility.
+     *
+     * @param listener lister to add to the list of listeners that will be triggered before the response is sent
+     * @return this instance
+     */
+    default ServerResponse beforeSend(Runnable listener) {
+        // do nothing, backward compatibility
+        return this;
+    }
+
+    /**
      * Completed when last byte is buffered for socket write.
      *
-     * @param listener listener to add to list of listeners that will be triggered once response is sent
+     * @param listener listener to add to the list of listeners that will be triggered once the response is sent
      * @return this instance
      */
     ServerResponse whenSent(Runnable listener);

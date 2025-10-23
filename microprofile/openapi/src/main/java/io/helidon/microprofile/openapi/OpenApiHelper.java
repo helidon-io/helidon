@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,10 @@ import java.util.Set;
 
 import io.helidon.common.LazyValue;
 
-import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
-import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.introspector.Property;
 
 /**
@@ -36,9 +33,15 @@ import org.yaml.snakeyaml.introspector.Property;
  */
 final class OpenApiHelper {
 
+    @Deprecated(since = "4.3.2", forRemoval = true)
+    private static final String WARNINGS_ENABLED_PROPERTY_NAME = "openapi.parsing.warnings.enabled";
+
+    private static final System.Logger LOGGER = System.getLogger(OpenApiHelper.class.getName());
+
     // Temporary to suppress SnakeYAML warnings.
     // As a static we keep a reference to the logger, thereby making sure any changes we make are persistent. (JUL holds
     // only weak references to loggers internally.)
+    @Deprecated(since = "4.3.2", forRemoval = true)
     private static final java.util.logging.Logger SNAKE_YAML_INTROSPECTOR_LOGGER =
             java.util.logging.Logger.getLogger(org.yaml.snakeyaml.introspector.PropertySubstitute.class.getPackage().getName());
 
@@ -48,10 +51,7 @@ final class OpenApiHelper {
     private final SnakeYAMLParserHelper<ExpandedTypeDescription> generatedHelper;
 
     private OpenApiHelper() {
-        boolean warningsEnabled = Boolean.getBoolean("openapi.parsing.warnings.enabled");
-        if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(java.util.logging.Level.WARNING) && !warningsEnabled) {
-            SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(java.util.logging.Level.SEVERE);
-        }
+        suppressWarningsIfRequested();
         this.generatedHelper = SnakeYAMLParserHelper.create(ExpandedTypeDescription::create);
         adjustTypeDescriptions(generatedHelper.types());
     }
@@ -63,6 +63,28 @@ final class OpenApiHelper {
      */
     static Map<Class<?>, ExpandedTypeDescription> types() {
         return INSTANCE.get().generatedHelper.types();
+    }
+
+
+    @Deprecated(since = "4.3.2", forRemoval = true)
+    private static void suppressWarningsIfRequested() {
+        // Previously, Helidon by default forced a SnakeYAML logger's level to SEVERE in order to suppress innocuous but alarming
+        // warnings. (Helidon used SnakeYAML property substitutes for properties that did not already exist on
+        // certain types, and although that did what we wanted functionally it also triggered warning messages.)
+        // Users could set openapi.parsing.warnings.enabled to true to re-enable warnings for that logger.
+        // Helidon no longer uses the property substitute approach for those purposes, so Helidon no longer suppresses the
+        // warnings by default so there is no need for the property. Helidon still honors it if specified but logs its use as
+        // deprecated.
+        String warningsEnabledText = System.getProperty(WARNINGS_ENABLED_PROPERTY_NAME);
+        if (warningsEnabledText != null) {
+            LOGGER.log(System.Logger.Level.INFO, String.format("""
+            Use of the property %s  + " is deprecated. \
+            Helidon logs parsing warnings by default but honors the property setting.""", WARNINGS_ENABLED_PROPERTY_NAME));
+            boolean warningsEnabled = Boolean.parseBoolean(warningsEnabledText);
+            if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(java.util.logging.Level.WARNING) && !warningsEnabled) {
+                SNAKE_YAML_INTROSPECTOR_LOGGER.setLevel(java.util.logging.Level.SEVERE);
+            }
+        }
     }
 
     private static void adjustTypeDescriptions(Map<Class<?>, ExpandedTypeDescription> types) {
@@ -91,27 +113,12 @@ final class OpenApiHelper {
         // SnakeYAML derives properties only from methods declared directly by each OpenAPI interface, not from methods defined
         // on other interfaces which the original one extends. Those we have to handle explicitly.
         for (ExpandedTypeDescription td : types.values()) {
-            if (Extensible.class.isAssignableFrom(td.getType())) {
-                td.addExtensions();
-            }
             Property defaultProperty = td.defaultProperty();
             if (defaultProperty != null) {
                 td.substituteProperty("default", defaultProperty.getType(), "getDefaultValue", "setDefaultValue");
                 td.addExcludes("defaultValue");
             }
-            if (isRef(td)) {
-                td.addRef();
-            }
         }
-    }
-
-    private static boolean isRef(TypeDescription td) {
-        for (Class<?> c : td.getType().getInterfaces()) {
-            if (c.equals(Reference.class)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static String getter(PathItem.HttpMethod method) {
