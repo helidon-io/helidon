@@ -57,8 +57,10 @@ import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
+import io.helidon.security.jwt.EncryptedJwt;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
+import io.helidon.security.jwt.JwtHeaders;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
@@ -518,9 +520,24 @@ class TenantAuthenticationHandler {
     }
 
     private AuthenticationResponse validateIdToken(String tenantId, ProviderRequest providerRequest, String idToken) {
+        JwtHeaders jwtHeaders = JwtHeaders.parseToken(idToken);
         SignedJwt signedJwt;
         try {
-            signedJwt = SignedJwt.parseToken(idToken);
+            if (jwtHeaders.encryption().isPresent()) {
+                if (tenantConfig.contentKeyDecryptionKeys().isEmpty()
+                        || tenantConfig.contentKeyDecryptionKeys().get().keys().isEmpty()) {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured "
+                                + "for the tenant: " + tenantId);
+                    }
+                    return AuthenticationResponse.failed("Failed to decrypt ID Token");
+                }
+                EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idToken);
+                JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
+                signedJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst());
+            } else {
+                signedJwt = SignedJwt.parseToken(idToken);
+            }
         } catch (Exception e) {
             //invalid token
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -576,9 +593,24 @@ class TenantAuthenticationHandler {
                                                        ProviderRequest providerRequest,
                                                        String token,
                                                        Jwt idToken) {
+        JwtHeaders jwtHeaders = JwtHeaders.parseToken(token);
         SignedJwt signedJwt;
         try {
-            signedJwt = SignedJwt.parseToken(token);
+            if (jwtHeaders.encryption().isPresent()) {
+                if (tenantConfig.contentKeyDecryptionKeys().isEmpty()
+                        || tenantConfig.contentKeyDecryptionKeys().get().keys().isEmpty()) {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "There are no content key decryption keys configured "
+                                + "for the tenant: " + tenantId);
+                    }
+                    return AuthenticationResponse.failed("Failed to decrypt Access Token");
+                }
+                EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, token);
+                JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
+                signedJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst());
+            } else {
+                signedJwt = SignedJwt.parseToken(token);
+            }
         } catch (Exception e) {
             //invalid token
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {

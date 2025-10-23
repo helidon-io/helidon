@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ class TenantConfigImpl implements TenantConfig {
     private final OidcConfig.ClientAuthentication tokenEndpointAuthentication;
     private final Duration clientTimeout;
     private final JwkKeys signJwk;
+    private final JwkKeys contentKeyDecryptionKeys;
     private final String clientSecret;
     private final URI introspectUri;
     private final URI logoutEndpointUri;
@@ -73,6 +74,7 @@ class TenantConfigImpl implements TenantConfig {
 
         this.clientSecret = builder.clientSecret();
         this.signJwk = builder.signJwk();
+        this.contentKeyDecryptionKeys = builder.contentKeyDecryptionKeys();
         this.oidcMetadata = builder.oidcMetadata();
         this.useWellKnown = builder.useWellKnown();
 
@@ -201,4 +203,8 @@ class TenantConfigImpl implements TenantConfig {
         return useWellKnown;
     }
 
+    @Override
+    public Optional<JwkKeys> contentKeyDecryptionKeys() {
+        return Optional.ofNullable(contentKeyDecryptionKeys);
+    }
 }
