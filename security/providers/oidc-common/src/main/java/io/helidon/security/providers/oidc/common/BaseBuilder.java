@@ -36,9 +36,12 @@ import jakarta.json.JsonReaderFactory;
 
 /**
  * Base builder of the OIDC config components.
+ *
+ * @param <B> type of the builder
+ * @param <T> type of the object built by this builder
  */
-@Configured
-abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B, T> {
+@Configured // as this class is configured, we reference it in the config metadata documentation, so it must be public
+public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B, T> {
 
     static final String DEFAULT_SERVER_TYPE = "@default";
     static final String DEFAULT_BASE_SCOPES = "openid";
@@ -468,7 +471,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         return oidcMetadata;
     }
 
-    public boolean useWellKnown() {
+    boolean useWellKnown() {
         return useWellKnown;
     }
 
