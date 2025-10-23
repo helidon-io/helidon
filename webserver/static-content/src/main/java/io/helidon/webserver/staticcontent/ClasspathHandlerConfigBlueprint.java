@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,4 +51,17 @@ interface ClasspathHandlerConfigBlueprint extends BaseHandlerConfigBlueprint {
      * @return class loader to use
      */
     Optional<ClassLoader> classLoader();
+
+    /**
+     * Classpath content usually starts from a {@link ClasspathHandlerConfig#location()} on classpath, and resolves all
+     * requested paths against this content root.
+     * When this property is set to {@code true} we consider the {@code location} to be a file, that is returned for any
+     * requested path under the configured {@link ClasspathHandlerConfig#context()}.
+     * <p>
+     * Note that when this is used, there will never be a redirect returned.
+     *
+     * @return whether to consider {@code location} as a single file, defaults to {@code false}
+     */
+    @Option.Configured
+    boolean singleFile();
 }

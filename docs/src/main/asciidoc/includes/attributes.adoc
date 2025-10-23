@@ -74,14 +74,16 @@ endif::[]
 :version-lib-jakarta-inject: 2.0
 
 // 3rd party
-:version-lib-eureka: 2.0.4
+:version-lib-eureka: 2.0.5
 :version-lib-eureka-client: {version-lib-eureka}
+:version-lib-eureka-server: {version-lib-eureka}
 :version-lib-jaeger: 1.22
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 4.0.2
 :version-lib-hibernate: 6.1
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
+:version-lib-opentelemetry: 1.29.0
 :version-plugin-jib: 0.10.1
 :version-plugin-jandex: 3.1.2
 :version-lib-micrometer: 1.11.1
@@ -204,6 +206,7 @@ endif::[]
 :config-mapping-javadoc-base-url: {javadoc-base-url}/io.helidon.config.objectmapping
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
+:discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
@@ -233,6 +236,7 @@ endif::[]
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
 :security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
 :service-registry-base-url: {javadoc-base-url}/io.helidon.service.registry
+:otel-config-javadoc-base-url: {javadoc-base-url}/io.helidon.telemetry.otelconfig
 :telemetry-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.telemetry
 :tracing-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing
 :tracing-otel-provider-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing.providers.opentelemetry
@@ -288,6 +292,7 @@ endif::[]
 :oracle-ucp-doc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjucp
 :oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
+:otel-exporter-doc-base-url: https://javadoc.io/static/io.opentelemetry/opentelemetry-exporter-otlp/{otel-version}/io/opentelemetry/exporter/otlp/trace/package-summary.html
 :micrometer-url: https://micrometer.io
 :micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer

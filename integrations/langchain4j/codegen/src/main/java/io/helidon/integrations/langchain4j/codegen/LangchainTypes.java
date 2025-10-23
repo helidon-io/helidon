@@ -29,6 +29,8 @@ final class LangchainTypes {
     static final TypeName AI_MODERATION_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ModerationModel");
     static final TypeName AI_CONTENT_RETRIEVER = TypeName.create("io.helidon.integrations.langchain4j.Ai.ContentRetriever");
     static final TypeName AI_RETRIEVER_AUGMENTOR = TypeName.create("io.helidon.integrations.langchain4j.Ai.RetrievalAugmentor");
+    static final TypeName AI_TOOL_PROVIDER = TypeName.create("io.helidon.integrations.langchain4j.Ai.ToolProvider");
+    static final TypeName AI_MCP_CLIENTS = TypeName.create("io.helidon.integrations.langchain4j.Ai.McpClients");
     static final TypeName AI_TOOLS = TypeName.create("io.helidon.integrations.langchain4j.Ai.Tools");
     static final TypeName AI_TOOL = TypeName.create("io.helidon.integrations.langchain4j.Ai.Tool");
     static final Annotation TOOL_QUALIFIER_ANNOTATION = Annotation.create(AI_TOOL);
@@ -58,6 +60,9 @@ final class LangchainTypes {
     static final TypeName LC_HTTP_CLIENT_BUILDER = TypeName.create("dev.langchain4j.http.client.HttpClientBuilder");
     static final TypeName LC_CHAT_MODEL_LISTENER = TypeName.create("dev.langchain4j.model.chat.listener.ChatModelListener");
     static final TypeName LC_DEF_REQUEST_PARAMS = TypeName.create("dev.langchain4j.model.chat.request.ChatRequestParameters");
+    static final TypeName LC_TOOL_PROVIDER = TypeName.create("dev.langchain4j.service.tool.ToolProvider");
+    static final TypeName LC_MCP_TOOL_PROVIDER = TypeName.create("dev.langchain4j.mcp.McpToolProvider");
+    static final TypeName LC_MCP_CLIENT = TypeName.create("dev.langchain4j.mcp.client.McpClient");
 
     static final TypeName SVC_QUALIFIED_INSTANCE = TypeName.create("io.helidon.service.registry.Service.QualifiedInstance");
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");

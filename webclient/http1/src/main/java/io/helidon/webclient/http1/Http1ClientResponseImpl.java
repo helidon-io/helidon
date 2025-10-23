@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.util.List;
@@ -229,8 +230,13 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private void entityFullyRead() {
-        this.entityFullyRead = true;
-        this.close();
+        try {
+            this.entityFullyRead = true;
+            inputStream.close();
+            this.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private BufferData readBytes(int estimate) {

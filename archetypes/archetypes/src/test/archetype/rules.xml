@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<rules>
+    <rule if="${app-type} == 'custom'">
+
+        <!-- media -->
+        <exclude if="sizeof ((list) ${media}) > 1"/>
+
+        <!-- only combine extra=none with security -->
+        <rule if="${extra} == []">
+            <exclude if="!${security}" />
+        </rule>
+
+        <!-- extra -->
+        <rule if="${extra} != []">
+            <rule if="${extra} != ['cors', 'fault-tolerance', 'coherence']">
+                <exclude if="${flavor} != 'se'"/>
+                <exclude if="${extra} != ['webclient', 'cors', 'fault-tolerance', 'coherence']"/>
+            </rule>
+        </rule>
+
+        <!-- observability: all or nothing -->
+        <exclude if="${metrics} != ${metrics.builtin}" />
+        <exclude if="${health} != ${health.builtin}" />
+        <exclude if="${metrics} != ${tracing}"/>
+        <exclude if="${metrics} != ${health}"/>
+
+        <rule if="${metrics}">
+
+            <!-- do not combine observability=true and media -->
+            <exclude if="${media} != []"/>
+
+            <!-- do not combine observability=true and extra=none -->
+            <exclude if="${extra} == []"/>
+
+            <!-- do not combine observability=true and docker -->
+            <exclude if="${docker}" />
+
+            <!-- do not combine observability=true and security -->
+            <exclude if="${security}" />
+        </rule>
+
+        <rule if="${security}">
+
+            <!-- do not combine security=true and extra -->
+            <exclude if="${extra} != []" />
+
+            <!-- do not combine security=true and media -->
+            <exclude if="${media} != []" />
+
+            <!-- do not combine security=true and docker -->
+            <exclude if="${docker}" />
+
+            <!-- force single option for security.atn -->
+            <rule if="${security.atz} == []">
+                <exclude if="sizeof ((list) ${security.atn}) != 1"/>
+            </rule>
+
+            <!-- only combine security.atz with security.atn=oidc -->
+            <rule if="${security.atz} == ['abac']">
+                <exclude if="${security.atn} != ['oidc']"/>
+            </rule>
+        </rule>
+
+        <!-- docker: all or nothing -->
+        <exclude if="${docker} != ${k8s}" />
+        <exclude if="${docker} != ${docker.native-image}" />
+        <exclude if="${docker} != ${docker.jlink-image}" />
+
+        <rule if="${docker}">
+
+            <!-- do not combine docker and media -->
+            <exclude if="${media} != []" />
+        </rule>
+
+        <!-- do not combine custom and db -->
+        <exclude if="${db}" />
+
+        <!-- multi-module -->
+        <rule if="${multi-module}">
+            <exclude if="${flavor} != 'se'"/>
+            <exclude if="${extra} != []"/>
+            <exclude if="${db}"/>
+            <exclude if="${security}" />
+            <exclude if="${metrics}" />
+            <exclude if="${docker}" />
+            <exclude if="${jpms}" />
+            <exclude if="${media} != ['json']"/>
+            <rule if="${media} == ['json']">
+                <exclude if="${media.json-lib} != 'jsonp'"/>
+            </rule>
+        </rule>
+    </rule>
+
+    <!-- database -->
+    <rule if="${app-type} == 'database'">
+        <!-- do not combine auto-ddl and jackson -->
+        <exclude if="${db.auto-ddl} != (${media.json-lib} == 'jackson')"/>
+
+        <!-- do not combine hikaricp and jackson -->
+        <exclude if="(${db.cp} == 'hikaricp') != (${media.json-lib} == 'jackson')"/>
+    </rule>
+</rules>

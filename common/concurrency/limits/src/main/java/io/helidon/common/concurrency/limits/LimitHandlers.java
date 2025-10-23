@@ -17,10 +17,11 @@ package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import io.helidon.common.concurrency.limits.LimitAlgorithm.Token;
 
 class LimitHandlers {
 
@@ -28,7 +29,8 @@ class LimitHandlers {
     }
 
     @SuppressWarnings("removal")
-    interface LimiterHandler extends SemaphoreLimit, LimitAlgorithm {
+    interface LimiterHandler extends SemaphoreLimit {
+        Optional<Token> tryAcquireToken(boolean wait);
     }
 
     static class NoOpSemaphoreHandler implements LimiterHandler {
@@ -47,21 +49,7 @@ class LimitHandlers {
         };
 
         @Override
-        public <T> T invoke(Callable<T> callable) throws Exception {
-            try {
-                return callable.call();
-            } catch (IgnoreTaskException e) {
-                return e.handle();
-            }
-        }
-
-        @Override
-        public void invoke(Runnable runnable) {
-            runnable.run();
-        }
-
-        @Override
-        public Optional<Token> tryAcquire(boolean wait) {
+        public Optional<Token> tryAcquireToken(boolean wait) {
             return Optional.of(TOKEN);
         }
 
@@ -78,7 +66,10 @@ class LimitHandlers {
         private final long timeoutMillis;
         private final Supplier<Token> tokenSupplier;
 
-        QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout, Supplier<Token> tokenSupplier) {
+        QueuedSemaphoreHandler(Semaphore semaphore,
+                               int queueLength,
+                               Duration queueTimeout,
+                               Supplier<Token> tokenSupplier) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
             this.timeoutMillis = queueTimeout.toMillis();
@@ -86,7 +77,7 @@ class LimitHandlers {
         }
 
         @Override
-        public Optional<Token> tryAcquire(boolean wait) {
+        public Optional<Token> tryAcquireToken(boolean wait) {
             if (queueLength > 0 && semaphore.getQueueLength() >= queueLength) {
                 // this is an estimate - we do not promise to be precise here
                 return Optional.empty();

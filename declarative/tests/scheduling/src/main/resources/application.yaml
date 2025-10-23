@@ -14,10 +14,8 @@
 # limitations under the License.
 #
 
-override:
-  cron:
-    expression: "0/1 * * * * ?"
-    concurrent: false
+overrides:
+  cron: "0/1 * * * * ?"
   fixed:
     delay-by: "PT0S"
     interval: "PT1S"

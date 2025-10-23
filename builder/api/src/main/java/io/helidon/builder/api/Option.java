@@ -31,7 +31,7 @@ public final class Option {
     }
 
     /**
-     * Mark a prototype option as one that can be read from {@code io.helidon.common.config.Config}.
+     * Mark a prototype option as one that can be read from {@code io.helidon.config.Config}.
      */
     @Target(ElementType.METHOD)
     @Inherited
@@ -361,6 +361,18 @@ public final class Option {
          * @return The singular name to add
          */
         String value() default "";
+
+        /**
+         * When set to {@code true}, the prefix {@code add} or {@code put} will be added to generated methods
+         * (for collections and maps respectively).
+         * When set to {@code false}, the {@link #value()} will be used as a full method name for singular add/put methods.
+         * <p>
+         * In case you set this to {@code false}, you must make sure the method name does not conflict with other methods
+         * on the generated type
+         *
+         * @return whether to add prefix to the generated method, defaults to {@code true}
+         */
+        boolean withPrefix() default true;
     }
 
     /**
@@ -480,5 +492,44 @@ public final class Option {
          * @return type name with generic declaration
          */
         Class<? extends Prototype.OptionDecorator<?, ?>> value();
+    }
+
+    /**
+     * Definition of how {@link java.util.Map} keys and values should be constructed.
+     * <p>
+     * If this annotation is not used, traversed is automatically applied on String and primitive/boxed types.
+     * In all other cases, non-traverse approach is applied.
+     * <p>
+     * If this annotation is used, it will use the {@code io.helidon.common.config.Config#traverse} method
+     * to perform a depth-first traversal of the node and its subtrees.
+     * Note: this annotation takes effect only when used in combination with {@link Configured}.
+     * <p>
+     * For example:
+     * <pre>{@code
+     * test-map:
+     *    key: "test-value1"
+     *    test-key:
+     *       second-part: "test-value2"
+     *       third-part: "test-value3"
+     * }</pre>
+     * <p>
+     * Will be handled as:
+     * <pre>{@code
+     * key: "key" value: "test-value1"
+     * key: "test-key.second-part" value: "test-value2"
+     * key: "test-key.third-part" value: "test-value3"
+     * }</pre>
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface TraverseConfig {
+
+        /**
+         * Whether to use traverse method to handle map key and value.
+         *
+         * @return true to enable traverse and false to disable
+         */
+        boolean value() default true;
+
     }
 }

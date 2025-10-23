@@ -67,4 +67,26 @@ class TestMultipleBaggageHeaders {
         }
     }
 
+    @Test
+    void testMultipleBaggageValuesInOneHeader() throws IOException, InterruptedException, URISyntaxException {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            URI uri = new URI(webTarget.getUri().getScheme(),
+                              webTarget.getUri().getUserInfo(),
+                              webTarget.getUri().getHost(),
+                              webTarget.getUri().getPort(),
+                              BaggageCheckingResource.PATH,
+                              null,
+                              null);
+            var requestBuilder = HttpRequest.newBuilder(uri)
+                    .GET();
+            requestBuilder.header("Baggage", "k1=val1,k2=val2");
+            var request = requestBuilder.build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertThat("Baggage-checking endpoint status", response.statusCode(), is(200));
+            assertThat("Baggage-checking endpoint response", response.body(), allOf(containsString("k1=val1"),
+                                                                                    containsString("k2=val2")));
+        }
+    }
+
 }

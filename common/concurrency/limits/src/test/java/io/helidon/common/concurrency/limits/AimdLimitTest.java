@@ -18,6 +18,7 @@ package io.helidon.common.concurrency.limits;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,8 +39,13 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AimdLimitTest {
     @Test
@@ -172,7 +179,7 @@ public class AimdLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            limit.invoke(() -> {});
+            limit.run(() -> {});
         }
     }
 
@@ -184,9 +191,11 @@ public class AimdLimitTest {
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
-            assertThat(token, not(Optional.empty()));
-            token.get().success();
+            LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
+            assertThat("Outcome", outcome, instanceOf(LimitAlgorithm.Outcome.Accepted.class));
+            LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
+
+            accepted.token().success();
         }
     }
 
@@ -208,11 +217,13 @@ public class AimdLimitTest {
         AtomicInteger failures = new AtomicInteger();
 
         Thread[] threads = new Thread[concurrency];
+        List<LimitAlgorithm.Result<?>> results = Collections.synchronizedList(new ArrayList<>(concurrency));
+
         for (int i = 0; i < concurrency; i++) {
             int index = i;
             threads[i] = new Thread(() -> {
                 try {
-                    limiter.invoke(() -> {
+                    results.add(limiter.call(() -> {
                         barrier.waitOn();
                         lock.lock();
                         try {
@@ -221,7 +232,7 @@ public class AimdLimitTest {
                             lock.unlock();
                         }
                         return null;
-                    });
+                    }));
                 } catch (LimitException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
@@ -244,6 +255,23 @@ public class AimdLimitTest {
         assertThat(failures.get(), is(0));
         // and eventually run to completion
         assertThat(result.size(), is(5));
+
+        assertThat("Outcomes", results, hasSize(5));
+        int deferredAccepts = 0;
+        int immediateAccepts = 0;
+        int index = 0;
+        for (LimitAlgorithm.Result<?> r : results) {
+            if (r.outcome() instanceof LimitAlgorithm.Outcome.Deferred) {
+                deferredAccepts++;
+            } else {
+                immediateAccepts++;
+            }
+            index++;
+        }
+
+        assertThat("Immediate accepts ", immediateAccepts, is(1));
+        assertThat("Deferred accepts ", deferredAccepts, is(4));
+
     }
 
     /**

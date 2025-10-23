@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,17 +24,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
 class ParametersMap implements Parameters {
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
     private final String component;
     private final Map<String, List<String>> params;
     private final String[] qualifiers;
 
-    ParametersMap(MapperManager mapperManager, String component, Map<String, List<String>> params) {
+    ParametersMap(Mappers mapperManager, String component, Map<String, List<String>> params) {
         this.qualifiers = component.split("/");
         this.mapperManager = mapperManager;
         this.component = component;

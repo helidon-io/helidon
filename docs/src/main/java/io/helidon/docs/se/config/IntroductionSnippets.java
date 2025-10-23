@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 package io.helidon.docs.se.config;
 
 import io.helidon.config.Config;
+import io.helidon.service.registry.Services;
 
 @SuppressWarnings("ALL")
 class IntroductionSnippets {
 
     void snippet_1() {
         // tag::snippet_1[]
-        Config config = Config.create(); // <1>
+        Config config = Services.get(Config.class);
         // end::snippet_1[]
     }
 
     void snippet_2() {
         // tag::snippet_2[]
-        Config config = Config.create(); // <1>
-        Config.global(config); // <2>
+        Config config = Config.global();
         // end::snippet_2[]
     }
 
     void snippet_3() {
+        Config config = Config.create();
         // tag::snippet_3[]
-        Config config = Config.global();
+        Services.set(Config.class, config);
         // end::snippet_3[]
     }
 

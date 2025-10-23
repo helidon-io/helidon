@@ -63,8 +63,7 @@ class Upgrade4xSnippets {
         // tag::snippet_2[]
         public static void main(String[] args) {
 
-            Config config = Config.create();
-            Config.global(config);
+            Config config = Config.global();
 
             WebServer server = WebServer.builder() // <1>
                     .config(config.get("server"))
@@ -162,13 +161,6 @@ class Upgrade4xSnippets {
     }
 
     static void sendResponse(ServerResponse response, String str) {
-    }
-
-    void snippet_7() {
-        // tag::snippet_7[]
-        Config config = Config.create();  // Uses default config sources
-        Config.global(config);
-        // end::snippet_7[]
     }
 
     void snippet_8() {

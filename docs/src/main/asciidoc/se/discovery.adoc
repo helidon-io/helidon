@@ -1,0 +1,310 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Discovery
+:description: Helidon SE Discovery Support
+:feature-name: Helidon Discovery
+:keywords: helidon, discovery
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<API Usage, API Usage>>
+* <<Providers, Providers>>
+** <<Eureka,Eureka>>
+
+== Overview
+
+In Helidon, _discovery_ is the general process of finding named sets of advertised resources at a moment of an
+application's runtime. The advertised resources are often URIs representing microservice endpoints. In some
+environments, those endpoints might frequently come and go at unpredictable intervals, as microservices are started,
+stopped, and redeployed. The named applications they represent, however, are relatively static. Discovery helps link
+such a named application to its transient resources, so that clients can more easily contact it, knowing only its name.
+
+Helidon Discovery is a feature with a vendor- and implementation-independent API backed by vendor-specific
+implementations of that API known as _providers_. A developer programs against the Discovery API, and packages a
+(normally Helidon-supplied) conformant Discovery implementation (a provider) with her application at deployment
+time. See <<Providers,Providers>> below.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+.`pom.xml`
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.discovery</groupId>
+        <artifactId>helidon-discovery</artifactId> <!--1-->
+    </dependency>
+</dependencies>
+----
+<1> Helidon Discovery API dependency.
+
+Discovery is implemented by one or more _<<Providers,discovery providers_>>. Generally you will choose a single provider
+and include its relevant dependencies on your runtime classpath as well. See the <<Providers, Providers>> section for
+more details.
+
+== API Usage
+
+To use Helidon Discovery, you acquire an
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] and call
+its
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`uris(String,
+URI)` method] to find resources represented as
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`io.helidon.discovery.DiscoveredUri`
+instances].  You supply a _discovery name_, which is the name under which you expect to find advertised resources, and a
+_default value_, which is a link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] to use in case the provider does
+not supply any resources. In general,
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`]s you receive are ordered from
+more suitable to less suitable, where the definition of _suitable_ is up to the provider. Some providers will consider
+aspects like the health or uptime of an advertised resource when returning results. Others may not. Finally, a
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing the default
+value you supply will always be present as the last element in the set of resources you receive.
+
+=== `Discovery` Acquisition
+
+==== `Discovery` Acquisition Using xref:injection.adoc#_injection_points[Helidon Inject]
+
+You can acquire a
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] by
+xref:injection.adoc#_injection_points[injecting] it into your Helidon SE application:
+
+[source,java]
+.Acquiring a `Discovery` object using Helidon Inject
+----
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_0_imports,indent=0]
+
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_0,indent=0]
+----
+<1> Use the
+    link:{service-registry-base-url}/io/helidon/service/registry/Service.Inject.html[`io.helidon.service.registry.Service.Inject`
+    annotation] to indicate that this constructor has an xref:injection.adoc#_injection_points[injection point].
+<2> Here, the `discovery` constructor parameter is the injection point and will receive a non-`null`
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[instance of `io.helidon.discovery.Discovery`].
+<3> The constructor explicitly assigns the injected reference to the `discovery` instance field.
+
+==== `Discovery` Acquisition Using the Helidon xref:injection.adoc#_programmatic_lookup[Service Registry]
+
+You can acquire a
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` object] by
+xref:injection.adoc#_programmatic_lookup[using the Helidon Service Registry] via the
+link:{service-registry-base-url}/io/helidon/service/registry/Services.html[`io.helidon.service.registry.Services`
+fa&ccedil;ade]:
+
+[source,java]
+.Acquiring a `Discovery` object using the Helidon Service Registry
+----
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_1_imports,indent=0]
+
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_1,indent=0]
+----
+<1> Use the
+    link:{service-registry-base-url}/io/helidon/service/registry/Services.html#get(java.lang.Class)[`io.helidon.service.registry.Services#get(Class)`
+    method] to acquire an instance of the
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html[`io.helidon.discovery.Discovery` class], and
+    assign it to an instance field.
+
+=== Discovering URIs
+
+Discovery uses a _discovery name_ to identify and discover URIs notionally belonging to an application. An application
+may have several URIs. The discovery name is the name that identifies the application for discovery purposes.
+
+To discover a named application's URIs, call the
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
+URI)` method], passing it the discovery name and a `URI` to use as a default value. Both values must be non-`null`. You
+will receive an immutable link:{jdk-javadoc-url}/java.base/java/util/SequencedSet.html[`SequencedSet`] of
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`io.helidon.discovery.DiscoveredUri`
+instances] representing the URIs, ordered from the most to the least _suitable_, according to the provider. A
+link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing the default
+value will appear last in the set:
+
+[source,java]
+.Discovering URIs
+----
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_2_imports,indent=0]
+
+include::{sourcedir}/se/DiscoverySnippets.java[tag=snippet_2,indent=0]
+----
+
+<1> URIs that are discovered are represented as a
+    link:{jdk-javadoc-url}/java.base/java/util/SequencedSet.html[`SequencedSet`] of
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`io.helidon.discovery.DiscoveredUri` instances].
+    This is the _discovered set_. In general, the first element in the set is the
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[discovered URI] that is the most
+    _suitable_, as determined by the Discovery provider. (The last element is a
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] whose
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html#uri()[`uri()` method] yields a
+    link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] that is identical or equal to the
+    link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] that was supplied as the default value.)
+<2> `EXAMPLE` is the discovery name for which URIs are being sought.
+<3> This link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] is a default value in case the Discovery provider
+    finds no URIs, or encounters an error. A
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/DiscoveredUri.html[`DiscoveredUri`] representing it will
+    appear last in the discovered set.
+<4> This link:{jdk-javadoc-url}/java.base/java/net/URI.html[`URI`] is the most suitable one for use, and may or may not
+    be equal to the supplied default value.
+
+== Providers
+
+The Discovery API is implemented at runtime by a _Discovery provider_. Helidon currently ships with a <<Eureka,Eureka
+Discovery provider>>. Others may follow in the future.
+
+To use a Discovery provider, include it on your runtime classpath. See the provider's documentation for details about
+installing, configuring, and using the provider.
+
+=== Eureka
+
+The Helidon Eureka Discovery provider implements the Discovery API at runtime by communicating with a
+link:https://github.com/Netflix/eureka/tree/v{version-lib-eureka-server}[Netflix Eureka server] (version
+{version-lib-eureka-server} or later).
+
+==== Maven Coordinates
+
+To use the Helidon Eureka Discovery provider, add the following dependency to your project’s `pom.xml` (see
+xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
+
+[source,xml]
+.`pom.xml`
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.discovery.providers</groupId>
+        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--1-->
+        <scope>runtime</scope> <!--2-->
+    </dependency>
+</dependencies>
+----
+<1> Helidon Eureka Discovery provider dependency.
+<2> The scope for the provider. Use `runtime` if you have no interest in provider-specific classes and methods (the most
+    common case). Use `compile` if you plan to call provider-specific methods.
+
+==== Configuration
+
+The Helidon Eureka Discovery provider can be configured using xref:config/introduction.adoc[Helidon Config]. Examples
+shown below are in YAML, but are expressible in any format and any location that Helidon Config supports.
+
+Configuration for the Helidon Eureka Discovery provider is found under a top-level `discovery.eureka` key path.
+
+Generated documentation normatively describing the provider's configuration in full can be found in Helidon's
+link:../config/io_helidon_discovery_providers_eureka_EurekaDiscovery[Configuration Reference]. Some common usages and
+examples are detailed below.
+
+===== Configuring the Location of the Eureka Server
+
+In order for the Helidon Eureka Discovery provider to do any meaningful work, you must tell it where the Eureka server
+is. (Discovery cannot bootstrap itself!) This is the only configuration that is effectively required. (If it is omitted,
+no error will occur, but the provider will log a message and effectively do nothing.)
+
+To do this, you specify attributes about the internal xref:webclient.adoc[HTTP client] it uses, specifically its
+link:../config/io_helidon_webclient_api_HttpClientConfig[`base-uri` property]:
+
+[source,yaml]
+.`application.yaml`
+----
+discovery: #<1>
+  eureka: #<2>
+    client: #<3>
+      base-uri: "http://example.com:8761/eureka" #<4>
+----
+<1> `discovery` is the topmost key of the provider's logical configuration tree.
+<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+<3> `client` identifies link:../config/io_helidon_webclient_api_HttpClientConfig[HTTP client configuration].
+<4> `base-uri` is a link:../config/io_helidon_webclient_api_HttpClientConfig[property of the HTTP client] identifying
+    the location of a Netflix Eureka server (version {version-lib-eureka-server} or later). Eureka servers are normally
+    hosted on port `8761`.
+
+===== Configuring Caching
+
+The Helidon Eureka Discovery provider uses a local cache of discovered URIs by default. You can configure, among
+link:../config/io_helidon_discovery_providers_eureka_CacheConfig[other things]:
+
+* whether the cache is enabled
+* how often the cache refreshes
+* whether the cache is computed or fully replaced
+
+[source,yaml]
+.`application.yaml`
+----
+discovery: #<1>
+  eureka: #<2>
+    cache: #<3>
+      compute-changes: true # <4>
+      defer-sync: false # <5>
+      enabled: true # <6>
+      fetch-thread-name: "Eureka registry fetch thread" # <7>
+      sync-interval: "PT30S" # <8>
+----
+<1> `discovery` is the topmost key of the provider's logical configuration tree.
+<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+<3> `cache` identifies configuration related to the local cache of Eureka-supplied information.
+<4> `compute-changes` controls how the cache's content is determined: if `true`, by applying a series of changes against an initial
+    state; if `false`, by replacing the contents of the cache with a new copy. `true` by default.
+<5> `defer-sync` controls whether the cache should be synchronized as late as possible (`true`), or as early as possible
+    (`false`). `false` by default.
+<6> `enabled` controls whether the cache is enabled. If `false`, then none of the other configuration items in the `cache` tree
+    are relevant, and every invocation of the
+    link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
+    URI)` method] will result in a network call.
+<7> `fetch-thread-name` contains the name of the thread that synchronizes the cache. `Eureka registry fetch thread` by
+    default.
+<8> `sync-interval` controls the time between synchronizations of the cache. `PT30S` (30 seconds) by default.
+
+===== Configuring IP Address vs. Hostname
+
+The Helidon Eureka Discovery provider can be configured to prefer IP addresses in URIs when possible (instead of
+hostnames).
+
+[source,yaml]
+.`application.yaml`
+----
+discovery: # <1>
+  eureka: # <2>
+    preferIpAddress: false # <3>
+----
+<1> `discovery` is the topmost key of the provider's logical configuration tree.
+<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+<3> `preferIpAddress` controls whether the host component of a URI should use an IP address, when possible (`true`), or
+a hostname (`false`). `false` by default.
+
+===== Disabling the Provider
+
+In some testing scenarios, it may be useful to disable the Helidon Eureka Discovery provider entirely. (When any
+Discovery provider is disabled, only default values supplied to the
+link:{discovery-javadoc-base-url}/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)[`Discovery#uris(String,
+URI)` method] will be returned.)
+
+[source,yaml]
+.`application.yaml`
+----
+discovery: # <1>
+  eureka: # <2>
+    enabled: false # <3>
+----
+<1> `discovery` is the topmost key of the provider's logical configuration tree.
+<2> `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+<3> `enabled` controls whether the provider is enabled at all (`true`) or completely disabled (`false`), in which case
+    all other configuration pertaining to it is irrelevant. `true` by default.
+
+==== Related Documentation
+
+Users of the Helidon Eureka Discovery provider may also be interested in the (related)
+xref:{docdir}/integrations/eureka/eureka-registration.adoc[Eureka Server Service Instance Registration] feature.

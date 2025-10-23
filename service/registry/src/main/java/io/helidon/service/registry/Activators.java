@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -953,12 +953,18 @@ final class Activators {
 
         @Override
         public void postConstruct() {
-            source.postConstruct(instance);
+            // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
+            if (instance != null) {
+                source.postConstruct(instance);
+            }
         }
 
         @Override
         public void preDestroy() {
-            source.preDestroy(instance);
+            // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
+            if (instance != null) {
+                source.preDestroy(instance);
+            }
         }
     }
 

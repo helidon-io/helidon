@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,15 @@ class WebSocketEndpointAppTest extends WebSocketBaseTest {
     @Test
     public void testEchoAnnot() throws Exception {
         URI echoUri = URI.create("ws://localhost:" + port() + "/web/echoAnnot");
+        EchoClient echoClient = new EchoClient(echoUri);
+        echoClient.echo("hi", "how are you?");
+        echoClient.shutdown();
+    }
+
+    @Test
+    public void testEchoAnnotWithQuery() throws Exception {
+        // Tyrus JDK client decodes %20 so we escape % here
+        URI echoUri = URI.create("ws://localhost:" + port() + "/web/echoAnnot?foo=bar%2520baz");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
         echoClient.shutdown();

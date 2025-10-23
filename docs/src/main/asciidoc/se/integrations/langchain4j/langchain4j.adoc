@@ -38,6 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 * <<AI Services, AI Services>>
     ** <<Creating AI Service, Creating AI Service>>
     ** <<Tools (Callback Functions), Tools (Callback Functions)>>
+    ** <<Observability (ChatModelListeners), Observability (ChatModelListeners)>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -55,7 +56,7 @@ LangChain4J integration is a preview feature. The APIs shown here are subject to
 +
 Automatically creates and registers selected LangChain4J components in the Helidon service registry based on configuration.
 
-- **Integration with CDI*
+- *Integration with CDI*
 +
 Thanks to the *Helidon Inject to CDI Bridge*, LangChain4J components can be used in CDI environments, including Helidon MP applications.
 
@@ -90,6 +91,9 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:cohere.adoc#_coherescoringmodel[`CohereScoringModel`]
 * xref:oracle.adoc[*Oracle*]
     ** xref:oracle.adoc#_oracleembeddingmodel[`OracleEmbeddingStore`]
+* xref:coherence.adoc[*Coherence*]
+    ** xref:coherence.adoc#_coherenceembeddingstore[`CoherenceEmbeddingStore`]
+    ** xref:coherence.adoc#_coherencechatmemorystorestore[`CoherenceChatMemoryStore`]
 * xref:jlama.adoc[*Jlama*]
     ** xref:jlama.adoc#_jlamachatmodel[`JlamaChatModel`]
     ** xref:jlama.adoc#_jlamastreamingchatmodel[`JlamaStreamingChatModel`]
@@ -237,6 +241,8 @@ Helidon's LangChain4J integration introduces a declarative Helidon Inject-based 
     ** *Retrieval Augmentor*: `dev.langchain4j.rag.RetrievalAugmentor`
 * *Callback Functions*:
     ** Methods annotated with `dev.langchain4j.agent.tool.Tool`
+* *MCP Client*:
+    ** `dev.langchain4j.mcp.client.McpClient`
 
 === Creating AI Service
 
@@ -267,6 +273,8 @@ In this scenario all LangChain4J components from the list above are taken from t
 | `Ai.ModerationModel`     | Specifies the name of a service in the service registry that implements `ModerationModel` to use in the annotated Ai Service.
 | `Ai.ContentRetriever`    | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`.
 | `Ai.RetrievalAugmentor`  | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`.
+| `Ai.ToolProvider`        | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.
+| `Ai.McpClients`          | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`.
 |===
 
 For example, in the snippet below a service with name "myCustomChatMemory" will be used as chat memory and all other components are discovered automatically.
@@ -281,6 +289,12 @@ public interface ChatAiService {
 ----
 
 NOTE: There is a possibility to switch off automatic discovery by using `@Ai.Service(autodicovery=false)`. In this case the service components are not discovered automatically and users must add components manually using annotations specified above. `@ChatModel` or `@StreamingChatModel` annotations are required.
+
+Since `Ai.ToolProvider` and `Ai.McpClients` are mutually exclusive, some clarification is needed regarding their functionality. Assume that automatic discovery is set to true in this context:
+
+* If neither annotation is present, a `ToolProvider` will be automatically discovered from the service registry.
+* If the `Ai.McpClients` annotation is present, corresponding MCP client services will be discovered, and no `ToolProvider` will be discovered.
+* If both annotations are present, an exception will be thrown.
 
 === Tools (Callback Functions)
 
@@ -304,6 +318,30 @@ NOTE: If you are using Helidon MP, to enable `@Tool`-annotated methods in CDI be
 
 For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-level-tool-api[LangChain4J Documentation on Tools].
 
+=== MCP Client
+In LangChain4J, an MCP (Model Context Protocol) client acts as a bridge between the language model and external services or resources that follow the MCP standard. Instead of directly embedding custom logic into the application, the MCP client enables the model to discover, connect to, and interact with external tools and data providers in a standardized way.
+
+To add MCP Clients to your AI Service, use the following:
+[source,java]
+----
+@Ai.Service
+@Ai.McpClients
+public interface ChatAiService {
+    String chat(String question);
+}
+----
+
+If you want to have your MCP clients created from the configuration, it should be placed under the `langchain4j.mcp-clients`.
+These are all the MCP Client configuration options currently supported:
+
+include::{rootdir}/config/io_helidon_integrations_langchain4j_McpClientConfig.adoc[leveloffset=+2,tag=config]
+
+=== Observability (ChatModelListeners)
+
+While LangChain4J doesn't provide Observability out-of-box, it provides for user to supplement it using `ChatModelListener`. For more details, read the https://docs.langchain4j.dev/tutorials/observability/[LangChain4J Documentation on Observability].
+
+Helidon provides `MetricsChatModelListener` which generates metrics that follow the https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/gen-ai/gen-ai-metrics.md[OpenTelemetry Semantic Conventions for GenAI Metrics v1.36.0]. This is done out-of-box for Chat API calls.
+
 == Additional Information
 
 * https://docs.langchain4j.dev/[LangChain4J documentation]
@@ -313,6 +351,7 @@ For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-lev
 ** xref:ollama.adoc[Ollama]
 ** xref:cohere.adoc[Cohere]
 ** xref:oracle.adoc[Oracle]
+** xref:coherence.adoc[Coherence]
 ** xref:jlama.adoc[Jlama]
 ** xref:codegen-provider.adoc[Code generated Lc4j Provider]
 

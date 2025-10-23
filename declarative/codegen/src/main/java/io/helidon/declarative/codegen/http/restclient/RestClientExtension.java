@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.model.http.ClientEndpoint;
@@ -56,7 +57,6 @@ import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
-import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG_EXCEPTION;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
@@ -548,48 +548,17 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                         .update(it -> registryClientParameter(it, endpoint)))
                 .addContentLine("this.errorHandling = errorHandling;")
                 .addContentLine("")
-                .addContent("var endpointConfig = config.get(\"")
-                .addContent(endpoint.configKey())
-                .addContentLine("\");")
-                .addContentLine("var clientConfig = endpointConfig.get(\"client\");")
-                .addContentLine("if (clientConfig.exists()) {")
-                .addContent("this.client = ")
-                .addContent(WEB_CLIENT)
-                .addContentLine(".builder().config(clientConfig).build();")
-                .decreaseContentPadding()
-                .addContentLine("} else {")
                 .addContent("this.client = registryClient.get().orElseGet(")
                 .addContent(WEB_CLIENT)
                 .addContentLine("::create);")
-                .addContentLine("}")
                 .update(it -> constructorUriHandling(it, endpoint));
     }
 
     private void constructorUriHandling(Constructor.Builder ctr, ClientEndpoint endpoint) {
-        ctr.addContent(String.class)
-                .addContentLine(" uri = endpointConfig.get(\"uri\")")
-                .increaseContentPadding()
-                .increaseContentPadding()
-                .addContentLine(".asString()");
-
-        if (endpoint.uri().isPresent()) {
-            ctr.addContent(".orElse(\"")
-                    .addContent(endpoint.uri().get())
-                    .addContentLine("\");");
-        } else {
-            ctr.addContent(".orElseThrow(() -> new ")
-                    .addContent(CONFIG_EXCEPTION)
-                    .addContent("(\"Configuration key \\\"")
-                    .addContent(endpoint.configKey())
-                    .addContent(".uri\\\" does not exist, and there is no default URI defined in")
-                    .addContent(" @")
-                    .addContent(REST_CLIENT_ENDPOINT.classNameWithEnclosingNames())
-                    .addContent(" for ")
-                    .addContent(endpoint.type().typeName().fqName())
-                    .addContentLine("\"));");
-        }
-        ctr.decreaseContentPadding()
-                .decreaseContentPadding();
+        DelcarativeConfigSupport.assignResolveExpression(ctr,
+                                                         "config",
+                                                         "uri",
+                                                         endpoint.uri());
 
         String path = endpoint.path().orElse("/");
         if (path.startsWith("/")) {

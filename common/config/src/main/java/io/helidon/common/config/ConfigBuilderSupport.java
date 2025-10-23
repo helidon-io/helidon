@@ -26,7 +26,10 @@ import io.helidon.service.registry.ServiceRegistry;
 /**
  * Methods used from generated code in builders when
  * {@link io.helidon.builder.api.Prototype.Configured} is used.
+ *
+ * @deprecated use {@code io.helidon.config.ConfigBuilderSupport} instead
  */
+@Deprecated(forRemoval = true, since = "4.3.0")
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class ConfigBuilderSupport {
     private ConfigBuilderSupport() {

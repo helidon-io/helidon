@@ -34,7 +34,8 @@ import io.helidon.common.types.TypedElementInfo;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 
 // builder property
-record PrototypeProperty(MethodSignature signature,
+record PrototypeProperty(TypedElementInfo element,
+                         MethodSignature signature,
                          TypeHandler typeHandler,
                          AnnotationDataOption configuredOption,
                          FactoryMethods factoryMethods,
@@ -111,6 +112,7 @@ record PrototypeProperty(MethodSignature signature,
                 .toList();
 
         return new PrototypeProperty(
+                element,
                 MethodSignature.create(element),
                 typeHandler,
                 configuredOption,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,15 +43,14 @@ final class Qualifiers {
             return true;
         }
 
-        if (src.isEmpty()) {
-            // neither defines qualifiers
-            return false;
-        }
-
-        // criteria has a qualifier while service does not
         // only return true if criteria contains ONLY wildcard named qualifier
         if (criteria.size() == 1 && criteria.contains(Qualifier.WILDCARD_NAMED)) {
             return true;
+        }
+
+        if (src.isEmpty()) {
+            // criteria has a qualifier while service does not
+            return false;
         }
 
         if (src.contains(Qualifier.WILDCARD_NAMED)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,9 +119,18 @@ class TypeHandlerMap extends TypeHandler {
                             AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         List<TypeName> typeArguments = declaredType().typeArguments();
-        if (TypeNames.STRING.equals(typeArguments.get(0)) && TypeNames.STRING.equals(typeArguments.get(1))) {
+        TypeName keyTypeName = typeArguments.get(0);
+        TypeName valueTypeName = typeArguments.get(1);
+        if (TypeNames.STRING.equals(keyTypeName) && TypeNames.STRING.equals(valueTypeName)) {
             // the special case of Map<String, String>
             method.addContentLine(configGet(configured) + ".detach().asMap().ifPresent(this::" + name() + ");");
+        } else if (configured.traverseConfig()){
+            method.addContent(configGet(configured) + ".detach().traverse().filter(")
+                    .addContent(Types.COMMON_CONFIG)
+                    .addContent("::hasValue).forEach(node -> "
+                                        + name() + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
+            generateFromConfig(method, factoryMethods);
+            method.addContentLine(".get()));");
         } else {
             method.addContent(configGet(configured)
                                       + ".asNodeList().ifPresent(nodes -> nodes.forEach"
@@ -211,7 +220,12 @@ class TypeHandlerMap extends TypeHandler {
         if (configured.singular()) {
             // Builder putValue(String key, String value)
             String singularName = configured.singularName();
-            String methodName = "put" + capitalize(singularName);
+            String methodName;
+            if (configured.singularAddPrefix()) {
+                methodName = "put" + capitalize(singularName);
+            } else {
+                methodName = singularName;
+            }
 
             Method.Builder method = Method.builder()
                     .name(methodName)
@@ -249,31 +263,34 @@ class TypeHandlerMap extends TypeHandler {
                 } else {
                     builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
                 }
-                classBuilder.addMethod(builder -> builder.name(methodName)
-                        .accessModifier(setterAccessModifier(configured))
-                        .returnType(returnType, "updated builder instance")
-                        .description(blueprintJavadoc.content())
-                        .addDescriptionLine("This method adds a new value to the map, or replaces it if the key already exists.")
-                        .addJavadocTag("see", "#" + getterName() + "()")
-                        .addParameter(param -> param.name("key")
-                                .type(keyType)
-                                .description("key to add or replace"))
-                        .addParameter(param -> param.name("consumer")
-                                .type(TypeName.builder()
-                                              .type(Consumer.class)
-                                              .addTypeArgument(builderType)
-                                              .build())
-                                .description("builder consumer to create new value for the key"))
-                        .addContent(Objects.class)
-                        .addContentLine(".requireNonNull(key);")
-                        .addContent(Objects.class)
-                        .addContentLine(".requireNonNull(consumer);")
-                        .addContent("var builder = ")
-                        .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                        .addContentLine("." + fm.createMethodName() + "();")
-                        .addContentLine("consumer.accept(builder);")
-                        .addContentLine("this." + methodName + "(key, builder.build());")
-                        .addContentLine("return self();"));
+                if (!skipBuilderConsumer(builderType)) {
+                    classBuilder.addMethod(builder -> builder.name(methodName)
+                            .accessModifier(setterAccessModifier(configured))
+                            .returnType(returnType, "updated builder instance")
+                            .description(blueprintJavadoc.content())
+                            .addDescriptionLine(
+                                    "This method adds a new value to the map, or replaces it if the key already exists.")
+                            .addJavadocTag("see", "#" + getterName() + "()")
+                            .addParameter(param -> param.name("key")
+                                    .type(keyType)
+                                    .description("key to add or replace"))
+                            .addParameter(param -> param.name("consumer")
+                                    .type(TypeName.builder()
+                                                  .type(Consumer.class)
+                                                  .addTypeArgument(builderType)
+                                                  .build())
+                                    .description("builder consumer to create new value for the key"))
+                            .addContent(Objects.class)
+                            .addContentLine(".requireNonNull(key);")
+                            .addContent(Objects.class)
+                            .addContentLine(".requireNonNull(consumer);")
+                            .addContent("var builder = ")
+                            .addContent(fm.typeWithFactoryMethod().genericTypeName())
+                            .addContentLine("." + fm.createMethodName() + "();")
+                            .addContentLine("consumer.accept(builder);")
+                            .addContentLine("this." + methodName + "(key, builder.build());")
+                            .addContentLine("return self();"));
+                }
             }
         }
     }

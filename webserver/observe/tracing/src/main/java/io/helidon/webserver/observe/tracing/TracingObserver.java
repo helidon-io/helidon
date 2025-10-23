@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.webserver.observe.tracing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -30,19 +30,17 @@ import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.Status;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
-import io.helidon.tracing.Tag;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
@@ -54,6 +52,7 @@ import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 import io.helidon.webserver.spi.ServerFeature;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
@@ -160,14 +159,23 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
         private final Tracer tracer;
         private final TracingConfig envConfig;
+        private final boolean waitTracingEnabled;
         private final List<PathTracingConfig> pathConfigs;
         private final String socketTag;
+        private final TracingSemanticConventionsProvider tracingSemanticConventionsProvider;
 
-        TracingFilter(Tracer tracer, TracingConfig envConfig, List<PathTracingConfig> pathConfigs, String socketTag) {
+        TracingFilter(Tracer tracer,
+                      TracingConfig envConfig,
+                      boolean waitTracingEnabled,
+                      List<PathTracingConfig> pathConfigs,
+                      String socketTag) {
             this.tracer = tracer;
             this.envConfig = envConfig;
+            this.waitTracingEnabled = waitTracingEnabled;
             this.pathConfigs = pathConfigs;
             this.socketTag = socketTag;
+            this.tracingSemanticConventionsProvider = Services.get(TracingSemanticConventionsProvider.class);
+
         }
 
         @Override
@@ -195,23 +203,20 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                 Contexts.runInContext(context, chain::proceed);
                 return;
             }
+
+            if (waitTracingEnabled) {
+                recordLimitWaitingSpan(req, tracer, inboundSpanContext);
+            }
+
+            TracingSemanticConventions semconv = tracingSemanticConventionsProvider.create(spanConfig, socketTag, req, res);
+
             /*
             Create web server span
              */
-            HttpPrologue prologue = req.prologue();
 
-            String spanName = spanConfig.newName().orElse(TRACING_SPAN_HTTP_REQUEST);
-            if (spanName.indexOf('%') > -1) {
-                spanName = String.format(spanName, prologue.method().text(), req.path().rawPath(), req.query().rawValue());
-            }
             // tracing is enabled, so we replace the parent span with web server parent span
-            Span span = tracer.spanBuilder(spanName)
-                    .kind(Span.Kind.SERVER)
-                    .update(it -> {
-                        if (!socketTag.isBlank()) {
-                            it.tag("helidon.socket", socketTag);
-                        }
-                    })
+            Span span = tracer.spanBuilder(semconv.spanName())
+                    .update(semconv::beforeStart)
                     .update(it -> inboundSpanContext.ifPresent(it::parent))
                     .start();
 
@@ -240,30 +245,38 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             }
 
             try (Scope ignored = span.activate()) {
-                span.tag(Tag.COMPONENT.create("helidon-webserver"));
-                span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
-                UriInfo uriInfo = req.requestedUri();
-                span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path()));
-                span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
                 Contexts.runInContext(context, chain::proceed);
 
-                Status status = res.status();
-                span.tag(Tag.HTTP_STATUS.create(status.code()));
-
-                if (status.code() >= 400) {
-                    span.status(Span.Status.ERROR);
-                    span.addEvent("error", Map.of("message", "Response HTTP status: " + status,
-                                                  "error.kind", status.code() < 500 ? "ClientError" : "ServerError"));
-                } else {
-                    span.status(Span.Status.OK);
-                }
-
+                semconv.beforeEnd(span);
                 span.end();
             } catch (Exception e) {
+                semconv.beforeEnd(span, e);
                 span.end(e);
                 throw e;
             }
+        }
+
+        private void recordLimitWaitingSpan(RoutingRequest req, Tracer tracer, Optional<SpanContext> inboundSpanContext) {
+
+            req.context().get(LimitAlgorithm.Outcome.class)
+                    .filter(oc -> oc instanceof LimitAlgorithm.Outcome.Deferred)
+                    .map(oc -> (LimitAlgorithm.Outcome.Deferred) oc)
+                    .ifPresent(deferred -> {
+
+                        var spanBuilder = tracer.spanBuilder(deferred.originName() + "-" + deferred.algorithmType() + "-limit"
+                                                                     + "-span");
+                        inboundSpanContext.ifPresent(sc -> sc.asParent(spanBuilder));
+                        var span = spanBuilder.start(Instant.ofEpochSecond(0, deferred.waitStartNanoTime()));
+                        Instant endInstant = Instant.ofEpochSecond(0, deferred.waitEndNanoTime());
+                        if (deferred instanceof LimitAlgorithm.Outcome.Accepted) {
+                            span.end(endInstant);
+                        } else {
+                            span.status(Span.Status.ERROR);
+                            span.addEvent("queue limit exceeded");
+                            span.end(endInstant);
+                        }
+                    });
         }
 
         private TracingConfig configureTracingConfig(RoutingRequest req, Context context) {
@@ -606,6 +619,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         public void setup(HttpRouting.Builder routing) {
             routing.addFilter(new TracingFilter(config.tracer(),
                                                 config.envConfig(),
+                                                config.waitTracingEnabled(),
                                                 config.pathConfigs(),
                                                 socketTag));
         }

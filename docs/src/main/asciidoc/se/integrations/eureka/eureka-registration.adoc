@@ -31,6 +31,7 @@ include::{rootdir}/includes/se.adoc[]
     - <<Installation, Installation>>
     - <<Configuration, Configuration>>
 - <<Logging, Logging>>
+- <<Related Documentation, Related Documentation>>
 
 == Overview
 
@@ -120,3 +121,8 @@ Like all other Helidon components, this feature uses Java logging. Its loggers b
 
 Information about how this feature is communicating with the Eureka Server is logged by loggers under the
 `io.helidon.webclient` prefix.
+
+== Related Documentation
+
+Users of this feature may also be interested in the (related) xref:{rootdir}/se/discovery.adoc[Discovery feature],
+particularly its xref:{rootdir}/se/discovery.adoc#_eureka[Eureka provider].

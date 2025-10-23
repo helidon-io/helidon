@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -207,8 +206,21 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
-                if (token.isEmpty()) {
+                LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
+                if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
+                    LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
+                    LimitAlgorithm.Token permit = accepted.token();
+
+                    try {
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                        route(prologue, headers, accepted);
+                        permit.success();
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                    } catch (Throwable e) {
+                        permit.dropped();
+                        throw e;
+                    }
+                } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
                             .setKeepAlive(false)
@@ -216,18 +228,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                             .type(EventType.OTHER)
                             .message("Too Many Concurrent Requests")
                             .build();
-                } else {
-                    LimitAlgorithm.Token permit = token.get();
-
-                    try {
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers);
-                        permit.success();
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                    } catch (Throwable e) {
-                        permit.dropped();
-                        throw e;
-                    }
                 }
             }
         } catch (CloseConnectionException e) {
@@ -499,7 +499,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return buffer;
     }
 
-    private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
+    private void route(HttpPrologue prologue,
+                       WritableHeaders<?> headers,
+                       LimitAlgorithm.Outcome limitOutcome) {
         EntityStyle entity = EntityStyle.NONE;
 
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
@@ -533,7 +535,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    routing.security(),
                                                                    prologue,
                                                                    headers,
-                                                                   requestId);
+                                                                   requestId,
+                                                                   limitOutcome);
+
             Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                    sendListener,
                                                                    writer,
@@ -600,7 +604,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                requestId,
                                                                expectContinue,
                                                                entityReadLatch,
-                                                               () -> this.readEntityFromPipeline(prologue, headers));
+                                                               () -> this.readEntityFromPipeline(prologue, headers),
+                                                               limitOutcome);
         Http1ServerResponse response = new Http1ServerResponse(ctx,
                                                                sendListener,
                                                                writer,

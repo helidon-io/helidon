@@ -27,7 +27,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.ElementKind.ENUM;
-import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.COMMON_CONFIG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIG;
 
 abstract class TypeHandlerBase {
@@ -44,14 +43,14 @@ abstract class TypeHandlerBase {
         return info -> info.enclosingType().map(TypeName::genericTypeName).map(withoutGenerics::equals).orElse(true);
     }
 
-    // exactly one parameter - either common config, or Helidon config
+    // exactly one parameter - Helidon config
     static boolean hasConfigParam(TypedElementInfo info) {
         List<TypedElementInfo> arguments = info.parameterArguments();
         if (arguments.size() != 1) {
             return false;
         }
-        TypeName argumentType = arguments.get(0).typeName();
-        return CONFIG.equals(argumentType) || COMMON_CONFIG.equals(argumentType);
+        TypeName argumentType = arguments.getFirst().typeName();
+        return CONFIG.equals(argumentType);
     }
 
     /*

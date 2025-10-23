@@ -1,0 +1,445 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+= OpenTelemetry Support in Helidon SE
+:h1Prefix: SE
+:description: Helidon SE Telemetry Support
+:keywords: helidon, telemetry, tracing, observability
+:feature-name: OpenTelemetry Support
+:rootdir: {docdir}/..
+include::{rootdir}/includes/se.adoc[]
+:version-doc-opentelemetry: v{version-lib-opentelemetry}
+:semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-doc-opentelemetry}/docs/http/http-spans.md#http-server
+
+:helidon-otelcfg-javadoc: {otel-config-javadoc-base-url}/io/helidon/telemetry/otelconfig/
+
+== Contents
+
+- <<Overview, Overview>>
+- <<API, API>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently an link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Incubating.html[incubating feature]. We intend to support it going forward, but we might withdraw the feature entirely or change its external API and behavior in backward-incompatible ways across dot releases.
+
+Helidon SE supports OpenTelemetry in several important ways:
+
+* Implements the xref:{docdir}/tracing.adoc[neutral Helidon tracing API] using OpenTelemetry
+* Allows users to assign OpenTelemetry settings as follows:
+** Declaratively, using Helidon config under the top-level `telemetry` config key
+** Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
+
+* Conforms to the link:{semconv-link}[OpenTelemetry semantic conventions] for automatically-created spans
+
+OpenTelemetry models observability as a set of link:https://opentelemetry.io/docs/concepts/signals/[_signals_]. Each signal--for example metrics, tracing, and logging--is an origin of monitoring data, and each has configurable settings which control its behavior.
+
+Helidon's config support for OpenTelemetry has certain config attributes which apply to OpenTelemetry as a whole, others which pertain to individual signals, and still more which describe lower-level elements within a signal.
+
+The Helidon OpenTelemetry configuration format, the Helidon OpenTelemetry API, and this documentation all follow this hierarchy:
+
+* <<top-level-config, Top-level telemetry>>
+** Signals
+*** <<tracing-config, Tracing>>
+**** <<attributes-config, Attributes>>
+**** <<span-exporters-config, Span exporters>>
+**** <<span-processors-config, Span processors>>
+**** <<span-sampler-config, Span sampler>>
+**** <<span-limits-config, Span limits>>
+
+This document describes how to configure each level in the hierarchy and covers general topics related to Helidon's support of OpenTelemetry.
+
+== API
+There are _two_ APIs that might be useful to developers working with OpenTelemetry:
+
+* The Helidon OpenTelemetry API - useful for mapping configuration sources to Helidon builders and, ultimately, OpenTelemetry objects.
+* The OpenTelemetry API - useful for creating OpenTelemetry objects apart from Helidon configuration sources.
+
+The types of the Helidon OpenTelemetry API correspond closely to the configuration structures described in later sections of this document. Application code can use Helidon OpenTelemetry builders to prepare and construct each of the configurable entities to ultimately prepare an `OpenTelemetry` instance set up according to the application's needs.
+
+That said, application code can equally well use the OpenTelemetry API and its builders to prepare the `OpenTelemetry` instance.
+
+Applications could even use both APIs together, reading configuration to construct a Helidon builder and then adding to that builder OpenTelemetry objects created separately using the OpenTelemetry API.
+
+The link:{helidon-otelcfg-javadoc}package-summary.html[Helidon OpenTelemetry API Javadoc] page lists the various types developers can use to prepare OpenTelemetry objects programmatically. As a starting point, the link:{helidon-otelcfg-javadoc}OpenTelemetryConfig.html[`OpenTelemetryConfig`] interface and its link:{helidon-otelcfg-javadoc}OpenTelemetryConfig.BuilderBase.html[`Builder`] represents the top-level configuration for OpenTelemetry. Their Javadoc contains links to other types that compose the top-level object, and so on.
+
+Later sections in this document also describe the configuration settings available.
+
+The link:https://opentelemetry.io/docs/languages/java/sdk/#sdk-components[OpenTelemetry SDK documentation] explains its API.
+
+[NOTE]
+Many applications do not need to use either the Helidon OpenTelemetry API or the OpenTelemetry API directly. They can instead rely completely on declarative Helidon configuration of OpenTelemetry.
+
+=== Managing the Global `OpenTelemetry` Instance
+Typically, an application uses the same `OpenTelemetry` instance throughout its execution. OpenTelemetry offers a global `OpenTelemetry` instance to make it easy for application code to set and obtain the global instance.
+
+Similarly, the Helidon tracing API has a global `Tracer`.
+
+In most cases, an application that prepares OpenTelemetry programmatically should initialize both of those by including code as shown in the following example.
+
+[source,java]
+.Setting the global `OpenTelemetry` and `Tracer` instances in Helidon
+----
+include::{sourcedir}/se/TelemetrySnippets.java[tags=snippet_1_imports;snippet_1, indent=0]
+----
+
+[[effects-of-setting-global]]
+==== Assigning the Global Instance
+Using Helidon to set the global `OpenTelemetry` instance has these effects:
+
+* Assigns the instance as the OpenTelemetry global instance.
+* Creates a Helidon `Tracer` using the OpenTelemetry instance and makes that the Helidon global `Tracer`.
+
+
+// Dependencies
+== Maven Coordinates [[maven-coordinates]]
+
+To enable various aspects of {feature-name}
+add one or more of the following dependencies to your project's `pom.xml` (see
+xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
+
+=== Using the OpenTelemetry implementation of the Helidon Tracing API
+Helidon offers an implementation of its xref:tracing.adoc[ neutral tracing API] that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
+[source,xml]
+.Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+----
+
+=== Adding OpenTelemetry Configuration and Builder Support
+To allow deployers and end users to set up Helidon configuration to control OpenTelemetry behavior, add the following dependency.
+
+[source,xml]
+.Dependency to add Helidon OpenTelemetry config and programmatic builder support
+----
+<dependency>
+    <groupId>io.helidon.telemetry</groupId>
+    <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> To use the Helidon OpenTelemetry API in your application code, remove this line or change it to `<scope>compile</scope>`.
+
+=== Enabling Automatic Spans for HTTP Requests
+Helidon's tracing observability support automatically creates a new tracing span for each HTTP request if your project includes the following dependency.
+
+[source,xml]
+.Dependency for automatic HTTP request tracing
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+By default, when Helidon {flavor-uc} creates spans automatically for HTTP requests, it uses a set of rules--semantic conventions--for choosing the span name and adding tags to each span.
+
+OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
+
+[source,xml]
+.Dependency for Helidon support of the OpenTelemetry semantic conventions
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+=== Specifying Additional OpenTelemetry Dependencies
+Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various span exporters individually. (See https://github.com/open-telemetry/opentelemetry-java/tree/{version-doc-opentelemetry}/exporters[this OpenTelemetry page] on span exporters in particular.)
+
+
+== Configuration
+You can control almost all of OpenTelemetry's overall and tracing runtime behavior using Helidon configuration settings. Helidon constructs an `OpenTelemetry` object using the configuration. The resulting `OpenTelemetry` instance includes an OpenTelemetry `TracerProvider` if the config specifies settings for it under `signals.tracing`.
+
+
+[[top-level-config]]
+=== Controlling Overall OpenTelemetry Behavior
+Several settings control the operation of OpenTelemetry as a whole, as shown in the next table.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryConfig.adoc[tag=config,leveloffset=+1]
+
+Notes:
+
+* OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in link:https://opentelemetry.io/docs/languages/java/configuration/#properties-general[this OpenTelemetry guide].)
+* Setting `global` to `true` has the effect described in the <<effects-of-setting-global, section>> about global instances.
+
+
+[[tracing-config]]
+=== Controlling OpenTelemetry Tracing Behavior
+The settings under `settings.tracing` prepare an OpenTelemetry `TracerProvider`. When your application uses the Helidon tracing API to obtain a `Tracer`, Helidon uses the `TracerProvider` prepared from this config to create the tracer.
+
+The next table describes the OpenTelemetry tracing settings.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryTracingConfig.adoc[tag=config,leveloffset=+2]
+
+OpenTelemetry applies the defaults described in the next table.
+
+.Default tracing settings applied by OpenTelemetry
+[cols="1,4"]
+|===
+| Setting | OpenTelemetry default (and OpenTelemetry doc link)
+
+| `exporters` | link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[`otlp` with `grpc` protocol] - see "Properties: exporters, `otel.traces.exporter` property"
+| `processors` | link:https://opentelemetry.io/docs/languages/java/configuration/#properties-traces[`batch` with defaults] - see "Properties for batch span processor(s)"
+| `sampler` | link:https://opentelemetry.io/docs/languages/java/configuration/#properties-traces[`parentbased_always_on`] - see "Properties for sampler"
+
+| `span-limits`
+| See link:https://opentelemetry.io/docs/languages/java/configuration/#properties-traces[tracing] "Properties for span limits"
+|===
+
+
+
+Sections below describe how to set up the tracing signal configuration:
+
+- <<attributes-config, Assigning attributes>>
+- <<associating-exporters-and-processors, Associating Exporters and Processors>>
+- <<span-exporters-config, Configuring Span Exporters>>
+- <<span-processors-config, Configuring Span Processors>>
+- <<span-sampler-config, Configuring the Span Sampler>>
+- <<span-limits-config, Configuring the Span Limits>>
+
+[[attributes-config]]
+==== Assigning Attributes
+Configured attributes are key/value pairs that OpenTelemetry attaches to each tracing span. OpenTelemetry supports attributes of type `String`, `long`, `double`, and `boolean`. The configuration stricture groups attributes by type so Helidon knows precisely what type you intend for each attribute.
+
+[[associating-exporters-and-processors]]
+==== Associating Exporters and Processors
+Ultimately, OpenTelemetry transmits the telemetry data it gathers to a backend system--such as Grafana, Prometheus,  Jaeger, or others--where you can view and query the data. OpenTelemetry tracing first _processes_ each data observation within the JVM and then _exports_ the processed data to one or more backends. Each span processor uses one or more span exporters to transmit telemetry data.
+
+You link processors and exporters in config selectively as follows:
+
+* Name each exporter if you have more than one.
+* List, for each processor, the names of exporters it should use. Omitting a processor's list of exporter names causes the processor to use all configured exporters.
+
+The following examples show increasingly-complicated scenarios:
+
+* Default
+* Minimal configuration
+* Maximum flexibility
+
+For many applications the default and minimal scenarios work well.
+
+===== Default
+This scenario includes no configuration at all for either processors or exporters.
+
+OpenTelemetry uses its default processor (`batch`) with its default exporter (`otlp` using `grpc`). |
+[source,yaml]
+----
+telemetry:
+  service: "inventory"
+  tracing:
+    sampler: "always_off"
+----
+
+===== Minimal configuration
+The user configures at most one processor and at most one exporter.
+
+The single processor uses the single exporter.
+
+No exporter name is declared or referenced.
+
+[source,yaml]
+----
+telemetry:
+  service: "inventory"
+  tracing:
+    sampler: "always_off"
+    exporters:
+      - type: zipkin
+        compression: gzip
+    processors:
+      - type: batch
+        max-queue-size: 50
+
+----
+
+===== Maximum flexibility
+The user configures possibly multiple processors and possibly multiple named exporters. Each processor's configuration lists the names of the exporters it should use; no names means all exporters.
+
+The first processor (type `batch`) uses both exporters because it does not specify any exporter names. The second processor uses only the `alternate-otlp` exporter.|
+
+[source,yaml]
+----
+telemetry:
+  service: "inventory"
+  tracing:
+    sampler: "always_off"
+    exporters:
+      - type: zipkin
+        compression: gzip
+        name: "compressed-zipkin"
+      - endpoint: "http://collect.com:4317"
+        name: "alternate-otlp""
+    processors:
+      - type: batch
+        max-queue-size: 50
+      - type: simple
+        exporters: ["alternate-otlp"]
+----
+
+[[span-processors-config]]
+==== Configuring Span Processors
+An OpenTelemetry span processor is one of the following types:
+
+* simple - The processor sends each telemetry observation to its exporters for transmission as soon as it receives the observation.
+* batch - The processor groups observations into batches and sends a batch at a time to its exporters for transmission.
+
+In the table below only the `type` and `exporters` setting apply to `simple` span processors; the other settings are for batch processors.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_BatchSpanProcessorConfig.adoc[tag=config,leveloffset=+3]
+
+[[span-exporters-config]]
+==== Configuring Span Exporters
+OpenTelemetry supports many types of exporters, each with its own configurable settings. Helidon configuration supports several of the most popular exporters, listed in the table below.
+
+[NOTE]
+You need to add dependencies to your project for the exporters your application uses, even ones supported by Helidon config.
+
+If you need to use an exporter that is _not_ in the table:
+
+* Add a dependency on the OpenTelemetry artifact that contains that exporter type.
+* Add application code that prepares the exporter instance.
+* Prepare the Helidon OpenTelemetry builders programmatically and add your exporter instance to the builder.
+
+
+
+[cols="1,2,5a"]
+|===
+| Exporter type | OpenTelemetry Java Type | Dependency to add - see also the link:https://opentelemetry.io/docs/languages/java/sdk/#spanexporter[OpenTelemetry documentation]
+
+.2+| <<otlp-exporter-config,`otlp`>> +
+(see `protocol` setting below)
+| `OtlpGrpcSpanExporter`
+.2+|
+[source,xml]
+----
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-otlp</artifactId>
+</dependency>
+----
+|`OtlpHttpSpanExporter`
+|<<zipkin-exporter-config,`zipkin`>> | `ZipkinSpanExporter`|
+[source,xml]
+----
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-zipkin</artifactId>
+</dependency>
+----
+| `console` | `LoggingSpanExporter` |
+included
+| `logging_otlp` | `OtlpJsonLoggingSpanExporter` | included
+|===
+
+[[otlp-exporter-config]]
+===== Configuring an OTLP Exporter
+
+The configuration for OTLP exporters is the same, regardless of which protocol you choose: `grpc` (the default) or `http/proto`. OpenTelemetry applies some different default values depending on the protocol.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_OtlpExporterConfig.adoc[tag=config,leveloffset=+2]
+
+The link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[OpenTelemetry documentation] describes the defaults; see the "Properties for `otlp `span, metric, and log exporters" section there.
+
+.OpenTelemetry defaults for tracing
+[cols="1,4"]
+|====
+| Setting | OpenTelemetry default (and OpenTelemetry doc link)
+
+| `compression` | `none`
+
+| `endpoint`
+| `grpc` protocol: http://localhost:4317
+
+`http/proto` protocol: http://localhost:4318
+| `protocol` | `grpc`
+| `retry-policy` | none
+| `timeout` | 10 seconds
+|====
+[[zipkin-exporter-config]]
+===== Configuring a Zipkin Exporter
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[tag=config,leveloffset=+2]
+
+The link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[OpenTelemetry documentation] describes the defaults; see the "Properties for Zipkin span exporters" section there.
+
+.OpenTelemetry defaults for Zipkin exporters
+[cols="1,4"]
+|====
+| Setting | OpenTelemetry default value
+
+| `compression` | `none`
+| `encoder` | `JSON_V2`
+| `endpoint` | http://localhost:9411/api/v2/spans
+| `timeout` | 10 seconds
+|====
+
+
+
+[[span-sampler-config]]
+==== Configuring the Span Sampler
+OpenTelemetry offers different ways of sampling data--deciding which tracing spans tp capture and send to the backend. The link:https://opentelemetry.io/docs/languages/java/sdk/#sampler[OpenTelemetry documentation] describes sampling in more detail.
+
+Helidon configuration supports the sampler implementations that reside in the `opentelemetry-sdk` as listed in the table below. Other samplers are in other components. If you need to use one of those:
+
+* Add the relevant OpenTelemetry dependency to your project.
+* Instantiate the span sample you need.
+* Prepare the sampler and the  OpenTelemetry-related builders programmatically and use your sampler to assign the sampler the `OpenTelemetryTracer.Builder` should use.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_SamplerConfig.adoc[tag=config,leveloffset=+2]
+
+[[span-limits-config]]
+==== Configuring Span Limits
+OpenTelemetry allows you to constrain certain aspects of the data it gathers in tracing spans. By assigning the settings in the table below, you can apply the span limits you want.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_SpanLimitsConfig.adoc[tag=config,leveloffset=+2]
+
+The link:https://opentelemetry.io/docs/languages/java/sdk/#sampler[OpenTelemetry documentation] describes the defaults; see the "Properties for span limits" section there.
+
+.OpenTelemetry defaults for span limits
+[cols="1,4"]
+|====
+| Setting | OpenTelemetry Default
+
+| `max-attribute-value-length` | no limit
+| `max-attributes` | 128
+| `max-attributes-per-event` | 128
+| `max-events` | 128
+| `max-links` | 128
+|====
+
+== Additional Information
+
+=== Helidon Documentation
+
+* xref:tracing.adoc[Helidon Tracing]
+
+=== OpenTelemetry Documentation
+
+* link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[Settings and defaults]
+* link:https://opentelemetry.io/docs/languages/java/sdk[OpenTelemetry Java SDK reference]
+* link:{semconv-link}[HTTP semantic conventions]
+* link:https://opentelemetry.io/docs/languages/java/intro/[Intro to OpenTelemetry Java]

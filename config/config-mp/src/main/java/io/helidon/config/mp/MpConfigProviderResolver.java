@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -269,7 +269,12 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         }
 
         private io.helidon.config.Config getCurrent() {
-            return helidonDelegate.get().context().last();
+            var current = helidonDelegate.get().context().last();
+            if (current == this) {
+                // in case there is a bad setup, we may return the same instance, prevent that
+                return helidonDelegate.get();
+            }
+            return current;
         }
 
         @Override

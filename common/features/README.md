@@ -1,9 +1,106 @@
 Helidon Features
 -----
 
+Helidon considers features to be a tree structure, with top level features being what the user wants to use,
+such as `WebServer`, `WebClient`, `Config`, `Security` etc.
+
+There can be "finer-grained" features, such as `Config/YAML`, `Security/Providers/OIDC`. The distinction is done through the
+`Features.Path` annotation, where the root path is the top-level feature.
+
+# How to define a Helidon Feature
+- Each feature `module-info.java` is to be annotated with `@Features.*` annotations
+- For preview features (production ready, but being worked on), use `@Features.Preview`
+- For incubating features (not production ready, for preview only), use `@Features.Incubating`
+- For information related to Native image, use `@Features.Aot`
+
+An annotation processor (codegen) is available to process these annotations and generate a runtime JSON file with module information.
+
+## Module info updates
+
+The module info must require the API, as it is used within the file. As the annotations are source only, we can use
+`requires static`:
+
+```java
+requires static io.helidon.common.features.api;
+```
+
+Module info example:
+```java
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
+/**
+ * Google login authentication provider.
+ *
+ * @deprecated use our OpenID Connect security provider instead
+ */
+@Features.Name("Google Login")
+@Features.Description("Security provider for Google login button authentication and outbound")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Security", "Provider", "Google-Login"})
+@Features.Aot(false)
+@Deprecated(forRemoval = true, since = "4.3.0")
+module io.helidon.security.providers.google.login {
+    requires static io.helidon.common.features.api;
+    // other module dependencies and configuration
+}
+```
+
+## Dependency to be added
+```xml
+<dependency>
+    <groupId>io.helidon.common.features</groupId>
+    <artifactId>helidon-common-features-api</artifactId>
+    <optional>true</optional>
+</dependency>
+```
+
+## Annotation processor setup
+This example provides full `plugins` tag, if exists, update only relevant sections. This example is for Helidon modules,
+when used outside Helidon repository, the `dependencies` section is not required.
+```xml
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.codegen</groupId>
+                    <artifactId>helidon-codegen-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+                <path>
+                    <groupId>io.helidon.common.features</groupId>
+                    <artifactId>helidon-common-features-codegen</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+        </dependencies>
+    </plugin>
+</plugins>
+```
+
 # Registry file format
 
 ## Version 1
+
+Created by `helidon-common-features-processor` using deprecated `Feature` annotation.
+This is now obsolete and will be removed from Helidon in version 5.0.0
 
 The registry is stored in each module in `META-INF/helidon/feature-metadata.properties`.
 The following keys are supported:
@@ -26,6 +123,7 @@ The following keys are supported:
 
 ## Version 2
 
+Created by `helidon-common-features-codegen`, using new `Features.*` annotations.
 The registry is stored in each module in `META-INF/helidon/feature-registry.json`.
 The root element is an array, to allow merging of all features into a single file.
 

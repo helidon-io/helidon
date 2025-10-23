@@ -283,6 +283,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
+    public boolean resetStream() {
+        if (isSent || outputStream != null && outputStream.totalBytesWritten() > 0) {
+            return false;
+        }
+        streamingEntity = false;
+        outputStream = null;
+        return true;
+    }
+
+    @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();

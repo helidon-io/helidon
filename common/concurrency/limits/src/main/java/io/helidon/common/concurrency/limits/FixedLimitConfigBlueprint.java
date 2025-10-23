@@ -113,12 +113,4 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     @Option.DefaultBoolean(false)
     boolean enableMetrics();
 
-    /**
-     * Whether to create tracing spans for waiting periods.
-     *
-     * @return tracing flag
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean enableTracing();
 }

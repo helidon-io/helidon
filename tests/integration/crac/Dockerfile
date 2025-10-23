@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM azul/zulu-openjdk:23-jdk-crac-latest AS checkpoint
+FROM azul/zulu-openjdk:24.0.2-24.32-jdk-crac AS checkpoint
 ENV BASE_URI=http://localhost:8080
 RUN apt-get update && apt-get install -y curl siege
 WORKDIR /helidon

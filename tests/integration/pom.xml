@@ -37,6 +37,7 @@
     <modules>
         <module>config</module>
         <module>dbclient</module>
+        <module>discovery</module>
         <module>eureka</module>
         <module>harness</module>
         <module>health</module>
@@ -73,6 +74,7 @@
         <module>crac</module>
         <module>mp-metrics-gh-9995</module>
         <module>context-http-propagation</module>
+        <module>transaction</module>
     </modules>
 
     <dependencyManagement>

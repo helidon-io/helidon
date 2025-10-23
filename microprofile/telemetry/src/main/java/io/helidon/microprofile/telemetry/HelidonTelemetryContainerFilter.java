@@ -280,13 +280,16 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         if (baggageProperties != null) {
             var baggageBuilder = Baggage.builder();
             for (String b : baggageProperties) {
-                String[] split = b.split("=");
-                if (split.length == 2) {
-                    String[] valueAndMetadata = split[1].split(";");
-                    String value = valueAndMetadata.length > 0 ? valueAndMetadata[0] : "";
-                    String metadata = valueAndMetadata.length > 1 ? valueAndMetadata[1] : "";
-                    baggageBuilder
-                            .put(split[0], value, BaggageEntryMetadata.create(metadata));
+                String[] assignments = b.split(",");
+                for (String assignment : assignments) {
+                    String[] split = assignment.split("=");
+                    if (split.length == 2) {
+                        String[] valueAndMetadata = split[1].split(";");
+                        String value = valueAndMetadata.length > 0 ? valueAndMetadata[0] : "";
+                        String metadata = valueAndMetadata.length > 1 ? valueAndMetadata[1] : "";
+                        baggageBuilder
+                                .put(split[0], value, BaggageEntryMetadata.create(metadata));
+                    }
                 }
             }
             baggageBuilder.build()

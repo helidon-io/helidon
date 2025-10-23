@@ -36,124 +36,58 @@
         </dependency>
     </dependencies>
 
-    <properties>
-        <!-- support command-line overrides -->
-        <cli.build.tools.version>${version.helidon-cli}</cli.build.tools.version>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <configuration>
-                    <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
-                    <entrypoint>
-                        <variables>
-                            <text path="helidon-version" transient="true">${project.version}</text>
-                        </variables>
-                        <exec src="flavor.xml"/>
-                    </entrypoint>
-                    <inputFiltersFile>filters.properties</inputFiltersFile>
-                    <validations>
-                        <validation>
-                            <match>any</match>
-                            <fail>true</fail>
-                            <patterns>
-                                <pattern>**/*.mustache</pattern>
-                                <pattern>**/__pkg__/**</pattern>
-                            </patterns>
-                        </validation>
-                    </validations>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-stager-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>install</phase>
+                        <id>default-compile</id>
+                        <configuration>
+                            <entrypoint>
+                                <variables>
+                                    <text path="helidon-version" transient="true">${project.version}</text>
+                                </variables>
+                                <exec src="flavor.xml"/>
+                            </entrypoint>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-jar</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <mavenArchetypeCompatible>false</mavenArchetypeCompatible>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stage-cli</id>
                         <goals>
                             <goal>stage</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>default-integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
                         <configuration>
-                            <directories>
-                                <directory target="${project.build.directory}">
-                                    <archives>
-                                        <archive target="cli-data/${project.version}/cli-data.zip">
-                                            <copy-artifacts>
-                                                <copy-artifact groupId="io.helidon.archetypes"
-                                                               artifactId="helidon-archetypes"
-                                                               version="${project.version}"
-                                                               target="helidon-{version}.{type}"
-                                                               type="jar"/>
-                                            </copy-artifacts>
-                                            <templates>
-                                                <template source="src/main/cli/metadata.properties.hbs"
-                                                          target="metadata.properties">
-                                                    <variables>
-                                                        <variable name="buildtoolsVersion"
-                                                                  value="${cli.build.tools.version}"/>
-                                                        <variable name="cliVersion"
-                                                                  value="${cli.build.tools.version}"/>
-                                                    </variables>
-                                                </template>
-                                            </templates>
-                                        </archive>
-                                    </archives>
-                                    <templates>
-                                        <template source="src/main/cli/versions.xml.hbs" target="cli-data/versions.xml">
-                                            <variables>
-                                                <variable name="version" value="${project.version}"/>
-                                            </variables>
-                                        </template>
-                                    </templates>
-                                    <files>
-                                        <file target="cli-data/latest">${project.version}</file>
-                                    </files>
-                                </directory>
-                            </directories>
+                            <invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:3.0.6</invokerId>
+                            <validations>
+                                <validation>
+                                    <match>any</match>
+                                    <fail>true</fail>
+                                    <patterns>
+                                        <pattern>**/*.mustache</pattern>
+                                        <pattern>**/__pkg__/**</pattern>
+                                    </patterns>
+                                </validation>
+                            </validations>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>log</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <messages>
-                        <message> |</message>
-                        <message> |                      /')    </message>
-                        <message> |               $(cyan! /)$(blue /)$(blue! /)$(magenta /)  /' )'   </message>
-                        <message> |              $(blue @)   \/'  )'    </message>
-                        <message> |  { $(yellow! note) }   $(yellow! &lt;) (  (_...)' </message>
-                        <message> |               \      )      </message>
-                        <message> |                \,,,,/       </message>
-                        <message> |                 $(red _|_)         </message>
-                        <message> |</message>
-                        <message> |  You can test the archetype locally with the Helidon CLI using the following arguments:</message>
-                        <message> |</message>
-                        <message> |     --reset --url file://${project.build.directory}/cli-data</message>
-                        <message> |</message>
-                        <message> |  For example:</message>
-                        <message> |</message>
-                        <message> |     helidon init --reset --url file://${project.build.directory}/cli-data</message>
-                        <message> |</message>
-                        <message> |  If you also want to test with a local Helidon CLI build, specify the version when building</message>
-                        <message> |  this project, e.g.:</message>
-                        <message> |</message>
-                        <message> |     mvn clean install -Dcli.build.tools.version=3.0.0-SNAPSHOT</message>
-                        <message> |</message>
-                    </messages>
-                </configuration>
             </plugin>
         </plugins>
     </build>

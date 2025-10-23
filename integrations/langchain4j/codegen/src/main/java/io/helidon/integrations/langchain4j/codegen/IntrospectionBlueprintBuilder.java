@@ -167,7 +167,7 @@ abstract class IntrospectionBlueprintBuilder {
         return false;
     }
 
-    void addArrayProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod) {
+    void addArrayProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod, boolean skipBuilderMapping) {
         var methodBuilder = createMethodBuilder(modelBldMethod)
                 .name(propName);
 
@@ -175,7 +175,9 @@ abstract class IntrospectionBlueprintBuilder {
 
         methodBuilder.returnType(TypeName.builder(LIST).addTypeArgument(propType).build());
 
-        confMethodBuilder.configureProperty(propName, propType, false, true, false);
+        if (!skipBuilderMapping) {
+            confMethodBuilder.configureProperty(propName, propType, false, true, false);
+        }
 
         if (overrideProps.containsKey(propName)) {
             confMethodBuilder.commentOverriddenProperty(overrideProps.get(propName));
@@ -184,8 +186,7 @@ abstract class IntrospectionBlueprintBuilder {
         }
     }
 
-    void addOptionalProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod) {
-        var custBuilderMappingAnnotation = modelBldMethod.findAnnotation(LangchainTypes.MODEL_CUSTOM_BUILDER_MAPPING);
+    void addOptionalProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod, boolean skipBuilderMapping) {
         var methodBuilder = createMethodBuilder(modelBldMethod)
                 .name(propName);
 
@@ -198,20 +199,21 @@ abstract class IntrospectionBlueprintBuilder {
 
         if (overrideProps.containsKey(propName)) {
             confMethodBuilder.commentOverriddenProperty(overrideProps.get(propName));
-            confMethodBuilder.configureProperty(propName, propType, false, false,
-                                                // Overridden non-optional props are kept mandatory
-                                                overrideProps.get(propName).typeName().isOptional());
+            if (!skipBuilderMapping) {
+                confMethodBuilder.configureProperty(propName, propType, false, false,
+                                                    // Overridden non-optional props are kept mandatory
+                                                    overrideProps.get(propName).typeName().isOptional());
+            }
 
         } else {
             classModelBuilder().addMethod(methodBuilder.build());
-            if (custBuilderMappingAnnotation.isEmpty()) {
+            if (!skipBuilderMapping) {
                 confMethodBuilder.configureProperty(propName, propType, false, false, true);
             }
         }
     }
 
-    void addCollectionProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod) {
-        var custBuilderMappingAnnotation = modelBldMethod.findAnnotation(LangchainTypes.MODEL_CUSTOM_BUILDER_MAPPING);
+    void addCollectionProperty(String propName, TypeName propType, TypedElementInfo modelBldMethod, boolean skipBuilderMapping) {
         var methodBuilder = createMethodBuilder(modelBldMethod)
                 .name(propName);
 
@@ -222,7 +224,7 @@ abstract class IntrospectionBlueprintBuilder {
                                     .type(propType)
                                     .build());
 
-        if (custBuilderMappingAnnotation.isEmpty()) {
+        if (!skipBuilderMapping) {
             confMethodBuilder.configureProperty(propName, propType, false, false, false);
         }
 
@@ -363,15 +365,16 @@ abstract class IntrospectionBlueprintBuilder {
         for (var m : propertyMap.values()) {
             var methodName = m.signature().name();
             var paramType = m.signature().parameterTypes().getFirst();
+            var skipBuilderMapping = m.findAnnotation(LangchainTypes.MODEL_CUSTOM_BUILDER_MAPPING).isPresent();
 
             if (paramType.array() && !hasCollectionAlternative(m, propertyList)) {
-                this.addArrayProperty(methodName, paramType, m);
+                this.addArrayProperty(methodName, paramType, m, skipBuilderMapping);
 
             } else if (paramType.isList() || paramType.isSet() || paramType.isMap()) {
-                this.addCollectionProperty(methodName, paramType, m);
+                this.addCollectionProperty(methodName, paramType, m, skipBuilderMapping);
 
             } else {
-                this.addOptionalProperty(methodName, paramType, m);
+                this.addOptionalProperty(methodName, paramType, m, skipBuilderMapping);
 
             }
         }
@@ -404,13 +407,13 @@ abstract class IntrospectionBlueprintBuilder {
             } else {
 
                 if (propertyType.array() && !hasCollectionAlternative(m, new ArrayList<>(overrideProps.values()))) {
-                    this.addArrayProperty(propertyName, propertyType, m);
+                    this.addArrayProperty(propertyName, propertyType, m, skipBuilderMapping);
 
                 } else if (propertyType.isList() || propertyType.isSet() || propertyType.isMap()) {
-                    this.addCollectionProperty(propertyName, propertyType, m);
+                    this.addCollectionProperty(propertyName, propertyType, m, skipBuilderMapping);
 
                 } else {
-                    this.addOptionalProperty(propertyName, propertyType, m);
+                    this.addOptionalProperty(propertyName, propertyType, m, skipBuilderMapping);
 
                 }
             }

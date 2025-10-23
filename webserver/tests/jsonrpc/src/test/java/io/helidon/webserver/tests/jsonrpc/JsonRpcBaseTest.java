@@ -18,7 +18,9 @@ package io.helidon.webserver.tests.jsonrpc;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.http.sse.SseEvent;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
@@ -30,6 +32,7 @@ import io.helidon.webserver.jsonrpc.JsonRpcResponse;
 import io.helidon.webserver.jsonrpc.JsonRpcRouting;
 import io.helidon.webserver.jsonrpc.JsonRpcRules;
 import io.helidon.webserver.jsonrpc.JsonRpcService;
+import io.helidon.webserver.sse.SseSink;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.Json;
@@ -77,6 +80,7 @@ class JsonRpcBaseTest {
                 // register a service under "/machine"
                 .service(new JsonRpcService1())
                 .register("/notifier", "ping", JsonRpcBaseTest::ping)
+                .register("/sse", "sse", JsonRpcBaseTest::sse)
                 .build();
 
         builder.register("/rpc", jsonRpcRouting);
@@ -117,8 +121,8 @@ class JsonRpcBaseTest {
         public void routing(JsonRpcRules rules) {
             rules.register("/machine",
                            JsonRpcHandlers.builder()
-                                   .putMethod("start", this::start)
-                                   .putMethod("stop", this::stop)
+                                   .method("start", this::start)
+                                   .method("stop", this::stop)
                                    .errorHandler(this::error)
                                    .build());
         }
@@ -173,5 +177,21 @@ class JsonRpcBaseTest {
 
     static void ping(JsonRpcRequest req, JsonRpcResponse res) {
         // don't call send(), just HTTP status response returned
+    }
+
+    // -- SSE -----------------------------------------------------------------
+
+    static void sse(JsonRpcRequest req, JsonRpcResponse res) {
+        res.header(HeaderValues.CONTENT_TYPE_EVENT_STREAM);
+        try (SseSink sink = res.sink(SseSink.TYPE)) {
+            sink.emit(SseEvent.builder()
+                              .name("message")
+                              .data(MACHINE_START)
+                              .build());
+            sink.emit(SseEvent.builder()
+                              .name("message")
+                              .data(MACHINE_STOP)
+                              .build());
+        }
     }
 }

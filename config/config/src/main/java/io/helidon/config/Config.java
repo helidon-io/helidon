@@ -254,7 +254,7 @@ public interface Config extends io.helidon.common.config.Config {
      * @return empty instance of {@code Config}.
      */
     static Config empty() {
-        return BuilderImpl.EmptyConfigHolder.EMPTY;
+        return EmptyConfig.EMPTY;
     }
 
     /**
@@ -442,6 +442,21 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
+     * Used for backward compatibility in generated code.
+     * <p>
+     * This method either returns the same instance (if instance of this interface), or creates a wrapper for the provided
+     * common config instance that implements this interface.
+     *
+     * @param commonConfig common config to wrap
+     * @return an instance of this interface
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.3.0")
+    static Config config(io.helidon.common.config.Config commonConfig) {
+        return ConfigProvider.wrapCommon(commonConfig);
+    }
+
+    /**
      * Returns the {@code Context} instance associated with the current
      * {@code Config} node that allows the application to access the last loaded
      * instance of the node or to request that the entire configuration be
@@ -545,6 +560,12 @@ public interface Config extends io.helidon.common.config.Config {
         return get(ConfigKeyImpl.of(key));
     }
 
+    /**
+     * Get the root of the configuration tree.
+     * In case this node is part of {@link #detach() detached} tree, this method returns the node that was detached.
+     *
+     * @return root of this configuration tree
+     */
     @Override
     Config root();
 
@@ -789,6 +810,19 @@ public interface Config extends io.helidon.common.config.Config {
      */
     <T> ConfigValue<T> as(Function<Config, T> mapper);
 
+    /**
+     * Typed value as a {@link io.helidon.common.config.ConfigValue} created from factory method.
+     * To convert from String, you can use
+     * {@link #asString() config.asString()}{@link io.helidon.common.config.ConfigValue#as(java.util.function.Function) .as(Function)}.
+     *
+     * @param mapper method to create an instance from config
+     * @param <T>    type
+     * @return typed value
+     *
+     * @deprecated use {@link #as(java.util.function.Function)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.3.0")
     @Override
     default <T> io.helidon.common.config.ConfigValue<T> map(Function<io.helidon.common.config.Config, T> mapper) {
         return as(mapper::apply);
@@ -862,7 +896,19 @@ public interface Config extends io.helidon.common.config.Config {
      */
     <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
 
+    /**
+     * Returns this node as a list mapping each list value using the provided mapper.
+     *
+     * @param mapper mapper to convert each list node into a typed value
+     * @param <T>    type of list elements
+     * @return a typed list with values
+     * @throws io.helidon.common.config.ConfigException in case the mapper fails to map the values
+     *
+     * @deprecated use {@link #asList(java.util.function.Function)} instead
+     */
+    @SuppressWarnings("removal")
     @Override
+    @Deprecated(forRemoval = true, since = "4.3.0")
     default <T> io.helidon.common.config.ConfigValue<List<T>> mapList(Function<io.helidon.common.config.Config, T> mapper)
             throws ConfigException {
         return asList(mapper::apply);
@@ -879,6 +925,15 @@ public interface Config extends io.helidon.common.config.Config {
                                    Config::asNode);
     }
 
+    /**
+     * Returns a list of child {@code Config} nodes if the node is {@code Type#OBJECT}.
+     * Returns a list of element nodes if the node is {@code Type#LIST}.
+     * Throws {@code MissingValueException} if the node is {@code Type#MISSING}.
+     * Otherwise, if node is {@code Type#VALUE}, it throws {@code ConfigMappingException}.
+     *
+     * @return a list of {@code Type#OBJECT} members or a list of {@code Type#LIST} members
+     * @throws io.helidon.config.ConfigException in case the node is {@code Type#VALUE}
+     */
     @Override
     @SuppressWarnings("unchecked")
     ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
@@ -985,6 +1040,43 @@ public interface Config extends io.helidon.common.config.Config {
          */
         @Override
         Key child(io.helidon.common.config.Config.Key key);
+
+        /**
+         * Returns {@code true} in case the key represents root config node,
+         * otherwise it returns {@code false}.
+         *
+         * @return {@code true} in case the key represents root node, otherwise {@code false}.
+         * @see #parent()
+         * @throws io.helidon.config.ConfigException if not defined
+         */
+        @Override
+        boolean isRoot();
+
+        /**
+         * Returns the name of Config node.
+         * <p>
+         * The name of a node is the last token in fully-qualified key.
+         * Depending on context the name is evaluated one by one:
+         * <ul>
+         * <li>in Type#OBJECT} node the name represents a <strong>name of object member</strong>;
+         * </li>
+         * <li>in Type#LIST} node the name represents an zero-based <strong>index of list
+         * element</strong>,
+         * an unsigned base-10 integer value, leading zeros are not allowed.</li>
+         * </ul>
+         *
+         * @return name of config node
+         */
+        @Override
+        String name();
+
+        /**
+         * Returns formatted fully-qualified key.
+         *
+         * @return formatted fully-qualified key.
+         */
+        @Override
+        String toString();
 
         /**
          * Creates new instance of Key for specified {@code key} literal.

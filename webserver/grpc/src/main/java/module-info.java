@@ -38,6 +38,7 @@ module io.helidon.webserver.grpc {
 
     requires io.grpc;
     requires io.grpc.stub;
+    requires io.grpc.services;
     requires com.google.protobuf;
 
     requires transitive io.helidon.grpc.core;

@@ -369,6 +369,12 @@ backend:
                   type: "icon"
                   value: "storage"
               - type: "PAGE"
+                title: "Discovery"
+                source: "discovery.adoc"
+                glyph:
+                  type: "icon"
+                  value: "radar"
+              - type: "PAGE"
                 title: "Fault Tolerance"
                 source: "fault-tolerance.adoc"
                 glyph:
@@ -496,6 +502,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "outbox"
+              - type: "PAGE"
+                title: "Telemetry"
+                source: "open-telemetry.adoc"
+                glyph:
+                  type: "icon"
+                  value: "analytics"
               - type: "PAGE"
                 title: "Testing"
                 source: "testing.adoc"

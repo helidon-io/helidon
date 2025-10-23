@@ -43,7 +43,7 @@ class ScheduledTask {
         }
     }
 
-    @Scheduling.Cron(value = "0/5 * * * * ?", configKey = "override.cron")
+    @Scheduling.Cron(value = "${overrides.cron:0/5 * * * * ?}")
     void scheduled(CronInvocation invocation) {
         if (!cronParam.isDone()) {
             cronParam.complete(invocation);
@@ -57,7 +57,7 @@ class ScheduledTask {
         }
     }
 
-    @Scheduling.FixedRate(value = "PT5S", delayBy = "PT1S", configKey = "override.fixed")
+    @Scheduling.FixedRate(value = "${overrides.fixed.interval:PT5S}", delayBy = "${overrides.fixed.delay-by:PT1S}")
     void fixedRate(FixedRateInvocation invocation) {
         if (!fixedParam.isDone()) {
             fixedParam.complete(invocation);

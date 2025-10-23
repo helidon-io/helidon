@@ -247,7 +247,7 @@ public class ClientWsConnection implements WsSession, Runnable {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                     LOGGER.log(System.Logger.Level.TRACE, "Failed while reading or processing frames", e);
                 }
-                return;
+                throw e;        // re-throw for run() to call onError()
             }
         }
     }

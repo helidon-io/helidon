@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
@@ -70,7 +71,7 @@ public interface Parameters {
      * @return new named parameters with values based on the map
      */
     static Parameters create(String component, Map<String, List<String>> params) {
-        return new ParametersMap(MapperManager.global(), component, params);
+        return new ParametersMap(ParametersEmpty.MAPPERS, component, params);
     }
 
     /**
@@ -81,7 +82,7 @@ public interface Parameters {
      * @return new named parameters with values based on the map
      */
     static Parameters createSingleValueMap(String component, Map<String, String> params) {
-        return new ParametersSingleValueMap(MapperManager.global(), component, params);
+        return new ParametersSingleValueMap(ParametersEmpty.MAPPERS, component, params);
     }
 
     /**
@@ -210,7 +211,7 @@ public interface Parameters {
         private final Map<String, List<String>> params = new LinkedHashMap<>();
         private final String component;
 
-        private MapperManager mapperManager;
+        private Mappers mapperManager;
 
         private Builder(String component) {
             this.component = component;
@@ -219,7 +220,7 @@ public interface Parameters {
         @Override
         public Parameters build() {
             if (mapperManager == null) {
-                mapperManager = MapperManager.global();
+                mapperManager = ParametersEmpty.MAPPERS;
             }
             return new ParametersMap(mapperManager, component, params);
         }

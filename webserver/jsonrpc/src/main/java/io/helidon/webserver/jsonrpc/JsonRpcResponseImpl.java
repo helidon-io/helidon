@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.ServerResponseHeaders;
@@ -28,6 +29,7 @@ import io.helidon.http.Status;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonUtil;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http.spi.Sink;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -130,6 +132,10 @@ class JsonRpcResponseImpl implements JsonRpcResponse {
             builder.add("error", error.asJsonObject());
         }
         return builder.build();
+    }
+
+    public <T extends Sink<?>> T sink(GenericType<T> sinkType) {
+        return delegate.sink(sinkType);
     }
 
     @Override

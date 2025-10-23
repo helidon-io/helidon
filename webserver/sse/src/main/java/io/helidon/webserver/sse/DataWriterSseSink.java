@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,10 +100,23 @@ class DataWriterSseSink implements SseSink {
         }
         Object data = sseEvent.data();
         if (data != null) {
-            bufferData.write(SSE_DATA);
-            byte[] bytes = serializeData(data, sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN));
-            bufferData.write(bytes);
-            bufferData.write(SSE_NL);
+            MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
+
+            // is it multi-line string data?
+            if (data instanceof String stringData && stringData.contains("\n")) {
+                String[] lines = stringData.split("\n");
+                for (String line : lines) {
+                    bufferData.write(SSE_DATA);
+                    byte[] bytes = serializeData(line, mediaType);
+                    bufferData.write(bytes);
+                    bufferData.write(SSE_NL);
+                }
+            } else {
+                bufferData.write(SSE_DATA);
+                byte[] bytes = serializeData(data, mediaType);
+                bufferData.write(bytes);
+                bufferData.write(SSE_NL);
+            }
         }
         bufferData.write(SSE_NL);
 

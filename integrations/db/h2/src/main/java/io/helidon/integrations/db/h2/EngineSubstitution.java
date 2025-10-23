@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@ import com.oracle.svm.core.annotate.Delete;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
 import org.h2.engine.ConnectionInfo;
-import org.h2.engine.Session;
+import org.h2.engine.SessionLocal;
 
 /**
  * Remove support for in-memory databases in native-image.
  */
 @TargetClass(className = "org.h2.engine.Engine")
 public final class EngineSubstitution {
+    private EngineSubstitution() {
+    }
 
     /**
      * Just throws an exception in native image.
@@ -38,12 +40,12 @@ public final class EngineSubstitution {
      * @see org.h2.engine.Engine#createSession(org.h2.engine.ConnectionInfo)
      */
     @Delete
-    public Session createSession(ConnectionInfo connectionInfo) {
+    public static SessionLocal createSession(ConnectionInfo connectionInfo) {
         throw new UnsupportedOperationException("In-memory database is not available in native-image");
     }
 
     @Substitute
-    void close(String name) {
+    static void close(String name) {
         // as we do not open any databases, we do not need to close them
     }
 }

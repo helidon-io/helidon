@@ -1,0 +1,49 @@
+{
+  "applications": {
+    "versions__delta": "25",
+    "apps__hashcode": "",
+    "application": [
+      {
+        "name": "EXAMPLE",
+        "instance": [
+          {
+            "instanceId": "localhost:80",
+            "hostName": "localhost",
+            "app": "EXAMPLE",
+            "ipAddr": "127.0.0.1",
+            "status": "UP",
+            "overriddenStatus": "UNKNOWN",
+            "port": {
+              "$": 80,
+              "@enabled": "true"
+            },
+            "securePort": {
+              "$": 443,
+              "@enabled": "false"
+            },
+            "countryId": 1,
+            "dataCenterInfo": {
+              "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+              "name": "MyOwn"
+            },
+            "leaseInfo": {
+              "renewalIntervalInSecs": 30,
+              "durationInSecs": 90,
+              "registrationTimestamp": 1755204392470,
+              "lastRenewalTimestamp": 1755204392470,
+              "evictionTimestamp": 1755208870046,
+              "serviceUpTimestamp": 1755204391872
+            },
+            "metadata": {
+              "@class": "java.util.Collections$EmptyMap"
+            },
+            "isCoordinatingDiscoveryServer": "false",
+            "lastUpdatedTimestamp": "1755208870046",
+            "lastDirtyTimestamp": "1755204391870",
+            "actionType": "DELETED"
+          }
+        ]
+      }
+    ]
+  }
+}

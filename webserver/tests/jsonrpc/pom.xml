@@ -59,6 +59,16 @@
             <artifactId>yasson</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-sse</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-sse</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

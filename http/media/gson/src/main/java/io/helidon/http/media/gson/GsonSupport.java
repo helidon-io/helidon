@@ -15,8 +15,12 @@
  */
 package io.helidon.http.media.gson;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
@@ -37,18 +41,24 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * {@link java.util.ServiceLoader} provider implementation for Gson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class GsonSupport implements MediaSupport {
+@RuntimeType.PrototypedBy(GsonSupportConfig.class)
+public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportConfig> {
+
+    private static final Gson GSON = new GsonBuilder().create();
+
     private final Gson gson;
     private final GsonReader reader;
     private final GsonWriter writer;
 
     private final String name;
+    private final GsonSupportConfig config;
 
-    private GsonSupport(Gson gson, GsonReader reader, GsonWriter writer, String name) {
-        this.gson = gson;
-        this.reader = reader;
-        this.writer = writer;
-        this.name = name;
+    private GsonSupport(GsonSupportConfig config) {
+        this.config = config;
+        this.name = config.name();
+        this.gson = config.gson();
+        this.reader = new GsonReader(gson);
+        this.writer = new GsonWriter(gson);
     }
 
     /**
@@ -65,16 +75,17 @@ public class GsonSupport implements MediaSupport {
      * Creates a new {@link GsonSupport}.
      *
      * @param config must not be {@code null}
-     * @param name of the Gson support
+     * @param name   of the Gson support
      * @return a new {@link GsonSupport}
      */
     public static MediaSupport create(Config config, String name) {
         Objects.requireNonNull(config, "Config must not be null");
         Objects.requireNonNull(name, "Name must not be null");
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        Gson gson = gsonBuilder.create();
-        return create(gson, name);
+        return builder()
+                .name(name)
+                .config(config)
+                .build();
     }
 
     /**
@@ -98,9 +109,39 @@ public class GsonSupport implements MediaSupport {
         Objects.requireNonNull(gson, "Gson must not be null");
         Objects.requireNonNull(name, "Name must not be null");
 
-        GsonReader reader = new GsonReader(gson);
-        GsonWriter writer = new GsonWriter(gson);
-        return new GsonSupport(gson, reader, writer, name);
+        return builder()
+                .name(name)
+                .gson(gson)
+                .build();
+    }
+
+    /**
+     * Creates a new {@link GsonSupport} based on the {@link GsonSupportConfig}.
+     *
+     * @param config must not be {@code null}
+     * @return a new {@link GsonSupport}
+     */
+    public static GsonSupport create(GsonSupportConfig config) {
+        return new GsonSupport(config);
+    }
+
+    /**
+     * Creates a new customized {@link GsonSupport}.
+     *
+     * @param consumer config builder consumer
+     * @return a new {@link GsonSupport}
+     */
+    public static GsonSupport create(Consumer<GsonSupportConfig.Builder> consumer) {
+        return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a new builder.
+     *
+     * @return a new builder instance
+     */
+    public static GsonSupportConfig.Builder builder() {
+        return GsonSupportConfig.builder();
     }
 
     @Override
@@ -141,10 +182,10 @@ public class GsonSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(
-        GenericType<T> type,
-        Headers requestHeaders,
-        WritableHeaders<?> responseHeaders
-    ){
+            GenericType<T> type,
+            Headers requestHeaders,
+            WritableHeaders<?> responseHeaders
+    ) {
         if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
@@ -171,5 +212,56 @@ public class GsonSupport implements MediaSupport {
 
     <T> EntityWriter<T> writer() {
         return writer;
+    }
+
+    @Override
+    public GsonSupportConfig prototype() {
+        return config;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<GsonSupportConfig.BuilderBase<?, ?>> {
+
+        private static final Map<String, Consumer<GsonBuilder>> BOOLEAN_PROPERTIES;
+
+        static {
+            BOOLEAN_PROPERTIES = Map.of("pretty-printing",
+                                        GsonBuilder::setPrettyPrinting,
+                                        "disable-html-escaping",
+                                        GsonBuilder::disableHtmlEscaping,
+                                        "disable-inner-class-serialization",
+                                        GsonBuilder::disableInnerClassSerialization,
+                                        "disable-jdk-unsafe",
+                                        GsonBuilder::disableJdkUnsafe,
+                                        "enable-complex-map-key-serialization",
+                                        GsonBuilder::enableComplexMapKeySerialization,
+                                        "exclude-fields-without-expose-annotation",
+                                        GsonBuilder::excludeFieldsWithoutExposeAnnotation,
+                                        "generate-non-executable-json",
+                                        GsonBuilder::generateNonExecutableJson,
+                                        "serialize-special-floating-point-values",
+                                        GsonBuilder::serializeSpecialFloatingPointValues,
+                                        "lenient",
+                                        GsonBuilder::setLenient,
+                                        "serialize-nulls",
+                                        GsonBuilder::serializeNulls);
+        }
+
+        @Override
+        public void decorate(GsonSupportConfig.BuilderBase<?, ?> target) {
+            if (target.gson().isEmpty()) {
+                if (target.properties().isEmpty()) {
+                    target.gson(GSON);
+                } else {
+                    GsonBuilder builder = new GsonBuilder();
+                    target.properties()
+                            .entrySet()
+                            .stream()
+                            .filter(Map.Entry::getValue)
+                            .filter(entry -> BOOLEAN_PROPERTIES.containsKey(entry.getKey()))
+                            .forEach(entry -> BOOLEAN_PROPERTIES.get(entry.getKey()).accept(builder));
+                    target.gson(builder.create());
+                }
+            }
+        }
     }
 }

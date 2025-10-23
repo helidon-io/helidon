@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.reset()).thenReturn(false);
+        when(res.resetStream()).thenReturn(false);
         ErrorHandlers handlers = ErrorHandlers.create(Map.of(OtherException.class,
                 (request, response, t) -> res.send(t.getMessage())));
         try {
@@ -145,7 +145,7 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.reset()).thenReturn(true);
+        when(res.resetStream()).thenReturn(true);
 
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
@@ -177,7 +177,7 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.isSent()).thenReturn(true);
-        when(res.reset()).thenReturn(true);
+        when(res.resetStream()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

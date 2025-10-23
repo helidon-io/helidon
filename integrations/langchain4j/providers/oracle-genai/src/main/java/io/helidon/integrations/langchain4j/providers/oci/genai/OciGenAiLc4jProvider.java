@@ -29,8 +29,12 @@ import com.oracle.bmc.generativeaiinference.GenerativeAiInferenceClient;
 import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiChatModel;
 import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiStreamingChatModel;
 
-@AiProvider.ModelConfig(OciGenAiChatModel.class)
-@AiProvider.ModelConfig(OciGenAiStreamingChatModel.class)
+@AiProvider.ModelConfig(
+        value = OciGenAiChatModel.class,
+        skip = "logitBias\\(java\\.lang\\.Object\\)")
+@AiProvider.ModelConfig(
+        value = OciGenAiStreamingChatModel.class,
+        skip = "logitBias\\(java\\.lang\\.Object\\)")
 @Prototype.CustomMethods(OciFactoryMethods.class)
 interface OciGenAiLc4jProvider {
 
