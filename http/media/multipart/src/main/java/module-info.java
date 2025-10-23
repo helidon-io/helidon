@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Multipart media support.
  */
-@Feature(value = "Multipart",
-        description = "Multipart media support",
-        in = HelidonFlavor.SE,
-        path = {"Media", "Multipart"}
-)
+@Features.Name("Multipart")
+@Features.Description("Multipart media support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Media", "Multipart"})
 module io.helidon.http.media.multipart {
 
     requires io.helidon.common.buffers;

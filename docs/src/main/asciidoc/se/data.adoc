@@ -1,0 +1,71 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= About Helidon Data Repository
+:description: Helidon Data Repository
+:keywords: helidon, se, database, data, repository
+:feature-name: Data Repository
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+-  <<Overview, Overview>>
+-  <<Maven Coordinates, Maven Coordinates>>
+-  <<Annotation Processor, Annotation Processor>>
+-  <<Usage, Usage>>
+-  <<Helidon Config, Helidon Config>>
+-  <<SE Application, SE Application>>
+-  <<Repository Interface, Repository Interface>>
+-  <<Pagination, Pagination>>
+-  <<Dynamic Ordering, Dynamic Ordering>>
+-  <<Persistence Session Access, Persistence Session Access>>
+-  <<Transactions, Transactions>>
+
+== Overview
+
+The Helidon SE Data Repository provides a unified API for working with database queries.
+include::{rootdir}/includes/data.adoc[tag=data_overview]
+
+include::{rootdir}/includes/data.adoc[tag=data_annotation_processor]
+include::{rootdir}/includes/data.adoc[tag=data_usage]
+include::{rootdir}/includes/data.adoc[tag=data_config]
+
+== SE Application
+
+The runtime initialization of the data repository is managed by the service registry. You can obtain repository
+interface instances using the service registry API:
+
+[source,java]
+----
+include::{sourcedir}/se/data/PetService.java[tag=repository_init, indent=0]
+----
+
+include::{rootdir}/includes/data.adoc[tag=data_repository_interface]
+include::{rootdir}/includes/data.adoc[tag=data_pagination]
+include::{rootdir}/includes/data.adoc[tag=data_dynamic_ordering]
+
+include::{rootdir}/includes/data.adoc[tag=data_session_access_1]
+[source,java]
+----
+include::{sourcedir}/se/data/PetService.java[tag=session_access, indent=0]
+----
+include::{rootdir}/includes/data.adoc[tag=data_session_access_2]
+
+include::{rootdir}/includes/data.adoc[tag=data_transaction]

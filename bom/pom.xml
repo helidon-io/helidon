@@ -803,6 +803,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.telemetry.testing</groupId>
+                <artifactId>helidon-telemetry-testing-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webserver.observe</groupId>
                 <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
                 <version>${helidon.version}</version>
@@ -1723,6 +1728,11 @@
             <!-- Metadata -->
             <dependency>
                 <groupId>io.helidon.metadata</groupId>
+                <artifactId>helidon-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metadata</groupId>
                 <artifactId>helidon-metadata-hson</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1741,6 +1751,18 @@
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
                 <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Json schema -->
+            <dependency>
+                <groupId>io.helidon.json.schema</groupId>
+                <artifactId>helidon-json-schema</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json.schema</groupId>
+                <artifactId>helidon-json-schema-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

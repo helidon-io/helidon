@@ -1,0 +1,764 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+ifndef::sourcedir[:sourcedir: {rootdir}/../java/io/helidon/docs]
+
+// tag::data_overview[]
+
+Data repository queries are an abstraction over Object–Relational Mapping, or ORM. This enables
+interfaces with query definitions to be translated into implementation classes at compile time.
+
+The Helidon Data Repository supports Jakarta Persistence and major providers such as EclipseLink
+and Hibernate.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.data</groupId>
+    <artifactId>helidon-data</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.data.jakarta.persistence</groupId>
+    <artifactId>helidon-data-jakarta-persistence</artifactId>
+</dependency>
+----
+
+The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such as MySQL,
+are required at runtime:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.eclipse.persistence</groupId>
+    <artifactId>org.eclipse.persistence.jpa</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>org.eclipse.persistence</groupId>
+    <artifactId>org.eclipse.persistence.core</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+// end::data_overview[]
+
+// tag::data_annotation_processor[]
+
+== Annotation Processor
+
+Both the entity model and data repository interfaces require a specific annotation-processor configuration:
+
+[source,xml]
+----
+<annotationProcessorPaths>
+    <path>
+        <groupId>io.helidon.bundles</groupId>
+        <artifactId>helidon-bundles-apt</artifactId>
+        <version>${helidon.version}</version>
+    </path>
+    <path>
+        <groupId>io.helidon.data.jakarta.persistence</groupId>
+        <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+        <version>${helidon.version}</version>
+    </path>
+</annotationProcessorPaths>
+----
+
+// end::data_annotation_processor[]
+
+// tag::data_usage[]
+
+== Usage
+
+The Data Repository provides an API and tooling for implementing database queries through interface method
+prototypes.
+
+There are two ways in which such a query can be defined:
+
+* using the method name as the query definition
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=findByName_method, indent=0]
+----
+
+* using a method annotated with `@Data.Query`
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
+----
+
+// end::data_usage[]
+
+// tag::data_config[]
+
+== Helidon Config
+
+You must configure the data repository before using it.
+
+In the example below, Helidon Config sets up the data repository using the EclipseLink provider and a MySQL
+database as a custom connection:
+
+[source,yaml]
+----
+data:
+  persistence-units:
+    jakarta:
+      - connection:
+          username: "user"
+          password: "password"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+          # EclipseLink properties
+          properties:
+            eclipselink.target-database: "MySQL"
+            eclipselink.target-server: "None"
+            jakarta.persistence.schema-generation.database.action: "none"
+----
+
+In the next example, Helidon Config sets up the data repository using the Hibernate provider and a MySQL database
+as a Hikari `DataSource`:
+
+[source,yaml]
+----
+data:
+  sources:
+    sql:
+      - name: "example"
+        provider.hikari:
+          username: "user"
+          password: "changeit"
+          url: "jdbc:mysql://localhost:3306/pets"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+  persistence-units:
+    jakarta:
+      - data-source: "example"
+        properties:
+          hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
+          jakarta.persistence.schema-generation.database.action: "drop-and-create"
+----
+
+`DataSource` is defined in a separate node, and its name is set to `"example"`. This name is referenced in the corresponding
+`persistence-units` configuration node.
+
+// end::data_config[]
+
+// tag::data_repository_interface[]
+
+== Repository Interface
+
+Data repository interfaces are annotated with `@Data.Repository` and extend the `Data.GenericRepository`
+interface.
+
+The `@Data.Repository` annotation takes no arguments. The `Data.GenericRepository` declares no methods
+but has two generic type parameters, `E` and `ID`. `E` represents the persistence entity type and `ID`
+represents the type of the entity's primary key attribute. Composite primary keys are not supported.
+
+The `Data.GenericRepository` interface is extended by additional interfaces that add specific features:
+
+[cols="20%,80%"]
+|===
+|Interface |Description
+
+|`Data.GenericRepository<E, ID>`
+|Root interface with entity type and primary key type as generic arguments.
+
+|`Data.BasicRepository<E, ID>`
+|Extends `GenericRepository`; adds a set of basic entity life-cycle operations.
+
+|`Data.CrudRepository<E, ID>`
+|Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support.
+
+|`Data.PageableRepository<E, ID>`
+|Extends `GenericRepository`; adds pagination support.
+|===
+
+=== Repository Interface Methods
+
+A repository interface may contain three kinds of methods:
+
+* Methods inherited from an ancestor interface
+* Methods with a query defined via the `@Data.Query` annotation
+* Methods with a query defined via the method name
+
+The following `PetRepository` interface contains all of these: inherited methods from `CrudRepository`,
+the methods `findByName` and `listNameOrderByName` defined by method name, and `selectPetsByCategory`
+defined by the `@Data.Query` annotation:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=PetRepository_class, indent=0]
+----
+
+==== Method with Query Defined by Method Name
+
+This method type infers the query based on the method name and does not use a specific annotation.
+
+The general method name syntax is illustrated below:
+
+image::data/qbmn_syntax.png[align="left",role="fit"]
+
+All parts of the pattern are optional except the return type keyword, such as `get`, `find`, `list`,
+`stream`, `count` and `exists`.
+
+===== Method Name Prefix and Return Type
+
+A method can have a user-defined prefix. The prefix is a sequence of letters and digits that does not
+match any return type keyword. This prefix has no influence on the query and can be used to distinguish
+between methods that have the same query but different return types. If a prefix is used, the following
+query return type keyword must start with a capital letter.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_method, indent=0]
+----
+
+The query return type depends on the return type keyword:
+
+[cols=3*]
+|===
+|Keyword |Return Type |Description
+
+|count
+|Numeric type
+|Number of rows matching the query criteria
+
+|exists
+|`boolean` or `Boolean`
+|Whether at least one matching row exists
+
+|get
+|Query row type
+|Single result that throws an exception if there are zero or multiple results
+
+|find
+|`Optional<…>`
+|Zero or single result that throws an exception if there are multiple results
+
+|list
+|`Collection` or `List`
+|All matching rows
+
+|list
+|`Slice` or `Page`
+|Pageable result set
+
+|stream
+|`Stream`
+|Stream of matching rows
+|===
+
+NOTE: Validation of the keyword–return type mapping is not fully enforced by the code generator,
+though this may change in future releases.
+
+===== Projection in Method Name
+
+The projection part is optional and follows directly after the return-type keyword. It consists
+of `expression` and `property` components:
+
+[cols=3*]
+|===
+|Keyword |Example |Description
+
+|Distinct
+|`listDistinctNameByTrainer_Name`
+|Returns only unique values.
+
+|First<number>
+|`listFirst10ByAge`
+|Returns up to `<number>` rows.
+
+|Min
+|`getMinPoints`
+|Returns the minimum property value. Requires numeric type.
+
+|Max
+|`getMaxPoints`
+|Returns the maximum property value. Requires numeric type.
+
+|Sum
+|`getSumPoints`
+|Returns the sum of values. Requires numeric type.
+
+|Avg
+|`getAvgPoints`
+|Returns the average value. Requires floating point type.
+|===
+
+The `property` part is the entity property name and it can contain underscores. An underscore is interpreted
+as a dot, which means navigation to a related entity attribute. For example, `Keeper_Name` on the `Pet` entity
+translates to the JPQL query `SELECT p.keeper.name FROM Pet p`.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=simple_model, indent=0]
+----
+
+===== Criteria in Method Name
+
+The criteria part of the method name is optional and represents the `WHERE` clause of the query.
+It is a logical expression composed of individual conditions joined by the `AND` and `OR` operators.
+A single criteria condition is the `property`, optionally followed by a set of criteria keywords.
+For example, `NameIgnoreCaseNotEndsWith` consists of the entity property `name` and the keywords
+`IgnoreCase`, `Not`, and `EndsWith`.
+
+Criteria condition keywords are of two types:
+
+* `IgnoreCase` and `Not` modifiers that can appear before the condition keyword
+* the condition keyword itself, such as `EndsWith`
+
+A condition keyword can consume method arguments. Each keyword consumes an exact number of arguments.
+Method arguments are consumed in the same order as the condition keywords appear in the method name.
+
+Criteria modifiers:
+
+[cols="10%,90%"]
+|===
+|Keyword |Description
+
+|Not
+|Negates the next condition
+
+|IgnoreCase
+|Makes the next condition case-insensitive
+|===
+
+Supported condition keywords:
+
+[cols=3*]
+|===
+|Keyword |Args |Description
+
+|After
+|1
+|The property value is after the given value. Requires a `Comparable` property and argument.
+ Intended for date and time. Effectively equivalent to `GreaterThan`.
+
+|Before
+|1
+|The property value is before the given value. Requires a `Comparable` property and argument.
+ Intended for date and time. Effectively equivalent to `LessThan`.
+
+|Contains
+|1
+|The property value contains the given value. Requires a `String` property and argument.
+
+|EndsWith
+|1
+|The property value ends with the given value. Requires a `String` property and argument.
+
+|StartsWith
+|1
+|The property value starts with the given value. Requires a `String` property and argument.
+
+|Equal
+|1
+|The property value is equal to the given value.
+
+|LessThan
+|1
+|The property value is less than the given value. Requires a `Comparable` property and argument.
+
+|LessThanEqual
+|1
+|The property value is less or equal to the given value. Requires a `Comparable` property and argument.
+
+|GreaterThan
+|1
+|The property value is greater than the given value. Requires a `Comparable` property and argument.
+
+|GreaterThanEqual
+|1
+|The property value is greater or equal to the given value. Requires a `Comparable` property and argument.
+
+|Between
+|2
+|The property value is between the given values. Requires `Comparable` properties and arguments.
+
+|Like
+|1
+|The property value is `LIKE` the given value. Requires a `String` property and argument.
+
+|In
+|1
+|The property value is in the given collection. Requires a `Collection` argument.
+
+|Empty
+|0
+|The property value is empty. Requires a `Collection` property.
+
+|Null
+|0
+|The property value is `NULL`.
+
+|True
+|0
+|The property value is `true`. Requires `boolean` or `Boolean` property.
+
+|False
+|0
+|The property value is `false`. Requires `boolean` or `Boolean` property.
+|===
+
+An example repository method with criteria:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_criteria_methods, indent=0]
+----
+
+Logical operators:
+
+[cols="10%,90%"]
+|===
+|Keyword |Description
+
+|And
+|Logical AND
+
+|Or
+|Logical OR
+|===
+
+An example repository method with criteria and logical operator:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_multiple_criteria_methods, indent=0]
+----
+
+NOTE: In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta Persistence 3.1, section 4.6.6.
+      The same rule applies to SQL.
+
+===== Ordering in Method Name
+
+The ordering part of the method name is optional and represents the `ORDER BY` clause of the query.
+It is a list of ordering rules. A single ordering rule is the `property` optionally followed by
+a direction keyword. If more than one ordering rule is present, the rules must be separated by direction
+keywords, so only the last keyword is optional.
+
+Ordering keywords:
+
+[cols="10%,90%"]
+|===
+|Keyword |Description
+
+|Asc
+|The returned collection is sorted in ascending order.
+
+|Desc
+|The returned collection is sorted in descending order.
+|===
+
+The default direction is ascending when the keyword is omitted after the `property`.
+
+An example repository method with ordering:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_sort_method, indent=0]
+----
+
+===== Method Name Grammar
+
+The formal grammar for method names is as follows:
+
+[source,text]
+----
+        method-name  :: <query> | <delete>
+
+        query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
+                            | <all-action> "All" [ "OrderBy" <order> ]
+        delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
+
+        action       :: <action-l> | <prefix> <action-u>
+        all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
+        del-action   :: "delete" | [ <prefix> ] "Delete"
+
+        prefix       :: [a-zA-Z0-9]*
+        action-l     :: "count" |  "exists" | "get" | <all-action-l>
+        action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
+        all-action-l :: "find" | "list" | "stream"
+        all-action-u :: "Find" | "List" | "Stream"
+
+        projection   :: [ <expression> ] [ <property> ]
+        expression   :: "First" <number> [ "Distinct" ] | "Distinct"
+                            | "Max" | "Min" | "Sum" | "Avg"
+        property     :: <identifier> [ "_" <identifier> ]
+        identifier   :: [a-zA-Z][a-zA-Z0-9]*
+        number       :: [0-9]+
+
+        criteria     :: <condition> { <logical-operator> <condition> }
+        condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
+        operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
+                            | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
+                            | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
+        logical-operator :: "And" | "Or"
+
+        order        :: <property> [ <direction> [ <order> ] ]
+        direction    :: "Asc" | "Desc"
+----
+
+==== Method with Query Defined by `@Data.Query` Annotation
+
+This method type must be annotated with `@Data.Query`. The annotation takes a single `String` value containing
+the database query. Currently, JPQL is supported. Method arguments must match the query parameters:
+
+* For named parameters, each named parameter in the query must correspond to a method argument
+  with the same name. Order does not matter.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepository.java[tag=listPets_method, indent=0]
+----
+
+* For indexed parameters, each argument must appear in the same order as in the query. Indexing starts at `1`.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=selectKeeper_method, indent=0]
+----
+
+Supported return types include:
+
+* the query row type such as an entity class, an entity attribute, or a custom projection
+* `List`, `Collection`, `Stream`, or `Optional` with the query row type as the generic parameter
+* `Page` or `Slice` with the query row type as the generic parameter
+
+// end::data_repository_interface[]
+
+// tag::data_pagination[]
+
+== Pagination
+
+Pagination allows the caller to split a returned data collection into individual pages. When pagination is used,
+the repository method must have an argument of type `PageRequest`. The return type of the method is `Slice` or `Page`.
+The `PageRequest` argument defines the page size and the page index, starting from `0`.
+
+Returned page content types:
+
+[cols="10%,90%"]
+|===
+|Name |Description
+
+|Slice
+|Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page.
+
+|Page
+|Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest`
+ to retrieve this page.
+|===
+
+An example repository method with pagination:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_slice_method, indent=0]
+----
+
+// end::data_pagination[]
+
+// tag::data_dynamic_ordering[]
+
+== Dynamic Ordering
+
+The ordering part of the method name defines a static ordering rule that cannot be modified at runtime.
+Dynamic ordering allows the caller to define an additional ordering rule at runtime. Dynamic ordering is triggered
+by adding an argument of type `Sort` to the repository method. Both static and dynamic rules can be used together.
+
+An example repository method with dynamic ordering:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_dynamic_sort_method, indent=0]
+----
+
+Static ordering rules from the method name are always applied first, and dynamic rules are added after them:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/PetRepositorySnippets.java[tag=qbmn_dual_sort_method, indent=0]
+----
+
+// end::data_dynamic_ordering[]
+
+// tag::data_session_access_1[]
+
+== Persistence Session Access
+
+The caller can access the persistence provider session to implement more complex tasks that the framework does not
+support directly. This feature is available to a data repository interface that extends the `Data.SessionRepository<S>` interface.
+
+The generic argument `S` is the persistence session type, for example `EntityManager`.
+The `Data.SessionRepository` interface provides methods that supply a session managed by the data repository framework,
+so there is no need to handle the session instance lifecycle.
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=session_repository, indent=0]
+----
+
+The session instance is available through the `Data.SessionRepository<S>` interface methods `run` and `call`:
+
+// end::data_session_access_1[]
+
+// tag::data_session_access_2[]
+
+NOTE: The session instance is valid only while `run` or `call` method is being executed. This instance must not
+      be stored and used after this method has ended.
+
+// end::data_session_access_2[]
+
+// tag::data_transaction[]
+
+== Transactions
+
+Transaction handling is available through Helidon Transaction API.
+
+To enable Helidon Transaction API, add the following dependency to your project’s `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>jakarta.transaction</groupId>
+    <artifactId>jakarta.transaction-api</artifactId>
+</dependency>
+----
+
+Helidon JTA Transaction support, such as Narayana, may be provided at runtime to enable `JTA` transaction type:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.transaction</groupId>
+    <artifactId>helidon-transaction-narayana</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+If JTA transaction support is not provided, Helidon Data runtime will use `RESOURCE_LOCAL` transaction type.
+
+=== Transaction Types and Annotations
+
+The `Tx` class defines several ways how transactional support can be applied to transactional method executions.
+Those ways are defined in `Tx.Type` enum.
+The `Tx` class also defines annotations that can be used to mark methods for transactional execution
+based on `Tx.Type` enum.
+
+[cols=3*]
+|===
+|Enum |Annotation |Description
+
+|`MANDATORY`
+|`@Mandatory`
+|A transaction must already be in effect when a method executes. If called outside a transaction
+ context, a `TxException` is thrown. If called inside a transaction context, method execution continues
+ under that context.
+
+|`NEW`
+|`@New`
+|A new transaction is started when a method executes. If called outside a transaction context, a new
+ transaction is begun. If called inside a transaction context, the current transaction is suspended, a new
+ transaction is begun, and the method execution continues inside this new transaction context.
+
+|`NEVER`
+|`@Never`
+|No transaction must be in effect when a method executes. If called outside a transaction context, method
+ execution continues outside a transaction context. If called inside a transaction context, a `TxException`
+ is thrown.
+
+|`REQUIRED`
+|`@Required`
+|A transaction will be in effect when a method executes. If called outside a transaction context,
+ a new transaction is begun. If called inside a transaction context, method execution continues inside
+ that transaction context.
+
+|`SUPPORTED`
+|`@Supported`
+|A transaction may optionally be in effect when a method executes. If called outside a transaction
+ context, method execution continues outside a transaction context. If called inside a transaction context,
+ method execution continues inside that transaction context.
+
+|`UNSUPPORTED`
+|`@Unsupported`
+|No transaction will be in effect when a method executes. If called outside a transaction context, method
+ execution continues outside a transaction context. If called inside a transaction context, the current
+ transaction is suspended, method execution continues outside a transaction context, and the previously
+ suspended transaction is resumed after method execution completes.
+|===
+
+=== Transaction Methods
+
+The `Tx` class provides several methods for executing tasks within a transaction:
+
+[cols="20%,80%"]
+|===
+|Method |Description
+
+|`transaction(Callable<T> task)`
+|Executes a task with a managed transaction of type `REQUIRED`.
+
+|`transaction(Type type, Callable<T> task)`
+|Executes a task with a managed transaction of the specified type.
+
+|`transaction(CheckedRunnable<Exception> task)`
+|Executes a task with a managed transaction of type `REQUIRED` without returning a result.
+
+|`transaction(Type type, CheckedRunnable<Exception> task)`
+|Executes a task with a managed transaction of the specified type without returning a result.
+|===
+
+=== Usage
+
+The `Tx.Type` enum is used to control the transactional behavior of methods. By specifying the desired transactional
+behavior using one of the enum values, developers can ensure that their methods are executed with the correct transactional
+context.
+For example, using `REQUIRED` ensures that a method is always executed within a transaction, while using `NEVER` ensures
+that a method is never executed within a transaction.
+
+In this example, the `doSomething()` method is annotated with `@Tx.Required`, ensuring that it is always executed within
+a transaction. The `doSomethingElse()` method is annotated with `@Tx.Never`, ensuring that it is never executed within
+a transaction:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=data_transaction_annotations, indent=0]
+----
+
+`PetService` class instance is obtained from service registry.
+
+In this example, lambda expression in the `doSomething()` method is executed using `Tx.transaction` method with
+`Tx.Type.REQUIRED` argument, ensuring that it is always executed within a transaction. Lambda expression
+in the `doSomethingElse()` method is executed  using `Tx.transaction` method with `Tx.Type.NEVER` argument, ensuring
+that it is never executed within a transaction:
+
+[source,java]
+----
+include::{sourcedir}/includes/data/SimpleSnippets.java[tag=data_transaction_methods, indent=0]
+----
+
+// end::data_transaction[]

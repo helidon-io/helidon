@@ -162,9 +162,9 @@ public final class PathMatchers {
         }
 
         if (checkPattern.contains("{")
-            || checkPattern.contains("[")
-            || checkPattern.contains("*")
-            || checkPattern.contains("\\")) {
+                || checkPattern.contains("[")
+                || checkPattern.contains("*")
+                || checkPattern.contains("\\")) {
             return pattern(pathPattern);
         }
 
@@ -285,6 +285,7 @@ public final class PathMatchers {
     }
 
     static final class ExactPathMatcher implements PathMatcher {
+        private final boolean isRoot;
         private final String path;
         private final String pathWithTrailingSlash;
 
@@ -292,6 +293,8 @@ public final class PathMatchers {
             // We work with decoded URIs
             this.path = UriEncoding.decodeUri(path);
             this.pathWithTrailingSlash = this.path + "/";
+            // optimization - this happens one per lifetime of the server, but the check is happening for every request
+            this.isRoot = "/".equals(this.path);
         }
 
         @Override
@@ -310,27 +313,29 @@ public final class PathMatchers {
 
         @Override
         public PrefixMatchResult prefixMatch(UriPath uriPath) {
-            if (path.equals("/")) {
+            if (isRoot) {
                 return new PrefixMatchResult(true,
                                              ROUTED_ROOT,
                                              uriPath);
             }
 
             String actualPath = uriPath.path();
-            if (actualPath.startsWith(pathWithTrailingSlash) || actualPath.equals(path)) {
+            // first do an exact match, then a prefix match (to avoid doing prefix match if exactly matched)
+            if (path.equals(actualPath)) {
+                // this is an exact match
+                return new PrefixMatchResult(true,
+                                             new NoParamRoutedPath(uriPath),
+                                             UriPath.createRelative(uriPath, "/"));
+            }
+            if (actualPath.startsWith(pathWithTrailingSlash)) {
                 // we have /test
                 String remaining = actualPath.substring(path.length());
-                if (remaining.isEmpty()) {
-                    // we received /test
-                    return new PrefixMatchResult(true,
-                                                 new NoParamRoutedPath(uriPath),
-                                                 UriPath.createRelative(uriPath, "/"));
-                } else {
-                    // we received /test/whatever, remaining should be /whatever
-                    return new PrefixMatchResult(true,
-                                                 new NoParamRoutedPath(UriPath.createRelative(uriPath, path)),
-                                                 UriPath.createRelative(uriPath, remaining));
-                }
+
+                // we received /test/whatever, remaining should be /whatever
+                return new PrefixMatchResult(true,
+                                             new NoParamRoutedPath(UriPath.createRelative(uriPath, path)),
+                                             UriPath.createRelative(uriPath, remaining));
+
             }
             return PrefixMatchResult.notAccepted();
         }

@@ -86,6 +86,7 @@ backend:
                   - "overview.adoc"
                   - "quickstart.adoc"
                   - "config.adoc"
+                  - "langchain4j.adoc"
                   - "health.adoc"
                   - "metrics.adoc"
                   - "security-oidc.adoc"
@@ -102,6 +103,15 @@ backend:
                   - "jbatch.adoc"
                   - "performance-tuning.adoc"
                   - "oci-guide.adoc"
+              - type: "MENU"
+                title: "AI"
+                glyph:
+                  type: "icon"
+                  value: "auto_awesome"
+                dir: "ai"
+                sources:
+                  - "langchain4j.adoc"
+                  - "mcp.adoc"
               - type: "PAGE"
                 title: "Bean Validation"
                 source: "beanvalidation.adoc"
@@ -123,6 +133,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "share"
+              - type: "PAGE"
+                title: "Data Repository"
+                source: "data.adoc"
+                glyph:
+                  type: "icon"
+                  value: "storage"
               - type: "PAGE"
                 title: "Fault Tolerance"
                 source: "fault-tolerance.adoc"
@@ -157,7 +173,6 @@ backend:
                   type: "icon"
                   value: "filter_drama"
                 sources:
-                  - "langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
@@ -322,6 +337,7 @@ backend:
                   - "overview.adoc"
                   - "quickstart.adoc"
                   - "config.adoc"
+                  - "langchain4j.adoc"
                   - "health.adoc"
                   - "metrics.adoc"
                   - "security-oidc.adoc"
@@ -335,6 +351,15 @@ backend:
                   - "webclient.adoc"
                   - "dbclient.adoc"
                   - "performance-tuning.adoc"
+              - type: "MENU"
+                title: "AI"
+                glyph:
+                  type: "icon"
+                  value: "auto_awesome"
+                dir: "ai"
+                sources:
+                  - "langchain4j/langchain4j.adoc"
+                  - "mcp.adoc"
               - type: "PAGE"
                 title: "Builder"
                 source: "builder.adoc"
@@ -365,6 +390,12 @@ backend:
               - type: "PAGE"
                 title: "DB Client"
                 source: "dbclient.adoc"
+                glyph:
+                  type: "icon"
+                  value: "storage"
+              - type: "PAGE"
+                title: "Data Repository"
+                source: "data.adoc"
                 glyph:
                   type: "icon"
                   value: "storage"
@@ -409,16 +440,18 @@ backend:
                   value: "filter_drama"
                 sources:
                   - "eureka/eureka-registration.adoc"
-                  - "langchain4j/langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Injection"
-                source: "injection.adoc"
+                dir: "injection"
                 glyph:
                   type: "icon"
                   value: "colorize"
+                sources:
+                  - "injection.adoc"
+                  - "declarative.adoc"
               - type: "MENU"
                 title: "JSON-RPC"
                 dir: "jsonrpc"

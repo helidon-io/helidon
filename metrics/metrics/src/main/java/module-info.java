@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon Metrics implementation.
  */
-@Feature(value = "Metrics",
-        description = "Metrics",
-        in = HelidonFlavor.SE,
-        path = {"Metrics"}
-)
+@Features.Name("Metrics")
+@Features.Description("Metrics")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Metrics"})
 module io.helidon.metrics {
     requires static io.helidon.common.features.api;
 

@@ -16,6 +16,7 @@
 package io.helidon.integrations.langchain4j;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +34,7 @@ import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
 import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.TokenUsage;
 
 /**
  * Creates metrics that follow the
@@ -79,6 +81,9 @@ class MetricsChatModelListener implements ChatModelListener {
         final ChatRequest chatRequest = chatModelResponseContext.chatRequest();
         final ChatResponse chatResponse = chatModelResponseContext.chatResponse();
 
+        var tokenUsage = Optional.of(chatResponse)
+                .map(ChatResponse::tokenUsage);
+
         String requestModelName = chatRequest.modelName();
         String responseModelName = chatResponse.modelName();
         DistributionSummary clientInputTokenUsage = responseInputTokenUsageByModelName.computeIfAbsent(
@@ -102,7 +107,8 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai_token_type",
                                                                        "input"))));
-        clientInputTokenUsage.record(chatResponse.tokenUsage().inputTokenCount());
+        tokenUsage.map(TokenUsage::inputTokenCount)
+                .ifPresent(clientInputTokenUsage::record);
 
         DistributionSummary clientOutputTokenUsage = responseOutputTokenUsageByModelName.computeIfAbsent(
                 responseModelName,
@@ -125,7 +131,9 @@ class MetricsChatModelListener implements ChatModelListener {
                                                                .addTag(Tag.create(
                                                                        "gen_ai_token_type",
                                                                        "output"))));
-        clientOutputTokenUsage.record(chatResponse.tokenUsage().outputTokenCount());
+
+        tokenUsage.map(TokenUsage::outputTokenCount)
+                .ifPresent(clientOutputTokenUsage::record);
 
         DistributionSummary clientOperationDuration = responseOperationDurationByModelName.computeIfAbsent(
                 responseModelName,

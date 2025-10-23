@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
  * MicroProfile Telemetry support for Helidon.
  */
-@Preview
-@Feature(value = "Telemetry",
-        description = "MP Telemetry support",
-        in = HelidonFlavor.MP,
-        path = "Telemetry"
-)
+@Features.Preview
+@Features.Name("Telemetry")
+@Features.Description("MP Telemetry support")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("Telemetry")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.telemetry {
 

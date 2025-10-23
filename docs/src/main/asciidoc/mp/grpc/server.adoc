@@ -39,14 +39,14 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Examples, Examples>>
 
 == Overview
-The gRPC Microprofile API is an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP] to allow building
-gRPC services that integrate with the Microprofile APIs. Using Helidon MP makes building gRPC services
-easier when compared to the traditional approach. Services
-can be built using POJOs that are then discovered and deployed at runtime in the same way Helidon MP
-discovers and deploys other Web services.
+The gRPC MicroProfile (MP) API is an extension to xref:{rootdir}/mp/introduction.adoc[Helidon MP]
+that enables building gRPC services integrated with MicroProfile APIs. Using Helidon MP simplifies
+the process of developing gRPC services compared to traditional approaches. Services can be
+implemented as plain POJOs, which are then automatically discovered and deployed at
+runtime—just like other Helidon MP web services.
 
-Building gRPC services using Helidon gRPC MP is simple and allows developers to concentrate on their
-application logic without the need to write a lot of boilerplate code.
+Building gRPC services with Helidon gRPC MP is straightforward, allowing developers to focus
+on application logic rather than boilerplate code.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -57,6 +57,10 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-microprofile-grpc-server</artifactId>
 </dependency>
 ----
+
+Additional dependencies may be required depending on your application needs. See
+the link:{helidon-github-examples-url}/microprofile/grpc[gRPC MP Example]
+for a complete example.
 
 == API
 All Helidon gRPC MP annotations are defined in the `Grpc` interface. The following annotations are
@@ -114,6 +118,12 @@ message StringMessage {
   string text = 1;
 }
 ----
+
+When using Maven, Protobuf files should be placed under the `src/main/proto` directory.
+It’s recommended to use the `protobuf-maven-plugin` to compile these files as part of
+the Maven build process. You can refer to the
+link:{helidon-github-examples-url}/microprofile/grpc/pom.xml[pom.xml]
+file in the Helidon gRPC MP example for guidance.
 
 === Using Custom Marshalers
 

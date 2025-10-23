@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -54,6 +55,26 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
             return global.get(OpenTelemetryTracer.class)
                     .map(Tracer.class::cast)
                     .orElseGet(() -> {
+                        /*
+                        To preserve backward compatibility with the global(Tracer) method on this class while also working with
+                        OpenTelemetry config via Helidon config, try to initialize OTel using our configured support.
+                         */
+                        Optional<OpenTelemetry> fromService = Services.first(OpenTelemetry.class);
+                        if (fromService.isPresent()) {
+                            /*
+                            If we are here then CONFIGURED_TRACER was not set earlier but the call to Services.first was able
+                            to initialize OpenTelemetry. Part of that logic is to set CONFIGURED_TRACER. So here we just
+                            return what is now (or certainly should be) a non-empty CONFIGURED_TRACER.
+                             */
+                            var recentTracer = CONFIGURED_TRACER.get();
+                            if (recentTracer != null) {
+                                LOGGER.log(System.Logger.Level.TRACE, "Global tracer has been set via telemetry configuration");
+                                return recentTracer;
+                            }
+                            LOGGER.log(System.Logger.Level.TRACE,
+                                       "OpenTelemetry was initialized via the service registry but the global tracer was "
+                                               + "unexpectedly not set.");
+                        }
                         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                             LOGGER.log(System.Logger.Level.TRACE, "Global tracer is not registered. Register it through "
                                     + "Tracer.global(HelidonOpenTelemetry.create(ot, tracer). Using global open telemetry");

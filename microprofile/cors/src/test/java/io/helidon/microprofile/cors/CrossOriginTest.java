@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS;
@@ -45,6 +46,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.isEmptyString;
 
 /**
  * Class CrossOriginTest.
@@ -53,9 +56,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(CrossOriginTest.CorsResource1.class)
 @AddBean(CrossOriginTest.CorsResource2.class)
 @AddBean(CrossOriginTest.CorsResource3.class)
+@AddBean(CrossOriginTest.CorsResource4.class)
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
+@AddConfig(key = "cors.paths.1.path-pattern", value = "/cors4")
+@AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar, http://bar.foo")
+@AddConfig(key = "cors.paths.1.allow-methods", value = "GET")
 class CrossOriginTest extends BaseCrossOriginTest {
     @Inject
     private WebTarget target;
@@ -146,6 +153,16 @@ class CrossOriginTest extends BaseCrossOriginTest {
         }
     }
 
+    @RequestScoped
+    @Path("/cors4")
+    static public class CorsResource4 {
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
+        }
+    }
+
     @Test
     void test1PreFlightAllowedOrigin() {
         Response res = target.path("/cors1")
@@ -201,6 +218,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
@@ -226,6 +244,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "POST")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
@@ -237,6 +256,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar, X-oops")
                 .options();
         assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat(res.readEntity(String.class), isEmptyString());
     }
 
     @Test
@@ -376,5 +396,18 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
+    }
+
+    @Test
+    void testEntityAndHeadersWhenForbidden() {
+        Response res = target.path("/cors4")
+                .request()
+                .header(ORIGIN.defaultCase(), "http://other.com")
+                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "GET")
+                .get();
+        assertThat("Status of rejection response", res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+        assertThat("Entity of rejection response", res.hasEntity(), is(false));
+        assertThat("Headers of rejection response", res.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), nullValue());
+
     }
 }

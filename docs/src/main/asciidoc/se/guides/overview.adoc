@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,6 +45,13 @@ Create your first Helidon SE application in under 5 minutes.
 [link=config.adoc]
 --
 Learn how to configure a Helidon SE application.
+--
+
+[CARD]
+.LangChain4j Guide
+[link=langchain4j.adoc]
+--
+Learn how to create AI powered Helidon SE applications.
 --
 
 [CARD]

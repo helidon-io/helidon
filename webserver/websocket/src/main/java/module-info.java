@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer WebSocket Support.
  */
-@Feature(value = "WebSocket",
-         description = "WebServer WebSocket support",
-         in = HelidonFlavor.SE,
-         path = {"WebSocket", "WebServer"}
-)
+@Features.Name("WebSocket")
+@Features.Description("WebServer WebSocket support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebSocket", "WebServer"})
 module io.helidon.webserver.websocket {
 
     requires io.helidon.builder.api;

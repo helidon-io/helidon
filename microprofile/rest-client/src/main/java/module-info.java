@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 import io.helidon.common.features.api.Aot;
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -23,12 +23,11 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see org.eclipse.microprofile.rest.client
  */
-@Feature(value = "REST Client",
-        description = "MicroProfile REST client spec implementation",
-        in = HelidonFlavor.MP,
-        path = "REST Client"
-)
-@Aot(description = "Does not support execution of default methods on interfaces.")
+@Features.Name("REST Client")
+@Features.Description("MicroProfile REST client spec implementation")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("REST Client")
+@Features.Aot(description = "Does not support execution of default methods on interfaces.")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.restclient {
 

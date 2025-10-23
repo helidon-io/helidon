@@ -1,0 +1,230 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+
+:guidesdir: {rootdir}/{flavor-lc}/guides
+
+This guide describes how to create a sample AI powered Helidon {flavor-uc} project with LangChain4j integration.
+
+== Introduction
+
+include::{rootdir}/se/ai/langchain4j/langchain4j.adoc[tag=overview]
+
+== What you need
+
+For this 15 minute tutorial, you will need the following:
+
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
+
+== Generate the Project
+
+Generate the project using the Helidon {flavor-uc} Quickstart Maven archetype.
+
+[source,bash,subs="attributes+"]
+.Run the Maven archetype:
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-{flavor-lc} \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-{project-tag}-{flavor-lc} \
+    -Dpackage=io.helidon.examples.quickstart.{project-tag}
+----
+
+The archetype generates a Maven project in your current directory,
+(for example, `helidon-quickstart-{project-tag}-{flavor-lc}`). Change into this directory and build.
+
+[source,bash,subs="attributes+"]
+----
+cd helidon-quickstart-{project-tag}-{flavor-lc}
+----
+
+== Dependencies
+
+Add necessary dependencies for LangChain4j integration and OpenAI provider in the project POM.
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j</groupId>
+    <artifactId>helidon-integrations-langchain4j</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-open-ai</artifactId>
+</dependency>
+----
+
+You will also need extra annotation processors as LangChain4j AI services are handled as superfast build time beans.
+
+include::{rootdir}/se/ai/langchain4j/langchain4j.adoc[tag=annotation-processors]
+
+== Configuration
+
+Add to the configuration file
+ifdef::se-flavor[]
+`./src/main/resources/application.yaml`
+endif::se-flavor[]
+ifdef::mp-flavor[]
+`./src/main/resources/META-INF/microprofile-config.properties`
+endif::mp-flavor[]
+following LangChain4j configuration for OpenAI provider.
+
+[TIP]
+Don't forget to enable your model with `enabled` set to `true`
+
+ifdef::se-flavor[]
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    chat-model:
+      enabled: true
+      model-name: "gpt-4o-mini"
+      # Lc4j demo api key needs to be routed over lc4j proxy
+      base-url: "http://langchain4j.dev/demo/openai/v1"
+      api-key: "demo"
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,properties]
+----
+langchain4j.open-ai.chat-model.enabled=true
+langchain4j.open-ai.chat-model.model-name=gpt-4o-mini
+# Lc4j demo api key needs to be routed over lc4j proxy
+langchain4j.open-ai.chat-model.base-url=http://langchain4j.dev/demo/openai/v1
+langchain4j.open-ai.chat-model.api-key=demo
+----
+endif::mp-flavor[]
+
+== Ai Service
+Next we need to create LangChain4j https://docs.langchain4j.dev/tutorials/ai-services[Ai service] and
+annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
+
+[source,java,subs="none"]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_ai_service, indent=0]
+----
+
+ifdef::se-flavor[]
+
+Next step is to add new Http POST handler to the webserver, you can do it by changing method `routing` in  `src/main/java/io/helidon/examples/quickstart/lc4j/Main.java` like following example shows.
+
+[source,java]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_resource, indent=0]
+----
+<1> Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
+
+endif::se-flavor[]
+ifdef::mp-flavor[]
+Next step is to add new Http POST JAX-RS resource, create new public class `PirateResource` like following example shows.
+
+[source,java]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=base_resource, indent=0]
+----
+<1> Notice how we can inject the LangChain4j Ai service as Helidon declarative superfast build time bean directly in JAX-RS resource.
+endif::mp-flavor[]
+
+When we build and run our Helidon AI-powered quickstart:
+
+[source:bash]
+----
+mvn package -DskipTests && java -jar ./target/*.jar
+----
+
+We can test our pirate service with curl:
+
+[source:bash]
+----
+echo "Who are you?" | curl -d @- localhost:8080/chat
+----
+
+== Prompt Template Arguments
+
+Ofcourse all the features from LangChain4j Ai services are going to work, let's try to expand the example with
+https://docs.langchain4j.dev/tutorials/ai-services#usermessage[template arguments].
+
+[source,java,subs="none"]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=template_ai_service, indent=0]
+----
+
+Remember to fix the code calling the service.
+
+[source,java]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=template_resource, indent=0]
+----
+
+When we build and run our Helidon AI-powered quickstart:
+
+[source:bash]
+----
+mvn package -DskipTests && java -jar ./target/*.jar
+----
+
+We can test our pirate service with curl:
+
+[source:bash]
+----
+echo "Who was your captain?" | curl -d @- localhost:8080/chat
+----
+
+== Custom Memory Provider
+
+We can also extend the pirate example with https://docs.langchain4j.dev/tutorials/chat-memory[conversation memory]. First, we need to create a memory provider
+so our memory works per conversation ID.
+
+[source,java]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_provider, indent=0]
+----
+
+Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
+
+[source,java,subs="none"]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_ai_service, indent=0]
+----
+
+We will expect conversation id as a header on the webserver.
+
+[source,java]
+----
+include::{sourcedir}/{flavor-lc}/guides/LangChain4jSnippets.java[tag=memory_resource, indent=0]
+----
+
+[source:bash]
+----
+mvn package -DskipTests && java -jar ./target/*.jar
+----
+
+We can test our pirate service with curl:
+
+[source:bash]
+----
+echo "Hi, I am John."          | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+Ahoy there, John
+
+echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.config.spi.ConfigFilter;
 public class SecurityConfigFilter implements ConfigFilter {
     @Override
     public String apply(Config.Key key, String stringValue) {
-        if ("${AES=thisIsEncriptedPassphrase}".equals(stringValue)) {
+        if ("${GCM=thisIsEncriptedPassphrase}".equals(stringValue)) {
             return "Password1.";
         } else {
             return stringValue;

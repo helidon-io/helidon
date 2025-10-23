@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Provides a Eureka-based implementation of <dfn>discovery</dfn> support for Helidon.
  */
+@Features.Name("Discovery")
+@Features.Description("Eureka provider for Discovery")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Discovery", "Eureka"})
+@Features.Preview
+@Features.Since("4.3.0")
 module io.helidon.discovery.providers.eureka {
+
+    requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;

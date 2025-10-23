@@ -315,7 +315,8 @@ public class CorsSupportHelper<Q, R> {
     }
 
     /**
-     * Prepares a response with CORS headers, if the supplied request is in fact a CORS request.
+     * Prepares a response with CORS headers, if the supplied request is in fact a CORS request and if upstream processing has
+     * not already determined the request should be refused.
      *
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
@@ -323,6 +324,12 @@ public class CorsSupportHelper<Q, R> {
     public void prepareResponse(CorsRequestAdapter<Q> requestAdapter, CorsResponseAdapter<R> responseAdapter) {
         if (!isActive()) {
             decisionLog(() -> String.format("CORS ignoring request %s; CORS processing is inactive", requestAdapter));
+            return;
+        }
+
+        if (responseAdapter.status() == Status.FORBIDDEN_403_CODE) {
+            decisionLog(() -> String.format("CORS bypassing addition of CORS headers for request %s; status is Forbidden",
+                                            requestAdapter));
             return;
         }
 

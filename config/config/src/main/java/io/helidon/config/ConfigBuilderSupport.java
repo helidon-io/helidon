@@ -55,16 +55,18 @@ public final class ConfigBuilderSupport {
      * @param configType      type of the configuration
      * @param allFromRegistry whether to use all services from the registry
      * @param existingValues  existing values that was explicitly configured by the user
-     * @param <T>             type of the service
+     * @param <S>             type of the service
+     * @param <T>             type of the service provider (contract)
      * @return instances from the user augmented with instances from the registry
      */
-    public static <T extends NamedService> List<T> discoverServices(Config config,
-                                                                    String configKey,
-                                                                    Optional<ServiceRegistry> serviceRegistry,
-                                                                    Class<? extends ConfiguredProvider<T>> providerType,
-                                                                    Class<T> configType,
-                                                                    boolean allFromRegistry,
-                                                                    List<T> existingValues) {
+    public static <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
+    discoverServices(Config config,
+                     String configKey,
+                     Optional<ServiceRegistry> serviceRegistry,
+                     Class<T> providerType,
+                     Class<S> configType,
+                     boolean allFromRegistry,
+                     List<S> existingValues)  {
 
         return ProvidedUtil.discoverServices(config,
                                              configKey,

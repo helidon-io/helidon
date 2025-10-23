@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -22,11 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  *
  * @see org.eclipse.microprofile.config
  */
-@Feature(value = "Config",
-        description = "MicroProfile configuration spec implementation",
-        in = HelidonFlavor.MP,
-        path = "Config"
-)
+@Features.Name("Config")
+@Features.Description("MicroProfile configuration spec implementation")
+@Features.Flavor(HelidonFlavor.MP)
+@Features.Path("Config")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.config {
 

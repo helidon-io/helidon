@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,16 @@ public interface CodegenFiler {
      */
     default FilerResource resource(String location, Object... originatingElements) {
         throw new UnsupportedOperationException("Method resource not implemented yet on " + getClass().getName());
+    }
+
+    /**
+     * Manifest resource that is used to collect all manifest files to allow runtime
+     * discovery.
+     *
+     * @return manifest resource
+     */
+    default ManifestResource manifest() {
+        return ManifestResource.create(this);
     }
 
     /**

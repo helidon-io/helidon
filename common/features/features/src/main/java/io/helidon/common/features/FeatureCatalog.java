@@ -29,6 +29,8 @@ import java.util.Properties;
 
 import io.helidon.common.features.metadata.FeatureMetadata;
 import io.helidon.common.features.metadata.FeatureRegistry;
+import io.helidon.metadata.MetadataConstants;
+import io.helidon.metadata.MetadataDiscovery;
 import io.helidon.metadata.hson.Hson;
 
 /**
@@ -45,20 +47,24 @@ final class FeatureCatalog {
         Map<String, FeatureMetadata> features = new LinkedHashMap<>();
 
         try {
-            Enumeration<URL> hsons = classLoader.getResources(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V2);
-            while (hsons.hasMoreElements()) {
-                URL url = hsons.nextElement();
-                Hson.Array hson;
-                try (InputStream in = url.openStream()) {
-                    hson = Hson.parse(in)
-                            .asArray();
-                }
+            MetadataDiscovery.instance()
+                    .list(MetadataConstants.FEATURE_REGISTRY_FILE)
+                    .forEach(metadatum -> {
+                        Hson.Array hson;
+                        try (InputStream in = metadatum.inputStream()) {
+                            hson = Hson.parse(in)
+                                    .asArray();
+                        } catch (IOException e) {
+                            LOGGER.log(Level.WARNING, "Failed to read features from " + metadatum.absoluteLocation(), e);
+                            return;
+                        }
 
-                List<FeatureMetadata> metadatas = FeatureRegistry.metadata("Classpath: " + url, hson);
-                for (FeatureMetadata metadata : metadatas) {
-                    features.putIfAbsent(metadata.name(), metadata);
-                }
-            }
+                        List<FeatureMetadata> metadatas = FeatureRegistry.metadata("Classpath: "
+                                                                                           + metadatum.absoluteLocation(), hson);
+                        for (FeatureMetadata metadata : metadatas) {
+                            features.putIfAbsent(metadata.name(), metadata);
+                        }
+                    });
 
             Enumeration<URL> resources = classLoader.getResources(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V1);
             while (resources.hasMoreElements()) {

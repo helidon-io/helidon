@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,9 @@
 
 package io.helidon.tests.integration.packaging.inject;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.service.registry.Services;
 
 /**
  * We must provide a main class when using modularized jar file with main class attribute,
@@ -31,6 +26,7 @@ import io.helidon.service.registry.Services;
  * <p>
  * This should be replaced once the maven plugin fully supports main classes (if..).
  */
+@Service.GenerateBinding
 public class Main {
     static {
         LogConfig.initClass();
@@ -39,15 +35,6 @@ public class Main {
     public static void main(String[] args) {
         LogConfig.configureRuntime();
 
-        // makes sure global config is initialized
-        Config config = Config.create();
-        GlobalConfig.config(() -> config, true);
-        Services.set(Config.class, config);
-
-        ServiceRegistry registry = ServiceRegistryManager.create()
-                .registry();
-        registry.get(Lookup.builder()
-                             .runLevel(Service.RunLevel.SERVER)
-                             .build());
+        ServiceRegistryManager.start(ApplicationBinding.create());
     }
 }

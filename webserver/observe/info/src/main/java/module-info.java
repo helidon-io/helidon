@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
@@ -22,10 +22,10 @@ import io.helidon.common.features.api.HelidonFlavor;
  * Info allows configuration of custom properties to be available to users.
  * Info endpoint is unprotected by default and is available at {@code /observe/info} (configurable).
  */
-@Feature(value = "Info",
-         description = "WebServer Info observability support",
-         in = HelidonFlavor.SE,
-         path = {"Observe", "Info"})
+@Features.Name("Info")
+@Features.Description("WebServer Info observability support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"Observe", "Info"})
 module io.helidon.webserver.observe.info {
     requires static io.helidon.common.features.api;
 

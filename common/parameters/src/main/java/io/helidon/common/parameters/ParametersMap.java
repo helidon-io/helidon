@@ -41,6 +41,13 @@ class ParametersMap implements Parameters {
         this.params = new LinkedHashMap<>(params);
     }
 
+    ParametersMap(Mappers mapperManager, String component, Map<String, List<String>> params, String[] qualifiers) {
+        this.qualifiers = qualifiers;
+        this.mapperManager = mapperManager;
+        this.component = component;
+        this.params = new LinkedHashMap<>(params);
+    }
+
     @Override
     public List<String> all(String name) throws NoSuchElementException {
         List<String> value = params.get(name);

@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebServer Tracing Support.
  */
-@Feature(value = "Tracing",
-         description = "WebServer Tracing support",
-         in = HelidonFlavor.SE
-)
+@Features.Name("Tracing")
+@Features.Description("WebServer Tracing support")
+@Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver.observe.tracing {
 
     requires io.helidon.http;

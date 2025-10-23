@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Helidon WebClient HTTP/1.1 Support.
  */
-@Feature(value = "HTTP/1.1",
-         description = "WebClient HTTP/1.1 support",
-         in = HelidonFlavor.SE,
-         path = {"WebClient", "HTTP/1.1"}
-)
+@Features.Name("HTTP/1.1")
+@Features.Description("WebClient HTTP/1.1 support")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"WebClient", "HTTP/1.1"})
 module io.helidon.webclient.http1 {
 
     requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency

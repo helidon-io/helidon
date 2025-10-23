@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Vault's Cubbyhole Secrets Engine support.
  */
-@Feature(value = "Cubbyhole",
-        description = "Cubbyhole Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"HCP Vault", "Secrets", "Cubbyhole"}
-)
+@Features.Name("Cubbyhole")
+@Features.Description("Cubbyhole Secrets Engine")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"HCP Vault", "Secrets", "Cubbyhole"})
 module io.helidon.integrations.vault.secrets.cubbyhole {
 
     requires io.helidon.integrations.common.rest;

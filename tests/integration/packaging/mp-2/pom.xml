@@ -202,6 +202,10 @@
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
+                    <includes>
+                        <!-- Do not include any tests by default, only with profiles -->
+                        <include>none</include>
+                    </includes>
                 </configuration>
                 <executions>
                     <execution>
@@ -274,6 +278,10 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>fat-jar-image</id>
+            <!-- Not supported-->
         </profile>
     </profiles>
 </project>

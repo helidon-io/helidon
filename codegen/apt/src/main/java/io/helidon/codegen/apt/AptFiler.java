@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,9 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.FilerResource;
 import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.IndentType;
+import io.helidon.codegen.ManifestResource;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,6 +49,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 class AptFiler implements CodegenFiler {
     private final Filer filer;
     private final String indent;
+    private final LazyValue<ManifestResource> manifestResource;
 
     AptFiler(ProcessingEnvironment env, CodegenOptions options) {
         this.filer = env.getFiler();
@@ -55,6 +58,7 @@ class AptFiler implements CodegenFiler {
         int codegenRepeat = CodegenOptions.INDENT_COUNT.value(options);
 
         this.indent = String.valueOf(value.character()).repeat(codegenRepeat);
+        this.manifestResource = LazyValue.create(() -> ManifestResource.create(this));
     }
 
     @Override
@@ -139,6 +143,11 @@ class AptFiler implements CodegenFiler {
         } catch (IOException e) {
             return new FilerResourceImpl(filer, location, toElements(originatingElements));
         }
+    }
+
+    @Override
+    public ManifestResource manifest() {
+        return manifestResource.get();
     }
 
     private Object originatingElement(Element[] elements, Object alternative) {

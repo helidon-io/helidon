@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
 
 /**
  * Helidon Database Client JDBC.
  */
-@Feature(value = "Hikari Connection Pool support for Helidon JDBC Database Client",
-         description = "Hikari connection pool for JDBC DB client",
-         in = HelidonFlavor.SE,
-         path = {"DbClient", "Hikari"}
-)
+@Features.Name("Hikari Connection Pool support for Helidon JDBC Database Client")
+@Features.Description("Hikari connection pool for JDBC DB client")
+@Features.Flavor(HelidonFlavor.SE)
+@Features.Path({"DbClient", "Hikari"})
 module io.helidon.dbclient.hikari {
 
     requires static io.helidon.common.features.api;

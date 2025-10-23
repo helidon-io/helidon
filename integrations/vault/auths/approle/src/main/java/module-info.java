@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * AppRole authentication method for Vault.
  */
-@Feature(value = "AppRole",
-        description = "AppRole Authentication Method",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE},
-        path = {"HCP Vault", "Auth", "AppRole"}
-)
+@Features.Name("AppRole")
+@Features.Description("AppRole Authentication Method")
+@Features.Flavor({HelidonFlavor.MP, HelidonFlavor.SE})
+@Features.Path({"HCP Vault", "Auth", "AppRole"})
 module io.helidon.integrations.vault.auths.approle {
 
     requires io.helidon.http;

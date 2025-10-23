@@ -68,7 +68,7 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     public Optional<JsonRpcError> error() {
         try {
             JsonObject error = asJsonObject().getJsonObject("error");
-            return Optional.of(JsonRpcError.create(error));
+            return Optional.ofNullable(error == null ? null : JsonRpcError.create(error));
         } catch (ClassCastException e) {
             return Optional.empty();
         }

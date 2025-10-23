@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Vault's Key/value version 2 Secrets Engine support.
  */
-@Feature(value = "K/V 2",
-        description = "Key/Value Version 2 Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP},
-        path = {"HCP Vault", "Secrets", "K/V 2"}
-)
+@Features.Name("K/V 2")
+@Features.Description("Key/Value Version 2 Secrets Engine")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"HCP Vault", "Secrets", "K/V 2"})
 module io.helidon.integrations.vault.secrets.kv {
 
     requires io.helidon.http;
