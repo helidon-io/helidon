@@ -72,12 +72,22 @@ public class ConfigUserStore implements SecureUserStore {
         return Optional.ofNullable(users.get(login));
     }
 
+    /**
+     * A user that is loaded from configuration.
+     */
     @Configured
-    static class ConfigUser implements User {
+    public static class ConfigUser implements User {
         private final Set<String> roles = new LinkedHashSet<>();
         private String login;
         private char[] password;
 
+        /**
+         * Create a new user from configuration.
+         * The configuration must be located on the user's node.
+         *
+         * @param config configuration instance
+         * @return a new config user with the configured login, password, and roles
+         */
         @ConfiguredOption(key = "login", type = String.class, description = "User's login")
         @ConfiguredOption(key = "password", type = String.class, description = "User's password")
         @ConfiguredOption(key = "roles",
