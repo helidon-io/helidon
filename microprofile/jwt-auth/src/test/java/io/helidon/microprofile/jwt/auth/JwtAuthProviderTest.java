@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.jwt.auth;
 
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,7 +45,6 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
-import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claims;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -95,23 +93,12 @@ public class JwtAuthProviderTest {
         securityLevels.add(classSecurityLevel);
 
         when(ec.securityLevels()).thenReturn(securityLevels);
-        when(appSecurityLevel.filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS))
-                .thenReturn(List.of(new LoginConfig() {
-                    @Override
-                    public Class<? extends Annotation> annotationType() {
-                        return LoginConfig.class;
-                    }
-
-                    @Override
-                    public String authMethod() {
-                        return JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD;
-                    }
-
-                    @Override
-                    public String realmName() {
-                        return "helidon-realm";
-                    }
-                }));
+        when(appSecurityLevel.filterAnnotations(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG, EndpointConfig.AnnotationScope.CLASS))
+                .thenReturn(List.of(io.helidon.common.types.Annotation.builder()
+                                            .typeName(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG)
+                                            .putValue("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
+                                            .putValue("realmName", "helidon-realm")
+                                            .build()));
 
         when(atnRequest.env()).thenReturn(se);
         when(atnRequest.endpointConfig()).thenReturn(ec);
@@ -449,13 +436,13 @@ public class JwtAuthProviderTest {
         List<SecurityLevel> securityLevels = new ArrayList<>();
         securityLevels.add(appSecurityLevel);
 
-        LoginConfig lc = mock(LoginConfig.class);
-        when(lc.authMethod()).thenReturn(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD);
-        when(lc.realmName()).thenReturn("");
-
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(appSecurityLevel.filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS))
-                .thenReturn(List.of(lc));
+        when(appSecurityLevel.filterAnnotations(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG, EndpointConfig.AnnotationScope.CLASS))
+                .thenReturn(List.of(io.helidon.common.types.Annotation.builder()
+                                            .typeName(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG)
+                                            .putValue("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
+                                            .putValue("realmName", "helidon-realm")
+                                            .build()));
         when(atnRequest.endpointConfig()).thenReturn(ep);
 
         return atnRequest;

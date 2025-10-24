@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.http.Status;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,12 +42,21 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 class MpServicesTest {
     private static Server server;
+    private static int defaultPort;
+    private static int adminPort;
     // I must use an HTTP client that is not integrated with Helidon
 
     @BeforeAll
     static void initClass() {
+        LogConfig.configureRuntime();
+        System.getLogger(MpServicesTest.class.getName())
+                .log(System.Logger.Level.INFO, "Starting up MP Services test");
         // start the program
         server = MpServicesMain.startTheServer();
+        defaultPort = server.port();
+        adminPort = CDI.current().select(ServerCdiExtension.class)
+                .get()
+                .port("admin");
     }
 
     @AfterAll
@@ -56,21 +68,21 @@ class MpServicesTest {
     void testServices() throws Exception {
         assertAll(
                 // by priority, the service1 should be on this endpoint
-                () -> test(9998, "/services", "service1"),
-                () -> test(9998, "/services/service1", "service1"),
-                () -> test(9998, "/services/service2", "service2"),
-                () -> test(9998, "/services/service3", "service3"),
+                () -> test(defaultPort, "/services", "service1"),
+                () -> test(defaultPort, "/services/service1", "service1"),
+                () -> test(defaultPort, "/services/service2", "service2"),
+                () -> test(defaultPort, "/services/service3", "service3"),
                 // by priority, the service2 should be on this endpoint
-                () -> test(9998, "/services/service2", "service2"),
-                () -> test(9999, "/services", "admin"),
-                () -> test(9999, "/services/admin", "admin")
+                () -> test(defaultPort, "/services/service2", "service2"),
+                () -> test(adminPort, "/services", "admin"),
+                () -> test(adminPort, "/services/admin", "admin")
         );
     }
 
     @Test
     void testJaxrs() throws IOException {
         // configured in application.yaml to override both the routing name and the routing path
-        test(9999, "/jaxrs", "jax-rs");
+        test(adminPort, "/jaxrs", "jax-rs");
     }
 
 

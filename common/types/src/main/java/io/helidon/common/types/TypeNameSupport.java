@@ -476,7 +476,18 @@ final class TypeNameSupport {
     private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
-        builder.className(componentType.getSimpleName());
+        String className = componentType.getSimpleName();
+        if (className.isBlank()) {
+            // anonymous inner classes - name must be guessed from the fully qualified class name
+            className = componentType.getName();
+            int lastDollar = className.lastIndexOf('$');
+            if (lastDollar > 0) {
+                className = className.substring(lastDollar + 1);
+            } else {
+                throw new IllegalArgumentException("Anonymous inner classes must have a name: " + className);
+            }
+        }
+        builder.className(className);
         builder.array(classType.isArray());
 
         if (classType.isArray()) {

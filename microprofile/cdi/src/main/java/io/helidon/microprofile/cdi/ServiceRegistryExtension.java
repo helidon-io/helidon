@@ -174,6 +174,10 @@ public class ServiceRegistryExtension implements Extension {
                 // we do not want to re-insert CDI beans into CDI, obviously
                 continue;
             }
+            if (service.contracts().contains(ResolvedType.create("io.helidon.security.Security"))) {
+                // bugfix - we must use `SecurityCdiExtension`, as it has public methods with security builder...
+                continue;
+            }
             addServiceInfo(abd, bm, registry, processedTypes, service);
         }
 

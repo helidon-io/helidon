@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
+import io.helidon.common.types.Annotation;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.Principal;
@@ -41,16 +42,8 @@ public class ScopeValidatorTest {
     @Test
     public void testScopesAndPermit() {
         ScopeValidator validator = ScopeValidator.create();
-        ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_get");
-        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
-        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
-        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
-                annot,
-                annotTwo
-        });
+        Annotation scopes = createScopes("calendar_get", "calendar_update");
 
         SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
         SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
@@ -60,7 +53,7 @@ public class ScopeValidatorTest {
 
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -87,16 +80,8 @@ public class ScopeValidatorTest {
     @Test
     public void testScopesAndDeny() {
         ScopeValidator validator = ScopeValidator.create();
-        ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_get");
-        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
-        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
-        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
-                annot,
-                annotTwo
-        });
+        Annotation scopes = createScopes("calendar_get", "calendar_update");
 
         SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
         SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
@@ -106,7 +91,7 @@ public class ScopeValidatorTest {
 
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -134,16 +119,7 @@ public class ScopeValidatorTest {
                 .useOrOperator(true)
                 .build();
 
-        ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_get");
-        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
-        when(annotTwo.value()).thenReturn("calendar_update");
-
-        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
-        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
-                annot,
-                annotTwo
-        });
+        Annotation scopes = createScopes("calendar_get", "calendar_update");
 
         SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
         SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
@@ -153,7 +129,7 @@ public class ScopeValidatorTest {
 
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -179,16 +155,7 @@ public class ScopeValidatorTest {
                 .useOrOperator(true)
                 .build();
 
-        ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_get");
-        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
-        when(annotTwo.value()).thenReturn("calendar_update");
-
-        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
-        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
-                annot,
-                annotTwo
-        });
+        Annotation scopes = createScopes("calendar_get", "calendar_update");
 
         SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
         SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
@@ -198,7 +165,7 @@ public class ScopeValidatorTest {
 
         EndpointConfig ep = mock(EndpointConfig.class);
         when(ep.securityLevels()).thenReturn(securityLevels);
-        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.TYPE, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(List.of(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -218,5 +185,17 @@ public class ScopeValidatorTest {
         if (collector.collect().isValid()) {
             fail("User does not have any of the required scopes, should have failed");
         }
+    }
+
+    private Annotation createScopes(String... scopes) {
+        List<Annotation> scopeList = new ArrayList<>();
+
+        for (String scope : scopes) {
+            scopeList.add(Annotation.create(ScopeValidator.Scope.TYPE, scope));
+        }
+        return Annotation.builder()
+                .typeName(ScopeValidator.Scopes.TYPE)
+                .putValue("value", scopeList)
+                .build();
     }
 }
