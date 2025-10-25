@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -42,6 +43,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -56,6 +58,7 @@ import static io.helidon.common.types.TypeName.createFromGenericDeclaration;
 @Deprecated(forRemoval = true, since = "4.2.0")
 public final class AptTypeFactory {
     private static final Pattern NESTED_TYPES = Pattern.compile("(?<!\\$)\\$(?!\\$)");
+
     private AptTypeFactory() {
     }
 
@@ -75,13 +78,67 @@ public final class AptTypeFactory {
      * @param typeMirror annotation processing type mirror
      * @return type name
      * @throws IllegalArgumentException when the mirror cannot be resolved into a name (such as when it represents
-     *                                            none or error)
+     *                                  none or error)
      */
     public static Optional<TypeName> createTypeName(TypeMirror typeMirror) {
-        return createTypeName(new HashSet<>(), typeMirror);
+        return createTypeName(null, new HashSet<>(), typeMirror);
     }
 
-    private static Optional<TypeName> createTypeName(Set<TypeMirror> inProgress, TypeMirror typeMirror) {
+    /**
+     * Create type from type mirror. The element is needed to correctly map
+     * type arguments to type parameters.
+     *
+     * @param element the type element of the type mirror
+     * @param mirror  the type mirror as declared in source code
+     * @return type for the provided values
+     */
+    public static Optional<TypeName> createTypeName(TypeElement element, TypeMirror mirror) {
+        Optional<TypeName> result = createTypeName(null, new HashSet<>(), mirror);
+        if (result.isEmpty()) {
+            return result;
+        }
+
+        TypeName mirrorName = result.get();
+        int typeArgumentSize = mirrorName.typeArguments().size();
+
+        List<String> typeParameters = element.getTypeParameters()
+                .stream()
+                .map(TypeParameterElement::toString)
+                .toList();
+        if (typeArgumentSize > typeParameters.size()) {
+            throw new IllegalStateException("Found " + typeArgumentSize + " type arguments, but only " + typeParameters.size()
+                                                    + " type parameters on: " + mirror);
+        }
+        return Optional.of(TypeName.builder(mirrorName)
+                                   .typeParameters(typeParameters)
+                                   .build());
+    }
+
+    /**
+     * Creates a name from an element type during annotation processing.
+     *
+     * @param type the element type
+     * @return the associated type name instance
+     */
+    public static Optional<TypeName> createTypeName(Element type) {
+        return createTypeName(null, new HashSet<>(), type);
+    }
+
+    /**
+     * A replacement for {@link #createTypeName(javax.lang.model.element.Element)}, as we require elements to be able
+     * to process annotations.
+     *
+     * @param elements APT elements
+     * @param type     element to get type name for
+     * @return type name, if available, may include type argument annotations (i.e. {@code List<@NonEmpty String>}}
+     */
+    static Optional<TypeName> createTypeName(Elements elements, Element type) {
+        return createTypeName(elements, new HashSet<>(), type);
+    }
+
+    // we must accept `null` elements, until we hide the methods from public
+    // as otherwise this whole method would have to be duplicated
+    private static Optional<TypeName> createTypeName(Elements elements, Set<TypeMirror> inProgress, TypeMirror typeMirror) {
         TypeKind kind = typeMirror.getKind();
         if (kind.isPrimitive()) {
             Class<?> type = switch (kind) {
@@ -112,8 +169,8 @@ public final class AptTypeFactory {
                 var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
 
                 var typeVar = ((TypeVariable) typeMirror);
-                handleBounds(inProgress, typeVar.getUpperBound(), builder::addUpperBound);
-                handleBounds(inProgress, typeVar.getLowerBound(), builder::addLowerBound);
+                handleBounds(elements, inProgress, typeVar.getUpperBound(), builder::addUpperBound);
+                handleBounds(elements, inProgress, typeVar.getLowerBound(), builder::addLowerBound);
 
                 return Optional.of(builder.build());
             } finally {
@@ -127,8 +184,8 @@ public final class AptTypeFactory {
                     .wildcard(true)
                     .className("?");
 
-            handleBounds(inProgress, vt.getExtendsBound(), builder::addUpperBound);
-            handleBounds(inProgress, vt.getSuperBound(), builder::addLowerBound);
+            handleBounds(elements, inProgress, vt.getExtendsBound(), builder::addUpperBound);
+            handleBounds(elements, inProgress, vt.getSuperBound(), builder::addLowerBound);
 
             return Optional.of(builder.build());
         }
@@ -145,7 +202,7 @@ public final class AptTypeFactory {
         }
 
         if (typeMirror instanceof ArrayType arrayType) {
-            TypeName typeName = createTypeName(inProgress, arrayType.getComponentType()).orElseThrow();
+            TypeName typeName = createTypeName(elements, inProgress, arrayType.getComponentType()).orElseThrow();
             return Optional.of(TypeName.builder(typeName)
                                        .componentType(typeName)
                                        .array(true)
@@ -155,12 +212,27 @@ public final class AptTypeFactory {
         if (typeMirror instanceof DeclaredType declaredType) {
             List<TypeName> typeParams = declaredType.getTypeArguments()
                     .stream()
-                    .map(it -> createTypeName(inProgress, it))
+                    .map(it -> createTypeName(elements, inProgress, it))
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList());
 
-            TypeName result = createTypeName(inProgress, declaredType.asElement()).orElse(null);
-            if (typeParams.isEmpty() || result == null) {
+            TypeName result = createTypeName(elements, inProgress, declaredType.asElement()).orElse(null);
+
+            if (result == null) {
+                return Optional.empty();
+            }
+
+            var annotationMirrors = declaredType.getAnnotationMirrors();
+            if (!annotationMirrors.isEmpty() && elements != null) {
+                // we cannot do this if elements is null
+                var newResultBuilder = TypeName.builder(result);
+                for (AnnotationMirror annotationMirror : annotationMirrors) {
+                    newResultBuilder.addAnnotation(AptAnnotationFactory.createAnnotation(annotationMirror, elements));
+                }
+                result = newResultBuilder.build();
+            }
+
+            if (typeParams.isEmpty()) {
                 return Optional.ofNullable(result);
             }
 
@@ -173,7 +245,10 @@ public final class AptTypeFactory {
         throw new IllegalStateException("Unknown type mirror: " + typeMirror);
     }
 
-    private static void handleBounds(Set<TypeMirror> processed, TypeMirror boundMirror, Consumer<TypeName> boundHandler) {
+    private static void handleBounds(Elements elements,
+                                     Set<TypeMirror> processed,
+                                     TypeMirror boundMirror,
+                                     Consumer<TypeName> boundHandler) {
         if (boundMirror == null) {
             return;
         }
@@ -183,71 +258,31 @@ public final class AptTypeFactory {
                 it.getBounds()
                         .stream()
                         .filter(Predicate.not(processed::equals))
-                        .map(typeMirror -> createTypeName(processed, typeMirror))
+                        .map(typeMirror -> createTypeName(elements, processed, typeMirror))
                         .flatMap(Optional::stream)
                         .filter(Predicate.not(TypeNames.OBJECT::equals))
                         .forEach(boundHandler);
 
             } else {
-                createTypeName(processed, boundMirror)
+                createTypeName(elements, processed, boundMirror)
                         .filter(Predicate.not(TypeNames.OBJECT::equals))
                         .ifPresent(boundHandler);
             }
         }
     }
 
-    /**
-     * Create type from type mirror. The element is needed to correctly map
-     * type arguments to type parameters.
-     *
-     * @param element the type element of the type mirror
-     * @param mirror the type mirror as declared in source code
-     * @return type for the provided values
-     */
-    public static Optional<TypeName> createTypeName(TypeElement element, TypeMirror mirror) {
-        Optional<TypeName> result = createTypeName(new HashSet<>(), mirror);
-        if (result.isEmpty()) {
-            return result;
-        }
-
-        TypeName mirrorName = result.get();
-        int typeArgumentSize = mirrorName.typeArguments().size();
-
-        List<String> typeParameters = element.getTypeParameters()
-                .stream()
-                .map(TypeParameterElement::toString)
-                .toList();
-        if (typeArgumentSize > typeParameters.size()) {
-            throw new IllegalStateException("Found " + typeArgumentSize + " type arguments, but only " + typeParameters.size()
-                                                    + " type parameters on: " + mirror);
-        }
-        return Optional.of(TypeName.builder(mirrorName)
-                                   .typeParameters(typeParameters)
-                                   .build());
-    }
-
-    /**
-     * Creates a name from an element type during annotation processing.
-     *
-     * @param type the element type
-     * @return the associated type name instance
-     */
-    public static Optional<TypeName> createTypeName(Element type) {
-        return createTypeName(new HashSet<>(), type);
-    }
-
-    private static Optional<TypeName> createTypeName(Set<TypeMirror> processed, Element type) {
+    private static Optional<TypeName> createTypeName(Elements elements, Set<TypeMirror> processed, Element type) {
         if (type instanceof VariableElement) {
-            return createTypeName(processed, type.asType());
+            return createTypeName(elements, processed, type.asType());
         }
 
         if (type instanceof ExecutableElement ee) {
-            return createTypeName(processed, ee.getReturnType());
+            return createTypeName(elements, processed, ee.getReturnType());
         }
 
         if (type.getKind() == ElementKind.TYPE_PARAMETER) {
             TypeMirror mirror = type.asType();
-            return createTypeName(processed, mirror);
+            return createTypeName(elements, processed, mirror);
         }
 
         List<String> classNames = new ArrayList<>();

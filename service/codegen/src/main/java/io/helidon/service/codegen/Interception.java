@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,11 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_INTERCEPTED;
 
@@ -44,6 +47,8 @@ final class Interception {
     /**
      * Find all elements that may be intercepted.
      * This method also returns fields (as injection into fields can be intercepted).
+     * An executable element may be intercepted if one of its parameters or return type may be intercepted,
+     * in addition to annotations directly on the element.
      *
      * @param typeInfo type being processed
      * @return all elements that may be intercepted (constructors, fields, methods)
@@ -154,9 +159,55 @@ final class Interception {
     }
 
     private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
+        if (hasDirectInterceptTriggerAnnotation(typeInfo, element)) {
+            return true;
+        }
+
+        if (element instanceof TypedElementInfo tei) {
+            if (tei.kind() == ElementKind.METHOD || tei.kind() == ElementKind.CONSTRUCTOR || tei.kind() == ElementKind.FIELD) {
+                // got through parameters and return types, and through a type for field
+                return hasInterceptTriggerOnParams(typeInfo, tei);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasInterceptTriggerOnParams(TypeInfo typeInfo, TypedElementInfo tei) {
+        // we currently cannot retrieve annotations on generics, i.e. List<@NotBlank String>
+        if (hasInterceptTriggerOnTypeArguments(typeInfo, tei.typeName())) {
+            return true;
+        }
+
+        // so for now, just support direct annotations on parameters
+        for (TypedElementInfo parameter : tei.parameterArguments()) {
+            if (hasInterceptTrigger(typeInfo, parameter)) {
+                return true;
+            }
+            if (hasInterceptTriggerOnTypeArguments(typeInfo, parameter.typeName())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasInterceptTriggerOnTypeArguments(TypeInfo typeInfo, TypeName typeName) {
+        if (hasDirectInterceptTriggerAnnotation(typeInfo, typeName)) {
+            return true;
+        }
+        for (TypeName typeArgument : typeName.typeArguments()) {
+            if (hasInterceptTriggerOnTypeArguments(typeInfo, typeArgument)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasDirectInterceptTriggerAnnotation(TypeInfo typeInfo, Annotated element) {
         for (Annotation annotation : element.annotations()) {
             if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), INTERCEPTION_INTERCEPTED)) {
+                if (annotation.hasMetaAnnotation(INTERCEPTION_INTERCEPTED)) {
                     return true;
                 }
             }
@@ -177,6 +228,7 @@ final class Interception {
                 }
             }
         }
+
         return false;
     }
 }
