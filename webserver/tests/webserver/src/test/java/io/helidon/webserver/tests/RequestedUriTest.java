@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,5 +74,17 @@ class RequestedUriTest {
                 () -> assertThat(response.entity(), is("http://[::1]:" + port + "/uri")),
                 () -> assertThat(response.status(), is(Status.OK_200))
         );
+    }
+
+    @Test
+    void schemeCaseTest() {
+        int port = webServer.port();
+        WebClient client = WebClient.builder()
+                .baseUri("hTTp://localhost:" + port)
+                .build();
+        ClientResponseTyped<String> response = client.get()
+                .path("/uri")
+                .request(String.class);
+        assertThat(response.status(), is(Status.OK_200));
     }
 }

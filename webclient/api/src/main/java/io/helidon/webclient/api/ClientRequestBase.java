@@ -475,7 +475,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private R validateAndSubmit(Object entity) {
-        if (!SUPPORTED_SCHEMES.contains(uri().scheme())) {
+        String scheme = uri().scheme();
+        if (scheme == null || !SUPPORTED_SCHEMES.contains(scheme.toLowerCase())) {
             throw new IllegalArgumentException(
                     String.format("Not supported scheme %s, client supported schemes are: %s",
                                   uri().scheme(),
