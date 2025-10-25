@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.tests.integration.packaging.mp2;
 import java.time.Duration;
 import java.util.Map;
 
+import io.helidon.tests.integration.harness.ProcessMonitor;
 import io.helidon.tests.integration.harness.ProcessRunner;
 import io.helidon.tests.integration.harness.ProcessRunner.ExecMode;
-import io.helidon.tests.integration.harness.ProcessMonitor;
 import io.helidon.tests.integration.harness.WaitStrategy;
 
 import org.testcontainers.containers.GenericContainer;
@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.is;
 @Testcontainers(disabledWithoutDocker = true)
 abstract class Mp2PackagingTestIT {
 
-    private static final DockerImageName image = DockerImageName.parse("container-registry.oracle.com/database/express");
+    private static final DockerImageName image = DockerImageName.parse("container-registry.oracle.com/database/free:latest-lite");
 
     @Container
     static final GenericContainer<?> CONTAINER = new GenericContainer<>(image)

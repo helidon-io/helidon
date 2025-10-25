@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class OraDbSuite implements SuiteProvider {
     private static final System.Logger LOGGER = System.getLogger(OraDbSuite.class.getName());
     private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/express");
+            "container-registry.oracle.com/database/free:latest-lite");
 
     private final TestContainerHandler containerHandler;
 
@@ -55,9 +55,9 @@ public class OraDbSuite implements SuiteProvider {
                 .ifPresent(password -> container.withEnv("ORACLE_PWD", password));
 
         container.withExposedPorts(this.containerHandler.originalPort())
-                        .waitingFor(Wait.forHealthcheck()
-                                            .withStartupTimeout(Duration.ofMinutes(5)));
-            }
+                .waitingFor(Wait.forHealthcheck()
+                                    .withStartupTimeout(Duration.ofMinutes(5)));
+    }
 
     @TestSuite.BeforeSuite
     public void beforeSuite() {
