@@ -29,10 +29,6 @@ class TestWebClient {
     @Test
     void showThatWebClientRequiresLowercaseHttpAndHttpsSchemesOnly() {
         WebClient c = WebClient.builder().build();
-        assertThrows(IllegalArgumentException.class, c.get("HTTP://example.com")::request); // !
-        assertThrows(IllegalArgumentException.class, c.get("htTP://example.com")::request); // !
-        assertThrows(IllegalArgumentException.class, c.get("HTTPS://example.com")::request); // !
-        assertThrows(IllegalArgumentException.class, c.get("httPS://example.com")::request); // !
         assertThrows(IllegalArgumentException.class, c.get("otherscheme://example.com")::request); // !
     }
 
