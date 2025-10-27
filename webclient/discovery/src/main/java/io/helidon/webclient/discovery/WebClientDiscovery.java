@@ -36,6 +36,15 @@ import io.helidon.webclient.spi.WebClientService;
  * of {@link WebClientDiscovery} instances returned from invocations of the {@link #create(WebClientDiscoveryConfig)}
  * method.</p>
  *
+ * <h2>Logging</h2>
+ *
+ * <p>Implementations returned by invocations of the {@link #create(WebClientDiscoveryConfig)} method, and any of their
+ * internal supporting classes, will use {@link java.lang.System.Logger Logger}s {@linkplain
+ * java.lang.System#getLogger(String) whose names begin with} {@code io.helidon.webclient.discovery.}.</p>
+ *
+ * <p>Logging output is particularly important to monitor because as a general rule {@linkplain
+ * io.helidon.discovery.Discovery discovery} integrations must strive to be resilient in the presence of failures.</p>
+ *
  * @see #handle(Chain, WebClientServiceRequest)
  * @see #builder()
  * @see WebClientDiscoveryConfig#builder()
