@@ -29,11 +29,14 @@ module io.helidon.security.abac.role {
     requires io.helidon.security.providers.abac;
     requires jakarta.annotation;
 
+    // only for annotations
     requires static io.helidon.common.features.api;
+    requires static io.helidon.service.registry;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security;
+    requires io.helidon.metadata.reflection;
 
     exports io.helidon.security.abac.role;
 
