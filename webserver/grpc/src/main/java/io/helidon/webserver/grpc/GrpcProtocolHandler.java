@@ -109,6 +109,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
+    private BufferData reusableBufferData = BufferData.create(32 * 1024);
+    private long entityBytesLeft;
     private Compressor compressor;
     private Decompressor decompressor;
     private boolean identityCompressor;
@@ -185,24 +187,33 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void windowUpdate(Http2WindowUpdate update) {
     }
 
+    /**
+     * Data received from HTTP/2 layer. Data may contain a partial gRPC request
+     * or more than one request, making logic a bit more difficult.
+     *
+     * @param header frame header
+     * @param data   frame data
+     */
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
         try {
             boolean isCompressed = false;
 
             while (data.available() > 0) {
-                // start of new chunk?
+                // start of new request?
                 if (entityBytes == null) {
                     isCompressed = (data.read() == 1);
-                    long length = data.readUnsignedInt32();
-                    entityBytes = BufferData.create((int) length);
+                    entityBytesLeft = data.readUnsignedInt32();
+                    entityBytes = allocateBuffer((int) entityBytesLeft);
                 }
 
-                // append data to current chunk
-                entityBytes.write(data);
+                // append data to current entity
+                int writableNow = (int) Math.min(entityBytesLeft, data.available());
+                entityBytes.write(data, writableNow);
+                entityBytesLeft -= writableNow;
 
-                // is chunk complete?
-                if (entityBytes.capacity() == 0) {
+                // is the entity complete?
+                if (entityBytesLeft == 0) {
                     // fail if compressed and no decompressor
                     if (isCompressed && decompressor == null) {
                         throw new IllegalStateException("Unable to codec for compressed data");
@@ -214,7 +225,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
                     listenerQueue.add(request);
                     flushQueue();
+
+                    // reset entity state
                     entityBytes = null;
+                    entityBytesLeft = 0L;
                 }
             }
 
@@ -232,6 +246,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             listener.onCancel();
             LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
         }
+    }
+
+    BufferData allocateBuffer(int length) {
+        reusableBufferData.reset();
+        int capacity = reusableBufferData.capacity();
+        if (length > capacity) {
+            reusableBufferData = BufferData.create(Math.max(2 * capacity, length));
+        }
+        return reusableBufferData;
     }
 
     void initCompression(ServerCall<REQ, RES> serverCall, Headers httpHeaders) {
