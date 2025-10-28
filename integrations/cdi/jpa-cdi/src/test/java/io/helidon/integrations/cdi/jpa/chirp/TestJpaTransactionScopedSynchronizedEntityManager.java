@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -292,9 +292,9 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         assertThat(transactionScopedContext.isActive(), is(true));
 
         // Remove the Author we successfully committed before.  We
-        // have to merge because author1 became detached a few lines
-        // above.
-        author1 = em.merge(author1);
+        // have to find because author1 became detached a few lines
+        // above and it is not allowed to attach it again with merge.
+        author1 = em.find(Author.class, Integer.valueOf(1));
         assertThat(author1, notNullValue());
         assertThat(em.contains(author1), is(true));
         em.remove(author1);
@@ -313,13 +313,15 @@ class TestJpaTransactionScopedSynchronizedEntityManager {
         // tables.
         assertTableRowCount(dataSource, "AUTHOR", 0);
 
-        // Start a new transaction, merge our detached author1, and
+        // Start a new transaction, persist our detached author1, and
         // commit.  This will bump the author's ID and put a row in
         // the database.
         tm.begin();
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(transactionScopedContext.isActive(), is(true));
-        author1 = em.merge(author1);
+        author1 = new Author("Abraham Lincoln");
+        em.persist(author1);
+        em.merge(author1);
         tm.commit();
         assertThat(em.isJoinedToTransaction(), is(false));
         assertThat(em.contains(author1), is(false));
