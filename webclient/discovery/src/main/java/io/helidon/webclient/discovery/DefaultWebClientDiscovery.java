@@ -109,6 +109,9 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
             }
             return chain.proceed(request);
         }
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "DiscoveryRequest: " + discoveryRequest);
+        }
 
         URI discoveredUri = this.prototype()
             .discovery()
@@ -313,6 +316,9 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
                     }
                     continue;
                 }
+                if (LOGGER.isLoggable(DEBUG)) {
+                    LOGGER.log(DEBUG, "Testing " + uriInfoUri + " to see if it is prefixed with " + prefixUri);
+                }
                 // Relativize the URI in flight against the prefix URI, using the well-defined semantics of
                 // URI#relativize(String), yielding, if there is a match, in most cases, just a simple path.
                 URI diff = prefixUri.relativize(uriInfoUri);
@@ -320,6 +326,9 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
                     // Relativization "failed"; see
                     // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html#relativize(java.net.URI). No
                     // problem; we just didn't match this particular prefix. Carry on to the next one.
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG, "Ignoring " + prefixUri + " because it does not prefix " + uriInfoUri);
+                    }
                     continue;
                 }
                 // We matched a prefix and now have the raw materials to query Discovery. Return early.

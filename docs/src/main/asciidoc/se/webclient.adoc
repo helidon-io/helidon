@@ -412,7 +412,7 @@ xref:discovery.adoc#_web_client_discovery_integration[`discovery`], `metrics`, `
 
 ==== Enabling the service
 
-In order for a service to function, their dependency needs to be added in the application's `pom.xml`. Below are examples on how to enable the built-in services:
+In order for a service to function, its dependencies need to be added in the application's `pom.xml`. Below are examples on how to enable the built-in services:
 
 * `discovery` (see xref:discovery.adoc#_web_client_discovery_integration[its documentation])
 +
