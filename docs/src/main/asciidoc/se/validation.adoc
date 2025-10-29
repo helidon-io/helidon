@@ -1,0 +1,157 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Validation
+:description: Helidon SE Validation
+:feature-name: Validation
+:keywords: helidon, validation
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+
+== Overview
+
+Validation checks values against constraints.
+
+There are two ways to use validation features in Helidon SE:
+
+1. Have a `@Validation.Validated` annotated type and use a `TypeValidator` service to validate it
+2. Invoke the constraint checks directly using `Validators` static methods
+
+The feature fit with our xref:{rootdir}/se/injection/declarative.adoc#Dec-Validation[Helidon Declarative], which is a preview feature.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.validation</groupId>
+        <artifactId>helidon-validation</artifactId>    <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webserver</groupId>
+        <artifactId>helidon-webserver-validation</artifactId> <!--2-->
+    </dependency>
+</dependencies>
+----
+<1> Helidon validation dependency.
+<2> WebServer integration with validation, to provide correct HTTP status on validation failures
+
+== Usage
+
+=== Validated type
+
+A type annotated with `@Validation.Validated` will have validation code generated.
+
+[source,java]
+.Example of a validated type
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_1, indent=0]
+----
+
+Such code can then be validated using a service `TypeValidation`:
+
+[source,java]
+.Example of validating a type
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_2, indent=0]
+----
+
+Or using the check method(s) that throw a `ValidationException`:
+
+[source,java]
+.Example of validating a type that throws an exception
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_3, indent=0]
+----
+
+The following annotation processing setup must be done to generate the code:
+
+[source,xml]
+----
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+</plugins>
+----
+
+=== Validate Object
+
+An object can be validated using one of the built-in constraints through methods on
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validators.html[`io.helidon.validation.Validators`]
+
+[source,java]
+.Example of validating an object using a built-in constraint
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_4, indent=0]
+----
+
+[source,java]
+.Example of validating an object using a built-in constraint that throws an exception
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_5, indent=0]
+----
+
+The low-level approach allows use of any constraint (including custom constraints) through programmatic API.
+Note that an instance of the validator can be cached as long as it is used for the same type and constraint configuration.
+
+The first approach gives as a validation response:
+
+[source,java]
+.Example of validating an object using any constraint
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_6, indent=0]
+----
+<1> Get the constraint validation provider from the registry, named by the annotation it handles
+<2> Create a new validation context (can be used to validate multiple constraints)
+<3> Create a new validator for a specific type and annotation
+<4> Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
+<5> Get a validation response from the context
+
+
+And the second throws an exception if validation failed:
+
+[source,java]
+.Example of validating an object using any constraint that throws an exception
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_7, indent=0]
+----
+<1> Get the constraint validation provider from the registry, named by the annotation it handles
+<2> Create a new validation context (can be used to validate multiple constraints)
+<3> Create a new validator for a specific type and annotation
+<4> Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
+<5> Throw and exception in case any of the checks failed

@@ -60,6 +60,16 @@
                         <include>tests/integration/jpa/**</include>
                     </includes>
                 </moduleSet>
+                <moduleSet name="data-oracle">
+                    <includes>
+                        <include>data/tests/**/ucp/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="data">
+                    <includes>
+                        <include>data/tests/**</include>
+                    </includes>
+                </moduleSet>
                 <moduleSet name="dbclient-oracle">
                     <includes>
                         <include>tests/integration/dbclient/oracle/**</include>

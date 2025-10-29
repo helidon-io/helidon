@@ -228,6 +228,13 @@ public final class ErrorHandlers {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "Exception not handled.", e);
                 unhandledError(ctx, request, response, e);
             }
+        } catch (HttpException ex) {
+            if (ex.getClass().equals(e.getClass())) {
+                ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
+                unhandledError(ctx, request, response, e);
+            } else {
+                throw ex;
+            }
         } catch (Exception ex) {
             ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
             unhandledError(ctx, request, response, e);

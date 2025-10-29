@@ -166,7 +166,7 @@ class SchedulingExtension implements RegistryCodegenExtension {
         postConstruct.addContentLine("var taskManager = taskManagerSupplier.get();")
                 .addContentLine("var config = configSupplier.get();")
                 .addContentLine("var service = serviceSupplier.get();")
-                .addContentLine("");
+                .addContentLine();
 
         for (int i = 0; i < schedules.size(); i++) {
             Scheduled scheduled = schedules.get(i);

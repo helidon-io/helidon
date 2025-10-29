@@ -367,7 +367,7 @@ final class HttpRoutingImpl implements HttpRouting {
 
         @Override
         public <T extends Throwable> Builder error(Class<T> exceptionClass, ErrorHandler<? super T> handler) {
-            errorHandlers.put(exceptionClass, handler);
+            errorHandlers.putIfAbsent(exceptionClass, handler);
             return this;
         }
 

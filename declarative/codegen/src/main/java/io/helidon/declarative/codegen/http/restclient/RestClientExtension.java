@@ -547,7 +547,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                         .name("registryClient")
                         .update(it -> registryClientParameter(it, endpoint)))
                 .addContentLine("this.errorHandling = errorHandling;")
-                .addContentLine("")
+                .addContentLine()
                 .addContent("this.client = registryClient.get().orElseGet(")
                 .addContent(WEB_CLIENT)
                 .addContentLine("::create);")

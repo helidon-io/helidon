@@ -218,7 +218,7 @@ final class RetryHandler extends FtHandler {
         builder.addContentLine(".build();")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
-        builder.addContentLine("");
+        builder.addContentLine();
 
         /*
         Now build the retry itself

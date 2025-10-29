@@ -273,10 +273,26 @@ public final class ServiceCodegenTypes {
             TypeName.create("io.helidon.service.registry.GeneratedService.EventObserverRegistration");
 
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.InterceptionContext}.
+     */
+    public static final TypeName INTERCEPTION_CONTEXT =
+            TypeName.create("io.helidon.service.registry.InterceptionContext");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Interceptor.Chain}.
+     */
+    public static final TypeName INTERCEPTION_CHAIN =
+            TypeName.create("io.helidon.service.registry.Interception.Interceptor.Chain");
+
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Intercepted}.
      */
     public static final TypeName INTERCEPTION_INTERCEPTED =
             TypeName.create("io.helidon.service.registry.Interception.Intercepted");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.ElementInterceptor}.
+     */
+    public static final TypeName INTERCEPTION_ELEMENT_INTERCEPTOR =
+            TypeName.create("io.helidon.service.registry.Interception.ElementInterceptor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Delegate}.
      */

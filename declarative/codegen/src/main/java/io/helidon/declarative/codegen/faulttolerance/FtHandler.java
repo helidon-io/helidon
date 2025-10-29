@@ -159,7 +159,7 @@ abstract class FtHandler {
             field.addContent(")");
             return;
         }
-        field.addContentLine("");
+        field.addContentLine();
         field.increaseContentPadding()
                 .increaseContentPadding()
                 .update(it -> {
@@ -170,7 +170,7 @@ abstract class FtHandler {
                         if (iterator.hasNext()) {
                             it.addContent(",");
                         }
-                        it.addContentLine("");
+                        it.addContentLine();
                     }
                 })
                 .decreaseContentPadding()

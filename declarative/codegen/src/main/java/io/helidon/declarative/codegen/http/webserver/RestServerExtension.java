@@ -163,7 +163,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .addContent("var annotations = ")
                 .addContent(descriptorType)
                 .addContentLine(".ANNOTATIONS;")
-                .addContentLine("");
+                .addContentLine();
 
         for (RestMethod method : methods) {
             String uniqueName = method.uniqueName();
@@ -467,7 +467,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                restMethod,
                                parameter,
                                methodIndex);
-            method.addContentLine("");
+            method.addContentLine();
         }
 
         boolean hasResponse = false;
@@ -493,7 +493,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContentLine(");");
         } else {
             // more than one parameter, multiline
-            method.addContentLine("")
+            method.addContentLine()
                     .increaseContentPadding()
                     .increaseContentPadding();
             Iterator<RestMethodParameter> iterator = params.iterator();
