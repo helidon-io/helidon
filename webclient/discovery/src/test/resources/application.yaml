@@ -14,18 +14,18 @@
 # limitations under the License.
 #
 
-TestWebClientConfig-testPropertiesFromConfig:
+WebClientConfigTest-testPropertiesFromConfig:
   base-uri: http://prod.example.com/foo
   properties:
     helidon-discovery-TEST-prefix-uri: http://test.example.com/
     helidon-discovery-PROD-prefix-uri: http://prod.example.com/
 
-TestDiscoveryRequest-testCustomDiscoveryNames:
+DiscoveryRequestTest-testCustomDiscoveryNames:
   base-uri: http://prod.example.com/foo # ClientUri internals will add ":80" to the authority!
   properties:
     helidon-discovery-ids: prod, test
     helidon-discovery-prod-name: PROD # optional; prod by default
-    helidon-discovery-prod-prefix-uri: ${TestDiscoveryRequest-testCustomDiscoveryNames.base-uri}
+    helidon-discovery-prod-prefix-uri: ${DiscoveryRequestTest-testCustomDiscoveryNames.base-uri}
     helidon-discovery-test-name: TEST
     helidon-discovery-test-prefix-uri: http://test.example.com/foo
 
