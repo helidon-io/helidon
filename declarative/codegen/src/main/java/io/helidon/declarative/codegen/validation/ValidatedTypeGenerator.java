@@ -64,7 +64,7 @@ class ValidatedTypeGenerator {
         this.constraintAnnotations = constraintAnnotations;
     }
 
-    public void process(TypeInfo typeInfo) {
+    void process(TypeInfo typeInfo) {
         // a type to be validated, may contain properties that either have constraints, or are @Valid
 
         TypeName triggerType = typeInfo.typeName();
@@ -100,7 +100,7 @@ class ValidatedTypeGenerator {
                         .type(VALIDATION_CONTEXT))
                 .addParameter(instance -> instance.name("validation__instance")
                         .type(triggerType))
-                .addContentLine("");
+                .addContentLine();
 
         // now we can add all the fields necessary to validate this type, within the type scope
         checkMethod.addContent("try (var validation__typeScope = validation__ctx.scope(")

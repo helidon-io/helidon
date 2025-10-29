@@ -64,7 +64,7 @@ class InterceptorGenerator {
         this.constraintAnnotations = constraintAnnotations;
     }
 
-    public void process(TypeInfo type) {
+    void process(TypeInfo type) {
         // a type that has methods with constraints
         // if the type is not a service, fail, unless annotated with @Validated
         // so what can be intercepted:
@@ -252,11 +252,11 @@ class InterceptorGenerator {
             proceedMethod.addContentLine("}");
         }
 
-        proceedMethod.addContentLine("")
+        proceedMethod.addContentLine()
                 .addContentLine("validation__ctx.throwOnFailure();")
-                .addContentLine("")
+                .addContentLine()
                 .addContentLine("var interception__res = interception__chain.proceed(interception__args);")
-                .addContentLine("");
+                .addContentLine();
 
         if (element.kind() == ElementKind.METHOD) {
             // re-enter method
@@ -278,13 +278,13 @@ class InterceptorGenerator {
         }
 
         proceedMethod.addContentLine("validation__ctx.throwOnFailure();")
-                .addContentLine("")
+                .addContentLine()
                 .addContentLine("return interception__res;");
         // leave type on response
         proceedMethod.addContentLine("}");
 
         classModel.addConstructor(constructor);
-        classModel.addMethod(proceedMethod.addContentLine(""));
+        classModel.addMethod(proceedMethod.addContentLine());
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
     }
 

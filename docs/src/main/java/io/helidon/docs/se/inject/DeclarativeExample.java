@@ -116,7 +116,7 @@ public class DeclarativeExample {
     @Service.Singleton
     static class CacheService {
         @Scheduling.FixedRate("PT5S")
-        void ValidationCache()  {
+        void checkCache()  {
             // do something every 5 seconds
         }
     }

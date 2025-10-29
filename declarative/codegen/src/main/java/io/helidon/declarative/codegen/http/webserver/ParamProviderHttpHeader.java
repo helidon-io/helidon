@@ -102,7 +102,7 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
             }
         } else {
             // add .orElseThrow() in case the header is missing
-            contentBuilder.addContentLine("")
+            contentBuilder.addContentLine()
                     .addContent(".orElseThrow(() -> new ")
                     .addContent(BAD_REQUEST_EXCEPTION)
                     .addContent("(\"Header \" + ")
