@@ -1183,6 +1183,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
