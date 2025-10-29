@@ -240,14 +240,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                     // read and possibly decompress data
                     bytesReceived += entityBytes.available();
-                    InputStream is = entityBytes.asInputStream();
+                    InputStream is = new BufferDataInputStream(entityBytes);
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
                     listenerQueue.add(request);
                     flushQueue();
 
-                    // reset entity state
+                    // reset entityBytes
                     entityBytes = null;
-                    entityBytesLeft = 0L;
                 }
             }
 
@@ -534,5 +533,38 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });
+    }
+
+    /**
+     * An input stream that can return its length. gRPC parsers can use this extra
+     * knowledge for optimizations. It can also copy a byte array directly on a
+     * single read.
+     */
+    static class BufferDataInputStream extends InputStream implements KnownLength {
+        private final BufferData bufferData;
+
+        BufferDataInputStream(BufferData bufferData) {
+            this.bufferData = bufferData;
+        }
+
+        @Override
+        public int read() {
+            return bufferData.read();
+        }
+
+        @Override
+        public int read(byte[] b) {
+            return bufferData.read(b);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            return bufferData.read(b, off, len);
+        }
+
+        @Override
+        public int available() {
+            return bufferData.available();
+        }
     }
 }
