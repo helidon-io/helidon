@@ -98,6 +98,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
+    private static final int GRPC_HEADER_SIZE = 5;
+    private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
+
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -109,7 +112,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
-    private BufferData reusableBufferData = BufferData.create(32 * 1024);
+    private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
+    private BufferData unreadBufferData;
     private long entityBytesLeft;
     private Compressor compressor;
     private Decompressor decompressor;
@@ -199,17 +203,32 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         try {
             boolean isCompressed = false;
 
-            while (data.available() > 0) {
+            // check for any unread data received before
+            BufferData newData;
+            if (unreadBufferData != null) {
+                newData = BufferData.create(unreadBufferData, data);
+                unreadBufferData = null;
+            } else {
+                newData = data;
+            }
+
+            // process 0 or more requests from data
+            while (newData.available() > 0) {
                 // start of new request?
                 if (entityBytes == null) {
-                    isCompressed = (data.read() == 1);
-                    entityBytesLeft = data.readUnsignedInt32();
-                    entityBytes = allocateBuffer((int) entityBytesLeft);
+                    if (newData.available() >= GRPC_HEADER_SIZE) {
+                        isCompressed = (newData.read() == 1);
+                        entityBytesLeft = newData.readUnsignedInt32();
+                        entityBytes = allocateReadBuffer((int) entityBytesLeft);
+                    } else {
+                        unreadBufferData = newData;
+                        return;     // need more for gRPC header
+                    }
                 }
 
                 // append data to current entity
-                int writableNow = (int) Math.min(entityBytesLeft, data.available());
-                entityBytes.write(data, writableNow);
+                int writableNow = (int) Math.min(entityBytesLeft, newData.available());
+                entityBytes.write(newData, writableNow);
                 entityBytesLeft -= writableNow;
 
                 // is the entity complete?
@@ -248,13 +267,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         }
     }
 
-    BufferData allocateBuffer(int length) {
-        reusableBufferData.reset();
-        int capacity = reusableBufferData.capacity();
+    BufferData allocateReadBuffer(int length) {
+        readBufferData.reset();
+        int capacity = readBufferData.capacity();
         if (length > capacity) {
-            reusableBufferData = BufferData.create(Math.max(2 * capacity, length));
+            readBufferData = BufferData.create(Math.max(2 * capacity, length));
         }
-        return reusableBufferData;
+        return readBufferData;
     }
 
     void initCompression(ServerCall<REQ, RES> serverCall, Headers httpHeaders) {
@@ -339,10 +358,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private ServerCall<REQ, RES> createServerCall() {
-        return new ServerCall<>() {
+        return new ServerCall<REQ, RES>() {
 
             private long bytesSent;
             private boolean headersSent;
+            private final BufferData headerBufferData = BufferData.create(GRPC_HEADER_SIZE);
+            private final BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
 
             @Override
             public void request(int numMessages) {
@@ -383,16 +404,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         // avoid buffer copy if length is known
                         if (inputStream instanceof KnownLength knownLength) {
                             int bytesLength = knownLength.available();
-                            bufferData = BufferData.create(5 + bytesLength);
+                            bufferData = writeBufferData.reset();
                             bufferData.write(0);        // off for identity compressor
                             bufferData.writeUnsignedInt32(bytesLength);
                             bufferData.readFrom(inputStream);
                         } else {
-                            byte[] bytes = inputStream.readAllBytes();
-                            bufferData = BufferData.create(5 + bytes.length);
-                            bufferData.write(0);        // off for identity compressor
-                            bufferData.writeUnsignedInt32(bytes.length);
-                            bufferData.write(bytes);
+                            BufferData entity = writeBufferData.reset();
+                            entity.readFrom(inputStream);
+                            BufferData prefix = headerBufferData.reset();
+                            prefix.write(0);            // off for identity compressor
+                            prefix.writeUnsignedInt32(entity.capacity());
+                            bufferData = BufferData.create(prefix, entity);
                         }
                     } else {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -400,7 +422,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                             inputStream.transferTo(os);
                         }
                         byte[] bytes = baos.toByteArray();
-                        bufferData = BufferData.create(5 + bytes.length);
+                        bufferData = writeBufferData.reset();
                         bufferData.write(1);
                         bufferData.writeUnsignedInt32(bytes.length);
                         bufferData.write(bytes);
