@@ -25,9 +25,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
-class TestURI {
+class URITest {
 
-    private TestURI() {
+    private URITest() {
         super();
     }
 

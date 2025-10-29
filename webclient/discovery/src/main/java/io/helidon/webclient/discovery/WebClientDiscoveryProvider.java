@@ -55,10 +55,10 @@ public final class WebClientDiscoveryProvider implements WebClientServiceProvide
      * java.net.URI) discover} URIs.
      *
      * @param config a {@link Config}
-     * @param name a service name; normally {@code discovery}; ignored
+     * @param name a service name; normally {@code discovery}
      * @return a new, non-{@code null} {@link WebClientDiscovery} implementation enabling discovery for its affiliated
      * {@link io.helidon.webclient.api.WebClient} instance
-     * @exception NullPointerException if {@code config} is {@code null}
+     * @exception NullPointerException if {@code config} or {@code name} is {@code null}
      * @see WebClientDiscovery#handle(io.helidon.webclient.spi.WebClientService.Chain,
      * io.helidon.webclient.api.WebClientServiceRequest)
      * @see WebClientDiscoveryConfig#builder()
@@ -68,6 +68,7 @@ public final class WebClientDiscoveryProvider implements WebClientServiceProvide
     public WebClientDiscovery create(Config config, String name) {
         return WebClientDiscoveryConfig.builder()
             .config(config)
+            .name(name) // after config(config) so that the name argument is always honored
             .build();
     }
 

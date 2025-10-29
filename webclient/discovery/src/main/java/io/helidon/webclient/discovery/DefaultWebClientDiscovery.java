@@ -98,8 +98,7 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         ClientUri clientUri = request.uri();
         if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "Initial ClientUri: " + clientUri);
-            LOGGER.log(DEBUG, "Properties: " + request.properties());
+            LOGGER.log(DEBUG, "Initial ClientUri: " + clientUri + "; properties: " + request.properties());
         }
 
         DiscoveryRequest discoveryRequest = DiscoveryRequest.of(request.properties(), request.uri()).orElse(null);

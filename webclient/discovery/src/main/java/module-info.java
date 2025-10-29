@@ -22,20 +22,8 @@
  */
 module io.helidon.webclient.discovery {
 
-    requires io.helidon.webclient.api;
-
-    requires io.helidon.builder.api;
-
-    requires io.helidon.common;
-
-    requires io.helidon.config;
-
-    requires io.helidon.discovery;
-
-    requires io.helidon.http;
-
-    requires io.helidon.service.registry;
-
+    requires transitive io.helidon.discovery;
+    requires transitive io.helidon.webclient.api;
     exports io.helidon.webclient.discovery;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider

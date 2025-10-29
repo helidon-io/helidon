@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class TestWebClient {
+class WebClientTest {
 
-    private TestWebClient() {
+    private WebClientTest() {
         super();
     }
 

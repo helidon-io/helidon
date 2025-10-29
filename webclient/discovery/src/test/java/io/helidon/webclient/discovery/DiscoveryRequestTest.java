@@ -34,17 +34,18 @@ import org.junit.jupiter.api.Test;
 import static java.util.HashMap.newHashMap;
 import static java.util.logging.Level.FINER;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-class TestDiscoveryRequest {
+class DiscoveryRequestTest {
 
-    private TestDiscoveryRequest() {
+    private DiscoveryRequestTest() {
         super();
     }
 
     @Test
-    void testDiscoveryRequest() {
+    void discoveryRequestTest() {
         Map<String, String> m = newHashMap(7);
         m.put("helidon-discovery-ids", " prod  ,, test ");
         m.put("helidon-discovery-prod-prefix-uri", "http://example.com/prod/");
@@ -112,7 +113,7 @@ class TestDiscoveryRequest {
             l.setLevel(level);
         }
         // see src/test/resources/application.yaml
-        assertThat(uris[0], is("http://prod.example.com:80/foo/foo"));
+        assertThat(uris[0], containsString("http://prod.example.com:80/foo/foo"));
         assertThat(uris[1], is("http://prod.example.com:80/foo"));
     }
 

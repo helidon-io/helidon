@@ -33,9 +33,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.nullValue;
 
-class TestClientUri {
+class ClientUriTest {
 
-    private TestClientUri() {
+    private ClientUriTest() {
         super();
     }
 
