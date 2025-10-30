@@ -48,8 +48,11 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
+import io.helidon.security.jwt.EncryptedJwt;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtHeaders;
 import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.providers.oidc.common.Tenant;
@@ -438,7 +441,7 @@ public final class OidcFeature implements HttpFeature {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
-                    processJsonResponse(req, res, jsonObject, tenantName, stateCookie);
+                    processJsonResponse(req, res, jsonObject, tenantName, stateCookie, tenant);
                 } catch (Exception e) {
                     processError(res, e, "Failed to read JSON from response");
                 }
@@ -498,16 +501,26 @@ public final class OidcFeature implements HttpFeature {
                                        ServerResponse res,
                                        JsonObject json,
                                        String tenantName,
-                                       JsonObject stateCookie) {
+                                       JsonObject stateCookie,
+                                       Tenant tenant) {
         String accessToken = json.getString("access_token");
         String idToken = json.getString("id_token", null);
         String refreshToken = json.getString("refresh_token", null);
+        JwtHeaders jwtHeaders = JwtHeaders.parseToken(idToken);
+        TenantConfig tenantConfig = tenant.tenantConfig();
 
-        Jwt idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
+        Jwt idTokenJwt;
+        if (jwtHeaders.encryption().isPresent() && tenantConfig.contentKeyDecryptionKeys().isPresent()) {
+            EncryptedJwt encryptedJwt = EncryptedJwt.parseToken(jwtHeaders, idToken);
+            JwkKeys jwkKeys = tenantConfig.contentKeyDecryptionKeys().get();
+            idTokenJwt = encryptedJwt.decrypt(jwkKeys, jwkKeys.keys().getFirst()).getJwt();
+        } else {
+            idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
+        }
         String nonceOriginal = stateCookie.getString("nonce");
-        String nonceAccess = idTokenJwt.nonce()
+        String nonceIdToken = idTokenJwt.nonce()
                 .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
-        if (!nonceAccess.equals(nonceOriginal)) {
+        if (!nonceIdToken.equals(nonceOriginal)) {
             throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
         }
 
