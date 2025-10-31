@@ -69,9 +69,7 @@ The following example dependency uses the OpenTelemetry `otlp` exporter.
 == Configuring OpenTelemetry Tracing
 Because OpenTelemetry comprises several signals, of which tracing is only one, you configure OpenTelemetry tracing differently from other implementations of tracing.
 
-For complete information on configuring OpenTelemetry using Helidon {flavor-uc}, see xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[the Helidon {flavor-uc} OpenTelemetry documentation].
-
-The following example shows only some of the settings you can use to control OpenTelemetry tracing.
+For complete information on configuring OpenTelemetry using Helidon {flavor-uc}, see xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[the Helidon {flavor-uc} OpenTelemetry documentation] which describes all the available configuration settings. The following example shows only some of those settings.
 
 ifdef::se-flavor[]
 [source,yaml]
@@ -102,6 +100,6 @@ endif::mp-flavor[]
 
 The `simple` processor type sends each span to the backend as soon as it ends, rather than grouping multiple spans into batches, and so is appropriate for testing and demos but not for production deployments.
 
-The `otlp` exporter type matches the exporter dependency example shown above. If you try to configure a particular exporter type without added the corresponding dependency to your project, the server fails during startup.
+The `otlp` exporter type matches the exporter dependency example shown above. If you try to configure a particular exporter type without adding the corresponding dependency to your project, the server fails during startup.
 
 // end::otel-configuration[]
