@@ -55,7 +55,7 @@
         <version.lib.expressly>5.0.0</version.lib.expressly>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>2.7.2</version.lib.google-api-client>
+        <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
         <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
