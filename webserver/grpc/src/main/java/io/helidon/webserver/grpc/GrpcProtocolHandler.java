@@ -270,7 +270,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         readBufferData.reset();
         int capacity = readBufferData.capacity();
         if (length > capacity) {
-            readBufferData = BufferData.create(Math.max(2 * capacity, length));
+            if (length > grpcConfig.maxReadBufferSize()) {
+                throw new IllegalStateException("gRPC message size exceeds max read buffer size");
+            }
+            readBufferData = BufferData.create(length);
         }
         return readBufferData;
     }
