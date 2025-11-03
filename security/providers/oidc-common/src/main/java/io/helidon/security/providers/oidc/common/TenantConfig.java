@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,6 +192,15 @@ public interface TenantConfig {
      * @return configured oidc metadata
      */
     boolean useWellKnown();
+
+    /**
+     * Used for JWE (Encrypted JWT) content encryption key decryption.
+     *
+     * @return content encryption key decryption keys
+     */
+    default Optional<JwkKeys> contentKeyDecryptionKeys() {
+        return Optional.empty();
+    }
 
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link TenantConfig}.

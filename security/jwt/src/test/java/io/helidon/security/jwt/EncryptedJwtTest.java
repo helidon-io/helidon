@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,25 @@
 
 package io.helidon.security.jwt;
 
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.text.ParseException;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.EncryptedJwt.SupportedAlgorithm;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.jwt.jwk.JwkRSA;
 
+import com.nimbusds.jose.EncryptionMethod;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWEAlgorithm;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.RSADecrypter;
+import com.nimbusds.jose.crypto.RSAEncrypter;
+import com.nimbusds.jwt.SignedJWT;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -125,6 +138,41 @@ public class EncryptedJwtTest {
         SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys);
 
         assertThat(decryptedOne.headerJson(), is(decryptedTwo.headerJson()));
+    }
+
+    @Test
+    void testNimbusToHelidon() throws ParseException, JOSEException {
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        RSAPublicKey publicKey = (RSAPublicKey) jwk.publicKey();
+
+        Payload payload = new Payload(SignedJWT.parse(signedJwt.tokenContent()));
+        JWEHeader header = new JWEHeader(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256CBC_HS512);
+        JWEObject jweObject = new JWEObject(header, payload);
+        jweObject.encrypt(new RSAEncrypter(publicKey));
+        String serializedJweFromNimbus = jweObject.serialize();
+
+        EncryptedJwt encryptedJwt = parseToken(serializedJweFromNimbus);
+        SignedJwt decrypted = encryptedJwt.decrypt(jwk);
+
+        assertThat(decrypted.payloadJson().toString(), is(signedJwt.payloadJson().toString()));
+    }
+
+    @Test
+    void testHelidonToNimbus() throws ParseException, JOSEException {
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        RSAPrivateKey privateKey = (RSAPrivateKey) jwk.privateKey().orElseThrow();
+
+        EncryptedJwt encryptedJwt = builder(signedJwt)
+                .jwk(jwk)
+                .algorithm(SupportedAlgorithm.RSA_OAEP_256)
+                .encryption(SupportedEncryption.A256CBC_HS512)
+                .build();
+
+        JWEObject jweObject = JWEObject.parse(encryptedJwt.token());
+        jweObject.decrypt(new RSADecrypter(privateKey));
+        SignedJWT signedJWT = SignedJWT.parse(jweObject.getPayload().toString());
+
+        assertThat(signedJWT.getPayload().toString(), is(signedJwt.payloadJson().toString()));
     }
 
 }
