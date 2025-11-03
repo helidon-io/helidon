@@ -347,14 +347,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     static Http2StreamState nextStreamState(Http2StreamState currentStreamState,
                                             Http2StreamState desiredStreamState) {
         return switch (desiredStreamState) {
-            case HALF_CLOSED_LOCAL ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
-                            ? Http2StreamState.CLOSED
-                            : Http2StreamState.HALF_CLOSED_LOCAL;
-            case HALF_CLOSED_REMOTE ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
-                            ? Http2StreamState.CLOSED
-                            : Http2StreamState.HALF_CLOSED_REMOTE;
+            case HALF_CLOSED_LOCAL -> currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_LOCAL;
+            case HALF_CLOSED_REMOTE -> currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_REMOTE;
             default -> desiredStreamState;
         };
     }
@@ -364,8 +362,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             private long bytesSent;
             private boolean headersSent;
-            private final BufferData headerBufferData = BufferData.create(GRPC_HEADER_SIZE);
-            private final BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
+            private BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
 
             @Override
             public void request(int numMessages) {
@@ -402,30 +399,24 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 try (InputStream inputStream = route.method().streamResponse(message)) {
                     // prepare buffer for writing
                     BufferData bufferData;
-                    if (identityCompressor) {
-                        // avoid buffer copy if length is known
-                        if (inputStream instanceof KnownLength knownLength) {
-                            int bytesLength = knownLength.available();
-                            bufferData = writeBufferData.reset();
-                            bufferData.write(0);        // off for identity compressor
-                            bufferData.writeUnsignedInt32(bytesLength);
-                            bufferData.readFrom(inputStream);
-                        } else {
-                            BufferData entity = writeBufferData.reset();
-                            entity.readFrom(inputStream);
-                            BufferData prefix = headerBufferData.reset();
-                            prefix.write(0);            // off for identity compressor
-                            prefix.writeUnsignedInt32(entity.capacity());
-                            bufferData = BufferData.create(prefix, entity);
-                        }
+                    if (identityCompressor && inputStream instanceof KnownLength knownLength) {
+                        int bytesLength = knownLength.available();
+                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytesLength);
+                        bufferData.write(0);        // 0 for identity compressor
+                        bufferData.writeUnsignedInt32(bytesLength);
+                        bufferData.readFrom(inputStream);
                     } else {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        try (OutputStream os = compressor.compress(baos)) {
-                            inputStream.transferTo(os);
+                        if (identityCompressor) {
+                            inputStream.transferTo(baos);
+                        } else {
+                            try (OutputStream os = compressor.compress(baos)) {
+                                inputStream.transferTo(os);
+                            }
                         }
                         byte[] bytes = baos.toByteArray();
-                        bufferData = writeBufferData.reset();
-                        bufferData.write(1);
+                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytes.length);
+                        bufferData.write(identityCompressor ? 0 : 1);
                         bufferData.writeUnsignedInt32(bytes.length);
                         bufferData.write(bytes);
                     }
@@ -495,6 +486,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             @Override
             public MethodDescriptor<REQ, RES> getMethodDescriptor() {
                 return route.method();
+            }
+
+            private BufferData allocateWriteBuffer(int length) {
+                writeBufferData.reset();
+                int capacity = writeBufferData.capacity();
+                if (length > capacity) {
+                    writeBufferData = BufferData.create(length);
+                }
+                return writeBufferData;
             }
         };
     }
