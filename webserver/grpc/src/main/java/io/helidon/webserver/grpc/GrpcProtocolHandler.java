@@ -98,6 +98,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
+    private static final int GRPC_HEADER_SIZE = 5;
+    private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
+
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -109,6 +112,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
+    private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
+    private BufferData unreadBufferData;
+    private long entityBytesLeft;
     private Compressor compressor;
     private Decompressor decompressor;
     private boolean identityCompressor;
@@ -185,24 +191,48 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void windowUpdate(Http2WindowUpdate update) {
     }
 
+    /**
+     * Data received from HTTP/2 layer. Data may contain a partial gRPC request
+     * or more than one request, making logic a bit more difficult.
+     *
+     * @param header frame header
+     * @param data   frame data
+     */
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
         try {
             boolean isCompressed = false;
 
-            while (data.available() > 0) {
-                // start of new chunk?
+            // check for any unread data received before
+            BufferData newData;
+            if (unreadBufferData != null) {
+                newData = BufferData.create(unreadBufferData, data);
+                unreadBufferData = null;
+            } else {
+                newData = data;
+            }
+
+            // process 0 or more requests from data
+            while (newData.available() > 0) {
+                // start of new request?
                 if (entityBytes == null) {
-                    isCompressed = (data.read() == 1);
-                    long length = data.readUnsignedInt32();
-                    entityBytes = BufferData.create((int) length);
+                    if (newData.available() >= GRPC_HEADER_SIZE) {
+                        isCompressed = (newData.read() == 1);
+                        entityBytesLeft = newData.readUnsignedInt32();
+                        entityBytes = allocateReadBuffer((int) entityBytesLeft);
+                    } else {
+                        unreadBufferData = newData;
+                        return;     // need more for gRPC header
+                    }
                 }
 
-                // append data to current chunk
-                entityBytes.write(data);
+                // append data to current entity
+                int writableNow = (int) Math.min(entityBytesLeft, newData.available());
+                entityBytes.write(newData, writableNow);
+                entityBytesLeft -= writableNow;
 
-                // is chunk complete?
-                if (entityBytes.capacity() == 0) {
+                // is the entity complete?
+                if (entityBytesLeft == 0) {
                     // fail if compressed and no decompressor
                     if (isCompressed && decompressor == null) {
                         throw new IllegalStateException("Unable to codec for compressed data");
@@ -210,10 +240,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                     // read and possibly decompress data
                     bytesReceived += entityBytes.available();
-                    InputStream is = entityBytes.asInputStream();
+                    InputStream is = new BufferDataInputStream(entityBytes);
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
                     listenerQueue.add(request);
                     flushQueue();
+
+                    // reset entityBytes
                     entityBytes = null;
                 }
             }
@@ -232,6 +264,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             listener.onCancel();
             LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
         }
+    }
+
+    BufferData allocateReadBuffer(int length) {
+        readBufferData.reset();
+        int capacity = readBufferData.capacity();
+        if (length > capacity) {
+            if (length > grpcConfig.maxReadBufferSize()) {
+                throw new IllegalStateException("gRPC message size exceeds max read buffer size");
+            }
+            readBufferData = BufferData.create(length);
+        }
+        return readBufferData;
     }
 
     void initCompression(ServerCall<REQ, RES> serverCall, Headers httpHeaders) {
@@ -303,23 +347,22 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     static Http2StreamState nextStreamState(Http2StreamState currentStreamState,
                                             Http2StreamState desiredStreamState) {
         return switch (desiredStreamState) {
-            case HALF_CLOSED_LOCAL ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
-                            ? Http2StreamState.CLOSED
-                            : Http2StreamState.HALF_CLOSED_LOCAL;
-            case HALF_CLOSED_REMOTE ->
-                    currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
-                            ? Http2StreamState.CLOSED
-                            : Http2StreamState.HALF_CLOSED_REMOTE;
+            case HALF_CLOSED_LOCAL -> currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_LOCAL;
+            case HALF_CLOSED_REMOTE -> currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_REMOTE;
             default -> desiredStreamState;
         };
     }
 
     private ServerCall<REQ, RES> createServerCall() {
-        return new ServerCall<>() {
+        return new ServerCall<REQ, RES>() {
 
             private long bytesSent;
             private boolean headersSent;
+            private BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
 
             @Override
             public void request(int numMessages) {
@@ -356,29 +399,24 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 try (InputStream inputStream = route.method().streamResponse(message)) {
                     // prepare buffer for writing
                     BufferData bufferData;
-                    if (identityCompressor) {
-                        // avoid buffer copy if length is known
-                        if (inputStream instanceof KnownLength knownLength) {
-                            int bytesLength = knownLength.available();
-                            bufferData = BufferData.create(5 + bytesLength);
-                            bufferData.write(0);        // off for identity compressor
-                            bufferData.writeUnsignedInt32(bytesLength);
-                            bufferData.readFrom(inputStream);
-                        } else {
-                            byte[] bytes = inputStream.readAllBytes();
-                            bufferData = BufferData.create(5 + bytes.length);
-                            bufferData.write(0);        // off for identity compressor
-                            bufferData.writeUnsignedInt32(bytes.length);
-                            bufferData.write(bytes);
-                        }
+                    if (identityCompressor && inputStream instanceof KnownLength knownLength) {
+                        int bytesLength = knownLength.available();
+                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytesLength);
+                        bufferData.write(0);        // 0 for identity compressor
+                        bufferData.writeUnsignedInt32(bytesLength);
+                        bufferData.readFrom(inputStream);
                     } else {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        try (OutputStream os = compressor.compress(baos)) {
-                            inputStream.transferTo(os);
+                        if (identityCompressor) {
+                            inputStream.transferTo(baos);
+                        } else {
+                            try (OutputStream os = compressor.compress(baos)) {
+                                inputStream.transferTo(os);
+                            }
                         }
                         byte[] bytes = baos.toByteArray();
-                        bufferData = BufferData.create(5 + bytes.length);
-                        bufferData.write(1);
+                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytes.length);
+                        bufferData.write(identityCompressor ? 0 : 1);
                         bufferData.writeUnsignedInt32(bytes.length);
                         bufferData.write(bytes);
                     }
@@ -449,6 +487,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             public MethodDescriptor<REQ, RES> getMethodDescriptor() {
                 return route.method();
             }
+
+            private BufferData allocateWriteBuffer(int length) {
+                writeBufferData.reset();
+                int capacity = writeBufferData.capacity();
+                if (length > capacity) {
+                    writeBufferData = BufferData.create(length);
+                }
+                return writeBufferData;
+            }
         };
     }
 
@@ -489,5 +536,38 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });
+    }
+
+    /**
+     * An input stream that can return its length. gRPC parsers can use this extra
+     * knowledge for optimizations. It can also copy a byte array directly on a
+     * single read.
+     */
+    static class BufferDataInputStream extends InputStream implements KnownLength {
+        private final BufferData bufferData;
+
+        BufferDataInputStream(BufferData bufferData) {
+            this.bufferData = bufferData;
+        }
+
+        @Override
+        public int read() {
+            return bufferData.read();
+        }
+
+        @Override
+        public int read(byte[] b) {
+            return bufferData.read(b);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            return bufferData.read(b, off, len);
+        }
+
+        @Override
+        public int available() {
+            return bufferData.available();
+        }
     }
 }
