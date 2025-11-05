@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.Http2Config;
@@ -48,6 +49,10 @@ import static io.helidon.http.Method.POST;
 
 @Testcontainers(disabledWithoutDocker = true)
 class H2SpecIT {
+
+    static {
+        LogConfig.configureRuntime();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(H2SpecIT.class);
 

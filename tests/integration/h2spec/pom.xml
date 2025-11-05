@@ -49,11 +49,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.logging</groupId>
-            <artifactId>helidon-logging-slf4j</artifactId>
+            <artifactId>helidon-logging-jul</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>slf4j-jdk14</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -103,7 +103,7 @@
                     </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
@@ -114,7 +114,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
