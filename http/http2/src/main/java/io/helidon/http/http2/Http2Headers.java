@@ -1124,7 +1124,7 @@ public class Http2Headers {
 
     /**
      * There is one dynamic table for inbound headers and one for outbound headers for each connection.
-     * This is to minimize size of headers on the transport.
+     * This is to minimize the size of headers on the transport.
      * The table caches header names and values and then uses indexes only when transferring headers over network.
      */
     public static class DynamicTable {
@@ -1177,6 +1177,7 @@ public class Http2Headers {
             if (maxTableSize == 0) {
                 currentTableSize = 0;
                 headers.clear();
+                currentTableSize = 0;
             }
             while (maxTableSize < currentTableSize) {
                 evict();
@@ -1193,7 +1194,7 @@ public class Http2Headers {
 
             while ((currentTableSize + size) > maxTableSize) {
                 evict();
-                if (currentTableSize <= 0) {
+                if (maxTableSize - currentTableSize < size) {
                     throw new Http2Exception(Http2ErrorCode.COMPRESSION,
                                              "Cannot add header record, max table size too low. "
                                                      + "current size: " + currentTableSize + ", max size: " + maxTableSize + ","
@@ -1244,6 +1245,7 @@ public class Http2Headers {
 
         private void evict() {
             if (headers.isEmpty()) {
+                currentTableSize = 0;
                 return;
             }
             DynamicHeader removed = headers.remove(headers.size() - 1);
