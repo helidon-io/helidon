@@ -1189,6 +1189,12 @@
                 <version>${version.lib.maven-wagon}</version>
             </dependency>
             <dependency>
+                <!-- for dependency convergence with handlebars -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.lib.commons-text}</version>
+            </dependency>
+            <dependency>
                 <!--
                 Required for dependency convergence
                 Used by both
