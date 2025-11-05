@@ -23,10 +23,10 @@ import io.helidon.common.config.Config;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class SecurityService implements Supplier<Security> {
+class SecurityFactory implements Supplier<Security> {
     private final LazyValue<Security> delegate;
 
-    SecurityService(Config config) {
+    SecurityFactory(Config config) {
         this.delegate = LazyValue.create(() -> Security.builder()
                 .config(config.get("security"))
                 .build());
