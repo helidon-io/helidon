@@ -168,7 +168,7 @@ public interface AnnotationAnalyzer {
         if (declaredMethod.getParameterCount() != expectedArguments.size()) {
             return false;
         }
-        // same number of parameters, same name, let's got through parameters
+        // same number of parameters, same name, let's go through parameters
         for (int i = 0; i < declaredMethod.getParameterTypes().length; i++) {
             Class<?> parameterType = declaredMethod.getParameterTypes()[i];
             if (!expectedArguments.get(i).typeName().equals(TypeName.create(parameterType))) {

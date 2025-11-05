@@ -110,7 +110,8 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         UriInfo requestedUri = req.requestedUri();
         SecurityContext securityContext = req.context()
                 .get(SecurityContext.class)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalStateException("No security context in request context. "
+                                                                     + "Make sure the ContextFeature is added to WebServer"));
 
         String resourceType = ctx.serviceInfo().serviceType().fqName();
         var securityEnvironment = SecurityEnvironment.builder(security.serverTime())
