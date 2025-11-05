@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
@@ -88,8 +89,8 @@ class H2SpecIT {
         try (var cont = new GenericContainer<>(
                 new ImageFromDockerfile().withDockerfile(Path.of("./Dockerfile")))
                 .withAccessToHost(true)
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("h2spec")))
                 .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(365)))
-                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()))
                 .waitingFor(Wait.forLogMessage(".*Finished in.*", 1))) {
 
             org.testcontainers.Testcontainers.exposeHostPorts(port);
