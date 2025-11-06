@@ -1188,18 +1188,21 @@ public class Http2Headers {
             int size = name.length() + headerValue.getBytes(StandardCharsets.US_ASCII).length + 32;
 
             if (currentTableSize + size <= maxTableSize) {
+                // fast path
                 return add(headerName, headerValue, size);
             }
 
             while ((currentTableSize + size) > maxTableSize) {
                 evict();
-                if (maxTableSize - currentTableSize < size) {
-                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
-                                             "Cannot add header record, max table size too low. "
-                                                     + "current size: " + currentTableSize + ", max size: " + maxTableSize + ","
-                                                     + " header size: " + size);
-                }
             }
+
+            if (maxTableSize - currentTableSize < size) {
+                throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                         "Cannot add header record, max table size too low. "
+                                                 + "current size: " + currentTableSize + ", max size: " + maxTableSize + ","
+                                                 + " header size: " + size);
+            }
+
             return add(headerName, headerValue, size);
         }
 
