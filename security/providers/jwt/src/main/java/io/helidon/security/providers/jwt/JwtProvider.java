@@ -168,12 +168,14 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (errors.isValid()) {
                 Jwt jwt = signedJwt.getJwt();
                 // perform all validations, including expected audience verification
-                JwtValidator jwtValidator = JwtValidator.builder()
+                JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
                         .addDefaultTimeValidators()
                         .addCriticalValidator()
-                        .addUserPrincipalValidator()
-                        .addAudienceValidator(expectedAudience)
-                        .build();
+                        .addUserPrincipalValidator();
+                if (expectedAudience != null) {
+                    jwtValidatorBuilder.addAudienceValidator(expectedAudience);
+                }
+                JwtValidator jwtValidator =  jwtValidatorBuilder.build();
                 Errors validate = jwtValidator.validate(jwt);
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
