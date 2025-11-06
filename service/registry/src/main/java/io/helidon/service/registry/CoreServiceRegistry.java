@@ -486,18 +486,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             stateWriteLock.unlock();
         }
     }
-/*
-TODO add and add qualified also must use all contracts
-            ResolvedType contractType = ResolvedType.create(contract);
-            Set<ResolvedType> actualContracts = contractMap.get(contractType);
-            if (actualContracts == null) {
-                actualContracts = Set.of(contractType);
-            }
-            for (ResolvedType actualContract : actualContracts) {
-                // set for each type that is valid for this contract
-                doSet(actualContract, instances);
-            }
- */
+
     <T> void add(Class<T> contract, double weight, T instance) {
         if (!allowLateBinding) {
             throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
@@ -505,43 +494,38 @@ TODO add and add qualified also must use all contracts
         }
         stateWriteLock.lock();
         try {
-            ResolvedType contractType = ResolvedType.create(contract);
-            checkValidContract(contractType);
-            ServiceInfo serviceInfo = servicesByType.get(contractType.type());
-            if (serviceInfo == null) {
-                Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
-                Set<ServiceInfo> currentInfos = servicesByContract.get(contractType);
-                if (currentInfos != null) {
-                    serviceInfos.addAll(currentInfos);
-                }
-
-                // each instance will have its own descriptor
-                VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), weight, instance);
-                ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                         vt);
-                Activator<Object> activator = Activators.create(provider, instance);
-
-                servicesByDescriptor.put(vt, new ServiceManager<>(this,
-                                                                  scopeSupplier(vt),
-                                                                  provider,
-                                                                  true,
-                                                                  () -> activator));
-                serviceInfos.add(vt);
-
-                // replace the instances
-                servicesByContract.put(contractType, serviceInfos);
-            } else {
-                throw new ServiceRegistryException("Cannot add a service instance for service implementation: "
-                                                           + contract.getName());
+            Set<ResolvedType> contracts = resolveContracts(contract);
+            for (ResolvedType resolvedType : contracts) {
+                doAdd(resolvedType, weight, instance);
             }
-            // reset bindings, as build-time binding would ignore instances explicitly set
-            bindings.forgetContract(contractType);
         } finally {
             stateWriteLock.unlock();
         }
     }
 
-    @SuppressWarnings("unchecked")
+    private <T> void doAdd(ResolvedType contract, double weight, T instance) {
+        checkValidContract(contract);
+        ServiceInfo serviceInfo = servicesByType.get(contract.type());
+        if (serviceInfo == null) {
+            Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+            Set<ServiceInfo> currentInfos = servicesByContract.get(contract);
+            if (currentInfos != null) {
+                serviceInfos.addAll(currentInfos);
+            }
+
+            // each instance will have its own descriptor
+            setContract(contract, instance, weight, serviceInfos);
+
+            // replace the instances
+            servicesByContract.put(contract, serviceInfos);
+        } else {
+            throw new ServiceRegistryException("Cannot add a service instance for service implementation: "
+                                                       + contract.resolvedName());
+        }
+        // reset bindings, as build-time binding would ignore instances explicitly set
+        bindings.forgetContract(contract);
+    }
+
     <T> void setQualified(Class<T> contract, T instance, Set<Qualifier> qualifiers) {
         if (!allowLateBinding) {
             throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
@@ -550,47 +534,10 @@ TODO add and add qualified also must use all contracts
 
         stateWriteLock.lock();
         try {
-            ResolvedType contractType = ResolvedType.create(contract);
-            checkValidContract(contractType);
-            ServiceInfo serviceInfo = servicesByType.get(contractType.type());
-            if (serviceInfo != null && !serviceInfo.qualifiers().equals(qualifiers)) {
-                throw new IllegalArgumentException("Attempting to create a qualified service instance for "
-                                                           + "a service implementation, with wrong qualifiers: "
-                                                           + contract.getName() + ", qualifiers: " + qualifiers);
+            Set<ResolvedType> contracts = resolveContracts(contract);
+            for (ResolvedType resolvedType : contracts) {
+                setQualified(resolvedType, instance, qualifiers);
             }
-            if (serviceInfo == null) {
-                Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
-
-                // we need to keep order of the instances; if somebody calls set, and then add, it may be tricky
-
-                VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), Weighted.DEFAULT_WEIGHT, instance, qualifiers);
-
-                ServiceProvider<Object> provider = new ServiceProvider<>(this, vt);
-                Activator<Object> activator = Activators.create(provider, instance);
-
-                servicesByDescriptor.put(vt, new ServiceManager<>(this,
-                                                                  scopeSupplier(vt),
-                                                                  provider,
-                                                                  true,
-                                                                  () -> activator));
-                serviceInfos.add(vt);
-
-                // replace the instances
-                servicesByContract.put(contractType, serviceInfos);
-            } else {
-                // this is a service instance, not contract implementation (i.e. the contract is actual service class)
-                ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                         (ServiceDescriptor<Object>) serviceInfo);
-
-                Activator<Object> activator = Activators.create(provider, instance);
-                servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
-                                                                           scopeSupplier(serviceInfo),
-                                                                           provider,
-                                                                           true,
-                                                                           () -> activator));
-            }
-            // reset bindings, as build-time binding would ignore instances explicitly set
-            bindings.forgetContract(contractType);
         } finally {
             stateWriteLock.unlock();
         }
@@ -606,12 +553,9 @@ TODO add and add qualified also must use all contracts
 
         stateWriteLock.lock();
         try {
-            ResolvedType contractType = ResolvedType.create(contract);
-            Set<ResolvedType> actualContracts = contractMap.get(contractType);
-            if (actualContracts == null) {
-                actualContracts = Set.of(contractType);
-            }
-            for (ResolvedType actualContract : actualContracts) {
+            Set<ResolvedType> contracts = resolveContracts(contract);
+
+            for (ResolvedType actualContract : contracts) {
                 // set for each type that is valid for this contract
                 doSet(actualContract, instances);
             }
@@ -620,6 +564,51 @@ TODO add and add qualified also must use all contracts
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> void setQualified(ResolvedType contract, T instance, Set<Qualifier> qualifiers) {
+        checkValidContract(contract);
+        ServiceInfo serviceInfo = servicesByType.get(contract.type());
+        if (serviceInfo != null && !serviceInfo.qualifiers().equals(qualifiers)) {
+            throw new IllegalArgumentException("Attempting to create a qualified service instance for "
+                                                       + "a service implementation, with wrong qualifiers: "
+                                                       + contract.resolvedName() + ", qualifiers: " + qualifiers);
+        }
+        if (serviceInfo == null) {
+            Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+
+            // we need to keep order of the instances; if somebody calls set, and then add, it may be tricky
+
+            VirtualDescriptor vt = new VirtualDescriptor(contract.type(), Weighted.DEFAULT_WEIGHT, instance, qualifiers);
+
+            ServiceProvider<Object> provider = new ServiceProvider<>(this, vt);
+            Activator<Object> activator = Activators.create(provider, instance);
+
+            servicesByDescriptor.put(vt, new ServiceManager<>(this,
+                                                              scopeSupplier(vt),
+                                                              provider,
+                                                              true,
+                                                              () -> activator));
+            serviceInfos.add(vt);
+
+            // replace the instances
+            servicesByContract.put(contract, serviceInfos);
+        } else {
+            // this is a service instance, not contract implementation (i.e. the contract is actual service class)
+            ServiceProvider<Object> provider = new ServiceProvider<>(this,
+                                                                     (ServiceDescriptor<Object>) serviceInfo);
+
+            Activator<Object> activator = Activators.create(provider, instance);
+            servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
+                                                                       scopeSupplier(serviceInfo),
+                                                                       provider,
+                                                                       true,
+                                                                       () -> activator));
+        }
+        // reset bindings, as build-time binding would ignore instances explicitly set
+        bindings.forgetContract(contract);
+    }
+
+    @SuppressWarnings("unchecked")
     private <T> void doSet(ResolvedType contractType, T[] instances) {
         checkValidContract(contractType);
         ServiceInfo serviceInfo = servicesByType.get(contractType.type());
@@ -630,17 +619,7 @@ TODO add and add qualified also must use all contracts
             double currentWeight = Weighted.DEFAULT_WEIGHT;
             for (T instance : instances) {
                 // each instance will have its own descriptor
-                VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance);
-                ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                         vt);
-                Activator<Object> activator = Activators.create(provider, instance);
-
-                servicesByDescriptor.put(vt, new ServiceManager<>(this,
-                                                                  scopeSupplier(vt),
-                                                                  provider,
-                                                                  true,
-                                                                  () -> activator));
-                serviceInfos.add(vt);
+                setContract(contractType, instance, currentWeight, serviceInfos);
                 // reduce by a small number, so other things behave as expected
                 currentWeight -= 0.001;
             }
@@ -769,6 +748,20 @@ TODO add and add qualified also must use all contracts
                 .forEach(ServiceManager::ensureBindingPlan);
     }
 
+    private <T> void setContract(ResolvedType contractType, T instance, double currentWeight, Set<ServiceInfo> serviceInfos) {
+        VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance);
+        ServiceProvider<Object> provider = new ServiceProvider<>(this,
+                                                                 vt);
+        Activator<Object> activator = Activators.create(provider, instance);
+
+        servicesByDescriptor.put(vt, new ServiceManager<>(this,
+                                                          scopeSupplier(vt),
+                                                          provider,
+                                                          true,
+                                                          () -> activator));
+        serviceInfos.add(vt);
+    }
+
     private void accessed(ServiceInfo service) {
         stateReadLock.lock();
         try {
@@ -874,6 +867,19 @@ TODO add and add qualified also must use all contracts
             scopeHandlerInstancesLock.unlock();
         }
     }
+
+    // Resolve all contracts implemented by the provided class
+    // this depends on how the service descriptor treats interfaces and classes (i.e. we may only add contracts
+    // annotated with @Service.Contract, or all interfaces etc.) This method uses information from the actual descriptors.
+    private <T> Set<ResolvedType> resolveContracts(Class<T> contract) {
+        ResolvedType contractType = ResolvedType.create(contract);
+        Set<ResolvedType> actualContracts = contractMap.get(contractType);
+        if (actualContracts == null) {
+            actualContracts = Set.of(contractType);
+        }
+        return actualContracts;
+    }
+
 
     private record ScopeImpl(TypeName scopeType,
                              Service.ScopeHandler handler,
