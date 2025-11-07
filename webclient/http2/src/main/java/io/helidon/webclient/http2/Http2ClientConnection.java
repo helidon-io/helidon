@@ -94,7 +94,6 @@ public class Http2ClientConnection {
     private Future<?> handleTask;
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
 
-
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
