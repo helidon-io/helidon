@@ -11,6 +11,56 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.3.2]
+
+This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Declarative: Update to web server observability features to support Helidon declarative [10764](https://github.com/helidon-io/helidon/pull/10764)
+- gRPC: improvements and a bug fix for large data uploads [10797](https://github.com/helidon-io/helidon/pull/10797)
+- gRPC: New gRPC server SPI and gRPC tracing refactoring [10771](https://github.com/helidon-io/helidon/pull/10771)
+- HTTP/2: Create correct HTTP/2 settings for a new stream in gRPC client [10814](https://github.com/helidon-io/helidon/pull/10814)
+- HTTP/2: Fix dynamic table cpu burn #10472 [10806](https://github.com/helidon-io/helidon/pull/10806)
+- HTTP/2: Fix http2 client dynamic table RC [10821](https://github.com/helidon-io/helidon/pull/10821)
+- HTTP/2: Infinite loop during webservice request in io.helidon.http.http2.Http2Headers.DynamicTable#add #10472 [10502](https://github.com/helidon-io/helidon/pull/10502)
+- Security: JwtProvider expected audience is no longer mandatory [10778](https://github.com/helidon-io/helidon/pull/10778)
+- Security: OIDC JWE support [10760](https://github.com/helidon-io/helidon/pull/10760)
+- WebClient: ClientRequestBase incorrectly rejects non-lowercase schemes #10752 [10780](https://github.com/helidon-io/helidon/pull/10780)
+- WebServer: Add beforeSend method to server response [10770](https://github.com/helidon-io/helidon/pull/10770)
+- WebServer: Do not set an initial value for SO_RCVBUF [10801](https://github.com/helidon-io/helidon/pull/10801)
+- Build: Do not deploy helidon-data-sql-testing [10818](https://github.com/helidon-io/helidon/pull/10818)
+- Build: Remove unused plugin declaration for helidon-service-maven-plugin [10737](https://github.com/helidon-io/helidon/pull/10737)
+- Dependencies: Bump com.oracle.oci.sdk:oci-java-sdk-bom from 3.73.1 to 3.75.0 in /dependencies [10796](https://github.com/helidon-io/helidon/pull/10796)
+- Dependencies: Fix warnings logged from SnakeYAML; update SnakeYAML to 2.5 [10754](https://github.com/helidon-io/helidon/pull/10754)
+- Dependencies: Remove direct dependency on commons-text [10804](https://github.com/helidon-io/helidon/pull/10804)
+- Dependencies: Update Jackson to 2.20.0. Update owasp dependency check [10776](https://github.com/helidon-io/helidon/pull/10776)
+- Dependencies: Upgrade antlr to 4.13.2 [10803](https://github.com/helidon-io/helidon/pull/10803)
+- Dependencies: Upgrade google-api-client to 2.8.1 [10793](https://github.com/helidon-io/helidon/pull/10793)
+- Dependencies: Upgrade H2 to 2.4.240 [10758](https://github.com/helidon-io/helidon/pull/10758)
+- Docs: Added support for `@value` javadoc reference to resolve into value in docs [10759](https://github.com/helidon-io/helidon/pull/10759)
+- Docs: Do not replace `#` sign for "href" links in `@see` [10772](https://github.com/helidon-io/helidon/pull/10772)
+- Docs: Fix bad links in generated documentation. [10779](https://github.com/helidon-io/helidon/pull/10779)
+- Docs: JSON Schema documentation [10748](https://github.com/helidon-io/helidon/pull/10748)
+- Docs: Several gRPC server doc improvements [10750](https://github.com/helidon-io/helidon/pull/10750)
+- Examples: Fix casing in Docketfile mustache templates [10766](https://github.com/helidon-io/helidon/pull/10766)
+- Tests: Shard-off Helidon Data tests [10799](https://github.com/helidon-io/helidon/pull/10799)
+
+## [4.3.1]
+
+This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Config: Use requires transitive for service.registry [10744](https://github.com/helidon-io/helidon/pull/10744)
+- JSON-RPC: Include the JSON-RPC ID in all error responses when available [10740](https://github.com/helidon-io/helidon/pull/10740)
+- LC4J: Add JSON Schema and lc4j codegens to apt bundle #10723 [10747](https://github.com/helidon-io/helidon/pull/10747)
+- Dependencies: Bump lc4j to 1.6.0 [10746](https://github.com/helidon-io/helidon/pull/10746)
+
 ## [4.3.0]
 
 This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
@@ -2167,6 +2217,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
+[4.3.1]: https://github.com/oracle/helidon/compare/4.3.0...4.3.1
 [4.3.0]: https://github.com/oracle/helidon/compare/4.2.7...4.3.0
 [4.2.7]: https://github.com/oracle/helidon/compare/4.2.6...4.2.7
 [4.2.6]: https://github.com/oracle/helidon/compare/4.2.5...4.2.6
