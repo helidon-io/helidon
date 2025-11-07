@@ -103,7 +103,7 @@
                     </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
@@ -114,7 +114,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
