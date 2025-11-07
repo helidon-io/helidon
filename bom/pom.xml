@@ -724,11 +724,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.data.sql</groupId>
-                <artifactId>helidon-data-sql-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource</artifactId>
                 <version>${helidon.version}</version>
