@@ -533,10 +533,6 @@
             <artifactId>helidon-data-sql-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.sql</groupId>
-            <artifactId>helidon-data-sql-testing</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.data.sql.datasource</groupId>
             <artifactId>helidon-data-sql-datasource</artifactId>
         </dependency>

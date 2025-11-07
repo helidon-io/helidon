@@ -39,6 +39,16 @@
         <dependency-check.skip>true</dependency-check.skip>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon.data.sql</groupId>
+                <artifactId>helidon-data-sql-testing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>sql</module>
         <module>model</module>

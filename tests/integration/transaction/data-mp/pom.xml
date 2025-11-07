@@ -31,6 +31,16 @@
     <artifactId>io.helidon.data.tests.integration.transaction.data.mp-project</artifactId>
     <name>Helidon Tests Integration Transactions Data with MP Project</name>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon.data.sql</groupId>
+                <artifactId>helidon-data-sql-testing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>data-mp</module>
         <module>eclipselink</module>
