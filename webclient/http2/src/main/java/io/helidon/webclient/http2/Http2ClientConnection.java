@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.common.buffers.BufferData;
@@ -46,6 +47,7 @@ import io.helidon.http.http2.Http2FrameListener;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2RstStream;
@@ -76,6 +78,7 @@ public class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    private final ReentrantLock inboundDynamicTableLock = new ReentrantLock();
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final SocketContext ctx;
@@ -257,6 +260,32 @@ public class Http2ClientConnection {
                 .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
                 .add(Http2Setting.ENABLE_PUSH, false)
                 .build();
+    }
+
+    /**
+     * Reads the HTTP/2 headers for the specified client stream from this connection.
+     * Thread-safe: Uses connection inbound dynamic table synchronized per connection.
+     *
+     * @param stream the HTTP/2 client stream for which headers are being read
+     * @param decoder the Huffman decoder to decode the headers
+     * @param headers the existing headers object to populate or use as a basis
+     * @param array the array of HTTP/2 frame data to process
+     * @return the processed HTTP/2 headers
+     */
+    Http2Headers readHeaders(Http2ClientStream stream,
+                             Http2HuffmanDecoder decoder,
+                             Http2Headers headers,
+                             Http2FrameData[] array) {
+        inboundDynamicTableLock.lock();
+        try {
+            return Http2Headers.create(stream,
+                                       inboundDynamicTable,
+                                       decoder,
+                                       headers,
+                                       array);
+        } finally {
+            inboundDynamicTableLock.unlock();
+        }
     }
 
     private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {
