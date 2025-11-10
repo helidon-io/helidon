@@ -64,6 +64,15 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
     }
 
     /**
+     * Add a new line (empty).
+     *
+     * @return updated builder instance
+     */
+    default T addContentLine() {
+        return addContent("\n");
+    }
+
+    /**
      * Adds the provided literal as content, enclosed in double quotes.
      *
      * @param literal the literal string to be added as content

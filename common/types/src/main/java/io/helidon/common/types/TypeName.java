@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -117,6 +118,150 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     TypeName genericTypeName();
 
     /**
+     * Functions similar to {@link Class#getPackageName()}.
+     *
+     * @return the package name, never null
+     */
+    @Override
+    String packageName();
+
+    /**
+     * Functions similar to {@link Class#getSimpleName()}.
+     *
+     * @return the simple class name
+     */
+    @Override
+    String className();
+
+    /**
+     * Simple names of enclosing classes (if any exist).
+     * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
+     * a list of {@code Type, NestOne}.
+     *
+     * @return enclosing classes simple names
+     */
+    @Override
+    List<String> enclosingNames();
+
+    /**
+     * Functions similar to {@link Class#isPrimitive()}.
+     *
+     * @return true if this type represents a primitive type
+     */
+    @Override
+    boolean primitive();
+
+    /**
+     * Functions similar to {@link Class#isArray()}.
+     *
+     * @return true if this type represents a primitive array []
+     */
+    @Override
+    boolean array();
+
+    /**
+     * If this is a representation of {@link io.helidon.common.types.TypeName#array()}, this method can identify that it
+     * was declared as a vararg.
+     * This may be used for method/constructor parameters (which is the only place this is supported in Java).
+     *
+     * @return whether an array is declared as a vararg
+     */
+    @Override
+    boolean vararg();
+
+    /**
+     * Indicates whether this type is using generics.
+     *
+     * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
+     */
+    @Override
+    boolean generic();
+
+    /**
+     * Indicates whether this type is using wildcard generics.
+     *
+     * @return used to represent a wildcard (e.g., "? extends SomeType")
+     */
+    @Override
+    boolean wildcard();
+
+    /**
+     * Returns the list of generic type arguments, or an empty list if no generics are in use.
+     *
+     * @return the type arguments of this type, if this type supports generics/parameterized type
+     * @see #typeParameters()
+     */
+    @Override
+    List<TypeName> typeArguments();
+
+    /**
+     * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+     * for example in declaration of the top level type (as arguments are a function of usage of the type).
+     * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+     *
+     * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+     * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
+     */
+    @Override
+    List<String> typeParameters();
+
+    /**
+     * Generic types that provide keyword {@code extends} will have a lower bound defined.
+     * Each lower bound may be a real type, or another generic type.
+     * <p>
+     * This list may only have value if this is a generic type.
+     *
+     * @return list of lower bounds of this type
+     * @see io.helidon.common.types.TypeName#generic()
+     */
+    @Override
+    List<TypeName> lowerBounds();
+
+    /**
+     * Generic types that provide keyword {@code super} will have an upper bound defined.
+     * Upper bound may be a real type, or another generic type.
+     * <p>
+     * This list may only have value if this is a generic type.
+     *
+     * @return list of upper bounds of this type
+     * @see io.helidon.common.types.TypeName#generic()
+     */
+    @Override
+    List<TypeName> upperBounds();
+
+    /**
+     * Component type of array.
+     *
+     * @return component type of array
+     */
+    @Override
+    Optional<TypeName> componentType();
+
+    /**
+     * List of declared and known annotations for this element.
+     * Note that "known" implies that the annotation is visible, which depends
+     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+     *
+     * @return the list of annotations declared on this element
+     */
+    @Override
+    List<Annotation> annotations();
+
+    /**
+     * List of all inherited annotations for this element. Inherited annotations are annotations declared
+     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+     * <p>
+     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+     * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
+     *
+     * @return list of all meta annotations of this element
+     */
+    @Override
+    List<Annotation> inheritedAnnotations();
+
+    /**
      * Fluent API builder base for {@link TypeName}.
      *
      * @param <BUILDER> type of the builder extending this abstract builder
@@ -125,6 +270,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     abstract class BuilderBase<BUILDER extends TypeName.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
+        private final List<Annotation> annotations = new ArrayList<>();
+        private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<TypeName> lowerBounds = new ArrayList<>();
         private final List<TypeName> typeArguments = new ArrayList<>();
         private final List<TypeName> upperBounds = new ArrayList<>();
@@ -132,7 +279,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private final List<String> typeParameters = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
+        private boolean isAnnotationsMutated;
         private boolean isEnclosingNamesMutated;
+        private boolean isInheritedAnnotationsMutated;
         private boolean isLowerBoundsMutated;
         private boolean isTypeArgumentsMutated;
         private boolean isTypeParametersMutated;
@@ -185,6 +334,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
             addUpperBounds(prototype.upperBounds());
             componentType(prototype.componentType());
+            if (!isAnnotationsMutated) {
+                annotations.clear();
+            }
+            addAnnotations(prototype.annotations());
+            if (!isInheritedAnnotationsMutated) {
+                inheritedAnnotations.clear();
+            }
+            addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
         }
 
@@ -243,6 +400,22 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 addUpperBounds(builder.upperBounds);
             }
             builder.componentType().ifPresent(this::componentType);
+            if (isAnnotationsMutated) {
+                if (builder.isAnnotationsMutated) {
+                    addAnnotations(builder.annotations);
+                }
+            } else {
+                annotations.clear();
+                addAnnotations(builder.annotations);
+            }
+            if (isInheritedAnnotationsMutated) {
+                if (builder.isInheritedAnnotationsMutated) {
+                    addInheritedAnnotations(builder.inheritedAnnotations);
+                }
+            } else {
+                inheritedAnnotations.clear();
+                addInheritedAnnotations(builder.inheritedAnnotations);
+            }
             return self();
         }
 
@@ -259,7 +432,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getPackageName()}.
+         * Functions similar to {@link Class#getPackageName()}.
          *
          * @param packageName the package name, never null
          * @return updated builder instance
@@ -272,7 +445,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getSimpleName()}.
+         * Functions similar to {@link Class#getSimpleName()}.
          *
          * @param className the simple class name
          * @return updated builder instance
@@ -346,7 +519,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isArray()}.
+         * Functions similar to {@link Class#isArray()}.
          *
          * @param array true if this type represents a primitive array []
          * @return updated builder instance
@@ -652,7 +825,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Clear the existing value of this property.
+         * Clear existing value of this property.
          *
          * @return updated builder instance
          * @see #componentType()
@@ -691,7 +864,155 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getPackageName()}.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @param annotations the list of annotations declared on this element
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER annotations(List<? extends Annotation> annotations) {
+            Objects.requireNonNull(annotations);
+            isAnnotationsMutated = true;
+            this.annotations.clear();
+            this.annotations.addAll(annotations);
+            return self();
+        }
+
+        /**
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @param annotations the list of annotations declared on this element
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER addAnnotations(List<? extends Annotation> annotations) {
+            Objects.requireNonNull(annotations);
+            isAnnotationsMutated = true;
+            this.annotations.addAll(annotations);
+            return self();
+        }
+
+        /**
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @param annotation the list of annotations declared on this element
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER addAnnotation(Annotation annotation) {
+            Objects.requireNonNull(annotation);
+            this.annotations.add(annotation);
+            isAnnotationsMutated = true;
+            return self();
+        }
+
+        /**
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @param consumer the list of annotations declared on this element
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER addAnnotation(Consumer<Annotation.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = Annotation.builder();
+            consumer.accept(builder);
+            this.annotations.add(builder.build());
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @param inheritedAnnotation list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
+            Objects.requireNonNull(inheritedAnnotation);
+            this.inheritedAnnotations.add(inheritedAnnotation);
+            isInheritedAnnotationsMutated = true;
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @param consumer list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Consumer<Annotation.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = Annotation.builder();
+            consumer.accept(builder);
+            this.inheritedAnnotations.add(builder.build());
+            return self();
+        }
+
+        /**
+         * Functions similar to {@link Class#getPackageName()}.
          *
          * @return the package name
          */
@@ -700,7 +1021,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getSimpleName()}.
+         * Functions similar to {@link Class#getSimpleName()}.
          *
          * @return the class name
          */
@@ -729,7 +1050,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#isArray()}.
+         * Functions similar to {@link Class#isArray()}.
          *
          * @return the array
          */
@@ -829,6 +1150,32 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @return the annotations
+         */
+        public List<Annotation> annotations() {
+            return annotations;
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @return the inherited annotations
+         */
+        public List<Annotation> inheritedAnnotations() {
+            return inheritedAnnotations;
+        }
+
+        /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
@@ -869,6 +1216,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean primitive;
             private final boolean vararg;
             private final boolean wildcard;
+            private final List<Annotation> annotations;
+            private final List<Annotation> inheritedAnnotations;
             private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
             private final List<TypeName> upperBounds;
@@ -896,7 +1245,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.typeParameters = List.copyOf(builder.typeParameters());
                 this.lowerBounds = List.copyOf(builder.lowerBounds());
                 this.upperBounds = List.copyOf(builder.upperBounds());
-                this.componentType = builder.componentType();
+                this.componentType = builder.componentType().map(Function.identity());
+                this.annotations = List.copyOf(builder.annotations());
+                this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
 
             @Override
@@ -1005,6 +1356,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
+            public List<Annotation> annotations() {
+                return annotations;
+            }
+
+            @Override
+            public List<Annotation> inheritedAnnotations() {
+                return inheritedAnnotations;
+            }
+
+            @Override
             public boolean equals(Object o) {
                 if (o == this) {
                     return true;
@@ -1013,15 +1374,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                     return false;
                 }
                 return Objects.equals(packageName, other.packageName())
-                        && Objects.equals(className, other.className())
-                        && Objects.equals(enclosingNames, other.enclosingNames())
-                        && primitive == other.primitive()
-                        && array == other.array();
+                    && Objects.equals(className, other.className())
+                    && Objects.equals(enclosingNames, other.enclosingNames())
+                    && primitive == other.primitive()
+                    && array == other.array()
+                    && Objects.equals(componentType, other.componentType());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(packageName, className, enclosingNames, primitive, array);
+                return Objects.hash(packageName, className, enclosingNames, primitive, array, componentType);
             }
 
         }

@@ -48,7 +48,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(decorator = TypeNameSupport.Decorator.class)
 @Prototype.CustomMethods(TypeNameSupport.class)
 @Prototype.Implement("java.lang.Comparable<TypeName>")
-interface TypeNameBlueprint {
+interface TypeNameBlueprint extends Annotated {
     /**
      * Functions similar to {@link Class#getPackageName()}.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ public interface Annotated {
      * @return the list of annotations declared on this element
      */
     @Option.Singular
+    @Option.Redundant
     List<Annotation> annotations();
 
     /**
@@ -49,6 +50,7 @@ public interface Annotated {
      * @return list of all meta annotations of this element
      */
     @Option.Singular
+    @Option.Redundant
     List<Annotation> inheritedAnnotations();
 
     /**
