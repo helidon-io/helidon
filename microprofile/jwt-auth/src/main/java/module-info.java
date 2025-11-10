@@ -48,6 +48,7 @@ module io.helidon.microprofile.jwt.auth {
     requires transitive io.helidon.security.jwt;
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security;
+    requires io.helidon.metadata.reflection;
 
     exports io.helidon.microprofile.jwt.auth;
 
