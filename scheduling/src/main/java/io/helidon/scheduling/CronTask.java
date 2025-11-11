@@ -68,7 +68,15 @@ class CronTask implements Cron {
         executionTime = ExecutionTime.forCron(cron);
 
         config.taskManager().register(this);
-        scheduleNext();
+
+        if (config.enabled()) {
+            scheduleNext();
+        } else {
+            // Create a completed future so close() works correctly
+            future = executorService.schedule(() -> {}, Long.MAX_VALUE, TimeUnit.DAYS);
+            future.cancel(false);
+            LOGGER.log(Level.INFO, "Task " + taskId + " is disabled and will not be scheduled");
+        }
     }
 
     @Override

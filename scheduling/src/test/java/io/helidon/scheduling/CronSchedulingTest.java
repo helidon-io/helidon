@@ -305,4 +305,31 @@ public class CronSchedulingTest {
         }
     }
 
+    @Test
+    void cronDisabledProgrammatically() throws InterruptedException {
+        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
+        IntervalMeter meter = new IntervalMeter();
+        Cron cron = null;
+
+        try {
+            cron = Cron.builder()
+                    .id("disabledCronTest")
+                    .executor(executorService)
+                    .expression("* * * * * ? *")  // Every second
+                    .enabled(false)  // Disabled
+                    .task(cronInvocation -> meter.start().end())
+                    .build();
+
+            // Wait and verify task never executed
+            Thread.sleep(3000);
+            assertThat(meter.size(), Matchers.equalTo(0));
+            assertThat(taskManager.tasks(), hasItem(cron));
+        } finally {
+            if (cron != null) {
+                cron.close();
+            }
+            executorService.shutdownNow();
+        }
+    }
+
 }

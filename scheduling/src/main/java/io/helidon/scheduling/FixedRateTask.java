@@ -46,16 +46,23 @@ class FixedRateTask implements FixedRate {
         this.executorService = config.executor();
         this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
 
-        this.future = switch (config.delayType()) {
-            case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run,
-                                                                             initialDelay.toMillis(),
-                                                                             interval.toMillis(),
-                                                                             TimeUnit.MILLISECONDS);
-            case SINCE_PREVIOUS_END -> executorService.scheduleWithFixedDelay(this::run,
-                                                                              initialDelay.toMillis(),
-                                                                              interval.toMillis(),
-                                                                              TimeUnit.MILLISECONDS);
-        };
+        if (config.enabled()) {
+            this.future = switch (config.delayType()) {
+                case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run,
+                                                                                 initialDelay.toMillis(),
+                                                                                 interval.toMillis(),
+                                                                                 TimeUnit.MILLISECONDS);
+                case SINCE_PREVIOUS_END -> executorService.scheduleWithFixedDelay(this::run,
+                                                                                  initialDelay.toMillis(),
+                                                                                  interval.toMillis(),
+                                                                                  TimeUnit.MILLISECONDS);
+            };
+        } else {
+            // Create a completed future so close() works correctly
+            this.future = executorService.schedule(() -> {}, Long.MAX_VALUE, TimeUnit.DAYS);
+            this.future.cancel(false);
+            LOGGER.log(Level.INFO, "Task " + taskId + " is disabled and will not be scheduled");
+        }
 
         config.taskManager().register(this);
     }
