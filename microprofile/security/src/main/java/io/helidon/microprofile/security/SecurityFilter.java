@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.uri.UriPath;
 import io.helidon.jersey.common.InvokedResource;
+import io.helidon.metadata.reflection.AnnotationFactory;
+import io.helidon.metadata.reflection.TypedElementFactory;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -333,9 +336,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
 
             if (null == parent) {
-                analyzerResponse = analyzer.analyze(realClass);
+                analyzerResponse = analyzer.analyze(TypeName.create(realClass), AnnotationFactory.create(realClass));
             } else {
-                analyzerResponse = analyzer.analyze(realClass, parent.analyzerResponse(analyzer));
+                analyzerResponse = analyzer.analyze(TypeName.create(realClass),
+                                                    AnnotationFactory.create(realClass),
+                                                    parent.analyzerResponse(analyzer));
             }
 
             definition.analyzerResponse(analyzer, analyzerResponse);
@@ -431,7 +436,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                                                               .build();
                 methodDef.securityLevels().set(methodDef.securityLevels().size() - 1, newSecurityLevel);
                 for (AnnotationAnalyzer analyzer : analyzers) {
-                    AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(method,
+                    AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(
+                            TypeName.create(method.getDeclaringClass()),
+                            TypedElementFactory.create(method),
                             current.analyzerResponse(analyzer));
 
                     methodDef.analyzerResponse(analyzer, analyzerResponse);

@@ -91,6 +91,8 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ServiceRegistryExtension implements Extension {
+    // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
+    private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
 
     /**
      * Creates a new {@link ServiceRegistryExtension}.
@@ -172,6 +174,10 @@ public class ServiceRegistryExtension implements Extension {
         for (ServiceInfo service : allServices) {
             if (service instanceof CdiBeanDescriptor || service instanceof CdiProducerDescriptor) {
                 // we do not want to re-insert CDI beans into CDI, obviously
+                continue;
+            }
+            if (service.contracts().contains(SECURITY)) {
+                // workaround - we must use `SecurityCdiExtension`, as it has public methods with security builder...
                 continue;
             }
             addServiceInfo(abd, bm, registry, processedTypes, service);

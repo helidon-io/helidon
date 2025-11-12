@@ -41,21 +41,18 @@ include::{rootdir}/includes/se.adoc[]
 
 == Overview
 
-The Helidon gRPC server provides a framework for creating link:http://grpc.io/[gRPC] applications.
-While it allows you to deploy any standard gRPC service that
-implements `io.grpc.BindableService` interface, including services generated
-from the Protobuf IDL files (and even allows you to customize them to a certain
-extent), using Helidon gRPC framework to implement your services has a number of
-benefits:
+The Helidon gRPC server provides a framework for building link:http://grpc.io/[gRPC]
+applications. While it supports deploying any standard gRPC service that implements
+the `io.grpc.BindableService` interface—including those generated from Protobuf IDL
+files—it also allows a degree of customization.
 
-* It allows you to define both HTTP and gRPC services using a similar programming
-model, simplifying the learning curve for developers
+Using the Helidon gRPC framework to implement your services offers several advantages:
 
-* It provides a number of helper methods that make service implementation
-significantly simpler
+* Unified programming model: You can define both HTTP and gRPC services using a consistent, intuitive model, reducing the learning curve for developers.
 
-* It allows you to run gRPC and HTTP endpoints on the same WebServer, and even on the same port.
+* Simplified development: The framework includes helper methods that make service implementation significantly easier.
 
+* Integrated deployment: You can host gRPC and HTTP endpoints on the same WebServer instance, even sharing the same port.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -67,14 +64,17 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+Additional dependencies may be required depending on your application needs. See
+the link:{helidon-github-examples-url}/webserver/grpc[gRPC SE Example]
+for a complete example.
+
 == Usage
 === gRPC Server Routing
 - <<Customizing Service Definitions, Customizing Service Definitions>>
 
-Unlike the HTTP server, which allows you to route requests based on path expression
-and an HTTP verb, the gRPC server always routes requests based on the service and
-method names. This makes routing configuration somewhat simpler -- all you need
-to do is register your services:
+Unlike the HTTP server—which routes requests based on path expressions and HTTP
+verbs—the gRPC server routes requests by service and method names. This simplifies
+routing configuration: all you need to do is register your services.
 
 [source,java]
 ----
@@ -86,13 +86,14 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_1, indent=0]
 <3> Register `MathService` instance.
 <4> Register a custom unary gRPC route
 
-Both "standard" gRPC services that implement `io.grpc.BindableService` interface
-(typically implemented by extending generated server-side stubs and overriding
-their methods), and Helidon gRPC services that implement
-`io.helidon.grpc.server.GrpcService` interface can be registered.
-The difference is that Helidon gRPC services allow you to customize behavior
-down to the method level, and provide a number of useful helper methods that
-make service implementation easier, as we'll see in a moment.
+Both standard gRPC services that implement the `io.grpc.BindableService`
+interface (typically created by extending generated server-side stubs and
+overriding their methods) and Helidon gRPC services that implement the
+io.helidon.grpc.server.GrpcService interface can be registered.
+
+The key difference is that Helidon gRPC services provide finer-grained
+control—allowing you to customize behavior at the method level—and include
+several helper methods that simplify service implementation, as we’ll see shortly.
 
 ==== Customizing Service Definitions
 
@@ -104,7 +105,7 @@ argument to the `service` method.
 
 ==== Implementing Protobuf Services
 
-In order to implement Protobuf-based service, you would follow the official
+To implement Protobuf-based services, you can follow the official
 link:https://grpc.io/docs/quickstart/java.html[instructions] on the gRPC
 website, which boil down to the following:
 
@@ -131,12 +132,16 @@ message EchoResponse {
 }
 ----
 
-Based on this IDL, the gRPC compiler will generate message classes (`EchoRequest`
-and `EchoResponse`), client stubs that can be used to make RPC calls to the server,
-as well as the base class for the server-side service implementation.
+When using Maven, `.proto` files should be placed under the `src/main/proto` directory.
+It’s recommended to use the `protobuf-maven-plugin` to compile these files as part of
+the Maven build process. You can refer to the
+link:{helidon-github-examples-url}/webserver/grpc/pom.xml[pom.xml]
+file in the Helidon gRPC SE example for guidance.
 
-We can ignore the last one, and implement the service using Helidon gRPC framework
-instead.
+The Protobuf compiler generates message classes (EchoRequest and EchoResponse), client
+stubs (for making RPC calls to the server), and a base class for the server-side
+service implementation. In this example, we’ll ignore the generated base class and
+instead implement the service using the Helidon gRPC framework.
 
 ===== Implement the Service
 
@@ -161,16 +166,16 @@ link:{grpc-server-javadoc-base-url}/io/helidon/webserver/grpc/ResponseHelper.htm
 
 === Server Interceptors
 
-gRPC supports the notion of _server interceptors_ which are useful to implement
-common tasks (cross-cutting concerns) on any subset of methods and services.
-Interceptors implement the `io.grpc.ServerInterceptor` interface which defines
-a single `interceptCall` method. Server interceptors are arranged in a _chain_ that
-wraps the actual gRPC method invocation and that can be ordered by weight.
+gRPC supports the concept of _server interceptors_, which are useful for
+implementing cross-cutting concerns across any subset of methods or services.
+Interceptors implement the `io.grpc.ServerInterceptor` interface, which defines
+a single `interceptCall` method. Server interceptors are arranged in a chain that
+wraps the actual gRPC method invocation and can be ordered by weight.
 
-Server interceptors are registered while creating routes, and will intercept any
-gRPC method calls that follow: that is, registration ordering is important to
-make sure interceptor chains are properly constructed to accomplish a
-certain task. For example, consider the following routing definition:
+Server interceptors are registered during route creation and will intercept
+all subsequent gRPC method calls. Because of this, registration order is important
+to ensure that interceptor chains are constructed correctly to achieve the desired
+behavior. For example, consider the following routing definition:
 
 [source,java]
 ----
@@ -269,13 +274,15 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_3, indent=0]
 
 === Configuring the gRPC Reflection Service
 
-When a gRPC client interacts with a server, it needs to have access to the
-proto file in order to learn about the available services, methods and
-message types in use. For many applications this information is simply
-_common knowledge_ between the two parties. However, in some cases, especially
-while developing a new service, it is convenient to use tools such as `grpcurl`
-to test the service. One way to do that is to specify the proto file as
-an argument as follows:
+When a gRPC client interacts with a server, it must have access to the
+corresponding `.proto` file to understand the available services, methods,
+and message types. In many applications, this information is _common knowledge_
+shared between the client and server.
+
+However, during development—especially when testing a new service—it can be
+useful to use tools such as `grpcurl` to invoke service methods directly. In such
+cases, one option is to provide the `.proto` file as a command-line argument,
+as shown below:
 
 [source,bash]
 ----
@@ -287,7 +294,7 @@ messages types available in the proto file, and ultimately execute the
 requested gRPC call.
 
 Helidon includes a gRPC reflection service that can be queried by tools
-such as `grpcurl` to learn about the available services &mdash;similar to
+such as `grpcurl` to learn about the available services--similar to
 OpenAPI for REST services. The reflection service is implemented as a
 _feature_ and can be enabled programmatically when adding the feature, or
 via config as follows:
@@ -308,10 +315,11 @@ gRPC reflection, see https://grpc.io/docs/guides/reflection/[gRPC Reflection].
 
 === Configuring Compression
 
-gRPC compression is normally driven by client requests, and it can be asymmetric, whereby
-the server may use a different type of compression than the client. In some scenarios, such
-as when debugging or measuring performance, it may be beneficial to disable compression on
-the server side. As always, this can be done programmatically or via config.
+gRPC compression is typically driven by client requests and can be asymmetric—that is, the
+server may use a different compression type than the client. In certain scenarios, such as
+debugging or performance testing, it may be useful to disable compression on the server
+side. As with most Helidon features, this can be configured either programmatically
+or through configuration.
 
 [source,yaml]
 ----
@@ -330,4 +338,5 @@ as shown above.
 
 The following gRPC examples for Helidon SE are available:
 
+* link:{helidon-github-examples-url}/webserver/grpc[gRPC SE Example]
 * link:{helidon-github-examples-url}/webserver/protocols[Multiple protocols on a single WebServer]

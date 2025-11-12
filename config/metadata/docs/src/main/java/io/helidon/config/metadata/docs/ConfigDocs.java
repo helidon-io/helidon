@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,6 +211,7 @@ public class ConfigDocs {
 
         for (CmModule module : allModules) {
             for (CmType type : module.getTypes()) {
+                type.module(module.getModule());
                 configuredTypes.put(type.getAnnotatedType(), type);
                 allTypes.add(type.getAnnotatedType());
                 allTypes.add(type.getType());
@@ -619,13 +620,13 @@ public class ConfigDocs {
 
                     throw new ConfigDocsException(
                             "Cannot generate config reference documentation, unless target path contains "
-                            + CONFIG_REFERENCE_ADOC + " file or it is empty. "
-                            + "Target path: " + path.toAbsolutePath() + " contains files");
+                                    + CONFIG_REFERENCE_ADOC + " file or it is empty. "
+                                    + "Target path: " + path.toAbsolutePath() + " contains files");
                 }
             }
         } else {
             throw new IllegalArgumentException("Target path must be a directory: "
-                                               + path.toAbsolutePath().normalize());
+                                                       + path.toAbsolutePath().normalize());
         }
     }
 
@@ -675,31 +676,56 @@ public class ConfigDocs {
 
     private void resolveTypeReference(Map<String, CmType> configuredTypes) {
         for (CmType value : configuredTypes.values()) {
-            value.setTypeReference(resolveTypeReference(value.getType()));
+            value.setTypeReference(resolveTypeReference(value));
         }
     }
 
-    private String resolveTypeReference(String type) {
+    private String resolveTypeReference(CmType cmType) {
+        String type = cmType.getType();
         if (type.startsWith("io.helidon")) {
             // our type
-            return resolveModuleFromType(type);
+            return resolveModuleFromType(cmType);
         } else {
             // no reference
             return type;
         }
     }
 
-    private String resolveModuleFromType(String type) {
-        Matcher m = MODULE_PATTERN.matcher(type);
-        if (m.matches()) {
-            String moduleName = m.group(1);
-            return "link:{javadoc-base-url}/" + moduleName + "/" + toJavadocLink(type) + "[" + type + "]";
-        }
-        return type;
+    private String resolveModuleFromType(CmType cmType) {
+        String type = cmType.getType();
+        return "link:{javadoc-base-url}/" + cmType.module() + "/" + toJavadocLink(type) + "[" + type + "]";
+
     }
 
     private String toJavadocLink(String type) {
-        return type.replace('.', '/') + ".html";
+        // inner classes must use the ., not /
+        StringBuilder link = new StringBuilder();
+        String inProgress = type;
+        boolean notFirst = false;
+        while (true) {
+            int dot = inProgress.indexOf('.');
+            if (dot == -1) {
+                link.append("/");
+                break;
+            }
+            String beforeDot = inProgress.substring(0, dot);
+            if (notFirst) {
+                link.append("/");
+
+                if (Character.isUpperCase(beforeDot.charAt(0))) {
+                    // thw whole segment is class name with an inner class name
+                    break;
+                }
+            }
+            link.append(beforeDot);
+            inProgress = inProgress.substring(dot + 1);
+            notFirst = true;
+        }
+        if (!inProgress.isBlank()) {
+            link.append(inProgress);
+        }
+        link.append(".html");
+        return link.toString();
     }
 
     private void translateHtml(Map<String, CmType> configuredTypes) {

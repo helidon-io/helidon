@@ -16,14 +16,19 @@
 
 package io.helidon.webserver.grpc;
 
+import java.util.List;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.webserver.grpc.spi.GrpcServerService;
+import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = GrpcProtocolProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
+@Prototype.IncludeDefaultMethods("grpcServices")
 interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**
@@ -53,7 +58,7 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**
      * Whether to support compression if requested by a client. If explicitly
-     * disabled, no compression will be ever be used by the server even if a
+     * disabled, no compression will ever be used by the server even if a
      * client-compatible compressor is found.
      *
      * @return true if compression is enabled
@@ -61,4 +66,25 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enableCompression();
+
+    /**
+     * gRPC server services. These services will not be discovered automatically.
+     *
+     * @return services to use
+     */
+    @Option.Singular
+    @Option.Configured
+    @Option.Provider(value = GrpcServerServiceProvider.class, discoverServices = false)
+    default List<GrpcServerService> grpcServices() {
+        return List.of();
+    }
+
+    /**
+     * Max size of gRPC reading buffer. If receiving an entity larger than this,
+     * processing will be aborted. This can help prevent DoS attacks. Default
+     * set to 2 MB.
+     */
+    @Option.Configured
+    @Option.DefaultInt(2 * 1024 * 1024)
+    int maxReadBufferSize();
 }

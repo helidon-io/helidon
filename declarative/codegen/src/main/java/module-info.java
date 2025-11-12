@@ -22,7 +22,8 @@ module io.helidon.declarative.codegen {
     requires io.helidon.codegen.classmodel;
     requires io.helidon.service.codegen;
     requires io.helidon.declarative.codegen.model;
-
+    requires io.helidon.common;
+    requires io.helidon.common.types;
     exports io.helidon.declarative.codegen;
 
     exports io.helidon.declarative.codegen.http;
@@ -36,6 +37,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
     exports io.helidon.declarative.codegen.scheduling;
+    // validation
+    exports io.helidon.declarative.codegen.validation;
 
     uses io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 
@@ -43,7 +46,8 @@ module io.helidon.declarative.codegen {
             with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
                     io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
-                    io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider;
+                    io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
+                    io.helidon.declarative.codegen.validation.ValidationExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;

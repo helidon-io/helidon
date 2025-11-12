@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Helidon WebServer gRPC Support.
@@ -45,6 +44,7 @@ module io.helidon.webserver.grpc {
     requires static io.helidon.common.features.api;
 
     exports io.helidon.webserver.grpc;
+    exports io.helidon.webserver.grpc.spi;
 
     provides io.helidon.webserver.http2.spi.Http2SubProtocolProvider
             with io.helidon.webserver.grpc.GrpcProtocolProvider;

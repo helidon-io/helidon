@@ -62,7 +62,7 @@ abstract class AbstractParametersProvider {
                     .addContent(".");
             asMethod(contentBuilder, parameterType);
             // add .orElseThrow() in case the parameter is missing
-            contentBuilder.addContentLine("")
+            contentBuilder.addContentLine()
                     .addContent(".orElseThrow(() -> new ")
                     .addContent(BAD_REQUEST_EXCEPTION)
                     .addContent("(\"")

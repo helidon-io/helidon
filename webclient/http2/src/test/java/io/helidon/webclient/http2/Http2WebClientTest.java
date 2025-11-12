@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
@@ -141,17 +142,36 @@ class Http2WebClientTest {
                     res.send("POST " + req.content().as(String.class));
                 }))
                 .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
-                           res.status(Status.OK_200);
-                           String execId = req.query().get("execId");
-                           try (OutputStream os = res.outputStream()) {
-                               for (int i = 0; i < 5; i++) {
-                                   os.write(String.format(execId + "BAF%03d", i).getBytes());
-                                   Thread.sleep(10);
-                               }
-                           } catch (IOException | InterruptedException e) {
-                               throw new RuntimeException(e);
-                           }
-                       }));
+                    res.status(Status.OK_200);
+                    String execId = req.query().get("execId");
+                    try (OutputStream os = res.outputStream()) {
+                        for (int i = 0; i < 5; i++) {
+                            os.write(String.format(execId + "BAF%03d", i).getBytes());
+                            Thread.sleep(10);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }))
+                .route(Http2Route.route(GET, "/versionspecific/h2streaming-headers", (req, res) -> {
+                    res.status(Status.OK_200);
+                    int phase = req.headers()
+                            .first(HeaderNames.create("phase"))
+                            .map(Integer::parseInt)
+                            .orElse(0);
+                    for (int i = phase; i < 1000 + phase; i++) {
+                        res.headers().add(HeaderNames.create("test" + i), "test" + i);
+                    }
+                    String execId = req.query().get("execId");
+                    try (OutputStream os = res.outputStream()) {
+                        for (int i = 0; i < 5; i++) {
+                            os.write(String.format(execId + "BAF%03d", i).getBytes());
+                            Thread.sleep(10);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
 
         serverBuilder
                 .port(-1)
@@ -253,7 +273,6 @@ class Http2WebClientTest {
         }
     }
 
-//    @Disabled("Failing intermittently, to be investigated")
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void multiplexParallelStreamsGet(String clientType, Supplier<Http2Client> client)
@@ -287,6 +306,45 @@ class Http2WebClientTest {
                 , CompletableFuture.runAsync(() -> callable.accept(2), executorService)
                 , CompletableFuture.runAsync(() -> callable.accept(3), executorService)
                 , CompletableFuture.runAsync(() -> callable.accept(4), executorService)
+        ).get(5, TimeUnit.MINUTES);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("clientTypes")
+    void multiplexParallelStreamsGetWithUniqueHeaders(String clientType, Supplier<Http2Client> client)
+            throws ExecutionException, InterruptedException, TimeoutException {
+
+        Http2Client http2Client = client.get();
+        Consumer<Integer> callable = id -> {
+            try (Http2ClientResponse response = http2Client
+                    .get("/h2streaming-headers")
+                    .queryParam("execId", id.toString())
+                    .header(HeaderNames.create("phase"), String.valueOf(id * 1000))
+                    .request()
+            ) {
+
+                InputStream is = response.inputStream();
+                for (int i = 0; ; i++) {
+                    byte[] bytes = is.readNBytes("0BAF000".getBytes().length);
+                    if (bytes.length == 0) {
+                        break;
+                    }
+                    String message = new String(bytes);
+                    assertThat(message, is(String.format(id + "BAF%03d", i)));
+                }
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+        CompletableFuture.allOf(
+                IntStream.range(1, 6)
+                        .boxed()
+                        .map(i -> CompletableFuture
+                                .runAsync(() -> callable.accept(i), executorService))
+                        .toList()
+                        .toArray(new CompletableFuture[0])
         ).get(5, TimeUnit.MINUTES);
     }
 }

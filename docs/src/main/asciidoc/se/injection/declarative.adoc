@@ -82,6 +82,7 @@ The following features are currently implemented:
 - <<Dec-HTTP-Client, Typed HTTP Client>>
 - <<Dec-FT, Fault Tolerance>>
 - <<Dec-Scheduling, Scheduling>>
+- <<Dec-Validation, Validation>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -195,7 +196,7 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
 
 === Fault Tolerance [[Dec-FT]]
 
-Fault tolerance annotation allow adding features to methods on services.
+Fault tolerance annotations allow adding features to methods on services.
 The annotations can be added to any method that supports interception (i.e. methods that are not private).
 
 Method Annotations:
@@ -226,4 +227,147 @@ Method annotations:
 .Example of a fixed rate scheduled method
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_5, indent=0]
+----
+
+=== Validation [[Dec-Validation]]
+
+Validation provides an ability to validate service method parameters and return types.
+This is achieved through constraint annotations and type validation.
+
+To use validation, the proper dependency must be added to your `pom.xml`, and an annotation processor must be configured to
+code generate the required classes. The annotation processor is part of the bundle mentioned in Helidon Declarative introduction
+above.
+
+Helidon validation module:
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.validation</groupId>
+    <artifactId>helidon-validation</artifactId>
+</dependency>
+----
+
+==== Constraint Annotations
+
+A "Constraint Annotation" is any annotation directly annotated with `io.helidon.validation.Validation`.
+Helidon Validation provides a set of built-in validation constraints, though custom constraints can be created, or existing constraints can be combined.
+
+Existing constraints:
+
+Constraints for any type:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.NotNull.html[`io.helidon.validation.Validation.NotNull`] - must not be null
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Null.html[`io.helidon.validation.Validation.Null`] - must be null
+
+Constraints for `String` and `CharSequence`:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.String.Email.html[`io.helidon.validation.Validation.Email`] - matches an e-mail structure (basic check only)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.String.NotBlank.html[`io.helidon.validation.Validation.String.NotBlank`] - must not be blank (empty or only white-space characters)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.String.NotEmpty.html[`io.helidon.validation.Validation.String.NotEmpty`] - must not be empty (i.e. length is `0`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.String.Length.html[`io.helidon.validation.Validation.String.Length`] - check for maximal (and optionally minimal) length
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.String.Pattern.html[`io.helidon.validation.Validation.String.Pattern`] - check against a regular expression
+
+Constraints for types that extend `java.lang.Number`. These constraints accept any such type, though all types are eventually converted to a `BigDecimal` and the checks are done against the result.
+`Byte` is always converted as an unsigned number, i.e. its values are from `0` to `255` inclusive.
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Negative.html[`io.helidon.validation.Validation.Number.Negative`] - the value must be negative (`< 0`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.NegativeOrZero.html[`io.helidon.validation.Validation.Number.NegativeOrZero`] - the value must be negative or zero (`&lt;= 0`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Positive.html[`io.helidon.validation.Validation.Number.Positive`] - the value must be positive (`> 0`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.PositiveOrZero.html[`io.helidon.validation.Validation.Number.PositiveOrZero`] - the value must be positive or zero (`>= 0`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Min.html[`io.helidon.validation.Validation.Number.Min`] - the value must be at least the specified minimal value (`>= min`), value is defined as a `String`
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Max.html[`io.helidon.validation.Validation.Number.Max`] - the value must be at most the specified maximal value (`&lt;= max`), value is defined as a `String`
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Number.Digits.html[`io.helidon.validation.Validation.Number.Digits`] - the number must have at most the specified number of integer and fractional digits
+
+Constraints for `Integer` data types. These constraints accept `int, long, byte, char, short` and their boxed counterparts.
+`byte` is always converted as an unsigned number, i.e. its values are from `0` to `255` inclusive.
+These are convenience annotation that use `int` data type:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Min.html[`io.helidon.validation.Validation.Integer.Min`] - the value must be at least the specified minimal value (`>= min`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Integer.Max.html[`io.helidon.validation.Validation.Integer.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+
+Constraints for `Long` and `long` data types. No other type is supported:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Min.html[`io.helidon.validation.Validation.Long.Min`] - the value must be at least the specified minimal value (`>= min`)
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Long.Max.html[`io.helidon.validation.Validation.Long.Max`] - the value must be at most the specified maximal value (`&lt;= max`)
+
+Constraints for `Boolean` and `boolean` data type. No other type is supported:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Boolean.True.html[`io.helidon.validation.Validation.Boolean.True`] - the value must be `true`
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Boolean.False.html[`io.helidon.validation.Validation.Boolean.False`] - the value must be `false`
+
+Constraints for collection and map data types:
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Collection.Size.html[`io.helidon.validation.Validation.Collection.Size`] - the size of the collection or map must be between the minimal and maximal sizes
+
+Constraints for calendar/time data types. Behavior depends on the specific type - for example for `Year` data type, past is previous year,
+future is the next year, and present is the current year, regardless of which month it is. When using `Instant`, past is already the last millisecond.
+
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Calendar.Future.html[`io.helidon.validation.Validation.Calendar.Future`] - the value must be in the future
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Calendar.FutureOrPresent.html[`io.helidon.validation.Validation.Calendar.FutureOrPresent`] - the value must be in the future or now
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Calendar.Past.html[`io.helidon.validation.Validation.Calendar.Past`] - the value must be in the past
+- link:{validation-javadoc-base-url}/io/helidon/validation/Validation.Calendar.PastOrPresent.html[`io.helidon.validation.Validation.Calendar.PastOrPresent`] - the value must be in the past or now
+
+Supported types for calendar/time validations:
+
+- `java.util.Date`
+- `java.util.Calendar`
+- `java.time.Instant`
+- `java.time.LocalDate`
+- `java.time.LocalDateTime`
+- `java.time.LocalTime`
+- `java.time.MonthDay`
+- `java.time.OffsetDateTime`
+- `java.time.OffsetTime`
+- `java.time.Year`
+- `java.time.YearMonth`
+- `java.time.ZonedDateTime`
+- `java.time.chrono.HijrahDate`
+- `java.time.chrono.JapaneseDate`
+- `java.time.chrono.MinguoDate`
+- `java.time.chrono.ThaiBuddhistDate`
+
+
+==== Type Validation
+
+A type annotated with `@Validation.Validated` will have validation code generated. Usage of that type can be marked with
+`@Validation.Valid` - if such an annotation is present, and it is on a field of another validated type, or it is a parameter,
+return type, or a type argument of a parameter/return type of a service method, the object instance will be validated using
+a generated interceptor.
+
+==== Usage
+
+[source,java]
+.Example of a validated type
+----
+include::{sourcedir}/se/ValidationSnippets.java[tag=snippet_1, indent=0]
+----
+
+[source,java]
+.Example of a validated method call using a validated type
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_7, indent=0]
+----
+
+A custom "compound" annotation can be created to simplify usage.
+
+[source,java]
+.Example of a compound annotation
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_8, indent=0]
+----
+
+A custom constraint annotation can be created (and act as a compound annotation as well).
+
+[source,java]
+.Example of a custom constraint annotation
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_9, indent=0]
+----
+
+For each constraint annotation, there MUST be a service that validates it.
+
+[source,java]
+.Example of constraint validation provider
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_10, indent=0]
 ----

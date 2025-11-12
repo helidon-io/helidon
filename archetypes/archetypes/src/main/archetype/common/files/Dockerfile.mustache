@@ -1,6 +1,6 @@
 
 # 1st stage, build the app
-FROM container-registry.oracle.com/java/jdk-no-fee-term:21 as build
+FROM container-registry.oracle.com/java/jdk-no-fee-term:21 AS build
 
 # Install maven
 WORKDIR /usr/share

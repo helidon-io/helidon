@@ -28,7 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.config {
     requires static io.helidon.common.features.api;
 
-    requires static io.helidon.service.registry;
+    requires transitive io.helidon.service.registry;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.media.type;
     requires transitive io.helidon.common;

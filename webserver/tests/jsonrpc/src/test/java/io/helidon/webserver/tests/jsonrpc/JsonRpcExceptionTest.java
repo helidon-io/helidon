@@ -98,8 +98,11 @@ class JsonRpcExceptionTest {
     @Test
     void testPing1() throws InterruptedException {
         try (JsonRpcClientResponse res = client.rpcMethod("ping1")
+                .rpcId(1)
                 .path("/rpc")
                 .submit()) {
+            assertThat(res.rpcId().isPresent(), is(true));
+            assertThat(res.rpcId().get().toString(), is("1"));
             assertThat(res.error().isPresent(), is(true));
             assertThat(res.error().get().code(), is(-10001));
             assertThat(res.error().get().message(), is(MESSAGE1));
@@ -110,8 +113,11 @@ class JsonRpcExceptionTest {
     @Test
     void testPing2() throws InterruptedException {
         try (JsonRpcClientResponse res = client.rpcMethod("ping2")
+                .rpcId(1)
                 .path("/rpc")
                 .submit()) {
+            assertThat(res.rpcId().isPresent(), is(true));
+            assertThat(res.rpcId().get().toString(), is("1"));
             assertThat(res.error().isPresent(), is(true));
             assertThat(res.error().get().code(), is(-10002));
             assertThat(res.error().get().message(), is(MESSAGE2));
@@ -122,8 +128,11 @@ class JsonRpcExceptionTest {
     @Test
     void testPing3() throws InterruptedException {
         try (JsonRpcClientResponse res = client.rpcMethod("ping3")
+                .rpcId(1)
                 .path("/rpc")
                 .submit()) {
+            assertThat(res.rpcId().isPresent(), is(true));
+            assertThat(res.rpcId().get().toString(), is("1"));
             assertThat(res.error().isPresent(), is(true));
             assertThat(res.error().get().code(), is(JsonRpcError.INTERNAL_ERROR));
         }

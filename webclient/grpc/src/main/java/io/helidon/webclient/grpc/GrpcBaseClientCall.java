@@ -38,6 +38,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.metrics.api.Counter;
@@ -57,6 +58,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
+import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
@@ -84,10 +86,12 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
     protected static final int DATA_PREFIX_LENGTH = 5;
     protected static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+
     protected record MethodMetrics(Counter callStarted,
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
+
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final GrpcClientImpl grpcClient;
@@ -151,10 +155,16 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
                                                   clientConnection, true);
 
+        // note that settings from connection may not be initialized at this time
+        // given that Http2ClientConnection.create() above runs asynchronously
+        Http2Settings http2Settings = http2Settings(grpcClient.http2Client()
+                                                            .prototype()
+                                                            .protocolConfig());
+
         // create HTTP2 stream from connection
         clientStream = new GrpcClientStream(
                 connection,
-                Http2Settings.create(),                 // Http2Settings
+                http2Settings,
                 socket,                                 // SocketContext
                 new Http2StreamConfig() {
                     @Override
@@ -169,8 +179,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
                     @Override
                     public Duration readTimeout() {
-                        return grpcClient.prototype().readTimeout().orElse(
-                                grpcClient.prototype().protocolConfig().pollWaitTime());
+                        GrpcClientConfig config = grpcClient.prototype();
+                        return config.readTimeout().orElse(config.protocolConfig().pollWaitTime());
                     }
                 },
                 null,       // Http2ClientConfig
@@ -387,6 +397,17 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             throw e;
         }
         socket().log(LOGGER, TRACE, "[Reading thread] HTTP/2 stream timeout, retrying");
+    }
+
+    private Http2Settings http2Settings(Http2ClientProtocolConfig config) {
+        Http2Settings.Builder b = Http2Settings.builder();
+        if (config.maxHeaderListSize() > 0) {
+            b.add(Http2Setting.MAX_HEADER_LIST_SIZE, config.maxHeaderListSize());
+        }
+        return b.add(Http2Setting.INITIAL_WINDOW_SIZE, (long) config.initialWindowSize())
+                .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
+                .add(Http2Setting.ENABLE_PUSH, false)
+                .build();
     }
 
     protected void initMetrics() {

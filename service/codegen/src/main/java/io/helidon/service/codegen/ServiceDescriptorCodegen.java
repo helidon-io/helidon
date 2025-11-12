@@ -66,6 +66,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.GENERIC_T_TYPE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_DELEGATE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_EXCEPTION;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_INVOKER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_METADATA;
 import static io.helidon.service.codegen.ServiceCodegenTypes.LIST_OF_DEPENDENCIES;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_ENTRY_POINT;
@@ -1888,35 +1889,56 @@ public class ServiceDescriptorCodegen {
             methodBuilder.addContentLine(field.declaredType().resolvedName() + " "
                                                  + field.ipParamName()
                                                  + " = ctx__helidonInject.dependency(" + field.constantName() + ");");
-            String interceptorsName = field.ipParamName() + "__interceptors";
+
+            // now create the invoker and invoke it, guarded by try/catch block (as invoke may throw checked exception)
+            TypeName invokerType = TypeName.builder(INTERCEPT_INVOKER)
+                    .addTypeArgument(field.declaredType())
+                    .build();
+            String invokerName = field.ipParamName() + "__invoker";
+            // the typed element info of this element
             String constantName = fieldElementConstantName(field.ipParamName());
-            methodBuilder.addContent("var ")
-                    .addContent(interceptorsName)
-                    .addContent(" = interceptMeta__helidonInject.interceptors(QUALIFIERS, ANNOTATIONS, ")
-                    .addContent(constantName)
-                    .addContentLine(");")
-                    .addContent("if(")
-                    .addContent(interceptorsName)
-                    .addContentLine(".isEmpty() {")
-                    .addContent("instance__helidonInject.")
-                    .addContent(field.ipParamName())
-                    .addContent(" = ")
-                    .addContent(field.ipParamName())
-                    .addContentLine(";")
-                    .addContentLine("} else {")
-                    .addContent("instance__helidonInject.")
-                    .addContent(field.ipParamName())
-                    .addContent(" = interceptMeta__helidonInject.invoke(this,")
+
+            // begin try/catch block
+            methodBuilder.addContentLine("try {");
+
+            // create invoker
+            methodBuilder.addContent(invokerType)
+                    .addContent(" ")
+                    .addContent(invokerName)
+                    .addContentLine(" = interceptMeta__helidonInject.createInvoker(instance__helidonInject, ")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContentLine("INSTANCE,")
+                    .addContentLine("QUALIFIERS,")
                     .addContentLine("ANNOTATIONS,")
                     .addContent(constantName)
                     .addContentLine(",")
-                    .addContent(interceptorsName)
-                    .addContentLine(",")
-                    .addContent("params__helidonInject -> ")
-                    .addContent(field.constantName())
-                    .addContentLine(".type().cast(params__helidonInject[0]),")
+                    .addContent("params__helidonInject -> (")
+                    .addContent(field.declaredType().resolvedName())
+                    .addContentLine(") params__helidonInject[0],")
+                    .addContent(Set.class)
+                    .addContentLine(".of());")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+            // assign the instance
+            methodBuilder.addContent("instance__helidonInject.")
+                    .addContent(field.ipParamName())
+                    .addContent(" = config__invoker.invoke(")
                     .addContent(field.ipParamName())
                     .addContentLine(");")
+                    .decreaseContentPadding();
+            // end try/catch block
+            methodBuilder.addContent("} catch (")
+                    .addContent(RuntimeException.class)
+                    .addContentLine(" e__helidonInject) {")
+                    .addContentLine("throw e__helidonInject;")
+                    .decreaseContentPadding()
+                    .addContent("} catch (")
+                    .addContent(Exception.class)
+                    .addContentLine(" e__helidonInject) {")
+                    .addContent("throw new ")
+                    .addContent(RuntimeException.class)
+                    .addContentLine("(e__helidonInject);")
                     .addContentLine("}");
         } else {
             methodBuilder.addContent("instance__helidonInject." + field.ipParamName() + " = ")
@@ -2312,26 +2334,26 @@ public class ServiceDescriptorCodegen {
                                        ClassModel.Builder classModel,
                                        TypedElements.ElementMeta element) {
 
-            var method = element.element();
-            String uniqueName = ctx.uniqueName(typeInfo, method);
-            String constantName = "METHOD_" + toConstantName(uniqueName);
+        var method = element.element();
+        String uniqueName = ctx.uniqueName(typeInfo, method);
+        String constantName = "METHOD_" + toConstantName(uniqueName);
 
-            // add inherited annotations from interfaces
-            List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-            addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
-            TypedElementInfo typedElementInfo = TypedElementInfo.builder()
-                    .from(method)
-                    .annotations(elementAnnotations)
-                    .build();
-            classModel.addField(constant -> constant
-                    .description("Element info for method: {@code " + method.signature() + "}.")
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .type(TypeNames.TYPED_ELEMENT_INFO)
-                    .name(constantName)
-                    .addContentCreate(typedElementInfo));
-        }
+        // add inherited annotations from interfaces
+        List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
+        addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
+        TypedElementInfo typedElementInfo = TypedElementInfo.builder()
+                .from(method)
+                .annotations(elementAnnotations)
+                .build();
+        classModel.addField(constant -> constant
+                .description("Element info for method: {@code " + method.signature() + "}.")
+                .accessModifier(AccessModifier.PUBLIC)
+                .isStatic(true)
+                .isFinal(true)
+                .type(TypeNames.TYPED_ELEMENT_INFO)
+                .name(constantName)
+                .addContentCreate(typedElementInfo));
+    }
 
     private void generateInterceptedType(RegistryRoundContext roundContext,
                                          TypeInfo typeInfo,

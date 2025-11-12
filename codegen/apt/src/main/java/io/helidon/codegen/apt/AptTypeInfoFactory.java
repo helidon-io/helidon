@@ -193,7 +193,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                                                Element v,
                                                                                Elements elements,
                                                                                boolean varargType) {
-        TypeName type = AptTypeFactory.createTypeName(v).orElse(null);
+        TypeName type = AptTypeFactory.createTypeName(elements, v).orElse(null);
         TypeMirror typeMirror = null;
         String defaultValue = null;
         List<TypedElementInfo> params = List.of();
@@ -263,6 +263,11 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             }
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
+            Object variableDefault = ve.getConstantValue();
+            // configure default value for constants
+            if (variableDefault != null) {
+                defaultValue = String.valueOf(variableDefault);
+            }
         }
 
         if (typeMirror != null) {

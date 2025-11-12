@@ -506,7 +506,7 @@ link:{javadoc-base-url}/io.helidon.http/io/helidon/http/DirectHandler.EventType.
 
 Direct handlers can be configured independently for each port exposed by the Webserver;
 similar to other config, if configured directly on the Webserver they will only apply to the default port. For more information see
-link:{webserver-javadoc-base-url}/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)[directHandlers] method in `ListenerConfig`.
+link:{webserver-javadoc-base-url}/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)[directHandlers] method in `ListenerConfig`.
 
 The following example shows how to register a custom handler for a request that
 is deemed invalid before the routing phase stars. The custom handler in

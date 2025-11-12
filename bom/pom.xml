@@ -724,11 +724,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.data.sql</groupId>
-                <artifactId>helidon-data-sql-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource</artifactId>
                 <version>${helidon.version}</version>
@@ -1475,6 +1470,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-grpc-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1766,6 +1766,17 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+
+            <dependency>
+                <groupId>io.helidon.validation</groupId>
+                <artifactId>helidon-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.introspector.MethodProperty;
 import org.yaml.snakeyaml.introspector.Property;
-import org.yaml.snakeyaml.introspector.PropertySubstitute;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
@@ -78,7 +77,7 @@ import org.yaml.snakeyaml.nodes.Tag;
  */
 public class ExpandedTypeDescription extends TypeDescription {
 
-    static final PropertyUtils PROPERTY_UTILS = new PropertyUtils();
+    static final PropertyUtils PROPERTY_UTILS = new ExtendedPropertyUtils();
 
     private static final String EXTENSION_PROPERTY_PREFIX = "x-";
 
@@ -87,6 +86,7 @@ public class ExpandedTypeDescription extends TypeDescription {
     private ExpandedTypeDescription(Class<?> clazz, Class<?> impl) {
         super(clazz, null, impl);
         this.impl = impl;
+        setPropertyUtils(PROPERTY_UTILS);
     }
 
     /**
@@ -110,7 +110,6 @@ public class ExpandedTypeDescription extends TypeDescription {
         } else {
             result = new ExpandedTypeDescription(clazz, impl);
         }
-        result.setPropertyUtils(PROPERTY_UTILS);
         return result;
     }
 
@@ -118,11 +117,10 @@ public class ExpandedTypeDescription extends TypeDescription {
      * Adds property handling for a {@code $ref} reference.
      *
      * @return this type description
+     * @deprecated No need to invoke addRef any longer; refs are handled by the custom property utils implementation.
      */
+    @Deprecated(since = "4.3.2", forRemoval = true)
     public ExpandedTypeDescription addRef() {
-        PropertySubstitute sub = new PropertySubstitute("ref", String.class, "getRef", "setRef");
-        sub.setTargetType(impl);
-        substituteProperty(sub);
         return this;
     }
 
@@ -130,19 +128,15 @@ public class ExpandedTypeDescription extends TypeDescription {
      * Adds property handling for extensions.
      *
      * @return this type description
+     * @deprecated No need to invoke addExtensions any longer; extensions are handled by the custom property utils implementation.
      */
+    @Deprecated(since = "4.3.2", forRemoval = true)
     public ExpandedTypeDescription addExtensions() {
-        PropertySubstitute sub = new PropertySubstitute("extensions", Map.class, "getExtensions", "setExtensions");
-        sub.setTargetType(impl);
-        substituteProperty(sub);
         return this;
     }
 
     @Override
     public Property getProperty(String name) {
-        if (isExtension(name)) {
-            return new ExtensionProperty(name);
-        }
         if (isRef(name)) {
             return new RenamedProperty(this.getType(), "ref");
         }

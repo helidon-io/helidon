@@ -151,9 +151,6 @@ class WebServerConfigSupport {
             if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
                 target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
             }
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_RCVBUF)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_RCVBUF, 4096);
-            }
             if (target.requestedUriDiscoveryContext().isEmpty()) {
                 target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
                                                             .socketId(target.name())

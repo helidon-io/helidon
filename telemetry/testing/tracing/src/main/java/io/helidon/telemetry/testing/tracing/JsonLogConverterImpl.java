@@ -292,7 +292,13 @@ class JsonLogConverterImpl implements JsonLogConverter {
                    Map<String, Object> attributes) implements JsonLogConverter.LogSpan {
     }
 
-    private static class TestLogHandler extends Handler {
+    static class TestLogHandler extends Handler {
+
+        // For testing.
+        static TestLogHandler create() {
+            return new TestLogHandler();
+        }
+
 
         private final List<String> resourceSpans = Collections.synchronizedList(new ArrayList<>());
 
@@ -312,7 +318,7 @@ class JsonLogConverterImpl implements JsonLogConverter {
         }
 
         List<String> resourceSpans() {
-            return resourceSpans;
+            return List.copyOf(resourceSpans);
         }
 
     }

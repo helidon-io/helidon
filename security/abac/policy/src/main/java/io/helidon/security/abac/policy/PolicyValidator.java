@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -35,6 +34,7 @@ import java.util.Set;
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityLevel;
@@ -59,6 +59,7 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  */
 public final class PolicyValidator implements AbacValidator<PolicyValidator.PolicyConfig> {
     private static final System.Logger LOGGER = System.getLogger(PolicyValidator.class.getName());
+    private static final TypeName POLICY_STATEMENT = TypeName.create(PolicyStatement.class);
 
     private final List<PolicyExecutor> executors = new LinkedList<>();
 
@@ -133,16 +134,9 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         PolicyConfig.Builder resultBuilder = PolicyConfig.builder();
         for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
             for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
-                List<Annotation> annotations = new ArrayList<>();
-                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
-                }
-                for (Annotation annotation : annotations) {
-                    if (annotation instanceof PolicyStatement) {
-                        PolicyStatement statement = (PolicyStatement) annotation;
-                        resultBuilder.from(PolicyConfig.builder().from(statement).build());
-                    }
-                }
+                securityLevel.filterAnnotations(POLICY_STATEMENT, scope)
+                        .forEach(annotation ->
+                                         resultBuilder.from(PolicyConfig.builder().policyStatement(annotation).build()));
             }
         }
 
@@ -364,6 +358,11 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
 
             Builder from(PolicyStatement annot) {
                 return inherit(annot.inherit()).statement(annot.value());
+            }
+
+            Builder policyStatement(io.helidon.common.types.Annotation annotation) {
+                return inherit(annotation.booleanValue("inherit").orElse(true))
+                        .statement(annotation.stringValue().orElse(""));
             }
 
             Builder from(PolicyConfig config) {
