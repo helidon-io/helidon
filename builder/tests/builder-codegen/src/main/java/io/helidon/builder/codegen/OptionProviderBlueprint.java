@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,25 @@
 
 package io.helidon.builder.codegen;
 
-import io.helidon.codegen.classmodel.Javadoc;
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
-record CustomConstant(TypeName declaringType, TypeName fieldType, String name, Javadoc javadoc) {
+/**
+ * Definition of an option that is a provider (i.e. loaded through registry or service loader).
+ */
+@Prototype.Blueprint
+interface OptionProviderBlueprint {
+    /**
+     * Type of the provider to lookup.
+     *
+     * @return provider type
+     */
+    TypeName providerType();
+
+    /**
+     * Whether to discover services by default.
+     *
+     * @return whether to discover services
+     */
+    boolean discoverServices();
 }

@@ -226,7 +226,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
         return Optional.empty();
     }
 
-    private static boolean doesImplement(TypeInfo typeInfo, TypeName interfaceType) {
+    static boolean doesImplement(TypeInfo typeInfo, TypeName interfaceType) {
         return typeInfo.interfaceTypeInfo()
                 .stream()
                 .anyMatch(it -> interfaceType.equals(it.typeName().genericTypeName()));

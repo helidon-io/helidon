@@ -78,6 +78,18 @@ final class TypeNameSupport {
             PRIMITIVE_VOID, BOXED_VOID
     );
 
+    private static final Map<TypeName, TypeName> UNBOXED_TYPES = Map.of(
+            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
+            BOXED_BYTE, PRIMITIVE_BYTE,
+            BOXED_SHORT, PRIMITIVE_SHORT,
+            BOXED_INT, PRIMITIVE_INT,
+            BOXED_LONG, PRIMITIVE_LONG,
+            BOXED_CHAR, PRIMITIVE_CHAR,
+            BOXED_FLOAT, PRIMITIVE_FLOAT,
+            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
+            BOXED_VOID, PRIMITIVE_VOID
+    );
+
     private TypeNameSupport() {
     }
 
@@ -106,6 +118,19 @@ final class TypeNameSupport {
     @Prototype.PrototypeMethod
     static TypeName boxed(TypeName original) {
         return Optional.ofNullable(BOXED_TYPES.get(original))
+                .orElse(original);
+    }
+
+    /**
+     * Return the unboxed equivalent of this type.
+     * If this is a boxed primitive, the primitive type is returned.
+     *
+     * @param original instance to unbox
+     * @return primitive type for this type, or this type if not boxed primitive type
+     */
+    @Prototype.PrototypeMethod
+    static TypeName unboxed(TypeName original) {
+        return Optional.ofNullable(UNBOXED_TYPES.get(original))
                 .orElse(original);
     }
 

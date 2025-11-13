@@ -20,9 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 
-import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
@@ -32,123 +30,137 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.builder.codegen.Types.LINKED_HASH_MAP;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.MAP;
 import static io.helidon.common.types.TypeNames.OBJECT;
 import static io.helidon.common.types.TypeNames.SET;
 
-class TypeHandlerMap extends TypeHandler {
+class TypeHandlerMap extends TypeHandlerBase {
     private static final TypeName SAME_GENERIC_TYPE = TypeName.createFromGenericDeclaration("TYPE");
-    private final TypeName actualType;
-    private final TypeName implTypeName;
+
     private final boolean sameGeneric;
 
-    TypeHandlerMap(TypeName blueprintType,
-                   TypedElementInfo annotatedMethod,
-                   String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
-        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
-        this.sameGeneric = sameGeneric;
+    TypeHandlerMap(PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(prototypeInfo, option, option.declaredType().typeArguments().get(1));
 
-        this.implTypeName = collectionImplType(MAP);
-        if (declaredType.typeArguments().size() < 2) {
-            this.actualType = TypeNames.STRING;
-        } else {
-            this.actualType = declaredType.typeArguments().get(1);
-        }
+        this.sameGeneric = option.sameGeneric();
     }
 
     @Override
-    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
-        Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
-        if (isBuilder && !configured.hasDefault()) {
+    public Field.Builder field(boolean isBuilder) {
+        Field.Builder builder = super.field(isBuilder);
+        if (isBuilder && option().defaultValue().isEmpty()) {
             builder.addContent("new ")
-                    .addContent(implTypeName.genericTypeName())
+                    .addContent(LINKED_HASH_MAP)
                     .addContent("<>()");
         }
         return builder;
     }
 
     @Override
-    Consumer<ContentBuilder<?>> toDefaultValue(List<String> defaultValues,
-                                               List<Integer> defaultInts,
-                                               List<Long> defaultLongs,
-                                               List<Double> defaultDoubles,
-                                               List<Boolean> defaultBooleans) {
-
-        if (defaultValues != null) {
-            if (defaultValues.size() % 2 != 0) {
-                throw new IllegalArgumentException("Default value for a map does not have even number of entries:"
-                                                           + defaultValues);
-            }
-
-            return content -> {
-                content.addContent(Map.class)
-                        .addContent(".of(");
-
-                for (int i = 1; i < defaultValues.size(); i = i + 2) {
-                    content.addContent("\"")
-                            .addContent(defaultValues.get(i - 1))
-                            .addContent("\", ");
-                    super.toDefaultValue(defaultValues.get(i)).accept(content);
-                    if (i < defaultValues.size() - 2) {
-                        content.addContentLine(", ");
-                    }
-                    if (i == 1) {
-                        content.increaseContentPadding()
-                                .increaseContentPadding();
-                    }
-                }
-
-                content.addContent(")")
-                        .decreaseContentPadding()
-                        .decreaseContentPadding();
-            };
-        }
-
-        return null;
-    }
-
-    @Override
-    TypeName actualType() {
-        return actualType;
-    }
-
-    @Override
-    void generateFromConfig(Method.Builder method,
-                            AnnotationDataOption configured,
-                            FactoryMethods factoryMethods) {
-        List<TypeName> typeArguments = declaredType().typeArguments();
+    public void generateFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
+        String optionName = option().name();
+        List<TypeName> typeArguments = option().declaredType().typeArguments();
         TypeName keyTypeName = typeArguments.get(0);
         TypeName valueTypeName = typeArguments.get(1);
         if (TypeNames.STRING.equals(keyTypeName) && TypeNames.STRING.equals(valueTypeName)) {
             // the special case of Map<String, String>
-            method.addContentLine(configGet(configured) + ".detach().asMap().ifPresent(this::" + name() + ");");
-        } else if (configured.traverseConfig()){
-            method.addContent(configGet(configured) + ".detach().traverse().filter(")
+            method.addContentLine(configGet(optionConfigured) + ".detach().asMap().ifPresent(this::" + optionName + ");");
+        } else if (optionConfigured.traverse()) {
+            method.addContent(configGet(optionConfigured) + ".detach().traverse().filter(")
                     .addContent(Types.COMMON_CONFIG)
                     .addContent("::hasValue).forEach(node -> "
-                                        + name() + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
-            generateFromConfig(method, factoryMethods);
+                                        + optionName + ".put(node.get(\"name\").asString().orElse(node.key().toString()), node");
+            generateFromConfig(method);
             method.addContentLine(".get()));");
         } else {
-            method.addContent(configGet(configured)
+            method.addContent(configGet(optionConfigured)
                                       + ".asNodeList().ifPresent(nodes -> nodes.forEach"
                                       + "(node -> "
-                                      + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node");
-            generateFromConfig(method, factoryMethods);
+                                      + optionName + ".put(node.get(\"name\").asString().orElse(node.name()), node");
+            generateFromConfig(method);
             method.addContentLine(".get())));");
         }
     }
 
     @Override
-    TypeName argumentTypeName() {
-        TypeName firstType = declaredType().typeArguments().get(0);
-        if (!(TypeNames.STRING.equals(firstType) || toPrimitive(firstType).primitive() || firstType.array())) {
+    public void setters(InnerClass.Builder classBuilder, TypeName returnType) {
+
+        declaredSetter(classBuilder, returnType);
+        declaredSetterAdd(classBuilder, returnType);
+
+        TypeName keyType = option().declaredType().typeArguments().get(0);
+        TypeName valueType = option().declaredType().typeArguments().get(1);
+
+        if (option().singular().isEmpty()) {
+            return;
+        }
+
+        var singular = option().singular().get();
+        String singularName = singular.name();
+        String methodName = singular.setter();
+
+        if (isCollection(type())) {
+            // value is a collection as well we need to generate `add` methods for adding a single value, and adding
+            // collection values
+            // builder.addValue(String key, String value)
+            // builder.addValues(String key, Set<String> values)
+            setterAddValueToCollection(classBuilder,
+                                       singularName,
+                                       keyType,
+                                       valueType,
+                                       returnType);
+
+            setterAddValuesToCollection(classBuilder,
+                                        "add" + capitalize(option().name()),
+                                        keyType,
+                                        returnType);
+        }
+        // Builder putValue(String key, String value)
+
+        var setter = option().setter();
+        Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc javadoc = Javadoc.builder(setterJavadoc)
+                .add("This method adds a new value to the map, or replaces it if the key already exists.")
+                .build();
+
+        Method.Builder method = Method.builder()
+                .returnType(returnType)
+                .name(methodName)
+                .javadoc(javadoc)
+                .accessModifier(setter.accessModifier());
+        if (sameGeneric) {
+            sameGenericArgs(method, keyType, singularName, type());
+        } else {
+            method.addParameter(param -> param.name("key")
+                            .type(keyType)
+                            .description("key to add or replace"))
+                    .addParameter(param -> param.name(singularName)
+                            .type(type())
+                            .description("new value for the key"));
+        }
+        method.addContent(Objects.class)
+                .addContentLine(".requireNonNull(key);")
+                .addContent(Objects.class)
+                .addContentLine(".requireNonNull(" + singularName + ");")
+                .addContent("this." + option().name() + ".put(key, ");
+        secondArgToPut(method, type(), singularName);
+        method.addContentLine(");")
+                .addContentLine("return self();");
+
+        classBuilder.addMethod(method);
+    }
+
+    @Override
+    TypeName setterArgumentTypeName() {
+        TypeName firstType = option().declaredType().typeArguments().get(0);
+        if (!(TypeNames.STRING.equals(firstType) || firstType.unboxed().primitive() || firstType.array())) {
             firstType = toWildcard(firstType);
         }
-        TypeName secondType = declaredType().typeArguments().get(1);
-        if (!(TypeNames.STRING.equals(secondType) || toPrimitive(secondType).primitive() || secondType.array())) {
+        TypeName secondType = option().declaredType().typeArguments().get(1);
+        if (!(TypeNames.STRING.equals(secondType) || secondType.unboxed().primitive() || secondType.array())) {
             secondType = toWildcard(secondType);
         }
 
@@ -158,162 +170,25 @@ class TypeHandlerMap extends TypeHandler {
                 .build();
     }
 
-    @SuppressWarnings("checkstyle:MethodLength") // will be shorter when we switch to class model
     @Override
-    void setters(InnerClass.Builder classBuilder,
-                 AnnotationDataOption configured,
-                 FactoryMethods factoryMethod,
-                 TypeName returnType,
-                 Javadoc blueprintJavadoc) {
+    void declaredSetter(InnerClass.Builder classBuilder, TypeName returnType) {
+        var setter = option().setter();
 
-        declaredSetter(classBuilder, configured, returnType, blueprintJavadoc);
-        declaredSetterAdd(classBuilder, configured, returnType, blueprintJavadoc);
-
-        if (factoryMethod.createTargetType().isPresent()) {
-            // factory method
-            FactoryMethods.FactoryMethod fm = factoryMethod.createTargetType().get();
-            String name = name();
-            String argumentName = name + "Config";
-            classBuilder.addMethod(builder -> {
-                builder.name(name + "Config")
-                        .description(blueprintJavadoc.content())
-                        .accessModifier(setterAccessModifier(configured))
-                        .addDescriptionLine("This method keeps existing values, then puts all new values into the map.")
-                        .addParameter(param -> param.name(argumentName)
-                                .type(fm.argumentType())
-                                .description(blueprintJavadoc.returnDescription()))
-                        .addJavadocTag("see", "#" + getterName() + "()")
-                        .returnType(returnType, "updated builder instance")
-                        .addContent(Objects.class)
-                        .addContentLine(".requireNonNull(" + argumentName + ");")
-                        .addContentLine("this." + name + ".clear();")
-                        .addContent("this." + name + ".putAll(")
-                        .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                        .addContentLine("." + fm.createMethodName() + "(" + argumentName + "));")
-                        .addContentLine("return self();");
-            });
-        }
-
-        TypeName keyType = declaredType().typeArguments().get(0);
-
-        if (configured.singular() && isCollection(actualType())) {
-            // value is a collection as well, we need to generate `add` methods for adding a single value, and adding
-            // collection values
-            // builder.addValue(String key, String value)
-            // builder.addValues(String key, Set<String> values)
-            String singularName = configured.singularName();
-            setterAddValueToCollection(classBuilder,
-                                       configured,
-                                       singularName,
-                                       keyType,
-                                       actualType().typeArguments().get(0),
-                                       returnType,
-                                       blueprintJavadoc);
-
-            setterAddValuesToCollection(classBuilder,
-                                        configured,
-                                        "add" + capitalize(name()),
-                                        keyType,
-                                        returnType,
-                                        blueprintJavadoc);
-        }
-        if (configured.singular()) {
-            // Builder putValue(String key, String value)
-            String singularName = configured.singularName();
-            String methodName;
-            if (configured.singularAddPrefix()) {
-                methodName = "put" + capitalize(singularName);
-            } else {
-                methodName = singularName;
-            }
-
-            Method.Builder method = Method.builder()
-                    .name(methodName)
-                    .accessModifier(setterAccessModifier(configured))
-                    .returnType(returnType, "updated builder instance")
-                    .description(blueprintJavadoc.content())
-                    .addDescriptionLine("This method adds a new value to the map, or replaces it if the key already exists.")
-                    .addJavadocTag("see", "#" + getterName() + "()");
-            if (sameGeneric) {
-                sameGenericArgs(method, keyType, singularName, actualType());
-            } else {
-                method.addParameter(param -> param.name("key")
-                                .type(keyType)
-                                .description("key to add or replace"))
-                        .addParameter(param -> param.name(singularName)
-                                .type(actualType())
-                                .description("new value for the key"));
-            }
-            method.addContent(Objects.class)
-                    .addContentLine(".requireNonNull(key);")
-                    .addContent(Objects.class)
-                    .addContentLine(".requireNonNull(" + singularName + ");")
-                    .addContent("this." + name() + ".put(key, ");
-            secondArgToPut(method, actualType(), singularName);
-            method.addContentLine(");")
-                    .addContentLine("return self();");
-
-            classBuilder.addMethod(method);
-
-            if (factoryMethod.builder().isPresent()) {
-                FactoryMethods.FactoryMethod fm = factoryMethod.builder().get();
-                TypeName builderType;
-                if (fm.factoryMethodReturnType().className().equals("Builder")) {
-                    builderType = fm.factoryMethodReturnType();
-                } else {
-                    builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
-                }
-                if (!skipBuilderConsumer(builderType)) {
-                    classBuilder.addMethod(builder -> builder.name(methodName)
-                            .accessModifier(setterAccessModifier(configured))
-                            .returnType(returnType, "updated builder instance")
-                            .description(blueprintJavadoc.content())
-                            .addDescriptionLine(
-                                    "This method adds a new value to the map, or replaces it if the key already exists.")
-                            .addJavadocTag("see", "#" + getterName() + "()")
-                            .addParameter(param -> param.name("key")
-                                    .type(keyType)
-                                    .description("key to add or replace"))
-                            .addParameter(param -> param.name("consumer")
-                                    .type(TypeName.builder()
-                                                  .type(Consumer.class)
-                                                  .addTypeArgument(builderType)
-                                                  .build())
-                                    .description("builder consumer to create new value for the key"))
-                            .addContent(Objects.class)
-                            .addContentLine(".requireNonNull(key);")
-                            .addContent(Objects.class)
-                            .addContentLine(".requireNonNull(consumer);")
-                            .addContent("var builder = ")
-                            .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                            .addContentLine("." + fm.createMethodName() + "();")
-                            .addContentLine("consumer.accept(builder);")
-                            .addContentLine("this." + methodName + "(key, builder.build());")
-                            .addContentLine("return self();"));
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void declaredSetter(InnerClass.Builder classBuilder,
-                                  AnnotationDataOption configured,
-                                  TypeName returnType,
-                                  Javadoc blueprintJavadoc) {
         // declared type (such as Map<String, String>) - replace content
-        classBuilder.addMethod(builder -> builder.name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addDescriptionLine("This method replaces all values with the new ones.")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
+        classBuilder.addMethod(builder -> builder.name(setter.elementName())
+                .returnType(returnType)
+                .javadoc(Javadoc.parse(setter.description().orElse("")))
+                .update(it -> {
+                    for (TypedElementInfo parameter : setter.parameterArguments()) {
+                        it.addParameter(param -> param.name(parameter.elementName())
+                                .type(parameter.typeName()));
+                    }
+                })
+                .accessModifier(setter.accessModifier())
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");")
-                .addContentLine("this." + name() + ".clear();")
-                .addContentLine("this." + name() + ".putAll(" + name() + ");")
+                .addContentLine(".requireNonNull(" + option().name() + ");")
+                .addContentLine("this." + option().name() + ".clear();")
+                .addContentLine("this." + option().name() + ".putAll(" + option().name() + ");")
                 .addContentLine("return self();"));
     }
 
@@ -322,7 +197,6 @@ class TypeHandlerMap extends TypeHandler {
                                  String value,
                                  TypeName valueType) {
 
-        String typeDeclaration;
         TypeName genericTypeBase;
         TypeName resolvedKeyType;
         TypeName resolvedValueType;
@@ -341,7 +215,7 @@ class TypeHandlerMap extends TypeHandler {
             <TYPE extends Provider> put(Class<TYPE>, List<TYPE>)
              */
             // this is also good
-            TypeName typeArg = keyType.typeArguments().get(0);
+            TypeName typeArg = keyType.typeArguments().getFirst();
             if (typeArg.wildcard()) {
                 // ?, or ? extends Something
                 if (typeArg.generic()) {
@@ -358,7 +232,8 @@ class TypeHandlerMap extends TypeHandler {
                     .typeArguments(List.of(SAME_GENERIC_TYPE))
                     .build();
         } else {
-            throw new IllegalArgumentException("Property " + name() + " with type " + declaredType().fqName() + " is annotated"
+            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                    .fqName() + " is annotated"
                                                        + " with @SameGeneric, yet the key generic type cannot be determined."
                                                        + " Either the key must be a simple type, or a type with one type"
                                                        + " argument.");
@@ -373,15 +248,17 @@ class TypeHandlerMap extends TypeHandler {
         // now resolve value
         if (valueType.typeArguments().isEmpty()) {
             if (!genericTypeBase.equals(valueType)) {
-                throw new IllegalArgumentException("Property " + name() + " with type " + declaredType().fqName() + " is "
+                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                        .fqName() + " is "
                                                            + "annotated"
                                                            + " with @SameGeneric, yet the type of value is not the"
                                                            + " same as type found on key: " + genericTypeBase.fqName());
             }
             resolvedValueType = SAME_GENERIC_TYPE;
         } else if (valueType.typeArguments().size() == 1) {
-            if (!genericTypeBase.equals(valueType.typeArguments().get(0))) {
-                throw new IllegalArgumentException("Property " + name() + " with type " + declaredType().fqName() + " is "
+            if (!genericTypeBase.equals(valueType.typeArguments().getFirst())) {
+                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                        .fqName() + " is "
                                                            + "annotated"
                                                            + " with @SameGeneric, yet type of value is not the"
                                                            + " same as type found on key: " + genericTypeBase.fqName());
@@ -390,7 +267,8 @@ class TypeHandlerMap extends TypeHandler {
                     .typeArguments(List.of(SAME_GENERIC_TYPE))
                     .build();
         } else {
-            throw new IllegalArgumentException("Property " + name() + " with type " + declaredType().fqName() + " is annotated"
+            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                    .fqName() + " is annotated"
                                                        + " with @SameGeneric, yet the value generic type cannot be determined."
                                                        + " Either the value must be a simple type, or a type with one type"
                                                        + " argument.");
@@ -405,36 +283,37 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     private void setterAddValueToCollection(InnerClass.Builder classBuilder,
-                                            AnnotationDataOption configured,
                                             String singularName,
                                             TypeName keyType,
                                             TypeName valueType,
-                                            TypeName returnType,
-                                            Javadoc blueprintJavadoc) {
+                                            TypeName returnType) {
         String methodName = "add" + capitalize(singularName);
-        TypeName implType = collectionImplType(actualType());
+        var setter = option().setter();
+        Javadoc blueprintJavadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc myJavadoc = Javadoc.builder(blueprintJavadoc)
+                .parameters(Map.of())
+                .addParameter("key", "key to add")
+                .addParameter(singularName, "additional value for the key")
+                .add("This method adds a new value to the map value, or creates a new value.")
+                .build();
 
         classBuilder.addMethod(builder -> builder.name(methodName)
-                .accessModifier(setterAccessModifier(configured))
+                .accessModifier(setter.accessModifier())
                 .addParameter(param -> param.name("key")
-                        .type(keyType)
-                        .description("key to add to"))
+                        .type(keyType))
                 .addParameter(param -> param.name(singularName)
-                        .type(valueType)
-                        .description("additional value for the key"))
-                .description(blueprintJavadoc.content())
-                .addDescriptionLine("This method adds a new value to the map value, or creates a new value.")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .returnType(returnType, "updated builder instance")
+                        .type(valueType))
+                .description(blueprintJavadoc.toString())
+                .returnType(returnType)
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(key);")
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + singularName + ");")
-                .addContentLine("this." + name() + ".compute(key, (k, v) -> {")
+                .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
                 .addContent("v = v == null ? new ")
-                .addContent(implType)
+                .addContent(LINKED_HASH_MAP)
                 .addContent("<>() : new ")
-                .addContent(implType)
+                .addContent(LINKED_HASH_MAP)
                 .addContentLine("<>(v);")
                 .addContentLine("v.add(" + singularName + ");")
                 .addContentLine("return v;")
@@ -444,35 +323,33 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     private void setterAddValuesToCollection(InnerClass.Builder classBuilder,
-                                             AnnotationDataOption configured,
                                              String methodName,
                                              TypeName keyType,
-                                             TypeName returnType,
-                                             Javadoc blueprintJavadoc) {
-        TypeName implType = collectionImplType(actualType());
-        String name = name();
+                                             TypeName returnType) {
+        String name = option().name();
+        var setter = option().setter();
+        Javadoc javadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc myJavadoc = Javadoc.builder(javadoc)
+                .add("This method adds a new value to the map value, or creates a new value.")
+                .build();
 
         classBuilder.addMethod(builder -> builder.name(methodName)
-                .accessModifier(setterAccessModifier(configured))
+                .accessModifier(setter.accessModifier())
                 .addParameter(param -> param.name("key")
-                        .type(keyType)
-                        .description("key to add to"))
+                        .type(keyType))
                 .addParameter(param -> param.name(name)
-                        .type(actualType())
-                        .description("additional values for the key"))
-                .description(blueprintJavadoc.content())
-                .addDescriptionLine("This method adds a new value to the map value, or creates a new value.")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .returnType(returnType, "updated builder instance")
+                        .type(type()))
+                .javadoc(myJavadoc)
+                .returnType(returnType)
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(key);")
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + name + ");")
                 .addContentLine("this." + name + ".compute(key, (k, v) -> {")
                 .addContent("v = v == null ? new ")
-                .addContent(implType)
+                .addContent(LINKED_HASH_MAP)
                 .addContent("<>() : new ")
-                .addContent(implType)
+                .addContent(LINKED_HASH_MAP)
                 .addContentLine("<>(v);")
                 .addContentLine("v.addAll(" + name + ");")
                 .addContentLine("return v;")
@@ -481,22 +358,24 @@ class TypeHandlerMap extends TypeHandler {
                 .addContentLine("return self();"));
     }
 
-    private void declaredSetterAdd(InnerClass.Builder classBuilder, AnnotationDataOption configured,
-                                   TypeName returnType,
-                                   Javadoc blueprintJavadoc) {
+    private void declaredSetterAdd(InnerClass.Builder classBuilder,
+                                   TypeName returnType) {
+        var setter = option().setter();
+        Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc myJavadoc = Javadoc.builder(setterJavadoc)
+                .add("This method keeps existing values, then puts all new values into the map.")
+                .build();
+
         // declared type - add content
-        classBuilder.addMethod(builder -> builder.name("add" + capitalize(name()))
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addDescriptionLine("This method keeps existing values, then puts all new values into the map.")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
+        classBuilder.addMethod(builder -> builder.name("add" + capitalize(option().name()))
+                .returnType(returnType)
+                .javadoc(myJavadoc)
+                .addParameter(param -> param.name(option().name())
+                        .type(setterArgumentTypeName()))
+                .accessModifier(setter.accessModifier())
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");")
-                .addContentLine("this." + name() + ".putAll(" + name() + ");")
+                .addContentLine(".requireNonNull(" + option().name() + ");")
+                .addContentLine("this." + option().name() + ".putAll(" + option().name() + ");")
                 .addContentLine("return self();"));
     }
 

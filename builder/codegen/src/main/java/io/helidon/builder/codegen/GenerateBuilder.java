@@ -36,13 +36,16 @@ final class GenerateBuilder {
     private GenerateBuilder() {
     }
 
-    static void generate(ClassModel.Builder classBuilder,
-                         TypeName prototype,
-                         TypeName runtimeType,
-                         List<TypeArgument> typeArguments,
-                         List<TypeName> typeArgumentNames,
-                         boolean isFactory,
-                         TypeContext typeContext) {
+    public static void generate(ClassModel.Builder classBuilder,
+                                PrototypeInfo prototypeInfo,
+                                List<TypeArgument> typeArguments,
+                                List<TypeName> typeArgumentNames) {
+
+
+        TypeName prototype = prototypeInfo.prototypeType();
+        TypeName runtimeType = prototypeInfo.runtimeType().orElse(prototype);
+        boolean isFactory = !prototype.equals(runtimeType);
+
         classBuilder.addInnerClass(builder -> {
             TypeName builderType = TypeName.builder()
                     .from(TypeName.create(prototype.fqName() + ".Builder"))
@@ -64,7 +67,7 @@ final class GenerateBuilder {
                                           .addTypeArgument(runtimeType)
                                           .build())
                     .addConstructor(constructor -> {
-                        if (typeContext.blueprintData().builderPublic()) {
+                        if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
                             constructor.accessModifier(AccessModifier.PRIVATE);
                         } else {
                             // package private to allow instantiation
@@ -86,7 +89,7 @@ final class GenerateBuilder {
                         method.addContentLine("(this);");
                     });
             if (isFactory) {
-                GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, typeContext, true);
+                GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, prototypeInfo, runtimeType, true);
             } else {
                 // build method returns the same as buildPrototype method
                 builder.addMethod(method -> method.name("build")

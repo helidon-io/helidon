@@ -60,6 +60,8 @@ final class Types {
     static final TypeName PROTOTYPE_CONSTANT = TypeName.create("io.helidon.builder.api.Prototype.Constant");
     static final TypeName PROTOTYPE_SERVICE_REGISTRY = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
     static final TypeName PROTOTYPE_INCLUDE_DEFAULTS = TypeName.create("io.helidon.builder.api.Prototype.IncludeDefaultMethods");
+    static final TypeName PROTOTYPE_EXTENSION = TypeName.create("io.helidon.builder.api.Prototype.Extension");
+    static final TypeName PROTOTYPE_EXTENSIONS = TypeName.create("io.helidon.builder.api.Prototype.Extensions");
     static final TypeName GENERATED_EQUALITY_UTIL = TypeName.create("io.helidon.builder.api.GeneratedBuilder.EqualityUtil");
 
     static final TypeName RUNTIME_PROTOTYPE = TypeName.create("io.helidon.builder.api.RuntimeType.PrototypedBy");

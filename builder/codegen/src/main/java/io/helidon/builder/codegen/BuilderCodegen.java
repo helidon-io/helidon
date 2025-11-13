@@ -19,13 +19,18 @@ package io.helidon.builder.codegen;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.codegen.ValidationTask.ValidateConfiguredType;
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
+import io.helidon.builder.codegen.spi.BuilderCodegenExtensionProvider;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
@@ -33,12 +38,15 @@ import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Errors;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -46,10 +54,32 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.metadata.MetadataConstants;
 
+import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSION;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSIONS;
 import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPE;
 
+/*
+Each option can have the following methods:
+- Blueprint method - defined by user, cannot be changed (optional, we can have properties defined in extensions)
+- Prototype method - generated getter method on prototype interface (always exists)
+- BuilderBase setter declared - setter with the type declared - replaces value
+- BuilderBase setter value - setter with the type of the value - for Optional<X> this is setter(X)
+- BuilderBase setter add declared - for set, list, map - adds values to existing values
+- BuilderBase setter add value - for set, list to add a single value to collection (for @Singular)
+- BuilderBase setter add key/value - for Map<String, List<...>> - adds a value to the collection for the provided key
+- BuilderBase setter add key/values - for Map<String, List<...>> - adds values to the collection for the provided key
+- BuilderBase setter put key/value - for Map, replaces current mapping (for @Singular)
+- BuilderBase getter - a getter that returns the declared type or an Optional<DeclaredType> for mandatory fields
+
+For annotation purposes:
+- getter is the method on prototype, implemented by Impl
+- setter is the setter with value (or declared if the same) - i.e. if we have an optional, setter is considered only the
+non-optional one
+ */
 class BuilderCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(BuilderCodegen.class);
 
@@ -61,14 +91,41 @@ class BuilderCodegen implements CodegenExtension {
     private final Set<String> serviceLoaderContracts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     private final CodegenContext ctx;
+    private final List<BuilderCodegenExtensionProvider> extensions;
 
     BuilderCodegen(CodegenContext ctx) {
         this.ctx = ctx;
+        this.extensions = HelidonServiceLoader.create(BuilderCodegenExtensionProvider.class)
+                .asList();
+    }
+
+    /**
+     *
+     * @param classModel
+     * @param customMethods
+     * @param implementation true for implementation, false for prototype
+     */
+    static void generateCustomPrototypeMethods(ClassBase.Builder<?, ?> classModel,
+                                               List<GeneratedMethod> customMethods,
+                                               boolean implementation) {
+
+        for (GeneratedMethod customMethod : customMethods) {
+            // we can generate everything except for toString(), hashCode(), and equals(Object)
+            if (onlyImplMethod(customMethod)) {
+                if (implementation) {
+                    generateCustomMethod(classModel, customMethod);
+                }
+            } else {
+                if (!implementation) {
+                    generateCustomMethod(classModel, customMethod);
+                }
+            }
+        }
     }
 
     @Override
     public void process(RoundContext roundContext) {
-        // see need to keep the type names, as some types may not be available, as we are generating them
+        // we need to keep the type names, as some types may not be available, as we are generating them
         runtimeTypes.addAll(roundContext.annotatedTypes(Types.RUNTIME_PROTOTYPED_BY)
                                     .stream()
                                     .map(TypeInfo::typeName)
@@ -99,7 +156,7 @@ class BuilderCodegen implements CodegenExtension {
         // types nice and ready
         List<ValidationTask> validationTasks = new ArrayList<>();
         validationTasks.addAll(addRuntimeTypesForValidation(this.runtimeTypes));
-        validationTasks.addAll(addBlueprintsForValidation(this.blueprintTypes));
+        validationTasks.addAll(addBlueprintsForValidation(roundContext, this.blueprintTypes));
 
         Errors.Collector collector = Errors.collector();
         for (ValidationTask task : validationTasks) {
@@ -125,79 +182,79 @@ class BuilderCodegen implements CodegenExtension {
         }
     }
 
-    private static void addCreateDefaultMethod(AnnotationDataBlueprint blueprintDef,
-                                               TypeContext.PropertyData propertyData,
+    private static void addCreateDefaultMethod(List<OptionHandler> options,
                                                ClassModel.Builder classModel,
                                                TypeName prototype,
                                                String ifaceName,
                                                String typeArgumentString,
                                                List<TypeArgument> typeArguments) {
-        if (blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
+
         /*
           static X create()
          */
-            if (!propertyData.hasRequired()) {
-                classModel.addMethod(builder -> {
-                    builder.isStatic(true)
-                            .name("create")
-                            .description("Create a new instance with default values.")
-                            .returnType(prototype, "a new instance")
-                            .addContentLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
-                    typeArguments.forEach(builder::addGenericArgument);
-                });
-            }
+        boolean noRequired = noRequired(options);
+
+        if (noRequired) {
+            classModel.addMethod(builder -> {
+                builder.isStatic(true)
+                        .name("create")
+                        .description("Create a new instance with default values.")
+                        .returnType(prototype, "a new instance")
+                        .addContentLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
+                typeArguments.forEach(builder::addGenericArgument);
+            });
         }
     }
 
-    private static void addCreateFromConfigMethod(AnnotationDataBlueprint blueprintDef,
-                                                  AnnotationDataConfigured configuredData,
+    private static void addCreateFromConfigMethod(PrototypeConfigured configuredData,
                                                   TypeName prototype,
                                                   List<TypeArgument> typeArguments,
                                                   String ifaceName,
                                                   String typeArgumentString,
                                                   ClassModel.Builder classModel) {
-        if (blueprintDef.createFromConfigPublic() && configuredData.configured()) {
-            Method.Builder method = Method.builder()
-                    .name("create")
-                    .isStatic(true)
-                    .description("Create a new instance from configuration.")
-                    .returnType(prototype, "a new instance configured from configuration")
-                    .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG)
-                            .name("config")
-                            .description("used to configure the new instance"));
-            typeArguments.forEach(method::addGenericArgument);
-            if (blueprintDef.builderPublic()) {
-                method.addContentLine("return " + ifaceName + "." + typeArgumentString + "builder().config(config)"
-                                              + ".buildPrototype();");
-            } else {
-                if (typeArguments.isEmpty()) {
-                    method.addContentLine("return new Builder().config(config).build();");
-                } else {
-                    method.addContentLine("return new Builder()<>.config(config).build();");
-                }
-            }
-            classModel.addMethod(method);
 
-            // backward compatibility
-            Method.Builder commonMethod = Method.builder()
-                    .name("create")
-                    .isStatic(true)
-                    .returnType(prototype)
-                    .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
-                            .name("config"))
-                    .javadoc(Javadoc.builder()
-                                     .add("Create a new instance from configuration.")
-                                     .returnDescription("a new instance configured from configuration")
-                                     .addParameter("config", "used to configure the new instance")
-                                     .addTag("deprecated", "use {@link #create(" + Types.CONFIG.fqName() + ")}")
-                                     .build())
-                    .addContent("return create(")
-                    .addContent(Types.CONFIG)
-                    .addContentLine(".config(config));")
-                    .addAnnotation(Annotations.DEPRECATED);
-            typeArguments.forEach(commonMethod::addGenericArgument);
-             classModel.addMethod(commonMethod);
-        }
+        Method.Builder method = Method.builder()
+                .accessModifier(configuredData.createAccessModifier())
+                .name("create")
+                .isStatic(true)
+                .description("Create a new instance from configuration.")
+                .returnType(prototype, "a new instance configured from configuration")
+                .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG)
+                        .name("config")
+                        .description("used to configure the new instance"));
+        typeArguments.forEach(method::addGenericArgument);
+        method.addContent("return ")
+                .addContent(ifaceName)
+                .addContent(".")
+                .addContent(typeArgumentString)
+                .addContentLine("builder()")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContentLine(".config(config)")
+                .addContentLine(".buildPrototype();")
+                .decreaseContentPadding()
+                .decreaseContentPadding();
+        classModel.addMethod(method);
+
+        // backward compatibility
+        Method.Builder commonMethod = Method.builder()
+                .name("create")
+                .isStatic(true)
+                .returnType(prototype)
+                .addParameter(paramBuilder -> paramBuilder.type(Types.COMMON_CONFIG)
+                        .name("config"))
+                .javadoc(Javadoc.builder()
+                                 .add("Create a new instance from configuration.")
+                                 .returnDescription("a new instance configured from configuration")
+                                 .addParameter("config", "used to configure the new instance")
+                                 .addTag("deprecated", "use {@link #create(" + Types.CONFIG.fqName() + ")}")
+                                 .build())
+                .addContent("return create(")
+                .addContent(Types.CONFIG)
+                .addContentLine(".config(config));")
+                .addAnnotation(Annotations.DEPRECATED);
+        typeArguments.forEach(commonMethod::addGenericArgument);
+        classModel.addMethod(commonMethod);
     }
 
     private static void addCopyBuilderMethod(ClassModel.Builder classModel,
@@ -238,88 +295,78 @@ class BuilderCodegen implements CodegenExtension {
         });
     }
 
-    private static void generateCustomConstants(CustomMethods customMethods, ClassModel.Builder classModel) {
-        for (CustomConstant customConstant : customMethods.customConstants()) {
-            classModel.addField(constant -> constant
-                    .type(customConstant.fieldType())
-                    .name(customConstant.name())
-                    .javadoc(customConstant.javadoc())
-                    .addContent(customConstant.declaringType())
-                    .addContent(".")
-                    .addContent(customConstant.name()));
-        }
+    private static void generateCustomConstant(ClassModel.Builder classModel, PrototypeConstant customConstant) {
+        classModel.addField(constant -> constant
+                .type(customConstant.type())
+                .name(customConstant.name())
+                .javadoc(customConstant.javadoc())
+                .update(customConstant::accept));
+
     }
 
     private static void generateCustomMethods(ClassModel.Builder classModel,
-                                              TypeName builderTypeName,
-                                              TypeName prototype,
-                                              CustomMethods customMethods) {
-        for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
-            TypeName typeName = customMethod.declaredMethod().returnType();
-            if (typeName.isOptional()) {
-                //Content of the Optional
-                typeName = typeName.typeArguments().getFirst();
-            }
-            // there is a chance the typeName does not have a package (if "forward referenced"),
-            // in that case compare just by classname (leap of faith...)
-            if (typeName.packageName().isBlank()) {
-                String className = typeName.className();
-                if (!(
-                        className.equals(prototype.className())
-                                || className.equals(builderTypeName.className()))) {
-                    // based on class names
-                    continue;
-                }
-            } else if (!(typeName.equals(prototype) || typeName.equals(builderTypeName))) {
-                // we only generate custom factory methods if they return prototype or builder
-                continue;
-            }
+                                              List<GeneratedMethod> customMethods) {
 
-            // prototype definition - custom static factory methods
-            // static TypeName create(Type type);
-            CustomMethods.Method generated = customMethod.generatedMethod().method();
-            Method.Builder method = Method.builder()
-                    .name(generated.name())
-                    .javadoc(Javadoc.parse(generated.javadoc()))
-                    .isStatic(true)
-                    .returnType(generated.returnType());
-            customMethod.generatedMethod().generateCode().accept(method);
-
-            for (String annotation : customMethod.generatedMethod().annotations()) {
-                method.addAnnotation(io.helidon.codegen.classmodel.Annotation.parse(annotation));
-            }
-            for (CustomMethods.Argument argument : generated.arguments()) {
-                method.addParameter(param -> param.name(argument.name())
-                        .type(argument.typeName()));
-            }
-            classModel.addMethod(method);
+        for (GeneratedMethod customMethod : customMethods) {
+            generateCustomMethod(classModel, customMethod);
         }
+    }
 
-        for (CustomMethods.CustomMethod customMethod : customMethods.prototypeMethods()) {
-            // prototype definition - custom methods must have a new method defined on this interface, missing on blueprint
-            CustomMethods.Method generated = customMethod.generatedMethod().method();
-            if (generated.javadoc().isEmpty()
-                    && customMethod.generatedMethod()
-                    .annotations()
-                    .contains(Override.class.getName())) {
-                // there is no javadoc, and this is overriding a method from super interface, ignore
-                continue;
-            }
+    private static boolean onlyImplMethod(GeneratedMethod customMethod) {
+        var method = customMethod.methodDefinition();
+        var methodName = method.elementName();
+        List<TypedElementInfo> params = method.parameterArguments();
 
-            // TypeName boxed();
-            Method.Builder method = Method.builder()
-                    .name(generated.name())
-                    .javadoc(Javadoc.parse(generated.javadoc()))
-                    .returnType(generated.returnType());
-            for (String annotation : customMethod.generatedMethod().annotations()) {
-                method.addAnnotation(io.helidon.codegen.classmodel.Annotation.parse(annotation));
-            }
-            for (CustomMethods.Argument argument : generated.arguments()) {
-                method.addParameter(param -> param.name(argument.name())
-                        .type(argument.typeName()));
-            }
-            classModel.addMethod(method);
+        if (methodName.equals("toString") || methodName.equals("hashCode")) {
+            return params.isEmpty();
         }
+        if (methodName.equals("equals")) {
+            return params.size() == 1 && params.getFirst().typeName().equals(TypeNames.OBJECT);
+        }
+        return false;
+    }
+
+    private static void generateCustomMethod(ClassBase.Builder<?, ?> classModel,
+                                             GeneratedMethod customMethod) {
+        TypedElementInfo element = customMethod.methodDefinition();
+
+        var doc = element.description().orElse("");
+        Javadoc javadoc = Javadoc.parse(doc);
+
+        classModel.addMethod(method -> method
+                .returnType(element.typeName())
+                .name(element.elementName())
+                .accessModifier(element.accessModifier())
+                .isStatic(element.elementModifiers().contains(Modifier.STATIC))
+                .isDefault(element.elementModifiers().contains(Modifier.DEFAULT))
+                .isFinal(element.elementModifiers().contains(Modifier.FINAL))
+                .isAbstract(element.elementModifiers().contains(Modifier.ABSTRACT))
+                .update(it -> element.parameterArguments().forEach(arg -> {
+                    it.addParameter(paramBuilder -> paramBuilder
+                            .name(arg.elementName())
+                            .type(arg.typeName())
+                            .update(argBuilder -> arg.annotations().forEach(argBuilder::addAnnotation))
+                    );
+                }))
+                .update(it -> {
+                    if (customMethod.override()) {
+                        it.addAnnotation(Annotations.OVERRIDE);
+                    }
+                })
+                .update(it -> element.annotations().forEach(it::addAnnotation))
+                .update(it -> {
+                    if (!(doc.isBlank() && customMethod.override())) {
+                        // only set blank javadoc if not overriding
+                        it.javadoc(javadoc);
+                    }
+                })
+                .update(customMethod::accept));
+    }
+
+    private static boolean noRequired(List<OptionHandler> options) {
+        return options.stream()
+                .map(OptionHandler::option)
+                .noneMatch(OptionInfo::required);
     }
 
     private void updateServiceLoaderResource() {
@@ -350,81 +397,214 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     private void process(RoundContext roundContext, TypeInfo blueprint) {
-        TypeContext typeContext = TypeContext.create(ctx, blueprint);
-        AnnotationDataBlueprint blueprintDef = typeContext.blueprintData();
-        AnnotationDataConfigured configuredData = typeContext.configuredData();
-        TypeContext.PropertyData propertyData = typeContext.propertyData();
-        TypeContext.TypeInformation typeInformation = typeContext.typeInfo();
-        CustomMethods customMethods = typeContext.customMethods();
+        /*
+         All information about the prototype itself except for options
+         */
+        PrototypeInfo tmpPrototypeInfo = TypeContext.create(roundContext, blueprint);
 
-        TypeInfo typeInfo = typeInformation.blueprintType();
-        TypeName prototype = typeContext.typeInfo().prototype();
+        // find all extensions, as these may modify handling of our types
+        List<BuilderCodegenExtension> extensions = findExtensions(tmpPrototypeInfo);
+
+        // an extension may modify the prototype info (i.e. to add custom metehods, annotations etc.
+        for (BuilderCodegenExtension extension : extensions) {
+            tmpPrototypeInfo = extension.prototypeInfo(tmpPrototypeInfo);
+        }
+
+        // now we have final prototype info - processed by all extensions, next we start collecting options
+        PrototypeInfo prototypeInfo = tmpPrototypeInfo;
+
+        /*
+         We must identify the first prototype/blueprint we extend, and then discover all options on interfaces we extend
+         that are not prototype/blueprint; then we find options that are NOT defined on the super prototype/blueprint,
+         unless we have a default value (as in that case, we will need to override it in builder constructor)
+         We cannot implement/extend more than one direct prototype/blueprint, as our builder cannot extend more than one class,
+            but call the one from the supertype
+        */
+
+        List<OptionInfo> newOptions = new ArrayList<>();
+        List<OptionInfo> existingOptions = new ArrayList<>();
+
+        PrototypeOption.options(ctx, roundContext, prototypeInfo, newOptions, existingOptions);
+
+        for (BuilderCodegenExtension extension : extensions) {
+            newOptions = extension.options(newOptions);
+        }
+
+        /*
+        We may have new options that override existing option's:
+        - default value: add to builder base constructor, to call setter after super is constructed
+        - annotations: add the methods explicitly, call super.getter, super.setter where makes sense
+        - method names: add the methods explicitly, call super.getter, super.setter where makes sense
+         */
+
+        // now we have final option infos - processed by all extension, next we can start building
+
+        Map<String, List<OptionInfo>> existingOptionMap = new LinkedHashMap<>();
+        Map<String, List<OptionInfo>> newOptionMap = new LinkedHashMap<>();
+
+        for (OptionInfo existingOption : existingOptions) {
+            existingOptionMap.computeIfAbsent(existingOption.name(), k -> new ArrayList<>())
+                    .add(existingOption);
+        }
+        for (OptionInfo newOption : newOptions) {
+            newOptionMap.computeIfAbsent(newOption.name(), k -> new ArrayList<>())
+                    .add(newOption);
+        }
+
+        List<OptionInfo> options = new ArrayList<>();
+        List<MethodUpdate> methodUpdate = new ArrayList<>();
+        List<NewDefault> newDefaults = new ArrayList<>();
+
+        for (String optionName : newOptionMap.keySet()) {
+            if (existingOptionMap.containsKey(optionName)) {
+                // this option already exists on super-prototype, handle it (use first default we find)
+                newOptionMap.get(optionName)
+                        .stream()
+                        .filter(it -> it.defaultValue().isPresent())
+                        .findFirst()
+                        .ifPresent(it -> newDefaults.add(new NewDefault(optionName,
+                                                                        setterName(prototypeInfo,
+                                                                                   existingOptionMap.get(optionName)),
+                                                                        it.defaultValue().get())));
+                // and now check if new options add something
+                OptionInfo newOption = mergeOptions(newOptionMap.get(optionName));
+                OptionInfo existingOption = mergeOptions(existingOptionMap.get(optionName));
+                if (methodUpdate(newOption, existingOption)) {
+                    methodUpdate.add(new MethodUpdate(newOption, existingOption));
+                }
+            } else {
+                // this is a net-new option
+                List<OptionInfo> optionInfos = newOptionMap.get(optionName);
+                if (optionInfos.size() == 1) {
+                    options.add(optionInfos.getFirst());
+                } else {
+                    // merge options from multiple declaring interfaces (maybe blueprint and prototype?)
+                    options.add(mergeOptions(optionInfos));
+                }
+            }
+        }
+
+        // associate each option with a type handler, for code generation (specifics for maps, sets etc.)
+        var optionHandlers = options.stream()
+                .map(it -> OptionHandler.create(prototypeInfo, it))
+                .toList();
+
+        generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults, methodUpdate);
+    }
+
+    private boolean methodUpdate(OptionInfo newOption, OptionInfo existingOption) {
+        if (!newOption.annotations().equals(existingOption.annotations())) {
+            return true;
+        }
+        if (newOption.decorator().isPresent() && !newOption.decorator().equals(existingOption.decorator())) {
+            return true;
+        }
+
+        if (newOption.configured().isPresent() && !existingOption.configured().equals(newOption.configured())) {
+            return true;
+        }
+        if (!newOption.getter().equals(existingOption.getter())) {
+            return true;
+        }
+        if (!newOption.setter().equals(existingOption.setter())) {
+            return true;
+        }
+        if (!newOption.implGetter().equals(existingOption.implGetter())) {
+            return true;
+        }
+        if (!newOption.setterForOptional().equals(existingOption.setterForOptional())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private OptionInfo mergeOptions(List<OptionInfo> optionInfos) {
+        for (OptionInfo optionInfo : optionInfos) {
+            if (optionInfo.blueprintMethod().isPresent()) {
+                var enclosing = optionInfo.blueprintMethod().get().enclosingType();
+                if (enclosing.isPresent() && enclosing.get().className().endsWith("Blueprint")) {
+                    // always prefer blueprint options
+                    return optionInfo;
+                }
+            }
+        }
+        // this means all the options are non-blueprint, so we are not customizing anything...
+        // just use the first one
+        return optionInfos.getFirst();
+    }
+
+    private String setterName(PrototypeInfo prototypeInfo, List<OptionInfo> optionInfos) {
+        boolean recordStyle = prototypeInfo.recordStyle();
+        String first = null;
+        for (OptionInfo optionInfo : optionInfos) {
+            String setterName = optionInfo.setter().elementName();
+            if (first == null) {
+                first = setterName;
+            }
+            if (setterName.startsWith("set") && setterName.length() > 3 && Character.isUpperCase(setterName.charAt(3))) {
+                if (!recordStyle) {
+                    return setterName;
+                }
+            } else {
+                if (recordStyle) {
+                    return setterName;
+                }
+            }
+        }
+        return first;
+    }
+
+    private void generatePrototype(RoundContext ctx,
+                                   List<BuilderCodegenExtension> extensions,
+                                   PrototypeInfo prototypeInfo,
+                                   List<OptionHandler> options,
+                                   List<NewDefault> newDefaults,
+                                   List<MethodUpdate> methodUpdate) {
+
+        TypeInfo blueprint = prototypeInfo.blueprint();
+        TypeName prototype = prototypeInfo.prototypeType();
         String ifaceName = prototype.className();
-        List<TypeName> typeGenericArguments = blueprintDef.typeArguments();
+        List<TypeName> typeGenericArguments = blueprint.typeName().typeArguments();
         String typeArgumentString = createTypeArgumentString(typeGenericArguments);
+        List<TypeArgument> typeArguments = typeGenericArguments
+                .stream()
+                .map(TypeArgument::create)
+                .toList();
 
-        // prototype interface (with inner class Builder)
+        // prototype interface (with inner classes: BuilderBase, Builder, and Impl)
         ClassModel.Builder classModel = ClassModel.builder()
-                .type(prototype)
+                .type(prototypeInfo.prototypeType())
                 .classType(ElementKind.INTERFACE)
                 .copyright(CodegenUtil.copyright(GENERATOR,
-                                                 typeInfo.typeName(),
-                                                 prototype));
+                                                 blueprint.typeName(),
+                                                 prototype))
+                .javadoc(prototypeInfo.javadoc())
+                .accessModifier(prototypeInfo.accessModifier());
 
-        String javadocString = blueprintDef.javadoc();
-        List<TypeArgument> typeArguments = new ArrayList<>();
-        Javadoc javadoc;
-        if (javadocString == null) {
-            javadoc = Javadoc.parse("Interface generated from definition. Please add javadoc to the "
-                                            + "definition interface.");
-        } else {
-            javadoc = Javadoc.parse(blueprintDef.javadoc());
-        }
-        classModel.javadoc(javadoc);
-
-        typeGenericArguments.forEach(arg -> {
-            TypeArgument.Builder tokenBuilder = TypeArgument.builder()
-                    .token(arg.className());
-            if (!arg.upperBounds().isEmpty()) {
-                arg.upperBounds().forEach(tokenBuilder::addBound);
-            }
-            if (javadoc.genericsTokens().containsKey(arg.className())) {
-                tokenBuilder.description(javadoc.genericsTokens().get(arg.className()));
-            }
-            typeArguments.add(tokenBuilder.build());
-        });
-
-        List<TypeName> typeArgumentNames = typeArguments.stream()
-                .map(it -> TypeName.createFromGenericDeclaration(it.className()))
-                .collect(Collectors.toList());
         typeArguments.forEach(classModel::addGenericArgument);
 
-        if (blueprintDef.builderPublic()) {
+        if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
             classModel.addJavadocTag("see", "#builder()");
         }
-        if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
+        if (noRequired(options) && prototypeInfo.createEmptyCreate() && prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
             classModel.addJavadocTag("see", "#create()");
         }
 
-        typeContext.typeInfo()
-                .annotationsToGenerate()
-                .forEach(annotation -> classModel.addAnnotation(io.helidon.codegen.classmodel.Annotation.parse(annotation)));
+        prototypeInfo.annotations()
+                .forEach(classModel::addAnnotation);
 
         classModel.addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
-                                                                 typeInfo.typeName(),
+                                                                 blueprint.typeName(),
                                                                  prototype,
                                                                  "1",
                                                                  ""));
 
-        if (typeContext.blueprintData().prototypePublic()) {
-            classModel.accessModifier(AccessModifier.PUBLIC);
-        } else {
-            classModel.accessModifier(AccessModifier.PACKAGE_PRIVATE);
-        }
-        blueprintDef.extendsList()
+        prototypeInfo.superTypes()
                 .forEach(classModel::addInterface);
 
-        generateCustomConstants(customMethods, classModel);
+        prototypeInfo.constants()
+                .forEach(constant -> generateCustomConstant(classModel, constant));
 
         TypeName builderTypeName = TypeName.builder()
                 .from(TypeName.create(prototype.fqName() + ".Builder"))
@@ -437,95 +617,162 @@ class BuilderCodegen implements CodegenExtension {
         // static Builder builder(T instance)
         addCopyBuilderMethod(classModel, builderTypeName, prototype, typeArguments, ifaceName, typeArgumentString);
 
-        // static T create(Config config)
-        addCreateFromConfigMethod(blueprintDef,
-                                  configuredData,
-                                  prototype,
-                                  typeArguments,
-                                  ifaceName,
-                                  typeArgumentString,
-                                  classModel);
+        if (prototypeInfo.configured().isPresent()) {
+            // static T create(Config config)
+            addCreateFromConfigMethod(prototypeInfo.configured().get(),
+                                      prototype,
+                                      typeArguments,
+                                      ifaceName,
+                                      typeArgumentString,
+                                      classModel);
+        }
 
         // static X create()
-        addCreateDefaultMethod(blueprintDef, propertyData, classModel, prototype, ifaceName, typeArgumentString, typeArguments);
+        if (prototypeInfo.createEmptyCreate()) {
+            addCreateDefaultMethod(options,
+                                   classModel,
+                                   prototype,
+                                   ifaceName,
+                                   typeArgumentString,
+                                   typeArguments);
+        }
 
-        generateCustomMethods(classModel, builderTypeName, prototype, customMethods);
+        generateCustomMethods(classModel, prototypeInfo.prototypeFactoryMethods());
+        generateCustomPrototypeMethods(classModel, prototypeInfo.prototypeMethods(), false);
 
         // re-create all blueprint methods to have correct javadoc references
-        generatePrototypeMethods(classModel, blueprint.typeName(), propertyData);
+        generatePrototypeMethods(classModel, blueprint.typeName(), options);
 
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
-                                         typeInformation.prototype(),
-                                         typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                         prototypeInfo,
+                                         prototypeInfo.runtimeType().orElseGet(prototypeInfo::prototypeType),
                                          typeArguments,
-                                         typeArgumentNames,
-                                         typeContext);
+                                         typeGenericArguments,
+                                         options,
+                                         newDefaults,
+                                         methodUpdate);
+
         // class Builder extends BuilderBase ...
         GenerateBuilder.generate(classModel,
-                                 typeInformation.prototype(),
-                                 typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                 prototypeInfo,
                                  typeArguments,
-                                 typeArgumentNames,
-                                 typeContext.blueprintData().isFactory(),
-                                 typeContext);
+                                 typeGenericArguments);
 
-        roundContext.addGeneratedType(prototype,
-                                      classModel,
-                                      blueprint.typeName(),
-                                      blueprint.originatingElementValue());
+        for (BuilderCodegenExtension extension : extensions) {
+            extension.updatePrototype(classModel);
+        }
 
-        if (typeContext.typeInfo().supportsServiceRegistry()) {
-            for (PrototypeProperty property : typeContext.propertyData().properties()) {
-                if (property.configuredOption().provider()) {
-                    this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());
+        ctx.addGeneratedType(prototype,
+                             classModel,
+                             blueprint.typeName(),
+                             blueprint.originatingElementValue());
+
+        if (prototypeInfo.registrySupport()) {
+            for (OptionHandler optionHandler : options) {
+                OptionInfo option = optionHandler.option();
+                if (option.provider().isPresent()) {
+                    this.serviceLoaderContracts.add(option.provider().get().providerType().fqName());
                 }
             }
         }
     }
 
+    private List<BuilderCodegenExtension> findExtensions(PrototypeInfo prototypeInfo) {
+        List<Annotation> extensions = prototypeInfo.findAnnotation(PROTOTYPE_EXTENSIONS)
+                .flatMap(it -> it.annotationValues())
+                .orElseGet(List::of);
+        if (!extensions.isEmpty()) {
+            return extensionsForAnnotations(prototypeInfo, extensions);
+        }
+        return prototypeInfo.findAnnotation(PROTOTYPE_EXTENSION)
+                .map(it -> extensionsForAnnotations(prototypeInfo, List.of(it)))
+                .orElseGet(List::of);
+    }
+
+    private List<BuilderCodegenExtension> extensionsForAnnotations(PrototypeInfo prototypeInfo,
+                                                                   List<Annotation> extensionAnnotations) {
+        Set<TypeName> extensionTypes = extensionAnnotations.stream()
+                .map(Annotation::typeValue)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
+
+        List<ExtensionAndTypes> found = new ArrayList<>();
+
+        Set<TypeName> unsatisfiedTypes = new HashSet<>(extensionTypes);
+
+        // each extension only ones
+        for (BuilderCodegenExtensionProvider extension : this.extensions) {
+            boolean matches = false;
+            List<TypeName> matchedTypes = new ArrayList<>();
+            for (TypeName extensionType : extensionTypes) {
+                if (extension.supports(extensionType)) {
+                    matches = true;
+                    unsatisfiedTypes.remove(extensionType);
+                    matchedTypes.add(extensionType);
+                }
+            }
+            if (matches) {
+                found.add(new ExtensionAndTypes(matchedTypes, extension));
+            }
+        }
+        if (!unsatisfiedTypes.isEmpty()) {
+            throw new CodegenException("Could not find builder codegen extension for types: " + unsatisfiedTypes
+                                               + " (used in @Prototype.Extension)",
+                                       prototypeInfo.blueprint());
+        }
+
+        return found.stream()
+                .map(it -> it.provider().create(it.typeArray()))
+                .toList();
+    }
+
     private void generatePrototypeMethods(ClassModel.Builder classModel,
                                           TypeName blueprintType,
-                                          TypeContext.PropertyData propertyData) {
+                                          List<OptionHandler> options) {
 
-        for (PrototypeProperty property : propertyData.properties()) {
-            Method.Builder method = Method.builder()
-                    .name(property.getterName())
-                    .returnType(property.typeHandler().declaredType())
-                    .addAnnotation(Annotations.OVERRIDE);
+        for (OptionHandler optionHandler : options) {
+            OptionInfo option = optionHandler.option();
+            TypedElementInfo getter = option.getter();
 
-            property.element()
-                    .description()
-                    .map(Javadoc::parse)
-                    .ifPresent(method::javadoc);
-            if (property.element().elementModifiers().contains(Modifier.DEFAULT)) {
-                method.isDefault(true)
-                        .addContent("return ")
-                        .addContent(blueprintType.classNameWithEnclosingNames())
-                        .addContent(".super.")
-                        .addContent(property.getterName())
-                        .addContent("();");
-            }
-            classModel.addMethod(method);
+            classModel.addMethod(method -> {
+                method.name(getter.elementName())
+                        .returnType(getter.typeName())
+                        .update(it -> {
+                            if (option.blueprintMethod().isPresent()) {
+                                it.addAnnotation(Annotations.OVERRIDE);
+                            }
+                        })
+                        .update(it -> getter.description().ifPresent(it::description));
+
+                if (getter.elementModifiers().contains(Modifier.DEFAULT)) {
+                    method.isDefault(true)
+                            .addContent("return ")
+                            .addContent(blueprintType.classNameWithEnclosingNames())
+                            .addContent(".super.")
+                            .addContent(getter.elementName())
+                            .addContent("();");
+                }
+            });
         }
     }
 
-    private Collection<? extends ValidationTask> addBlueprintsForValidation(Set<TypeName> blueprints) {
+    private Collection<? extends ValidationTask> addBlueprintsForValidation(RoundContext roundContext, Set<TypeName> blueprints) {
         List<ValidationTask> result = new ArrayList<>();
 
         for (TypeName blueprintType : blueprints) {
             TypeInfo blueprint = ctx.typeInfo(blueprintType)
-                    .orElseThrow(() -> new CodegenException("Could not get TypeInfo for " + blueprintType.fqName()));
-            result.add(new ValidationTask.ValidateBlueprint(blueprint));
-            TypeContext typeContext = TypeContext.create(ctx, blueprint);
+                    .orElseThrow(() -> new CodegenException("Could not get TypeInfo for " + blueprintType.fqName(),
+                                                            blueprintType));
 
-            if (typeContext.blueprintData().isFactory()) {
-                result.add(new ValidationTask.ValidateBlueprintExtendsFactory(typeContext.typeInfo().prototype(),
+            result.add(new ValidationTask.ValidateBlueprint(blueprint));
+            var typeContext = TypeContext.create(roundContext, blueprint);
+
+            if (typeContext.runtimeType().isPresent()) {
+                result.add(new ValidationTask.ValidateBlueprintExtendsFactory(typeContext.prototypeType(),
                                                                               blueprint,
                                                                               toTypeInfo(blueprint,
-                                                                                         typeContext.typeInfo()
-                                                                                                 .runtimeObject()
-                                                                                                 .get())));
+                                                                                         typeContext.runtimeType().get())));
             }
         }
 
@@ -563,5 +810,17 @@ class BuilderCodegen implements CodegenExtension {
             return "<" + arguments + ">";
         }
         return "";
+    }
+
+    record NewDefault(String name, String setterName, Consumer<ContentBuilder<?>> defaultValue) {
+    }
+
+    record MethodUpdate(OptionInfo newValues, OptionInfo existingValues) {
+    }
+
+    private record ExtensionAndTypes(List<TypeName> types, BuilderCodegenExtensionProvider provider) {
+        public TypeName[] typeArray() {
+            return types.toArray(new TypeName[0]);
+        }
     }
 }

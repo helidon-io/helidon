@@ -16,8 +16,6 @@
 
 package io.helidon.builder.codegen;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,436 +23,414 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
-import io.helidon.common.Severity;
-import io.helidon.common.types.Annotated;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_API;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_BLUEPRINT;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_BUILDER_DECORATOR;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_BUILDER_METHOD;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_CONFIGURED;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_CONSTANT;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_CUSTOM_METHODS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_INCLUDE_DEFAULTS;
-import static io.helidon.common.types.TypeNames.OBJECT;
-import static io.helidon.common.types.TypeNames.OPTIONAL;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_PROTOTYPE_METHOD;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_PROVIDES;
 
-record TypeContext(
-        TypeInformation typeInfo,
-        AnnotationDataBlueprint blueprintData,
-        AnnotationDataConfigured configuredData,
-        PropertyData propertyData,
-        CustomMethods customMethods) {
+final class TypeContext {
 
-    private static final Set<String> IGNORED_NAMES = Set.of("build",
-                                                            "get",
-                                                            "buildPrototype");
     private static final String BLUEPRINT = "Blueprint";
-    private static final Set<MethodSignature> IGNORED_METHODS = Set.of(
-            // equals, hash code and toString
-            new MethodSignature(TypeName.create(boolean.class), "equals", List.of(OBJECT)),
-            new MethodSignature(TypeName.create(int.class), "hashCode", List.of()),
-            new MethodSignature(TypeNames.STRING, "toString", List.of())
-    );
 
-    @SuppressWarnings("checkstyle:MethodLength") // use a lot of lines for parameter formatting
-    static TypeContext create(CodegenContext ctx, TypeInfo blueprint) {
-        String javadoc = blueprint.description().orElse(null);
-        // we need to have Blueprint
-        Optional<Annotation> blueprintAnnotationOpt = blueprint.findAnnotation(Types.PROTOTYPE_BLUEPRINT);
-        Optional<Annotation> implementAnnoOpt = blueprint.findAnnotation(Types.PROTOTYPE_IMPLEMENT);
+    private TypeContext() {
+    }
 
+    static PrototypeInfo create(RoundContext ctx, TypeInfo blueprint) {
+        Annotation blueprintAnnotation = blueprintAnnotation(blueprint);
 
-        if (blueprintAnnotationOpt.isEmpty()) {
-            throw new IllegalStateException("Cannot get @Prototype.Blueprint annotation when processing it for type "
-                                                    + blueprint);
+        TypeName prototypeType = generatedTypeName(blueprint);
+        Javadoc blueprintJavadoc = Javadoc.parse(blueprint.description().orElse(""));
+
+        PrototypeInfo.Builder prototype = PrototypeInfo.builder()
+                .blueprint(blueprint)
+                .prototypeType(prototypeType)
+                .defaultMethodsPredicate(defaultMethodsPredicate(blueprint))
+                .accessModifier(prototypeAccessModifier(blueprintAnnotation))
+                .builderAccessModifier(builderAccessModifier(blueprintAnnotation))
+                .createEmptyCreate(createEmptyPublic(blueprintAnnotation))
+                .recordStyle(recordStyleAccessors(blueprintAnnotation))
+                .registrySupport(registrySupport(blueprint))
+                .superPrototype(superPrototype(blueprint))
+                .superTypes(prototypeExtends(blueprint))
+                .providerProvides(providerProvides(blueprint))
+                .javadoc(prototypeJavadoc(blueprint))
+                .builderBaseJavadoc(builderBaseJavadoc(blueprintJavadoc, prototypeType))
+                .builderJavadoc(builderJavadoc(blueprintJavadoc, prototypeType));
+
+        builderDecorator(blueprintAnnotation).ifPresent(prototype::builderDecorator);
+        configured(blueprint, blueprintAnnotation).ifPresent(prototype::configured);
+        runtimeType(blueprint).ifPresent(prototype::runtimeType);
+
+        customMethodsTypeInfo(ctx, blueprint).ifPresent(it -> {
+            Errors.Collector errors = Errors.collector();
+
+            prototype.constants(constants(it, errors));
+            prototype.prototypeMethods(customMethods(
+                    it,
+                    errors,
+                    PROTOTYPE_PROTOTYPE_METHOD,
+                    el -> true,
+                    TypeContext::prototypeMethod));
+            prototype.prototypeFactoryMethods(customMethods(it,
+                                                            errors,
+                                                            PROTOTYPE_FACTORY_METHOD,
+                                                            TypeContext::isPrototypeFactory,
+                                                            TypeContext::prototypeFactory));
+            prototype.builderMethods(customMethods(it,
+                                                   errors,
+                                                   PROTOTYPE_BUILDER_METHOD,
+                                                   el -> true,
+                                                   TypeContext::builderMethod));
+            prototype.factoryMethods(customMethods(it,
+                                                   errors,
+                                                   PROTOTYPE_FACTORY_METHOD,
+                                                   TypeContext::isFactory,
+                                                   TypeContext::factoryMethod));
+
+            Errors collected = errors.collect();
+            if (collected.hasFatal()) {
+                throw new CodegenException("Invalid custom methods or constants: " + collected,
+                                           it);
+            }
+        });
+
+        return prototype.build();
+    }
+
+    private static boolean isPrototypeFactory(TypedElementInfo factoryMethod) {
+        return !isFactory(factoryMethod);
+    }
+
+    private static boolean isFactory(TypedElementInfo factoryMethod) {
+        if (factoryMethod.parameterArguments().size() == 1) {
+            var type = factoryMethod.parameterArguments()
+                    .getFirst()
+                    .typeName();
+            if (type.equals(CONFIG)) {
+                return true;
+            }
+            if (type.equals(COMMON_CONFIG)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Optional<TypeName> runtimeType(TypeInfo blueprint) {
+        Optional<TypeInfo> factoryInterface = blueprint.interfaceTypeInfo()
+                .stream()
+                .filter(it -> PROTOTYPE_FACTORY.equals(it.typeName().genericTypeName()))
+                .findFirst();
+        return factoryInterface.map(it -> it.typeName().typeArguments().getFirst());
+    }
+
+    private static Javadoc prototypeJavadoc(TypeInfo blueprint) {
+        return blueprint.description()
+                .map(Javadoc::parse)
+                .orElseGet(() -> Javadoc.builder()
+                        .add("Interface generated from blueprint {@code " + blueprint.typeName().fqName() + "}. "
+                                     + "Please add javadoc to blueprint, as it is currently missing.")
+                        .build());
+    }
+
+    private static Javadoc builderBaseJavadoc(Javadoc blueprintJavadoc, TypeName prototypeType) {
+        return Javadoc.builder()
+                .add("Fluent API builder base for {@link " + prototypeType.className() + "}.")
+                .update(it -> {
+                    // add blueprint type parameters, as these are copied to the builder
+                    blueprintJavadoc.parameters()
+                            .forEach(it::addParameter);
+                })
+                .addParameter("<BUILDER>", "type of the builder extending this abstract builder")
+                .addParameter("<PROTOTYPE>", "type of the prototype interface that would be built by {@link #buildPrototype()}")
+                .build();
+    }
+
+    private static Javadoc builderJavadoc(Javadoc blueprintJavadoc, TypeName prototypeType) {
+        return Javadoc.builder()
+                .add("Fluent API builder for {@link " + prototypeType.className() + "}.")
+                .update(it -> {
+                    // add blueprint type parameters, as these are copied to the builder
+                    blueprintJavadoc.parameters()
+                            .forEach(it::addParameter);
+                })
+                .build();
+    }
+
+    private static GeneratedMethod builderMethod(Errors.Collector collector,
+                                                 TypeName typeName,
+                                                 TypedElementInfo referencedMethod,
+                                                 List<Annotation> annotations) {
+        return GeneratedBuilderMethod.create(typeName, referencedMethod, annotations);
+    }
+
+    private static GeneratedMethod prototypeFactory(Errors.Collector collector,
+                                                    TypeName typeName,
+                                                    TypedElementInfo referencedMethod,
+                                                    List<Annotation> annotations) {
+        return GeneratedFactoryMethod.create(typeName, referencedMethod, annotations);
+    }
+
+    private static FactoryMethod factoryMethod(Errors.Collector collector,
+                                               TypeName typeName,
+                                               TypedElementInfo referencedMethod,
+                                               List<Annotation> annotations) {
+
+        return new FactoryMethodImpl(typeName, referencedMethod.typeName(), referencedMethod.elementName(),
+                                     referencedMethod.parameterArguments()
+                                             .stream()
+                                             .map(TypeContext::toFactoryMethodParameter)
+                                             .toList());
+    }
+
+    private static FactoryMethod.Parameter toFactoryMethodParameter(TypedElementInfo elementInfo) {
+        return new FactoryMethodParameterImpl(elementInfo.typeName(), elementInfo.elementName());
+    }
+
+    private static GeneratedMethod prototypeMethod(Errors.Collector collector,
+                                                   TypeName typeName,
+                                                   TypedElementInfo referencedMethod,
+                                                   List<Annotation> annotations) {
+
+        return GeneratedPrototypeMethod.create(typeName,
+                                               referencedMethod,
+                                               annotations);
+    }
+
+    private static <T> List<? extends T> customMethods(TypeInfo customMethodsType,
+                                                       Errors.Collector errors,
+                                                       TypeName requiredAnnotation,
+                                                       Predicate<TypedElementInfo> predicate,
+                                                       CustomMethodProcessor<T> methodProcessor) {
+        // all custom methods must be static
+        // parameter and return type validation is to be done by method processor
+        return customMethodsType.elementInfo()
+                .stream()
+                .filter(predicate)
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates.hasAnnotation(requiredAnnotation))
+                .map(it -> {
+                    // annotations to be added to generated code
+                    List<Annotation> annotations = it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
+                            .flatMap(Annotation::stringValues)
+                            .orElseGet(List::of)
+                            .stream()
+                            .map(String::trim) // to remove spaces after commas when used
+                            .filter(Predicate.not(String::isBlank)) // we do not care about blank values
+                            .map(io.helidon.codegen.classmodel.Annotation::parse)
+                            .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
+                            .toList();
+
+                    return methodProcessor.process(errors,
+                                                   customMethodsType.typeName(),
+                                                   it,
+                                                   annotations);
+                })
+                .toList();
+    }
+
+    private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx, TypeInfo blueprint) {
+        return blueprint.findAnnotation(PROTOTYPE_CUSTOM_METHODS)
+                .map(it -> customMethodsTypeInfo(ctx, blueprint, it));
+
+    }
+
+    private static TypeInfo customMethodsTypeInfo(RoundContext ctx, TypeInfo blueprint, Annotation customMethodsAnnotation) {
+        // the `value()` is mandatory on this annotation
+        TypeName type = customMethodsAnnotation.typeValue()
+                .orElseThrow();
+        return ctx.typeInfo(type)
+                .orElseThrow(() -> new CodegenException("No type found for @Prototype.CustomMethods annotation on "
+                                                                + blueprint.typeName() + ", type: " + type.fqName(),
+                                                        blueprint));
+    }
+
+    private static List<? extends PrototypeConstant> constants(TypeInfo customMethodsType, Errors.Collector errors) {
+        return customMethodsType.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isField)
+                .filter(ElementInfoPredicates.hasAnnotation(PROTOTYPE_CONSTANT))
+                .map(it -> {
+                    if (!it.elementModifiers().contains(Modifier.STATIC)) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is not static.");
+                    }
+                    if (!it.elementModifiers().contains(Modifier.FINAL)) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is not final.");
+                    }
+                    if (it.accessModifier() == AccessModifier.PRIVATE) {
+                        errors.fatal(it,
+                                     "A field annotated with @Prototype.Constant must be static, final, "
+                                             + "and at least package local. Field \"" + it.elementName() + "\" is private.");
+                    }
+                    TypeName fieldType = it.typeName();
+                    String name = it.elementName();
+                    Javadoc javadoc = it.description()
+                            .map(Javadoc::parse)
+                            .orElseGet(() -> Javadoc.builder()
+                                    .add(fieldType.equals(TypeNames.STRING)
+                                                 ? "Constant for {@value}."
+                                                 : "Code generated constant.")
+                                    .build());
+
+                    return PrototypeConstantReference.create(customMethodsType.typeName(),
+                                                             fieldType,
+                                                             name,
+                                                             javadoc);
+                })
+                .toList();
+    }
+
+    private static Optional<PrototypeConfigured> configured(TypeInfo blueprint, Annotation blueprintAnnotation) {
+        return blueprint.findAnnotation(PROTOTYPE_CONFIGURED)
+                .map(it -> TypeContext.configured(blueprintAnnotation, it));
+    }
+
+    private static PrototypeConfigured configured(Annotation blueprintAnnotation, Annotation configuredAnnotation) {
+        Optional<String> configKey = configuredAnnotation.stringValue()
+                .filter(Predicate.not(String::isBlank));
+
+        var builder = PrototypeConfigured.builder();
+
+        configKey.ifPresent(it -> {
+            builder.key(it);
+            builder.root(configuredAnnotation.booleanValue("root").orElse(true));
+        });
+
+        blueprintAnnotation.booleanValue("createFromConfigPublic")
+                .map(it -> it ? AccessModifier.PUBLIC : AccessModifier.PACKAGE_PRIVATE)
+                .ifPresent(builder::createAccessModifier);
+
+        return builder.build();
+    }
+
+    private static Set<TypeName> prototypeExtends(TypeInfo blueprint) {
+        // gather all directly implemented interfaces + add blueprint, Prototype.Api
+
+        Set<TypeName> prototypeExtends = new LinkedHashSet<>();
+        prototypeExtends.add(blueprint.typeName());
+        prototypeExtends.add(PROTOTYPE_API);
+
+        // add custom implements
+        blueprint.findAnnotation(Types.PROTOTYPE_IMPLEMENT)
+                .flatMap(Annotation::stringValues)
+                .stream()
+                .flatMap(List::stream)
+                .map(TypeName::create)
+                .forEach(prototypeExtends::add);
+
+        // add declared implements
+        for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
+            if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                TypeName superBlueprint = superInterface.typeName();
+                String className = superBlueprint.className();
+                TypeName toExtend = TypeName.builder()
+                        .packageName(superBlueprint.packageName())
+                        // blueprints MUST end with Blueprint suffix
+                        .className(className.substring(0, className.length() - 9))
+                        .build();
+                prototypeExtends.add(toExtend);
+                continue;
+            }
+            // other we can add directly, also as this is a set, if you extend both prototype and bluepritn it is fine
+            prototypeExtends.add(superInterface.typeName());
         }
 
-        Annotation blueprintAnnotation =
-                blueprintAnnotationOpt.orElseGet(() -> Annotation.create(Types.PROTOTYPE_BLUEPRINT));
-        List<TypeName> prototypeImplements =
-                implementAnnoOpt.map(TypeContext::prototypeImplements)
-                        .orElseGet(List::of);
+        return prototypeExtends;
+    }
 
-        Set<TypeName> extendList = new LinkedHashSet<>();
-        Set<TypeName> superPrototypes = new LinkedHashSet<>();
-        Set<TypeName> ignoreInterfaces = new LinkedHashSet<>();
+    private static Set<TypeName> providerProvides(TypeInfo blueprint) {
+        return blueprint.findAnnotation(PROTOTYPE_PROVIDES)
+                .flatMap(Annotation::typeValues)
+                .map(it -> (Set<TypeName>) new LinkedHashSet<>(it))
+                .orElseGet(Set::of);
+    }
 
-        // add my blueprint
-        extendList.add(blueprint.typeName());
-        /// prototype (marker interface)
-        extendList.add(Types.PROTOTYPE_API);
-
-        gatherExtends(blueprint, extendList, superPrototypes, ignoreInterfaces);
-        extendList.addAll(prototypeImplements);
-
-        Optional<TypeName> superPrototype;
-        if (superPrototypes.isEmpty()) {
-            superPrototype = Optional.empty();
-        } else {
-            // the first prototype we reach is the one we extend, this is "best effort" approach
-            // we could traverse the hierarchy more granularly to find the right one or throw
-            // if we extend more than one prototype interface on the same level
-            superPrototype = Optional.of(superPrototypes.iterator().next());
-        }
-
-        boolean beanStyleAccessors = blueprintAnnotation.getValue("beanStyle")
-                .map(Boolean::parseBoolean)
+    private static boolean registrySupport(TypeInfo blueprint) {
+        return blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY)
+                .flatMap(Annotation::booleanValue)
                 .orElse(false);
-        boolean includeDefaultMethods = blueprint.hasAnnotation(PROTOTYPE_INCLUDE_DEFAULTS);
-        Set<String> includedDefaultMethods = blueprint.findAnnotation(PROTOTYPE_INCLUDE_DEFAULTS)
+    }
+
+    private static boolean createEmptyPublic(Annotation blueprintAnnotation) {
+        return blueprintAnnotation.booleanValue("createEmptyPublic")
+                .orElse(true);
+    }
+
+    private static AccessModifier builderAccessModifier(Annotation blueprintAnnotation) {
+        return blueprintAnnotation.booleanValue("builderPublic")
+                .filter(it -> !it)
+                .map(it -> AccessModifier.PACKAGE_PRIVATE)
+                .orElse(AccessModifier.PUBLIC);
+    }
+
+    private static AccessModifier prototypeAccessModifier(Annotation blueprintAnnotation) {
+        return blueprintAnnotation.booleanValue("isPublic")
+                .filter(it -> !it)
+                .map(it -> AccessModifier.PACKAGE_PRIVATE)
+                .orElse(AccessModifier.PUBLIC);
+    }
+
+    private static Optional<TypeName> builderDecorator(Annotation blueprintAnnotation) {
+        return blueprintAnnotation.getValue("decorator")
+                .map(TypeName::create)
+                .filter(Predicate.not(PROTOTYPE_BUILDER_DECORATOR::equals));
+    }
+
+    private static Annotation blueprintAnnotation(TypeInfo blueprint) {
+        return blueprint.findAnnotation(Types.PROTOTYPE_BLUEPRINT)
+                .orElseThrow(() -> new CodegenException("No @Prototype.Blueprint annotation found on " + blueprint.typeName(),
+                                                        blueprint));
+    }
+
+    private static boolean recordStyleAccessors(Annotation blueprintAnnotation) {
+        return !blueprintAnnotation.booleanValue("beanStyle")
+                .orElse(false);
+    }
+
+    private static Predicate<String> defaultMethodsPredicate(TypeInfo blueprint) {
+        if (!blueprint.hasAnnotation(PROTOTYPE_INCLUDE_DEFAULTS)) {
+            return it -> false;
+        }
+        Set<String> methodNames = blueprint.findAnnotation(PROTOTYPE_INCLUDE_DEFAULTS)
                 .flatMap(Annotation::stringValues)
                 .stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
 
-
-        /*
-         * Find all valid builder methods
-         */
-        Errors.Collector errors = Errors.collector();
-        List<PrototypeProperty> propertyMethods = new ArrayList<>();
-        // default methods discovered on any interface (this one or extended) - these should not become properties
-        Set<MethodSignature> ignoredMethods = new HashSet<>(IGNORED_METHODS);
-        // all method signatures defined on super prototypes
-        Set<MethodSignature> superPrototypeMethods = new HashSet<>();
-        gatherBuilderProperties(ctx,
-                                blueprint,
-                                errors,
-                                propertyMethods,
-                                ignoredMethods,
-                                ignoreInterfaces,
-                                beanStyleAccessors,
-                                superPrototypeMethods,
-                                includeDefaultMethods,
-                                includedDefaultMethods);
-        errors.collect().checkValid();
-
-        /*
-         now some properties on the current blueprint may be overriding properties from one of the super prototypes
-         in such a case, we must handle it specifically
-         - if it has a different default value, update it in the supertype (constructor should call setter with the default
-         */
-        List<PrototypeProperty> overridingProperties = new ArrayList<>();
-        propertyMethods = propertyMethods.stream()
-                .filter(it -> {
-                    // filter out all properties from super prototypes
-                    if (superPrototypeMethods.contains(it.signature())) {
-                        overridingProperties.add(it);
-                        return false;
-                    }
-                    return true;
-                })
-                .toList();
-
-        // filter out duplicates
-        Set<MethodSignature> addedSignatures = new HashSet<>();
-        propertyMethods = propertyMethods.stream()
-                .filter(it -> addedSignatures.add(it.signature()))
-                .toList();
-
-        boolean hasOptional = propertyMethods.stream()
-                .map(PrototypeProperty::typeHandler)
-                .anyMatch(it -> it.declaredType().genericTypeName().equals(OPTIONAL));
-        boolean hasRequired = propertyMethods.stream()
-                .map(PrototypeProperty::configuredOption)
-                .anyMatch(AnnotationDataOption::required);
-        boolean hasNonNulls = propertyMethods.stream()
-                .map(PrototypeProperty::configuredOption)
-                .anyMatch(AnnotationDataOption::validateNotNull);
-        boolean hasAllowedValues = propertyMethods.stream()
-                .map(PrototypeProperty::configuredOption)
-                .anyMatch(AnnotationDataOption::hasAllowedValues);
-        boolean prototypePublic = blueprintAnnotation.getValue("isPublic")
-                .map(Boolean::parseBoolean)
-                .orElse(true);
-        // does not make sense to create public builder, if prototype interface is package local
-        boolean builderPublic = blueprintAnnotation.getValue("builderPublic")
-                .map(Boolean::parseBoolean)
-                .orElse(true);
-        boolean createFromConfigPublic = blueprintAnnotation.getValue("createFromConfigPublic")
-                .map(Boolean::parseBoolean)
-                .orElse(true);
-        boolean createEmptyPublic = blueprintAnnotation.getValue("createEmptyPublic")
-                .map(Boolean::parseBoolean)
-                .orElse(true);
-        boolean hasProvider = propertyMethods.stream()
-                .map(PrototypeProperty::configuredOption)
-                .map(AnnotationDataOption::provider)
-                .filter(it -> it) // filter our falses
-                .findFirst()
-                .orElse(false);
-        Optional<TypeName> decorator = blueprintAnnotation.getValue("decorator")
-                .map(TypeName::create)
-                .filter(Predicate.not(PROTOTYPE_BUILDER_DECORATOR::equals));
-
-        // factory is if the blueprint implements Factory<RuntimeContractType>
-        Optional<TypeInfo> factoryInterface = blueprint.interfaceTypeInfo()
-                .stream()
-                .filter(it -> PROTOTYPE_FACTORY.equals(it.typeName().genericTypeName()))
-                .findFirst();
-        boolean isFactory = factoryInterface.isPresent();
-        Optional<TypeName> runtimeObject = factoryInterface.map(it -> it.typeName().typeArguments().getFirst());
-
-        AnnotationDataConfigured configured = AnnotationDataConfigured.create(blueprint);
-
-        TypeName prototype = generatedTypeName(blueprint);
-
-        TypeName prototypeImpl = TypeName.builder(prototype)
-                .className(prototype.className() + "Impl")
-                .build();
-
-        TypeName prototypeBuilder = TypeName.builder(prototype)
-                .addEnclosingName(prototype.className())
-                .className("Builder")
-                .build();
-
-        /*
-        Service registry is supported if it is explicitly configured && a provider exists,
-        or there is an option annotated with @Option.RegistryService
-         */
-        boolean supportsServiceRegistry = blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY)
-                .flatMap(Annotation::booleanValue)
-                .orElse(false)
-                && blueprint.elementInfo()
-                .stream()
-                .filter(ElementInfoPredicates::isMethod)
-                .anyMatch(ElementInfoPredicates.hasAnnotation(Types.OPTION_PROVIDER));
-        supportsServiceRegistry |= Stream.concat(Stream.of(blueprint), blueprint.interfaceTypeInfo().stream())
-                .map(TypeInfo::elementInfo)
-                .flatMap(Collection::stream)
-                .filter(ElementInfoPredicates::isMethod)
-                .anyMatch(ElementInfoPredicates.hasAnnotation(Types.OPTION_REGISTRY_SERVICE));
-
-        TypeInformation typeInformation = new TypeInformation(supportsServiceRegistry,
-                                                              blueprint,
-                                                              prototype,
-                                                              prototypeBuilder,
-                                                              prototypeImpl,
-                                                              runtimeObject,
-                                                              decorator,
-                                                              superPrototype,
-                                                              annotationsToGenerate(blueprint));
-
-        return new TypeContext(
-                typeInformation,
-                new AnnotationDataBlueprint(
-                        prototypePublic,
-                        builderPublic,
-                        createFromConfigPublic,
-                        createEmptyPublic,
-                        isFactory,
-                        extendList,
-                        javadoc,
-                        blueprint.typeName().typeArguments()),
-                configured,
-                new PropertyData(hasOptional,
-                                             hasRequired,
-                                             hasNonNulls,
-                                             hasProvider,
-                                             hasAllowedValues,
-                                             propertyMethods,
-                                             overridingProperties),
-                CustomMethods.create(ctx, typeInformation));
-    }
-
-    static List<String> annotationsToGenerate(Annotated annotated) {
-        return annotated.findAnnotation(Types.PROTOTYPE_ANNOTATED)
-                .flatMap(Annotation::stringValues)
-                .stream()
-                .flatMap(List::stream)
-                .toList();
-    }
-
-    private static List<TypeName> prototypeImplements(Annotation annotation) {
-        return annotation.stringValues()
-                .stream()
-                .flatMap(List::stream)
-                .map(TypeName::create)
-                .toList();
-    }
-
-    private static void gatherExtends(TypeInfo typeInfo, Set<TypeName> extendList,
-                                      Set<TypeName> superPrototypes,
-                                      Set<TypeName> ignoredInterfaces) {
-        // if any implemented interface is a @Blueprint, we must extend the target type as well
-        // as any implemented interface is already a Prototype, we ignore additional annotations (it is our super type)
-        List<TypeInfo> typeInfos = typeInfo.interfaceTypeInfo();
-        for (TypeInfo info : typeInfos) {
-            if (info.findAnnotation(Types.PROTOTYPE_BLUEPRINT).isPresent()) {
-                // this is a blueprint, we must implement its built type
-                TypeName typeName = info.typeName();
-                String className = typeName.className();
-                TypeName toExtend = TypeName.builder(typeName)
-                        .className(className.substring(0, className.length() - 9))
-                        .build();
-                extendList.add(toExtend);
-                superPrototypes.add(toExtend);
-                ignoredInterfaces.add(toExtend);
-                ignoredInterfaces.add(typeName);
-            }
-            boolean gatherAll = true;
-            for (TypeInfo implementedInterface : info.interfaceTypeInfo()) {
-                if (implementedInterface.typeName().equals(Types.PROTOTYPE_API)) {
-                    extendList.add(info.typeName());
-                    // this is a prototype itself, ignore additional interfaces
-                    gatherAll = false;
-                    superPrototypes.add(info.typeName());
-
-                    // we need to ignore ANY interface implemented by "info" and its super interfaces
-                    if (ignoredInterfaces.add(info.typeName().genericTypeName())) {
-                        ignoredInterfaces.add(TypeName.builder(info.typeName())
-                                                      .className(info.typeName().className() + "Blueprint")
-                                                      .build());
-                        ignoreAllInterfaces(ignoredInterfaces, info);
-                    }
-                    break;
-                }
-            }
-            if (gatherAll) {
-                gatherExtends(info, extendList, superPrototypes, ignoredInterfaces);
-            }
+        if (methodNames.isEmpty()) {
+            return it -> true;
         }
-    }
 
-    private static void ignoreAllInterfaces(Set<TypeName> ignoredInterfaces, TypeInfo info) {
-        // also add all super interfaces of the prototype
-        List<TypeInfo> superIfaces = info.interfaceTypeInfo();
-
-        for (TypeInfo superIface : superIfaces) {
-            if (ignoredInterfaces.add(superIface.typeName().genericTypeName())) {
-                ignoreAllInterfaces(ignoredInterfaces, superIface);
-            }
-        }
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them
-    private static void gatherBuilderProperties(CodegenContext ctx,
-                                                TypeInfo typeInfo,
-                                                Errors.Collector errors,
-                                                List<PrototypeProperty> properties,
-                                                Set<MethodSignature> ignoredMethods,
-                                                Set<TypeName> ignoreInterfaces,
-                                                boolean beanStyleAccessors,
-                                                Set<MethodSignature> superPrototypeMethods,
-                                                boolean includeDefaultMethods,
-                                                Set<String> includedDefaultMethods) {
-
-        // we are only interested in getter methods
-        TypeName typeName = typeInfo.typeName();
-        properties.addAll(typeInfo.elementInfo().stream()
-                                  .filter(ElementInfoPredicates::isMethod)
-                                  .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                                  .filter(Predicate.not(ElementInfoPredicates::isPrivate))
-                                  .filter(it -> {
-                                      if (it.elementModifiers().contains(Modifier.DEFAULT)) {
-                                          if (includeDefaultMethods) {
-                                              if (includedDefaultMethods.isEmpty()
-                                                      || includedDefaultMethods.contains(it.elementName())) {
-                                                  return true;
-                                              }
-                                          }
-                                          ignoredMethods.add(MethodSignature.create(it));
-                                          return false;
-                                      }
-                                      return true;
-                                  })
-                                  .filter(it -> {
-                                      if (IGNORED_NAMES.contains(it.elementName())) {
-                                          return false;
-                                      }
-                                      return !ignoredMethods.contains(MethodSignature.create(it));
-                                  })
-                                  .filter(it -> {
-                                      // if the method is defined on a super prototype, add it to the set
-                                      if (ignoreInterfaces.contains(it.enclosingType().get())) {
-                                          // collect all methods from super prototypes, so we know how to handle overrides
-                                          superPrototypeMethods.add(MethodSignature.create(it));
-                                      }
-                                      if (ignoreInterfaces.contains(it.enclosingType().get())) {
-                                          // if this method is defined on an ignored interface, filter it out
-                                          return false;
-                                      }
-                                      return true;
-                                  })
-                                  .filter(it -> {
-                                      Severity severity = Severity.WARN;
-
-                                      // parameters and return type
-                                      if (it.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
-                                          // invalid return type for builder
-                                          if (it.elementModifiers().contains(Modifier.DEFAULT)
-                                                && includeDefaultMethods) {
-                                              // ignore invalid default methods if we support all default methods
-                                              return false;
-                                          }
-
-                                          errors.message("Builder definition methods cannot have void return type "
-                                                                 + "(must be getters): "
-                                                                 + typeName + "." + it.elementName(),
-                                                         severity);
-                                          return false;
-                                      }
-                                      if (!it.parameterArguments().isEmpty()) {
-                                          if (it.elementModifiers().contains(Modifier.DEFAULT)
-                                                  && includeDefaultMethods) {
-                                              // ignore invalid default methods if we support all default methods
-                                              return false;
-                                          }
-
-                                          errors.message("Builder definition methods cannot have "
-                                                                 + "parameters (must be getters): "
-                                                                 + typeName + "." + it.elementName(),
-                                                         severity);
-                                          return false;
-                                      }
-
-                                      return true;
-                                  })
-                                  // filter out Supplier.get()
-                                  .filter(it -> !("get".equals(it.elementName()) && "T".equals(it.typeName().className())))
-                                  .map(it -> PrototypeProperty.create(ctx,
-                                                                      typeInfo,
-                                                                      it,
-                                                                      beanStyleAccessors))
-                                  .toList());
-
-        // we also need to add info for all implemented interfaces
-        List<TypeInfo> interfaces = typeInfo.interfaceTypeInfo();
-
-        for (TypeInfo anInterface : interfaces) {
-            boolean hasIncludeAnnotation = anInterface.hasAnnotation(PROTOTYPE_INCLUDE_DEFAULTS);
-            boolean nextIncludeDefaults = includeDefaultMethods || hasIncludeAnnotation;
-            Set<String> nextIncludedDefaultMethods = anInterface.findAnnotation(PROTOTYPE_INCLUDE_DEFAULTS)
-                    .flatMap(Annotation::stringValues)
-                    .stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toSet());
-
-            Set<String> usedIncludedDefaults;
-            if (hasIncludeAnnotation && includedDefaultMethods.isEmpty()) {
-                usedIncludedDefaults = includedDefaultMethods;
-            } else {
-                usedIncludedDefaults = new HashSet<>(includedDefaultMethods);
-                usedIncludedDefaults.addAll(nextIncludedDefaultMethods);
-            }
-
-            gatherBuilderProperties(ctx,
-                                    anInterface,
-                                    errors,
-                                    properties,
-                                    ignoredMethods,
-                                    ignoreInterfaces,
-                                    beanStyleAccessors,
-                                    superPrototypeMethods,
-                                    nextIncludeDefaults,
-                                    usedIncludedDefaults);
-        }
+        return methodNames::contains;
     }
 
     private static TypeName generatedTypeName(TypeInfo typeInfo) {
@@ -462,8 +438,9 @@ record TypeContext(
         if (typeName.endsWith(BLUEPRINT)) {
             typeName = typeName.substring(0, typeName.length() - BLUEPRINT.length());
         } else {
-            throw new IllegalArgumentException("Blueprint interface name must end with " + BLUEPRINT
-                                                       + ", this is invalid type: " + typeInfo.typeName().fqName());
+            throw new CodegenException("Blueprint interface name must end with " + BLUEPRINT
+                                               + ", this is invalid type: " + typeInfo.typeName().fqName(),
+                                       typeInfo);
         }
 
         return TypeName.builder(typeInfo.typeName())
@@ -472,32 +449,142 @@ record TypeContext(
                 .build();
     }
 
-    record TypeInformation(
-            boolean supportsServiceRegistry,
-            TypeInfo blueprintType,
-            TypeName prototype,
-            TypeName prototypeBuilder,
-            TypeName prototypeImpl,
-            Optional<TypeName> runtimeObject,
-            Optional<TypeName> decorator,
-            Optional<TypeName> superPrototype,
-            List<String> annotationsToGenerate) {
-        public TypeName prototypeBuilderBase() {
-            return TypeName.builder(prototypeBuilder)
-                    .className(prototypeBuilder.className() + "Base")
-                    .build()
-                    .genericTypeName();
+    private static Optional<TypeName> superPrototype(TypeInfo blueprint) {
+        // interfaces we directly implement
+
+        Set<TypeName> processedInterfaces = new HashSet<>();
+        Set<TypeName> superPrototypes = new LinkedHashSet<>();
+        superPrototype(blueprint, superPrototypes, processedInterfaces);
+
+        return superPrototypes.stream()
+                .findFirst();
+    }
+
+    private static void superPrototype(TypeInfo inProgress, Set<TypeName> superPrototypes, Set<TypeName> processedInterfaces) {
+        List<TypeInfo> superInterfaces = inProgress.interfaceTypeInfo();
+        for (TypeInfo superInterface : superInterfaces) {
+            // we may implement the same interface through multiple super-interface, ignore it next time
+            if (!processedInterfaces.add(superInterface.typeName())) {
+                continue;
+            }
+            if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                // we have a direct super-interface that is a blueprint
+                TypeName superBlueprint = superInterface.typeName();
+                String className = superBlueprint.className();
+                TypeName toExtend = TypeName.builder()
+                        .packageName(superBlueprint.packageName())
+                        // blueprints MUST end with Blueprint suffix
+                        .className(className.substring(0, className.length() - 9))
+                        .build();
+                // encountering this again will skip it, also we do not care about any super interfaces of this interface,
+                // as those are already covered by the prototype we extend
+                processedInterfaces.add(toExtend);
+                superPrototypes.add(toExtend);
+
+                if (superPrototypes.size() > 1) {
+                    throw new CodegenException("A blueprint extends more than one other blueprint/prototype. "
+                                                       + "Multiple inheritance is not supported in Java, so we cannot generate"
+                                                       + " a builder extending more than one super-builder.",
+                                               inProgress);
+                }
+                continue;
+            }
+
+            boolean found = false;
+            for (TypeInfo anInterface : superInterface.interfaceTypeInfo()) {
+                // all implemented types of our super type - we look for Prototype.Api, as all prototypes must extend that
+                // if found, this is a direct super prototype
+                if (anInterface.typeName().equals(PROTOTYPE_API)) {
+                    superPrototypes.add(anInterface.typeName());
+                    if (superPrototypes.size() > 1) {
+                        throw new CodegenException("A blueprint extends more than one other blueprint/prototype. "
+                                                           + "Multiple inheritance is not supported in Java, so we cannot "
+                                                           + "generate a builder extending more than one super-builder.",
+                                                   inProgress);
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                // this was a prototype, continue with next one
+                continue;
+            }
+            // this is a "random" interface, just go through all the types it extends
+            superPrototype(superInterface,
+                           superPrototypes,
+                           processedInterfaces);
         }
     }
 
-    record PropertyData(
-            boolean hasOptional,
-            boolean hasRequired,
-            boolean hasNonNulls,
-            boolean hasProvider,
-            boolean hasAllowedValues,
-            List<PrototypeProperty> properties,
-            List<PrototypeProperty> overridingProperties) {
+    interface CustomMethodProcessor<T> {
+        T process(Errors.Collector collector,
+                  TypeName customMethodsType,
+                  TypedElementInfo customMethod,
+                  List<Annotation> annotations);
     }
 
+    private static class FactoryMethodParameterImpl implements FactoryMethod.Parameter {
+        private final TypeName type;
+        private final String name;
+
+        private FactoryMethodParameterImpl(TypeName type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public TypeName type() {
+            return type;
+        }
+
+        @Override
+        public String toString() {
+            return type.className() + " " + name;
+        }
+    }
+
+    private static class FactoryMethodImpl implements FactoryMethod {
+        private final TypeName declaringType;
+        private final TypeName returnType;
+        private final String methodName;
+        private final List<FactoryMethod.Parameter> parameters;
+
+        private FactoryMethodImpl(TypeName declaringType, TypeName returnType, String methodName, List<Parameter> parameters) {
+            this.declaringType = declaringType;
+            this.returnType = returnType;
+            this.methodName = methodName;
+            this.parameters = parameters;
+        }
+
+        @Override
+        public TypeName declaringType() {
+            return declaringType;
+        }
+
+        @Override
+        public TypeName returnType() {
+            return returnType;
+        }
+
+        @Override
+        public String methodName() {
+            return methodName;
+        }
+
+        @Override
+        public List<Parameter> parameters() {
+            return parameters;
+        }
+
+        @Override
+        public String toString() {
+            return declaringType.fqName() + "." + methodName + "(" + parameters + ")";
+        }
+    }
 }

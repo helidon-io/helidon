@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -108,6 +107,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @return boxed type for this type, or this type if not primitive
      */
     TypeName boxed();
+
+    /**
+     * Return the unboxed equivalent of this type.
+     * If this is a boxed primitive, the primitive type is returned.
+     *
+     * @return primitive type for this type, or this type if not boxed primitive type
+     */
+    default TypeName unboxed() {
+        return TypeNameSupport.unboxed(this);
+    }
 
     /**
      * The base generic type name, stripped of any {@link TypeName#typeArguments()}.
@@ -238,33 +247,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     Optional<TypeName> componentType();
 
     /**
-     * List of declared and known annotations for this element.
-     * Note that "known" implies that the annotation is visible, which depends
-     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
-     *
-     * @return the list of annotations declared on this element
-     */
-    @Override
-    List<Annotation> annotations();
-
-    /**
-     * List of all inherited annotations for this element. Inherited annotations are annotations declared
-     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
-     * <p>
-     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
-     * annotations, it will be returned once for each such declaration.
-     * <p>
-     * This method does not return annotations on super types or interfaces!
-     *
-     * @return list of all meta annotations of this element
-     */
-    @Override
-    List<Annotation> inheritedAnnotations();
-
-    /**
      * Fluent API builder base for {@link TypeName}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends TypeName.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
@@ -1021,7 +1006,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions similar to {@link Class#getSimpleName()}.
+         * Functions the same as {@link Class#getSimpleName()}.
          *
          * @return the class name
          */
@@ -1100,7 +1085,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
          * for example in declaration of the top level type (as arguments are a function of usage of the type).
-         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the
+         * type).
          *
          * @return the type parameters
          * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
@@ -1150,32 +1136,6 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * List of declared and known annotations for this element.
-         * Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
-         *
-         * @return the annotations
-         */
-        public List<Annotation> annotations() {
-            return annotations;
-        }
-
-        /**
-         * List of all inherited annotations for this element. Inherited annotations are annotations declared
-         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
-         * <p>
-         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
-         * annotations, it will be returned once for each such declaration.
-         * <p>
-         * This method does not return annotations on super types or interfaces!
-         *
-         * @return the inherited annotations
-         */
-        public List<Annotation> inheritedAnnotations() {
-            return inheritedAnnotations;
-        }
-
-        /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
@@ -1216,8 +1176,6 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean primitive;
             private final boolean vararg;
             private final boolean wildcard;
-            private final List<Annotation> annotations;
-            private final List<Annotation> inheritedAnnotations;
             private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
             private final List<TypeName> upperBounds;
@@ -1258,6 +1216,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public TypeName boxed() {
                 return TypeNameSupport.boxed(this);
+            }
+
+            @Override
+            public TypeName unboxed() {
+                return TypeNameSupport.unboxed(this);
             }
 
             @Override
@@ -1374,6 +1337,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                     return false;
                 }
                 return Objects.equals(packageName, other.packageName())
+                        && Objects.equals(className, other.className())
+                        && Objects.equals(enclosingNames, other.enclosingNames())
+                        && primitive == other.primitive()
+                        && array == other.array()
+                        && Objects.equals(componentType, other.componentType());
                     && Objects.equals(className, other.className())
                     && Objects.equals(enclosingNames, other.enclosingNames())
                     && primitive == other.primitive()
@@ -1383,7 +1351,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
 
             @Override
             public int hashCode() {
-                return Objects.hash(packageName, className, enclosingNames, primitive, array, componentType);
+                return Objects.hash(packageName, className, enclosingNames, primitive, array);
             }
 
         }

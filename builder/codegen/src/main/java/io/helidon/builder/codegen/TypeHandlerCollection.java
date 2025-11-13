@@ -35,7 +35,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
@@ -52,10 +53,9 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 
-abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
+abstract class TypeHandlerCollection extends TypeHandlerBase {
     private static final Set<TypeName> BUILT_IN_MAPPERS = Set.of(
             TypeNames.STRING,
             TypeNames.BOXED_BOOLEAN,
@@ -92,29 +92,34 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     );
     private final TypeName collectionType;
     private final TypeName collectionImplType;
-    private final String collector;
-    private final Optional<String> configMapper;
+    private final Consumer<ContentBuilder<?>> collector;
+    private final Optional<Consumer<ContentBuilder<?>>> configMapper;
 
-    TypeHandlerCollection(TypeName blueprintType,
-                          TypedElementInfo annotatedMethod,
-                          String name,
-                          String getterName,
-                          String setterName,
-                          TypeName declaredType,
+    TypeHandlerCollection(PrototypeInfo prototypeInfo,
+                          OptionInfo option,
                           TypeName collectionType,
-                          String collector,
-                          Optional<String> configMapper) {
-        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
+                          TypeName collectionImplType,
+                          Consumer<ContentBuilder<?>> collector,
+                          Optional<Consumer<ContentBuilder<?>>> configMapper) {
+        super(prototypeInfo, option, firstTypeArgument(option));
+
         this.collectionType = collectionType;
-        this.collectionImplType = collectionImplType(collectionType);
+        this.collectionImplType = collectionImplType;
         this.collector = collector;
         this.configMapper = configMapper;
     }
 
+    static String isMutatedField(String propertyName) {
+        return "is" + CodegenUtil.capitalize(propertyName) + "Mutated";
+    }
+
     @Override
-    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
-        Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
-        if (isBuilder && !configured.hasDefault()) {
+    public Field.Builder field(boolean isBuilder) {
+        Field.Builder builder = super.field(isBuilder);
+        // collections are always final, we clear them if needed
+        builder.isFinal(true);
+
+        if (isBuilder && option().defaultValue().isEmpty()) {
             newCollectionInstanceWithoutParams(builder);
             builder.addContent("()");
         }
@@ -122,72 +127,19 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    Consumer<ContentBuilder<?>> toDefaultValue(List<String> defaultValues,
-                                               List<Integer> defaultInts,
-                                               List<Long> defaultLongs,
-                                               List<Double> defaultDoubles,
-                                               List<Boolean> defaultBooleans) {
-
-        if (defaultValues != null) {
-            return content -> {
-                newCollectionInstanceWithoutParams(content);
-                content.addContent("(")
-                        .addContent(collectionType.genericTypeName())
-                        .addContent(".of(");
-
-                for (int i = 0; i < defaultValues.size(); i++) {
-                    toDefaultValue(defaultValues.get(i)).accept(content);
-                    if (i != defaultValues.size() - 1) {
-                        content.addContent(", ");
-                    }
-                }
-                content.addContent("))");
-            };
-        }
-
-        if (defaultInts != null) {
-            return defaultCollection(defaultInts);
-        }
-        if (defaultLongs != null) {
-            return content -> {
-                newCollectionInstanceWithoutParams(content);
-                content.addContent("(")
-                        .addContent(collectionType.genericTypeName())
-                        .addContent(".of(");
-
-                for (int i = 0; i < defaultLongs.size(); i++) {
-                    content.addContent(String.valueOf(defaultLongs.get(i)))
-                            .addContent("L");
-                    if (i != defaultLongs.size() - 1) {
-                        content.addContent(", ");
-                    }
-                }
-                content.addContent("))");
-            };
-        }
-        if (defaultDoubles != null) {
-            return defaultCollection(defaultDoubles);
-        }
-        if (defaultBooleans != null) {
-            return defaultCollection(defaultBooleans);
-        }
-
-        return null;
-    }
-
-    @Override
-    void generateFromConfig(Method.Builder method,
-                            AnnotationDataOption configured,
-                            FactoryMethods factoryMethods) {
-        if (configured.provider()) {
+    public void generateFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
+        if (option().provider().isPresent()) {
             return;
         }
-        TypeName actualType = actualType().genericTypeName();
+        TypeName actualType = type().genericTypeName();
+        var setter = option().setter();
 
-        if (factoryMethods.createFromConfig().isPresent()) {
-            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createFromConfig().get();
-            TypeName returnType = factoryMethod.factoryMethodReturnType();
-            boolean mapList = true;
+        Optional<FactoryMethod> factoryMethod = findFactory(prototype(), actualType);
+        if (factoryMethod.isPresent()) {
+            var fm = factoryMethod.get();
+            TypeName returnType = fm.returnType();
+
+            boolean mapList;
             if (returnType.isList() || returnType.isSet()) {
                 mapList = false;
             } else {
@@ -196,65 +148,91 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 mapList = returnType.equals(actualType);
             }
             if (mapList) {
-                method.addContentLine(configGet(configured)
-                                              + ".asList("
-                                              + generateMapListFromConfig(factoryMethods)
-                                              + ").ifPresent(this::" + setterName() + ");");
+                method.addContent(configGet(optionConfigured))
+                        .addContent(".asList(")
+                        .update(it -> generateMapListFromConfig(it, fm))
+                        .addContentLine(").ifPresent(this::" + setter.elementName() + ");");
             } else {
-                method.addContent(configGet(configured));
-                generateFromConfig(method, factoryMethods);
-                method.addContentLine(".ifPresent(this::" + setterName() + ");");
+                method.addContent(configGet(optionConfigured));
+                generateFromConfig(method, fm);
+                method.addContentLine(".ifPresent(this::" + setter.elementName() + ");");
             }
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
             // types we support in config can be simplified,
             // this also supports comma separated lists for string based types
 
-            method.addContent(configGet(configured))
+            method.addContent(configGet(optionConfigured))
                     .addContent(".asList(")
                     .addContent(actualType.genericTypeName())
                     .addContent(".class")
                     .addContent(")");
-            configMapper.ifPresent(method::addContent);
+            configMapper.ifPresent(it -> it.accept(method));
 
-            if (actualType().typeArguments().isEmpty()) {
+            if (type().typeArguments().isEmpty()) {
                 method.addContent(".ifPresent(this::")
-                        .addContent(setterName())
+                        .addContent(setter.elementName())
                         .addContentLine(");");
             } else {
                 method.addContent(".ifPresent(it -> this.")
-                        .addContent(setterName())
+                        .addContent(setter.elementName())
                         .addContent("((")
                         .addContent(collectionType)
                         .addContentLine(")it));");
                 // maybe we should add @SuppressWarnings("unchecked")
             }
 
-
         } else {
-            method.addContent(configGet(configured)
+            method.addContent(configGet(optionConfigured)
                                       + ".asNodeList()"
                                       + ".map(nodeList -> nodeList.stream()"
                                       + ".map(cfg -> cfg");
-            generateFromConfig(method, factoryMethods);
+            generateFromConfig(method);
             method.addContentLine(".get())"
                                           + "." + collector + ")"
-                                          + ".ifPresent(this::" + setterName() + ");");
+                                          + ".ifPresent(this::" + setter.elementName() + ");");
         }
     }
 
-    String generateMapListFromConfig(FactoryMethods factoryMethods) {
-        return factoryMethods.createFromConfig()
-                .map(it -> it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName())
-                .orElseThrow(() -> new IllegalStateException("This should have been called only if factory method is present for "
-                                                                     + declaredType() + " " + name()));
+    @Override
+    public void setters(InnerClass.Builder classBuilder,
+                        TypeName returnType) {
 
+        if (option().provider().isPresent() || option().registryService()) {
+            discoverServicesSetter(classBuilder, returnType);
+        }
+
+        // we cannot call super. as collections are always final
+        // there is always a setter with the declared type, replacing values
+        declaredSetters(classBuilder, returnType);
+
+        if (option().singular().isPresent()) {
+            singularSetter(classBuilder, returnType, option().singular().get());
+
+            if (option().builderInfo().isPresent()) {
+                builderConsumerSetter(classBuilder,
+                                      returnType,
+                                      option().builderInfo().get(),
+                                      option().singular().get());
+            }
+        }
+    }
+
+    void generateMapListFromConfig(ContentBuilder<?> content, FactoryMethod factoryMethod) {
+        var declaringType = factoryMethod.declaringType();
+        var methodName = factoryMethod.methodName();
+
+        content.addContent(declaringType.genericTypeName())
+                .addContent("::")
+                .addContent(methodName);
     }
 
     @Override
-    TypeName argumentTypeName() {
-        TypeName type = actualType();
-        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive() || type.array()) {
-            return declaredType();
+    TypeName setterArgumentTypeName() {
+        TypeName type = type();
+        if (TypeNames.STRING.equals(type) || type.unboxed().primitive() || type.array()) {
+            return TypeName.builder(collectionType)
+                    .addTypeArgument(type.boxed())
+                    .build();
         }
 
         return TypeName.builder(collectionType)
@@ -262,41 +240,66 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .build();
     }
 
-    @Override
-    void setters(InnerClass.Builder classBuilder,
-                 AnnotationDataOption configured,
-                 FactoryMethods factoryMethods,
-                 TypeName returnType,
-                 Javadoc blueprintJavadoc) {
+    Method.Builder extraSetterContent(Method.Builder builder) {
+        return builder.addContentLine("this." + isMutatedField() + " = true;");
+    }
 
-        if (configured.provider() || configured.registryService()) {
-            discoverServicesSetter(classBuilder, configured, returnType, blueprintJavadoc);
+    Method.Builder extraAdderContent(Method.Builder builder) {
+        return builder.addContentLine("this." + isMutatedField() + " = true;");
+    }
+
+    protected abstract String decoratorSetMethodName();
+
+    protected abstract String decoratorAddMethodName();
+
+    void builderConsumerSetter(InnerClass.Builder classBuilder,
+                               TypeName returnType,
+                               OptionBuilder optionBuilder,
+                               OptionSingular singular) {
+
+        var setter = option().setter();
+
+        // if there is a factory method for the return type, we also have setters for the type (probably config object)
+        TypeName builderType = optionBuilder.builderType();
+
+        TypeName argumentType = TypeName.builder()
+                .type(Consumer.class)
+                .addTypeArgument(builderType)
+                .build();
+        String argumentName = "consumer";
+
+        Javadoc origJavadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc javadoc = Javadoc.builder(origJavadoc)
+                .parameters(Map.of())
+                .addParameter(argumentName, "consumer of builder for "
+                        + String.join("\n", origJavadoc.parameters().get(option().name())))
+                .build();
+
+        Method.Builder builder = Method.builder()
+                .name(singular.setter())
+                .returnType(returnType)
+                .addParameter(param -> param.name(argumentName)
+                        .type(argumentType))
+                .accessModifier(setter.accessModifier())
+                .addContent(Objects.class)
+                .javadoc(javadoc)
+                .addContentLine(".requireNonNull(" + argumentName + ");")
+                .addContent("var builder = ");
+
+        if (optionBuilder.builderMethodName().equals("<init>")) {
+            builder.addContent("new ")
+                    .addContent(optionBuilder.builderType())
+                    .addContentLine("();");
+        } else {
+            builder.addContent(type())
+                    .addContentLine("." + optionBuilder.builderMethodName() + "();");
         }
 
-        // we cannot call super. as collections are always final
-        // there is always a setter with the declared type, replacing values
-        declaredSetters(classBuilder, configured, returnType, blueprintJavadoc);
+        builder.addContentLine("consumer.accept(builder);")
+                .addContentLine("this." + option().name() + ".add(builder.build());")
+                .addContentLine("return self();");
 
-        if (factoryMethods.createTargetType().isPresent()) {
-            FactoryMethods.FactoryMethod factoryMethod = factoryMethods.createTargetType().get();
-            if (factoryMethod.factoryMethodReturnType().isList() || factoryMethod.factoryMethodReturnType().isSet()) {
-                // if there is a factory method for the return type, we also have setters for the type (probably config object)
-                factorySetter(classBuilder, configured, returnType, blueprintJavadoc, factoryMethod);
-            }
-        }
-
-        if (configured.singular()) {
-            singularSetter(classBuilder, configured, returnType, blueprintJavadoc, configured.singularName());
-        }
-
-        if (factoryMethods.builder().isPresent()) {
-            factorySetterConsumer(classBuilder,
-                                  configured,
-                                  returnType,
-                                  blueprintJavadoc,
-                                  factoryMethods,
-                                  factoryMethods.builder().get());
-        }
+        classBuilder.addMethod(builder);
     }
 
     private void newCollectionInstanceWithoutParams(ContentBuilder<?> content) {
@@ -305,249 +308,125 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                 .addContent("<>");
     }
 
-    private Consumer<ContentBuilder<?>> defaultCollection(List<?> list) {
-        return content -> {
-            newCollectionInstanceWithoutParams(content);
-            content.addContent("(")
-                    .addContent(collectionType.genericTypeName())
-                    .addContent(".of(");
-
-            for (int i = 0; i < list.size(); i++) {
-                content.addContent(String.valueOf(list.get(i)));
-                if (i != list.size() - 1) {
-                    content.addContent(", ");
-                }
-            }
-            content.addContent("))");
-        };
+    private String isMutatedField() {
+        return isMutatedField(option().name());
     }
 
     private void discoverServicesSetter(InnerClass.Builder classBuilder,
-                                        AnnotationDataOption configured,
-                                        TypeName returnType,
-                                        Javadoc blueprintJavadoc) {
-        classBuilder.addMethod(builder -> builder.name(setterName() + "DiscoverServices")
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
+                                        TypeName returnType) {
+        var setter = option().setter();
+
+        Javadoc javadoc = Javadoc.builder(Javadoc.parse(setter.description().orElse("")))
+                .parameters(Map.of())
+                .addParameter("discoverServices", "whether to discover implementations through service loader")
+                .build();
+
+        classBuilder.addMethod(builder -> builder.name(setter.elementName() + "DiscoverServices")
+                .returnType(returnType)
+                .javadoc(javadoc)
                 .addParameter(param -> param.name("discoverServices")
-                        .type(boolean.class)
-                        .description("whether to discover implementations through service loader"))
-                .accessModifier(setterAccessModifier(configured))
-                .addContentLine("this." + name() + "DiscoverServices = discoverServices;")
+                        .type(boolean.class))
+                .accessModifier(setter.accessModifier())
+                .addContentLine("this." + option().name() + "DiscoverServices = discoverServices;")
                 .addContentLine("return self();"));
     }
 
-    private void factorySetterConsumer(InnerClass.Builder classBuilder,
-                                       AnnotationDataOption configured,
-                                       TypeName returnType,
-                                       Javadoc blueprintJavadoc,
-                                       FactoryMethods factoryMethods,
-                                       FactoryMethods.FactoryMethod factoryMethod) {
-        if (!configured.singular()) {
-            // if singular is not defined, we are not instructed to create add methods, so it does not make sense
-            // to create an add method with a builder consumer
-            return;
-        }
-        // if there is a factory method for the return type, we also have setters for the type (probably config object)
-        TypeName builderType;
-        if (factoryMethod.factoryMethodReturnType().className().equals("Builder")) {
-            builderType = factoryMethod.factoryMethodReturnType();
-        } else {
-            builderType = TypeName.create(factoryMethod.factoryMethodReturnType().fqName() + ".Builder");
-        }
-
-        if (skipBuilderConsumer(builderType)) {
-            return;
-        }
-
-        TypeName argumentType = TypeName.builder()
-                .type(Consumer.class)
-                .addTypeArgument(builderType)
+    private void singularSetter(InnerClass.Builder classBuilder, TypeName returnType, OptionSingular optionSingular) {
+        String methodName = optionSingular.setter();
+        String singularName = optionSingular.name();
+        TypedElementInfo setter = option().setter();
+        Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));
+        Javadoc javadoc = Javadoc.builder(setterJavadoc)
+                .parameters(Map.of())
+                .addParameter(singularName, setterJavadoc.parameters().get(option().name()))
                 .build();
-        String argumentName = "consumer";
-
-        Javadoc javadoc = setterJavadoc(blueprintJavadoc)
-                .addParameter(argumentName, blueprintJavadoc.returnDescription())
-                .build();
-
-        Method.Builder builder = Method.builder()
-                .name(setterName())
-                .returnType(returnType)
-                .addParameter(param -> param.name(argumentName)
-                        .type(argumentType))
-                .accessModifier(setterAccessModifier(configured))
-                .addContent(Objects.class)
-                .javadoc(javadoc)
-                .addContentLine(".requireNonNull(" + argumentName + ");")
-                .addContent("var builder = ")
-                .addContent(factoryMethod.typeWithFactoryMethod().genericTypeName())
-                .addContentLine("." + factoryMethod.createMethodName() + "();")
-                .addContentLine("consumer.accept(builder);");
-
-        if (factoryMethods.createTargetType()
-                .map(FactoryMethods.FactoryMethod::factoryMethodReturnType)
-                .map(m -> m.genericTypeName().equals(collectionType))
-                .orElse(false)) {
-            builder.addContentLine("this." + name() + "(builder.build());")
-                    .addContentLine("return self();");
-            classBuilder.addMethod(builder);
-            return;
-        }
-
-        String singularName = configured.singularName();
-        String methodName;
-        if (configured.singularAddPrefix()) {
-            methodName = "add" + capitalize(singularName);
-        } else {
-            methodName = singularName;
-        }
-        builder.name(methodName)
-                .addContentLine("this." + name() + ".add(builder.build());")
-                .addContentLine("return self();");
-        classBuilder.addMethod(builder);
-    }
-
-    private void singularSetter(InnerClass.Builder classBuilder,
-                                AnnotationDataOption configured,
-                                TypeName returnType,
-                                Javadoc blueprintJavadoc,
-                                String singularName) {
-        String methodName;
-        if (configured.singularAddPrefix()) {
-            methodName = "add" + capitalize(singularName);
-        } else {
-            methodName = singularName;
-        }
 
         Method.Builder builder = Method.builder()
                 .name(methodName)
-                .javadoc(setterJavadoc(blueprintJavadoc)
-                                 .addParameter(singularName, blueprintJavadoc.returnDescription())
-                                 .build())
+                .javadoc(javadoc)
                 .returnType(returnType)
-                .update(it -> configured.annotations().forEach(it::addAnnotation))
                 .addParameter(param -> param.name(singularName)
-                        .type(actualType()))
-                .accessModifier(setterAccessModifier(configured))
+                        .type(type()))
+                .accessModifier(setter.accessModifier())
                 .addContent(Objects.class)
                 .addContentLine(".requireNonNull(" + singularName + ");");
 
-        if (configured.decorator() != null) {
+        if (option().decorator().isPresent()) {
+            var decorator = option().decorator().get();
+
             builder.addContent("new ")
-                    .addContent(configured.decorator())
+                    .addContent(decorator)
                     .addContent("().decorate(this, ")
                     .addContent(singularName)
                     .addContentLine(");");
         }
 
-        builder.addContentLine("this." + name() + ".add(" + singularName + ");")
+        builder.addContentLine("this." + option().name() + ".add(" + singularName + ");")
                 .update(this::extraAdderContent)
                 .addContentLine("return self();");
 
         classBuilder.addMethod(builder);
     }
 
-    private void factorySetter(InnerClass.Builder classBuilder,
-                               AnnotationDataOption configured,
-                               TypeName returnType,
-                               Javadoc blueprintJavadoc,
-                               FactoryMethods.FactoryMethod factoryMethod) {
-        if (factoryMethod.argumentType().equals(CONFIG)) {
-            // if the factory method uses config as a parameter, then it is not desired on the builder
-            return;
-        }
-        String argumentName = name() + "Config";
-        Method.Builder builder = Method.builder()
-                .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(argumentName)
-                        .type(factoryMethod.argumentType())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + argumentName + ");")
-                .addContentLine("this." + name() + ".clear();")
-                .addContent("this." + name() + ".addAll(")
-                .addContent(factoryMethod.typeWithFactoryMethod().genericTypeName())
-                .addContentLine("." + factoryMethod.createMethodName() + "(" + argumentName + "));")
-                .addContentLine("return self();");
-        classBuilder.addMethod(builder);
-    }
-
     private void declaredSetters(InnerClass.Builder classBuilder,
-                                 AnnotationDataOption configured,
-                                 TypeName returnType,
-                                 Javadoc blueprintJavadoc) {
+                                 TypeName returnType) {
+
+        var setter = option().setter();
+        Javadoc javadoc = Javadoc.parse(setter.description().orElse(""));
+
         // we cannot call super. as collections are always final
         // there is always a setter with the declared type, replacing values
         Method.Builder setMethod = Method.builder()
-                .name(setterName())
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
+                .name(setter.elementName())
+                .returnType(returnType)
+                .javadoc(javadoc)
+                .addParameter(param -> param.name(option().name())
+                        .type(setterArgumentTypeName()))
+                .accessModifier(setter.accessModifier())
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");");
+                .addContentLine(".requireNonNull(" + option().name() + ");");
 
         Method.Builder addMethod = Method.builder()
-                .name("add" + capitalize(name()))
-                .returnType(returnType, "updated builder instance")
-                .description(blueprintJavadoc.content())
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured))
+                .name("add" + capitalize(option().name()))
+                .returnType(returnType)
+                .javadoc(javadoc)
+                .addParameter(param -> param.name(option().name())
+                        .type(setterArgumentTypeName()))
+                .accessModifier(setter.accessModifier())
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");");
+                .addContentLine(".requireNonNull(" + option().name() + ");");
 
         // in case the method has a decorator, we need to handle it as well
-        if (configured.decorator() != null) {
+        if (option().decorator().isPresent()) {
+            TypeName decorator = option().decorator().get();
             setMethod.addContent("new ")
-                    .addContent(configured.decorator())
+                    .addContent(decorator)
                     .addContent("().")
                     .addContent(decoratorSetMethodName())
                     .addContent("(this, ")
-                    .addContent(name())
+                    .addContent(option().name())
                     .addContentLine(");");
 
             addMethod.addContent("new ")
-                    .addContent(configured.decorator())
+                    .addContent(decorator)
                     .addContent("().")
                     .addContent(decoratorAddMethodName())
                     .addContent("(this, ")
-                    .addContent(name())
+                    .addContent(option().name())
                     .addContentLine(");");
         }
 
         // first decorate (above), then set the values
         setMethod.update(this::extraSetterContent)
-                .addContentLine("this." + name() + ".clear();")
-                .addContentLine("this." + name() + ".addAll(" + name() + ");")
+                .addContentLine("this." + option().name() + ".clear();")
+                .addContentLine("this." + option().name() + ".addAll(" + option().name() + ");")
                 .addContentLine("return self();");
 
         addMethod.update(this::extraAdderContent)
-                .addContentLine("this." + name() + ".addAll(" + name() + ");")
+                .addContentLine("this." + option().name() + ".addAll(" + option().name() + ");")
                 .addContentLine("return self();");
 
         classBuilder.addMethod(setMethod);
         classBuilder.addMethod(addMethod);
     }
-
-    Method.Builder extraSetterContent(Method.Builder builder) {
-        return builder;
-    }
-
-    Method.Builder extraAdderContent(Method.Builder builder) {
-        return builder;
-    }
-
-    protected abstract String decoratorSetMethodName();
-    protected abstract String decoratorAddMethodName();
 }

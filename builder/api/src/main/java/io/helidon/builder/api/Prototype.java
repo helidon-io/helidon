@@ -18,6 +18,7 @@ package io.helidon.builder.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -143,6 +144,8 @@ public final class Prototype {
          * Whether to use bean style setters and getters, or not (default is not).
          * If set to {@code true}, only methods starting with {@code get} would be used,
          * and all setters will start with {@code set}, except for add methods.
+         * <p>
+         * NOTE: bean style must be consistent in a hierarchy, otherwise we cannot discover properties correctly.
          *
          * @return whether to use bean style accessors, defaults to false
          */
@@ -446,5 +449,36 @@ public final class Prototype {
         String[] value() default {};
     }
 
+    /**
+     * Extension definition for a blueprint.
+     * Extensions allow modification of the generated code that is outside the scope of the default builder codegen.
+     * This can be used, for example, to generate {@code JSON} binding annotations.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(Extensions.class)
+    public @interface Extension {
+        /**
+         * Type the extension supports, see documentation of appropriate extension.
+         *
+         * @return type the extension supports
+         */
+        Class<?> value();
+    }
+
+    /**
+     * Container of {@link io.helidon.builder.api.Prototype.Extension} annotations, to allow more than one extension to be
+     * used.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Extensions {
+        /**
+         * Extensions to use.
+         *
+         * @return extensions to use
+         */
+        Extension[] value();
+    }
 }
 

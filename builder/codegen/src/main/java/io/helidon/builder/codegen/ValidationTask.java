@@ -33,6 +33,17 @@ import static io.helidon.builder.codegen.Types.RUNTIME_API;
 import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPED_BY;
 
 abstract class ValidationTask {
+    static boolean doesImplement(TypeInfo validatedType, TypeName implementedInterface) {
+        if (validatedType.interfaceTypeInfo()
+                .stream()
+                .anyMatch(it -> it.typeName().equals(implementedInterface))) {
+            return true;
+        }
+        return validatedType.superTypeInfo()
+                .map(it -> doesImplement(it, implementedInterface))
+                .orElse(false);
+    }
+
     abstract void validate(Errors.Collector errors);
 
     private static void validateImplements(Errors.Collector errors,
@@ -43,17 +54,6 @@ abstract class ValidationTask {
         if (!doesImplement(validatedType, implementedInterface)) {
             errors.fatal(validatedType.typeName(), message);
         }
-    }
-
-    private static boolean doesImplement(TypeInfo validatedType, TypeName implementedInterface) {
-        if (validatedType.interfaceTypeInfo()
-                .stream()
-                .anyMatch(it -> it.typeName().equals(implementedInterface))) {
-            return true;
-        }
-        return validatedType.superTypeInfo()
-                .map(it -> doesImplement(it, implementedInterface))
-                .orElse(false);
     }
 
     private static void validateFactoryMethod(Errors.Collector errors,
@@ -183,14 +183,14 @@ abstract class ValidationTask {
 
             // if configured & provides, must have config key
             if (blueprint.hasAnnotation(Types.PROTOTYPE_CONFIGURED)
-                && blueprint.hasAnnotation(Types.PROTOTYPE_PROVIDES)) {
+                    && blueprint.hasAnnotation(Types.PROTOTYPE_PROVIDES)) {
                 Annotation configured = blueprint.annotation(Types.PROTOTYPE_CONFIGURED);
                 String value = configured.stringValue().orElse("");
                 if (value.isEmpty()) {
                     // we have a @Configured and @Provides - this should have a configuration key!
                     errors.fatal(blueprint.typeName(), blueprint.typeName().fqName()
                             + " is marked as @Configured and @Provides, yet it does not"
-                                         + " define a configuration key");
+                            + " define a configuration key");
                 }
             }
         }

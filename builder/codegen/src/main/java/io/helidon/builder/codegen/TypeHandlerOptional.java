@@ -16,10 +16,8 @@
 
 package io.helidon.builder.codegen;
 
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
@@ -35,41 +33,90 @@ import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
 
-// declaration in builder is always non-generic, so no need to modify default values
-class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
-
-    TypeHandlerOptional(TypeName blueprintType,
-                        TypedElementInfo annotatedMethod,
-                        String name, String getterName, String setterName, TypeName declaredType) {
-        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
+class TypeHandlerOptional extends TypeHandlerBase {
+    TypeHandlerOptional(PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(prototypeInfo, option, firstTypeArgument(option));
     }
 
     @Override
-    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
+    public Field.Builder field(boolean isBuilder) {
         Field.Builder builder = Field.builder()
-                .isFinal(alwaysFinal || !isBuilder)
-                .name(name());
-        TypeName usedType = isBuilder ? actualType() : declaredType();
+                .isFinal(!isBuilder)
+                .name(option().name());
 
-        if (isBuilder && (configured.required() || !configured.hasDefault())) {
+        TypeName usedType = isBuilder ? type() : option().declaredType();
+
+        if (isBuilder && (option().required() || option().defaultValue().isEmpty())) {
             // we need to use object types to be able to see if this was configured
             builder.type(usedType.boxed());
         } else {
             builder.type(usedType);
         }
 
-        if (isBuilder && configured.hasDefault()) {
-            configured.defaultValue().accept(builder);
+        if (isBuilder && option().defaultValue().isPresent()) {
+            option().defaultValue().get().accept(builder);
         }
 
         return builder;
     }
 
     @Override
-    TypeName argumentTypeName() {
-        TypeName type = actualType();
-        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive() || type.array()) {
-            return declaredType();
+    public void setters(InnerClass.Builder classBuilder, TypeName returnType) {
+        declaredSetter(classBuilder, returnType);
+        clearSetter(classBuilder, returnType);
+
+        // and add the setter with the actual type
+        // config is special - handled directly when configuration is handled, as it also must be used when this type
+        // is @Configured
+        if (isConfigProperty()) {
+            return;
+        }
+
+        var setter = option().setter();
+        String optionName = option().name();
+
+        // declared setter - optional is package local, field is never optional in builder
+        Method.Builder method = Method.builder()
+                .name(setter.elementName())
+                .accessModifier(setter.accessModifier())
+                .javadoc(Javadoc.parse(setter.description().orElse("")))
+                .returnType(returnType)
+                .addParameter(param -> param.name(optionName)
+                        .type(type().unboxed()))
+                .update(it -> {
+                    if (!type().unboxed().primitive()) {
+                        it.addContent(Objects.class)
+                                .addContentLine(".requireNonNull(" + optionName + ");");
+                    }
+                })
+                .update(it -> option().decorator()
+                        .ifPresent(decorator ->
+                                           it.addContent("new ")
+                                                   .addContent(decorator)
+                                                   .addContent("().decorate(this, ")
+                                                   .addContent(Optional.class)
+                                                   .addContent(".of(")
+                                                   .addContent(optionName)
+                                                   .addContentLine("));")))
+                .addContentLine("this." + optionName + " = " + optionName + ";")
+                .addContentLine("return self();");
+        classBuilder.addMethod(method);
+
+        if (type().equals(CHAR_ARRAY)) {
+            charArraySetter(classBuilder, returnType);
+        }
+
+        if (option().builderInfo().isPresent()) {
+            // if there is a factory method for the return type, we also have setters for the type (probably config object)
+            builderConsumerSetter(classBuilder, returnType, option().builderInfo().get());
+        }
+    }
+
+    @Override
+    TypeName setterArgumentTypeName() {
+        TypeName type = type();
+        if (TypeNames.STRING.equals(type) || type.unboxed().primitive() || type.array()) {
+            return option().declaredType();
         }
 
         return TypeName.builder(OPTIONAL)
@@ -78,189 +125,47 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    void setters(InnerClass.Builder classBuilder,
-                 AnnotationDataOption configured,
-                 FactoryMethods factoryMethod,
-                 TypeName returnType,
-                 Javadoc blueprintJavadoc) {
+    void declaredSetter(InnerClass.Builder classBuilder, TypeName returnType) {
+        TypedElementInfo setter = option().setter();
 
-        declaredSetter(classBuilder, returnType, blueprintJavadoc);
-        clearSetter(classBuilder, returnType, configured);
-
-        // and add the setter with the actual type
-        // config is special - handled directly when configuration is handled, as it also must be used when this type
-        // is @Configured
-        if (!isConfigProperty(this)) {
-            // declared setter - optional is package local, field is never optional in builder
-            Method.Builder method = Method.builder()
-                    .name(setterName())
-                    .accessModifier(setterAccessModifier(configured))
-                    .description(blueprintJavadoc.content())
-                    .returnType(returnType, "updated builder instance")
-                    .addParameter(param -> param.name(name())
-                            .type(toPrimitive(actualType()))
-                            .description(blueprintJavadoc.returnDescription()))
-                    .addJavadocTag("see", "#" + getterName() + "()")
-                    .addContent(Objects.class)
-                    .addContentLine(".requireNonNull(" + name() + ");")
-                    .update(it -> {
-                        if (configured.decorator() != null) {
-                            it.addContent("new ")
-                                    .addContent(configured.decorator())
-                                    .addContent("().decorate(this, ")
-                                    .addContent(Optional.class)
-                                    .addContent(".of(")
-                                    .addContent(name())
-                                    .addContentLine("));");
-                        }
-                    })
-                    .addContentLine("this." + name() + " = " + name() + ";")
-                    .addContentLine("return self();");
-            classBuilder.addMethod(method);
-        }
-
-        if (actualType().equals(CHAR_ARRAY)) {
-            charArraySetter(classBuilder, configured, returnType, blueprintJavadoc);
-        }
-
-        if (factoryMethod.createTargetType().isPresent()) {
-            // if there is a factory method for the return type, we also have setters for the type (probably config object)
-            FactoryMethods.FactoryMethod fm = factoryMethod.createTargetType().get();
-            String optionalSuffix = optionalSuffix(fm.factoryMethodReturnType());
-            String argumentName = name() + "Config";
-
-            classBuilder.addMethod(builder -> builder.name(setterName())
-                    .accessModifier(setterAccessModifier(configured))
-                    .description(blueprintJavadoc.content())
-                    .returnType(returnType, "updated builder instance")
-                    .addParameter(param -> param.name(argumentName)
-                            .type(fm.argumentType())
-                            .description(blueprintJavadoc.returnDescription()))
-                    .addJavadocTag("see", "#" + getterName() + "()")
-                    .addContent(Objects.class)
-                    .addContentLine(".requireNonNull(" + argumentName + ");")
-                    .addContent("this." + name() + " = ")
-                    .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                    .addContentLine("." + fm.createMethodName() + "(" + argumentName + ")" + optionalSuffix + ";")
-                    .addContentLine("return self();"));
-        }
-
-        if (factoryMethod.builder().isPresent()) {
-            // if there is a factory method for the return type, we also have setters for the type (probably config object)
-            FactoryMethods.FactoryMethod fm = factoryMethod.builder().get();
-
-            TypeName builderType;
-            String className = fm.factoryMethodReturnType().className();
-            if (className.equals("Builder") || className.endsWith(".Builder")) {
-                builderType = fm.factoryMethodReturnType();
-            } else {
-                builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
-                if (!fm.factoryMethodReturnType().typeArguments().isEmpty()) {
-                    builderType = TypeName.builder(builderType)
-                            .update(it -> fm.factoryMethodReturnType().typeArguments().forEach(it::addTypeArgument))
-                            .build();
-                }
-            }
-
-            if (!skipBuilderConsumer(builderType)) {
-                String argumentName = "consumer";
-                TypeName argumentType = TypeName.builder()
-                        .type(Consumer.class)
-                        .addTypeArgument(builderType)
-                        .build();
-
-                Javadoc javadoc = setterJavadoc(blueprintJavadoc)
-                        .addParameter(argumentName, blueprintJavadoc.returnDescription())
-                        .build();
-
-                TypeName finalBuilderType = builderType;
-                classBuilder.addMethod(builder -> builder.name(setterName())
-                        .accessModifier(setterAccessModifier(configured))
-                        .returnType(returnType)
-                        .addParameter(param -> param.name(argumentName)
-                                .type(argumentType))
-                        .addContent(Objects.class)
-                        .javadoc(javadoc)
-                        .addContentLine(".requireNonNull(" + argumentName + ");")
-                        .addContent("var builder = ")
-                        .addContent(fm.typeWithFactoryMethod().genericTypeName())
-                        .addContent(".")
-                        .update(it -> {
-                            Iterator<TypeName> iterator = finalBuilderType.typeArguments()
-                                    .stream()
-                                    .filter(t -> !t.name().equals("?"))
-                                    .iterator();
-                            if (iterator.hasNext()) {
-                                it.addContent("<");
-                                while (iterator.hasNext()) {
-                                    it.addContent(iterator.next());
-                                    if (iterator.hasNext()) {
-                                        it.addContent(", ");
-                                    }
-                                }
-                                it.addContent(">");
-                            }
-                        })
-                        .addContentLine(fm.createMethodName() + "();")
-                        .addContentLine("consumer.accept(builder);")
-                        .addContentLine("this." + name() + "(builder.build());")
-                        .addContentLine("return self();"));
-            }
-        }
-    }
-
-    private void declaredSetter(InnerClass.Builder classBuilder,
-                                TypeName returnType,
-                                Javadoc blueprintJavadoc) {
-        boolean generic = !actualType().typeArguments().isEmpty();
+        boolean generic = !type().typeArguments().isEmpty();
         // declared setter - optional is package local, field is never optional in builder
-        classBuilder.addMethod(builder -> builder.name(setterName())
+        classBuilder.addMethod(builder -> builder.name(setter.elementName())
                 .update(it -> {
                     if (generic) {
                         it.addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"));
                     }
                 })
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .description(blueprintJavadoc.content())
-                .returnType(returnType, "updated builder instance")
-                .addParameter(param -> param.name(name())
-                        .type(argumentTypeName())
-                        .description(blueprintJavadoc.returnDescription()))
-                .addJavadocTag("see", "#" + getterName() + "()")
+                .javadoc(Javadoc.parse(setter.description().orElse("")))
+                .returnType(returnType)
+                .addParameter(param -> param.name(option().name())
+                        .type(setterArgumentTypeName()))
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");")
-                .addContentLine("this." + name() + " = " + name()
-                                 + ".map(" + actualType().fqName() + ".class::cast)"
-                                 + ".orElse(this." + name() + ");")
+                .addContentLine(".requireNonNull(" + option().name() + ");")
+                .addContentLine("this." + option().name() + " = " + option().name()
+                                        + ".map(" + type().fqName() + ".class::cast)"
+                                        + ".orElse(this." + option().name() + ");")
                 .addContentLine("return self();"));
     }
 
-    private void clearSetter(InnerClass.Builder classBuilder,
-                             TypeName returnType,
-                             AnnotationDataOption configured) {
+    private void clearSetter(InnerClass.Builder classBuilder, TypeName returnType) {
         // declared setter - optional is package local, field is never optional in builder
-        classBuilder.addMethod(builder -> builder.name("clear" + capitalize(name()))
-                .accessModifier(setterAccessModifier(configured))
+        TypedElementInfo setter = option().setter();
+
+        classBuilder.addMethod(builder -> builder.name("clear" + capitalize(option().name()))
+                .accessModifier(setter.accessModifier())
                 .description("Clear existing value of this property.")
                 .returnType(returnType, "updated builder instance")
-                .addJavadocTag("see", "#" + getterName() + "()")
-                .update(it -> {
-                    if (configured.decorator() != null) {
-                        builder.addContent("new ")
-                                .addContent(configured.decorator())
+                .addJavadocTag("see", "#" + option().getter().elementName() + "()")
+                .update(it -> option().decorator()
+                        .ifPresent(decorator -> it.addContent("new ")
+                                .addContent("new ")
+                                .addContent(decorator)
                                 .addContent("().decorate(this, ")
                                 .addContent(Optional.class)
-                                .addContentLine(".empty());");
-                    }
-                })
-                .addContentLine("this." + name() + " = null;")
+                                .addContentLine(".empty());")))
+                .addContentLine("this." + option().name() + " = null;")
                 .addContentLine("return self();"));
-    }
-
-    private String optionalSuffix(TypeName typeName) {
-        if (OPTIONAL.equals(typeName.genericTypeName())) {
-            return ".orElse(null)";
-        }
-        return "";
     }
 }
