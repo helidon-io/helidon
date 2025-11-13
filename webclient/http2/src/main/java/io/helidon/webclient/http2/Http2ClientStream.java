@@ -43,7 +43,6 @@ import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
-import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Stream;
 import io.helidon.http.http2.Http2StreamState;
@@ -340,7 +339,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                                                                   : 0),
                                                                streamId);
         Http2FrameData frameData = new Http2FrameData(frameHeader, entityBytes);
-        splitAndWrite(frameData);
+        write(frameData, frameData.header().flags(Http2FrameTypes.DATA).endOfStream());
     }
 
     /**
@@ -486,16 +485,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                        continuationData.toArray(new Http2FrameData[0]));
         recvListener.headers(ctx, streamId, http2Headers);
         return http2Headers;
-    }
-
-    private void splitAndWrite(Http2FrameData frameData) {
-        int maxFrameSize = this.serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue();
-
-        // Split to frames if bigger than max frame size
-        Http2FrameData[] frames = frameData.split(maxFrameSize);
-        for (Http2FrameData frame : frames) {
-            write(frame, frame.header().flags(Http2FrameTypes.DATA).endOfStream());
-        }
     }
 
     private void write(Http2FrameData frameData, boolean endOfStream) {
