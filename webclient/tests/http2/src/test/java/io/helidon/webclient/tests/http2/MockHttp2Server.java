@@ -96,8 +96,9 @@ class MockHttp2Server {
     static class MockHttp2ServerBuilder implements Builder<MockHttp2ServerBuilder, MockHttp2Server> {
         private int port = 0;
 
-        private Http2DataHandler onDataHandler;
-        private Http2SettingsAckHandler onSettingsAckHandler;
+        private Http2DataHandler onDataHandler = (ctx, streamId, data, padding, endOfStream, encoder) -> 0;
+        private Http2SettingsAckHandler onSettingsAckHandler = (ctx, encoder) -> {
+        };
         private Handler onHeadersHandler = (ctx, streamId, headers, unused, encoder) -> {
             Http2Headers h = new DefaultHttp2Headers().status(HttpResponseStatus.OK.codeAsText());
             encoder.writeHeaders(ctx, streamId, h, 0, false, ctx.newPromise());
@@ -112,8 +113,6 @@ class MockHttp2Server {
 
         };
 
-        Http2Handler mockHandler = new MockHttp2HandlerBuilder(MockHttp2ServerBuilder.this).build();
-
         @Override
         public MockHttp2Server build() {
             EventLoopGroup group = new NioEventLoopGroup();
@@ -127,6 +126,8 @@ class MockHttp2Server {
                                     8192,
                                     true,
                                     128);
+
+                            Http2Handler mockHandler = new MockHttp2HandlerBuilder(MockHttp2ServerBuilder.this).build();
 
                             var upgradeHandler =
                                     new HttpServerUpgradeHandler(codec,

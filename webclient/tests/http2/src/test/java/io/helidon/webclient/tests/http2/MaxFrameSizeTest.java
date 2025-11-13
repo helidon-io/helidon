@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.tests.http2;
 
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -50,13 +49,16 @@ class MaxFrameSizeTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static MockHttp2Server mockHttp2Server;
     private static int serverPort;
-    private static final CompletableFuture<Void> SETTINGS_SENT = new CompletableFuture<>();
-    private static CompletableFuture<Void> SETTINGS_ACKED = CompletableFuture.completedFuture(null);
-    private static CompletableFuture<Void> SEND_HEADERS = CompletableFuture.completedFuture(null);
+    private static CompletableFuture<Void> SETTINGS_SENT;
+    private static CompletableFuture<Void> SETTINGS_ACKED;
+    private static CompletableFuture<Void> SEND_HEADERS;
 
     @BeforeEach
     void beforeAll() {
         LogConfig.configureRuntime();
+        SETTINGS_SENT = new CompletableFuture<>();
+        SETTINGS_ACKED = CompletableFuture.completedFuture(null);
+        SEND_HEADERS = CompletableFuture.completedFuture(null);
 
         mockHttp2Server = MockHttp2Server.builder()
                 .onHeaders((ctx, streamId, headers, payload, encoder) -> {
@@ -111,21 +113,21 @@ class MaxFrameSizeTest {
 
                     frameSizeList.add(data.readableBytes());
 
-                    if(endOfStream) {
-                            Http2Headers h = new DefaultHttp2Headers()
-                                    .status(HttpResponseStatus.OK.codeAsText());
-                            encoder.writeHeaders(ctx, streamId, h, 0, false, ctx.newPromise());
-                            var msg = frameSizeList.stream()
-                                    .filter(i -> i > 0)
-                                    .map(String::valueOf)
-                                    .toList()
-                                    .toString();
-                                encoder.writeData(ctx,
-                                                  streamId,
-                                                  Unpooled.wrappedBuffer((msg).getBytes()),
-                                                  0,
-                                                  true,
-                                                  ctx.newPromise());
+                    if (endOfStream) {
+                        Http2Headers h = new DefaultHttp2Headers()
+                                .status(HttpResponseStatus.OK.codeAsText());
+                        encoder.writeHeaders(ctx, streamId, h, 0, false, ctx.newPromise());
+                        var msg = frameSizeList.stream()
+                                .filter(i -> i > 0)
+                                .map(String::valueOf)
+                                .toList()
+                                .toString();
+                        encoder.writeData(ctx,
+                                          streamId,
+                                          Unpooled.wrappedBuffer((msg).getBytes()),
+                                          0,
+                                          true,
+                                          ctx.newPromise());
 
                     }
                     return 0;
@@ -142,8 +144,6 @@ class MaxFrameSizeTest {
 
     @Test
     void maxFrameChangeMidConnection() throws InterruptedException {
-        SEND_HEADERS = CompletableFuture.completedFuture(null);
-
         Http2Client
                 client = Http2Client.builder()
                 .shareConnectionCache(false)
