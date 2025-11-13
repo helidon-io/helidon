@@ -241,8 +241,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 throw new IOException("Output stream already closed");
             }
 
-            // if length is known, write directly checking length at close
-            if (contentLength > 0) {
+            // if not chunked and length known, write directly checking length at close
+            if (!chunked && contentLength > 0) {
                 if (!whenSent.isDone()) {
                     sendPrologueAndHeader();
                     noData = false;
