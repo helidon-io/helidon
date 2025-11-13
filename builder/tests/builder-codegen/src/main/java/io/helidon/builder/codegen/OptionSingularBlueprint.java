@@ -22,7 +22,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Definition of a singular option.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionSingularBlueprint {
 
     /**

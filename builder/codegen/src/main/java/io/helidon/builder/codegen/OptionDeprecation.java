@@ -27,7 +27,6 @@ import io.helidon.common.Errors;
  * Deprecated option information.
  *
  * @see #builder()
- * @see #create()
  */
 public interface OptionDeprecation {
 
@@ -48,15 +47,6 @@ public interface OptionDeprecation {
      */
     static Builder builder(OptionDeprecation instance) {
         return OptionDeprecation.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionDeprecation create() {
-        return OptionDeprecation.builder().buildPrototype();
     }
 
     /**
@@ -211,7 +201,7 @@ public interface OptionDeprecation {
         /**
          * Deprecation message.
          *
-         * @return the message
+         * @return deprecation message
          */
         public Optional<String> message() {
             return Optional.ofNullable(message);
@@ -220,7 +210,7 @@ public interface OptionDeprecation {
         /**
          * If this is scheduled for removal, defaults to {@code true}.
          *
-         * @return the for removal
+         * @return whether scheduled for removal
          */
         public boolean forRemoval() {
             return forRemoval;
@@ -229,7 +219,7 @@ public interface OptionDeprecation {
         /**
          * Name of the option to use instead of this one.
          *
-         * @return the alternative
+         * @return alternative option name
          */
         public Optional<String> alternative() {
             return Optional.ofNullable(alternative);
@@ -238,7 +228,7 @@ public interface OptionDeprecation {
         /**
          * Version that deprecated this option.
          *
-         * @return the since
+         * @return since version
          */
         public Optional<String> since() {
             return Optional.ofNullable(since);
@@ -280,7 +270,7 @@ public interface OptionDeprecation {
          */
         BUILDER alternative(Optional<String> alternative) {
             Objects.requireNonNull(alternative);
-            this.alternative = alternative.map(String.class::cast).orElse(this.alternative);
+            this.alternative = alternative.orElse(this.alternative);
             return self();
         }
 
@@ -293,7 +283,7 @@ public interface OptionDeprecation {
          */
         BUILDER since(Optional<String> since) {
             Objects.requireNonNull(since);
-            this.since = since.map(String.class::cast).orElse(this.since);
+            this.since = since.orElse(this.since);
             return self();
         }
 

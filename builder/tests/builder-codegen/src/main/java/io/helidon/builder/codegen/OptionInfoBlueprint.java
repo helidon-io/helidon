@@ -32,7 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Model of a prototype/builder option.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionInfoBlueprint extends Annotated {
     /**
      * Blueprint method if created from blueprint.

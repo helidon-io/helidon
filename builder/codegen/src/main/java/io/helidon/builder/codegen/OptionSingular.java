@@ -18,15 +18,17 @@ package io.helidon.builder.codegen;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
- * Interface generated from definition. Please add javadoc to the definition interface.
+ * Definition of a singular option.
  *
  * @see #builder()
- * @see #create()
  */
 public interface OptionSingular extends Prototype.Api {
 
@@ -50,15 +52,6 @@ public interface OptionSingular extends Prototype.Api {
     }
 
     /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionSingular create() {
-        return OptionSingular.builder().buildPrototype();
-    }
-
-    /**
      * Singular setter method.
      * <p>
      * Examples:
@@ -69,7 +62,7 @@ public interface OptionSingular extends Prototype.Api {
      *
      * @return singular setter method
      */
-    String setter();
+    TypedElementInfo setter();
 
     /**
      * Singular form of the option name.
@@ -90,7 +83,7 @@ public interface OptionSingular extends Prototype.Api {
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private String name;
-        private String setter;
+        private TypedElementInfo setter;
 
         /**
          * Protected to support extensibility.
@@ -124,14 +117,60 @@ public interface OptionSingular extends Prototype.Api {
 
         /**
          * Singular setter method.
+         * <p>
+         * Examples:
+         * <ul>
+         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
+         *     <li>{@code putOption} - for a map option named {@code options}</li>
+         * </ul>
          *
-         * @param setter singular setter
+         * @param setter singular setter method
          * @return updated builder instance
          * @see #setter()
          */
-        public BUILDER setter(String setter) {
+        public BUILDER setter(TypedElementInfo setter) {
             Objects.requireNonNull(setter);
             this.setter = setter;
+            return self();
+        }
+
+        /**
+         * Singular setter method.
+         * <p>
+         * Examples:
+         * <ul>
+         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
+         *     <li>{@code putOption} - for a map option named {@code options}</li>
+         * </ul>
+         *
+         * @param consumer consumer of builder
+         * @return updated builder instance
+         * @see #setter()
+         */
+        public BUILDER setter(Consumer<TypedElementInfo.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypedElementInfo.builder();
+            consumer.accept(builder);
+            this.setter(builder.build());
+            return self();
+        }
+
+        /**
+         * Singular setter method.
+         * <p>
+         * Examples:
+         * <ul>
+         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
+         *     <li>{@code putOption} - for a map option named {@code options}</li>
+         * </ul>
+         *
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
+         * @return updated builder instance
+         * @see #setter()
+         */
+        public BUILDER setter(Supplier<? extends TypedElementInfo> supplier) {
+            Objects.requireNonNull(supplier);
+            this.setter(supplier.get());
             return self();
         }
 
@@ -152,10 +191,16 @@ public interface OptionSingular extends Prototype.Api {
 
         /**
          * Singular setter method.
+         * <p>
+         * Examples:
+         * <ul>
+         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
+         *     <li>{@code putOption} - for a map option named {@code options}</li>
+         * </ul>
          *
-         * @return the setter
+         * @return singular setter method
          */
-        public Optional<String> setter() {
+        public Optional<TypedElementInfo> setter() {
             return Optional.ofNullable(setter);
         }
 
@@ -164,7 +209,7 @@ public interface OptionSingular extends Prototype.Api {
          * For {@code lines}, this would be {@code line}.
          * For {@code properties}, this should be {@code property}, so we allow customization by the user.
          *
-         * @return the name
+         * @return singular name
          */
         public Optional<String> name() {
             return Optional.ofNullable(name);
@@ -204,7 +249,7 @@ public interface OptionSingular extends Prototype.Api {
         protected static class OptionSingularImpl implements OptionSingular {
 
             private final String name;
-            private final String setter;
+            private final TypedElementInfo setter;
 
             /**
              * Create an instance providing a builder.
@@ -217,7 +262,7 @@ public interface OptionSingular extends Prototype.Api {
             }
 
             @Override
-            public String setter() {
+            public TypedElementInfo setter() {
                 return setter;
             }
 
@@ -243,7 +288,7 @@ public interface OptionSingular extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(setter, other.setter())
-                        && Objects.equals(name, other.name());
+                    && Objects.equals(name, other.name());
             }
 
             @Override
@@ -258,8 +303,7 @@ public interface OptionSingular extends Prototype.Api {
     /**
      * Fluent API builder for {@link OptionSingular}.
      */
-    class Builder extends OptionSingular.BuilderBase<OptionSingular.Builder, OptionSingular>
-            implements io.helidon.common.Builder<OptionSingular.Builder, OptionSingular> {
+    class Builder extends OptionSingular.BuilderBase<OptionSingular.Builder, OptionSingular> implements io.helidon.common.Builder<OptionSingular.Builder, OptionSingular> {
 
         private Builder() {
         }

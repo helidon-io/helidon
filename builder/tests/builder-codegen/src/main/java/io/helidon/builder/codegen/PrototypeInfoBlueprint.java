@@ -32,7 +32,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Information about the prototype we are going to build.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface PrototypeInfoBlueprint extends Annotated {
     /**
      * Blueprint type info.
@@ -170,6 +170,14 @@ interface PrototypeInfoBlueprint extends Annotated {
      * @return whether to support service registry, defaults to {@code false}
      */
     boolean registrySupport();
+
+    /**
+     * Whether to detach the blueprint from the generated prototype.
+     *
+     * @return true if the blueprint should not be extended by the prototype
+     */
+    @Option.DefaultBoolean(false)
+    boolean detachBlueprint();
 
     /**
      * If the blueprint extends an existing prototype (or blueprint), we must extend that prototype and

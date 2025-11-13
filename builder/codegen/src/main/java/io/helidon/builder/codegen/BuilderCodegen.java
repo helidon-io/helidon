@@ -641,7 +641,7 @@ class BuilderCodegen implements CodegenExtension {
         generateCustomPrototypeMethods(classModel, prototypeInfo.prototypeMethods(), false);
 
         // re-create all blueprint methods to have correct javadoc references
-        generatePrototypeMethods(classModel, blueprint.typeName(), options);
+        generatePrototypeMethods(classModel, prototypeInfo, blueprint.typeName(), options);
 
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
@@ -728,6 +728,7 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     private void generatePrototypeMethods(ClassModel.Builder classModel,
+                                          PrototypeInfo prototypeInfo,
                                           TypeName blueprintType,
                                           List<OptionHandler> options) {
 
@@ -739,7 +740,7 @@ class BuilderCodegen implements CodegenExtension {
                 method.name(getter.elementName())
                         .returnType(getter.typeName())
                         .update(it -> {
-                            if (option.blueprintMethod().isPresent()) {
+                            if (option.blueprintMethod().isPresent() && !prototypeInfo.detachBlueprint()) {
                                 it.addAnnotation(Annotations.OVERRIDE);
                             }
                         })

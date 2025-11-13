@@ -26,7 +26,6 @@ import io.helidon.common.Errors;
  * Setup of configured option.
  *
  * @see #builder()
- * @see #create()
  */
 public interface OptionConfigured {
 
@@ -47,15 +46,6 @@ public interface OptionConfigured {
      */
     static Builder builder(OptionConfigured instance) {
         return OptionConfigured.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionConfigured create() {
-        return OptionConfigured.builder().buildPrototype();
     }
 
     /**
@@ -80,9 +70,9 @@ public interface OptionConfigured {
     boolean traverse();
 
     /**
-     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionConfigured}.
+     * Fluent API builder base for {@link OptionConfigured}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionConfigured>
@@ -140,8 +130,7 @@ public interface OptionConfigured {
         /**
          * Whether to merge the key with the current object.
          *
-         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named
-         *              {@link #configKey()}
+         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named {@link #configKey()}
          * @return updated builder instance
          * @see #merge()
          */
@@ -165,7 +154,7 @@ public interface OptionConfigured {
         /**
          * Config key to use.
          *
-         * @return the config key
+         * @return config key
          */
         public Optional<String> configKey() {
             return Optional.ofNullable(configKey);
@@ -174,7 +163,7 @@ public interface OptionConfigured {
         /**
          * Whether to merge the key with the current object.
          *
-         * @return the merge
+         * @return whether to merge, defaults to {@code false}, i.e. this option will have its own key, named {@link #configKey()}
          */
         public boolean merge() {
             return merge;
@@ -183,7 +172,7 @@ public interface OptionConfigured {
         /**
          * Whether to traverse the config node when creating a map.
          *
-         * @return the traverse
+         * @return whether to traverse config, defaults to {@code true}
          */
         public boolean traverse() {
             return traverse;

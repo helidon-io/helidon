@@ -160,6 +160,13 @@ public final class Prototype {
          * @return decorator type
          */
         Class<? extends BuilderDecorator> decorator() default BuilderDecorator.class;
+
+        /**
+         * If set to {@code true} the generated type will not extend the blueprint interface.
+         *
+         * @return whether to detach the generated type from the blueprint interface
+         */
+        boolean detach() default false;
     }
 
     /**

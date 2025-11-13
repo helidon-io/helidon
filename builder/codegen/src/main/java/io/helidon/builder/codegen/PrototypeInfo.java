@@ -42,7 +42,6 @@ import io.helidon.common.types.TypeName;
  * Information about the prototype we are going to build.
  *
  * @see #builder()
- * @see #create()
  */
 @Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.PrototypeInfoBlueprint")
 public interface PrototypeInfo extends Annotated, Prototype.Api {
@@ -64,15 +63,6 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
      */
     static PrototypeInfo.Builder builder(PrototypeInfo instance) {
         return PrototypeInfo.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static PrototypeInfo create() {
-        return PrototypeInfo.builder().buildPrototype();
     }
 
     /**
@@ -208,6 +198,13 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
     boolean registrySupport();
 
     /**
+     * Whether to detach the blueprint from the generated prototype.
+     *
+     * @return true if the blueprint should not be extended by the prototype
+     */
+    boolean detachBlueprint();
+
+    /**
      * If the blueprint extends an existing prototype (or blueprint), we must extend that prototype and
      * also that prototype's builder.
      *
@@ -276,13 +273,11 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
     List<FactoryMethod> factoryMethods();
 
     /**
-     *
      */
     @Override
     List<Annotation> annotations();
 
     /**
-     *
      */
     @Override
     List<Annotation> inheritedAnnotations();
@@ -308,6 +303,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         private AccessModifier accessModifier = AccessModifier.PUBLIC;
         private AccessModifier builderAccessModifier = AccessModifier.PUBLIC;
         private boolean createEmptyCreate = true;
+        private boolean detachBlueprint = false;
         private boolean isAnnotationsMutated;
         private boolean isBuilderMethodsMutated;
         private boolean isConstantsMutated;
@@ -315,6 +311,8 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         private boolean isInheritedAnnotationsMutated;
         private boolean isPrototypeFactoryMethodsMutated;
         private boolean isPrototypeMethodsMutated;
+        private boolean isProviderProvidesMutated;
+        private boolean isSuperTypesMutated;
         private boolean recordStyle = true;
         private boolean registrySupport;
         private Javadoc builderBaseJavadoc;
@@ -355,8 +353,15 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
             recordStyle(prototype.recordStyle());
             configured(prototype.configured());
             registrySupport(prototype.registrySupport());
+            detachBlueprint(prototype.detachBlueprint());
             superPrototype(prototype.superPrototype());
+            if (!isSuperTypesMutated) {
+                superTypes.clear();
+            }
             addSuperTypes(prototype.superTypes());
+            if (!isProviderProvidesMutated) {
+                providerProvides.clear();
+            }
             addProviderProvides(prototype.providerProvides());
             if (!isConstantsMutated) {
                 constants.clear();
@@ -410,6 +415,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
             recordStyle(builder.recordStyle());
             builder.configured().ifPresent(this::configured);
             registrySupport(builder.registrySupport());
+            detachBlueprint(builder.detachBlueprint());
             builder.superPrototype().ifPresent(this::superPrototype);
             addSuperTypes(builder.superTypes);
             addProviderProvides(builder.providerProvides);
@@ -490,8 +496,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Blueprint type info.
          * A new prototype cannot be generated without a blueprint to base it on, so this is a required option.
          *
-         * @param consumer consumer of builder for
-         *                 blueprint type information
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #blueprint()
          */
@@ -507,8 +512,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Blueprint type info.
          * A new prototype cannot be generated without a blueprint to base it on, so this is a required option.
          *
-         * @param supplier supplier of
-         *                 blueprint type information
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #blueprint()
          */
@@ -551,7 +555,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Method {@link io.helidon.builder.api.Prototype.Builder#buildPrototype()} builds the prototype,
          * while method {@link io.helidon.common.Builder#build()} builds the runtime type.
          *
-         * @param consumer runtime type, if configured
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #runtimeType()
          */
@@ -579,8 +583,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the generated prototype.
          *
-         * @param consumer consumer of builder for
-         *                 prototype javadoc
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #javadoc()
          */
@@ -595,8 +598,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the generated prototype.
          *
-         * @param supplier supplier of
-         *                 prototype javadoc
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #javadoc()
          */
@@ -622,8 +624,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder base.
          *
-         * @param consumer consumer of builder for
-         *                 builder base javadoc
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderBaseJavadoc()
          */
@@ -638,8 +639,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder base.
          *
-         * @param supplier supplier of
-         *                 builder base javadoc
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #builderBaseJavadoc()
          */
@@ -665,8 +665,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder class.
          *
-         * @param consumer consumer of builder for
-         *                 builder javadoc
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderJavadoc()
          */
@@ -681,8 +680,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder class.
          *
-         * @param supplier supplier of
-         *                 builder javadoc
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #builderJavadoc()
          */
@@ -719,7 +717,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Builder decorator, if configured.
          *
-         * @param consumer type of the builder decorator, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderDecorator()
          */
@@ -765,8 +763,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          *
          * If you modify the type name to be generated, the result will not support inheritance.
          *
-         * @param consumer consumer of builder for
-         *                 type of the prototype interface
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #prototypeType()
          */
@@ -790,8 +787,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          *
          * If you modify the type name to be generated, the result will not support inheritance.
          *
-         * @param supplier supplier of
-         *                 type of the prototype interface
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #prototypeType()
          */
@@ -912,7 +908,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Prototype configuration details.
          *
-         * @param consumer prototype configuration details, if configured
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #configured()
          */
@@ -933,6 +929,18 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER registrySupport(boolean registrySupport) {
             this.registrySupport = registrySupport;
+            return self();
+        }
+
+        /**
+         * Whether to detach the blueprint from the generated prototype.
+         *
+         * @param detachBlueprint true if the blueprint should not be extended by the prototype
+         * @return updated builder instance
+         * @see #detachBlueprint()
+         */
+        public BUILDER detachBlueprint(boolean detachBlueprint) {
+            this.detachBlueprint = detachBlueprint;
             return self();
         }
 
@@ -965,7 +973,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * If the blueprint extends an existing prototype (or blueprint), we must extend that prototype and
          * also that prototype's builder.
          *
-         * @param consumer super prototype, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #superPrototype()
          */
@@ -988,6 +996,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER superTypes(Set<? extends TypeName> superTypes) {
             Objects.requireNonNull(superTypes);
+            this.isSuperTypesMutated = true;
             this.superTypes.clear();
             this.superTypes.addAll(superTypes);
             return self();
@@ -1004,6 +1013,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addSuperTypes(Set<? extends TypeName> superTypes) {
             Objects.requireNonNull(superTypes);
+            this.isSuperTypesMutated = true;
             this.superTypes.addAll(superTypes);
             return self();
         }
@@ -1020,6 +1030,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addSuperType(TypeName superType) {
             Objects.requireNonNull(superType);
             this.superTypes.add(superType);
+            this.isSuperTypesMutated = true;
             return self();
         }
 
@@ -1028,7 +1039,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * This list will always contain the blueprint interface, and {@link io.helidon.builder.api.Prototype.Api}.
          * This list also contains {@link #superPrototype()} if present.
          *
-         * @param consumer types the prototype must extend
+         * @param consumer consumer of builder for types the prototype must extend
          * @return updated builder instance
          * @see #superTypes()
          */
@@ -1049,6 +1060,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER providerProvides(Set<? extends TypeName> providerProvides) {
             Objects.requireNonNull(providerProvides);
+            this.isProviderProvidesMutated = true;
             this.providerProvides.clear();
             this.providerProvides.addAll(providerProvides);
             return self();
@@ -1063,6 +1075,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addProviderProvides(Set<? extends TypeName> providerProvides) {
             Objects.requireNonNull(providerProvides);
+            this.isProviderProvidesMutated = true;
             this.providerProvides.addAll(providerProvides);
             return self();
         }
@@ -1077,13 +1090,14 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addProviderProvide(TypeName providerProvide) {
             Objects.requireNonNull(providerProvide);
             this.providerProvides.add(providerProvide);
+            this.isProviderProvidesMutated = true;
             return self();
         }
 
         /**
          * Types the generated prototype should provide, if this prototype is/configures a service provider.
          *
-         * @param consumer provider provides types
+         * @param consumer consumer of builder for provider provides types
          * @return updated builder instance
          * @see #providerProvides()
          */
@@ -1105,7 +1119,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER constants(List<? extends PrototypeConstant> constants) {
             Objects.requireNonNull(constants);
-            isConstantsMutated = true;
+            this.isConstantsMutated = true;
             this.constants.clear();
             this.constants.addAll(constants);
             return self();
@@ -1121,7 +1135,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addConstants(List<? extends PrototypeConstant> constants) {
             Objects.requireNonNull(constants);
-            isConstantsMutated = true;
+            this.isConstantsMutated = true;
             this.constants.addAll(constants);
             return self();
         }
@@ -1137,7 +1151,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addConstant(PrototypeConstant constant) {
             Objects.requireNonNull(constant);
             this.constants.add(constant);
-            isConstantsMutated = true;
+            this.isConstantsMutated = true;
             return self();
         }
 
@@ -1153,7 +1167,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER prototypeMethods(List<? extends GeneratedMethod> prototypeMethods) {
             Objects.requireNonNull(prototypeMethods);
-            isPrototypeMethodsMutated = true;
+            this.isPrototypeMethodsMutated = true;
             this.prototypeMethods.clear();
             this.prototypeMethods.addAll(prototypeMethods);
             return self();
@@ -1171,7 +1185,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addPrototypeMethods(List<? extends GeneratedMethod> prototypeMethods) {
             Objects.requireNonNull(prototypeMethods);
-            isPrototypeMethodsMutated = true;
+            this.isPrototypeMethodsMutated = true;
             this.prototypeMethods.addAll(prototypeMethods);
             return self();
         }
@@ -1189,7 +1203,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addPrototypeMethod(GeneratedMethod prototypeMethod) {
             Objects.requireNonNull(prototypeMethod);
             this.prototypeMethods.add(prototypeMethod);
-            isPrototypeMethodsMutated = true;
+            this.isPrototypeMethodsMutated = true;
             return self();
         }
 
@@ -1204,7 +1218,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER prototypeFactoryMethods(List<? extends GeneratedMethod> prototypeFactoryMethods) {
             Objects.requireNonNull(prototypeFactoryMethods);
-            isPrototypeFactoryMethodsMutated = true;
+            this.isPrototypeFactoryMethodsMutated = true;
             this.prototypeFactoryMethods.clear();
             this.prototypeFactoryMethods.addAll(prototypeFactoryMethods);
             return self();
@@ -1221,7 +1235,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addPrototypeFactoryMethods(List<? extends GeneratedMethod> prototypeFactoryMethods) {
             Objects.requireNonNull(prototypeFactoryMethods);
-            isPrototypeFactoryMethodsMutated = true;
+            this.isPrototypeFactoryMethodsMutated = true;
             this.prototypeFactoryMethods.addAll(prototypeFactoryMethods);
             return self();
         }
@@ -1238,7 +1252,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addPrototypeFactoryMethod(GeneratedMethod prototypeFactoryMethod) {
             Objects.requireNonNull(prototypeFactoryMethod);
             this.prototypeFactoryMethods.add(prototypeFactoryMethod);
-            isPrototypeFactoryMethodsMutated = true;
+            this.isPrototypeFactoryMethodsMutated = true;
             return self();
         }
 
@@ -1253,7 +1267,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER builderMethods(List<? extends GeneratedMethod> builderMethods) {
             Objects.requireNonNull(builderMethods);
-            isBuilderMethodsMutated = true;
+            this.isBuilderMethodsMutated = true;
             this.builderMethods.clear();
             this.builderMethods.addAll(builderMethods);
             return self();
@@ -1270,7 +1284,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addBuilderMethods(List<? extends GeneratedMethod> builderMethods) {
             Objects.requireNonNull(builderMethods);
-            isBuilderMethodsMutated = true;
+            this.isBuilderMethodsMutated = true;
             this.builderMethods.addAll(builderMethods);
             return self();
         }
@@ -1287,7 +1301,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addBuilderMethod(GeneratedMethod builderMethod) {
             Objects.requireNonNull(builderMethod);
             this.builderMethods.add(builderMethod);
-            isBuilderMethodsMutated = true;
+            this.isBuilderMethodsMutated = true;
             return self();
         }
 
@@ -1301,7 +1315,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER factoryMethods(List<? extends FactoryMethod> factoryMethods) {
             Objects.requireNonNull(factoryMethods);
-            isFactoryMethodsMutated = true;
+            this.isFactoryMethodsMutated = true;
             this.factoryMethods.clear();
             this.factoryMethods.addAll(factoryMethods);
             return self();
@@ -1317,7 +1331,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addFactoryMethods(List<? extends FactoryMethod> factoryMethods) {
             Objects.requireNonNull(factoryMethods);
-            isFactoryMethodsMutated = true;
+            this.isFactoryMethodsMutated = true;
             this.factoryMethods.addAll(factoryMethods);
             return self();
         }
@@ -1333,7 +1347,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addFactoryMethod(FactoryMethod factoryMethod) {
             Objects.requireNonNull(factoryMethod);
             this.factoryMethods.add(factoryMethod);
-            isFactoryMethodsMutated = true;
+            this.isFactoryMethodsMutated = true;
             return self();
         }
 
@@ -1346,7 +1360,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -1361,7 +1375,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -1376,14 +1390,14 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
         /**
          *
          *
-         * @param consumer
+         * @param consumer consumer of builder for
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1404,7 +1418,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -1419,7 +1433,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -1434,14 +1448,14 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
         /**
          *
          *
-         * @param consumer
+         * @param consumer consumer of builder for
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1457,7 +1471,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Blueprint type info.
          * A new prototype cannot be generated without a blueprint to base it on, so this is a required option.
          *
-         * @return the blueprint
+         * @return blueprint type information
          */
         public Optional<TypeInfo> blueprint() {
             return Optional.ofNullable(blueprint);
@@ -1469,7 +1483,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Method {@link io.helidon.builder.api.Prototype.Builder#buildPrototype()} builds the prototype,
          * while method {@link io.helidon.common.Builder#build()} builds the runtime type.
          *
-         * @return the runtime type
+         * @return runtime type, if configured
          */
         public Optional<TypeName> runtimeType() {
             return Optional.ofNullable(runtimeType);
@@ -1478,7 +1492,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the generated prototype.
          *
-         * @return the javadoc
+         * @return prototype javadoc
          */
         public Optional<Javadoc> javadoc() {
             return Optional.ofNullable(javadoc);
@@ -1487,7 +1501,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder base.
          *
-         * @return the builder base javadoc
+         * @return builder base javadoc
          */
         public Optional<Javadoc> builderBaseJavadoc() {
             return Optional.ofNullable(builderBaseJavadoc);
@@ -1496,7 +1510,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Javadoc for the builder class.
          *
-         * @return the builder javadoc
+         * @return builder javadoc
          */
         public Optional<Javadoc> builderJavadoc() {
             return Optional.ofNullable(builderJavadoc);
@@ -1505,7 +1519,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Builder decorator, if configured.
          *
-         * @return the builder decorator
+         * @return type of the builder decorator, if present
          */
         public Optional<TypeName> builderDecorator() {
             return Optional.ofNullable(builderDecorator);
@@ -1523,7 +1537,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          *
          * If you modify the type name to be generated, the result will not support inheritance.
          *
-         * @return the prototype type
+         * @return type of the prototype interface
          */
         public Optional<TypeName> prototypeType() {
             return Optional.ofNullable(prototypeType);
@@ -1540,7 +1554,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          *     <li>Otherwise the default method will not be an option</li>
          * </nl>
          *
-         * @return the default methods predicate
+         * @return predicate for method names
          */
         public Predicate<String> defaultMethodsPredicate() {
             return defaultMethodsPredicate;
@@ -1549,7 +1563,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Access modifier for the generated prototype.
          *
-         * @return the access modifier
+         * @return access modifier, defaults to {@code public}
          */
         public AccessModifier accessModifier() {
             return accessModifier;
@@ -1558,7 +1572,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Access modifier for the generated builder.
          *
-         * @return the builder access modifier
+         * @return access modifier, defaults to {@code public}
          */
         public AccessModifier builderAccessModifier() {
             return builderAccessModifier;
@@ -1567,7 +1581,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Whether to create an empty {@code create()} method.
          *
-         * @return the create empty create
+         * @return whether to create an empty {@code create()} method, defaults to {@code true}
          */
         public boolean createEmptyCreate() {
             return createEmptyCreate;
@@ -1589,7 +1603,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          *     <li>Setter: {@code Builder setAccessModifier(AccessModifier)}</li>
          * </ul>
          *
-         * @return the record style
+         * @return whether to use record style accessors, defaults to {@code true}
          */
         public boolean recordStyle() {
             return recordStyle;
@@ -1598,7 +1612,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Prototype configuration details.
          *
-         * @return the configured
+         * @return prototype configuration details, if configured
          */
         public Optional<PrototypeConfigured> configured() {
             return Optional.ofNullable(configured);
@@ -1607,17 +1621,26 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Whether to use the service registry to discover providers.
          *
-         * @return the registry support
+         * @return whether to support service registry, defaults to {@code false}
          */
         public boolean registrySupport() {
             return registrySupport;
         }
 
         /**
+         * Whether to detach the blueprint from the generated prototype.
+         *
+         * @return true if the blueprint should not be extended by the prototype
+         */
+        public boolean detachBlueprint() {
+            return detachBlueprint;
+        }
+
+        /**
          * If the blueprint extends an existing prototype (or blueprint), we must extend that prototype and
          * also that prototype's builder.
          *
-         * @return the super prototype
+         * @return super prototype, if present
          */
         public Optional<TypeName> superPrototype() {
             return Optional.ofNullable(superPrototype);
@@ -1628,7 +1651,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * This list will always contain the blueprint interface, and {@link io.helidon.builder.api.Prototype.Api}.
          * This list also contains {@link #superPrototype()} if present.
          *
-         * @return the super types
+         * @return types the prototype must extend
          */
         public Set<TypeName> superTypes() {
             return superTypes;
@@ -1637,7 +1660,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
         /**
          * Types the generated prototype should provide, if this prototype is/configures a service provider.
          *
-         * @return the provider provides
+         * @return provider provides types
          */
         public Set<TypeName> providerProvides() {
             return providerProvides;
@@ -1647,7 +1670,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Constants to be defined on the prototype.
          * A constant may be either a reference to another constant or a generated value.
          *
-         * @return the constants
+         * @return constants to add to the prototype
          */
         public List<PrototypeConstant> constants() {
             return constants;
@@ -1659,7 +1682,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Non-default interface methods cannot be added, as the implementation is not customizable.
          * This list does NOT contain option methods.
          *
-         * @return the prototype methods
+         * @return custom methods to add to the prototype
          */
         public List<GeneratedMethod> prototypeMethods() {
             return prototypeMethods;
@@ -1670,7 +1693,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
          * or to #factoryMethods() depending on signature.
          *
-         * @return the prototype factory methods
+         * @return a list of factory methods to add to the prototype
          */
         public List<GeneratedMethod> prototypeFactoryMethods() {
             return prototypeFactoryMethods;
@@ -1681,7 +1704,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * It is your responsibility to ensure these methods do not conflict with option methods.
          * This list does NOT contain option methods.
          *
-         * @return the builder methods
+         * @return custom methods to add to the prototype builder base
          */
         public List<GeneratedMethod> builderMethods() {
             return builderMethods;
@@ -1691,7 +1714,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
          * Factory methods to be used when mapping config to types.
          * These methods will never be made public.
          *
-         * @return the factory methods
+         * @return factory methods to use when mapping config to types
          */
         public List<FactoryMethod> factoryMethods() {
             return factoryMethods;
@@ -1699,8 +1722,6 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
 
         /**
          *
-         *
-         * @return the annotations
          */
         public List<Annotation> annotations() {
             return annotations;
@@ -1708,8 +1729,6 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
 
         /**
          *
-         *
-         * @return the inherited annotations
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;
@@ -1732,6 +1751,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
                     + "recordStyle=" + recordStyle + ","
                     + "configured=" + configured + ","
                     + "registrySupport=" + registrySupport + ","
+                    + "detachBlueprint=" + detachBlueprint + ","
                     + "superPrototype=" + superPrototype + ","
                     + "superTypes=" + superTypes + ","
                     + "providerProvides=" + providerProvides + ","
@@ -1838,6 +1858,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
             private final AccessModifier accessModifier;
             private final AccessModifier builderAccessModifier;
             private final boolean createEmptyCreate;
+            private final boolean detachBlueprint;
             private final boolean recordStyle;
             private final boolean registrySupport;
             private final Javadoc builderBaseJavadoc;
@@ -1880,6 +1901,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
                 this.recordStyle = builder.recordStyle();
                 this.configured = builder.configured().map(Function.identity());
                 this.registrySupport = builder.registrySupport();
+                this.detachBlueprint = builder.detachBlueprint();
                 this.superPrototype = builder.superPrototype().map(Function.identity());
                 this.superTypes = Collections.unmodifiableSet(new LinkedHashSet<>(builder.superTypes()));
                 this.providerProvides = Collections.unmodifiableSet(new LinkedHashSet<>(builder.providerProvides()));
@@ -1963,6 +1985,11 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
             }
 
             @Override
+            public boolean detachBlueprint() {
+                return detachBlueprint;
+            }
+
+            @Override
             public Optional<TypeName> superPrototype() {
                 return superPrototype;
             }
@@ -2029,6 +2056,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
                         + "recordStyle=" + recordStyle + ","
                         + "configured=" + configured + ","
                         + "registrySupport=" + registrySupport + ","
+                        + "detachBlueprint=" + detachBlueprint + ","
                         + "superPrototype=" + superPrototype + ","
                         + "superTypes=" + superTypes + ","
                         + "providerProvides=" + providerProvides + ","
@@ -2064,6 +2092,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
                     && recordStyle == other.recordStyle()
                     && Objects.equals(configured, other.configured())
                     && registrySupport == other.registrySupport()
+                    && detachBlueprint == other.detachBlueprint()
                     && Objects.equals(superPrototype, other.superPrototype())
                     && Objects.equals(superTypes, other.superTypes())
                     && Objects.equals(providerProvides, other.providerProvides())
@@ -2078,7 +2107,7 @@ public interface PrototypeInfo extends Annotated, Prototype.Api {
 
             @Override
             public int hashCode() {
-                return Objects.hash(blueprint, runtimeType, javadoc, builderBaseJavadoc, builderJavadoc, builderDecorator, prototypeType, defaultMethodsPredicate, accessModifier, builderAccessModifier, createEmptyCreate, recordStyle, configured, registrySupport, superPrototype, superTypes, providerProvides, constants, prototypeMethods, prototypeFactoryMethods, builderMethods, factoryMethods, annotations, inheritedAnnotations);
+                return Objects.hash(blueprint, runtimeType, javadoc, builderBaseJavadoc, builderJavadoc, builderDecorator, prototypeType, defaultMethodsPredicate, accessModifier, builderAccessModifier, createEmptyCreate, recordStyle, configured, registrySupport, detachBlueprint, superPrototype, superTypes, providerProvides, constants, prototypeMethods, prototypeFactoryMethods, builderMethods, factoryMethods, annotations, inheritedAnnotations);
             }
 
         }

@@ -25,7 +25,7 @@ import io.helidon.common.types.AccessModifier;
 /**
  * Configuration information for a prototype.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface PrototypeConfiguredBlueprint {
     /**
      * Access modifier.

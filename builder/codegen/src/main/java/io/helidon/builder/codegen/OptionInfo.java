@@ -37,7 +37,6 @@ import io.helidon.common.types.TypedElementInfo;
  * Model of a prototype/builder option.
  *
  * @see #builder()
- * @see #create()
  */
 @Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionInfoBlueprint")
 public interface OptionInfo extends Prototype.Api {
@@ -59,15 +58,6 @@ public interface OptionInfo extends Prototype.Api {
      */
     static OptionInfo.Builder builder(OptionInfo instance) {
         return OptionInfo.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionInfo create() {
-        return OptionInfo.builder().buildPrototype();
     }
 
     /**
@@ -456,7 +446,7 @@ public interface OptionInfo extends Prototype.Api {
          * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
          * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
          *
-         * @param consumer blueprint method, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #blueprintMethod()
          */
@@ -486,8 +476,7 @@ public interface OptionInfo extends Prototype.Api {
          * Prototype getter definition.
          * This method is always abstract (interface method).
          *
-         * @param consumer consumer of builder for
-         *                 prototype getter
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #getter()
          */
@@ -503,8 +492,7 @@ public interface OptionInfo extends Prototype.Api {
          * Prototype getter definition.
          * This method is always abstract (interface method).
          *
-         * @param supplier supplier of
-         *                 prototype getter
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #getter()
          */
@@ -534,8 +522,7 @@ public interface OptionInfo extends Prototype.Api {
          * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
          * defined for a non-optional option.
          *
-         * @param consumer consumer of builder for
-         *                 builder getter
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderGetter()
          */
@@ -552,8 +539,7 @@ public interface OptionInfo extends Prototype.Api {
          * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
          * defined for a non-optional option.
          *
-         * @param supplier supplier of
-         *                 builder getter
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #builderGetter()
          */
@@ -583,8 +569,7 @@ public interface OptionInfo extends Prototype.Api {
          * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
          * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
          *
-         * @param consumer consumer of builder for
-         *                 builder setter
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #setter()
          */
@@ -601,8 +586,7 @@ public interface OptionInfo extends Prototype.Api {
          * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
          * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
          *
-         * @param supplier supplier of
-         *                 builder setter
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #setter()
          */
@@ -643,7 +627,7 @@ public interface OptionInfo extends Prototype.Api {
          * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
          * copy methods.
          *
-         * @param consumer setter with optional parameter, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #setterForOptional()
          */
@@ -675,8 +659,7 @@ public interface OptionInfo extends Prototype.Api {
          * As the implementation class implements the prototype, this method is always annotated
          * with {@link java.lang.Override}.
          *
-         * @param consumer consumer of builder for
-         *                 implementation getter
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #implGetter()
          */
@@ -693,8 +676,7 @@ public interface OptionInfo extends Prototype.Api {
          * As the implementation class implements the prototype, this method is always annotated
          * with {@link java.lang.Override}.
          *
-         * @param supplier supplier of
-         *                 implementation getter
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #implGetter()
          */
@@ -733,8 +715,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * The return type of the blueprint method, or the type expected in getter of the option.
          *
-         * @param consumer consumer of builder for
-         *                 declared type
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -749,8 +730,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * The return type of the blueprint method, or the type expected in getter of the option.
          *
-         * @param supplier supplier of
-         *                 declared type
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -787,7 +767,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Option decorator type.
          *
-         * @param consumer type of the option decorator, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #decorator()
          */
@@ -887,7 +867,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER qualifiers(List<? extends Annotation> qualifiers) {
             Objects.requireNonNull(qualifiers);
-            isQualifiersMutated = true;
+            this.isQualifiersMutated = true;
             this.qualifiers.clear();
             this.qualifiers.addAll(qualifiers);
             return self();
@@ -902,7 +882,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER addQualifiers(List<? extends Annotation> qualifiers) {
             Objects.requireNonNull(qualifiers);
-            isQualifiersMutated = true;
+            this.isQualifiersMutated = true;
             this.qualifiers.addAll(qualifiers);
             return self();
         }
@@ -917,14 +897,14 @@ public interface OptionInfo extends Prototype.Api {
         public BUILDER addQualifier(Annotation qualifier) {
             Objects.requireNonNull(qualifier);
             this.qualifiers.add(qualifier);
-            isQualifiersMutated = true;
+            this.isQualifiersMutated = true;
             return self();
         }
 
         /**
          * List of qualifiers for this option.
          *
-         * @param consumer service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -945,7 +925,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER allowedValues(List<? extends OptionAllowedValue> allowedValues) {
             Objects.requireNonNull(allowedValues);
-            isAllowedValuesMutated = true;
+            this.isAllowedValuesMutated = true;
             this.allowedValues.clear();
             this.allowedValues.addAll(allowedValues);
             return self();
@@ -960,7 +940,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER addAllowedValues(List<? extends OptionAllowedValue> allowedValues) {
             Objects.requireNonNull(allowedValues);
-            isAllowedValuesMutated = true;
+            this.isAllowedValuesMutated = true;
             this.allowedValues.addAll(allowedValues);
             return self();
         }
@@ -975,14 +955,14 @@ public interface OptionInfo extends Prototype.Api {
         public BUILDER addAllowedValue(OptionAllowedValue allowedValue) {
             Objects.requireNonNull(allowedValue);
             this.allowedValues.add(allowedValue);
-            isAllowedValuesMutated = true;
+            this.isAllowedValuesMutated = true;
             return self();
         }
 
         /**
          * List of allowed values for this option.
          *
-         * @param consumer allowed values
+         * @param consumer consumer of builder for allowed values
          * @return updated builder instance
          * @see #allowedValues()
          */
@@ -1045,7 +1025,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Details about configurability of this option.
          *
-         * @param consumer configured setup if configured
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #configured()
          */
@@ -1084,7 +1064,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Deprecation details.
          *
-         * @param consumer deprecation details, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #deprecation()
          */
@@ -1123,7 +1103,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Provider details.
          *
-         * @param consumer provider details, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #provider()
          */
@@ -1162,7 +1142,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Singular option details.
          *
-         * @param consumer singular setter name and related information, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #singular()
          */
@@ -1215,7 +1195,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * If the option has a builder, return its information.
          *
-         * @param consumer builder information, if present
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderInfo()
          */
@@ -1236,7 +1216,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -1251,7 +1231,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -1266,14 +1246,14 @@ public interface OptionInfo extends Prototype.Api {
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
         /**
          *
          *
-         * @param consumer
+         * @param consumer consumer of builder for
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1294,7 +1274,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -1309,7 +1289,7 @@ public interface OptionInfo extends Prototype.Api {
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -1324,14 +1304,14 @@ public interface OptionInfo extends Prototype.Api {
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
         /**
          *
          *
-         * @param consumer
+         * @param consumer consumer of builder for
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1348,7 +1328,7 @@ public interface OptionInfo extends Prototype.Api {
          * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
          * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
          *
-         * @return the blueprint method
+         * @return blueprint method, if present
          */
         public Optional<TypedElementInfo> blueprintMethod() {
             return Optional.ofNullable(blueprintMethod);
@@ -1358,7 +1338,7 @@ public interface OptionInfo extends Prototype.Api {
          * Prototype getter definition.
          * This method is always abstract (interface method).
          *
-         * @return the getter
+         * @return prototype getter
          */
         public Optional<TypedElementInfo> getter() {
             return Optional.ofNullable(getter);
@@ -1369,7 +1349,7 @@ public interface OptionInfo extends Prototype.Api {
          * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
          * defined for a non-optional option.
          *
-         * @return the builder getter
+         * @return builder getter
          */
         public Optional<TypedElementInfo> builderGetter() {
             return Optional.ofNullable(builderGetter);
@@ -1380,7 +1360,7 @@ public interface OptionInfo extends Prototype.Api {
          * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
          * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
          *
-         * @return the setter
+         * @return builder setter
          */
         public Optional<TypedElementInfo> setter() {
             return Optional.ofNullable(setter);
@@ -1391,7 +1371,7 @@ public interface OptionInfo extends Prototype.Api {
          * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
          * copy methods.
          *
-         * @return the setter for optional
+         * @return setter with optional parameter, if present
          */
         public Optional<TypedElementInfo> setterForOptional() {
             return Optional.ofNullable(setterForOptional);
@@ -1402,7 +1382,7 @@ public interface OptionInfo extends Prototype.Api {
          * As the implementation class implements the prototype, this method is always annotated
          * with {@link java.lang.Override}.
          *
-         * @return the impl getter
+         * @return implementation getter
          */
         public Optional<TypedElementInfo> implGetter() {
             return Optional.ofNullable(implGetter);
@@ -1411,7 +1391,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Option name.
          *
-         * @return the name
+         * @return name of this option
          */
         public Optional<String> name() {
             return Optional.ofNullable(name);
@@ -1420,7 +1400,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * The return type of the blueprint method, or the type expected in getter of the option.
          *
-         * @return the declared type
+         * @return declared type
          */
         public Optional<TypeName> declaredType() {
             return Optional.ofNullable(declaredType);
@@ -1429,7 +1409,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Option decorator type.
          *
-         * @return the decorator
+         * @return type of the option decorator, if present
          */
         public Optional<TypeName> decorator() {
             return Optional.ofNullable(decorator);
@@ -1438,7 +1418,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Whether to include this option in generated {@link java.lang.Object#toString()} method
          *
-         * @return the include in to string
+         * @return whether to include in the {@code toString} method
          */
         public boolean includeInToString() {
             return includeInToString;
@@ -1448,7 +1428,7 @@ public interface OptionInfo extends Prototype.Api {
          * Whether to include this option in generated {@link java.lang.Object#equals(Object)}
          * and {@link java.lang.Object#hashCode()} methods.
          *
-         * @return the include in equals and hash code
+         * @return whether to include in the {@code equals} and {@code hashCode} methods
          */
         public boolean includeInEqualsAndHashCode() {
             return includeInEqualsAndHashCode;
@@ -1457,7 +1437,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Whether this option is confidential (i.e. we should not print the value in {@code toString} method).
          *
-         * @return the confidential
+         * @return whether this option is confidential
          */
         public boolean confidential() {
             return confidential;
@@ -1466,7 +1446,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Whether this option should be loaded from {@code ServiceRegistry}.
          *
-         * @return the registry service
+         * @return whether this option should be loaded from {@code ServiceRegistry}
          */
         public boolean registryService() {
             return registryService;
@@ -1477,7 +1457,7 @@ public interface OptionInfo extends Prototype.Api {
          * For example, for a {@code Map<Class<?>, Instance<?>>} that has {@code sameGeneric} set to {@code true}, we would
          * generate singular method with signature {@code <T> put(Class<T>, Instance<T>}.
          *
-         * @return the same generic
+         * @return whether a map has the same generic in key and value for a single mapping
          */
         public boolean sameGeneric() {
             return sameGeneric;
@@ -1490,7 +1470,7 @@ public interface OptionInfo extends Prototype.Api {
          *     <li>the return type on blueprint is not {@link java.util.Optional} or a collection, and we do not support null</li>
          * </ul>
          *
-         * @return the required
+         * @return whether the option is required
          */
         public boolean required() {
             return required;
@@ -1499,7 +1479,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of qualifiers for this option.
          *
-         * @return the qualifiers
+         * @return service registry qualifiers defined on this option (to be used when getting a service registry instance)
          */
         public List<Annotation> qualifiers() {
             return qualifiers;
@@ -1508,7 +1488,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of allowed values for this option.
          *
-         * @return the allowed values
+         * @return allowed values
          */
         public List<OptionAllowedValue> allowedValues() {
             return allowedValues;
@@ -1517,7 +1497,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Default value for this option, a consumer of the field content builder.
          *
-         * @return the default value
+         * @return default value consumer
          */
         public Optional<Consumer<ContentBuilder<?>>> defaultValue() {
             return Optional.ofNullable(defaultValue);
@@ -1526,7 +1506,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Details about configurability of this option.
          *
-         * @return the configured
+         * @return configured setup if configured
          */
         public Optional<OptionConfigured> configured() {
             return Optional.ofNullable(configured);
@@ -1535,7 +1515,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Deprecation details.
          *
-         * @return the deprecation
+         * @return deprecation details, if present
          */
         public Optional<OptionDeprecation> deprecation() {
             return Optional.ofNullable(deprecation);
@@ -1544,7 +1524,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Provider details.
          *
-         * @return the provider
+         * @return provider details, if present
          */
         public Optional<OptionProvider> provider() {
             return Optional.ofNullable(provider);
@@ -1553,7 +1533,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Singular option details.
          *
-         * @return the singular
+         * @return singular setter name and related information, if present
          */
         public Optional<OptionSingular> singular() {
             return Optional.ofNullable(singular);
@@ -1563,7 +1543,7 @@ public interface OptionInfo extends Prototype.Api {
          * Access modifier of generated setter methods on builder.
          * Note that prototype methods are declared in an interface, so these must always be public.
          *
-         * @return the access modifier
+         * @return access modifier to use
          */
         public AccessModifier accessModifier() {
             return accessModifier;
@@ -1572,7 +1552,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * If the option has a builder, return its information.
          *
-         * @return the builder info
+         * @return builder information, if present
          */
         public Optional<OptionBuilder> builderInfo() {
             return Optional.ofNullable(builderInfo);
@@ -1580,8 +1560,6 @@ public interface OptionInfo extends Prototype.Api {
 
         /**
          *
-         *
-         * @return the annotations
          */
         public List<Annotation> annotations() {
             return annotations;
@@ -1589,8 +1567,6 @@ public interface OptionInfo extends Prototype.Api {
 
         /**
          *
-         *
-         * @return the inherited annotations
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;

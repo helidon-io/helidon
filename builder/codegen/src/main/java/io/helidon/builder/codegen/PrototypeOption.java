@@ -394,7 +394,8 @@ final class PrototypeOption {
                         .filter(ElementInfoPredicates::isPublic)
                         .filter(ElementInfoPredicates::hasNoArgs)
                         .filter(m -> m.typeName().equals(actualType)
-                                || (actualType.packageName().isBlank() && m.typeName().className().equals(actualType.className())))
+                                || (
+                                actualType.packageName().isBlank() && m.typeName().className().equals(actualType.className())))
                         .anyMatch(elementName("build")))
                 .findFirst()
                 .map(it -> OptionBuilder.builder()
@@ -419,8 +420,8 @@ final class PrototypeOption {
     private static void addGetter(PrototypeInfo prototypeInfo, OptionInfo.Builder option, TypedElementInfo candidate) {
         // TODO not used for now
         TypedElementInfo builderGetter = TypedElementInfo.builder()
-                .accessModifier(prototypeInfo.builderAccessModifier())
-                .typeName(candidate.typeName()) // this must be an option for required types and types without defaults
+                .accessModifier(AccessModifier.PUBLIC)
+                .typeName(candidate.typeName())
                 .elementName(candidate.elementName())
                 .kind(ElementKind.METHOD)
                 .description(candidate.description().orElse(""))
@@ -489,7 +490,7 @@ final class PrototypeOption {
 
             option.singular(singular -> singular
                     .name(singularName)
-                    .setter(singularSetterName));
+                    .setter(singularSetter));
         }
     }
 
@@ -703,7 +704,8 @@ final class PrototypeOption {
         if (option.defaultValue().isPresent() && required) {
             required = false;
         }
-        option.required(required);;
+        option.required(required);
+        ;
     }
 
     private static Javadoc singularSetterJavadoc(Javadoc getterJavadoc, String singularName, String getterName) {

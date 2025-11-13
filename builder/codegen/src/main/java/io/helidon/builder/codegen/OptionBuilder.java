@@ -32,7 +32,6 @@ import io.helidon.common.types.TypeName;
  * The builder then must have a {@code build} method that returns the option type, or a {@code buildPrototype} method.
  *
  * @see #builder()
- * @see #create()
  */
 public interface OptionBuilder extends Prototype.Api {
 
@@ -53,15 +52,6 @@ public interface OptionBuilder extends Prototype.Api {
      */
     static OptionBuilder.Builder builder(OptionBuilder instance) {
         return OptionBuilder.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionBuilder create() {
-        return OptionBuilder.builder().buildPrototype();
     }
 
     /**
@@ -162,8 +152,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Type of the builder.
          *
-         * @param consumer consumer of builder for
-         *                 type of the builder
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #builderType()
          */
@@ -178,8 +167,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Type of the builder.
          *
-         * @param supplier supplier of
-         *                 type of the builder
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #builderType()
          */
@@ -207,7 +195,7 @@ public interface OptionBuilder extends Prototype.Api {
          * If a method name is defined, it is expected to be on the type of the option. If constructor is defined,
          * it is expected to be an accessible constructor on the {@link #builderType()}.
          *
-         * @return the builder method name
+         * @return name of the method
          */
         public String builderMethodName() {
             return builderMethodName;
@@ -216,7 +204,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Type of the builder.
          *
-         * @return the builder type
+         * @return type of the builder
          */
         public Optional<TypeName> builderType() {
             return Optional.ofNullable(builderType);
@@ -225,7 +213,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Name of the build method ({@code build} or {@code buildPrototype}).
          *
-         * @return the build method name
+         * @return builder build method name
          */
         public Optional<String> buildMethodName() {
             return Optional.ofNullable(buildMethodName);

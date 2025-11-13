@@ -59,6 +59,10 @@ final class TypeContext {
     private TypeContext() {
     }
 
+    /*
+    Creates a prototype information from the blueprint.
+    This method analyses the class, not options.
+     */
     static PrototypeInfo create(RoundContext ctx, TypeInfo blueprint) {
         Annotation blueprintAnnotation = blueprintAnnotation(blueprint);
 
@@ -68,6 +72,7 @@ final class TypeContext {
         PrototypeInfo.Builder prototype = PrototypeInfo.builder()
                 .blueprint(blueprint)
                 .prototypeType(prototypeType)
+                .detachBlueprint(blueprintAnnotation.booleanValue("detach").orElse(false))
                 .defaultMethodsPredicate(defaultMethodsPredicate(blueprint))
                 .accessModifier(prototypeAccessModifier(blueprintAnnotation))
                 .builderAccessModifier(builderAccessModifier(blueprintAnnotation))
@@ -75,11 +80,12 @@ final class TypeContext {
                 .recordStyle(recordStyleAccessors(blueprintAnnotation))
                 .registrySupport(registrySupport(blueprint))
                 .superPrototype(superPrototype(blueprint))
-                .superTypes(prototypeExtends(blueprint))
                 .providerProvides(providerProvides(blueprint))
                 .javadoc(prototypeJavadoc(blueprint))
                 .builderBaseJavadoc(builderBaseJavadoc(blueprintJavadoc, prototypeType))
                 .builderJavadoc(builderJavadoc(blueprintJavadoc, prototypeType));
+
+        prototypeExtends(prototype, blueprint);
 
         builderDecorator(blueprintAnnotation).ifPresent(prototype::builderDecorator);
         configured(blueprint, blueprintAnnotation).ifPresent(prototype::configured);
@@ -332,11 +338,18 @@ final class TypeContext {
         return builder.build();
     }
 
-    private static Set<TypeName> prototypeExtends(TypeInfo blueprint) {
+    private static void prototypeExtends(PrototypeInfo.Builder prototype, TypeInfo blueprint) {
+        // when detaching blueprint, and all types the blueprint extends except for another blueprint
+        // when not detaching blueprint, only add blueprint, API, and interfaces from annotation
+
+        boolean detachBlueprint = prototype.detachBlueprint();
+
         // gather all directly implemented interfaces + add blueprint, Prototype.Api
 
         Set<TypeName> prototypeExtends = new LinkedHashSet<>();
-        prototypeExtends.add(blueprint.typeName());
+        if (!detachBlueprint) {
+            prototypeExtends.add(blueprint.typeName());
+        }
         prototypeExtends.add(PROTOTYPE_API);
 
         // add custom implements
@@ -347,24 +360,26 @@ final class TypeContext {
                 .map(TypeName::create)
                 .forEach(prototypeExtends::add);
 
-        // add declared implements
-        for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
-            if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
-                TypeName superBlueprint = superInterface.typeName();
-                String className = superBlueprint.className();
-                TypeName toExtend = TypeName.builder()
-                        .packageName(superBlueprint.packageName())
-                        // blueprints MUST end with Blueprint suffix
-                        .className(className.substring(0, className.length() - 9))
-                        .build();
-                prototypeExtends.add(toExtend);
-                continue;
+        if (detachBlueprint) {
+            // add declared implements
+            for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
+                if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                    TypeName superBlueprint = superInterface.typeName();
+                    String className = superBlueprint.className();
+                    TypeName toExtend = TypeName.builder()
+                            .packageName(superBlueprint.packageName())
+                            // blueprints MUST end with Blueprint suffix
+                            .className(className.substring(0, className.length() - 9))
+                            .build();
+                    prototypeExtends.add(toExtend);
+                    continue;
+                }
+                // other we can add directly, also as this is a set, if you extend both prototype and blueprint it is fine
+                prototypeExtends.add(superInterface.typeName());
             }
-            // other we can add directly, also as this is a set, if you extend both prototype and bluepritn it is fine
-            prototypeExtends.add(superInterface.typeName());
         }
 
-        return prototypeExtends;
+        prototype.superTypes(prototypeExtends);
     }
 
     private static Set<TypeName> providerProvides(TypeInfo blueprint) {

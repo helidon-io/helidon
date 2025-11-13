@@ -26,7 +26,7 @@ import io.helidon.common.types.TypeName;
  * The type must have a {@code builder} method that returns a builder type.
  * The builder then must have a {@code build} method that returns the option type, or a {@code buildPrototype} method.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionBuilderBlueprint {
     /**
      * Name of the static builder method, or {@code <init>} to identify a constructor should be used.

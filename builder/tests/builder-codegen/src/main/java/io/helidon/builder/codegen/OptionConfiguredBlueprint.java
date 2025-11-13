@@ -22,7 +22,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Setup of configured option.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionConfiguredBlueprint {
     /**
      * Config key to use.

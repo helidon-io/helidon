@@ -26,9 +26,8 @@ import io.helidon.common.Errors;
  * Option allowed value.
  *
  * @see #builder()
- * @see #create()
  */
-public interface OptionAllowedValue {
+public interface OptionAllowedValue extends Prototype.Api {
 
     /**
      * Create a new fluent API builder to customize configuration.
@@ -50,15 +49,6 @@ public interface OptionAllowedValue {
     }
 
     /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionAllowedValue create() {
-        return OptionAllowedValue.builder().buildPrototype();
-    }
-
-    /**
      * Value, such as a string constant or enum value.
      *
      * @return value that is allowed
@@ -73,10 +63,10 @@ public interface OptionAllowedValue {
     String description();
 
     /**
-     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionAllowedValue}.
+     * Fluent API builder base for {@link OptionAllowedValue}.
      *
      * @param <BUILDER>   type of the builder extending this abstract builder
-     * @param <PROTOTYPE> type of the prototype interface that would be built
+     * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionAllowedValue>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
@@ -143,7 +133,7 @@ public interface OptionAllowedValue {
         /**
          * Value, such as a string constant or enum value.
          *
-         * @return the value
+         * @return value that is allowed
          */
         public Optional<String> value() {
             return Optional.ofNullable(value);
@@ -152,7 +142,7 @@ public interface OptionAllowedValue {
         /**
          * Description of this value.
          *
-         * @return the description
+         * @return value description
          */
         public Optional<String> description() {
             return Optional.ofNullable(description);
@@ -244,7 +234,7 @@ public interface OptionAllowedValue {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.builder.codegen.OptionAllowedValue}.
+     * Fluent API builder for {@link OptionAllowedValue}.
      */
     class Builder extends BuilderBase<Builder, OptionAllowedValue>
             implements io.helidon.common.Builder<Builder, OptionAllowedValue> {

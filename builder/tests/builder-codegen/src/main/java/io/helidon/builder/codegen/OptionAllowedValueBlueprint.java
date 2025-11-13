@@ -21,7 +21,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Option allowed value.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionAllowedValueBlueprint {
     /**
      * Value, such as a string constant or enum value.

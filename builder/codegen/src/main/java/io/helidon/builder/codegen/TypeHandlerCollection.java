@@ -276,7 +276,7 @@ abstract class TypeHandlerCollection extends TypeHandlerBase {
                 .build();
 
         Method.Builder builder = Method.builder()
-                .name(singular.setter())
+                .name(singular.setter().elementName())
                 .returnType(returnType)
                 .addParameter(param -> param.name(argumentName)
                         .type(argumentType))
@@ -332,7 +332,7 @@ abstract class TypeHandlerCollection extends TypeHandlerBase {
     }
 
     private void singularSetter(InnerClass.Builder classBuilder, TypeName returnType, OptionSingular optionSingular) {
-        String methodName = optionSingular.setter();
+        String methodName = optionSingular.setter().elementName();
         String singularName = optionSingular.name();
         TypedElementInfo setter = option().setter();
         Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));

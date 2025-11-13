@@ -180,7 +180,7 @@ public interface PrototypeConfigured extends Prototype.Api {
         /**
          * Access modifier.
          *
-         * @return the create access modifier
+         * @return access modifier of the method {@code create(Config)}, defaults to {@code public}
          */
         public AccessModifier createAccessModifier() {
             return createAccessModifier;
@@ -190,7 +190,7 @@ public interface PrototypeConfigured extends Prototype.Api {
          * Whether the configuration is expected from the root of config tree.
          * Defaults to {@code true} in case a {@link #key()} is defined.
          *
-         * @return the root
+         * @return whether this prototype uses root configuration key
          */
         public boolean root() {
             return root;
@@ -199,7 +199,7 @@ public interface PrototypeConfigured extends Prototype.Api {
         /**
          * Key of this prototype's configuration.
          *
-         * @return the key
+         * @return key if configured
          */
         public Optional<String> key() {
             return Optional.ofNullable(key);

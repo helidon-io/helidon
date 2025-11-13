@@ -100,7 +100,7 @@ class TypeHandlerMap extends TypeHandlerBase {
 
         var singular = option().singular().get();
         String singularName = singular.name();
-        String methodName = singular.setter();
+        String methodName = singular.setter().elementName();
 
         if (isCollection(type())) {
             // value is a collection as well we need to generate `add` methods for adding a single value, and adding

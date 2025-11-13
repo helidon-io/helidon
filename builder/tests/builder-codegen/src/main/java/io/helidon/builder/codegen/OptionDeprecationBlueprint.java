@@ -24,7 +24,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Deprecated option information.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionDeprecationBlueprint {
     /**
      * Deprecation message.

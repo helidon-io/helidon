@@ -29,7 +29,6 @@ import io.helidon.common.types.TypeName;
  * Definition of an option that is a provider (i.e. loaded through registry or service loader).
  *
  * @see #builder()
- * @see #create()
  */
 public interface OptionProvider {
 
@@ -50,15 +49,6 @@ public interface OptionProvider {
      */
     static Builder builder(OptionProvider instance) {
         return OptionProvider.builder().from(instance);
-    }
-
-    /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static OptionProvider create() {
-        return OptionProvider.builder().buildPrototype();
     }
 
     /**
@@ -132,8 +122,7 @@ public interface OptionProvider {
         /**
          * Type of the provider to lookup.
          *
-         * @param consumer consumer of builder for
-         *                 provider type
+         * @param consumer consumer of builder
          * @return updated builder instance
          * @see #providerType()
          */
@@ -148,8 +137,7 @@ public interface OptionProvider {
         /**
          * Type of the provider to lookup.
          *
-         * @param supplier supplier of
-         *                 provider type
+         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
          * @return updated builder instance
          * @see #providerType()
          */
@@ -174,7 +162,7 @@ public interface OptionProvider {
         /**
          * Type of the provider to lookup.
          *
-         * @return the provider type
+         * @return provider type
          */
         public Optional<TypeName> providerType() {
             return Optional.ofNullable(providerType);
@@ -183,7 +171,7 @@ public interface OptionProvider {
         /**
          * Whether to discover services by default.
          *
-         * @return the discover services
+         * @return whether to discover services
          */
         public boolean discoverServices() {
             return discoverServices;

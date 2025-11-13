@@ -22,7 +22,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Definition of an option that is a provider (i.e. loaded through registry or service loader).
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(detach = true)
 interface OptionProviderBlueprint {
     /**
      * Type of the provider to lookup.
