@@ -22,8 +22,9 @@ import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,7 +54,7 @@ class CronTask implements Cron {
     private ZonedDateTime lastNext = null;
 
     private volatile boolean stopped;
-    private volatile ScheduledFuture<?> future;
+    private volatile Future<?> future;
 
     CronTask(CronConfig config) {
         this.config = config;
@@ -72,9 +73,7 @@ class CronTask implements Cron {
         if (config.enabled()) {
             scheduleNext();
         } else {
-            // Create a completed future so close() works correctly
-            future = executorService.schedule(() -> {}, Long.MAX_VALUE, TimeUnit.DAYS);
-            future.cancel(false);
+            future = CompletableFuture.completedFuture(null);
             LOGGER.log(Level.INFO, "Task " + taskId + " is disabled and will not be scheduled");
         }
     }
@@ -136,8 +135,8 @@ class CronTask implements Cron {
             stopped = true;
             if (future != null) {
                 future.cancel(false);
-                config.taskManager().remove(this);
             }
+            config.taskManager().remove(this);
         } finally {
             scheduleNextLock.unlock();
         }

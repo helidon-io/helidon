@@ -19,8 +19,9 @@ package io.helidon.scheduling;
 import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,7 +34,7 @@ class FixedRateTask implements FixedRate {
     private final Duration initialDelay;
     private final Duration interval;
     private final ScheduledConsumer<FixedRateInvocation> actualTask;
-    private final ScheduledFuture<?> future;
+    private final Future<?> future;
     private final FixedRateConfig config;
     private final String taskId;
 
@@ -58,9 +59,7 @@ class FixedRateTask implements FixedRate {
                                                                                   TimeUnit.MILLISECONDS);
             };
         } else {
-            // Create a completed future so close() works correctly
-            this.future = executorService.schedule(() -> {}, Long.MAX_VALUE, TimeUnit.DAYS);
-            this.future.cancel(false);
+            this.future = CompletableFuture.completedFuture(null);
             LOGGER.log(Level.INFO, "Task " + taskId + " is disabled and will not be scheduled");
         }
 
@@ -88,7 +87,9 @@ class FixedRateTask implements FixedRate {
 
     @Override
     public void close() {
-        future.cancel(false);
+        if (future != null) {
+            future.cancel(false);
+        }
         config.taskManager().remove(this);
     }
 
