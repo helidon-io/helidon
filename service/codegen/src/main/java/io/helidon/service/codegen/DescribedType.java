@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -29,25 +30,41 @@ import io.helidon.common.types.TypeName;
  * A described type (class, interface).
  * User service can have up to two types - one is the service itself, another one is a provided contract,
  * if the service is a provider.
+ *
+ * @deprecated this class is not part of public API and does not have any public elements, it will be package private in
+ *      a future release
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public class DescribedType {
     private final TypeInfo typeInfo;
     private final boolean isAbstract;
     private final TypeName typeName;
     private final Set<ResolvedType> contracts;
     private final DescribedElements elements;
+    private final Map<ResolvedType, Set<ResolvedType>> contractTypes;
 
-    DescribedType(TypeInfo typeInfo, TypeName typeName, Set<ResolvedType> contracts, DescribedElements elements) {
+    DescribedType(TypeInfo typeInfo,
+                  TypeName typeName,
+                  Set<ResolvedType> contracts,
+                  Map<ResolvedType, Set<ResolvedType>> contractMap,
+                  DescribedElements elements) {
+
         Objects.requireNonNull(typeInfo);
         Objects.requireNonNull(typeName);
         Objects.requireNonNull(contracts);
+        Objects.requireNonNull(contractMap);
         Objects.requireNonNull(elements);
 
         this.typeInfo = typeInfo;
         this.isAbstract = isAbstract(typeInfo);
         this.typeName = typeName;
         this.contracts = contracts;
+        this.contractTypes = contractMap;
         this.elements = elements;
+    }
+
+    Map<ResolvedType, Set<ResolvedType>> contractTypeSets() {
+        return contractTypes;
     }
 
     boolean isAbstract() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,9 +223,14 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
         writer.write("{");
         writer.writeSeparatorLine();
+
         if (!staticFields.isEmpty()) {
             writeClassFields(staticFields, writer, combinedTokens, imports);
         }
+
+        // support for static initializers
+        writePostConstantDeclaration(writer, declaredTokens, imports, classType);
+
         if (!fields.isEmpty()) {
             writeClassFields(fields, writer, combinedTokens, imports);
         }
@@ -243,6 +248,11 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
         writer.write("\n");
         writer.write("}");
+    }
+
+    void writePostConstantDeclaration(ModelWriter writer,  Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
+            throws IOException {
+        // default impl does nothing, as interfaces do not support this
     }
 
     @Override

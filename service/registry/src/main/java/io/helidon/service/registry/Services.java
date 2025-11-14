@@ -45,6 +45,11 @@ import io.helidon.common.types.TypeName;
  *     {@link io.helidon.service.registry.ServiceRegistry#get(Class)} must yield the same instance if the service is a
  *     singleton</li>
  * </ul>
+ *
+ * <strong>Important note:</strong> Do not use any of the methods on this class when building a Helidon Declarative
+ * application. In Helidon declarative - create your own service with higher than default {@link io.helidon.common.Weight}
+ * and it will be available for injection as expected.
+ * To get an instance, inject it into your service, do not call methods on this class.
  */
 public final class Services {
     private Services() {

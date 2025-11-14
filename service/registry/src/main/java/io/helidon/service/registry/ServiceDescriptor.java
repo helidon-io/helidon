@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -77,5 +78,27 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
      */
     default TypeName scope() {
         return Service.Singleton.TYPE;
+    }
+
+    /**
+     * Provide a mapping of a contracts of this service to its contract type set.
+     * If the result is empty, it will be ignored.
+     *
+     * @param contract contract to get types for
+     * @return type map for each type that is a contract of this service
+     */
+    default Set<ResolvedType> typeSet(ResolvedType contract) {
+        /*
+        When user calls Services.set(Config.class, config); we must set the instance for all contracts Config class provides
+        - in the current version of Helidon, this would be `io.helidon.common.config.Config` and `io.helidon.config.Config`
+            in case the class provided is `io.helidon.config.Config`
+
+        The registry needs a way to find out that `io.helidon.config.Config` has two contracts
+        This method should provide a set of resolved types for each contract implemented by this service, so registry
+        can create the full tree
+
+
+         */
+        return Set.of();
     }
 }
