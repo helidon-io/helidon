@@ -145,12 +145,15 @@
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.9.0.25.07</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
+        <!-- Force upgrade okio for dependency convergence: bring otel otlp exporter up to what langchain4j uses -->
+        <version.lib.okio>3.6.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.29.0-alpha</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.29.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.29.0</version.lib.opentelemetry.opentracing.shim>
-        <version.lib.opentelemetry>1.29.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.53.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
+        <version.lib.opentelemetry.opentracing.shim>1.53.0</version.lib.opentelemetry.opentracing.shim>
+        <version.lib.opentelemetry>1.53.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.instrumentation.annotations>2.19.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -273,7 +276,7 @@
             <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-annotations</artifactId>
-                <version>${version.lib.opentelemetry}</version>
+                <version>${version.lib.opentelemetry.instrumentation.annotations}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
@@ -1246,6 +1249,11 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${version.lib.okhttp3}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${version.lib.okio}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
