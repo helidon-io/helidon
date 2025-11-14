@@ -407,13 +407,34 @@ include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 
 === Adding Service to WebClient
 
-WebClient currently supports 3 built-in services namely `metrics`, `tracing` and `security`.
+WebClient currently supports four built-in services, namely
+xref:discovery.adoc#_web_client_discovery_integration[`discovery`], `metrics`, `tracing` and `security`.
 
 ==== Enabling the service
 
-In order for a service to function, their dependency needs to be added in the application's pom.xml. Below are examples on how to enable the built-in services:
+In order for a service to function, its dependencies need to be added in the application's `pom.xml`. Below are examples on how to enable the built-in services:
+
+* `discovery` (see xref:discovery.adoc#_web_client_discovery_integration[its documentation])
++
+.`pom.xml`
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-discovery</artifactId>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.helidon.discovery.providers</groupId>
+    <artifactId>helidon-discovery-providers-eureka</artifactId> <!--1-->
+    <scope>runtime</scope>
+</dependency>
+----
+<1> Backs the `discovery` service with a xref:discovery.adoc#_eureka[Discovery provider based on Netflix's Eureka]
 
 * `metrics`
++
+.`pom.xml`
 [source,xml]
 ----
 <dependency>
@@ -421,7 +442,10 @@ In order for a service to function, their dependency needs to be added in the ap
     <artifactId>helidon-webclient-metrics</artifactId>
 </dependency>
 ----
+
 * `tracing`
++
+.`pom.xml`
 [source,xml]
 ----
 <dependency>
@@ -429,7 +453,10 @@ In order for a service to function, their dependency needs to be added in the ap
     <artifactId>helidon-webclient-tracing</artifactId>
 </dependency>
 ----
+
 * `security`
++
+.`pom.xml`
 [source,xml]
 ----
 <dependency>
@@ -562,6 +589,7 @@ include::{rootdir}/config/io_helidon_webclient_context_WebClientContextService.a
 * link:{webclient-javadoc-base-url}.http2/module-summary.html[Helidon WebClient HTTP/2 Support]
 * link:{webclient-javadoc-base-url}.dns.resolver.first/module-summary.html[Helidon WebClient DNS Resolver First Support]
 * link:{webclient-javadoc-base-url}.dns.resolver.roundrobin/module-summary.html[Helidon WebClient DNS Resolver Round Robin Support]
+* link:{webclient-javadoc-base-url}.discovery/module-summary.html[Helidon WebClient Discovery Support]
 * link:{webclient-javadoc-base-url}.metrics/module-summary.html[Helidon WebClient Metrics Support]
 * link:{webclient-javadoc-base-url}.security/module-summary.html[Helidon WebClient Security Support]
 * link:{webclient-javadoc-base-url}.tracing/module-summary.html[Helidon WebClient Tracing Support]
