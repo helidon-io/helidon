@@ -61,12 +61,42 @@ class BitsSubstitutionTest {
      */
     @Test
     void testCompareNotNullUnsigned() {
+        // Basic equality and simple difference
         byte[] data1 = {1, 2, 3};
         byte[] data2 = {1, 2, 3};
         byte[] data3 = {1, 2, 4};
         assertThat(BitsSubstitution.compareNotNullUnsigned(data1, data2), is(0));
         assertThat(BitsSubstitution.compareNotNullUnsigned(data1, data3), is(-1));
         assertThat(BitsSubstitution.compareNotNullUnsigned(data3, data1), is(1));
+
+        // different lengths, first differing byte is not supposed to decide order
+        byte[] shorter = {1, 2, 6};         // length 3
+        byte[] longer  = {0, 122, 125, 100}; // length 4
+        assertThat(BitsSubstitution.compareNotNullUnsigned(shorter, longer), is(-1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(longer, shorter), is(1));
+
+        // Same array reference
+        byte[] sameRef = data1;
+        assertThat(BitsSubstitution.compareNotNullUnsigned(data1, sameRef), is(0));
+
+        // Empty arrays
+        byte[] empty1 = {};
+        byte[] empty2 = {};
+        assertThat(BitsSubstitution.compareNotNullUnsigned(empty1, empty2), is(0));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(empty1, data1), is(-1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(data1, empty1), is(1));
+
+        // Arrays with different lengths but same prefix
+        byte[] prefix1 = {1, 2};
+        byte[] prefix2 = {1, 2, 0};
+        assertThat(BitsSubstitution.compareNotNullUnsigned(prefix1, prefix2), is(-1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(prefix2, prefix1), is(1));
+
+        // Unsigned behavior (negative bytes)
+        byte[] neg1 = {(byte) 200, 50}; // 200 unsigned = 200
+        byte[] neg2 = {(byte) 150, 50}; // 150 unsigned = 150
+        assertThat(BitsSubstitution.compareNotNullUnsigned(neg1, neg2), is(1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(neg2, neg1), is(-1));
     }
 
     /**
