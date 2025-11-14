@@ -38,7 +38,6 @@ import io.helidon.common.Errors;
 import io.helidon.common.Size;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
@@ -269,15 +268,18 @@ final class PrototypeOption {
                 .filter(a -> a.hasMetaAnnotation(Types.SERVICE_QUALIFIER))
                 .toList();
 
-        option.blueprintMethod(candidate)
+        option.interfaceMethod(candidate)
                 .name(name)
+                .declaringType(typeInfo)
                 .declaredType(type)
                 .includeInEqualsAndHashCode(equality)
                 .includeInToString(toStringValue)
                 .confidential(confidential)
                 .registryService(registryService)
                 .sameGeneric(sameGeneric)
-                .qualifiers(qualifiers);
+                .qualifiers(qualifiers)
+                .getterName(getterName)
+                .setterName(setterName);
 
         optionBuilder(roundContext, type).ifPresent(option::builderInfo);
 
@@ -310,9 +312,6 @@ final class PrototypeOption {
         addConfiguredOptionData(option, candidate, type, name);
         // deprecation
         addDeprecatedOptionData(option, candidate, javadoc);
-        if (option.deprecation().isPresent()) {
-            javadoc = updateWithDeprecation(javadoc, option.deprecation().get());
-        }
         // provider
         addProviderOptionData(option, candidate);
         // default value
@@ -320,15 +319,8 @@ final class PrototypeOption {
         // required
         isOptionRequired(option, candidate, type);
 
-        // now we can build the option info fully
-        setters(option, javadoc, getterName, type, name, setterName);
-
         // singular
-        addSingularOptionData(prototypeInfo, option, candidate, type, name, javadoc, getterName);
-
-        addGetter(prototypeInfo, option, candidate);
-        addBuilderGetter(prototypeInfo, option, candidate);
-        addImplGetter(prototypeInfo, option, candidate);
+        addSingularOptionData(option, candidate, type, name);
 
         return option.build();
     }
@@ -417,49 +409,10 @@ final class PrototypeOption {
                                    .build());
     }
 
-    private static void addGetter(PrototypeInfo prototypeInfo, OptionInfo.Builder option, TypedElementInfo candidate) {
-        // TODO not used for now
-        TypedElementInfo builderGetter = TypedElementInfo.builder()
-                .accessModifier(AccessModifier.PUBLIC)
-                .typeName(candidate.typeName())
-                .elementName(candidate.elementName())
-                .kind(ElementKind.METHOD)
-                .description(candidate.description().orElse(""))
-                .build();
-        option.getter(builderGetter);
-    }
-
-    private static void addImplGetter(PrototypeInfo prototypeInfo, OptionInfo.Builder option, TypedElementInfo candidate) {
-        // TODO not used for now
-        TypedElementInfo builderGetter = TypedElementInfo.builder()
-                .accessModifier(prototypeInfo.builderAccessModifier())
-                .typeName(candidate.typeName()) // this must be an option for required types and types without defaults
-                .elementName(candidate.elementName())
-                .kind(ElementKind.METHOD)
-                .description(candidate.description().orElse(""))
-                .build();
-        option.implGetter(builderGetter);
-    }
-
-    private static void addBuilderGetter(PrototypeInfo prototypeInfo, OptionInfo.Builder option, TypedElementInfo candidate) {
-        // TODO not used for now
-        TypedElementInfo builderGetter = TypedElementInfo.builder()
-                .accessModifier(prototypeInfo.builderAccessModifier())
-                .typeName(candidate.typeName()) // this must be an option for required types and types without defaults
-                .elementName(candidate.elementName())
-                .kind(ElementKind.METHOD)
-                .description(candidate.description().orElse(""))
-                .build();
-        option.builderGetter(builderGetter);
-    }
-
-    private static void addSingularOptionData(PrototypeInfo prototypeInfo,
-                                              OptionInfo.Builder option,
+    private static void addSingularOptionData(OptionInfo.Builder option,
                                               TypedElementInfo element,
                                               TypeName returnType,
-                                              String name,
-                                              Javadoc getterJavadoc,
-                                              String getterName) {
+                                              String name) {
         if (element.hasAnnotation(OPTION_SINGULAR)) {
             var singularAnnot = element.annotation(OPTION_SINGULAR);
             String singularName = singularAnnot.value()
@@ -476,21 +429,9 @@ final class PrototypeOption {
                 singularSetterName = singularName;
             }
 
-            List<TypedElementInfo> parameterArguments = singularParameters(element, propertyTypeName(element), singularName);
-
-            TypedElementInfo singularSetter = TypedElementInfo.builder()
-                    .accessModifier(prototypeInfo.builderAccessModifier())
-                    .typeName(TypeName.createFromGenericDeclaration("BUILDER"))
-                    .elementName(singularSetterName)
-                    .kind(ElementKind.METHOD)
-                    .parameterArguments(parameterArguments)
-                    .description(String.join("\n",
-                                             singularSetterJavadoc(getterJavadoc, singularName, getterName).toString()))
-                    .build();
-
             option.singular(singular -> singular
-                    .name(singularName)
-                    .setter(singularSetter));
+                    .methodName(singularSetterName)
+                    .name(singularName));
         }
     }
 
@@ -500,91 +441,6 @@ final class PrototypeOption {
         } else {
             return maybeReservedName;
         }
-    }
-
-    private static void setters(OptionInfo.Builder option,
-                                Javadoc getterJavadoc,
-                                String getterName,
-                                TypeName optionType,
-                                String optionName,
-                                String setterName) {
-
-        // the following methods are not configurable and will be generated as we see fit
-        // for lists and sets - add `addValues(List<> values)` as well (always)
-        // and add(Consumer<Builder>) for builders
-        // and set(Consumer<Builder>)
-        TypedElementInfo declaredSetter = TypedElementInfo.builder()
-                .accessModifier(option.accessModifier())
-                .typeName(TypeName.createFromGenericDeclaration("BUILDER"))
-                .elementName(setterName)
-                .kind(ElementKind.METHOD)
-                .addParameterArgument(param -> param.elementName(optionName)
-                        .typeName(toSetterType(optionType))
-                        .kind(ElementKind.PARAMETER))
-                .description(String.join("\n", setterJavadoc(getterJavadoc, optionName, getterName).toString()))
-                .build();
-
-        if (optionType.isOptional()) {
-            option.setterForOptional(declaredSetter);
-            option.setter(TypedElementInfo.builder()
-                                  .accessModifier(option.accessModifier())
-                                  .typeName(TypeName.createFromGenericDeclaration("BUILDER"))
-                                  .elementName(setterName)
-                                  .kind(ElementKind.METHOD)
-                                  .addParameterArgument(param -> param.elementName(optionName)
-                                          .typeName(optionType.typeArguments().getFirst())
-                                          .kind(ElementKind.PARAMETER))
-                                  .description(String.join("\n",
-                                                           setterJavadoc(getterJavadoc, optionName, getterName).toString()))
-                                  .build());
-        } else {
-            option.setter(declaredSetter);
-        }
-    }
-
-    private static List<TypedElementInfo> singularParameters(TypedElementInfo candidate,
-                                                             TypeName optionType,
-                                                             String singularName) {
-        if (optionType.isSet() || optionType.isList()) {
-            TypeName typeName = optionType.typeArguments().getFirst();
-            return List.of(TypedElementInfo.builder()
-                                   .kind(ElementKind.PARAMETER)
-                                   .elementName(singularName)
-                                   .typeName(toSetterType(typeName))
-                                   .build());
-        }
-        if (optionType.isMap()) {
-            return List.of(TypedElementInfo.builder()
-                                   .kind(ElementKind.PARAMETER)
-                                   .elementName("key")
-                                   .typeName(toSetterType(optionType.typeArguments().get(0)))
-                                   .build(),
-                           TypedElementInfo.builder()
-                                   .kind(ElementKind.PARAMETER)
-                                   .elementName(singularName)
-                                   .typeName(toSetterType(optionType.typeArguments().get(1)))
-                                   .build());
-        }
-        throw new CodegenException("@Option.Singular annotation on invalid option type, only Set, List, and Map are supported",
-                                   candidate);
-    }
-
-    private static TypeName toSetterType(TypeName optionType) {
-        if (optionType.isOptional() || optionType.isSet() || optionType.isList()) {
-            TypeName argument = optionType.typeArguments().getFirst();
-            if (argument.unboxed().primitive() || argument.equals(TypeNames.STRING)) {
-                return optionType;
-            }
-            TypeName typeArgument = TypeName.builder()
-                    .className("?")
-                    .generic(true)
-                    .addUpperBound(argument)
-                    .build();
-            return TypeName.builder(optionType)
-                    .typeArguments(List.of(typeArgument))
-                    .build();
-        }
-        return optionType;
     }
 
     private static boolean validOptionMethodName(TypedElementInfo element) {
@@ -705,34 +561,6 @@ final class PrototypeOption {
             required = false;
         }
         option.required(required);
-        ;
-    }
-
-    private static Javadoc singularSetterJavadoc(Javadoc getterJavadoc, String singularName, String getterName) {
-        return Javadoc.builder(getterJavadoc)
-                .addParameter(singularName, getterJavadoc.returnDescription())
-                .returnDescription("updated builder instance")
-                .addTag("see", "#" + getterName + "()")
-                .build();
-    }
-
-    private static Javadoc setterJavadoc(Javadoc getterJavadoc, String name, String getterName) {
-        return Javadoc.builder(getterJavadoc)
-                .addParameter(name, getterJavadoc.returnDescription())
-                .returnDescription("updated builder instance")
-                .addTag("see", "#" + getterName + "()")
-                .build();
-    }
-
-    private static Javadoc updateWithDeprecation(Javadoc javadoc, OptionDeprecation optionDeprecation) {
-        if (optionDeprecation.alternative().isPresent()) {
-            return Javadoc.builder(javadoc)
-                    .deprecation("use {@link #" + optionDeprecation.alternative().get() + "()} instead")
-                    .build();
-        }
-        return Javadoc.builder(javadoc)
-                .deprecation(optionDeprecation.message())
-                .build();
     }
 
     private static String singularName(String optionName) {

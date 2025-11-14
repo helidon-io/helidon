@@ -27,9 +27,10 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -38,16 +39,15 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionInfoBlueprint")
-public interface OptionInfo extends Prototype.Api {
+public interface OptionInfo extends Prototype.Api, Annotated {
 
     /**
      * Create a new fluent API builder to customize configuration.
      *
      * @return a new builder
      */
-    static OptionInfo.Builder builder() {
-        return new OptionInfo.Builder();
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -56,62 +56,26 @@ public interface OptionInfo extends Prototype.Api {
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static OptionInfo.Builder builder(OptionInfo instance) {
+    static Builder builder(OptionInfo instance) {
         return OptionInfo.builder().from(instance);
     }
 
     /**
-     * Blueprint method if created from blueprint.
-     * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-     * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+     * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+     * Empty in case this is a "synthetic" option.
      *
-     * @return blueprint method, if present
+     * @return interface method, if present
      */
-    Optional<TypedElementInfo> blueprintMethod();
+    Optional<TypedElementInfo> interfaceMethod();
 
     /**
-     * Prototype getter definition.
-     * This method is always abstract (interface method).
+     * Type that declares this option.
+     * This may be the blueprint type, or an interface type.
+     * In case this is a "synthetic" option, there is not type to use.
      *
-     * @return prototype getter
+     * @return type that declares this option, if present
      */
-    TypedElementInfo getter();
-
-    /**
-     * Builder getter definition.
-     * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-     * defined for a non-optional option.
-     *
-     * @return builder getter
-     */
-    TypedElementInfo builderGetter();
-
-    /**
-     * Builder setter definition.
-     * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-     * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-     *
-     * @return builder setter
-     */
-    TypedElementInfo setter();
-
-    /**
-     * If an option method returns {@link java.util.Optional}, a setter will be created
-     * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-     * copy methods.
-     *
-     * @return setter with optional parameter, if present
-     */
-    Optional<TypedElementInfo> setterForOptional();
-
-    /**
-     * Getter that is generated on the implementation class.
-     * As the implementation class implements the prototype, this method is always annotated
-     * with {@link java.lang.Override}.
-     *
-     * @return implementation getter
-     */
-    TypedElementInfo implGetter();
+    Optional<TypeInfo> declaringType();
 
     /**
      * Option name.
@@ -119,6 +83,20 @@ public interface OptionInfo extends Prototype.Api {
      * @return name of this option
      */
     String name();
+
+    /**
+     * Name of the getter methods.
+     *
+     * @return getter method name
+     */
+    String getterName();
+
+    /**
+     * Name of the setter method(s).
+     *
+     * @return setter method name
+     */
+    String setterName();
 
     /**
      * The return type of the blueprint method, or the type expected in getter of the option.
@@ -135,15 +113,15 @@ public interface OptionInfo extends Prototype.Api {
     Optional<TypeName> decorator();
 
     /**
-     * Whether to include this option in generated {@link java.lang.Object#toString()} method
+     * Whether to include this option in generated {@link Object#toString()} method
      *
      * @return whether to include in the {@code toString} method
      */
     boolean includeInToString();
 
     /**
-     * Whether to include this option in generated {@link java.lang.Object#equals(Object)}
-     * and {@link java.lang.Object#hashCode()} methods.
+     * Whether to include this option in generated {@link Object#equals(Object)}
+     * and {@link Object#hashCode()} methods.
      *
      * @return whether to include in the {@code equals} and {@code hashCode} methods
      */
@@ -182,6 +160,14 @@ public interface OptionInfo extends Prototype.Api {
      * @return whether the option is required
      */
     boolean required();
+
+    /**
+     * Set to {@code true} if this option is only available on the builder.
+     * In such a case the prototype and implementation will not have this option.
+     *
+     * @return builder option only
+     */
+    boolean builderOptionOnly();
 
     /**
      * List of qualifiers for this option.
@@ -248,22 +234,26 @@ public interface OptionInfo extends Prototype.Api {
     Optional<OptionBuilder> builderInfo();
 
     /**
+     * Description of this option, used in Javadoc as the main text if defined.
      *
+     * @return description, if present
      */
-    List<Annotation> annotations();
+    Optional<String> description();
 
     /**
+     * Parameter/return type description, used in Javadoc as the param/return description.
      *
+     * @return parameter description, if present
      */
-    List<Annotation> inheritedAnnotations();
+    Optional<String> paramDescription();
 
     /**
-     * Fluent API builder base for {@link OptionInfo}.
+     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionInfo}.
      *
      * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends OptionInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo>
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<OptionAllowedValue> allowedValues = new ArrayList<>();
@@ -271,6 +261,7 @@ public interface OptionInfo extends Prototype.Api {
         private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<Annotation> qualifiers = new ArrayList<>();
         private AccessModifier accessModifier = AccessModifier.PUBLIC;
+        private boolean builderOptionOnly;
         private boolean confidential = false;
         private boolean includeInEqualsAndHashCode = true;
         private boolean includeInToString = true;
@@ -287,13 +278,13 @@ public interface OptionInfo extends Prototype.Api {
         private OptionDeprecation deprecation;
         private OptionProvider provider;
         private OptionSingular singular;
+        private String description;
+        private String getterName;
         private String name;
-        private TypedElementInfo blueprintMethod;
-        private TypedElementInfo builderGetter;
-        private TypedElementInfo getter;
-        private TypedElementInfo implGetter;
-        private TypedElementInfo setter;
-        private TypedElementInfo setterForOptional;
+        private String paramDescription;
+        private String setterName;
+        private TypedElementInfo interfaceMethod;
+        private TypeInfo declaringType;
         private TypeName declaredType;
         private TypeName decorator;
 
@@ -310,13 +301,11 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          */
         public BUILDER from(OptionInfo prototype) {
-            blueprintMethod(prototype.blueprintMethod());
-            getter(prototype.getter());
-            builderGetter(prototype.builderGetter());
-            setter(prototype.setter());
-            setterForOptional(prototype.setterForOptional());
-            implGetter(prototype.implGetter());
+            interfaceMethod(prototype.interfaceMethod());
+            declaringType(prototype.declaringType());
             name(prototype.name());
+            getterName(prototype.getterName());
+            setterName(prototype.setterName());
             declaredType(prototype.declaredType());
             decorator(prototype.decorator());
             includeInToString(prototype.includeInToString());
@@ -325,12 +314,13 @@ public interface OptionInfo extends Prototype.Api {
             registryService(prototype.registryService());
             sameGeneric(prototype.sameGeneric());
             required(prototype.required());
-            if (!isQualifiersMutated) {
-                qualifiers.clear();
+            builderOptionOnly(prototype.builderOptionOnly());
+            if (!this.isQualifiersMutated) {
+                this.qualifiers.clear();
             }
             addQualifiers(prototype.qualifiers());
-            if (!isAllowedValuesMutated) {
-                allowedValues.clear();
+            if (!this.isAllowedValuesMutated) {
+                this.allowedValues.clear();
             }
             addAllowedValues(prototype.allowedValues());
             defaultValue(prototype.defaultValue());
@@ -340,12 +330,14 @@ public interface OptionInfo extends Prototype.Api {
             singular(prototype.singular());
             accessModifier(prototype.accessModifier());
             builderInfo(prototype.builderInfo());
-            if (!isAnnotationsMutated) {
-                annotations.clear();
+            description(prototype.description());
+            paramDescription(prototype.paramDescription());
+            if (!this.isAnnotationsMutated) {
+                this.annotations.clear();
             }
             addAnnotations(prototype.annotations());
-            if (!isInheritedAnnotationsMutated) {
-                inheritedAnnotations.clear();
+            if (!this.isInheritedAnnotationsMutated) {
+                this.inheritedAnnotations.clear();
             }
             addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
@@ -357,14 +349,12 @@ public interface OptionInfo extends Prototype.Api {
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(OptionInfo.BuilderBase<?, ?> builder) {
-            builder.blueprintMethod().ifPresent(this::blueprintMethod);
-            builder.getter().ifPresent(this::getter);
-            builder.builderGetter().ifPresent(this::builderGetter);
-            builder.setter().ifPresent(this::setter);
-            builder.setterForOptional().ifPresent(this::setterForOptional);
-            builder.implGetter().ifPresent(this::implGetter);
+        public BUILDER from(BuilderBase<?, ?> builder) {
+            builder.interfaceMethod().ifPresent(this::interfaceMethod);
+            builder.declaringType().ifPresent(this::declaringType);
             builder.name().ifPresent(this::name);
+            builder.getterName().ifPresent(this::getterName);
+            builder.setterName().ifPresent(this::setterName);
             builder.declaredType().ifPresent(this::declaredType);
             builder.decorator().ifPresent(this::decorator);
             includeInToString(builder.includeInToString());
@@ -373,21 +363,20 @@ public interface OptionInfo extends Prototype.Api {
             registryService(builder.registryService());
             sameGeneric(builder.sameGeneric());
             required(builder.required());
-            if (isQualifiersMutated) {
+            builderOptionOnly(builder.builderOptionOnly());
+            if (this.isQualifiersMutated) {
                 if (builder.isQualifiersMutated) {
                     addQualifiers(builder.qualifiers);
                 }
             } else {
-                qualifiers.clear();
-                addQualifiers(builder.qualifiers);
+                qualifiers(builder.qualifiers);
             }
-            if (isAllowedValuesMutated) {
+            if (this.isAllowedValuesMutated) {
                 if (builder.isAllowedValuesMutated) {
                     addAllowedValues(builder.allowedValues);
                 }
             } else {
-                allowedValues.clear();
-                addAllowedValues(builder.allowedValues);
+                allowedValues(builder.allowedValues);
             }
             builder.defaultValue().ifPresent(this::defaultValue);
             builder.configured().ifPresent(this::configured);
@@ -396,293 +385,135 @@ public interface OptionInfo extends Prototype.Api {
             builder.singular().ifPresent(this::singular);
             accessModifier(builder.accessModifier());
             builder.builderInfo().ifPresent(this::builderInfo);
-            if (isAnnotationsMutated) {
+            builder.description().ifPresent(this::description);
+            builder.paramDescription().ifPresent(this::paramDescription);
+            if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
                     addAnnotations(builder.annotations);
                 }
             } else {
-                annotations.clear();
-                addAnnotations(builder.annotations);
+                annotations(builder.annotations);
             }
-            if (isInheritedAnnotationsMutated) {
+            if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
                     addInheritedAnnotations(builder.inheritedAnnotations);
                 }
             } else {
-                inheritedAnnotations.clear();
-                addInheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations);
             }
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of interfaceMethod.
          *
          * @return updated builder instance
-         * @see #blueprintMethod()
+         * @see #interfaceMethod()
          */
-        public BUILDER clearBlueprintMethod() {
-            this.blueprintMethod = null;
+        public BUILDER clearInterfaceMethod() {
+            this.interfaceMethod = null;
             return self();
         }
 
         /**
-         * Blueprint method if created from blueprint.
-         * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-         * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+         * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+         * Empty in case this is a "synthetic" option.
          *
-         * @param blueprintMethod blueprint method, if present
+         * @param interfaceMethod interface method, if present
          * @return updated builder instance
-         * @see #blueprintMethod()
+         * @see #interfaceMethod()
          */
-        public BUILDER blueprintMethod(TypedElementInfo blueprintMethod) {
-            Objects.requireNonNull(blueprintMethod);
-            this.blueprintMethod = blueprintMethod;
+        public BUILDER interfaceMethod(TypedElementInfo interfaceMethod) {
+            Objects.requireNonNull(interfaceMethod);
+            this.interfaceMethod = interfaceMethod;
             return self();
         }
 
         /**
-         * Blueprint method if created from blueprint.
-         * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-         * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+         * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+         * Empty in case this is a "synthetic" option.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of interface method, if present
          * @return updated builder instance
-         * @see #blueprintMethod()
+         * @see #interfaceMethod()
          */
-        public BUILDER blueprintMethod(Consumer<TypedElementInfo.Builder> consumer) {
+        public BUILDER interfaceMethod(Consumer<TypedElementInfo.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
-            this.blueprintMethod(builder.build());
+            this.interfaceMethod(builder.build());
             return self();
         }
 
         /**
-         * Prototype getter definition.
-         * This method is always abstract (interface method).
+         * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+         * Empty in case this is a "synthetic" option.
          *
-         * @param getter prototype getter
+         * @param supplier supplier of interface method, if present
          * @return updated builder instance
-         * @see #getter()
+         * @see #interfaceMethod()
          */
-        public BUILDER getter(TypedElementInfo getter) {
-            Objects.requireNonNull(getter);
-            this.getter = getter;
-            return self();
-        }
-
-        /**
-         * Prototype getter definition.
-         * This method is always abstract (interface method).
-         *
-         * @param consumer consumer of builder
-         * @return updated builder instance
-         * @see #getter()
-         */
-        public BUILDER getter(Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.getter(builder.build());
-            return self();
-        }
-
-        /**
-         * Prototype getter definition.
-         * This method is always abstract (interface method).
-         *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
-         * @return updated builder instance
-         * @see #getter()
-         */
-        public BUILDER getter(Supplier<? extends TypedElementInfo> supplier) {
+        public BUILDER interfaceMethod(Supplier<? extends TypedElementInfo> supplier) {
             Objects.requireNonNull(supplier);
-            this.getter(supplier.get());
+            this.interfaceMethod(supplier.get());
             return self();
         }
 
         /**
-         * Builder getter definition.
-         * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-         * defined for a non-optional option.
+         * Clear existing value of declaringType.
          *
-         * @param builderGetter builder getter
          * @return updated builder instance
-         * @see #builderGetter()
+         * @see #declaringType()
          */
-        public BUILDER builderGetter(TypedElementInfo builderGetter) {
-            Objects.requireNonNull(builderGetter);
-            this.builderGetter = builderGetter;
+        public BUILDER clearDeclaringType() {
+            this.declaringType = null;
             return self();
         }
 
         /**
-         * Builder getter definition.
-         * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-         * defined for a non-optional option.
+         * Type that declares this option.
+         * This may be the blueprint type, or an interface type.
+         * In case this is a "synthetic" option, there is not type to use.
          *
-         * @param consumer consumer of builder
+         * @param declaringType type that declares this option, if present
          * @return updated builder instance
-         * @see #builderGetter()
+         * @see #declaringType()
          */
-        public BUILDER builderGetter(Consumer<TypedElementInfo.Builder> consumer) {
+        public BUILDER declaringType(TypeInfo declaringType) {
+            Objects.requireNonNull(declaringType);
+            this.declaringType = declaringType;
+            return self();
+        }
+
+        /**
+         * Type that declares this option.
+         * This may be the blueprint type, or an interface type.
+         * In case this is a "synthetic" option, there is not type to use.
+         *
+         * @param consumer consumer of builder of type that declares this option, if present
+         * @return updated builder instance
+         * @see #declaringType()
+         */
+        public BUILDER declaringType(Consumer<TypeInfo.Builder> consumer) {
             Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
+            var builder = TypeInfo.builder();
             consumer.accept(builder);
-            this.builderGetter(builder.build());
+            this.declaringType(builder.build());
             return self();
         }
 
         /**
-         * Builder getter definition.
-         * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-         * defined for a non-optional option.
+         * Type that declares this option.
+         * This may be the blueprint type, or an interface type.
+         * In case this is a "synthetic" option, there is not type to use.
          *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
+         * @param supplier supplier of type that declares this option, if present
          * @return updated builder instance
-         * @see #builderGetter()
+         * @see #declaringType()
          */
-        public BUILDER builderGetter(Supplier<? extends TypedElementInfo> supplier) {
+        public BUILDER declaringType(Supplier<? extends TypeInfo> supplier) {
             Objects.requireNonNull(supplier);
-            this.builderGetter(supplier.get());
-            return self();
-        }
-
-        /**
-         * Builder setter definition.
-         * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-         * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-         *
-         * @param setter builder setter
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(TypedElementInfo setter) {
-            Objects.requireNonNull(setter);
-            this.setter = setter;
-            return self();
-        }
-
-        /**
-         * Builder setter definition.
-         * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-         * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-         *
-         * @param consumer consumer of builder
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.setter(builder.build());
-            return self();
-        }
-
-        /**
-         * Builder setter definition.
-         * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-         * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-         *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(Supplier<? extends TypedElementInfo> supplier) {
-            Objects.requireNonNull(supplier);
-            this.setter(supplier.get());
-            return self();
-        }
-
-        /**
-         * Clear existing value of this property.
-         *
-         * @return updated builder instance
-         * @see #setterForOptional()
-         */
-        public BUILDER clearSetterForOptional() {
-            this.setterForOptional = null;
-            return self();
-        }
-
-        /**
-         * If an option method returns {@link java.util.Optional}, a setter will be created
-         * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-         * copy methods.
-         *
-         * @param setterForOptional setter with optional parameter, if present
-         * @return updated builder instance
-         * @see #setterForOptional()
-         */
-        public BUILDER setterForOptional(TypedElementInfo setterForOptional) {
-            Objects.requireNonNull(setterForOptional);
-            this.setterForOptional = setterForOptional;
-            return self();
-        }
-
-        /**
-         * If an option method returns {@link java.util.Optional}, a setter will be created
-         * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-         * copy methods.
-         *
-         * @param consumer consumer of builder
-         * @return updated builder instance
-         * @see #setterForOptional()
-         */
-        public BUILDER setterForOptional(Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.setterForOptional(builder.build());
-            return self();
-        }
-
-        /**
-         * Getter that is generated on the implementation class.
-         * As the implementation class implements the prototype, this method is always annotated
-         * with {@link java.lang.Override}.
-         *
-         * @param implGetter implementation getter
-         * @return updated builder instance
-         * @see #implGetter()
-         */
-        public BUILDER implGetter(TypedElementInfo implGetter) {
-            Objects.requireNonNull(implGetter);
-            this.implGetter = implGetter;
-            return self();
-        }
-
-        /**
-         * Getter that is generated on the implementation class.
-         * As the implementation class implements the prototype, this method is always annotated
-         * with {@link java.lang.Override}.
-         *
-         * @param consumer consumer of builder
-         * @return updated builder instance
-         * @see #implGetter()
-         */
-        public BUILDER implGetter(Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.implGetter(builder.build());
-            return self();
-        }
-
-        /**
-         * Getter that is generated on the implementation class.
-         * As the implementation class implements the prototype, this method is always annotated
-         * with {@link java.lang.Override}.
-         *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
-         * @return updated builder instance
-         * @see #implGetter()
-         */
-        public BUILDER implGetter(Supplier<? extends TypedElementInfo> supplier) {
-            Objects.requireNonNull(supplier);
-            this.implGetter(supplier.get());
+            this.declaringType(supplier.get());
             return self();
         }
 
@@ -696,6 +527,32 @@ public interface OptionInfo extends Prototype.Api {
         public BUILDER name(String name) {
             Objects.requireNonNull(name);
             this.name = name;
+            return self();
+        }
+
+        /**
+         * Name of the getter methods.
+         *
+         * @param getterName getter method name
+         * @return updated builder instance
+         * @see #getterName()
+         */
+        public BUILDER getterName(String getterName) {
+            Objects.requireNonNull(getterName);
+            this.getterName = getterName;
+            return self();
+        }
+
+        /**
+         * Name of the setter method(s).
+         *
+         * @param setterName setter method name
+         * @return updated builder instance
+         * @see #setterName()
+         */
+        public BUILDER setterName(String setterName) {
+            Objects.requireNonNull(setterName);
+            this.setterName = setterName;
             return self();
         }
 
@@ -715,7 +572,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * The return type of the blueprint method, or the type expected in getter of the option.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of declared type
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -730,7 +587,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * The return type of the blueprint method, or the type expected in getter of the option.
          *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
+         * @param supplier supplier of declared type
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -741,7 +598,7 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of decorator.
          *
          * @return updated builder instance
          * @see #decorator()
@@ -767,7 +624,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Option decorator type.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of type of the option decorator, if present
          * @return updated builder instance
          * @see #decorator()
          */
@@ -780,7 +637,20 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Whether to include this option in generated {@link java.lang.Object#toString()} method
+         * Option decorator type.
+         *
+         * @param supplier supplier of type of the option decorator, if present
+         * @return updated builder instance
+         * @see #decorator()
+         */
+        public BUILDER decorator(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.decorator(supplier.get());
+            return self();
+        }
+
+        /**
+         * Whether to include this option in generated {@link Object#toString()} method
          *
          * @param includeInToString whether to include in the {@code toString} method
          * @return updated builder instance
@@ -792,8 +662,8 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Whether to include this option in generated {@link java.lang.Object#equals(Object)}
-         * and {@link java.lang.Object#hashCode()} methods.
+         * Whether to include this option in generated {@link Object#equals(Object)}
+         * and {@link Object#hashCode()} methods.
          *
          * @param includeInEqualsAndHashCode whether to include in the {@code equals} and {@code hashCode} methods
          * @return updated builder instance
@@ -859,9 +729,35 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * Set to {@code true} if this option is only available on the builder.
+         * In such a case the prototype and implementation will not have this option.
+         *
+         * @param builderOptionOnly builder option only
+         * @return updated builder instance
+         * @see #builderOptionOnly()
+         */
+        public BUILDER builderOptionOnly(boolean builderOptionOnly) {
+            this.builderOptionOnly = builderOptionOnly;
+            return self();
+        }
+
+        /**
+         * Clear all qualifiers.
+         *
+         * @return updated builder instance
+         * @see #qualifiers()
+         */
+        public BUILDER clearQualifiers() {
+            this.isQualifiersMutated = true;
+            this.qualifiers.clear();
+            return self();
+        }
+
+        /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
+         *                   instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -876,7 +772,8 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
+         *                   instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -890,7 +787,8 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifier service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifier add single service registry qualifiers defined on this option (to be used when getting a service
+         *                  registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -904,7 +802,8 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of qualifiers for this option.
          *
-         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a
+         *                 service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -912,7 +811,19 @@ public interface OptionInfo extends Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.qualifiers.add(builder.build());
+            this.addQualifier(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all allowedValues.
+         *
+         * @return updated builder instance
+         * @see #allowedValues()
+         */
+        public BUILDER clearAllowedValues() {
+            this.isAllowedValuesMutated = true;
+            this.allowedValues.clear();
             return self();
         }
 
@@ -948,7 +859,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * List of allowed values for this option.
          *
-         * @param allowedValue allowed values
+         * @param allowedValue add single allowed values
          * @return updated builder instance
          * @see #allowedValues()
          */
@@ -970,12 +881,12 @@ public interface OptionInfo extends Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = OptionAllowedValue.builder();
             consumer.accept(builder);
-            this.allowedValues.add(builder.build());
+            this.addAllowedValue(builder.build());
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of defaultValue.
          *
          * @return updated builder instance
          * @see #defaultValue()
@@ -999,7 +910,7 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of configured.
          *
          * @return updated builder instance
          * @see #configured()
@@ -1025,7 +936,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Details about configurability of this option.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of configured setup if configured
          * @return updated builder instance
          * @see #configured()
          */
@@ -1038,7 +949,20 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Details about configurability of this option.
+         *
+         * @param supplier supplier of configured setup if configured
+         * @return updated builder instance
+         * @see #configured()
+         */
+        public BUILDER configured(Supplier<? extends OptionConfigured> supplier) {
+            Objects.requireNonNull(supplier);
+            this.configured(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of deprecation.
          *
          * @return updated builder instance
          * @see #deprecation()
@@ -1064,7 +988,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Deprecation details.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of deprecation details, if present
          * @return updated builder instance
          * @see #deprecation()
          */
@@ -1077,7 +1001,20 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Deprecation details.
+         *
+         * @param supplier supplier of deprecation details, if present
+         * @return updated builder instance
+         * @see #deprecation()
+         */
+        public BUILDER deprecation(Supplier<? extends OptionDeprecation> supplier) {
+            Objects.requireNonNull(supplier);
+            this.deprecation(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of provider.
          *
          * @return updated builder instance
          * @see #provider()
@@ -1103,7 +1040,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Provider details.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of provider details, if present
          * @return updated builder instance
          * @see #provider()
          */
@@ -1116,7 +1053,20 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Provider details.
+         *
+         * @param supplier supplier of provider details, if present
+         * @return updated builder instance
+         * @see #provider()
+         */
+        public BUILDER provider(Supplier<? extends OptionProvider> supplier) {
+            Objects.requireNonNull(supplier);
+            this.provider(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of singular.
          *
          * @return updated builder instance
          * @see #singular()
@@ -1142,7 +1092,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * Singular option details.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of singular setter name and related information, if present
          * @return updated builder instance
          * @see #singular()
          */
@@ -1151,6 +1101,19 @@ public interface OptionInfo extends Prototype.Api {
             var builder = OptionSingular.builder();
             consumer.accept(builder);
             this.singular(builder.build());
+            return self();
+        }
+
+        /**
+         * Singular option details.
+         *
+         * @param supplier supplier of singular setter name and related information, if present
+         * @return updated builder instance
+         * @see #singular()
+         */
+        public BUILDER singular(Supplier<? extends OptionSingular> supplier) {
+            Objects.requireNonNull(supplier);
+            this.singular(supplier.get());
             return self();
         }
 
@@ -1169,7 +1132,7 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of builderInfo.
          *
          * @return updated builder instance
          * @see #builderInfo()
@@ -1195,7 +1158,7 @@ public interface OptionInfo extends Prototype.Api {
         /**
          * If the option has a builder, return its information.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of builder information, if present
          * @return updated builder instance
          * @see #builderInfo()
          */
@@ -1208,9 +1171,82 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * If the option has a builder, return its information.
          *
+         * @param supplier supplier of builder information, if present
+         * @return updated builder instance
+         * @see #builderInfo()
+         */
+        public BUILDER builderInfo(Supplier<? extends OptionBuilder> supplier) {
+            Objects.requireNonNull(supplier);
+            this.builderInfo(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of description.
          *
-         * @param annotations
+         * @return updated builder instance
+         * @see #description()
+         */
+        public BUILDER clearDescription() {
+            this.description = null;
+            return self();
+        }
+
+        /**
+         * Description of this option, used in Javadoc as the main text if defined.
+         *
+         * @param description description, if present
+         * @return updated builder instance
+         * @see #description()
+         */
+        public BUILDER description(String description) {
+            Objects.requireNonNull(description);
+            this.description = description;
+            return self();
+        }
+
+        /**
+         * Clear existing value of paramDescription.
+         *
+         * @return updated builder instance
+         * @see #paramDescription()
+         */
+        public BUILDER clearParamDescription() {
+            this.paramDescription = null;
+            return self();
+        }
+
+        /**
+         * Parameter/return type description, used in Javadoc as the param/return description.
+         *
+         * @param paramDescription parameter description, if present
+         * @return updated builder instance
+         * @see #paramDescription()
+         */
+        public BUILDER paramDescription(String paramDescription) {
+            Objects.requireNonNull(paramDescription);
+            this.paramDescription = paramDescription;
+            return self();
+        }
+
+        /**
+         * Clear all annotations.
+         *
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER clearAnnotations() {
+            this.isAnnotationsMutated = true;
+            this.annotations.clear();
+            return self();
+        }
+
+        /**
+         * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
+         *
+         * @param annotations the annotations option
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1223,9 +1259,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
          *
-         *
-         * @param annotations
+         * @param annotations the annotations option
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1237,9 +1273,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
          *
-         *
-         * @param annotation
+         * @param annotation add single the annotations option
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1251,9 +1287,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
          *
-         *
-         * @param consumer consumer of builder for
+         * @param consumer consumer of builder for the annotations option
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1261,14 +1297,26 @@ public interface OptionInfo extends Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.annotations.add(builder.build());
+            this.addAnnotation(builder.build());
             return self();
         }
 
         /**
+         * Clear all inheritedAnnotations.
          *
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER clearInheritedAnnotations() {
+            this.isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
+            return self();
+        }
+
+        /**
+         * InheritedAnnotations option. Defined in {@link io.helidon.common.types.Annotated#inheritedAnnotations()}
          *
-         * @param inheritedAnnotations
+         * @param inheritedAnnotations the inheritedAnnotations option
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1281,9 +1329,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * InheritedAnnotations option. Defined in {@link io.helidon.common.types.Annotated#inheritedAnnotations()}
          *
-         *
-         * @param inheritedAnnotations
+         * @param inheritedAnnotations the inheritedAnnotations option
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1295,9 +1343,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * InheritedAnnotations option. Defined in {@link io.helidon.common.types.Annotated#inheritedAnnotations()}
          *
-         *
-         * @param inheritedAnnotation
+         * @param inheritedAnnotation add single the inheritedAnnotations option
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1309,9 +1357,9 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * InheritedAnnotations option. Defined in {@link io.helidon.common.types.Annotated#inheritedAnnotations()}
          *
-         *
-         * @param consumer consumer of builder for
+         * @param consumer consumer of builder for the inheritedAnnotations option
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1319,73 +1367,29 @@ public interface OptionInfo extends Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.inheritedAnnotations.add(builder.build());
+            this.addInheritedAnnotation(builder.build());
             return self();
         }
 
         /**
-         * Blueprint method if created from blueprint.
-         * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-         * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+         * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+         * Empty in case this is a "synthetic" option.
          *
-         * @return blueprint method, if present
+         * @return interface method, if present
          */
-        public Optional<TypedElementInfo> blueprintMethod() {
-            return Optional.ofNullable(blueprintMethod);
+        public Optional<TypedElementInfo> interfaceMethod() {
+            return Optional.ofNullable(interfaceMethod);
         }
 
         /**
-         * Prototype getter definition.
-         * This method is always abstract (interface method).
+         * Type that declares this option.
+         * This may be the blueprint type, or an interface type.
+         * In case this is a "synthetic" option, there is not type to use.
          *
-         * @return prototype getter
+         * @return type that declares this option, if present
          */
-        public Optional<TypedElementInfo> getter() {
-            return Optional.ofNullable(getter);
-        }
-
-        /**
-         * Builder getter definition.
-         * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-         * defined for a non-optional option.
-         *
-         * @return builder getter
-         */
-        public Optional<TypedElementInfo> builderGetter() {
-            return Optional.ofNullable(builderGetter);
-        }
-
-        /**
-         * Builder setter definition.
-         * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-         * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-         *
-         * @return builder setter
-         */
-        public Optional<TypedElementInfo> setter() {
-            return Optional.ofNullable(setter);
-        }
-
-        /**
-         * If an option method returns {@link java.util.Optional}, a setter will be created
-         * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-         * copy methods.
-         *
-         * @return setter with optional parameter, if present
-         */
-        public Optional<TypedElementInfo> setterForOptional() {
-            return Optional.ofNullable(setterForOptional);
-        }
-
-        /**
-         * Getter that is generated on the implementation class.
-         * As the implementation class implements the prototype, this method is always annotated
-         * with {@link java.lang.Override}.
-         *
-         * @return implementation getter
-         */
-        public Optional<TypedElementInfo> implGetter() {
-            return Optional.ofNullable(implGetter);
+        public Optional<TypeInfo> declaringType() {
+            return Optional.ofNullable(declaringType);
         }
 
         /**
@@ -1395,6 +1399,24 @@ public interface OptionInfo extends Prototype.Api {
          */
         public Optional<String> name() {
             return Optional.ofNullable(name);
+        }
+
+        /**
+         * Name of the getter methods.
+         *
+         * @return getter method name
+         */
+        public Optional<String> getterName() {
+            return Optional.ofNullable(getterName);
+        }
+
+        /**
+         * Name of the setter method(s).
+         *
+         * @return setter method name
+         */
+        public Optional<String> setterName() {
+            return Optional.ofNullable(setterName);
         }
 
         /**
@@ -1416,7 +1438,7 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Whether to include this option in generated {@link java.lang.Object#toString()} method
+         * Whether to include this option in generated {@link Object#toString()} method
          *
          * @return whether to include in the {@code toString} method
          */
@@ -1425,8 +1447,8 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Whether to include this option in generated {@link java.lang.Object#equals(Object)}
-         * and {@link java.lang.Object#hashCode()} methods.
+         * Whether to include this option in generated {@link Object#equals(Object)}
+         * and {@link Object#hashCode()} methods.
          *
          * @return whether to include in the {@code equals} and {@code hashCode} methods
          */
@@ -1474,6 +1496,16 @@ public interface OptionInfo extends Prototype.Api {
          */
         public boolean required() {
             return required;
+        }
+
+        /**
+         * Set to {@code true} if this option is only available on the builder.
+         * In such a case the prototype and implementation will not have this option.
+         *
+         * @return builder option only
+         */
+        public boolean builderOptionOnly() {
+            return builderOptionOnly;
         }
 
         /**
@@ -1559,14 +1591,36 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
+         * Description of this option, used in Javadoc as the main text if defined.
          *
+         * @return description, if present
+         */
+        public Optional<String> description() {
+            return Optional.ofNullable(description);
+        }
+
+        /**
+         * Parameter/return type description, used in Javadoc as the param/return description.
+         *
+         * @return parameter description, if present
+         */
+        public Optional<String> paramDescription() {
+            return Optional.ofNullable(paramDescription);
+        }
+
+        /**
+         * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
+         *
+         * @return the annotations option
          */
         public List<Annotation> annotations() {
             return annotations;
         }
 
         /**
+         * InheritedAnnotations option. Defined in {@link io.helidon.common.types.Annotated#inheritedAnnotations()}
          *
+         * @return the inheritedAnnotations option
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;
@@ -1575,13 +1629,11 @@ public interface OptionInfo extends Prototype.Api {
         @Override
         public String toString() {
             return "OptionInfoBuilder{"
-                    + "blueprintMethod=" + blueprintMethod + ","
-                    + "getter=" + getter + ","
-                    + "builderGetter=" + builderGetter + ","
-                    + "setter=" + setter + ","
-                    + "setterForOptional=" + setterForOptional + ","
-                    + "implGetter=" + implGetter + ","
+                    + "interfaceMethod=" + interfaceMethod + ","
+                    + "declaringType=" + declaringType + ","
                     + "name=" + name + ","
+                    + "getterName=" + getterName + ","
+                    + "setterName=" + setterName + ","
                     + "declaredType=" + declaredType + ","
                     + "decorator=" + decorator + ","
                     + "includeInToString=" + includeInToString + ","
@@ -1590,6 +1642,7 @@ public interface OptionInfo extends Prototype.Api {
                     + "registryService=" + registryService + ","
                     + "sameGeneric=" + sameGeneric + ","
                     + "required=" + required + ","
+                    + "builderOptionOnly=" + builderOptionOnly + ","
                     + "qualifiers=" + qualifiers + ","
                     + "allowedValues=" + allowedValues + ","
                     + "defaultValue=" + defaultValue + ","
@@ -1599,6 +1652,8 @@ public interface OptionInfo extends Prototype.Api {
                     + "singular=" + singular + ","
                     + "accessModifier=" + accessModifier + ","
                     + "builderInfo=" + builderInfo + ","
+                    + "description=" + description + ","
+                    + "paramDescription=" + paramDescription + ","
                     + "annotations=" + annotations + ","
                     + "inheritedAnnotations=" + inheritedAnnotations
                     + "}";
@@ -1615,20 +1670,14 @@ public interface OptionInfo extends Prototype.Api {
          */
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
-            if (getter == null) {
-                collector.fatal(getClass(), "Property \"getter\" must not be null, but not set");
-            }
-            if (builderGetter == null) {
-                collector.fatal(getClass(), "Property \"builderGetter\" must not be null, but not set");
-            }
-            if (setter == null) {
-                collector.fatal(getClass(), "Property \"setter\" must not be null, but not set");
-            }
-            if (implGetter == null) {
-                collector.fatal(getClass(), "Property \"implGetter\" must not be null, but not set");
-            }
             if (name == null) {
                 collector.fatal(getClass(), "Property \"name\" must not be null, but not set");
+            }
+            if (getterName == null) {
+                collector.fatal(getClass(), "Property \"getterName\" must not be null, but not set");
+            }
+            if (setterName == null) {
+                collector.fatal(getClass(), "Property \"setterName\" must not be null, but not set");
             }
             if (declaredType == null) {
                 collector.fatal(getClass(), "Property \"declaredType\" must not be null, but not set");
@@ -1637,32 +1686,33 @@ public interface OptionInfo extends Prototype.Api {
         }
 
         /**
-         * Blueprint method if created from blueprint.
-         * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-         * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+         * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+         * Empty in case this is a "synthetic" option.
          *
-         * @param blueprintMethod blueprint method, if present
+         * @param interfaceMethod interface method, if present
          * @return updated builder instance
-         * @see #blueprintMethod()
+         * @see #interfaceMethod()
          */
-        BUILDER blueprintMethod(Optional<? extends TypedElementInfo> blueprintMethod) {
-            Objects.requireNonNull(blueprintMethod);
-            this.blueprintMethod = blueprintMethod.map(io.helidon.common.types.TypedElementInfo.class::cast).orElse(this.blueprintMethod);
+        @SuppressWarnings("unchecked")
+        BUILDER interfaceMethod(Optional<? extends TypedElementInfo> interfaceMethod) {
+            Objects.requireNonNull(interfaceMethod);
+            this.interfaceMethod = interfaceMethod.map(TypedElementInfo.class::cast).orElse(this.interfaceMethod);
             return self();
         }
 
         /**
-         * If an option method returns {@link java.util.Optional}, a setter will be created
-         * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-         * copy methods.
+         * Type that declares this option.
+         * This may be the blueprint type, or an interface type.
+         * In case this is a "synthetic" option, there is not type to use.
          *
-         * @param setterForOptional setter with optional parameter, if present
+         * @param declaringType type that declares this option, if present
          * @return updated builder instance
-         * @see #setterForOptional()
+         * @see #declaringType()
          */
-        BUILDER setterForOptional(Optional<? extends TypedElementInfo> setterForOptional) {
-            Objects.requireNonNull(setterForOptional);
-            this.setterForOptional = setterForOptional.map(io.helidon.common.types.TypedElementInfo.class::cast).orElse(this.setterForOptional);
+        @SuppressWarnings("unchecked")
+        BUILDER declaringType(Optional<? extends TypeInfo> declaringType) {
+            Objects.requireNonNull(declaringType);
+            this.declaringType = declaringType.map(TypeInfo.class::cast).orElse(this.declaringType);
             return self();
         }
 
@@ -1673,9 +1723,10 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #decorator()
          */
+        @SuppressWarnings("unchecked")
         BUILDER decorator(Optional<? extends TypeName> decorator) {
             Objects.requireNonNull(decorator);
-            this.decorator = decorator.map(io.helidon.common.types.TypeName.class::cast).orElse(this.decorator);
+            this.decorator = decorator.map(TypeName.class::cast).orElse(this.decorator);
             return self();
         }
 
@@ -1689,7 +1740,7 @@ public interface OptionInfo extends Prototype.Api {
         @SuppressWarnings("unchecked")
         BUILDER defaultValue(Optional<Consumer<ContentBuilder<?>>> defaultValue) {
             Objects.requireNonNull(defaultValue);
-            this.defaultValue = defaultValue.map(java.util.function.Consumer.class::cast).orElse(this.defaultValue);
+            this.defaultValue = defaultValue.map(Consumer.class::cast).orElse(this.defaultValue);
             return self();
         }
 
@@ -1700,6 +1751,7 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #configured()
          */
+        @SuppressWarnings("unchecked")
         BUILDER configured(Optional<? extends OptionConfigured> configured) {
             Objects.requireNonNull(configured);
             this.configured = configured.map(OptionConfigured.class::cast).orElse(this.configured);
@@ -1713,6 +1765,7 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #deprecation()
          */
+        @SuppressWarnings("unchecked")
         BUILDER deprecation(Optional<? extends OptionDeprecation> deprecation) {
             Objects.requireNonNull(deprecation);
             this.deprecation = deprecation.map(OptionDeprecation.class::cast).orElse(this.deprecation);
@@ -1726,6 +1779,7 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #provider()
          */
+        @SuppressWarnings("unchecked")
         BUILDER provider(Optional<? extends OptionProvider> provider) {
             Objects.requireNonNull(provider);
             this.provider = provider.map(OptionProvider.class::cast).orElse(this.provider);
@@ -1739,6 +1793,7 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #singular()
          */
+        @SuppressWarnings("unchecked")
         BUILDER singular(Optional<? extends OptionSingular> singular) {
             Objects.requireNonNull(singular);
             this.singular = singular.map(OptionSingular.class::cast).orElse(this.singular);
@@ -1752,9 +1807,36 @@ public interface OptionInfo extends Prototype.Api {
          * @return updated builder instance
          * @see #builderInfo()
          */
+        @SuppressWarnings("unchecked")
         BUILDER builderInfo(Optional<? extends OptionBuilder> builderInfo) {
             Objects.requireNonNull(builderInfo);
             this.builderInfo = builderInfo.map(OptionBuilder.class::cast).orElse(this.builderInfo);
+            return self();
+        }
+
+        /**
+         * Description of this option, used in Javadoc as the main text if defined.
+         *
+         * @param description description, if present
+         * @return updated builder instance
+         * @see #description()
+         */
+        BUILDER description(Optional<String> description) {
+            Objects.requireNonNull(description);
+            this.description = description.orElse(this.description);
+            return self();
+        }
+
+        /**
+         * Parameter/return type description, used in Javadoc as the param/return description.
+         *
+         * @param paramDescription parameter description, if present
+         * @return updated builder instance
+         * @see #paramDescription()
+         */
+        BUILDER paramDescription(Optional<String> paramDescription) {
+            Objects.requireNonNull(paramDescription);
+            this.paramDescription = paramDescription.orElse(this.paramDescription);
             return self();
         }
 
@@ -1764,6 +1846,7 @@ public interface OptionInfo extends Prototype.Api {
         protected static class OptionInfoImpl implements OptionInfo {
 
             private final AccessModifier accessModifier;
+            private final boolean builderOptionOnly;
             private final boolean confidential;
             private final boolean includeInEqualsAndHashCode;
             private final boolean includeInToString;
@@ -1779,15 +1862,15 @@ public interface OptionInfo extends Prototype.Api {
             private final Optional<OptionDeprecation> deprecation;
             private final Optional<OptionProvider> provider;
             private final Optional<OptionSingular> singular;
+            private final Optional<TypeInfo> declaringType;
             private final Optional<TypeName> decorator;
-            private final Optional<TypedElementInfo> blueprintMethod;
-            private final Optional<TypedElementInfo> setterForOptional;
+            private final Optional<TypedElementInfo> interfaceMethod;
+            private final Optional<String> description;
+            private final Optional<String> paramDescription;
             private final Optional<Consumer<ContentBuilder<?>>> defaultValue;
+            private final String getterName;
             private final String name;
-            private final TypedElementInfo builderGetter;
-            private final TypedElementInfo getter;
-            private final TypedElementInfo implGetter;
-            private final TypedElementInfo setter;
+            private final String setterName;
             private final TypeName declaredType;
 
             /**
@@ -1795,14 +1878,12 @@ public interface OptionInfo extends Prototype.Api {
              *
              * @param builder extending builder base of this prototype
              */
-            protected OptionInfoImpl(OptionInfo.BuilderBase<?, ?> builder) {
-                this.blueprintMethod = builder.blueprintMethod().map(Function.identity());
-                this.getter = builder.getter().get();
-                this.builderGetter = builder.builderGetter().get();
-                this.setter = builder.setter().get();
-                this.setterForOptional = builder.setterForOptional().map(Function.identity());
-                this.implGetter = builder.implGetter().get();
+            protected OptionInfoImpl(BuilderBase<?, ?> builder) {
+                this.interfaceMethod = builder.interfaceMethod().map(Function.identity());
+                this.declaringType = builder.declaringType().map(Function.identity());
                 this.name = builder.name().get();
+                this.getterName = builder.getterName().get();
+                this.setterName = builder.setterName().get();
                 this.declaredType = builder.declaredType().get();
                 this.decorator = builder.decorator().map(Function.identity());
                 this.includeInToString = builder.includeInToString();
@@ -1811,6 +1892,7 @@ public interface OptionInfo extends Prototype.Api {
                 this.registryService = builder.registryService();
                 this.sameGeneric = builder.sameGeneric();
                 this.required = builder.required();
+                this.builderOptionOnly = builder.builderOptionOnly();
                 this.qualifiers = List.copyOf(builder.qualifiers());
                 this.allowedValues = List.copyOf(builder.allowedValues());
                 this.defaultValue = builder.defaultValue().map(Function.identity());
@@ -1820,43 +1902,35 @@ public interface OptionInfo extends Prototype.Api {
                 this.singular = builder.singular().map(Function.identity());
                 this.accessModifier = builder.accessModifier();
                 this.builderInfo = builder.builderInfo().map(Function.identity());
+                this.description = builder.description().map(Function.identity());
+                this.paramDescription = builder.paramDescription().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
 
             @Override
-            public Optional<TypedElementInfo> blueprintMethod() {
-                return blueprintMethod;
+            public Optional<TypedElementInfo> interfaceMethod() {
+                return interfaceMethod;
             }
 
             @Override
-            public TypedElementInfo getter() {
-                return getter;
-            }
-
-            @Override
-            public TypedElementInfo builderGetter() {
-                return builderGetter;
-            }
-
-            @Override
-            public TypedElementInfo setter() {
-                return setter;
-            }
-
-            @Override
-            public Optional<TypedElementInfo> setterForOptional() {
-                return setterForOptional;
-            }
-
-            @Override
-            public TypedElementInfo implGetter() {
-                return implGetter;
+            public Optional<TypeInfo> declaringType() {
+                return declaringType;
             }
 
             @Override
             public String name() {
                 return name;
+            }
+
+            @Override
+            public String getterName() {
+                return getterName;
+            }
+
+            @Override
+            public String setterName() {
+                return setterName;
             }
 
             @Override
@@ -1897,6 +1971,11 @@ public interface OptionInfo extends Prototype.Api {
             @Override
             public boolean required() {
                 return required;
+            }
+
+            @Override
+            public boolean builderOptionOnly() {
+                return builderOptionOnly;
             }
 
             @Override
@@ -1945,6 +2024,16 @@ public interface OptionInfo extends Prototype.Api {
             }
 
             @Override
+            public Optional<String> description() {
+                return description;
+            }
+
+            @Override
+            public Optional<String> paramDescription() {
+                return paramDescription;
+            }
+
+            @Override
             public List<Annotation> annotations() {
                 return annotations;
             }
@@ -1957,13 +2046,11 @@ public interface OptionInfo extends Prototype.Api {
             @Override
             public String toString() {
                 return "OptionInfo{"
-                        + "blueprintMethod=" + blueprintMethod + ","
-                        + "getter=" + getter + ","
-                        + "builderGetter=" + builderGetter + ","
-                        + "setter=" + setter + ","
-                        + "setterForOptional=" + setterForOptional + ","
-                        + "implGetter=" + implGetter + ","
+                        + "interfaceMethod=" + interfaceMethod + ","
+                        + "declaringType=" + declaringType + ","
                         + "name=" + name + ","
+                        + "getterName=" + getterName + ","
+                        + "setterName=" + setterName + ","
                         + "declaredType=" + declaredType + ","
                         + "decorator=" + decorator + ","
                         + "includeInToString=" + includeInToString + ","
@@ -1972,6 +2059,7 @@ public interface OptionInfo extends Prototype.Api {
                         + "registryService=" + registryService + ","
                         + "sameGeneric=" + sameGeneric + ","
                         + "required=" + required + ","
+                        + "builderOptionOnly=" + builderOptionOnly + ","
                         + "qualifiers=" + qualifiers + ","
                         + "allowedValues=" + allowedValues + ","
                         + "defaultValue=" + defaultValue + ","
@@ -1981,6 +2069,8 @@ public interface OptionInfo extends Prototype.Api {
                         + "singular=" + singular + ","
                         + "accessModifier=" + accessModifier + ","
                         + "builderInfo=" + builderInfo + ","
+                        + "description=" + description + ","
+                        + "paramDescription=" + paramDescription + ","
                         + "annotations=" + annotations + ","
                         + "inheritedAnnotations=" + inheritedAnnotations
                         + "}";
@@ -1994,37 +2084,64 @@ public interface OptionInfo extends Prototype.Api {
                 if (!(o instanceof OptionInfo other)) {
                     return false;
                 }
-                return Objects.equals(blueprintMethod, other.blueprintMethod())
-                    && Objects.equals(getter, other.getter())
-                    && Objects.equals(builderGetter, other.builderGetter())
-                    && Objects.equals(setter, other.setter())
-                    && Objects.equals(setterForOptional, other.setterForOptional())
-                    && Objects.equals(implGetter, other.implGetter())
-                    && Objects.equals(name, other.name())
-                    && Objects.equals(declaredType, other.declaredType())
-                    && Objects.equals(decorator, other.decorator())
-                    && includeInToString == other.includeInToString()
-                    && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
-                    && confidential == other.confidential()
-                    && registryService == other.registryService()
-                    && sameGeneric == other.sameGeneric()
-                    && required == other.required()
-                    && Objects.equals(qualifiers, other.qualifiers())
-                    && Objects.equals(allowedValues, other.allowedValues())
-                    && Objects.equals(defaultValue, other.defaultValue())
-                    && Objects.equals(configured, other.configured())
-                    && Objects.equals(deprecation, other.deprecation())
-                    && Objects.equals(provider, other.provider())
-                    && Objects.equals(singular, other.singular())
-                    && Objects.equals(accessModifier, other.accessModifier())
-                    && Objects.equals(builderInfo, other.builderInfo())
-                    && Objects.equals(annotations, other.annotations())
-                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                return Objects.equals(interfaceMethod, other.interfaceMethod())
+                        && Objects.equals(declaringType, other.declaringType())
+                        && Objects.equals(name, other.name())
+                        && Objects.equals(getterName, other.getterName())
+                        && Objects.equals(setterName, other.setterName())
+                        && Objects.equals(declaredType, other.declaredType())
+                        && Objects.equals(decorator, other.decorator())
+                        && includeInToString == other.includeInToString()
+                        && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
+                        && confidential == other.confidential()
+                        && registryService == other.registryService()
+                        && sameGeneric == other.sameGeneric()
+                        && required == other.required()
+                        && builderOptionOnly == other.builderOptionOnly()
+                        && Objects.equals(qualifiers, other.qualifiers())
+                        && Objects.equals(allowedValues, other.allowedValues())
+                        && Objects.equals(defaultValue, other.defaultValue())
+                        && Objects.equals(configured, other.configured())
+                        && Objects.equals(deprecation, other.deprecation())
+                        && Objects.equals(provider, other.provider())
+                        && Objects.equals(singular, other.singular())
+                        && Objects.equals(accessModifier, other.accessModifier())
+                        && Objects.equals(builderInfo, other.builderInfo())
+                        && Objects.equals(description, other.description())
+                        && Objects.equals(paramDescription, other.paramDescription())
+                        && Objects.equals(annotations, other.annotations())
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(blueprintMethod, getter, builderGetter, setter, setterForOptional, implGetter, name, declaredType, decorator, includeInToString, includeInEqualsAndHashCode, confidential, registryService, sameGeneric, required, qualifiers, allowedValues, defaultValue, configured, deprecation, provider, singular, accessModifier, builderInfo, annotations, inheritedAnnotations);
+                return Objects.hash(interfaceMethod,
+                                    declaringType,
+                                    name,
+                                    getterName,
+                                    setterName,
+                                    declaredType,
+                                    decorator,
+                                    includeInToString,
+                                    includeInEqualsAndHashCode,
+                                    confidential,
+                                    registryService,
+                                    sameGeneric,
+                                    required,
+                                    builderOptionOnly,
+                                    qualifiers,
+                                    allowedValues,
+                                    defaultValue,
+                                    configured,
+                                    deprecation,
+                                    provider,
+                                    singular,
+                                    accessModifier,
+                                    builderInfo,
+                                    description,
+                                    paramDescription,
+                                    annotations,
+                                    inheritedAnnotations);
             }
 
         }
@@ -2032,10 +2149,9 @@ public interface OptionInfo extends Prototype.Api {
     }
 
     /**
-     * Fluent API builder for {@link OptionInfo}.
+     * Fluent API builder for {@link io.helidon.builder.codegen.OptionInfo}.
      */
-    class Builder extends OptionInfo.BuilderBase<OptionInfo.Builder, OptionInfo>
-            implements io.helidon.common.Builder<OptionInfo.Builder, OptionInfo> {
+    class Builder extends BuilderBase<Builder, OptionInfo> implements io.helidon.common.Builder<Builder, OptionInfo> {
 
         private Builder() {
         }

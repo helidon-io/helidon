@@ -1,8 +1,11 @@
 package io.helidon.builder.codegen.spi;
 
 import java.util.List;
+import java.util.Optional;
 
+import io.helidon.builder.codegen.GeneratedMethod;
 import io.helidon.builder.codegen.OptionInfo;
+import io.helidon.builder.codegen.OptionMethodType;
 import io.helidon.builder.codegen.PrototypeInfo;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
@@ -94,4 +97,18 @@ public interface BuilderCodegenExtension {
      */
     default void updateImplementation(ClassModel.Builder classModel) {
     }
+
+    /**
+     * This allows modification to the methods generated for options by the default builder code generator.
+     * To add additional methods to any of the generated code, use
+     * {@link #prototypeInfo(io.helidon.builder.codegen.PrototypeInfo)}.
+     * <p>
+     * <strong>Important note:</strong> we may add new method types in minor versions of Helidon, please make sure
+     * this would not break your extension.
+     *
+     * @param method     method to modify, possibly remove, or return
+     * @param methodType type of the method being processed
+     * @return update generated method
+     */
+    Optional<GeneratedMethod> method(GeneratedMethod method, OptionMethodType methodType);
 }

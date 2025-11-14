@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
 
 /**
@@ -30,7 +29,6 @@ import io.helidon.common.types.AccessModifier;
  * @see #builder()
  * @see #create()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.PrototypeConfiguredBlueprint")
 public interface PrototypeConfigured extends Prototype.Api {
 
     /**
@@ -38,8 +36,8 @@ public interface PrototypeConfigured extends Prototype.Api {
      *
      * @return a new builder
      */
-    static PrototypeConfigured.Builder builder() {
-        return new PrototypeConfigured.Builder();
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -48,7 +46,7 @@ public interface PrototypeConfigured extends Prototype.Api {
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static PrototypeConfigured.Builder builder(PrototypeConfigured instance) {
+    static Builder builder(PrototypeConfigured instance) {
         return PrototypeConfigured.builder().from(instance);
     }
 
@@ -84,12 +82,13 @@ public interface PrototypeConfigured extends Prototype.Api {
     Optional<String> key();
 
     /**
-     * Fluent API builder base for {@link PrototypeConfigured}.
+     * Fluent API builder base for {@link io.helidon.builder.codegen.PrototypeConfigured}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends PrototypeConfigured.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeConfigured> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeConfigured>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private AccessModifier createAccessModifier = AccessModifier.PUBLIC;
         private boolean root = true;
@@ -120,7 +119,7 @@ public interface PrototypeConfigured extends Prototype.Api {
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(PrototypeConfigured.BuilderBase<?, ?> builder) {
+        public BUILDER from(BuilderBase<?, ?> builder) {
             createAccessModifier(builder.createAccessModifier());
             root(builder.root());
             builder.key().ifPresent(this::key);
@@ -154,7 +153,7 @@ public interface PrototypeConfigured extends Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of key.
          *
          * @return updated builder instance
          * @see #key()
@@ -235,7 +234,7 @@ public interface PrototypeConfigured extends Prototype.Api {
          */
         BUILDER key(Optional<String> key) {
             Objects.requireNonNull(key);
-            this.key = key.map(java.lang.String.class::cast).orElse(this.key);
+            this.key = key.orElse(this.key);
             return self();
         }
 
@@ -253,7 +252,7 @@ public interface PrototypeConfigured extends Prototype.Api {
              *
              * @param builder extending builder base of this prototype
              */
-            protected PrototypeConfiguredImpl(PrototypeConfigured.BuilderBase<?, ?> builder) {
+            protected PrototypeConfiguredImpl(BuilderBase<?, ?> builder) {
                 this.createAccessModifier = builder.createAccessModifier();
                 this.root = builder.root();
                 this.key = builder.key().map(Function.identity());
@@ -292,8 +291,8 @@ public interface PrototypeConfigured extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(createAccessModifier, other.createAccessModifier())
-                    && root == other.root()
-                    && Objects.equals(key, other.key());
+                        && root == other.root()
+                        && Objects.equals(key, other.key());
             }
 
             @Override
@@ -306,9 +305,10 @@ public interface PrototypeConfigured extends Prototype.Api {
     }
 
     /**
-     * Fluent API builder for {@link PrototypeConfigured}.
+     * Fluent API builder for {@link io.helidon.builder.codegen.PrototypeConfigured}.
      */
-    class Builder extends PrototypeConfigured.BuilderBase<PrototypeConfigured.Builder, PrototypeConfigured> implements io.helidon.common.Builder<PrototypeConfigured.Builder, PrototypeConfigured> {
+    class Builder extends BuilderBase<Builder, PrototypeConfigured>
+            implements io.helidon.common.Builder<Builder, PrototypeConfigured> {
 
         private Builder() {
         }

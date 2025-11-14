@@ -191,14 +191,14 @@ final class TypeContext {
                                                  TypeName typeName,
                                                  TypedElementInfo referencedMethod,
                                                  List<Annotation> annotations) {
-        return GeneratedBuilderMethod.create(typeName, referencedMethod, annotations);
+        return GeneratedMethods.createBuilderMethod(typeName, referencedMethod, annotations);
     }
 
     private static GeneratedMethod prototypeFactory(Errors.Collector collector,
                                                     TypeName typeName,
                                                     TypedElementInfo referencedMethod,
                                                     List<Annotation> annotations) {
-        return GeneratedFactoryMethod.create(typeName, referencedMethod, annotations);
+        return GeneratedMethods.createFactoryMethod(typeName, referencedMethod, annotations);
     }
 
     private static FactoryMethod factoryMethod(Errors.Collector collector,
@@ -222,9 +222,9 @@ final class TypeContext {
                                                    TypedElementInfo referencedMethod,
                                                    List<Annotation> annotations) {
 
-        return GeneratedPrototypeMethod.create(typeName,
-                                               referencedMethod,
-                                               annotations);
+        return GeneratedMethods.createPrototypeMethod(typeName,
+                                                      referencedMethod,
+                                                      annotations);
     }
 
     private static <T> List<? extends T> customMethods(TypeInfo customMethodsType,
@@ -307,10 +307,10 @@ final class TypeContext {
                                                  : "Code generated constant.")
                                     .build());
 
-                    return PrototypeConstantReference.create(customMethodsType.typeName(),
-                                                             fieldType,
-                                                             name,
-                                                             javadoc);
+                    return PrototypeConstants.create(customMethodsType.typeName(),
+                                                     fieldType,
+                                                     name,
+                                                     javadoc);
                 })
                 .toList();
     }

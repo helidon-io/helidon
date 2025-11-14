@@ -51,7 +51,6 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
-import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -101,8 +100,8 @@ class BuilderCodegen implements CodegenExtension {
 
     /**
      *
-     * @param classModel
-     * @param customMethods
+     * @param classModel     prototype class model builder
+     * @param customMethods  custom methods to code generate
      * @param implementation true for implementation, false for prototype
      */
     static void generateCustomPrototypeMethods(ClassBase.Builder<?, ?> classModel,
@@ -113,11 +112,11 @@ class BuilderCodegen implements CodegenExtension {
             // we can generate everything except for toString(), hashCode(), and equals(Object)
             if (onlyImplMethod(customMethod)) {
                 if (implementation) {
-                    generateCustomMethod(classModel, customMethod);
+                    Utils.addGeneratedMethod(classModel, customMethod);
                 }
             } else {
                 if (!implementation) {
-                    generateCustomMethod(classModel, customMethod);
+                    Utils.addGeneratedMethod(classModel, customMethod);
                 }
             }
         }
@@ -300,7 +299,7 @@ class BuilderCodegen implements CodegenExtension {
                 .type(customConstant.type())
                 .name(customConstant.name())
                 .javadoc(customConstant.javadoc())
-                .update(customConstant::accept));
+                .update(customConstant.content()::accept));
 
     }
 
@@ -308,12 +307,12 @@ class BuilderCodegen implements CodegenExtension {
                                               List<GeneratedMethod> customMethods) {
 
         for (GeneratedMethod customMethod : customMethods) {
-            generateCustomMethod(classModel, customMethod);
+            Utils.addGeneratedMethod(classModel, customMethod);
         }
     }
 
     private static boolean onlyImplMethod(GeneratedMethod customMethod) {
-        var method = customMethod.methodDefinition();
+        var method = customMethod.method();
         var methodName = method.elementName();
         List<TypedElementInfo> params = method.parameterArguments();
 
@@ -324,43 +323,6 @@ class BuilderCodegen implements CodegenExtension {
             return params.size() == 1 && params.getFirst().typeName().equals(TypeNames.OBJECT);
         }
         return false;
-    }
-
-    private static void generateCustomMethod(ClassBase.Builder<?, ?> classModel,
-                                             GeneratedMethod customMethod) {
-        TypedElementInfo element = customMethod.methodDefinition();
-
-        var doc = element.description().orElse("");
-        Javadoc javadoc = Javadoc.parse(doc);
-
-        classModel.addMethod(method -> method
-                .returnType(element.typeName())
-                .name(element.elementName())
-                .accessModifier(element.accessModifier())
-                .isStatic(element.elementModifiers().contains(Modifier.STATIC))
-                .isDefault(element.elementModifiers().contains(Modifier.DEFAULT))
-                .isFinal(element.elementModifiers().contains(Modifier.FINAL))
-                .isAbstract(element.elementModifiers().contains(Modifier.ABSTRACT))
-                .update(it -> element.parameterArguments().forEach(arg -> {
-                    it.addParameter(paramBuilder -> paramBuilder
-                            .name(arg.elementName())
-                            .type(arg.typeName())
-                            .update(argBuilder -> arg.annotations().forEach(argBuilder::addAnnotation))
-                    );
-                }))
-                .update(it -> {
-                    if (customMethod.override()) {
-                        it.addAnnotation(Annotations.OVERRIDE);
-                    }
-                })
-                .update(it -> element.annotations().forEach(it::addAnnotation))
-                .update(it -> {
-                    if (!(doc.isBlank() && customMethod.override())) {
-                        // only set blank javadoc if not overriding
-                        it.javadoc(javadoc);
-                    }
-                })
-                .update(customMethod::accept));
     }
 
     private static boolean noRequired(List<OptionHandler> options) {
@@ -405,7 +367,7 @@ class BuilderCodegen implements CodegenExtension {
         // find all extensions, as these may modify handling of our types
         List<BuilderCodegenExtension> extensions = findExtensions(tmpPrototypeInfo);
 
-        // an extension may modify the prototype info (i.e. to add custom metehods, annotations etc.
+        // an extension may modify the prototype info (i.e. to add custom annotations etc).
         for (BuilderCodegenExtension extension : extensions) {
             tmpPrototypeInfo = extension.prototypeInfo(tmpPrototypeInfo);
         }
@@ -429,6 +391,37 @@ class BuilderCodegen implements CodegenExtension {
         for (BuilderCodegenExtension extension : extensions) {
             newOptions = extension.options(newOptions);
         }
+
+        // now for each provider, add discoverServices builder option (this is required for our code to work)
+        List<OptionInfo> discoverServicesOptions = newOptions.stream()
+                .filter(it -> it.provider().isPresent() || it.registryService())
+                .map(it -> {
+                    boolean defaultValue = it.provider().get().discoverServices();
+
+                    String name = it.name() + "DiscoverServices";
+                    String setterName = it.setterName() + "DiscoverServices";
+                    String getterName = it.getterName() + "DiscoverServices";
+                    return OptionInfo.builder()
+                            .accessModifier(it.accessModifier())
+                            .description("Service discovery flag for {@link #" + it.getterName()
+                                                 + "()}. If set to {@code true}, services will be discovered from Java service "
+                                                 + "loader, or Helidon ServiceRegistry.")
+                            .paramDescription("whether to enabled automatic service discovery")
+                            .name(name)
+                            .setterName(setterName)
+                            .getterName(getterName)
+                            .builderOptionOnly(true)
+                            .declaredType(TypeNames.PRIMITIVE_BOOLEAN)
+                            .defaultValue(defaultConsumer -> defaultConsumer.addContent(String.valueOf(defaultValue)))
+                            .update(optionBuilder -> copyConfiguredForDiscoverServices(it, optionBuilder))
+                            .update(optionBuilder -> it.deprecation().ifPresent(optionBuilder::deprecation))
+                            .build();
+                })
+                .toList();
+
+        // ensure mutability
+        newOptions = new ArrayList<>(newOptions);
+        newOptions.addAll(discoverServicesOptions);
 
         /*
         We may have new options that override existing option's:
@@ -484,12 +477,23 @@ class BuilderCodegen implements CodegenExtension {
             }
         }
 
-        // associate each option with a type handler, for code generation (specifics for maps, sets etc.)
+        // now we prepare all methods that are related to options
         var optionHandlers = options.stream()
-                .map(it -> OptionHandler.create(prototypeInfo, it))
+                .map(it -> OptionHandler.create(extensions, prototypeInfo, it))
                 .toList();
 
         generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults, methodUpdate);
+    }
+
+    private void copyConfiguredForDiscoverServices(OptionInfo providerOption, OptionInfo.Builder optionBuilder) {
+        if (providerOption.configured().isEmpty()) {
+            return;
+        }
+        OptionConfigured configured = providerOption.configured().get();
+        optionBuilder.configured(cfg -> cfg
+                .merge(configured.merge())
+                .configKey(configured.configKey() + "-discover-services")
+        );
     }
 
     private boolean methodUpdate(OptionInfo newOption, OptionInfo existingOption) {
@@ -503,26 +507,14 @@ class BuilderCodegen implements CodegenExtension {
         if (newOption.configured().isPresent() && !existingOption.configured().equals(newOption.configured())) {
             return true;
         }
-        if (!newOption.getter().equals(existingOption.getter())) {
-            return true;
-        }
-        if (!newOption.setter().equals(existingOption.setter())) {
-            return true;
-        }
-        if (!newOption.implGetter().equals(existingOption.implGetter())) {
-            return true;
-        }
-        if (!newOption.setterForOptional().equals(existingOption.setterForOptional())) {
-            return true;
-        }
 
         return false;
     }
 
     private OptionInfo mergeOptions(List<OptionInfo> optionInfos) {
         for (OptionInfo optionInfo : optionInfos) {
-            if (optionInfo.blueprintMethod().isPresent()) {
-                var enclosing = optionInfo.blueprintMethod().get().enclosingType();
+            if (optionInfo.interfaceMethod().isPresent()) {
+                var enclosing = optionInfo.interfaceMethod().get().enclosingType();
                 if (enclosing.isPresent() && enclosing.get().className().endsWith("Blueprint")) {
                     // always prefer blueprint options
                     return optionInfo;
@@ -538,7 +530,7 @@ class BuilderCodegen implements CodegenExtension {
         boolean recordStyle = prototypeInfo.recordStyle();
         String first = null;
         for (OptionInfo optionInfo : optionInfos) {
-            String setterName = optionInfo.setter().elementName();
+            String setterName = optionInfo.setterName();
             if (first == null) {
                 first = setterName;
             }
@@ -641,7 +633,7 @@ class BuilderCodegen implements CodegenExtension {
         generateCustomPrototypeMethods(classModel, prototypeInfo.prototypeMethods(), false);
 
         // re-create all blueprint methods to have correct javadoc references
-        generatePrototypeMethods(classModel, prototypeInfo, blueprint.typeName(), options);
+        generatePrototypeMethods(classModel, options);
 
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
@@ -728,33 +720,13 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     private void generatePrototypeMethods(ClassModel.Builder classModel,
-                                          PrototypeInfo prototypeInfo,
-                                          TypeName blueprintType,
                                           List<OptionHandler> options) {
 
         for (OptionHandler optionHandler : options) {
-            OptionInfo option = optionHandler.option();
-            TypedElementInfo getter = option.getter();
+            optionHandler.typeHandler()
+                    .optionMethod(OptionMethodType.PROTOTYPE_GETTER)
+                    .ifPresent(it -> Utils.addGeneratedMethod(classModel, it));
 
-            classModel.addMethod(method -> {
-                method.name(getter.elementName())
-                        .returnType(getter.typeName())
-                        .update(it -> {
-                            if (option.blueprintMethod().isPresent() && !prototypeInfo.detachBlueprint()) {
-                                it.addAnnotation(Annotations.OVERRIDE);
-                            }
-                        })
-                        .update(it -> getter.description().ifPresent(it::description));
-
-                if (getter.elementModifiers().contains(Modifier.DEFAULT)) {
-                    method.isDefault(true)
-                            .addContent("return ")
-                            .addContent(blueprintType.classNameWithEnclosingNames())
-                            .addContent(".super.")
-                            .addContent(getter.elementName())
-                            .addContent("();");
-                }
-            });
         }
     }
 

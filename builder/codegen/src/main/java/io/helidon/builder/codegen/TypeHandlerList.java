@@ -16,14 +16,18 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.List;
 import java.util.Optional;
+
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 
 import static io.helidon.builder.codegen.Types.ARRAY_LIST;
 import static io.helidon.common.types.TypeNames.LIST;
 
 class TypeHandlerList extends TypeHandlerCollection {
-    TypeHandlerList(PrototypeInfo prototypeInfo, OptionInfo option) {
-        super(prototypeInfo,
+    TypeHandlerList(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(extensions,
+              prototypeInfo,
               option,
               LIST,
               ARRAY_LIST,

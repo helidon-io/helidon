@@ -1,9 +1,12 @@
 package io.helidon.builder.codegen;
 
 import java.util.List;
+import java.util.Optional;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.CodegenException;
-import io.helidon.codegen.classmodel.Field;
+import io.helidon.codegen.classmodel.ClassBase;
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
@@ -11,39 +14,21 @@ import io.helidon.common.types.TypeNames;
 
 interface TypeHandler {
 
-    static TypeHandler create(PrototypeInfo prototypeInfo, OptionInfo option) {
-        var declaredType = option.declaredType();
-
-        if (declaredType.isOptional()) {
-            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.OPTIONAL, 1);
-            return new TypeHandlerOptional(prototypeInfo, option);
-        }
-        if (declaredType.isSupplier()) {
-            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.SUPPLIER, 1);
-            return new TypeHandlerSupplier(prototypeInfo, option);
-        }
-        if (declaredType.isSet()) {
-            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.SET, 1);
-            return new TypeHandlerSet(prototypeInfo, option);
-        }
-        if (declaredType.isList()) {
-            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.LIST, 1);
-            return new TypeHandlerList(prototypeInfo, option);
-        }
-        if (declaredType.isMap()) {
-            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.MAP, 2);
-            return new TypeHandlerMap(prototypeInfo, option);
-        }
-        return new TypeHandlerBase(prototypeInfo, option, option.declaredType());
+    static TypeHandler create(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        TypeHandlerBasic handler = handler(extensions, prototypeInfo, option);
+        handler.prepareMethods();
+        return handler;
     }
+
+    Optional<GeneratedMethod> optionMethod(OptionMethodType type);
 
     /**
      * Create a field for the handled option.
      *
-     * @param isBuilder whether we are generating builder field ({@code true}), or implementation field ({@code false})
-     * @return a field builder to add to the correct inner class
+     * @param classBuilder builder of the inner class {@code BuilderBase} or of implementation class
+     * @param isBuilder    whether we are generating builder field ({@code true}), or implementation field ({@code false})
      */
-    Field.Builder field(boolean isBuilder);
+    void fields(ClassBase.Builder<?, ?> classBuilder, boolean isBuilder);
 
     /**
      * The type name we use for builder fields. For {@link java.util.Optional}, {@link java.util.Set} and {@link java.util.List},
@@ -57,23 +42,8 @@ interface TypeHandler {
      * Add builder base setters for this option.
      *
      * @param classBuilder builder of the inner class {@code BuilderBase}
-     * @param returnType   return type of the setter (i.e. {@code BUILDER})
      */
-    void setters(InnerClass.Builder classBuilder, TypeName returnType);
-
-    /**
-     * Generate body of the builder getter.
-     *
-     * @param method method builder
-     */
-    void builderGetterBody(Method.Builder method);
-
-    /**
-     * Return type of the builder getter.
-     *
-     * @return type of the builder getter
-     */
-    TypeName builderGetterType();
+    void setters(InnerClass.Builder classBuilder);
 
     /**
      * Generate from config section for this option.
@@ -91,13 +61,59 @@ interface TypeHandler {
      */
     boolean builderGetterOptional();
 
+    /**
+     * Generate assignment from an existing builder.
+     * <p>
+     * Builder parameter name is {@code builder}.
+     *
+     * @param contentBuilder content builder of the method
+     */
+    void fromBuilderAssignment(ContentBuilder<?> contentBuilder);
+
+    /**
+     * Generate assignment from an existing prototype instance.
+     * <p>
+     * Builder parameter name is {@code prototype}.
+     *
+     * @param contentBuilder content builder of the method
+     */
+    void fromPrototypeAssignment(ContentBuilder<?> contentBuilder);
+
+    private static TypeHandlerBasic handler(List<BuilderCodegenExtension> extensions,
+                                            PrototypeInfo prototypeInfo,
+                                            OptionInfo option) {
+        var declaredType = option.declaredType();
+
+        if (declaredType.isOptional()) {
+            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.OPTIONAL, 1);
+            return new TypeHandlerOptional(extensions, prototypeInfo, option);
+        }
+        if (declaredType.isSupplier()) {
+            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.SUPPLIER, 1);
+            return new TypeHandlerSupplier(extensions, prototypeInfo, option);
+        }
+        if (declaredType.isSet()) {
+            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.SET, 1);
+            return new TypeHandlerSet(extensions, prototypeInfo, option);
+        }
+        if (declaredType.isList()) {
+            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.LIST, 1);
+            return new TypeHandlerList(extensions, prototypeInfo, option);
+        }
+        if (declaredType.isMap()) {
+            checkTypeArgsSizeAndTypes(prototypeInfo, option, TypeNames.MAP, 2);
+            return new TypeHandlerMap(extensions, prototypeInfo, option);
+        }
+        return new TypeHandlerBasic(extensions, prototypeInfo, option, option.declaredType());
+    }
+
     private static void checkTypeArgsSizeAndTypes(PrototypeInfo prototypeInfo,
                                                   OptionInfo option,
                                                   TypeName declaredType,
                                                   int expectedTypeArgs) {
         Object originatingElement;
-        if (option.blueprintMethod().isPresent()) {
-            originatingElement = option.blueprintMethod().get().originatingElementValue();
+        if (option.interfaceMethod().isPresent()) {
+            originatingElement = option.interfaceMethod().get().originatingElementValue();
         } else {
             originatingElement = prototypeInfo.blueprint().originatingElementValue();
         }

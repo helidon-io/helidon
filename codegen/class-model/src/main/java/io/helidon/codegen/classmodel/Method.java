@@ -27,7 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Model of the method which should be created in the specific type.
@@ -410,10 +412,45 @@ public final class Method extends Executable {
             return this;
         }
 
+        /**
+         * Create all method metadata from the provided method information.
+         * This will populate annotations, return type, method name etc., except for the body.
+         *
+         * @param methodInfo method element information
+         * @return updated builder
+         */
+        public Builder from(TypedElementInfo methodInfo) {
+            name(methodInfo.elementName())
+                    .accessModifier(methodInfo.accessModifier())
+                    .returnType(methodInfo.typeName())
+                    .update(it -> methodInfo.annotations().forEach(it::addAnnotation))
+                    .isDefault(methodInfo.elementModifiers().contains(Modifier.DEFAULT))
+                    .isFinal(methodInfo.elementModifiers().contains(Modifier.FINAL))
+                    .isAbstract(methodInfo.elementModifiers().contains(Modifier.ABSTRACT))
+                    .isStatic(methodInfo.elementModifiers().contains(Modifier.STATIC))
+                    .update(it -> addGeneratedMethodParams(methodInfo.parameterArguments(), it));
+
+            methodInfo.description()
+                    .map(Javadoc::parse)
+                    .ifPresent(this::javadoc);
+
+            return this;
+        }
+
         Type returnType() {
             return type();
         }
 
+        private void addGeneratedMethodParams(List<TypedElementInfo> params, Method.Builder method) {
+            for (TypedElementInfo param : params) {
+                method.addParameter(parameter -> parameter
+                        .vararg(param.typeName().vararg())
+                        .name(param.elementName())
+                        .type(param.typeName())
+                        .update(it -> param.annotations().forEach(it::addAnnotation))
+                );
+            }
+        }
     }
 
 }

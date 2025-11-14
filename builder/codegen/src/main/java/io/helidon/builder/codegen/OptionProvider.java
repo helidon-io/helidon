@@ -30,7 +30,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
-public interface OptionProvider {
+public interface OptionProvider extends Prototype.Api {
 
     /**
      * Create a new fluent API builder to customize configuration.
@@ -68,10 +68,11 @@ public interface OptionProvider {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionProvider}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionProvider> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionProvider>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private boolean discoverServices;
         private TypeName providerType;
@@ -122,7 +123,7 @@ public interface OptionProvider {
         /**
          * Type of the provider to lookup.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of provider type
          * @return updated builder instance
          * @see #providerType()
          */
@@ -137,7 +138,7 @@ public interface OptionProvider {
         /**
          * Type of the provider to lookup.
          *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
+         * @param supplier supplier of provider type
          * @return updated builder instance
          * @see #providerType()
          */
@@ -247,7 +248,7 @@ public interface OptionProvider {
                     return false;
                 }
                 return Objects.equals(providerType, other.providerType())
-                    && discoverServices == other.discoverServices();
+                        && discoverServices == other.discoverServices();
             }
 
             @Override

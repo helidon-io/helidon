@@ -16,16 +16,20 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 
 import static io.helidon.builder.codegen.Types.LINKED_HASH_SET;
 import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerSet extends TypeHandlerCollection {
 
-    TypeHandlerSet(PrototypeInfo prototypeInfo, OptionInfo option) {
-        super(prototypeInfo,
+    TypeHandlerSet(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(extensions,
+              prototypeInfo,
               option,
               SET,
               LINKED_HASH_SET,

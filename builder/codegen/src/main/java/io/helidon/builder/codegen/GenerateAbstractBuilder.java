@@ -200,44 +200,7 @@ final class GenerateAbstractBuilder {
 
     private static void addCustomBuilderMethods(InnerClass.Builder builder, PrototypeInfo prototypeInfo) {
         for (GeneratedMethod builderMethod : prototypeInfo.builderMethods()) {
-            var methodInfo = builderMethod.methodDefinition();
-            Method.Builder method = Method.builder()
-                    .name(methodInfo.elementName())
-                    .returnType(TypeName.createFromGenericDeclaration("BUILDER"));
-
-            builderMethod.accept(method);
-
-            for (io.helidon.common.types.Annotation annotation : methodInfo.annotations()) {
-                method.addAnnotation(annotation);
-            }
-            int argSize = methodInfo.parameterArguments().size();
-
-            for (int i = 0; i < argSize; i++) {
-                TypedElementInfo argument = methodInfo.parameterArguments().get(i);
-
-                if (i == argSize - 1 && argument.typeName().array() && !argument.typeName().primitive()) {
-                    // last argument
-                    method.addParameter(param -> param.name(argument.elementName())
-                            .type(TypeName.builder(argument.typeName())
-                                          .array(false)
-                                          .build())
-                            .update(it -> argument.annotations().forEach(it::addAnnotation))
-                            .vararg(true));
-                } else {
-                    method.addParameter(param -> param.name(argument.elementName())
-                            .update(it -> argument.annotations().forEach(it::addAnnotation))
-                            .type(argument.typeName()));
-                }
-            }
-
-            for (TypeName typeParameter : methodInfo.typeParameters()) {
-                method.addGenericArgument(TypeArgument.create(typeParameter));
-            }
-
-            method.javadoc(methodInfo.description().map(Javadoc::parse)
-                                   .orElseGet(() -> Javadoc.parse("")));
-
-            builder.addMethod(method);
+            Utils.addGeneratedMethod(builder, builderMethod);
         }
     }
 
@@ -277,7 +240,7 @@ final class GenerateAbstractBuilder {
                 // for methods not named config, we consider this to be "just another" property
                 continue;
             }
-            optionHandler.typeHandler().setters(classBuilder, returnType);
+            optionHandler.typeHandler().setters(classBuilder);
         }
         // then getters
         /*
@@ -288,8 +251,8 @@ final class GenerateAbstractBuilder {
          */
         for (OptionHandler optionHandler : options) {
             var option = optionHandler.option();
-            TypedElementInfo getter = option.getter();
-            String getterName = getter.elementName();
+
+            String getterName = option.getterName();
             if ("config".equals(getterName) && option.configured().isPresent()) {
                 if (isConfigOption(option)) {
                     // handled elsewhere
@@ -299,7 +262,7 @@ final class GenerateAbstractBuilder {
                 throw new CodegenException("Configured property named \"config\" can only be of type "
                                                    + Types.CONFIG.declaredName() + ", but is: "
                                                    + option.declaredType().fqName(),
-                                           option.blueprintMethod().map(TypedElementInfo::originatingElementValue)
+                                           option.interfaceMethod().map(TypedElementInfo::originatingElementValue)
                                                    .orElse(option.declaredType()));
             }
             /*
@@ -307,17 +270,9 @@ final class GenerateAbstractBuilder {
               return host;
             }
             */
-            Method.Builder method = Method.builder()
-                    .accessModifier(getter.accessModifier())
-                    .name(getterName)
-                    .javadoc(Javadoc.parse(getter.description().orElse("")))
-                    .returnType(optionHandler.typeHandler().builderGetterType())
-                    .update(it -> getter.annotations().forEach(it::addAnnotation))
-                    .accessModifier(getter.accessModifier());
-
-            optionHandler.typeHandler().builderGetterBody(method);
-
-            classBuilder.addMethod(method);
+            optionHandler.typeHandler()
+                    .optionMethod(OptionMethodType.BUILDER_GETTER)
+                    .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         }
 
         if (prototypeInfo.configured().isPresent()) {
@@ -474,56 +429,8 @@ final class GenerateAbstractBuilder {
                 .ifPresent(it -> methodBuilder.addContentLine("super.from(prototype);"));
 
         for (OptionHandler optionHandler : options) {
-            OptionInfo option = optionHandler.option();
-
             TypeHandler typeHandler = optionHandler.typeHandler();
-            TypeName declaredType = option.declaredType();
-
-            if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                if (declaredType.isList() || declaredType.isSet()) {
-                    // A list/set might contain only default values. If it has not been updated, clear it of default values
-                    // before adding the values from the other builder.
-                    methodBuilder.addContentLine("if (!is" + capitalize(option.name()) + "Mutated) {")
-                            .addContentLine(option.name() + ".clear();")
-                            .addContentLine("}");
-                }
-                methodBuilder.addContent("add");
-                methodBuilder.addContent(capitalize(option.name()));
-                methodBuilder.addContent("(prototype.");
-                methodBuilder.addContent(option.getter().elementName());
-                methodBuilder.addContentLine("());");
-            } else {
-                /*
-                Special handling from config - we have to assign it to field, we cannot go through (config(Config))
-                */
-                if (isConfigOption(option)) {
-                    if (typeHandler.type().equals(COMMON_CONFIG)) {
-                        if (declaredType.isOptional()) {
-                            methodBuilder.addContent("this.config = prototype.config().map(")
-                                    .addContent(CONFIG)
-                                    .addContent("::config).orElse(null)");
-                        } else {
-                            methodBuilder.addContent("this.config = ")
-                                    .addContent(CONFIG)
-                                    .addContent(".config(prototype.config())");
-                        }
-                    } else {
-                        methodBuilder.addContent("this.config = prototype.config()");
-                        if (declaredType.isOptional()) {
-                            methodBuilder.addContent(".orElse(null)");
-                        }
-                    }
-                    methodBuilder.addContentLine(";");
-                } else {
-                    methodBuilder.addContent(option.setter().elementName());
-                    methodBuilder.addContent("(prototype.");
-                    methodBuilder.addContent(option.getter().elementName());
-                    methodBuilder.addContentLine("());");
-                }
-            }
-            if (option.provider().isPresent() || option.registryService()) {
-                methodBuilder.addContentLine(option.name() + "DiscoverServices = false;");
-            }
+            typeHandler.fromPrototypeAssignment(methodBuilder);
         }
         methodBuilder.addContentLine("return self();");
         builder.addMethod(methodBuilder);
@@ -553,61 +460,8 @@ final class GenerateAbstractBuilder {
                 .ifPresent(it -> methodBuilder.addContentLine("super.from(builder);"));
 
         for (OptionHandler optionHandler : options) {
-            OptionInfo option = optionHandler.option();
             TypeHandler typeHandler = optionHandler.typeHandler();
-
-            String optionName = option.name();
-            TypeName declaredType = option.declaredType();
-            String setterName = option.setter().elementName();
-            String getterName = option.getter().elementName();
-
-            if (typeHandler.builderGetterOptional()) {
-                // property that is either mandatory or internally nullable
-                methodBuilder.addContentLine("builder." + getterName + "().ifPresent(this::" + setterName + ");");
-            } else {
-                if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                    if (declaredType.isList()) {
-                        /*
-                        If this builder's list HAS been mutated, add the other builder's values ONLY if they are not defaults.
-
-                        If this builder's list HAS NOT been mutated, clear it (to remove defaults) and add the other builder's
-                        values regardless of whether they are defaulted or explicitly set.
-
-                        Generated code:
-
-                        if (isXxxMutated) {
-                            if (builder.isXxxMutated) {
-                                addXxx(builder.xxx());
-                            }
-                        } else {
-                            xxx.clear();
-                            addXxx(builder.xxx());
-                        }
-                        */
-                        String isMutatedProperty = TypeHandlerCollection.isMutatedField(optionName);
-                        methodBuilder.addContentLine("if (" + isMutatedProperty + ") {")
-                                .addContentLine("if (builder." + isMutatedProperty + ") {")
-                                .addContentLine("add" + capitalize(optionName) + "(builder." + optionName + ");")
-                                .addContentLine("}")
-                                .decreaseContentPadding() // Ideally would not be needed but makes for nicer generated code.
-                                .addContentLine("} else {")
-                                .addContentLine(optionName + ".clear();")
-                                .addContentLine("add" + capitalize(optionName) + "(builder." + optionName + ");")
-                                .addContentLine("}");
-
-                    } else {
-                        // Non-list collection case.
-                        methodBuilder.addContentLine("add" + capitalize(optionName) + "(builder." + optionName + ");");
-                    }
-                } else {
-                    // Non-collection case.
-                    methodBuilder.addContentLine(setterName + "(builder." + getterName + "());");
-                }
-            }
-            if (option.provider().isPresent() || option.registryService()) {
-                methodBuilder.addContent(optionName + "DiscoverServices");
-                methodBuilder.addContentLine(" = builder." + optionName + "DiscoverServices;");
-            }
+            typeHandler.fromBuilderAssignment(methodBuilder);
         }
         methodBuilder.addContentLine("return self();");
         classBuilder.addMethod(methodBuilder);
@@ -644,7 +498,8 @@ final class GenerateAbstractBuilder {
             }
 
             if (!isBuilder || !isConfigOption(option)) {
-                classBuilder.addField(optionHandler.typeHandler().field(isBuilder));
+                optionHandler.typeHandler()
+                        .fields(classBuilder, isBuilder);
             }
             if (isBuilder && (option.provider().isPresent())) {
                 OptionProvider provider = option.provider().get();
@@ -791,7 +646,7 @@ final class GenerateAbstractBuilder {
                         .addContent(".ofNullable(")
                         .addContent(option.name())
                         .addContent(")).ifPresent(this::")
-                        .addContent(option.setter().elementName())
+                        .addContent(option.setterName())
                         .addContentLine(");");
             }
         } else {
@@ -819,7 +674,7 @@ final class GenerateAbstractBuilder {
                         .addContent(".ofNullable(")
                         .addContent(option.name())
                         .addContent(")).ifPresent(this::")
-                        .addContent(option.setter().elementName())
+                        .addContent(option.setterName())
                         .addContentLine(");");
             }
         }
@@ -942,7 +797,7 @@ final class GenerateAbstractBuilder {
                     .addContentLine("Qualifier)")
                     .increaseContentPadding()
                     .addContent(".ifPresent(this::")
-                    .addContent(option.setter().elementName())
+                    .addContent(option.setterName())
                     .addContentLine(");")
                     .decreaseContentPadding();
         }
@@ -1007,7 +862,7 @@ final class GenerateAbstractBuilder {
                         .decreaseContentPadding()
                         .decreaseContentPadding()
                         .addContent(".ifPresent(this::")
-                        .addContent(option.setter().elementName())
+                        .addContent(option.setterName())
                         .addContentLine(");")
                         .decreaseContentPadding();
             }
@@ -1046,7 +901,7 @@ final class GenerateAbstractBuilder {
                         .addContent("), ")
                         .addContent(option.name())
                         .addContent("DiscoverServices).ifPresent(this::")
-                        .addContent(option.setter().elementName())
+                        .addContent(option.setterName())
                         .addContentLine(");");
             }
         }
@@ -1267,26 +1122,26 @@ final class GenerateAbstractBuilder {
                             .addContent(".equals(")
                             .addContent(option.name())
                             .addContent(", other.")
-                            .addContent(option.getter().elementName())
+                            .addContent(option.getterName())
                             .addContent("())");
                 } else if (type.primitive()) {
                     method.addContent(option.name())
                             .addContent(" == other.")
-                            .addContent(option.getter().elementName())
+                            .addContent(option.getterName())
                             .addContent("()");
                 } else if (type.isOptional() && actualType.equals(Types.CHAR_ARRAY)) {
                     method.addContent(Types.GENERATED_EQUALITY_UTIL)
                             .addContent(".optionalCharArrayEquals(")
                             .addContent(option.name())
                             .addContent(", other.")
-                            .addContent(option.getter().elementName())
+                            .addContent(option.getterName())
                             .addContent("())");
                 } else {
                     method.addContent(Objects.class)
                             .addContent(".equals(")
                             .addContent(option.name())
                             .addContent(", other.")
-                            .addContent(option.getter().elementName())
+                            .addContent(option.getterName())
                             .addContent("())");
                 }
 
@@ -1361,7 +1216,7 @@ final class GenerateAbstractBuilder {
                                  boolean isBuilder) {
         if (!isBuilder && prototypeInfo.prototypeMethods()
                 .stream()
-                .map(GeneratedMethod::methodDefinition)
+                .map(GeneratedMethod::method)
                 .filter(it -> "toString".equals(it.elementName()))
                 .filter(it -> it.typeName().equals(TypeNames.STRING))
                 .anyMatch(it -> it.parameterArguments().isEmpty())) {
@@ -1430,7 +1285,7 @@ final class GenerateAbstractBuilder {
         for (OptionHandler optionHandler : options) {
             OptionInfo option = optionHandler.option();
             String fieldName = option.name();
-            String getterName = option.getter().elementName();
+            String getterName = option.getterName();
 
             classBuilder.addMethod(method -> method.name(getterName)
                     .returnType(option.declaredType())
@@ -1443,7 +1298,7 @@ final class GenerateAbstractBuilder {
                                            List<OptionHandler> options) {
         for (OptionHandler optionHandler : options) {
             OptionInfo option = optionHandler.option();
-            String getterName = option.getter().elementName();
+            String getterName = option.getterName();
 
             constructor.addContent("this." + option.name() + " = ");
             TypeName declaredType = option.declaredType();

@@ -63,7 +63,7 @@ public interface OptionAllowedValue extends Prototype.Api {
     String description();
 
     /**
-     * Fluent API builder base for {@link OptionAllowedValue}.
+     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionAllowedValue}.
      *
      * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
@@ -234,7 +234,7 @@ public interface OptionAllowedValue extends Prototype.Api {
     }
 
     /**
-     * Fluent API builder for {@link OptionAllowedValue}.
+     * Fluent API builder for {@link io.helidon.builder.codegen.OptionAllowedValue}.
      */
     class Builder extends BuilderBase<Builder, OptionAllowedValue>
             implements io.helidon.common.Builder<Builder, OptionAllowedValue> {

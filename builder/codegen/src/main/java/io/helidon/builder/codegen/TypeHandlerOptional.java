@@ -16,30 +16,33 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
+import io.helidon.codegen.classmodel.ClassBase;
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
-import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
-import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.codegen.CodegenUtil.capitalize;
-import static io.helidon.common.types.TypeNames.OPTIONAL;
 
-class TypeHandlerOptional extends TypeHandlerBase {
-    TypeHandlerOptional(PrototypeInfo prototypeInfo, OptionInfo option) {
-        super(prototypeInfo, option, firstTypeArgument(option));
+class TypeHandlerOptional extends TypeHandlerBasic {
+    TypeHandlerOptional(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(extensions, prototypeInfo, option, firstTypeArgument(option));
     }
 
     @Override
-    public Field.Builder field(boolean isBuilder) {
+    public void fields(ClassBase.Builder<?, ?> classBuilder, boolean isBuilder) {
         Field.Builder builder = Field.builder()
                 .isFinal(!isBuilder)
                 .name(option().name());
@@ -57,115 +60,97 @@ class TypeHandlerOptional extends TypeHandlerBase {
             option().defaultValue().get().accept(builder);
         }
 
-        return builder;
+        classBuilder.addField(builder);
     }
 
     @Override
-    public void setters(InnerClass.Builder classBuilder, TypeName returnType) {
-        declaredSetter(classBuilder, returnType);
-        clearSetter(classBuilder, returnType);
+    Optional<GeneratedMethod> prepareBuilderSetterDeclared(Javadoc getterJavadoc) {
+        TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
+        TypeName returnType = builderReturnType();
 
-        // and add the setter with the actual type
-        // config is special - handled directly when configuration is handled, as it also must be used when this type
-        // is @Configured
-        if (isConfigProperty()) {
-            return;
-        }
+        String name = option().name();
+        boolean generic = typeName.typeArguments().getFirst().wildcard();
 
-        var setter = option().setter();
-        String optionName = option().name();
-
-        // declared setter - optional is package local, field is never optional in builder
-        Method.Builder method = Method.builder()
-                .name(setter.elementName())
-                .accessModifier(setter.accessModifier())
-                .javadoc(Javadoc.parse(setter.description().orElse("")))
-                .returnType(returnType)
-                .addParameter(param -> param.name(optionName)
-                        .type(type().unboxed()))
-                .update(it -> {
-                    if (!type().unboxed().primitive()) {
-                        it.addContent(Objects.class)
-                                .addContentLine(".requireNonNull(" + optionName + ");");
-                    }
-                })
-                .update(it -> option().decorator()
-                        .ifPresent(decorator ->
-                                           it.addContent("new ")
-                                                   .addContent(decorator)
-                                                   .addContent("().decorate(this, ")
-                                                   .addContent(Optional.class)
-                                                   .addContent(".of(")
-                                                   .addContent(optionName)
-                                                   .addContentLine("));")))
-                .addContentLine("this." + optionName + " = " + optionName + ";")
-                .addContentLine("return self();");
-        classBuilder.addMethod(method);
-
-        if (type().equals(CHAR_ARRAY)) {
-            charArraySetter(classBuilder, returnType);
-        }
-
-        if (option().builderInfo().isPresent()) {
-            // if there is a factory method for the return type, we also have setters for the type (probably config object)
-            builderConsumerSetter(classBuilder, returnType, option().builderInfo().get());
-        }
-    }
-
-    @Override
-    TypeName setterArgumentTypeName() {
-        TypeName type = type();
-        if (TypeNames.STRING.equals(type) || type.unboxed().primitive() || type.array()) {
-            return option().declaredType();
-        }
-
-        return TypeName.builder(OPTIONAL)
-                .addTypeArgument(toWildcard(type))
-                .build();
-    }
-
-    @Override
-    void declaredSetter(InnerClass.Builder classBuilder, TypeName returnType) {
-        TypedElementInfo setter = option().setter();
-
-        boolean generic = !type().typeArguments().isEmpty();
-        // declared setter - optional is package local, field is never optional in builder
-        classBuilder.addMethod(builder -> builder.name(setter.elementName())
-                .update(it -> {
-                    if (generic) {
-                        it.addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"));
-                    }
-                })
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .javadoc(Javadoc.parse(setter.description().orElse("")))
-                .returnType(returnType)
-                .addParameter(param -> param.name(option().name())
-                        .type(setterArgumentTypeName()))
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + option().name() + ");")
-                .addContentLine("this." + option().name() + " = " + option().name()
-                                        + ".map(" + type().fqName() + ".class::cast)"
-                                        + ".orElse(this." + option().name() + ");")
-                .addContentLine("return self();"));
+                .typeName(returnType)
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        if (generic) {
+            method.addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"));
+        }
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(typeName)
+                .elementName(name)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            if (!typeName.primitive()) {
+                it.addContent(Objects.class)
+                        .addContentLine(".requireNonNull(" + name + ");");
+            }
+
+            it.addContent("this." + name + " = " + name);
+            if (generic) {
+                it.addContent(".map(")
+                        .addContent(type().genericTypeName())
+                        .addContent(".class::cast)");
+            }
+
+            it.addContent(".orElse(this.")
+                    .addContent(option().name())
+                    .addContentLine(");")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                                           .contentBuilder(contentConsumer)
+                                           .build());
     }
 
-    private void clearSetter(InnerClass.Builder classBuilder, TypeName returnType) {
-        // declared setter - optional is package local, field is never optional in builder
-        TypedElementInfo setter = option().setter();
+    @Override
+    Optional<GeneratedMethod> prepareBuilderClear(Javadoc getterJavadoc) {
+        TypeName returnType = builderReturnType();
 
-        classBuilder.addMethod(builder -> builder.name("clear" + capitalize(option().name()))
-                .accessModifier(setter.accessModifier())
-                .description("Clear existing value of this property.")
-                .returnType(returnType, "updated builder instance")
-                .addJavadocTag("see", "#" + option().getter().elementName() + "()")
-                .update(it -> option().decorator()
-                        .ifPresent(decorator -> it.addContent("new ")
-                                .addContent("new ")
-                                .addContent(decorator)
-                                .addContent("().decorate(this, ")
-                                .addContent(Optional.class)
-                                .addContentLine(".empty());")))
-                .addContentLine("this." + option().name() + " = null;")
-                .addContentLine("return self();"));
+        String name = option().name();
+
+        Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "ignore", ""))
+                .content(List.of("Clear existing value of " + name + "."))
+                .parameters(Map.of())
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName("clear" + capitalize(option().name()))
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+
+            option().decorator()
+                    .ifPresent(decorator -> it.addContent("new ")
+                            .addContent(decorator)
+                            .addContent("().decorate(this, ")
+                            .addContent(Optional.class)
+                            .addContentLine(".empty());"));
+
+            it.addContentLine("this." + name + " = null;")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
     }
 }

@@ -16,7 +16,11 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.function.Consumer;
+
+import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -29,27 +33,29 @@ import io.helidon.common.types.TypedElementInfo;
  *     <li>Custom factory methods are simply referenced</li>
  * </ul>
  */
-public interface GeneratedMethod {
+@Prototype.Blueprint(detach = true, decorator = BuilderCodegenSupport.GeneratedMethodDecorator.class)
+interface GeneratedMethodBlueprint {
     /**
-     * Definition of this method, including annotations.
+     * Definition of this method, including annotations (such as {@link java.lang.Override}).
      *
      * @return method definition
      */
-    TypedElementInfo methodDefinition();
+    TypedElementInfo method();
 
     /**
-     * Update the method content.
-     *
-     * @param contentBuilder builder of content
+     * Generator for the method content.
+
+     * @return content builder consumer
      */
-    void accept(ContentBuilder<?> contentBuilder);
+    Consumer<ContentBuilder<?>> contentBuilder();
 
     /**
-     * Whether this method overrides an existing method from a super class/interface.
+     * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
+     * complicated to update it.
+     * <p>
+     * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
      *
-     * @return whether this is an override
+     * @return javadoc for this method
      */
-    default boolean override() {
-        return false;
-    }
+    Javadoc javadoc();
 }

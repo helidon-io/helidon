@@ -19,13 +19,18 @@ package io.helidon.builder.codegen;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
+import io.helidon.codegen.classmodel.ClassBase;
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
-import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
@@ -37,35 +42,26 @@ import static io.helidon.common.types.TypeNames.MAP;
 import static io.helidon.common.types.TypeNames.OBJECT;
 import static io.helidon.common.types.TypeNames.SET;
 
-class TypeHandlerMap extends TypeHandlerBase {
+class TypeHandlerMap extends TypeHandlerContainer {
     private static final TypeName SAME_GENERIC_TYPE = TypeName.createFromGenericDeclaration("TYPE");
 
     private final boolean sameGeneric;
+    private final TypeName keyType;
+    private final TypeName valueType;
 
-    TypeHandlerMap(PrototypeInfo prototypeInfo, OptionInfo option) {
-        super(prototypeInfo, option, option.declaredType().typeArguments().get(1));
+    TypeHandlerMap(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(extensions, prototypeInfo, option, option.declaredType().typeArguments().get(1));
 
         this.sameGeneric = option.sameGeneric();
-    }
-
-    @Override
-    public Field.Builder field(boolean isBuilder) {
-        Field.Builder builder = super.field(isBuilder);
-        if (isBuilder && option().defaultValue().isEmpty()) {
-            builder.addContent("new ")
-                    .addContent(LINKED_HASH_MAP)
-                    .addContent("<>()");
-        }
-        return builder;
+        this.keyType = option.declaredType().typeArguments().get(0);
+        this.valueType = option.declaredType().typeArguments().get(1);
     }
 
     @Override
     public void generateFromConfig(Method.Builder method, OptionConfigured optionConfigured) {
         String optionName = option().name();
-        List<TypeName> typeArguments = option().declaredType().typeArguments();
-        TypeName keyTypeName = typeArguments.get(0);
-        TypeName valueTypeName = typeArguments.get(1);
-        if (TypeNames.STRING.equals(keyTypeName) && TypeNames.STRING.equals(valueTypeName)) {
+
+        if (TypeNames.STRING.equals(keyType) && TypeNames.STRING.equals(valueType)) {
             // the special case of Map<String, String>
             method.addContentLine(configGet(optionConfigured) + ".detach().asMap().ifPresent(this::" + optionName + ");");
         } else if (optionConfigured.traverse()) {
@@ -86,113 +82,297 @@ class TypeHandlerMap extends TypeHandlerBase {
     }
 
     @Override
-    public void setters(InnerClass.Builder classBuilder, TypeName returnType) {
+    GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
+        TypeName returnType = builderReturnType();
 
-        declaredSetter(classBuilder, returnType);
-        declaredSetterAdd(classBuilder, returnType);
+        String name = option().name();
 
-        TypeName keyType = option().declaredType().typeArguments().get(0);
-        TypeName valueType = option().declaredType().typeArguments().get(1);
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
 
-        if (option().singular().isEmpty()) {
-            return;
-        }
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(typeOfMap(keyType, valueType))
+                .elementName(name)
+        );
 
-        var singular = option().singular().get();
-        String singularName = singular.name();
-        String methodName = singular.setter().elementName();
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");");
 
-        if (isCollection(type())) {
-            // value is a collection as well we need to generate `add` methods for adding a single value, and adding
-            // collection values
-            // builder.addValue(String key, String value)
-            // builder.addValues(String key, Set<String> values)
-            setterAddValueToCollection(classBuilder,
-                                       singularName,
-                                       keyType,
-                                       valueType,
-                                       returnType);
+            it.addContentLine("this." + name + ".clear();")
+                    .addContentLine("this." + name + ".putAll(" + name + ");");
+            extraSetterContent(it);
+            it.addContentLine("return self();");
+        };
 
-            setterAddValuesToCollection(classBuilder,
-                                        "add" + capitalize(option().name()),
-                                        keyType,
-                                        returnType);
-        }
-        // Builder putValue(String key, String value)
+        return GeneratedMethod.builder()
+                .method(method.build())
+                .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                .contentBuilder(contentConsumer)
+                .build();
+    }
 
-        var setter = option().setter();
-        Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));
-        Javadoc javadoc = Javadoc.builder(setterJavadoc)
-                .add("This method adds a new value to the map, or replaces it if the key already exists.")
+    @Override
+    Optional<GeneratedMethod> prepareBuilderAddCollection(Javadoc getterJavadoc) {
+        TypeName returnType = builderReturnType();
+        String name = option().name();
+
+        Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, name, ""))
+                .add("This method keeps existing values, then puts all new values into the map.")
                 .build();
 
-        Method.Builder method = Method.builder()
-                .returnType(returnType)
-                .name(methodName)
-                .javadoc(javadoc)
-                .accessModifier(setter.accessModifier());
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(typeOfMap(keyType, valueType))
+                .elementName(name)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");")
+                    .addContentLine("this." + name + ".putAll(" + name + ");");
+            extraSetterContent(it);
+            it.addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .javadoc(javadoc)
+                                           .contentBuilder(contentConsumer)
+                                           .build());
+    }
+
+    @Override
+    Optional<GeneratedMethod> prepareBuilderSingularAdd(Javadoc getterJavadoc) {
+        if (option().singular().isEmpty()) {
+            return Optional.empty();
+        }
+        OptionSingular singular = option().singular().get();
+        String singularName = singular.name();
+        String methodName = singular.methodName();
+        TypeName returnType = builderReturnType();
+        String name = option().name();
+
+        Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                .add("This method adds or replaces a value in the map.")
+                .parameters(Map.of())
+                .addParameter("key", "key to add value for")
+                .addParameter(singularName, "value to add")
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
         if (sameGeneric) {
             sameGenericArgs(method, keyType, singularName, type());
         } else {
-            method.addParameter(param -> param.name("key")
-                            .type(keyType)
-                            .description("key to add or replace"))
-                    .addParameter(param -> param.name(singularName)
-                            .type(type())
-                            .description("new value for the key"));
+            method.addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(keyType)
+                            .elementName("key"))
+                    .addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(type())
+                            .elementName("value")
+                    );
         }
-        method.addContent(Objects.class)
-                .addContentLine(".requireNonNull(key);")
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + singularName + ");")
-                .addContent("this." + option().name() + ".put(key, ");
-        secondArgToPut(method, type(), singularName);
-        method.addContentLine(");")
-                .addContentLine("return self();");
 
-        classBuilder.addMethod(method);
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(key);")
+                    .addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + singularName + ");")
+                    .addContentLine("this." + name + ".put(key, ");
+            secondArgToPut(it, type(), singularName);
+            it.addContentLine(");");
+            extraAdderContent(it);
+            it.addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .contentBuilder(contentConsumer)
+                                           .javadoc(setterJavadoc)
+                                           .build());
     }
 
     @Override
-    TypeName setterArgumentTypeName() {
-        TypeName firstType = option().declaredType().typeArguments().get(0);
-        if (!(TypeNames.STRING.equals(firstType) || firstType.unboxed().primitive() || firstType.array())) {
-            firstType = toWildcard(firstType);
+    Optional<GeneratedMethod> prepareBuilderSingularAddToMapValue(Javadoc getterJavadoc) {
+        if (option().singular().isEmpty()) {
+            return Optional.empty();
         }
-        TypeName secondType = option().declaredType().typeArguments().get(1);
-        if (!(TypeNames.STRING.equals(secondType) || secondType.unboxed().primitive() || secondType.array())) {
-            secondType = toWildcard(secondType);
+        if (!(valueType.isSet() || valueType.isList())) {
+            return Optional.empty();
+        }
+        OptionSingular singular = option().singular().get();
+        String singularName = singular.name();
+        String methodName = "add" + capitalize(singularName);
+        TypeName returnType = builderReturnType();
+        TypeName valueParamType = type().typeArguments().getFirst();
+
+        Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                .add("This method adds a new value to the map value, or creates a new value.")
+                .parameters(Map.of())
+                .addParameter("key", "key to add value for")
+                .addParameter(singularName, "value to add to the map values")
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        if (sameGeneric) {
+            sameGenericArgs(method, keyType, singularName, valueParamType);
+        } else {
+            method.addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(keyType)
+                            .elementName("key"))
+                    .addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(valueParamType)
+                            .elementName(singularName)
+                    );
         }
 
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(key);")
+                    .addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + singularName + ");")
+                    .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
+                    .addContent("v = v == null ? new ")
+                    .addContent(LINKED_HASH_MAP)
+                    .addContent("<>() : new ")
+                    .addContent(LINKED_HASH_MAP)
+                    .addContentLine("<>(v);")
+                    .addContentLine("v.add(" + singularName + ");")
+                    .addContentLine("return v;")
+                    .decreaseContentPadding()
+                    .addContentLine("});");
+
+            extraAdderContent(it);
+            it.addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .contentBuilder(contentConsumer)
+                                           .javadoc(setterJavadoc)
+                                           .build());
+    }
+
+    @Override
+    Optional<GeneratedMethod> prepareBuilderSingularAddToMapValues(Javadoc getterJavadoc) {
+        if (option().singular().isEmpty()) {
+            return Optional.empty();
+        }
+        if (!(valueType.isSet() || valueType.isList())) {
+            return Optional.empty();
+        }
+        String methodName = "add" + capitalize(option().name());
+        TypeName returnType = builderReturnType();
+        String name = option().name();
+
+        Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                .add("This method adds new values to the map values, or creates a new mapping.")
+                .parameters(Map.of())
+                .addParameter("key", "key to add value for")
+                .addParameter(name, "values to add to the map values")
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        if (sameGeneric) {
+            sameGenericArgs(method, keyType, name, type());
+        } else {
+            method.addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(keyType)
+                            .elementName("key"))
+                    .addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(type())
+                            .elementName(name)
+                    );
+        }
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(key);")
+                    .addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + name + ");")
+                    .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
+                    .addContent("v = v == null ? new ")
+                    .addContent(LINKED_HASH_MAP)
+                    .addContent("<>() : new ")
+                    .addContent(LINKED_HASH_MAP)
+                    .addContentLine("<>(v);")
+                    .addContentLine("v.addAll(" + name + ");")
+                    .addContentLine("return v;")
+                    .decreaseContentPadding()
+                    .addContentLine("});");
+
+            extraAdderContent(it);
+            it.addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .contentBuilder(contentConsumer)
+                                           .javadoc(setterJavadoc)
+                                           .build());
+    }
+
+    @Override
+    void addFields(ClassBase.Builder<?, ?> classBuilder, boolean isBuilder) {
+        Field.Builder builder = super.field(isBuilder);
+        if (isBuilder && option().defaultValue().isEmpty()) {
+            builder.addContent("new ")
+                    .addContent(LINKED_HASH_MAP)
+                    .addContent("<>()");
+        }
+
+        classBuilder.addField(builder.build());
+    }
+
+    private TypeName typeOfMap(TypeName keyType, TypeName valueType) {
         return TypeName.builder(MAP)
-                .addTypeArgument(firstType)
-                .addTypeArgument(secondType)
+                .addTypeArgument(toWildcard(keyType))
+                .addTypeArgument(toWildcard(valueType))
                 .build();
     }
 
-    @Override
-    void declaredSetter(InnerClass.Builder classBuilder, TypeName returnType) {
-        var setter = option().setter();
-
-        // declared type (such as Map<String, String>) - replace content
-        classBuilder.addMethod(builder -> builder.name(setter.elementName())
-                .returnType(returnType)
-                .javadoc(Javadoc.parse(setter.description().orElse("")))
-                .update(it -> {
-                    for (TypedElementInfo parameter : setter.parameterArguments()) {
-                        it.addParameter(param -> param.name(parameter.elementName())
-                                .type(parameter.typeName()));
-                    }
-                })
-                .accessModifier(setter.accessModifier())
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + option().name() + ");")
-                .addContentLine("this." + option().name() + ".clear();")
-                .addContentLine("this." + option().name() + ".putAll(" + option().name() + ");")
-                .addContentLine("return self();"));
-    }
-
-    private void sameGenericArgs(Method.Builder method,
+    private void sameGenericArgs(TypedElementInfo.Builder method,
                                  TypeName keyType,
                                  String value,
                                  TypeName valueType) {
@@ -239,11 +419,11 @@ class TypeHandlerMap extends TypeHandlerBase {
                                                        + " argument.");
         }
 
-        method.addGenericArgument(TypeArgument.builder()
-                                          .token("TYPE")
-                                          .bound(genericTypeBase)
-                                          .description("Type to correctly map key and value")
-                                          .build());
+        method.addTypeParameter(TypeArgument.builder()
+                                        .token("TYPE")
+                                        .bound(genericTypeBase)
+                                        .description("Type to correctly map key and value")
+                                        .build());
 
         // now resolve value
         if (valueType.typeArguments().isEmpty()) {
@@ -274,136 +454,29 @@ class TypeHandlerMap extends TypeHandlerBase {
                                                        + " argument.");
         }
 
-        method.addParameter(param -> param.name("key")
-                        .type(resolvedKeyType)
+        method.addParameterArgument(param -> param.elementName("key")
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(resolvedKeyType)
                         .description("key to add or replace"))
-                .addParameter(param -> param.name(value)
-                        .type(resolvedValueType)
+                .addParameterArgument(param -> param.elementName(value)
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(resolvedValueType)
                         .description("new value for the key"));
     }
 
-    private void setterAddValueToCollection(InnerClass.Builder classBuilder,
-                                            String singularName,
-                                            TypeName keyType,
-                                            TypeName valueType,
-                                            TypeName returnType) {
-        String methodName = "add" + capitalize(singularName);
-        var setter = option().setter();
-        Javadoc blueprintJavadoc = Javadoc.parse(setter.description().orElse(""));
-        Javadoc myJavadoc = Javadoc.builder(blueprintJavadoc)
-                .parameters(Map.of())
-                .addParameter("key", "key to add")
-                .addParameter(singularName, "additional value for the key")
-                .add("This method adds a new value to the map value, or creates a new value.")
-                .build();
-
-        classBuilder.addMethod(builder -> builder.name(methodName)
-                .accessModifier(setter.accessModifier())
-                .addParameter(param -> param.name("key")
-                        .type(keyType))
-                .addParameter(param -> param.name(singularName)
-                        .type(valueType))
-                .description(blueprintJavadoc.toString())
-                .returnType(returnType)
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(key);")
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + singularName + ");")
-                .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
-                .addContent("v = v == null ? new ")
-                .addContent(LINKED_HASH_MAP)
-                .addContent("<>() : new ")
-                .addContent(LINKED_HASH_MAP)
-                .addContentLine("<>(v);")
-                .addContentLine("v.add(" + singularName + ");")
-                .addContentLine("return v;")
-                .decreaseContentPadding()
-                .addContentLine("});")
-                .addContentLine("return self();"));
-    }
-
-    private void setterAddValuesToCollection(InnerClass.Builder classBuilder,
-                                             String methodName,
-                                             TypeName keyType,
-                                             TypeName returnType) {
-        String name = option().name();
-        var setter = option().setter();
-        Javadoc javadoc = Javadoc.parse(setter.description().orElse(""));
-        Javadoc myJavadoc = Javadoc.builder(javadoc)
-                .add("This method adds a new value to the map value, or creates a new value.")
-                .build();
-
-        classBuilder.addMethod(builder -> builder.name(methodName)
-                .accessModifier(setter.accessModifier())
-                .addParameter(param -> param.name("key")
-                        .type(keyType))
-                .addParameter(param -> param.name(name)
-                        .type(type()))
-                .javadoc(myJavadoc)
-                .returnType(returnType)
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(key);")
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name + ");")
-                .addContentLine("this." + name + ".compute(key, (k, v) -> {")
-                .addContent("v = v == null ? new ")
-                .addContent(LINKED_HASH_MAP)
-                .addContent("<>() : new ")
-                .addContent(LINKED_HASH_MAP)
-                .addContentLine("<>(v);")
-                .addContentLine("v.addAll(" + name + ");")
-                .addContentLine("return v;")
-                .decreaseContentPadding()
-                .addContentLine("});")
-                .addContentLine("return self();"));
-    }
-
-    private void declaredSetterAdd(InnerClass.Builder classBuilder,
-                                   TypeName returnType) {
-        var setter = option().setter();
-        Javadoc setterJavadoc = Javadoc.parse(setter.description().orElse(""));
-        Javadoc myJavadoc = Javadoc.builder(setterJavadoc)
-                .add("This method keeps existing values, then puts all new values into the map.")
-                .build();
-
-        // declared type - add content
-        classBuilder.addMethod(builder -> builder.name("add" + capitalize(option().name()))
-                .returnType(returnType)
-                .javadoc(myJavadoc)
-                .addParameter(param -> param.name(option().name())
-                        .type(setterArgumentTypeName()))
-                .accessModifier(setter.accessModifier())
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + option().name() + ");")
-                .addContentLine("this." + option().name() + ".putAll(" + option().name() + ");")
-                .addContentLine("return self();"));
-    }
-
-    private void secondArgToPut(Method.Builder method, TypeName typeName, String singularName) {
+    private void secondArgToPut(ContentBuilder<?> contentBuilder, TypeName typeName, String singularName) {
         TypeName genericTypeName = typeName.genericTypeName();
         if (genericTypeName.equals(LIST)) {
-            method.addContent(List.class)
+            contentBuilder.addContent(List.class)
                     .addContent(".copyOf(" + singularName + ")");
         } else if (genericTypeName.equals(SET)) {
-            method.addContent(Set.class)
+            contentBuilder.addContent(Set.class)
                     .addContent(".copyOf(" + singularName + ")");
         } else if (genericTypeName.equals(MAP)) {
-            method.addContent(Map.class)
+            contentBuilder.addContent(Map.class)
                     .addContent(".copyOf(" + singularName + ")");
         } else {
-            method.addContent(singularName);
+            contentBuilder.addContent(singularName);
         }
     }
-
-    private boolean isCollection(TypeName typeName) {
-        if (typeName.typeArguments().size() != 1) {
-            return false;
-        }
-        TypeName genericTypeName = typeName.genericTypeName();
-        if (genericTypeName.equals(LIST)) {
-            return true;
-        }
-        return genericTypeName.equals(SET);
-    }
-
 }

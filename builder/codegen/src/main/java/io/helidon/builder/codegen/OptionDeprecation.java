@@ -28,7 +28,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface OptionDeprecation {
+public interface OptionDeprecation extends Prototype.Api {
 
     /**
      * Create a new fluent API builder to customize configuration.
@@ -151,7 +151,7 @@ public interface OptionDeprecation {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of alternative.
          *
          * @return updated builder instance
          * @see #alternative()
@@ -175,7 +175,7 @@ public interface OptionDeprecation {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of since.
          *
          * @return updated builder instance
          * @see #since()

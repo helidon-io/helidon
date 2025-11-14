@@ -26,6 +26,7 @@ import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -35,57 +36,21 @@ import io.helidon.common.types.TypedElementInfo;
 @Prototype.Blueprint(detach = true)
 interface OptionInfoBlueprint extends Annotated {
     /**
-     * Blueprint method if created from blueprint.
-     * This may be also a method on a non-blueprint interface, in case the blueprint extends from it.
-     * This must be filled in to generate the {@link java.lang.Override} annotation on the generated method.
+     * Blueprint method if created from blueprint, or interface method if inherited from non-blueprint interface.
+     * Empty in case this is a "synthetic" option.
      *
-     * @return blueprint method, if present
+     * @return interface method, if present
      */
-    Optional<TypedElementInfo> blueprintMethod();
+    Optional<TypedElementInfo> interfaceMethod();
 
     /**
-     * Prototype getter definition.
-     * This method is always abstract (interface method).
+     * Type that declares this option.
+     * This may be the blueprint type, or an interface type.
+     * In case this is a "synthetic" option, there is not type to use.
      *
-     * @return prototype getter
+     * @return type that declares this option, if present
      */
-    TypedElementInfo getter();
-
-    /**
-     * Builder getter definition.
-     * For non-collection types, this always returns an {@link java.util.Optional}, unless there is a default value
-     * defined for a non-optional option.
-     *
-     * @return builder getter
-     */
-    TypedElementInfo builderGetter();
-
-    /**
-     * Builder setter definition.
-     * This is a setter for option's declared type, unless the type is {@link java.util.Optional}.
-     * For optional options, the setter will have a non-optional parameter, and an unset method is generated as well.
-     *
-     * @return builder setter
-     */
-    TypedElementInfo setter();
-
-    /**
-     * If an option method returns {@link java.util.Optional}, a setter will be created
-     * without the optional parameter (as {@link #setter()}, and another one with an optional parameter for
-     * copy methods.
-     *
-     * @return setter with optional parameter, if present
-     */
-    Optional<TypedElementInfo> setterForOptional();
-
-    /**
-     * Getter that is generated on the implementation class.
-     * As the implementation class implements the prototype, this method is always annotated
-     * with {@link java.lang.Override}.
-     *
-     * @return implementation getter
-     */
-    TypedElementInfo implGetter();
+    Optional<TypeInfo> declaringType();
 
     /**
      * Option name.
@@ -93,6 +58,20 @@ interface OptionInfoBlueprint extends Annotated {
      * @return name of this option
      */
     String name();
+
+    /**
+     * Name of the getter methods.
+     *
+     * @return getter method name
+     */
+    String getterName();
+
+    /**
+     * Name of the setter method(s).
+     *
+     * @return setter method name
+     */
+    String setterName();
 
     /**
      * The return type of the blueprint method, or the type expected in getter of the option.
@@ -163,6 +142,14 @@ interface OptionInfoBlueprint extends Annotated {
     boolean required();
 
     /**
+     * Set to {@code true} if this option is only available on the builder.
+     * In such a case the prototype and implementation will not have this option.
+     *
+     * @return builder option only
+     */
+    boolean builderOptionOnly();
+
+    /**
      * List of qualifiers for this option.
      *
      * @return service registry qualifiers defined on this option (to be used when getting a service registry instance)
@@ -228,4 +215,18 @@ interface OptionInfoBlueprint extends Annotated {
      * @return builder information, if present
      */
     Optional<OptionBuilder> builderInfo();
+
+    /**
+     * Description of this option, used in Javadoc as the main text if defined.
+     *
+     * @return description, if present
+     */
+    Optional<String> description();
+
+    /**
+     * Parameter/return type description, used in Javadoc as the param/return description.
+     *
+     * @return parameter description, if present
+     */
+    Optional<String> paramDescription();
 }

@@ -18,12 +18,9 @@ package io.helidon.builder.codegen;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Definition of a singular option.
@@ -52,19 +49,6 @@ public interface OptionSingular extends Prototype.Api {
     }
 
     /**
-     * Singular setter method.
-     * <p>
-     * Examples:
-     * <ul>
-     *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-     *     <li>{@code putOption} - for a map option named {@code options}</li>
-     * </ul>
-     *
-     * @return singular setter method
-     */
-    TypedElementInfo setter();
-
-    /**
      * Singular form of the option name.
      * For {@code lines}, this would be {@code line}.
      * For {@code properties}, this should be {@code property}, so we allow customization by the user.
@@ -74,7 +58,14 @@ public interface OptionSingular extends Prototype.Api {
     String name();
 
     /**
-     * Fluent API builder base for {@link OptionSingular}.
+     * Name of the singular setter method.
+     *
+     * @return method name
+     */
+    String methodName();
+
+    /**
+     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionSingular}.
      *
      * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
@@ -82,8 +73,8 @@ public interface OptionSingular extends Prototype.Api {
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionSingular>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
+        private String methodName;
         private String name;
-        private TypedElementInfo setter;
 
         /**
          * Protected to support extensibility.
@@ -98,8 +89,8 @@ public interface OptionSingular extends Prototype.Api {
          * @return updated builder instance
          */
         public BUILDER from(OptionSingular prototype) {
-            setter(prototype.setter());
             name(prototype.name());
+            methodName(prototype.methodName());
             return self();
         }
 
@@ -109,68 +100,9 @@ public interface OptionSingular extends Prototype.Api {
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(OptionSingular.BuilderBase<?, ?> builder) {
-            builder.setter().ifPresent(this::setter);
+        public BUILDER from(BuilderBase<?, ?> builder) {
             builder.name().ifPresent(this::name);
-            return self();
-        }
-
-        /**
-         * Singular setter method.
-         * <p>
-         * Examples:
-         * <ul>
-         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-         *     <li>{@code putOption} - for a map option named {@code options}</li>
-         * </ul>
-         *
-         * @param setter singular setter method
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(TypedElementInfo setter) {
-            Objects.requireNonNull(setter);
-            this.setter = setter;
-            return self();
-        }
-
-        /**
-         * Singular setter method.
-         * <p>
-         * Examples:
-         * <ul>
-         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-         *     <li>{@code putOption} - for a map option named {@code options}</li>
-         * </ul>
-         *
-         * @param consumer consumer of builder
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.setter(builder.build());
-            return self();
-        }
-
-        /**
-         * Singular setter method.
-         * <p>
-         * Examples:
-         * <ul>
-         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-         *     <li>{@code putOption} - for a map option named {@code options}</li>
-         * </ul>
-         *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
-         * @return updated builder instance
-         * @see #setter()
-         */
-        public BUILDER setter(Supplier<? extends TypedElementInfo> supplier) {
-            Objects.requireNonNull(supplier);
-            this.setter(supplier.get());
+            builder.methodName().ifPresent(this::methodName);
             return self();
         }
 
@@ -190,18 +122,16 @@ public interface OptionSingular extends Prototype.Api {
         }
 
         /**
-         * Singular setter method.
-         * <p>
-         * Examples:
-         * <ul>
-         *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-         *     <li>{@code putOption} - for a map option named {@code options}</li>
-         * </ul>
+         * Name of the singular setter method.
          *
-         * @return singular setter method
+         * @param methodName method name
+         * @return updated builder instance
+         * @see #methodName()
          */
-        public Optional<TypedElementInfo> setter() {
-            return Optional.ofNullable(setter);
+        public BUILDER methodName(String methodName) {
+            Objects.requireNonNull(methodName);
+            this.methodName = methodName;
+            return self();
         }
 
         /**
@@ -215,11 +145,20 @@ public interface OptionSingular extends Prototype.Api {
             return Optional.ofNullable(name);
         }
 
+        /**
+         * Name of the singular setter method.
+         *
+         * @return method name
+         */
+        public Optional<String> methodName() {
+            return Optional.ofNullable(methodName);
+        }
+
         @Override
         public String toString() {
             return "OptionSingularBuilder{"
-                    + "setter=" + setter + ","
-                    + "name=" + name
+                    + "name=" + name + ","
+                    + "methodName=" + methodName
                     + "}";
         }
 
@@ -234,11 +173,11 @@ public interface OptionSingular extends Prototype.Api {
          */
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
-            if (setter == null) {
-                collector.fatal(getClass(), "Property \"setter\" must not be null, but not set");
-            }
             if (name == null) {
                 collector.fatal(getClass(), "Property \"name\" must not be null, but not set");
+            }
+            if (methodName == null) {
+                collector.fatal(getClass(), "Property \"methodName\" must not be null, but not set");
             }
             collector.collect().checkValid();
         }
@@ -248,22 +187,17 @@ public interface OptionSingular extends Prototype.Api {
          */
         protected static class OptionSingularImpl implements OptionSingular {
 
+            private final String methodName;
             private final String name;
-            private final TypedElementInfo setter;
 
             /**
              * Create an instance providing a builder.
              *
              * @param builder extending builder base of this prototype
              */
-            protected OptionSingularImpl(OptionSingular.BuilderBase<?, ?> builder) {
-                this.setter = builder.setter().get();
+            protected OptionSingularImpl(BuilderBase<?, ?> builder) {
                 this.name = builder.name().get();
-            }
-
-            @Override
-            public TypedElementInfo setter() {
-                return setter;
+                this.methodName = builder.methodName().get();
             }
 
             @Override
@@ -272,10 +206,15 @@ public interface OptionSingular extends Prototype.Api {
             }
 
             @Override
+            public String methodName() {
+                return methodName;
+            }
+
+            @Override
             public String toString() {
                 return "OptionSingular{"
-                        + "setter=" + setter + ","
-                        + "name=" + name
+                        + "name=" + name + ","
+                        + "methodName=" + methodName
                         + "}";
             }
 
@@ -287,13 +226,13 @@ public interface OptionSingular extends Prototype.Api {
                 if (!(o instanceof OptionSingular other)) {
                     return false;
                 }
-                return Objects.equals(setter, other.setter())
-                    && Objects.equals(name, other.name());
+                return Objects.equals(name, other.name())
+                        && Objects.equals(methodName, other.methodName());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(setter, name);
+                return Objects.hash(name, methodName);
             }
 
         }
@@ -301,9 +240,9 @@ public interface OptionSingular extends Prototype.Api {
     }
 
     /**
-     * Fluent API builder for {@link OptionSingular}.
+     * Fluent API builder for {@link io.helidon.builder.codegen.OptionSingular}.
      */
-    class Builder extends OptionSingular.BuilderBase<OptionSingular.Builder, OptionSingular> implements io.helidon.common.Builder<OptionSingular.Builder, OptionSingular> {
+    class Builder extends BuilderBase<Builder, OptionSingular> implements io.helidon.common.Builder<Builder, OptionSingular> {
 
         private Builder() {
         }

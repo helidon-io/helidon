@@ -40,8 +40,8 @@ public interface OptionBuilder extends Prototype.Api {
      *
      * @return a new builder
      */
-    static OptionBuilder.Builder builder() {
-        return new OptionBuilder.Builder();
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -50,7 +50,7 @@ public interface OptionBuilder extends Prototype.Api {
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static OptionBuilder.Builder builder(OptionBuilder instance) {
+    static Builder builder(OptionBuilder instance) {
         return OptionBuilder.builder().from(instance);
     }
 
@@ -78,12 +78,13 @@ public interface OptionBuilder extends Prototype.Api {
     String buildMethodName();
 
     /**
-     * Fluent API builder base for {@link OptionBuilder}.
+     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionBuilder}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends OptionBuilder.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private String buildMethodName;
         private String builderMethodName = "builder";
@@ -114,7 +115,7 @@ public interface OptionBuilder extends Prototype.Api {
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(OptionBuilder.BuilderBase<?, ?> builder) {
+        public BUILDER from(BuilderBase<?, ?> builder) {
             builderMethodName(builder.builderMethodName());
             builder.builderType().ifPresent(this::builderType);
             builder.buildMethodName().ifPresent(this::buildMethodName);
@@ -152,7 +153,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Type of the builder.
          *
-         * @param consumer consumer of builder
+         * @param consumer consumer of builder of type of the builder
          * @return updated builder instance
          * @see #builderType()
          */
@@ -167,7 +168,7 @@ public interface OptionBuilder extends Prototype.Api {
         /**
          * Type of the builder.
          *
-         * @param supplier supplier of value, such as a {@link io.helidon.common.Builder}
+         * @param supplier supplier of type of the builder
          * @return updated builder instance
          * @see #builderType()
          */
@@ -262,7 +263,7 @@ public interface OptionBuilder extends Prototype.Api {
              *
              * @param builder extending builder base of this prototype
              */
-            protected OptionBuilderImpl(OptionBuilder.BuilderBase<?, ?> builder) {
+            protected OptionBuilderImpl(BuilderBase<?, ?> builder) {
                 this.builderMethodName = builder.builderMethodName();
                 this.builderType = builder.builderType().get();
                 this.buildMethodName = builder.buildMethodName().get();
@@ -301,8 +302,8 @@ public interface OptionBuilder extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(builderMethodName, other.builderMethodName())
-                    && Objects.equals(builderType, other.builderType())
-                    && Objects.equals(buildMethodName, other.buildMethodName());
+                        && Objects.equals(builderType, other.builderType())
+                        && Objects.equals(buildMethodName, other.buildMethodName());
             }
 
             @Override
@@ -315,9 +316,9 @@ public interface OptionBuilder extends Prototype.Api {
     }
 
     /**
-     * Fluent API builder for {@link OptionBuilder}.
+     * Fluent API builder for {@link io.helidon.builder.codegen.OptionBuilder}.
      */
-    class Builder extends OptionBuilder.BuilderBase<OptionBuilder.Builder, OptionBuilder> implements io.helidon.common.Builder<OptionBuilder.Builder, OptionBuilder> {
+    class Builder extends BuilderBase<Builder, OptionBuilder> implements io.helidon.common.Builder<Builder, OptionBuilder> {
 
         private Builder() {
         }

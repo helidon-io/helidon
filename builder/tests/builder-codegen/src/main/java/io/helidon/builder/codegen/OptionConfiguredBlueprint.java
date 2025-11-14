@@ -16,6 +16,8 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
@@ -46,4 +48,12 @@ interface OptionConfiguredBlueprint {
      */
     @Option.DefaultBoolean(true)
     boolean traverse();
+
+    /**
+     * Factory method for this option. Factory method will be discovered from
+     * {@link PrototypeInfo#factoryMethods()}.
+     *
+     * @return config factory method if defined
+     */
+    Optional<FactoryMethod> factoryMethod();
 }

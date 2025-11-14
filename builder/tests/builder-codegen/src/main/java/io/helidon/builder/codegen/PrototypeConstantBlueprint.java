@@ -16,16 +16,41 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.function.Consumer;
+
+import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.types.TypeName;
 
-public interface PrototypeConstant {
+/**
+ * Custom constant definition. This constant will be code generated on the prototype interface.
+ */
+@Prototype.Blueprint(detach = true)
+interface PrototypeConstantBlueprint {
+    /**
+     * Name of the constant.
+     *
+     * @return field name
+     */
     String name();
 
+    /**
+     * Type of the constant.
+     *
+     * @return field type
+     */
     TypeName type();
 
+    /**
+     * Javadoc for the constant.
+     *
+     * @return javadoc
+     */
     Javadoc javadoc();
 
-    void accept(ContentBuilder<?> content);
+    /**
+     * Consumer of the content to generate the constant.
+     */
+    Consumer<ContentBuilder<?>> content();
 }

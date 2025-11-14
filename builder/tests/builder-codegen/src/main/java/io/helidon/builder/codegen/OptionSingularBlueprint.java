@@ -17,26 +17,12 @@
 package io.helidon.builder.codegen;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Definition of a singular option.
  */
 @Prototype.Blueprint(detach = true)
 interface OptionSingularBlueprint {
-
-    /**
-     * Singular setter method.
-     * <p>
-     * Examples:
-     * <ul>
-     *     <li>{@code addAllowedValue} - for option named {@code allowedValues}</li>
-     *     <li>{@code putOption} - for a map option named {@code options}</li>
-     * </ul>
-     *
-     * @return singular setter method
-     */
-    TypedElementInfo setter();
 
     /**
      * Singular form of the option name.
@@ -47,4 +33,10 @@ interface OptionSingularBlueprint {
      */
     String name();
 
+    /**
+     * Name of the singular setter method.
+     *
+     * @return method name
+     */
+    String methodName();
 }

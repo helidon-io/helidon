@@ -18,6 +18,7 @@ package io.helidon.builder.codegen;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -27,7 +28,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface OptionConfigured {
+public interface OptionConfigured extends Prototype.Api {
 
     /**
      * Create a new fluent API builder to customize configuration.
@@ -70,9 +71,17 @@ public interface OptionConfigured {
     boolean traverse();
 
     /**
-     * Fluent API builder base for {@link OptionConfigured}.
+     * Factory method for this option. Factory method will be discovered from
+     * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @return config factory method if defined
+     */
+    Optional<FactoryMethod> factoryMethod();
+
+    /**
+     * Fluent API builder base for {@link io.helidon.builder.codegen.OptionConfigured}.
+     *
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionConfigured>
@@ -80,6 +89,7 @@ public interface OptionConfigured {
 
         private boolean merge = false;
         private boolean traverse = true;
+        private FactoryMethod factoryMethod;
         private String configKey;
 
         /**
@@ -98,6 +108,7 @@ public interface OptionConfigured {
             configKey(prototype.configKey());
             merge(prototype.merge());
             traverse(prototype.traverse());
+            factoryMethod(prototype.factoryMethod());
             return self();
         }
 
@@ -111,6 +122,7 @@ public interface OptionConfigured {
             builder.configKey().ifPresent(this::configKey);
             merge(builder.merge());
             traverse(builder.traverse());
+            builder.factoryMethod().ifPresent(this::factoryMethod);
             return self();
         }
 
@@ -130,7 +142,8 @@ public interface OptionConfigured {
         /**
          * Whether to merge the key with the current object.
          *
-         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named {@link #configKey()}
+         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named
+         *              {@link #configKey()}
          * @return updated builder instance
          * @see #merge()
          */
@@ -148,6 +161,31 @@ public interface OptionConfigured {
          */
         public BUILDER traverse(boolean traverse) {
             this.traverse = traverse;
+            return self();
+        }
+
+        /**
+         * Clear existing value of factoryMethod.
+         *
+         * @return updated builder instance
+         * @see #factoryMethod()
+         */
+        public BUILDER clearFactoryMethod() {
+            this.factoryMethod = null;
+            return self();
+        }
+
+        /**
+         * Factory method for this option. Factory method will be discovered from
+         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         *
+         * @param factoryMethod config factory method if defined
+         * @return updated builder instance
+         * @see #factoryMethod()
+         */
+        public BUILDER factoryMethod(FactoryMethod factoryMethod) {
+            Objects.requireNonNull(factoryMethod);
+            this.factoryMethod = factoryMethod;
             return self();
         }
 
@@ -178,12 +216,23 @@ public interface OptionConfigured {
             return traverse;
         }
 
+        /**
+         * Factory method for this option. Factory method will be discovered from
+         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         *
+         * @return config factory method if defined
+         */
+        public Optional<FactoryMethod> factoryMethod() {
+            return Optional.ofNullable(factoryMethod);
+        }
+
         @Override
         public String toString() {
             return "OptionConfiguredBuilder{"
                     + "configKey=" + configKey + ","
                     + "merge=" + merge + ","
-                    + "traverse=" + traverse
+                    + "traverse=" + traverse + ","
+                    + "factoryMethod=" + factoryMethod
                     + "}";
         }
 
@@ -205,12 +254,28 @@ public interface OptionConfigured {
         }
 
         /**
+         * Factory method for this option. Factory method will be discovered from
+         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         *
+         * @param factoryMethod config factory method if defined
+         * @return updated builder instance
+         * @see #factoryMethod()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER factoryMethod(Optional<? extends FactoryMethod> factoryMethod) {
+            Objects.requireNonNull(factoryMethod);
+            this.factoryMethod = factoryMethod.map(FactoryMethod.class::cast).orElse(this.factoryMethod);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class OptionConfiguredImpl implements OptionConfigured {
 
             private final boolean merge;
             private final boolean traverse;
+            private final Optional<FactoryMethod> factoryMethod;
             private final String configKey;
 
             /**
@@ -222,6 +287,7 @@ public interface OptionConfigured {
                 this.configKey = builder.configKey().get();
                 this.merge = builder.merge();
                 this.traverse = builder.traverse();
+                this.factoryMethod = builder.factoryMethod().map(Function.identity());
             }
 
             @Override
@@ -240,11 +306,17 @@ public interface OptionConfigured {
             }
 
             @Override
+            public Optional<FactoryMethod> factoryMethod() {
+                return factoryMethod;
+            }
+
+            @Override
             public String toString() {
                 return "OptionConfigured{"
                         + "configKey=" + configKey + ","
                         + "merge=" + merge + ","
-                        + "traverse=" + traverse
+                        + "traverse=" + traverse + ","
+                        + "factoryMethod=" + factoryMethod
                         + "}";
             }
 
@@ -258,12 +330,13 @@ public interface OptionConfigured {
                 }
                 return Objects.equals(configKey, other.configKey())
                         && merge == other.merge()
-                        && traverse == other.traverse();
+                        && traverse == other.traverse()
+                        && Objects.equals(factoryMethod, other.factoryMethod());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(configKey, merge, traverse);
+                return Objects.hash(configKey, merge, traverse, factoryMethod);
             }
 
         }

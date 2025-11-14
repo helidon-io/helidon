@@ -41,7 +41,6 @@ final class GenerateBuilder {
                                 List<TypeArgument> typeArguments,
                                 List<TypeName> typeArgumentNames) {
 
-
         TypeName prototype = prototypeInfo.prototypeType();
         TypeName runtimeType = prototypeInfo.runtimeType().orElse(prototype);
         boolean isFactory = !prototype.equals(runtimeType);
@@ -56,11 +55,11 @@ final class GenerateBuilder {
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                     .description("Fluent API builder for {@link " + runtimeType.className() + "}.")
                     .superType(TypeName.builder()
-                                         .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
-                                         .addTypeArguments(typeArgumentNames)
-                                         .addTypeArgument(builderType)
-                                         .addTypeArgument(prototype)
-                                         .build())
+                                       .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
+                                       .addTypeArguments(typeArgumentNames)
+                                       .addTypeArgument(builderType)
+                                       .addTypeArgument(prototype)
+                                       .build())
                     .addInterface(TypeName.builder()
                                           .from(TypeName.create(Builder.class))
                                           .addTypeArgument(builderType)
