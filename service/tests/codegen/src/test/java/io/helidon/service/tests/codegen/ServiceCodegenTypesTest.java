@@ -210,6 +210,11 @@ class ServiceCodegenTypesTest {
                 .type(Set.class)
                 .addTypeArgument(TypeName.create(ResolvedType.class))
                 .build());
+        checkField(toCheck, checked, fields, "MAP_RESOLVED_TO_SET_OF_RESOLVED", TypeName.builder()
+                .type(Map.class)
+                .addTypeArgument(TypeName.create(ResolvedType.class))
+                .addTypeArgument(ServiceCodegenTypes.SET_OF_RESOLVED_TYPES)
+                .build());
         checkField(toCheck, checked, fields, "GENERIC_T_TYPE", TypeName.builder()
                 .className("T")
                 .generic(true)

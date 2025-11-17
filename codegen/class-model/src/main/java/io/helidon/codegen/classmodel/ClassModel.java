@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
@@ -49,12 +50,15 @@ public final class ClassModel extends ClassBase {
     public static final String DEFAULT_PADDING = "    ";
     private final String packageName;
     private final String copyright;
+    private final Content staticInitializer;
+
     private ImportOrganizer imports;
 
     private ClassModel(Builder builder) {
         super(builder);
         this.copyright = builder.copyright;
         this.packageName = builder.packageName;
+        this.staticInitializer = builder.staticInitializer == null ? null : builder.staticInitializer.build();
     }
 
     /**
@@ -128,6 +132,23 @@ public final class ClassModel extends ClassBase {
         writer.writeSeparatorLine();
     }
 
+    @Override
+    void writePostConstantDeclaration(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
+            throws IOException {
+        if (staticInitializer == null) {
+            return;
+        }
+        writer.increasePaddingLevel();
+        writer.write("\n");
+        writer.increasePaddingLevel();
+        writer.writeLine("static {");
+        staticInitializer.writeBody(writer, imports);
+        writer.decreasePaddingLevel();
+        writer.write("\n");
+        writer.writeLine("}");
+        writer.decreasePaddingLevel();
+    }
+
     /**
      * Type name of this class.
      *
@@ -145,11 +166,19 @@ public final class ClassModel extends ClassBase {
                 + '}';
     }
 
+    @Override
+    void addImports(ImportOrganizer.Builder builder) {
+        super.addImports(builder);
+        if (staticInitializer != null) {
+            staticInitializer.addImports(builder);
+        }
+    }
+
     /**
      * Fluent API builder for {@link ClassModel}.
      */
     public static final class Builder extends ClassBase.Builder<Builder, ClassModel> {
-
+        private Content.Builder staticInitializer;
         private String packageName = "";
         private String copyright;
 
@@ -209,6 +238,20 @@ public final class ClassModel extends ClassBase {
         public Builder type(TypeName type) {
             packageName(type.packageName());
             name(type.className());
+            return this;
+        }
+
+        /**
+         * Update the static initializer of this class.
+         *
+         * @param contentBuilder content builder consumer to update the static initializer
+         * @return updated builder instance
+         */
+        public Builder staticInitializer(Consumer<ContentBuilder<?>> contentBuilder) {
+            this.staticInitializer = (this.staticInitializer == null)
+                    ? Content.builder()
+                    : this.staticInitializer;
+            contentBuilder.accept(staticInitializer);
             return this;
         }
 
