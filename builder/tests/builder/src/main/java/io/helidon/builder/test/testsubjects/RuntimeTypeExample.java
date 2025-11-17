@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 
-@RuntimeType.PrototypedBy(RuntimeTypeExampleConfig.class)
 public class RuntimeTypeExample implements RuntimeType.Api<RuntimeTypeExampleConfig> {
     private final RuntimeTypeExampleConfig prototype;
 

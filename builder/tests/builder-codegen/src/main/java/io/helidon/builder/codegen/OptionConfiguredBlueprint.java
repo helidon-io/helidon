@@ -51,7 +51,7 @@ interface OptionConfiguredBlueprint {
 
     /**
      * Factory method for this option. Factory method will be discovered from
-     * {@link PrototypeInfo#factoryMethods()}.
+     * {@link io.helidon.builder.codegen.PrototypeInfo#configFactories()}.
      *
      * @return config factory method if defined
      */

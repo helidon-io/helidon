@@ -21,12 +21,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 
 /**
  * Option allowed value.
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionAllowedValueBlueprint")
 public interface OptionAllowedValue extends Prototype.Api {
 
     /**
@@ -65,11 +67,10 @@ public interface OptionAllowedValue extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionAllowedValue}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionAllowedValue>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionAllowedValue> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private String description;
         private String value;
@@ -221,7 +222,7 @@ public interface OptionAllowedValue extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(value, other.value())
-                        && Objects.equals(description, other.description());
+                    && Objects.equals(description, other.description());
             }
 
             @Override
@@ -236,8 +237,7 @@ public interface OptionAllowedValue extends Prototype.Api {
     /**
      * Fluent API builder for {@link io.helidon.builder.codegen.OptionAllowedValue}.
      */
-    class Builder extends BuilderBase<Builder, OptionAllowedValue>
-            implements io.helidon.common.Builder<Builder, OptionAllowedValue> {
+    class Builder extends BuilderBase<Builder, OptionAllowedValue> implements io.helidon.common.Builder<Builder, OptionAllowedValue> {
 
         private Builder() {
         }

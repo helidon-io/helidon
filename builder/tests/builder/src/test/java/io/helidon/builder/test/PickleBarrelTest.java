@@ -42,7 +42,7 @@ class PickleBarrelTest {
         Pickle.Builder pickleBuilder = Pickle.builder().size(PickleSize.MEDIUM);
         Errors.ErrorMessagesException e = assertThrows(Errors.ErrorMessagesException.class, pickleBuilder::build);
         assertThat(e.getMessage(),
-                   startsWith("FATAL: Property \"type\" is required, but not set at"));
+                   startsWith("FATAL: Property \"type\" must not be null, but not set"));
 
         // now it will build since we provided the required 'type' attribute...
         Pickle pickle = pickleBuilder.type(PickleType.GHERKIN).build();
@@ -54,7 +54,7 @@ class PickleBarrelTest {
         PickleBarrel.Builder pickleBarrelBuilder = PickleBarrel.builder();
         e = assertThrows(Errors.ErrorMessagesException.class, pickleBarrelBuilder::build);
         assertThat(e.getMessage(),
-                   startsWith("FATAL: Property \"id\" is required, but not set at"));
+                   startsWith("FATAL: Property \"id\" must not be null, but not set"));
 
         PickleBarrel pickleBarrel = pickleBarrelBuilder.addPickle(pickle).id("243").build();
 

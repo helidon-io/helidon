@@ -155,14 +155,17 @@ class GeneratedMethods {
         Javadoc newJavadoc = Javadoc.builder()
                 .from(javadoc)
                 .parameters(newParamsJavadoc)
+                .returnDescription("updated builder instance")
                 .build();
 
         TypedElementInfo newOne = TypedElementInfo.builder()
                 .from(referenceMethod)
+                .typeName(Utils.builderReturnType())
                 .clearEnclosingType()
                 .parameterArguments(newList)
                 .accessModifier(AccessModifier.PUBLIC)
                 .annotations(annotations)
+                .modifiers(Set.of())
                 .elementModifiers(Set.of())
                 .build();
 
@@ -172,7 +175,7 @@ class GeneratedMethods {
                     .addContent(referenceMethod.elementName())
                     .addContent("(this");
 
-            if (paramNames.size() > 1) {
+            if (!paramNames.isEmpty()) {
                 cb.addContent(", ");
             }
 

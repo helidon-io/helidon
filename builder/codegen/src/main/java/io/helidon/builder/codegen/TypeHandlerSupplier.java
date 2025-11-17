@@ -31,11 +31,9 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
-import static io.helidon.common.types.TypeNames.SUPPLIER;
 
 class TypeHandlerSupplier extends TypeHandlerBasic {
 
@@ -63,7 +61,7 @@ class TypeHandlerSupplier extends TypeHandlerBasic {
         if (option().provider().isPresent()) {
             return;
         }
-        Optional<FactoryMethod> factoryMethod = findFactory(prototype(), option().declaredType());
+        Optional<FactoryMethod> factoryMethod = optionConfigured.factoryMethod();
         String setterName = option().setterName();
 
         if (factoryMethod.isPresent()) {
@@ -86,7 +84,7 @@ class TypeHandlerSupplier extends TypeHandlerBasic {
     @Override
     Optional<GeneratedMethod> prepareBuilderSetterDeclared(Javadoc getterJavadoc) {
         TypeName typeName = option().declaredType();
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
         boolean generic = !type().typeArguments().isEmpty();
@@ -126,6 +124,15 @@ class TypeHandlerSupplier extends TypeHandlerBasic {
                                            .build());
     }
 
+    TypeName builderGetterType() {
+        return option().declaredType();
+    }
+
+    @Override
+    GeneratedMethod prepareBuilderGetter(Javadoc javadoc) {
+        return super.prepareBuilderGetter(javadoc);
+    }
+
     @Override
     GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
         TypeName typeName = type();
@@ -145,21 +152,9 @@ class TypeHandlerSupplier extends TypeHandlerBasic {
     }
 
     @Override
-    TypeName setterArgumentTypeName() {
-        TypeName type = type();
-        if (TypeNames.STRING.equals(type) || type.unboxed().primitive() || type.array()) {
-            return option().declaredType();
-        }
-
-        return TypeName.builder(SUPPLIER)
-                .addTypeArgument(toWildcard(type))
-                .build();
-    }
-
-    @Override
     GeneratedMethod realDeclaredBuilderSetter(Javadoc getterJavadoc) {
         TypeName typeName = type();
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 

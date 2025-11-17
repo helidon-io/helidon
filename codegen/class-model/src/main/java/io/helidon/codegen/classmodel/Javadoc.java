@@ -548,10 +548,14 @@ public final class Javadoc extends ModelComponent {
             this.deprecation.addAll(javadoc.deprecation());
             this.returnDescription.addAll(javadoc.returnDescription());
             this.contentBuilder.append(String.join("\n", javadoc.content()));
-            this.parameters.putAll(javadoc.parameters());
-            this.genericArguments.putAll(javadoc.genericsTokens());
-            this.throwsDesc.putAll(javadoc.throwsDesc());
-            this.otherTags.putAll(javadoc.otherTags());
+            javadoc.parameters()
+                    .forEach((name, values) -> this.parameters.put(name, new ArrayList<>(values)));
+            javadoc.genericsTokens()
+                    .forEach((name, values) -> this.genericArguments.put(name, new ArrayList<>(values)));
+            javadoc.throwsDesc()
+                    .forEach((name, values) -> this.throwsDesc.put(name, new ArrayList<>(values)));
+            javadoc.otherTags()
+                    .forEach((name, values) -> this.otherTags.put(name, new ArrayList<>(values)));
             return this;
         }
 

@@ -327,6 +327,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * </tr>
  * </table>
  */
+@SuppressWarnings("removal")
 public final class OidcConfig extends TenantConfigImpl {
     /**
      * Default name of the header we expect JWT in.
@@ -970,6 +971,7 @@ public final class OidcConfig extends TenantConfigImpl {
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
+    @SuppressWarnings("removal")
     @Configured(description = "Open ID Connect configuration")
     public static class Builder extends BaseBuilder<Builder, OidcConfig> {
 

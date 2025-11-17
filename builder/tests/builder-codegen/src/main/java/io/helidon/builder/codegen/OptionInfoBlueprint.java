@@ -217,6 +217,13 @@ interface OptionInfoBlueprint extends Annotated {
     Optional<OptionBuilder> builderInfo();
 
     /**
+     * Custom runtime type factory method.
+     *
+     * @return runtime type factory method, if present
+     */
+    Optional<RuntimeTypeInfo> runtimeType();
+
+    /**
      * Description of this option, used in Javadoc as the main text if defined.
      *
      * @return description, if present

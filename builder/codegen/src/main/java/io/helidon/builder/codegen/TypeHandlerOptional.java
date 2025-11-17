@@ -66,7 +66,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     @Override
     Optional<GeneratedMethod> prepareBuilderSetterDeclared(Javadoc getterJavadoc) {
         TypeName typeName = asTypeArgument(TypeNames.OPTIONAL);
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
         boolean generic = typeName.typeArguments().getFirst().wildcard();
@@ -117,7 +117,7 @@ class TypeHandlerOptional extends TypeHandlerBasic {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderClear(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -152,5 +152,12 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                                    .javadoc(javadoc)
                                    .contentBuilder(contentConsumer)
                                    .build());
+    }
+
+    void decorateValue(ContentBuilder<?> contentBuilder, String optionName) {
+        contentBuilder.addContent(TypeNames.OPTIONAL)
+                .addContent(".of(")
+                .addContent(optionName)
+                .addContent(")");
     }
 }

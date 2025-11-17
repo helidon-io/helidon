@@ -68,7 +68,7 @@ class AllowedValuesTest {
 
         String message = thrown.getMessage();
         assertThat(message,
-                   containsString("Property \"restricted-options\" value is not within allowed values. "
+                   containsString("Property \"restrictedOptions\" value is not within allowed values. "
                                       + "Configured: \"BAD\", expected one of: \""));
         // we use a set, may be different order
         assertThat(message, containsString("GOOD_1"));
@@ -86,7 +86,7 @@ class AllowedValuesTest {
 
         String message = thrown.getMessage();
         assertThat(message,
-                   containsString("Property \"restricted-options-list\" contains value that is not within allowed values. "
+                   containsString("Property \"restrictedOptionsList\" contains value that is not within allowed values. "
                                       + "Configured: \"BAD\", expected one of: \""));
         // we use a set, may be different order
         assertThat(message, containsString("GOOD_1"));

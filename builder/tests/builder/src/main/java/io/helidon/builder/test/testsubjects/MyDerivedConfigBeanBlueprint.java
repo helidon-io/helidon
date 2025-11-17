@@ -23,6 +23,6 @@ import io.helidon.builder.api.Prototype;
  *
  * @see MyConfigBean
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(beanStyle = true)
 interface MyDerivedConfigBeanBlueprint extends MyConfigBeanBlueprint {
 }

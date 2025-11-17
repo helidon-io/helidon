@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -33,6 +34,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionBuilderBlueprint")
 public interface OptionBuilder extends Prototype.Api {
 
     /**
@@ -71,6 +73,14 @@ public interface OptionBuilder extends Prototype.Api {
     TypeName builderType();
 
     /**
+     * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+     * to the generated setter with consumer.
+     *
+     * @return type declaring the builder method
+     */
+    TypeName builderMethodType();
+
+    /**
      * Name of the build method ({@code build} or {@code buildPrototype}).
      *
      * @return builder build method name
@@ -80,14 +90,14 @@ public interface OptionBuilder extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionBuilder}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
-        private String buildMethodName;
+        private String buildMethodName = "build";
         private String builderMethodName = "builder";
+        private TypeName builderMethodType;
         private TypeName builderType;
 
         /**
@@ -105,6 +115,7 @@ public interface OptionBuilder extends Prototype.Api {
         public BUILDER from(OptionBuilder prototype) {
             builderMethodName(prototype.builderMethodName());
             builderType(prototype.builderType());
+            builderMethodType(prototype.builderMethodType());
             buildMethodName(prototype.buildMethodName());
             return self();
         }
@@ -118,7 +129,8 @@ public interface OptionBuilder extends Prototype.Api {
         public BUILDER from(BuilderBase<?, ?> builder) {
             builderMethodName(builder.builderMethodName());
             builder.builderType().ifPresent(this::builderType);
-            builder.buildMethodName().ifPresent(this::buildMethodName);
+            builder.builderMethodType().ifPresent(this::builderMethodType);
+            buildMethodName(builder.buildMethodName());
             return self();
         }
 
@@ -179,6 +191,50 @@ public interface OptionBuilder extends Prototype.Api {
         }
 
         /**
+         * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+         * to the generated setter with consumer.
+         *
+         * @param builderMethodType type declaring the builder method
+         * @return updated builder instance
+         * @see #builderMethodType()
+         */
+        public BUILDER builderMethodType(TypeName builderMethodType) {
+            Objects.requireNonNull(builderMethodType);
+            this.builderMethodType = builderMethodType;
+            return self();
+        }
+
+        /**
+         * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+         * to the generated setter with consumer.
+         *
+         * @param consumer consumer of builder of type declaring the builder method
+         * @return updated builder instance
+         * @see #builderMethodType()
+         */
+        public BUILDER builderMethodType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.builderMethodType(builder.build());
+            return self();
+        }
+
+        /**
+         * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+         * to the generated setter with consumer.
+         *
+         * @param supplier supplier of type declaring the builder method
+         * @return updated builder instance
+         * @see #builderMethodType()
+         */
+        public BUILDER builderMethodType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.builderMethodType(supplier.get());
+            return self();
+        }
+
+        /**
          * Name of the build method ({@code build} or {@code buildPrototype}).
          *
          * @param buildMethodName builder build method name
@@ -212,12 +268,22 @@ public interface OptionBuilder extends Prototype.Api {
         }
 
         /**
+         * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+         * to the generated setter with consumer.
+         *
+         * @return type declaring the builder method
+         */
+        public Optional<TypeName> builderMethodType() {
+            return Optional.ofNullable(builderMethodType);
+        }
+
+        /**
          * Name of the build method ({@code build} or {@code buildPrototype}).
          *
          * @return builder build method name
          */
-        public Optional<String> buildMethodName() {
-            return Optional.ofNullable(buildMethodName);
+        public String buildMethodName() {
+            return buildMethodName;
         }
 
         @Override
@@ -225,6 +291,7 @@ public interface OptionBuilder extends Prototype.Api {
             return "OptionBuilderBuilder{"
                     + "builderMethodName=" + builderMethodName + ","
                     + "builderType=" + builderType + ","
+                    + "builderMethodType=" + builderMethodType + ","
                     + "buildMethodName=" + buildMethodName
                     + "}";
         }
@@ -243,8 +310,8 @@ public interface OptionBuilder extends Prototype.Api {
             if (builderType == null) {
                 collector.fatal(getClass(), "Property \"builderType\" must not be null, but not set");
             }
-            if (buildMethodName == null) {
-                collector.fatal(getClass(), "Property \"buildMethodName\" must not be null, but not set");
+            if (builderMethodType == null) {
+                collector.fatal(getClass(), "Property \"builderMethodType\" must not be null, but not set");
             }
             collector.collect().checkValid();
         }
@@ -256,6 +323,7 @@ public interface OptionBuilder extends Prototype.Api {
 
             private final String buildMethodName;
             private final String builderMethodName;
+            private final TypeName builderMethodType;
             private final TypeName builderType;
 
             /**
@@ -266,7 +334,8 @@ public interface OptionBuilder extends Prototype.Api {
             protected OptionBuilderImpl(BuilderBase<?, ?> builder) {
                 this.builderMethodName = builder.builderMethodName();
                 this.builderType = builder.builderType().get();
-                this.buildMethodName = builder.buildMethodName().get();
+                this.builderMethodType = builder.builderMethodType().get();
+                this.buildMethodName = builder.buildMethodName();
             }
 
             @Override
@@ -280,6 +349,11 @@ public interface OptionBuilder extends Prototype.Api {
             }
 
             @Override
+            public TypeName builderMethodType() {
+                return builderMethodType;
+            }
+
+            @Override
             public String buildMethodName() {
                 return buildMethodName;
             }
@@ -289,6 +363,7 @@ public interface OptionBuilder extends Prototype.Api {
                 return "OptionBuilder{"
                         + "builderMethodName=" + builderMethodName + ","
                         + "builderType=" + builderType + ","
+                        + "builderMethodType=" + builderMethodType + ","
                         + "buildMethodName=" + buildMethodName
                         + "}";
             }
@@ -302,13 +377,14 @@ public interface OptionBuilder extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(builderMethodName, other.builderMethodName())
-                        && Objects.equals(builderType, other.builderType())
-                        && Objects.equals(buildMethodName, other.buildMethodName());
+                    && Objects.equals(builderType, other.builderType())
+                    && Objects.equals(builderMethodType, other.builderMethodType())
+                    && Objects.equals(buildMethodName, other.buildMethodName());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(builderMethodName, builderType, buildMethodName);
+                return Objects.hash(builderMethodName, builderType, builderMethodType, buildMethodName);
             }
 
         }

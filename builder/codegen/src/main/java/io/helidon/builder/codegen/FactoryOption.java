@@ -47,6 +47,8 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.ARRAY_LIST;
 import static io.helidon.builder.codegen.Types.BUILDER_DESCRIPTION;
+import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.DEPRECATED;
 import static io.helidon.builder.codegen.Types.LINKED_HASH_MAP;
 import static io.helidon.builder.codegen.Types.LINKED_HASH_SET;
@@ -66,7 +68,12 @@ import static io.helidon.builder.codegen.Types.OPTION_REQUIRED;
 import static io.helidon.builder.codegen.Types.OPTION_SINGULAR;
 import static io.helidon.builder.codegen.Types.OPTION_TRAVERSE_CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_API;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_CONFIGURED;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
+import static io.helidon.builder.codegen.Types.RUNTIME_API;
+import static io.helidon.builder.codegen.Utils.deCapitalize;
+import static io.helidon.builder.codegen.Utils.resoledTypesEqual;
+import static io.helidon.builder.codegen.Utils.typesEqual;
 import static io.helidon.builder.codegen.ValidationTask.doesImplement;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.codegen.ElementInfoPredicates.elementName;
@@ -74,7 +81,7 @@ import static io.helidon.common.types.TypeNames.OBJECT;
 import static java.util.function.Predicate.not;
 
 // builder option
-final class PrototypeOption {
+final class FactoryOption {
     private static final Set<String> IGNORED_NAMES = Set.of("build",
                                                             "get",
                                                             "buildPrototype");
@@ -102,7 +109,7 @@ final class PrototypeOption {
             "while", "true", "false", "null"
     );
 
-    private PrototypeOption() {
+    private FactoryOption() {
     }
 
     static void options(CodegenContext ctx,
@@ -177,9 +184,10 @@ final class PrototypeOption {
                                         PrototypeInfo prototypeInfo,
                                         List<OptionInfo> options,
                                         List<TypeInfo> typeScope) {
+        Set<ElementSignature> ignoredDefaultMethods = new HashSet<>();
 
         for (TypeInfo typeInfo : typeScope) {
-            discoverOptions(ctx, roundContext, prototypeInfo, options, typeInfo);
+            discoverOptions(ctx, roundContext, prototypeInfo, options, typeInfo, ignoredDefaultMethods);
         }
     }
 
@@ -187,8 +195,9 @@ final class PrototypeOption {
                                         RoundContext roundContext,
                                         PrototypeInfo prototypeInfo,
                                         List<OptionInfo> options,
-                                        TypeInfo typeInfo) {
-        List<TypedElementInfo> candidates = optionCandidates(ctx, prototypeInfo, typeInfo);
+                                        TypeInfo typeInfo,
+                                        Set<ElementSignature> ignoredDefaultMethods) {
+        List<TypedElementInfo> candidates = optionCandidates(ctx, prototypeInfo, typeInfo, ignoredDefaultMethods);
 
         // all candidates are valid!
         for (TypedElementInfo candidate : candidates) {
@@ -198,14 +207,15 @@ final class PrototypeOption {
 
     private static List<TypedElementInfo> optionCandidates(CodegenContext ctx,
                                                            PrototypeInfo prototypeInfo,
-                                                           TypeInfo typeInfo) {
+                                                           TypeInfo typeInfo,
+                                                           Set<ElementSignature> ignoredDefaultMethods) {
         var candidates = typeInfo.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod) // only methods, constants are ignored
                 .filter(not(ElementInfoPredicates::isStatic)) // static factory methods are ignored
                 .filter(not(ElementInfoPredicates::isPrivate)) // private interface methods are ignored
-                .filter(it -> validOptionMethod(prototypeInfo.defaultMethodsPredicate(), it))
-                .filter(PrototypeOption::validOptionMethodName)
+                .filter(it -> validOptionMethod(prototypeInfo.defaultMethodsPredicate(), ignoredDefaultMethods, it))
+                .filter(FactoryOption::validOptionMethodName)
                 .toList();
 
         // we must validate - any candidate that is void, or has parameters is a bad candidate
@@ -281,7 +291,10 @@ final class PrototypeOption {
                 .getterName(getterName)
                 .setterName(setterName);
 
-        optionBuilder(roundContext, type).ifPresent(option::builderInfo);
+        optionBuilder(roundContext, type)
+                .ifPresent(option::builderInfo);
+
+        runtimeTypeFactory(roundContext, prototypeInfo, option, type, name);
 
         candidate.findAnnotation(Types.OPTION_DECORATOR)
                 .flatMap(Annotation::typeValue)
@@ -290,7 +303,7 @@ final class PrototypeOption {
         var accessModifier = candidate.findAnnotation(OPTION_ACCESS)
                 .flatMap(Annotation::stringValue)
                 .map(it -> it.isBlank() ? AccessModifier.PACKAGE_PRIVATE : AccessModifier.valueOf(it))
-                .orElse(prototypeInfo.builderAccessModifier());
+                .orElse(AccessModifier.PUBLIC);
         option.accessModifier(accessModifier);
 
         // allowedValues
@@ -309,7 +322,7 @@ final class PrototypeOption {
 
         Javadoc javadoc = optionJavadoc(candidate, name);
         // configured
-        addConfiguredOptionData(option, candidate, type, name);
+        addConfiguredOptionData(roundContext, prototypeInfo, option, candidate, type, name);
         // deprecation
         addDeprecatedOptionData(option, candidate, javadoc);
         // provider
@@ -325,24 +338,13 @@ final class PrototypeOption {
         return option.build();
     }
 
-    private static Optional<OptionBuilder> optionBuilder(RoundContext roundContext, TypeName type) {
-        /*
-        the type of interest - T below
-        Map<K, T>
-        Supplier<T>
-        Optional<T>
-        List<T>
-        Set<T>
-        T
-         */
-        TypeName actualType;
-        if (type.isOptional() || type.isSupplier() || type.isSet() || type.isList()) {
-            actualType = type.typeArguments().getFirst();
-        } else if (type.isMap()) {
-            actualType = type.typeArguments().get(1);
-        } else {
-            actualType = type;
-        }
+    @SuppressWarnings({"removal", "deprecation"})
+    private static void runtimeTypeFactory(RoundContext roundContext,
+                                           PrototypeInfo prototypeInfo,
+                                           OptionInfo.Builder option,
+                                           TypeName type,
+                                           String optionName) {
+        TypeName actualType = Utils.realType(type);
 
         /*
         We have a type, i.e. Option - now we are interested in
@@ -352,9 +354,112 @@ final class PrototypeOption {
          */
         if (actualType.equals(OBJECT)
                 || actualType.unboxed().primitive()
-                || actualType.generic()
-                || actualType.array()
-                || actualType.equals(TypeNames.STRING)) {
+                || actualType.generic()) {
+            // cannot build these for sure
+            return;
+        }
+
+        // first check prototype factories
+        for (RuntimeTypeInfo runtimeFactory : prototypeInfo.runtimeTypeFactories()) {
+            if (runtimeFactory.factoryMethod().isEmpty()) {
+                // this is not a valid definition of a factory
+                continue;
+            }
+            var factory = runtimeFactory.factoryMethod().get();
+            if (Utils.typesEqual(factory.returnType(), actualType)
+                    || resoledTypesEqual(factory.returnType(), actualType)) {
+                if (factory.optionName().orElse(optionName).equals(optionName)) {
+                    option.runtimeType(runtimeFactory);
+                    return;
+                }
+            }
+        }
+
+        TypeName prototype = prototypeInfo.prototypeType();
+
+        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
+            var referencedMethod = someFactory.method();
+            String methodName = referencedMethod.elementName();
+            TypeName returnType = referencedMethod.typeName();
+
+            if (referencedMethod.parameterArguments().size() != 1) {
+                // not a single parameter
+                continue;
+            }
+
+            if (Utils.typesEqual(returnType, prototype)) {
+                continue;
+            }
+
+            TypeName param = referencedMethod.parameterArguments().getFirst().typeName();
+            if (param.equals(CONFIG) || param.equals(COMMON_CONFIG)) {
+                continue;
+            }
+
+            if (Utils.typesEqual(actualType, returnType)
+                    || resoledTypesEqual(type, returnType)) {
+                String supportedOption = supportedOptionName(methodName, optionName);
+
+                if (optionName.equals(supportedOption)) {
+                    // matches type and matches option name (or for any option name of this type)
+                    option.runtimeType(rtf -> rtf
+                            .factoryMethod(fm -> fm
+                                    .declaringType(someFactory.declaringType())
+                                    .returnType(returnType)
+                                    .methodName(methodName)
+                                    .parameterType(referencedMethod.parameterArguments().getFirst().typeName())
+                                    .optionName(optionName)
+                            )
+                            .optionBuilder(OptionBuilder.builder()
+                                                   .builderMethodType(param)
+                                                   .builderType(Utils.prototypeBuilderType(param))
+                                                   .build()));
+                    return;
+
+                }
+            }
+        }
+
+        // also the actual type of the option may be an implementation of RuntimeType.Api
+        var typeInfo = roundContext.typeInfo(actualType);
+        if (typeInfo.isEmpty()) {
+            return;
+        }
+        var runtimeApi = typeInfo.get()
+                .interfaceTypeInfo()
+                .stream()
+                .filter(it -> it.typeName().equals(RUNTIME_API))
+                .findFirst();
+        if (runtimeApi.isEmpty()) {
+            return;
+        }
+        TypeName prototypeType = runtimeApi.get()
+                .typeName()
+                .typeArguments()
+                .getFirst();
+
+        option.runtimeType(rt -> rt
+                .optionBuilder(ob -> ob
+                        .builderMethodType(prototypeType)
+                        .builderType(Utils.prototypeBuilderType(prototypeType))
+                )
+        );
+
+    }
+
+    private static Optional<OptionBuilder> optionBuilder(RoundContext roundContext,
+                                                         TypeName type) {
+        TypeName actualType = Utils.realType(type);
+
+        /*
+        We have a type, i.e. Option - now we are interested in
+        Option.builder() // method name
+        Option.Builder // builder class
+        Option.Builder.build() // build method
+         */
+        if (actualType.equals(OBJECT)
+                || actualType.unboxed().primitive()
+                || actualType.generic()) {
             // cannot build these for sure
             return Optional.empty();
         }
@@ -367,6 +472,14 @@ final class PrototypeOption {
         } else {
             // assume this is a type built as part of this codegen round and is a prototype
             return optionBuilderGuessed(actualType);
+        }
+    }
+
+    private static String supportedOptionName(String methodName, String optionName) {
+        if (methodName.equals("create") || !methodName.startsWith("create")) {
+            return optionName;
+        } else {
+            return deCapitalize(methodName.substring("create".length()));
         }
     }
 
@@ -394,6 +507,7 @@ final class PrototypeOption {
                         .buildMethodName("build")
                         .builderMethodName(it.elementName())
                         .builderType(it.typeName())
+                        .builderMethodType(actualType)
                         .build());
     }
 
@@ -406,6 +520,7 @@ final class PrototypeOption {
                                    .builderMethodName("builder")
                                    .builderType(builderType)
                                    .buildMethodName("build")
+                                   .builderMethodType(actualType)
                                    .build());
     }
 
@@ -450,7 +565,9 @@ final class PrototypeOption {
         return !IGNORED_METHODS.contains(element.signature());
     }
 
-    private static boolean validOptionMethod(Predicate<String> defaultMethods, TypedElementInfo element) {
+    private static boolean validOptionMethod(Predicate<String> defaultMethods,
+                                             Set<ElementSignature> ignoredDefaultMethods,
+                                             TypedElementInfo element) {
         if (element.elementModifiers().contains(Modifier.DEFAULT)) {
             // default methods are OK only if allowed by the blueprint
             if (element.typeName().equals(TypeNames.PRIMITIVE_BOOLEAN)) {
@@ -458,13 +575,18 @@ final class PrototypeOption {
                 return false;
             }
             if (element.parameterArguments().isEmpty()) {
-                return defaultMethods.test(element.elementName());
+                boolean test = defaultMethods.test(element.elementName());
+                if (!test) {
+                    ignoredDefaultMethods.add(element.signature());
+                    return false;
+                }
+                return !ignoredDefaultMethods.contains(element.signature());
             }
             // default methods with parameters can never be options
             return false;
         }
         // abstract methods are always OK
-        return true;
+        return !ignoredDefaultMethods.contains(element.signature());
     }
 
     private static void addDefaultValue(OptionInfo.Builder option,
@@ -514,7 +636,7 @@ final class PrototypeOption {
         if (element.hasAnnotation(OPTION_DEFAULT_METHOD)) {
             Annotation annotation = element.annotation(OPTION_DEFAULT_METHOD);
             TypeName type = annotation
-                    .typeValue()
+                    .typeValue("type")
                     .filter(not(OPTION_DEFAULT_METHOD::equals))
                     .orElseGet(element::typeName);
             String name = annotation.stringValue().orElseThrow();
@@ -532,7 +654,7 @@ final class PrototypeOption {
     }
 
     private static TypeName realType(TypeName typeName) {
-        if (typeName.isOptional() || typeName.isSet() || typeName.isList()) {
+        if (typeName.isOptional() || typeName.isSet() || typeName.isList() || typeName.isSupplier()) {
             return realType(typeName.typeArguments().getFirst());
         }
         if (typeName.isMap()) {
@@ -581,7 +703,9 @@ final class PrototypeOption {
         }
     }
 
-    private static void addConfiguredOptionData(OptionInfo.Builder option,
+    private static void addConfiguredOptionData(RoundContext roundContext,
+                                                PrototypeInfo prototypeInfo,
+                                                OptionInfo.Builder option,
                                                 TypedElementInfo element,
                                                 TypeName returnType,
                                                 String name) {
@@ -595,11 +719,156 @@ final class PrototypeOption {
             boolean traverse = element.findAnnotation(OPTION_TRAVERSE_CONFIG)
                     .flatMap(Annotation::booleanValue)
                     .orElseGet(() -> traverseByDefault(returnType));
-            option.configured(configured -> configured
+            var configured = OptionConfigured.builder()
                     .configKey(configKey)
                     .merge(merge)
-                    .traverse(traverse)
-                    .build());
+                    .traverse(traverse);
+
+            configFactoryMethod(roundContext, prototypeInfo, option, returnType, name, configured);
+
+            option.configured(configured);
+        }
+    }
+
+    @SuppressWarnings({"removal", "deprecation"})
+    private static void configFactoryMethod(RoundContext roundContext, PrototypeInfo prototypeInfo,
+                                            OptionInfo.Builder option,
+                                            TypeName optionType,
+                                            String optionName,
+                                            OptionConfigured.Builder configured) {
+
+        TypeName actualType = Utils.realType(optionType);
+        // first check config factories
+        for (FactoryMethod configFactory : prototypeInfo.configFactories()) {
+            if (typesEqual(configFactory.returnType(), actualType)) {
+                if (configFactory.optionName().orElse(optionName).equals(optionName)) {
+                    configured.factoryMethod(configFactory);
+                    return;
+                }
+            }
+            if (resoledTypesEqual(configFactory.returnType(), actualType)) {
+                if (configFactory.optionName().orElse(optionName).equals(optionName)) {
+                    configured.factoryMethod(configFactory);
+                    return;
+                }
+            }
+        }
+
+        // check deprecated factories if any match
+        TypeName prototype = prototypeInfo.prototypeType();
+
+        for (DeprecatedFactoryMethod someFactory : prototypeInfo.deprecatedFactoryMethods()) {
+            var referencedMethod = someFactory.method();
+            String methodName = referencedMethod.elementName();
+            TypeName returnType = referencedMethod.typeName();
+
+            if (referencedMethod.parameterArguments().size() != 1) {
+                // not a single parameter
+                continue;
+            }
+            if (typesEqual(returnType, prototype)) {
+                // prototype factory method
+                continue;
+            }
+            TypeName firstParam = referencedMethod.parameterArguments().getFirst().typeName();
+            if (!(firstParam.equals(COMMON_CONFIG) || firstParam.equals(CONFIG))) {
+                // not a config factory
+                continue;
+            }
+            String supportedOptionName = supportedOptionName(methodName, optionName);
+            if (!supportedOptionName.equals(optionName)) {
+                // for some other option
+                continue;
+            }
+            if (!(typesEqual(returnType, actualType) || resoledTypesEqual(returnType, optionType))) {
+                // wrong return type
+                continue;
+            }
+            // this is a config factory method
+
+            // matches type and matches option name (or for any option name of this type)
+            configured.factoryMethod(fm -> fm
+                    .declaringType(someFactory.declaringType())
+                    .returnType(returnType)
+                    .methodName(methodName)
+                    .parameterType(firstParam)
+                    .optionName(optionName)
+            );
+            return;
+        }
+        // check if a runtime type prototype is a configured prototype
+        if (option.runtimeType().isPresent()) {
+            var rt = option.runtimeType().get();
+            var expectedPrototypeType = rt.optionBuilder()
+                    .builderMethodType();
+            var builderType = TypeName.builder(expectedPrototypeType)
+                    .className(expectedPrototypeType.className() + "Blueprint")
+                    .build();
+            var builderInfo = roundContext.typeInfo(builderType);
+            if (builderInfo.isPresent()) {
+                // we have a blueprint for the type, if annotated with configured, simply use this type
+                if (builderInfo.get().hasAnnotation(PROTOTYPE_CONFIGURED)) {
+                    configured.factoryMethod(fm -> fm
+                            .declaringType(expectedPrototypeType)
+                            .returnType(expectedPrototypeType)
+                            .methodName("create")
+                            .parameterType(CONFIG)
+                            .optionName(optionName)
+                    );
+                    return;
+                }
+            }
+        }
+
+        // check if the option type itself is a configured prototype
+        TypeName actualPrototype;
+        if (actualType.packageName().isBlank()) {
+            actualPrototype = TypeName.builder(actualType)
+                    .packageName(prototype.packageName())
+                    .build();
+        } else {
+            actualPrototype = actualType;
+        }
+        var blueprintType = TypeName.builder(actualPrototype)
+                .className(actualPrototype.className() + "Blueprint")
+                .build();
+        var blueprintInfo = roundContext.typeInfo(blueprintType);
+        if (blueprintInfo.isPresent()) {
+            // we have a blueprint for the type, if annotated with configured, simply use this type
+            if (blueprintInfo.get().hasAnnotation(PROTOTYPE_CONFIGURED)) {
+                configured.factoryMethod(fm -> fm
+                        .declaringType(actualPrototype)
+                        .returnType(actualPrototype)
+                        .methodName("create")
+                        .parameterType(CONFIG)
+                        .optionName(optionName)
+                );
+                return;
+            }
+        }
+        // and lastly - maybe there is a config factory method on the type
+        var actualTypeInfo = roundContext.typeInfo(actualType);
+        if (actualTypeInfo.isEmpty()) {
+            return;
+        }
+        if (actualTypeInfo.get()
+                .elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .filter(it -> Utils.typesEqual(it.typeName(), actualType))
+                .filter(it -> it.parameterArguments().size() == 1)
+                .map(it -> it.parameterArguments().getFirst().typeName())
+                .anyMatch(it -> it.equals(COMMON_CONFIG) || it.equals(CONFIG))) {
+            // there is a config factory method on the type
+            configured.factoryMethod(fm -> fm
+                    .declaringType(actualType)
+                    .returnType(actualType)
+                    .methodName("create")
+                    .parameterType(COMMON_CONFIG)
+                    .optionName(optionName)
+            );
         }
     }
 
@@ -681,17 +950,6 @@ final class PrototypeOption {
         }
 
         option.deprecation(deprecation.build());
-
-        io.helidon.common.types.Annotation.Builder deprecatedAnnotation = io.helidon.common.types.Annotation.builder()
-                .typeName(DEPRECATED);
-        if (since != null) {
-            deprecatedAnnotation.putValue("since", since);
-        }
-        if (forRemoval) {
-            deprecatedAnnotation.putValue("forRemoval", true);
-        }
-
-        option.addAnnotation(deprecatedAnnotation.build());
     }
 
     private static Javadoc optionJavadoc(TypedElementInfo element, String optionName) {
@@ -729,20 +987,13 @@ final class PrototypeOption {
 
         if (isBoolean) {
             if (getterName.startsWith("is")) {
-                return deCapitalize(getterName.substring(2));
+                return Utils.deCapitalize(getterName.substring(2));
             }
         }
         if (getterName.startsWith("get")) {
-            return deCapitalize(getterName.substring(3));
+            return Utils.deCapitalize(getterName.substring(3));
         }
         return getterName;
-    }
-
-    private static String deCapitalize(String string) {
-        if (string.isBlank()) {
-            return string;
-        }
-        return Character.toLowerCase(string.charAt(0)) + string.substring(1);
     }
 
     private enum OptionType {
@@ -836,7 +1087,7 @@ final class PrototypeOption {
                     content.addContentLiteral(defaultValues.get(i - 1))
                             .addContent(", ");
                     consumer(enclosingType, element, typeName, defaultValues.get(i)).accept(content);
-                    if (i != defaultValues.size() - 2) {
+                    if ((i - 1) != defaultValues.size() - 2) {
                         content.addContentLine(", ");
                     }
                     if (i == 1) {

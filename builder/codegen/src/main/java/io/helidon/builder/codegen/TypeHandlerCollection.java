@@ -133,7 +133,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
         TypeName actualType = type().genericTypeName();
         String setterName = option().setterName();
 
-        Optional<FactoryMethod> factoryMethod = findFactory(prototype(), actualType);
+        Optional<FactoryMethod> factoryMethod = optionConfigured.factoryMethod();
         if (factoryMethod.isPresent()) {
             var fm = factoryMethod.get();
             TypeName returnType = fm.returnType();
@@ -144,7 +144,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             } else {
                 // return type is some other type, we must check it is the same as this one,
                 // or we expect another method to be used
-                mapList = returnType.equals(actualType);
+                mapList = Utils.typesEqual(actualType, returnType);
             }
             if (mapList) {
                 method.addContent(configGet(optionConfigured))
@@ -186,9 +186,9 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
                                       + ".map(nodeList -> nodeList.stream()"
                                       + ".map(cfg -> cfg");
             generateFromConfig(method);
-            method.addContentLine(".get())"
-                                          + "." + collector + ")"
-                                          + ".ifPresent(this::" + setterName + ");");
+            method.addContent(".get()).");
+            collector.accept(method);
+            method.addContent(").ifPresent(this::" + setterName + ");");
         }
     }
 
@@ -207,7 +207,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
 
     @Override
     GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -252,7 +252,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderAddCollection(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -300,7 +300,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             return Optional.empty();
         }
 
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
         String name = option().name();
 
         OptionSingular optionSingular = option().singular().get();
@@ -351,7 +351,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
         if (option().singular().isEmpty() || option().builderInfo().isEmpty()) {
             return Optional.empty();
         }
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         OptionSingular optionSingular = option().singular().get();
         String methodName = optionSingular.methodName();
@@ -416,7 +416,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderClear(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -447,6 +447,82 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             extraSetterContent(it);
             it.addContentLine("this." + name + ".clear();")
                     .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    @Override
+    Optional<GeneratedMethod> prepareSetterPrototypeOfRuntimeType(Javadoc getterJavadoc) {
+        if (option().runtimeType().isEmpty()) {
+            return Optional.empty();
+        }
+
+        RuntimeTypeInfo rti = option().runtimeType().get();
+        var factoryMethod = rti.factoryMethod();
+        if (factoryMethod.isEmpty()) {
+            return Optional.empty();
+        }
+        var fm = factoryMethod.get();
+        if (!Utils.resoledTypesEqual(fm.returnType(), option().declaredType())) {
+            return Optional.empty();
+        }
+
+        var optionBuilder = rti.optionBuilder();
+        String optionName = option().name();
+        Javadoc javadoc = setterJavadoc(getterJavadoc, optionName, "prototype of ");
+
+        TypeName paramType = optionBuilder.builderMethodType();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(Utils.builderReturnType())
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(paramType)
+                .elementName(optionName)
+        );
+
+        /*
+        public BUILDER option(Prototype prototype) {
+            Objects.requireNonNull(prototype);
+            option(FactoryType.factoryMethod(prototype));
+            return self();
+        }
+         */
+
+        /*
+        public BUILDER option(Prototype prototype) {
+            Objects.requireNonNull(prototype);
+            option(prototype.build());
+            return self();
+        }
+         */
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + optionName + ");")
+                    .addContent(option().setterName())
+                    .addContent("(");
+
+            it.addContent(fm.declaringType().genericTypeName())
+                    .addContent(".")
+                    .addContent(fm.methodName())
+                    .addContent("(")
+                    .addContent(optionName)
+                    .addContent(")");
+
+            it.addContentLine(");");
+            it.addContentLine("return self();");
         };
 
         return Optional.of(GeneratedMethod.builder()

@@ -115,6 +115,10 @@ final class AptAnnotationFactory {
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
             Object value = val.accept(new ToAnnotationValueVisitor(elements), null);
+            if (value.equals("<error>")) {
+                // this is a forward-reference type
+                // the value is an Attribute$UnresolvedClass, and the classType contains a valid class name
+            }
             if (value != null) {
                 result.put(name, value);
             }

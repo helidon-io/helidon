@@ -84,6 +84,11 @@ public enum OptionMethodType {
      */
     BUILDER_SETTER_CONSUMER,
     /**
+     * Only created if the option type is built by another prototype, or if there is a factory method to build
+     * the type from another prototype.
+     */
+    BUILDER_SETTER_RUNTIME_TYPE_PROTOTYPE,
+    /**
      * Only created if the option type itself has a builder. This method uses a {@link java.util.function.Supplier}
      * of the type, as our builders are also {@link java.util.function.Supplier supplier}, so you can pass an instance
      * of the builder.

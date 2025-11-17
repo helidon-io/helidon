@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,8 +38,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
-import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_API;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_BLUEPRINT;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_BUILDER_DECORATOR;
@@ -47,45 +46,52 @@ import static io.helidon.builder.codegen.Types.PROTOTYPE_CONFIGURED;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_CONSTANT;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_CUSTOM_METHODS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
-import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_CONFIG;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_DEPRECATED;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_PROTOTYPE;
+import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_INCLUDE_DEFAULTS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROTOTYPE_METHOD;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROVIDES;
 
-final class TypeContext {
+@SuppressWarnings("deprecation")
+final class FactoryPrototypeInfo {
 
     private static final String BLUEPRINT = "Blueprint";
 
-    private TypeContext() {
+    private FactoryPrototypeInfo() {
     }
 
     /*
     Creates a prototype information from the blueprint.
     This method analyses the class, not options.
      */
+    @SuppressWarnings("removal")
     static PrototypeInfo create(RoundContext ctx, TypeInfo blueprint) {
         Annotation blueprintAnnotation = blueprintAnnotation(blueprint);
 
         TypeName prototypeType = generatedTypeName(blueprint);
         Javadoc blueprintJavadoc = Javadoc.parse(blueprint.description().orElse(""));
+        Predicate<String> defaultMethodsPredicate = defaultMethodsPredicate(blueprint);
+        Optional<TypeName> superPrototype = superPrototype(blueprint);
 
         PrototypeInfo.Builder prototype = PrototypeInfo.builder()
                 .blueprint(blueprint)
                 .prototypeType(prototypeType)
                 .detachBlueprint(blueprintAnnotation.booleanValue("detach").orElse(false))
-                .defaultMethodsPredicate(defaultMethodsPredicate(blueprint))
+                .defaultMethodsPredicate(defaultMethodsPredicate)
                 .accessModifier(prototypeAccessModifier(blueprintAnnotation))
                 .builderAccessModifier(builderAccessModifier(blueprintAnnotation))
                 .createEmptyCreate(createEmptyPublic(blueprintAnnotation))
                 .recordStyle(recordStyleAccessors(blueprintAnnotation))
                 .registrySupport(registrySupport(blueprint))
-                .superPrototype(superPrototype(blueprint))
+                .superPrototype(superPrototype)
                 .providerProvides(providerProvides(blueprint))
                 .javadoc(prototypeJavadoc(blueprint))
                 .builderBaseJavadoc(builderBaseJavadoc(blueprintJavadoc, prototypeType))
                 .builderJavadoc(builderJavadoc(blueprintJavadoc, prototypeType));
 
-        prototypeExtends(prototype, blueprint);
+        prototypeExtends(prototype, blueprint, superPrototype);
 
         builderDecorator(blueprintAnnotation).ifPresent(prototype::builderDecorator);
         configured(blueprint, blueprintAnnotation).ifPresent(prototype::configured);
@@ -99,51 +105,106 @@ final class TypeContext {
                     it,
                     errors,
                     PROTOTYPE_PROTOTYPE_METHOD,
-                    el -> true,
-                    TypeContext::prototypeMethod));
-            prototype.prototypeFactoryMethods(customMethods(it,
-                                                            errors,
-                                                            PROTOTYPE_FACTORY_METHOD,
-                                                            TypeContext::isPrototypeFactory,
-                                                            TypeContext::prototypeFactory));
+                    FactoryPrototypeInfo::prototypeMethod));
             prototype.builderMethods(customMethods(it,
                                                    errors,
                                                    PROTOTYPE_BUILDER_METHOD,
-                                                   el -> true,
-                                                   TypeContext::builderMethod));
-            prototype.factoryMethods(customMethods(it,
-                                                   errors,
-                                                   PROTOTYPE_FACTORY_METHOD,
-                                                   TypeContext::isFactory,
-                                                   TypeContext::factoryMethod));
+                                                   FactoryPrototypeInfo::builderMethod));
+
+            // these methods can only be processed once we know all the options
+            prototype.deprecatedFactoryMethods(customMethods(it,
+                                                             errors,
+                                                             PROTOTYPE_FACTORY_METHOD_DEPRECATED,
+                                                             FactoryPrototypeInfo::deprecatedFactory));
+
+            prototype.prototypeFactories(customMethods(it,
+                                                       errors,
+                                                       PROTOTYPE_FACTORY_METHOD_PROTOTYPE,
+                                                       FactoryPrototypeInfo::prototypeFactory));
+
+            prototype.configFactories(customMethods(it,
+                                                    errors,
+                                                    PROTOTYPE_FACTORY_METHOD_CONFIG,
+                                                    FactoryPrototypeInfo::configFactoryMethod));
+            prototype.runtimeTypeFactories(customMethods(it,
+                                                         errors,
+                                                         PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE,
+                                                         FactoryPrototypeInfo::runtimeTypeFactory));
 
             Errors collected = errors.collect();
             if (collected.hasFatal()) {
                 throw new CodegenException("Invalid custom methods or constants: " + collected,
-                                           it);
+                                           it.originatingElementValue());
             }
         });
+
+        // also add deprecated factory methods from the blueprint itself (as this was originally supported)
+        addBlueprintDeprecatedFactoryMethods(prototype, blueprint);
+
+        copyDefaultMethods(blueprint, defaultMethodsPredicate, prototype);
 
         return prototype.build();
     }
 
-    private static boolean isPrototypeFactory(TypedElementInfo factoryMethod) {
-        return !isFactory(factoryMethod);
+    @SuppressWarnings({"removal", "unused"})
+    private static void addBlueprintDeprecatedFactoryMethods(PrototypeInfo.Builder prototype, TypeInfo blueprint) {
+        List<DeprecatedFactoryMethod> deprecatedFactoryMethods = new ArrayList<>(prototype.deprecatedFactoryMethods());
+
+        Errors.Collector errors = Errors.collector();
+        deprecatedFactoryMethods.addAll(customMethods(blueprint,
+                                                      errors,
+                                                      PROTOTYPE_FACTORY_METHOD_DEPRECATED,
+                                                      FactoryPrototypeInfo::deprecatedFactory));
+        Errors collected = errors.collect();
+        if (collected.hasFatal()) {
+            throw new CodegenException("Invalid custom methods or constants: " + collected,
+                                       blueprint.originatingElementValue());
+        }
+        prototype.deprecatedFactoryMethods(deprecatedFactoryMethods);
     }
 
-    private static boolean isFactory(TypedElementInfo factoryMethod) {
-        if (factoryMethod.parameterArguments().size() == 1) {
-            var type = factoryMethod.parameterArguments()
-                    .getFirst()
-                    .typeName();
-            if (type.equals(CONFIG)) {
-                return true;
-            }
-            if (type.equals(COMMON_CONFIG)) {
-                return true;
-            }
+    private static void copyDefaultMethods(TypeInfo blueprint,
+                                           Predicate<String> defaultMethodsPredicate,
+                                           PrototypeInfo.Builder prototype) {
+
+        // add all default methods that are not options, and do not have an Override annotation (as that implies that method
+        // is inherited from another interface
+        List<TypedElementInfo> defaultMethodsNotOptions = blueprint.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(it -> it.elementModifiers().contains(Modifier.DEFAULT))
+                .filter(Predicate.not(it -> defaultMethodsPredicate.test(it.elementName())))
+                .filter(it -> !it.hasAnnotation(TypeName.create(Override.class)))
+                .toList();
+
+        if (defaultMethodsNotOptions.isEmpty()) {
+            return;
         }
-        return false;
+        if (prototype.detachBlueprint()) {
+            throw new CodegenException("Default methods are not allowed on detached blueprints",
+                                       defaultMethodsNotOptions.getFirst().originatingElementValue());
+        }
+        for (TypedElementInfo method : defaultMethodsNotOptions) {
+            prototype.addPrototypeMethod(m -> m
+                    .method(newMethod -> newMethod.from(method)
+                            .clearOriginatingElement())
+                    .javadoc(Javadoc.parse(method.description().orElse("")))
+                    .contentBuilder(content -> {
+                                        if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
+                                            content.addContent("return ");
+                                        }
+                                        content.addContent(blueprint.typeName())
+                                                .addContent(".super.")
+                                                .addContent(method.elementName())
+                                                .addContent("(")
+                                                .addContent(method.parameterArguments().stream()
+                                                                    .map(TypedElementInfo::elementName)
+                                                                    .collect(Collectors.joining(", ")))
+                                                .addContentLine(");");
+                                    }
+                    )
+            );
+        }
     }
 
     private static Optional<TypeName> runtimeType(TypeInfo blueprint) {
@@ -194,6 +255,16 @@ final class TypeContext {
         return GeneratedMethods.createBuilderMethod(typeName, referencedMethod, annotations);
     }
 
+    private static DeprecatedFactoryMethod deprecatedFactory(Errors.Collector collector,
+                                                             TypeName typeName,
+                                                             TypedElementInfo referencedMethod,
+                                                             List<Annotation> annotations) {
+        return DeprecatedFactoryMethod.builder()
+                .declaringType(typeName)
+                .method(referencedMethod)
+                .build();
+    }
+
     private static GeneratedMethod prototypeFactory(Errors.Collector collector,
                                                     TypeName typeName,
                                                     TypedElementInfo referencedMethod,
@@ -201,20 +272,84 @@ final class TypeContext {
         return GeneratedMethods.createFactoryMethod(typeName, referencedMethod, annotations);
     }
 
-    private static FactoryMethod factoryMethod(Errors.Collector collector,
-                                               TypeName typeName,
-                                               TypedElementInfo referencedMethod,
-                                               List<Annotation> annotations) {
+    private static RuntimeTypeInfo runtimeTypeFactory(Errors.Collector collector,
+                                                      TypeName typeName,
+                                                      TypedElementInfo referencedMethod,
+                                                      List<Annotation> annotations) {
 
-        return new FactoryMethodImpl(typeName, referencedMethod.typeName(), referencedMethod.elementName(),
-                                     referencedMethod.parameterArguments()
-                                             .stream()
-                                             .map(TypeContext::toFactoryMethodParameter)
-                                             .toList());
+        String methodName = referencedMethod.elementName();
+        if (referencedMethod.typeName().unboxed().equals(TypeNames.PRIMITIVE_VOID)) {
+            collector.fatal("@runtimeTypeFactoryMethods must not be void, but method " + typeName.fqName() + "." + methodName + " is");
+        }
+
+        TypeName runtimeType = referencedMethod.typeName();
+        TypeName prototypeType = paramType(collector, typeName, referencedMethod, "Runtime type");
+
+        var methodBuilder = FactoryMethod.builder()
+                .declaringType(typeName)
+                .methodName(methodName)
+                .returnType(runtimeType)
+                .parameterType(prototypeType);
+
+        Annotation annotation = referencedMethod.annotation(PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE);
+        annotation.value()
+                .filter(Predicate.not(String::isBlank))
+                .ifPresent(methodBuilder::optionName);
+
+        var builder = OptionBuilder.builder()
+                .builderMethodType(runtimeType)
+                .builderType(Utils.prototypeBuilderType(prototypeType));
+        /*
+        First guess from the parameter type, then use annotation to override
+         */
+        annotation.stringValue("builderMethodName")
+                .filter(Predicate.not("builder"::equals))
+                .ifPresent(builder::builderMethodName);
+        annotation.stringValue("buildMethodName")
+                .filter(Predicate.not("build"::equals))
+                .ifPresent(builder::buildMethodName);
+        annotation.typeValue("builderType")
+                .filter(Predicate.not(PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE::equals))
+                .ifPresent(builder::builderType);
+        annotation.typeValue("builderMethodType")
+                .filter(Predicate.not(PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE::equals))
+                .ifPresent(builder::builderType);
+
+        return RuntimeTypeInfo.builder()
+                .factoryMethod(methodBuilder)
+                .optionBuilder(builder)
+                .build();
     }
 
-    private static FactoryMethod.Parameter toFactoryMethodParameter(TypedElementInfo elementInfo) {
-        return new FactoryMethodParameterImpl(elementInfo.typeName(), elementInfo.elementName());
+    private static FactoryMethod configFactoryMethod(Errors.Collector collector,
+                                                     TypeName typeName,
+                                                     TypedElementInfo referencedMethod,
+                                                     List<Annotation> annotations) {
+
+        var builder = FactoryMethod.builder()
+                .declaringType(typeName)
+                .methodName(referencedMethod.elementName())
+                .parameterType(paramType(collector, typeName, referencedMethod, "Config"));
+
+        referencedMethod.annotation(PROTOTYPE_FACTORY_METHOD_CONFIG)
+                .stringValue()
+                .filter(Predicate.not(String::isBlank))
+                .ifPresent(builder::optionName);
+
+        return builder.build();
+    }
+
+    private static TypeName paramType(Errors.Collector collector,
+                                      TypeName typeName,
+                                      TypedElementInfo referencedMethod,
+                                      String factoryType) {
+        if (referencedMethod.parameterArguments().size() != 1) {
+            collector.fatal(factoryType + " must have exactly one parameter, but method "
+                                    + typeName.fqName() + "." + referencedMethod.elementName() + " has "
+                                    + referencedMethod.parameterArguments().size());
+
+        }
+        return referencedMethod.parameterArguments().getFirst().typeName();
     }
 
     private static GeneratedMethod prototypeMethod(Errors.Collector collector,
@@ -230,13 +365,11 @@ final class TypeContext {
     private static <T> List<? extends T> customMethods(TypeInfo customMethodsType,
                                                        Errors.Collector errors,
                                                        TypeName requiredAnnotation,
-                                                       Predicate<TypedElementInfo> predicate,
                                                        CustomMethodProcessor<T> methodProcessor) {
         // all custom methods must be static
         // parameter and return type validation is to be done by method processor
         return customMethodsType.elementInfo()
                 .stream()
-                .filter(predicate)
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(ElementInfoPredicates::isStatic)
                 .filter(ElementInfoPredicates.hasAnnotation(requiredAnnotation))
@@ -260,10 +393,24 @@ final class TypeContext {
                 .toList();
     }
 
-    private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx, TypeInfo blueprint) {
-        return blueprint.findAnnotation(PROTOTYPE_CUSTOM_METHODS)
+    private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx,
+                                                            TypeInfo blueprint) {
+        // first check the blueprint
+        var response = blueprint.findAnnotation(PROTOTYPE_CUSTOM_METHODS)
                 .map(it -> customMethodsTypeInfo(ctx, blueprint, it));
+        if (response.isPresent()) {
+            return response;
+        }
 
+        // then check all things the blueprint extends
+        for (TypeInfo typeInfo : blueprint.interfaceTypeInfo()) {
+            response = typeInfo.findAnnotation(PROTOTYPE_CUSTOM_METHODS)
+                    .map(it -> customMethodsTypeInfo(ctx, blueprint, it));
+            if (response.isPresent()) {
+                return response;
+            }
+        }
+        return Optional.empty();
     }
 
     private static TypeInfo customMethodsTypeInfo(RoundContext ctx, TypeInfo blueprint, Annotation customMethodsAnnotation) {
@@ -317,7 +464,7 @@ final class TypeContext {
 
     private static Optional<PrototypeConfigured> configured(TypeInfo blueprint, Annotation blueprintAnnotation) {
         return blueprint.findAnnotation(PROTOTYPE_CONFIGURED)
-                .map(it -> TypeContext.configured(blueprintAnnotation, it));
+                .map(it -> FactoryPrototypeInfo.configured(blueprintAnnotation, it));
     }
 
     private static PrototypeConfigured configured(Annotation blueprintAnnotation, Annotation configuredAnnotation) {
@@ -338,7 +485,7 @@ final class TypeContext {
         return builder.build();
     }
 
-    private static void prototypeExtends(PrototypeInfo.Builder prototype, TypeInfo blueprint) {
+    private static void prototypeExtends(PrototypeInfo.Builder prototype, TypeInfo blueprint, Optional<TypeName> superPrototype) {
         // when detaching blueprint, and all types the blueprint extends except for another blueprint
         // when not detaching blueprint, only add blueprint, API, and interfaces from annotation
 
@@ -360,24 +507,26 @@ final class TypeContext {
                 .map(TypeName::create)
                 .forEach(prototypeExtends::add);
 
-        if (detachBlueprint) {
-            // add declared implements
-            for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
-                if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
-                    TypeName superBlueprint = superInterface.typeName();
-                    String className = superBlueprint.className();
-                    TypeName toExtend = TypeName.builder()
-                            .packageName(superBlueprint.packageName())
-                            // blueprints MUST end with Blueprint suffix
-                            .className(className.substring(0, className.length() - 9))
-                            .build();
-                    prototypeExtends.add(toExtend);
-                    continue;
-                }
+        // add declared implements
+        for (TypeInfo superInterface : blueprint.interfaceTypeInfo()) {
+            if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                TypeName superBlueprint = superInterface.typeName();
+                String className = superBlueprint.className();
+                TypeName toExtend = TypeName.builder()
+                        .packageName(superBlueprint.packageName())
+                        // blueprints MUST end with Blueprint suffix
+                        .className(className.substring(0, className.length() - 9))
+                        .build();
+                prototypeExtends.add(toExtend);
+                continue;
+            }
+
+            if (detachBlueprint) {
                 // other we can add directly, also as this is a set, if you extend both prototype and blueprint it is fine
                 prototypeExtends.add(superInterface.typeName());
             }
         }
+        superPrototype.ifPresent(prototypeExtends::add);
 
         prototype.superTypes(prototypeExtends);
     }
@@ -403,7 +552,7 @@ final class TypeContext {
     private static AccessModifier builderAccessModifier(Annotation blueprintAnnotation) {
         return blueprintAnnotation.booleanValue("builderPublic")
                 .filter(it -> !it)
-                .map(it -> AccessModifier.PACKAGE_PRIVATE)
+                .map(it -> AccessModifier.PROTECTED)
                 .orElse(AccessModifier.PUBLIC);
     }
 
@@ -510,7 +659,7 @@ final class TypeContext {
                 // all implemented types of our super type - we look for Prototype.Api, as all prototypes must extend that
                 // if found, this is a direct super prototype
                 if (anInterface.typeName().equals(PROTOTYPE_API)) {
-                    superPrototypes.add(anInterface.typeName());
+                    superPrototypes.add(superInterface.typeName());
                     if (superPrototypes.size() > 1) {
                         throw new CodegenException("A blueprint extends more than one other blueprint/prototype. "
                                                            + "Multiple inheritance is not supported in Java, so we cannot "
@@ -537,69 +686,5 @@ final class TypeContext {
                   TypeName customMethodsType,
                   TypedElementInfo customMethod,
                   List<Annotation> annotations);
-    }
-
-    private static class FactoryMethodParameterImpl implements FactoryMethod.Parameter {
-        private final TypeName type;
-        private final String name;
-
-        private FactoryMethodParameterImpl(TypeName type, String name) {
-            this.type = type;
-            this.name = name;
-        }
-
-        @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public TypeName type() {
-            return type;
-        }
-
-        @Override
-        public String toString() {
-            return type.className() + " " + name;
-        }
-    }
-
-    private static class FactoryMethodImpl implements FactoryMethod {
-        private final TypeName declaringType;
-        private final TypeName returnType;
-        private final String methodName;
-        private final List<FactoryMethod.Parameter> parameters;
-
-        private FactoryMethodImpl(TypeName declaringType, TypeName returnType, String methodName, List<Parameter> parameters) {
-            this.declaringType = declaringType;
-            this.returnType = returnType;
-            this.methodName = methodName;
-            this.parameters = parameters;
-        }
-
-        @Override
-        public TypeName declaringType() {
-            return declaringType;
-        }
-
-        @Override
-        public TypeName returnType() {
-            return returnType;
-        }
-
-        @Override
-        public String methodName() {
-            return methodName;
-        }
-
-        @Override
-        public List<Parameter> parameters() {
-            return parameters;
-        }
-
-        @Override
-        public String toString() {
-            return declaringType.fqName() + "." + methodName + "(" + parameters + ")";
-        }
     }
 }

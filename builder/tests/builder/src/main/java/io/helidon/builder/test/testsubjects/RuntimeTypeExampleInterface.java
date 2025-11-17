@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 
-@RuntimeType.PrototypedBy(RuntimeTypeExampleInterfaceConfig.class)
 public interface RuntimeTypeExampleInterface extends RuntimeType.Api<RuntimeTypeExampleInterfaceConfig> {
 
     static RuntimeTypeExampleInterface create(RuntimeTypeExampleInterfaceConfig prototype) {

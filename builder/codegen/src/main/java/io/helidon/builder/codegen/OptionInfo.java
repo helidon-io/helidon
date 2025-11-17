@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
@@ -39,6 +40,7 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionInfoBlueprint")
 public interface OptionInfo extends Prototype.Api, Annotated {
 
     /**
@@ -234,6 +236,13 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     Optional<OptionBuilder> builderInfo();
 
     /**
+     * Custom runtime type factory method.
+     *
+     * @return runtime type factory method, if present
+     */
+    Optional<RuntimeTypeInfo> runtimeType();
+
+    /**
      * Description of this option, used in Javadoc as the main text if defined.
      *
      * @return description, if present
@@ -250,11 +259,10 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionInfo}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<OptionAllowedValue> allowedValues = new ArrayList<>();
         private final List<Annotation> annotations = new ArrayList<>();
@@ -278,6 +286,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         private OptionDeprecation deprecation;
         private OptionProvider provider;
         private OptionSingular singular;
+        private RuntimeTypeInfo runtimeType;
         private String description;
         private String getterName;
         private String name;
@@ -330,6 +339,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             singular(prototype.singular());
             accessModifier(prototype.accessModifier());
             builderInfo(prototype.builderInfo());
+            runtimeType(prototype.runtimeType());
             description(prototype.description());
             paramDescription(prototype.paramDescription());
             if (!this.isAnnotationsMutated) {
@@ -366,17 +376,17 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             builderOptionOnly(builder.builderOptionOnly());
             if (this.isQualifiersMutated) {
                 if (builder.isQualifiersMutated) {
-                    addQualifiers(builder.qualifiers);
-                }
+                    addQualifiers(builder.qualifiers());
+            }
             } else {
-                qualifiers(builder.qualifiers);
+                qualifiers(builder.qualifiers());
             }
             if (this.isAllowedValuesMutated) {
                 if (builder.isAllowedValuesMutated) {
-                    addAllowedValues(builder.allowedValues);
-                }
+                    addAllowedValues(builder.allowedValues());
+            }
             } else {
-                allowedValues(builder.allowedValues);
+                allowedValues(builder.allowedValues());
             }
             builder.defaultValue().ifPresent(this::defaultValue);
             builder.configured().ifPresent(this::configured);
@@ -385,21 +395,22 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             builder.singular().ifPresent(this::singular);
             accessModifier(builder.accessModifier());
             builder.builderInfo().ifPresent(this::builderInfo);
+            builder.runtimeType().ifPresent(this::runtimeType);
             builder.description().ifPresent(this::description);
             builder.paramDescription().ifPresent(this::paramDescription);
             if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
-                }
+                    addAnnotations(builder.annotations());
+            }
             } else {
-                annotations(builder.annotations);
+                annotations(builder.annotations());
             }
             if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
-                }
+                    addInheritedAnnotations(builder.inheritedAnnotations());
+            }
             } else {
-                inheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
@@ -756,8 +767,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
-         *                   instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -772,8 +782,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
-         *                   instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -787,8 +796,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifier add single service registry qualifiers defined on this option (to be used when getting a service
-         *                  registry instance)
+         * @param qualifier add single service registry qualifiers defined on this option (to be used when getting a service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -802,8 +810,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a
-         *                 service registry instance)
+         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -1180,6 +1187,58 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         public BUILDER builderInfo(Supplier<? extends OptionBuilder> supplier) {
             Objects.requireNonNull(supplier);
             this.builderInfo(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear existing value of runtimeType.
+         *
+         * @return updated builder instance
+         * @see #runtimeType()
+         */
+        public BUILDER clearRuntimeType() {
+            this.runtimeType = null;
+            return self();
+        }
+
+        /**
+         * Custom runtime type factory method.
+         *
+         * @param runtimeType runtime type factory method, if present
+         * @return updated builder instance
+         * @see #runtimeType()
+         */
+        public BUILDER runtimeType(RuntimeTypeInfo runtimeType) {
+            Objects.requireNonNull(runtimeType);
+            this.runtimeType = runtimeType;
+            return self();
+        }
+
+        /**
+         * Custom runtime type factory method.
+         *
+         * @param consumer consumer of builder of runtime type factory method, if present
+         * @return updated builder instance
+         * @see #runtimeType()
+         */
+        public BUILDER runtimeType(Consumer<RuntimeTypeInfo.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = RuntimeTypeInfo.builder();
+            consumer.accept(builder);
+            this.runtimeType(builder.build());
+            return self();
+        }
+
+        /**
+         * Custom runtime type factory method.
+         *
+         * @param supplier supplier of runtime type factory method, if present
+         * @return updated builder instance
+         * @see #runtimeType()
+         */
+        public BUILDER runtimeType(Supplier<? extends RuntimeTypeInfo> supplier) {
+            Objects.requireNonNull(supplier);
+            this.runtimeType(supplier.get());
             return self();
         }
 
@@ -1591,6 +1650,15 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Custom runtime type factory method.
+         *
+         * @return runtime type factory method, if present
+         */
+        public Optional<RuntimeTypeInfo> runtimeType() {
+            return Optional.ofNullable(runtimeType);
+        }
+
+        /**
          * Description of this option, used in Javadoc as the main text if defined.
          *
          * @return description, if present
@@ -1652,6 +1720,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                     + "singular=" + singular + ","
                     + "accessModifier=" + accessModifier + ","
                     + "builderInfo=" + builderInfo + ","
+                    + "runtimeType=" + runtimeType + ","
                     + "description=" + description + ","
                     + "paramDescription=" + paramDescription + ","
                     + "annotations=" + annotations + ","
@@ -1815,6 +1884,20 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Custom runtime type factory method.
+         *
+         * @param runtimeType runtime type factory method, if present
+         * @return updated builder instance
+         * @see #runtimeType()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER runtimeType(Optional<? extends RuntimeTypeInfo> runtimeType) {
+            Objects.requireNonNull(runtimeType);
+            this.runtimeType = runtimeType.map(RuntimeTypeInfo.class::cast).orElse(this.runtimeType);
+            return self();
+        }
+
+        /**
          * Description of this option, used in Javadoc as the main text if defined.
          *
          * @param description description, if present
@@ -1862,6 +1945,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             private final Optional<OptionDeprecation> deprecation;
             private final Optional<OptionProvider> provider;
             private final Optional<OptionSingular> singular;
+            private final Optional<RuntimeTypeInfo> runtimeType;
             private final Optional<TypeInfo> declaringType;
             private final Optional<TypeName> decorator;
             private final Optional<TypedElementInfo> interfaceMethod;
@@ -1902,6 +1986,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                 this.singular = builder.singular().map(Function.identity());
                 this.accessModifier = builder.accessModifier();
                 this.builderInfo = builder.builderInfo().map(Function.identity());
+                this.runtimeType = builder.runtimeType().map(Function.identity());
                 this.description = builder.description().map(Function.identity());
                 this.paramDescription = builder.paramDescription().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
@@ -2024,6 +2109,11 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             }
 
             @Override
+            public Optional<RuntimeTypeInfo> runtimeType() {
+                return runtimeType;
+            }
+
+            @Override
             public Optional<String> description() {
                 return description;
             }
@@ -2069,6 +2159,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                         + "singular=" + singular + ","
                         + "accessModifier=" + accessModifier + ","
                         + "builderInfo=" + builderInfo + ","
+                        + "runtimeType=" + runtimeType + ","
                         + "description=" + description + ","
                         + "paramDescription=" + paramDescription + ","
                         + "annotations=" + annotations + ","
@@ -2085,63 +2176,38 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                     return false;
                 }
                 return Objects.equals(interfaceMethod, other.interfaceMethod())
-                        && Objects.equals(declaringType, other.declaringType())
-                        && Objects.equals(name, other.name())
-                        && Objects.equals(getterName, other.getterName())
-                        && Objects.equals(setterName, other.setterName())
-                        && Objects.equals(declaredType, other.declaredType())
-                        && Objects.equals(decorator, other.decorator())
-                        && includeInToString == other.includeInToString()
-                        && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
-                        && confidential == other.confidential()
-                        && registryService == other.registryService()
-                        && sameGeneric == other.sameGeneric()
-                        && required == other.required()
-                        && builderOptionOnly == other.builderOptionOnly()
-                        && Objects.equals(qualifiers, other.qualifiers())
-                        && Objects.equals(allowedValues, other.allowedValues())
-                        && Objects.equals(defaultValue, other.defaultValue())
-                        && Objects.equals(configured, other.configured())
-                        && Objects.equals(deprecation, other.deprecation())
-                        && Objects.equals(provider, other.provider())
-                        && Objects.equals(singular, other.singular())
-                        && Objects.equals(accessModifier, other.accessModifier())
-                        && Objects.equals(builderInfo, other.builderInfo())
-                        && Objects.equals(description, other.description())
-                        && Objects.equals(paramDescription, other.paramDescription())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                    && Objects.equals(declaringType, other.declaringType())
+                    && Objects.equals(name, other.name())
+                    && Objects.equals(getterName, other.getterName())
+                    && Objects.equals(setterName, other.setterName())
+                    && Objects.equals(declaredType, other.declaredType())
+                    && Objects.equals(decorator, other.decorator())
+                    && includeInToString == other.includeInToString()
+                    && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
+                    && confidential == other.confidential()
+                    && registryService == other.registryService()
+                    && sameGeneric == other.sameGeneric()
+                    && required == other.required()
+                    && builderOptionOnly == other.builderOptionOnly()
+                    && Objects.equals(qualifiers, other.qualifiers())
+                    && Objects.equals(allowedValues, other.allowedValues())
+                    && Objects.equals(defaultValue, other.defaultValue())
+                    && Objects.equals(configured, other.configured())
+                    && Objects.equals(deprecation, other.deprecation())
+                    && Objects.equals(provider, other.provider())
+                    && Objects.equals(singular, other.singular())
+                    && Objects.equals(accessModifier, other.accessModifier())
+                    && Objects.equals(builderInfo, other.builderInfo())
+                    && Objects.equals(runtimeType, other.runtimeType())
+                    && Objects.equals(description, other.description())
+                    && Objects.equals(paramDescription, other.paramDescription())
+                    && Objects.equals(annotations, other.annotations())
+                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(interfaceMethod,
-                                    declaringType,
-                                    name,
-                                    getterName,
-                                    setterName,
-                                    declaredType,
-                                    decorator,
-                                    includeInToString,
-                                    includeInEqualsAndHashCode,
-                                    confidential,
-                                    registryService,
-                                    sameGeneric,
-                                    required,
-                                    builderOptionOnly,
-                                    qualifiers,
-                                    allowedValues,
-                                    defaultValue,
-                                    configured,
-                                    deprecation,
-                                    provider,
-                                    singular,
-                                    accessModifier,
-                                    builderInfo,
-                                    description,
-                                    paramDescription,
-                                    annotations,
-                                    inheritedAnnotations);
+                return Objects.hash(interfaceMethod, declaringType, name, getterName, setterName, declaredType, decorator, includeInToString, includeInEqualsAndHashCode, confidential, registryService, sameGeneric, required, builderOptionOnly, qualifiers, allowedValues, defaultValue, configured, deprecation, provider, singular, accessModifier, builderInfo, runtimeType, description, paramDescription, annotations, inheritedAnnotations);
             }
 
         }

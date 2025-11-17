@@ -18,16 +18,20 @@ package io.helidon.builder.codegen;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 
 /**
  * Setup of configured option.
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionConfiguredBlueprint")
 public interface OptionConfigured extends Prototype.Api {
 
     /**
@@ -72,7 +76,7 @@ public interface OptionConfigured extends Prototype.Api {
 
     /**
      * Factory method for this option. Factory method will be discovered from
-     * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+     * {@link PrototypeInfo#configFactories()}.
      *
      * @return config factory method if defined
      */
@@ -81,11 +85,10 @@ public interface OptionConfigured extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionConfigured}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionConfigured>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionConfigured> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private boolean merge = false;
         private boolean traverse = true;
@@ -142,8 +145,7 @@ public interface OptionConfigured extends Prototype.Api {
         /**
          * Whether to merge the key with the current object.
          *
-         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named
-         *              {@link #configKey()}
+         * @param merge whether to merge, defaults to {@code false}, i.e. this option will have its own key, named {@link #configKey()}
          * @return updated builder instance
          * @see #merge()
          */
@@ -177,7 +179,7 @@ public interface OptionConfigured extends Prototype.Api {
 
         /**
          * Factory method for this option. Factory method will be discovered from
-         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         * {@link PrototypeInfo#configFactories()}.
          *
          * @param factoryMethod config factory method if defined
          * @return updated builder instance
@@ -186,6 +188,36 @@ public interface OptionConfigured extends Prototype.Api {
         public BUILDER factoryMethod(FactoryMethod factoryMethod) {
             Objects.requireNonNull(factoryMethod);
             this.factoryMethod = factoryMethod;
+            return self();
+        }
+
+        /**
+         * Factory method for this option. Factory method will be discovered from
+         * {@link PrototypeInfo#configFactories()}.
+         *
+         * @param consumer consumer of builder of config factory method if defined
+         * @return updated builder instance
+         * @see #factoryMethod()
+         */
+        public BUILDER factoryMethod(Consumer<FactoryMethod.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = FactoryMethod.builder();
+            consumer.accept(builder);
+            this.factoryMethod(builder.build());
+            return self();
+        }
+
+        /**
+         * Factory method for this option. Factory method will be discovered from
+         * {@link PrototypeInfo#configFactories()}.
+         *
+         * @param supplier supplier of config factory method if defined
+         * @return updated builder instance
+         * @see #factoryMethod()
+         */
+        public BUILDER factoryMethod(Supplier<? extends FactoryMethod> supplier) {
+            Objects.requireNonNull(supplier);
+            this.factoryMethod(supplier.get());
             return self();
         }
 
@@ -218,7 +250,7 @@ public interface OptionConfigured extends Prototype.Api {
 
         /**
          * Factory method for this option. Factory method will be discovered from
-         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         * {@link PrototypeInfo#configFactories()}.
          *
          * @return config factory method if defined
          */
@@ -255,7 +287,7 @@ public interface OptionConfigured extends Prototype.Api {
 
         /**
          * Factory method for this option. Factory method will be discovered from
-         * {@link io.helidon.builder.codegen.PrototypeInfo#factoryMethods()}.
+         * {@link PrototypeInfo#configFactories()}.
          *
          * @param factoryMethod config factory method if defined
          * @return updated builder instance
@@ -329,9 +361,9 @@ public interface OptionConfigured extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(configKey, other.configKey())
-                        && merge == other.merge()
-                        && traverse == other.traverse()
-                        && Objects.equals(factoryMethod, other.factoryMethod());
+                    && merge == other.merge()
+                    && traverse == other.traverse()
+                    && Objects.equals(factoryMethod, other.factoryMethod());
             }
 
             @Override

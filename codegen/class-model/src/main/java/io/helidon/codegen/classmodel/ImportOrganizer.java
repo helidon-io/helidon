@@ -16,11 +16,11 @@
 package io.helidon.codegen.classmodel;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,15 +204,40 @@ class ImportOrganizer {
         }
 
         private void resolveFinalImports() {
+            Type builtTopLevelType = Type.fromTypeName(TypeName.builder()
+                                                               .packageName(packageName)
+                                                               .className(typeName)
+                                                               .build());
+
+            Set<String> alreadyIncludedInnerClasses = new HashSet<>();
+            Set<String> innerClassesSimpleNames = new HashSet<>();
+
+            // two passes - first identify all inner classes, to make sure these do not use the top level type name
+            for (Type anImport : imports) {
+                if (anImport.innerClass() && myInnerClass(builtTopLevelType, anImport)) {
+                    List<String> names = new ArrayList<>(anImport.typeName()
+                                                                 .enclosingNames());
+                    names.removeFirst();
+                    String usedName = String.join(".", names) + anImport.simpleTypeName();
+                    alreadyIncludedInnerClasses.add(anImport.fqTypeName());
+                    innerClassesSimpleNames.add(usedName);
+                    identifiedInnerClasses.put(anImport.fqTypeName(), anImport.typeName().classNameWithEnclosingNames());
+                }
+            }
+
             for (Type type : imports) {
-                //If processed type is inner class, we will be importing (top level) parent class
-                Type typeToProcess = topLevelType(type);
+                //If processed type is inner class, we will be importing parent class (top level parent)
+                Type typeToProcess = type.declaringClass().orElse(type);
                 String fqTypeName = typeToProcess.fqTypeName();
                 String typePackage = typeToProcess.packageName();
                 String typeSimpleName = typeToProcess.simpleTypeName();
 
+                if (alreadyIncludedInnerClasses.contains(type.fqTypeName())) {
+                    continue;
+                }
+
                 if (type.innerClass()) {
-                    identifiedInnerClasses.put(type.fqTypeName(), type.fqTypeName());
+                    identifiedInnerClasses.put(type.fqTypeName(), type.typeName().classNameWithEnclosingNames());
                 }
 
                 if (typePackage.equals("java.lang")) {
@@ -220,8 +245,9 @@ class ImportOrganizer {
                     processImportJavaLang(type, fqTypeName, typeSimpleName);
                 } else if (this.packageName.equals(typePackage)) {
                     processImportSamePackage(type, fqTypeName, typeSimpleName);
-                } else if (finalImports.containsKey(typeSimpleName)
-                        && !finalImports.get(typeSimpleName).equals(fqTypeName)) {
+                } else if ((innerClassesSimpleNames.contains(typeSimpleName) && !typePackage.isEmpty())
+                        || (finalImports.containsKey(typeSimpleName)
+                                    && !finalImports.get(typeSimpleName).equals(fqTypeName))) {
                     //If there is imported class with this simple name already, but it is not in the same package as this one
                     //add this newly added among the forced full names
                     forcedFullImports.add(fqTypeName);
@@ -238,15 +264,15 @@ class ImportOrganizer {
             }
         }
 
-        private Type topLevelType(Type type) {
-            Type lastType = type;
-            Optional<Type> declaringClass = type.declaringClass();
-            while (declaringClass.isPresent()) {
-                lastType = declaringClass.get();
-                declaringClass = lastType.declaringClass();
-
+        private boolean myInnerClass(Type builtTopLevelType, Type anImport) {
+            if (anImport instanceof ConcreteType ct) {
+                var declaringType = Type.fromTypeName(ct.declaringClass().orElse(anImport).typeName().genericTypeName());
+                if (declaringType.equals(builtTopLevelType)) {
+                    return true;
+                }
+                return declaringType.packageName().isBlank() && declaringType.simpleTypeName().equals(builtTopLevelType.simpleTypeName());
             }
-            return lastType;
+            return false;
         }
 
         private void processImportJavaLang(Type type, String typeName, String typeSimpleName) {

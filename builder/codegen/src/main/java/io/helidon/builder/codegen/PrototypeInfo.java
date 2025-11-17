@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
@@ -42,6 +43,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.PrototypeInfoBlueprint")
 public interface PrototypeInfo extends Prototype.Api, Annotated {
 
     /**
@@ -245,15 +247,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
     List<GeneratedMethod> prototypeMethods();
 
     /**
-     * Factory methods to be added to the prototype.
-     * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-     * or to #factoryMethods() depending on signature.
-     *
-     * @return a list of factory methods to add to the prototype
-     */
-    List<GeneratedMethod> prototypeFactoryMethods();
-
-    /**
      * Additional methods to be added to the prototype builder base.
      * It is your responsibility to ensure these methods do not conflict with option methods.
      * This list does NOT contain option methods.
@@ -263,27 +256,60 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
     List<GeneratedMethod> builderMethods();
 
     /**
+     * Static factory methods to be added to the prototype, or runtime type factory methods.
+     * <p>
+     * This method exists only for backwards compatibility and will be removed in a future major version.
+     *
+     * @return a list of factory methods declared on the blueprint or a reference custom methods type
+     * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+    {@link #configFactories()} instead, only present for backwards compatibility
+     */
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    List<DeprecatedFactoryMethod> deprecatedFactoryMethods();
+
+    /**
+     * Static factory methods to be added to the prototype.
+     *
+     * @return a list of factory methods to add to the prototype
+     */
+    List<GeneratedMethod> prototypeFactories();
+
+    /**
      * Factory methods to be used when mapping config to types.
      * These methods will never be made public.
+     * <p>
+     * Config factory methods may exist for a specific option, or for any option that matches the type.
      *
      * @return factory methods to use when mapping config to types
      */
-    List<FactoryMethod> factoryMethods();
+    List<FactoryMethod> configFactories();
+
+    /**
+     * Factory methods to create runtime types from a builder.
+     * If a method is available for a specific option and matches its types, a setter with a parameter of
+     * consumer of the builder type will be added to the builder base.
+     * <p>
+     * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+     *
+     * @return factory methods to create runtime types from a builder
+     */
+    List<RuntimeTypeInfo> runtimeTypeFactories();
 
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.PrototypeInfo}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeInfo>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
+        private final List<DeprecatedFactoryMethod> deprecatedFactoryMethods = new ArrayList<>();
+        private final List<FactoryMethod> configFactories = new ArrayList<>();
         private final List<GeneratedMethod> builderMethods = new ArrayList<>();
-        private final List<GeneratedMethod> prototypeFactoryMethods = new ArrayList<>();
+        private final List<GeneratedMethod> prototypeFactories = new ArrayList<>();
         private final List<GeneratedMethod> prototypeMethods = new ArrayList<>();
         private final List<PrototypeConstant> constants = new ArrayList<>();
-        private final List<FactoryMethod> factoryMethods = new ArrayList<>();
+        private final List<RuntimeTypeInfo> runtimeTypeFactories = new ArrayList<>();
         private final List<Annotation> annotations = new ArrayList<>();
         private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final Set<TypeName> providerProvides = new LinkedHashSet<>();
@@ -294,12 +320,14 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         private boolean detachBlueprint = false;
         private boolean isAnnotationsMutated;
         private boolean isBuilderMethodsMutated;
+        private boolean isConfigFactoriesMutated;
         private boolean isConstantsMutated;
-        private boolean isFactoryMethodsMutated;
+        private boolean isDeprecatedFactoryMethodsMutated;
         private boolean isInheritedAnnotationsMutated;
-        private boolean isPrototypeFactoryMethodsMutated;
+        private boolean isPrototypeFactoriesMutated;
         private boolean isPrototypeMethodsMutated;
         private boolean isProviderProvidesMutated;
+        private boolean isRuntimeTypeFactoriesMutated;
         private boolean isSuperTypesMutated;
         private boolean recordStyle = true;
         private boolean registrySupport;
@@ -359,18 +387,26 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                 this.prototypeMethods.clear();
             }
             addPrototypeMethods(prototype.prototypeMethods());
-            if (!this.isPrototypeFactoryMethodsMutated) {
-                this.prototypeFactoryMethods.clear();
-            }
-            addPrototypeFactoryMethods(prototype.prototypeFactoryMethods());
             if (!this.isBuilderMethodsMutated) {
                 this.builderMethods.clear();
             }
             addBuilderMethods(prototype.builderMethods());
-            if (!this.isFactoryMethodsMutated) {
-                this.factoryMethods.clear();
+            if (!this.isDeprecatedFactoryMethodsMutated) {
+                this.deprecatedFactoryMethods.clear();
             }
-            addFactoryMethods(prototype.factoryMethods());
+            addDeprecatedFactoryMethods(prototype.deprecatedFactoryMethods());
+            if (!this.isPrototypeFactoriesMutated) {
+                this.prototypeFactories.clear();
+            }
+            addPrototypeFactories(prototype.prototypeFactories());
+            if (!this.isConfigFactoriesMutated) {
+                this.configFactories.clear();
+            }
+            addConfigFactories(prototype.configFactories());
+            if (!this.isRuntimeTypeFactoriesMutated) {
+                this.runtimeTypeFactories.clear();
+            }
+            addRuntimeTypeFactories(prototype.runtimeTypeFactories());
             if (!this.isAnnotationsMutated) {
                 this.annotations.clear();
             }
@@ -407,66 +443,80 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             builder.superPrototype().ifPresent(this::superPrototype);
             if (this.isSuperTypesMutated) {
                 if (builder.isSuperTypesMutated) {
-                    addSuperTypes(builder.superTypes);
-                }
+                    addSuperTypes(builder.superTypes());
+            }
             } else {
-                superTypes(builder.superTypes);
+                superTypes(builder.superTypes());
             }
             if (this.isProviderProvidesMutated) {
                 if (builder.isProviderProvidesMutated) {
-                    addProviderProvides(builder.providerProvides);
-                }
+                    addProviderProvides(builder.providerProvides());
+            }
             } else {
-                providerProvides(builder.providerProvides);
+                providerProvides(builder.providerProvides());
             }
             if (this.isConstantsMutated) {
                 if (builder.isConstantsMutated) {
-                    addConstants(builder.constants);
-                }
+                    addConstants(builder.constants());
+            }
             } else {
-                constants(builder.constants);
+                constants(builder.constants());
             }
             if (this.isPrototypeMethodsMutated) {
                 if (builder.isPrototypeMethodsMutated) {
-                    addPrototypeMethods(builder.prototypeMethods);
-                }
-            } else {
-                prototypeMethods(builder.prototypeMethods);
+                    addPrototypeMethods(builder.prototypeMethods());
             }
-            if (this.isPrototypeFactoryMethodsMutated) {
-                if (builder.isPrototypeFactoryMethodsMutated) {
-                    addPrototypeFactoryMethods(builder.prototypeFactoryMethods);
-                }
             } else {
-                prototypeFactoryMethods(builder.prototypeFactoryMethods);
+                prototypeMethods(builder.prototypeMethods());
             }
             if (this.isBuilderMethodsMutated) {
                 if (builder.isBuilderMethodsMutated) {
-                    addBuilderMethods(builder.builderMethods);
-                }
-            } else {
-                builderMethods(builder.builderMethods);
+                    addBuilderMethods(builder.builderMethods());
             }
-            if (this.isFactoryMethodsMutated) {
-                if (builder.isFactoryMethodsMutated) {
-                    addFactoryMethods(builder.factoryMethods);
-                }
             } else {
-                factoryMethods(builder.factoryMethods);
+                builderMethods(builder.builderMethods());
+            }
+            if (this.isDeprecatedFactoryMethodsMutated) {
+                if (builder.isDeprecatedFactoryMethodsMutated) {
+                    addDeprecatedFactoryMethods(builder.deprecatedFactoryMethods());
+            }
+            } else {
+                deprecatedFactoryMethods(builder.deprecatedFactoryMethods());
+            }
+            if (this.isPrototypeFactoriesMutated) {
+                if (builder.isPrototypeFactoriesMutated) {
+                    addPrototypeFactories(builder.prototypeFactories());
+            }
+            } else {
+                prototypeFactories(builder.prototypeFactories());
+            }
+            if (this.isConfigFactoriesMutated) {
+                if (builder.isConfigFactoriesMutated) {
+                    addConfigFactories(builder.configFactories());
+            }
+            } else {
+                configFactories(builder.configFactories());
+            }
+            if (this.isRuntimeTypeFactoriesMutated) {
+                if (builder.isRuntimeTypeFactoriesMutated) {
+                    addRuntimeTypeFactories(builder.runtimeTypeFactories());
+            }
+            } else {
+                runtimeTypeFactories(builder.runtimeTypeFactories());
             }
             if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
-                }
+                    addAnnotations(builder.annotations());
+            }
             } else {
-                annotations(builder.annotations);
+                annotations(builder.annotations());
             }
             if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
-                }
+                    addInheritedAnnotations(builder.inheritedAnnotations());
+            }
             } else {
-                inheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
@@ -1339,84 +1389,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Clear all prototypeFactoryMethods.
-         *
-         * @return updated builder instance
-         * @see #prototypeFactoryMethods()
-         */
-        public BUILDER clearPrototypeFactoryMethods() {
-            this.isPrototypeFactoryMethodsMutated = true;
-            this.prototypeFactoryMethods.clear();
-            return self();
-        }
-
-        /**
-         * Factory methods to be added to the prototype.
-         * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-         * or to #factoryMethods() depending on signature.
-         *
-         * @param prototypeFactoryMethods a list of factory methods to add to the prototype
-         * @return updated builder instance
-         * @see #prototypeFactoryMethods()
-         */
-        public BUILDER prototypeFactoryMethods(List<? extends GeneratedMethod> prototypeFactoryMethods) {
-            Objects.requireNonNull(prototypeFactoryMethods);
-            this.isPrototypeFactoryMethodsMutated = true;
-            this.prototypeFactoryMethods.clear();
-            this.prototypeFactoryMethods.addAll(prototypeFactoryMethods);
-            return self();
-        }
-
-        /**
-         * Factory methods to be added to the prototype.
-         * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-         * or to #factoryMethods() depending on signature.
-         *
-         * @param prototypeFactoryMethods a list of factory methods to add to the prototype
-         * @return updated builder instance
-         * @see #prototypeFactoryMethods()
-         */
-        public BUILDER addPrototypeFactoryMethods(List<? extends GeneratedMethod> prototypeFactoryMethods) {
-            Objects.requireNonNull(prototypeFactoryMethods);
-            this.isPrototypeFactoryMethodsMutated = true;
-            this.prototypeFactoryMethods.addAll(prototypeFactoryMethods);
-            return self();
-        }
-
-        /**
-         * Factory methods to be added to the prototype.
-         * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-         * or to #factoryMethods() depending on signature.
-         *
-         * @param prototypeFactoryMethod add single a list of factory methods to add to the prototype
-         * @return updated builder instance
-         * @see #prototypeFactoryMethods()
-         */
-        public BUILDER addPrototypeFactoryMethod(GeneratedMethod prototypeFactoryMethod) {
-            Objects.requireNonNull(prototypeFactoryMethod);
-            this.prototypeFactoryMethods.add(prototypeFactoryMethod);
-            this.isPrototypeFactoryMethodsMutated = true;
-            return self();
-        }
-
-        /**
-         * Factory methods to be added to the prototype.
-         * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-         * or to #factoryMethods() depending on signature.
-         *
-         * @param consumer consumer of builder for a list of factory methods to add to the prototype
-         * @return updated builder instance
-         * @see #prototypeFactoryMethods()
-         */
-        public BUILDER addPrototypeFactoryMethod(Consumer<GeneratedMethod.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = GeneratedMethod.builder();
-            consumer.accept(builder);
-            this.addPrototypeFactoryMethod(builder.build());
-            return self();
-        }
-
-        /**
          * Clear all builderMethods.
          *
          * @return updated builder instance
@@ -1495,60 +1467,294 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Clear all factoryMethods.
+         * Clear all deprecatedFactoryMethods.
          *
          * @return updated builder instance
-         * @see #factoryMethods()
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+        {@link #configFactories()} instead, only present for backwards compatibility
+         * @see #deprecatedFactoryMethods()
          */
-        public BUILDER clearFactoryMethods() {
-            this.isFactoryMethodsMutated = true;
-            this.factoryMethods.clear();
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public BUILDER clearDeprecatedFactoryMethods() {
+            this.isDeprecatedFactoryMethodsMutated = true;
+            this.deprecatedFactoryMethods.clear();
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype, or runtime type factory methods.
+         * <p>
+         * This method exists only for backwards compatibility and will be removed in a future major version.
+         *
+         * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
+         * @return updated builder instance
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+        {@link #configFactories()} instead, only present for backwards compatibility
+         * @see #deprecatedFactoryMethods()
+         */
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public BUILDER deprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
+            Objects.requireNonNull(deprecatedFactoryMethods);
+            this.isDeprecatedFactoryMethodsMutated = true;
+            this.deprecatedFactoryMethods.clear();
+            this.deprecatedFactoryMethods.addAll(deprecatedFactoryMethods);
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype, or runtime type factory methods.
+         * <p>
+         * This method exists only for backwards compatibility and will be removed in a future major version.
+         *
+         * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
+         * @return updated builder instance
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+        {@link #configFactories()} instead, only present for backwards compatibility
+         * @see #deprecatedFactoryMethods()
+         */
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public BUILDER addDeprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
+            Objects.requireNonNull(deprecatedFactoryMethods);
+            this.isDeprecatedFactoryMethodsMutated = true;
+            this.deprecatedFactoryMethods.addAll(deprecatedFactoryMethods);
+            return self();
+        }
+
+        /**
+         * Clear all prototypeFactories.
+         *
+         * @return updated builder instance
+         * @see #prototypeFactories()
+         */
+        public BUILDER clearPrototypeFactories() {
+            this.isPrototypeFactoriesMutated = true;
+            this.prototypeFactories.clear();
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype.
+         *
+         * @param prototypeFactories a list of factory methods to add to the prototype
+         * @return updated builder instance
+         * @see #prototypeFactories()
+         */
+        public BUILDER prototypeFactories(List<? extends GeneratedMethod> prototypeFactories) {
+            Objects.requireNonNull(prototypeFactories);
+            this.isPrototypeFactoriesMutated = true;
+            this.prototypeFactories.clear();
+            this.prototypeFactories.addAll(prototypeFactories);
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype.
+         *
+         * @param prototypeFactories a list of factory methods to add to the prototype
+         * @return updated builder instance
+         * @see #prototypeFactories()
+         */
+        public BUILDER addPrototypeFactories(List<? extends GeneratedMethod> prototypeFactories) {
+            Objects.requireNonNull(prototypeFactories);
+            this.isPrototypeFactoriesMutated = true;
+            this.prototypeFactories.addAll(prototypeFactories);
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype.
+         *
+         * @param prototypeFactory add single a list of factory methods to add to the prototype
+         * @return updated builder instance
+         * @see #prototypeFactories()
+         */
+        public BUILDER addPrototypeFactory(GeneratedMethod prototypeFactory) {
+            Objects.requireNonNull(prototypeFactory);
+            this.prototypeFactories.add(prototypeFactory);
+            this.isPrototypeFactoriesMutated = true;
+            return self();
+        }
+
+        /**
+         * Static factory methods to be added to the prototype.
+         *
+         * @param consumer consumer of builder for a list of factory methods to add to the prototype
+         * @return updated builder instance
+         * @see #prototypeFactories()
+         */
+        public BUILDER addPrototypeFactory(Consumer<GeneratedMethod.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = GeneratedMethod.builder();
+            consumer.accept(builder);
+            this.addPrototypeFactory(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all configFactories.
+         *
+         * @return updated builder instance
+         * @see #configFactories()
+         */
+        public BUILDER clearConfigFactories() {
+            this.isConfigFactoriesMutated = true;
+            this.configFactories.clear();
             return self();
         }
 
         /**
          * Factory methods to be used when mapping config to types.
          * These methods will never be made public.
+         * <p>
+         * Config factory methods may exist for a specific option, or for any option that matches the type.
          *
-         * @param factoryMethods factory methods to use when mapping config to types
+         * @param configFactories factory methods to use when mapping config to types
          * @return updated builder instance
-         * @see #factoryMethods()
+         * @see #configFactories()
          */
-        public BUILDER factoryMethods(List<? extends FactoryMethod> factoryMethods) {
-            Objects.requireNonNull(factoryMethods);
-            this.isFactoryMethodsMutated = true;
-            this.factoryMethods.clear();
-            this.factoryMethods.addAll(factoryMethods);
+        public BUILDER configFactories(List<? extends FactoryMethod> configFactories) {
+            Objects.requireNonNull(configFactories);
+            this.isConfigFactoriesMutated = true;
+            this.configFactories.clear();
+            this.configFactories.addAll(configFactories);
             return self();
         }
 
         /**
          * Factory methods to be used when mapping config to types.
          * These methods will never be made public.
+         * <p>
+         * Config factory methods may exist for a specific option, or for any option that matches the type.
          *
-         * @param factoryMethods factory methods to use when mapping config to types
+         * @param configFactories factory methods to use when mapping config to types
          * @return updated builder instance
-         * @see #factoryMethods()
+         * @see #configFactories()
          */
-        public BUILDER addFactoryMethods(List<? extends FactoryMethod> factoryMethods) {
-            Objects.requireNonNull(factoryMethods);
-            this.isFactoryMethodsMutated = true;
-            this.factoryMethods.addAll(factoryMethods);
+        public BUILDER addConfigFactories(List<? extends FactoryMethod> configFactories) {
+            Objects.requireNonNull(configFactories);
+            this.isConfigFactoriesMutated = true;
+            this.configFactories.addAll(configFactories);
             return self();
         }
 
         /**
          * Factory methods to be used when mapping config to types.
          * These methods will never be made public.
+         * <p>
+         * Config factory methods may exist for a specific option, or for any option that matches the type.
          *
-         * @param factoryMethod add single factory methods to use when mapping config to types
+         * @param configFactory add single factory methods to use when mapping config to types
          * @return updated builder instance
-         * @see #factoryMethods()
+         * @see #configFactories()
          */
-        public BUILDER addFactoryMethod(FactoryMethod factoryMethod) {
-            Objects.requireNonNull(factoryMethod);
-            this.factoryMethods.add(factoryMethod);
-            this.isFactoryMethodsMutated = true;
+        public BUILDER addConfigFactory(FactoryMethod configFactory) {
+            Objects.requireNonNull(configFactory);
+            this.configFactories.add(configFactory);
+            this.isConfigFactoriesMutated = true;
+            return self();
+        }
+
+        /**
+         * Factory methods to be used when mapping config to types.
+         * These methods will never be made public.
+         * <p>
+         * Config factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @param consumer consumer of builder for factory methods to use when mapping config to types
+         * @return updated builder instance
+         * @see #configFactories()
+         */
+        public BUILDER addConfigFactory(Consumer<FactoryMethod.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = FactoryMethod.builder();
+            consumer.accept(builder);
+            this.addConfigFactory(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all runtimeTypeFactories.
+         *
+         * @return updated builder instance
+         * @see #runtimeTypeFactories()
+         */
+        public BUILDER clearRuntimeTypeFactories() {
+            this.isRuntimeTypeFactoriesMutated = true;
+            this.runtimeTypeFactories.clear();
+            return self();
+        }
+
+        /**
+         * Factory methods to create runtime types from a builder.
+         * If a method is available for a specific option and matches its types, a setter with a parameter of
+         * consumer of the builder type will be added to the builder base.
+         * <p>
+         * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @param runtimeTypeFactories factory methods to create runtime types from a builder
+         * @return updated builder instance
+         * @see #runtimeTypeFactories()
+         */
+        public BUILDER runtimeTypeFactories(List<? extends RuntimeTypeInfo> runtimeTypeFactories) {
+            Objects.requireNonNull(runtimeTypeFactories);
+            this.isRuntimeTypeFactoriesMutated = true;
+            this.runtimeTypeFactories.clear();
+            this.runtimeTypeFactories.addAll(runtimeTypeFactories);
+            return self();
+        }
+
+        /**
+         * Factory methods to create runtime types from a builder.
+         * If a method is available for a specific option and matches its types, a setter with a parameter of
+         * consumer of the builder type will be added to the builder base.
+         * <p>
+         * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @param runtimeTypeFactories factory methods to create runtime types from a builder
+         * @return updated builder instance
+         * @see #runtimeTypeFactories()
+         */
+        public BUILDER addRuntimeTypeFactories(List<? extends RuntimeTypeInfo> runtimeTypeFactories) {
+            Objects.requireNonNull(runtimeTypeFactories);
+            this.isRuntimeTypeFactoriesMutated = true;
+            this.runtimeTypeFactories.addAll(runtimeTypeFactories);
+            return self();
+        }
+
+        /**
+         * Factory methods to create runtime types from a builder.
+         * If a method is available for a specific option and matches its types, a setter with a parameter of
+         * consumer of the builder type will be added to the builder base.
+         * <p>
+         * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @param runtimeTypeFactory add single factory methods to create runtime types from a builder
+         * @return updated builder instance
+         * @see #runtimeTypeFactories()
+         */
+        public BUILDER addRuntimeTypeFactory(RuntimeTypeInfo runtimeTypeFactory) {
+            Objects.requireNonNull(runtimeTypeFactory);
+            this.runtimeTypeFactories.add(runtimeTypeFactory);
+            this.isRuntimeTypeFactoriesMutated = true;
+            return self();
+        }
+
+        /**
+         * Factory methods to create runtime types from a builder.
+         * If a method is available for a specific option and matches its types, a setter with a parameter of
+         * consumer of the builder type will be added to the builder base.
+         * <p>
+         * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @param consumer consumer of builder for factory methods to create runtime types from a builder
+         * @return updated builder instance
+         * @see #runtimeTypeFactories()
+         */
+        public BUILDER addRuntimeTypeFactory(Consumer<RuntimeTypeInfo.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = RuntimeTypeInfo.builder();
+            consumer.accept(builder);
+            this.addRuntimeTypeFactory(builder.build());
             return self();
         }
 
@@ -1914,17 +2120,6 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Factory methods to be added to the prototype.
-         * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-         * or to #factoryMethods() depending on signature.
-         *
-         * @return a list of factory methods to add to the prototype
-         */
-        public List<GeneratedMethod> prototypeFactoryMethods() {
-            return prototypeFactoryMethods;
-        }
-
-        /**
          * Additional methods to be added to the prototype builder base.
          * It is your responsibility to ensure these methods do not conflict with option methods.
          * This list does NOT contain option methods.
@@ -1936,13 +2131,51 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Static factory methods to be added to the prototype, or runtime type factory methods.
+         * <p>
+         * This method exists only for backwards compatibility and will be removed in a future major version.
+         *
+         * @return a list of factory methods declared on the blueprint or a reference custom methods type
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+        {@link #configFactories()} instead, only present for backwards compatibility
+         */
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public List<DeprecatedFactoryMethod> deprecatedFactoryMethods() {
+            return deprecatedFactoryMethods;
+        }
+
+        /**
+         * Static factory methods to be added to the prototype.
+         *
+         * @return a list of factory methods to add to the prototype
+         */
+        public List<GeneratedMethod> prototypeFactories() {
+            return prototypeFactories;
+        }
+
+        /**
          * Factory methods to be used when mapping config to types.
          * These methods will never be made public.
+         * <p>
+         * Config factory methods may exist for a specific option, or for any option that matches the type.
          *
          * @return factory methods to use when mapping config to types
          */
-        public List<FactoryMethod> factoryMethods() {
-            return factoryMethods;
+        public List<FactoryMethod> configFactories() {
+            return configFactories;
+        }
+
+        /**
+         * Factory methods to create runtime types from a builder.
+         * If a method is available for a specific option and matches its types, a setter with a parameter of
+         * consumer of the builder type will be added to the builder base.
+         * <p>
+         * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+         *
+         * @return factory methods to create runtime types from a builder
+         */
+        public List<RuntimeTypeInfo> runtimeTypeFactories() {
+            return runtimeTypeFactories;
         }
 
         /**
@@ -1986,9 +2219,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                     + "providerProvides=" + providerProvides + ","
                     + "constants=" + constants + ","
                     + "prototypeMethods=" + prototypeMethods + ","
-                    + "prototypeFactoryMethods=" + prototypeFactoryMethods + ","
                     + "builderMethods=" + builderMethods + ","
-                    + "factoryMethods=" + factoryMethods + ","
+                    + "deprecatedFactoryMethods=" + deprecatedFactoryMethods + ","
+                    + "prototypeFactories=" + prototypeFactories + ","
+                    + "configFactories=" + configFactories + ","
+                    + "runtimeTypeFactories=" + runtimeTypeFactories + ","
                     + "annotations=" + annotations + ","
                     + "inheritedAnnotations=" + inheritedAnnotations
                     + "}";
@@ -2097,11 +2332,13 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             private final Javadoc builderBaseJavadoc;
             private final Javadoc builderJavadoc;
             private final Javadoc javadoc;
+            private final List<DeprecatedFactoryMethod> deprecatedFactoryMethods;
+            private final List<FactoryMethod> configFactories;
             private final List<GeneratedMethod> builderMethods;
-            private final List<GeneratedMethod> prototypeFactoryMethods;
+            private final List<GeneratedMethod> prototypeFactories;
             private final List<GeneratedMethod> prototypeMethods;
             private final List<PrototypeConstant> constants;
-            private final List<FactoryMethod> factoryMethods;
+            private final List<RuntimeTypeInfo> runtimeTypeFactories;
             private final List<Annotation> annotations;
             private final List<Annotation> inheritedAnnotations;
             private final Optional<PrototypeConfigured> configured;
@@ -2140,9 +2377,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                 this.providerProvides = Collections.unmodifiableSet(new LinkedHashSet<>(builder.providerProvides()));
                 this.constants = List.copyOf(builder.constants());
                 this.prototypeMethods = List.copyOf(builder.prototypeMethods());
-                this.prototypeFactoryMethods = List.copyOf(builder.prototypeFactoryMethods());
                 this.builderMethods = List.copyOf(builder.builderMethods());
-                this.factoryMethods = List.copyOf(builder.factoryMethods());
+                this.deprecatedFactoryMethods = List.copyOf(builder.deprecatedFactoryMethods());
+                this.prototypeFactories = List.copyOf(builder.prototypeFactories());
+                this.configFactories = List.copyOf(builder.configFactories());
+                this.runtimeTypeFactories = List.copyOf(builder.runtimeTypeFactories());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
@@ -2248,18 +2487,28 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             }
 
             @Override
-            public List<GeneratedMethod> prototypeFactoryMethods() {
-                return prototypeFactoryMethods;
-            }
-
-            @Override
             public List<GeneratedMethod> builderMethods() {
                 return builderMethods;
             }
 
             @Override
-            public List<FactoryMethod> factoryMethods() {
-                return factoryMethods;
+            public List<DeprecatedFactoryMethod> deprecatedFactoryMethods() {
+                return deprecatedFactoryMethods;
+            }
+
+            @Override
+            public List<GeneratedMethod> prototypeFactories() {
+                return prototypeFactories;
+            }
+
+            @Override
+            public List<FactoryMethod> configFactories() {
+                return configFactories;
+            }
+
+            @Override
+            public List<RuntimeTypeInfo> runtimeTypeFactories() {
+                return runtimeTypeFactories;
             }
 
             @Override
@@ -2295,9 +2544,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                         + "providerProvides=" + providerProvides + ","
                         + "constants=" + constants + ","
                         + "prototypeMethods=" + prototypeMethods + ","
-                        + "prototypeFactoryMethods=" + prototypeFactoryMethods + ","
                         + "builderMethods=" + builderMethods + ","
-                        + "factoryMethods=" + factoryMethods + ","
+                        + "deprecatedFactoryMethods=" + deprecatedFactoryMethods + ","
+                        + "prototypeFactories=" + prototypeFactories + ","
+                        + "configFactories=" + configFactories + ","
+                        + "runtimeTypeFactories=" + runtimeTypeFactories + ","
                         + "annotations=" + annotations + ","
                         + "inheritedAnnotations=" + inheritedAnnotations
                         + "}";
@@ -2312,59 +2563,37 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                     return false;
                 }
                 return Objects.equals(blueprint, other.blueprint())
-                        && Objects.equals(runtimeType, other.runtimeType())
-                        && Objects.equals(javadoc, other.javadoc())
-                        && Objects.equals(builderBaseJavadoc, other.builderBaseJavadoc())
-                        && Objects.equals(builderJavadoc, other.builderJavadoc())
-                        && Objects.equals(builderDecorator, other.builderDecorator())
-                        && Objects.equals(prototypeType, other.prototypeType())
-                        && Objects.equals(defaultMethodsPredicate, other.defaultMethodsPredicate())
-                        && Objects.equals(accessModifier, other.accessModifier())
-                        && Objects.equals(builderAccessModifier, other.builderAccessModifier())
-                        && createEmptyCreate == other.createEmptyCreate()
-                        && recordStyle == other.recordStyle()
-                        && Objects.equals(configured, other.configured())
-                        && registrySupport == other.registrySupport()
-                        && detachBlueprint == other.detachBlueprint()
-                        && Objects.equals(superPrototype, other.superPrototype())
-                        && Objects.equals(superTypes, other.superTypes())
-                        && Objects.equals(providerProvides, other.providerProvides())
-                        && Objects.equals(constants, other.constants())
-                        && Objects.equals(prototypeMethods, other.prototypeMethods())
-                        && Objects.equals(prototypeFactoryMethods, other.prototypeFactoryMethods())
-                        && Objects.equals(builderMethods, other.builderMethods())
-                        && Objects.equals(factoryMethods, other.factoryMethods())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                    && Objects.equals(runtimeType, other.runtimeType())
+                    && Objects.equals(javadoc, other.javadoc())
+                    && Objects.equals(builderBaseJavadoc, other.builderBaseJavadoc())
+                    && Objects.equals(builderJavadoc, other.builderJavadoc())
+                    && Objects.equals(builderDecorator, other.builderDecorator())
+                    && Objects.equals(prototypeType, other.prototypeType())
+                    && Objects.equals(defaultMethodsPredicate, other.defaultMethodsPredicate())
+                    && Objects.equals(accessModifier, other.accessModifier())
+                    && Objects.equals(builderAccessModifier, other.builderAccessModifier())
+                    && createEmptyCreate == other.createEmptyCreate()
+                    && recordStyle == other.recordStyle()
+                    && Objects.equals(configured, other.configured())
+                    && registrySupport == other.registrySupport()
+                    && detachBlueprint == other.detachBlueprint()
+                    && Objects.equals(superPrototype, other.superPrototype())
+                    && Objects.equals(superTypes, other.superTypes())
+                    && Objects.equals(providerProvides, other.providerProvides())
+                    && Objects.equals(constants, other.constants())
+                    && Objects.equals(prototypeMethods, other.prototypeMethods())
+                    && Objects.equals(builderMethods, other.builderMethods())
+                    && Objects.equals(deprecatedFactoryMethods, other.deprecatedFactoryMethods())
+                    && Objects.equals(prototypeFactories, other.prototypeFactories())
+                    && Objects.equals(configFactories, other.configFactories())
+                    && Objects.equals(runtimeTypeFactories, other.runtimeTypeFactories())
+                    && Objects.equals(annotations, other.annotations())
+                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(blueprint,
-                                    runtimeType,
-                                    javadoc,
-                                    builderBaseJavadoc,
-                                    builderJavadoc,
-                                    builderDecorator,
-                                    prototypeType,
-                                    defaultMethodsPredicate,
-                                    accessModifier,
-                                    builderAccessModifier,
-                                    createEmptyCreate,
-                                    recordStyle,
-                                    configured,
-                                    registrySupport,
-                                    detachBlueprint,
-                                    superPrototype,
-                                    superTypes,
-                                    providerProvides,
-                                    constants,
-                                    prototypeMethods,
-                                    prototypeFactoryMethods,
-                                    builderMethods,
-                                    factoryMethods,
-                                    annotations,
-                                    inheritedAnnotations);
+                return Objects.hash(blueprint, runtimeType, javadoc, builderBaseJavadoc, builderJavadoc, builderDecorator, prototypeType, defaultMethodsPredicate, accessModifier, builderAccessModifier, createEmptyCreate, recordStyle, configured, registrySupport, detachBlueprint, superPrototype, superTypes, providerProvides, constants, prototypeMethods, builderMethods, deprecatedFactoryMethods, prototypeFactories, configFactories, runtimeTypeFactories, annotations, inheritedAnnotations);
             }
 
         }

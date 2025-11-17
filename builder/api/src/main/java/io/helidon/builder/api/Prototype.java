@@ -258,8 +258,8 @@ public final class Prototype {
         /**
          * Decorate a list of values, when a setter that replaces values is called.
          *
-         * @param builder       the target builder being decorated
-         * @param optionValues  option values set by the caller of the setter method
+         * @param builder      the target builder being decorated
+         * @param optionValues option values set by the caller of the setter method
          */
         default void decorateSetList(B builder, List<T> optionValues) {
         }
@@ -267,8 +267,8 @@ public final class Prototype {
         /**
          * Decorate a list of values, when a setter that adds values is called.
          *
-         * @param builder       the target builder being decorated
-         * @param optionValues  option values set by the caller of the setter method
+         * @param builder      the target builder being decorated
+         * @param optionValues option values set by the caller of the setter method
          */
         default void decorateAddList(B builder, List<T> optionValues) {
         }
@@ -276,18 +276,17 @@ public final class Prototype {
         /**
          * Decorate a set of values, when a setter that replaces values is called.
          *
-         * @param builder       the target builder being decorated
-         * @param optionValues  option values set by the caller of the setter method
+         * @param builder      the target builder being decorated
+         * @param optionValues option values set by the caller of the setter method
          */
         default void decorateSetSet(B builder, Set<T> optionValues) {
         }
 
-
         /**
          * Decorate a set of values, when a setter that adds values is called.
          *
-         * @param builder       the target builder being decorated
-         * @param optionValues  option values set by the caller of the setter method
+         * @param builder      the target builder being decorated
+         * @param optionValues option values set by the caller of the setter method
          */
         default void decorateAddSet(B builder, Set<T> optionValues) {
         }
@@ -311,9 +310,7 @@ public final class Prototype {
     }
 
     /**
-     * This is an annotation used by Helidon code generator that marks a static method
-     * as a factory method.
-     * <p>
+     * Old behavior, kept for backward compatibility:
      * This annotation must be defined on any static method that should be used as a factory for runtime types from
      * prototypes, and from configuration on {@link Prototype.Blueprint}.
      * <p>
@@ -327,13 +324,101 @@ public final class Prototype {
      *          prototype from configuration</li>
      *     <li>{@code static Prototype create()} - a method that creates a new instance if there are no required fields</li>
      * </ul>
-     * This annotation is also used for triggering an additional round of annotation processing by the generated types, to
-     * finalize
-     * validation.
+     *
+     * @deprecated use {@link io.helidon.builder.api.Prototype.PrototypeFactoryMethod},
+     *         {@link io.helidon.builder.api.Prototype.ConfigFactoryMethod},
+     *         or {@link io.helidon.builder.api.Prototype.RuntimeTypeFactoryMethod} for other types this annotation
+     *         could have been used for in the past
      */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.CLASS)
+    @Deprecated(forRemoval = true, since = "4.4.0")
     public @interface FactoryMethod {
+    }
+
+    /**
+     * Factory method that is added to the generated prototype.
+     * <p>
+     * This annotation MUST be on a static method that is part of a type referenced from blueprint through
+     * {@link io.helidon.builder.api.Prototype.CustomMethods}.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface PrototypeFactoryMethod {
+    }
+
+    /**
+     * Factory method that creates an option from a config instance.
+     * The config (the only parameter) must be of type {@code io.helidon.config.Config}.
+     * <p>
+     * The return type of the method must match the type of the option.
+     * <p>
+     * This annotation MUST be on a static method that is part of a type referenced from blueprint through
+     * {@link io.helidon.builder.api.Prototype.CustomMethods}.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface ConfigFactoryMethod {
+        /**
+         * An explicit option name can be defined to only use this factory method for the specified option.
+         * If none is specified, the factory method will be used for all options of the matching type.
+         *
+         * @return option name
+         */
+        String value() default "";
+    }
+
+    /**
+     * Factory method that creates an option from a prototype instance.
+     * The prototype (the only parameter) must be a type that has {@code builder} method that returns a builder,
+     * that can be built using {@code build} method (method names are customizable).
+     * <p>
+     * The return type of the method must match the type of the option.
+     * <p>
+     * This annotation MUST be on a static method that is part of a type referenced from blueprint through
+     * {@link io.helidon.builder.api.Prototype.CustomMethods}.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RuntimeTypeFactoryMethod {
+        /**
+         * An explicit option name can be defined to only use this factory method for the specified option.
+         * If none is specified, the factory method will be used for all options of the matching type.
+         *
+         * @return option name
+         */
+        String value() default "";
+
+        /**
+         * Name of the builder method on the prototype.
+         * If set to {@code <init>}, the builder will be created through its constructor, in such a case
+         * {@link #builderType()} must be provided as well.
+         *
+         * @return builder method name, defaults to {@code builder} if not set
+         */
+        String builderMethodName() default "builder";
+
+        /**
+         * Name of the build method on the builder to create an instance of the desired type.
+         *
+         * @return build method name, defaults to {@code build} if not set
+         */
+        String buildMethodName() default "build";
+
+        /**
+         * Type of the builder to use when creating the prototype instance.
+         *
+         * @return type of the builder, defaults to the type returned by the {@link #builderMethodName()}
+         */
+        Class<?> builderType() default RuntimeTypeFactoryMethod.class;
+
+        /**
+         * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+         * to the generated setter with consumer.
+         *
+         * @return type declaring the builder method
+         */
+        Class<?> builderMethodType() default RuntimeTypeFactoryMethod.class;
     }
 
     /**

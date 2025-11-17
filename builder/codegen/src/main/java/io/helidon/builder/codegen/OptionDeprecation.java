@@ -22,12 +22,14 @@ import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 
 /**
  * Deprecated option information.
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionDeprecationBlueprint")
 public interface OptionDeprecation extends Prototype.Api {
 
     /**
@@ -80,11 +82,10 @@ public interface OptionDeprecation extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionDeprecation}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionDeprecation>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionDeprecation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private boolean forRemoval = true;
         private String alternative;
@@ -348,9 +349,9 @@ public interface OptionDeprecation extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(message, other.message())
-                        && forRemoval == other.forRemoval()
-                        && Objects.equals(alternative, other.alternative())
-                        && Objects.equals(since, other.since());
+                    && forRemoval == other.forRemoval()
+                    && Objects.equals(alternative, other.alternative())
+                    && Objects.equals(since, other.since());
             }
 
             @Override
@@ -365,8 +366,7 @@ public interface OptionDeprecation extends Prototype.Api {
     /**
      * Fluent API builder for {@link io.helidon.builder.codegen.OptionDeprecation}.
      */
-    class Builder extends BuilderBase<Builder, OptionDeprecation>
-            implements io.helidon.common.Builder<Builder, OptionDeprecation> {
+    class Builder extends BuilderBase<Builder, OptionDeprecation> implements io.helidon.common.Builder<Builder, OptionDeprecation> {
 
         private Builder() {
         }

@@ -285,7 +285,10 @@ interface MetricsConfigBlueprint {
      * @param scope scope name
      * @return true if the scope as a whole is enabled; false otherwise
      */
-    boolean isScopeEnabled(String scope);
+    default boolean isScopeEnabled(String scope) {
+        var scopeConfig = scoping().scopes().get(scope);
+        return scopeConfig == null || scopeConfig.enabled();
+    }
 
     /**
      * Determines whether the meter with the specified name and within the indicated scope is enabled.
@@ -294,5 +297,10 @@ interface MetricsConfigBlueprint {
      * @param scope scope name
      * @return whether the meter is enabled
      */
-    boolean isMeterEnabled(String name, String scope);
+    default boolean isMeterEnabled(String name, String scope) {
+        return enabled()
+                && isScopeEnabled(scope)
+                && (scoping().scopes().get(scope) == null
+                            || scoping().scopes().get(scope).isMeterEnabled(name));
+    }
 }

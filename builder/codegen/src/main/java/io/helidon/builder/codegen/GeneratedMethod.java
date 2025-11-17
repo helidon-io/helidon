@@ -25,6 +25,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -39,6 +40,7 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.GeneratedMethodBlueprint")
 public interface GeneratedMethod extends Prototype.Api {
 
     /**
@@ -58,6 +60,15 @@ public interface GeneratedMethod extends Prototype.Api {
      */
     static Builder builder(GeneratedMethod instance) {
         return GeneratedMethod.builder().from(instance);
+    }
+
+    /**
+     * Create a new instance with default values.
+     *
+     * @return a new instance
+     */
+    static GeneratedMethod create() {
+        return GeneratedMethod.builder().buildPrototype();
     }
 
     /**
@@ -87,11 +98,10 @@ public interface GeneratedMethod extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.GeneratedMethod}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends GeneratedMethod>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends GeneratedMethod> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private Consumer<ContentBuilder<?>> contentBuilder;
         private Javadoc javadoc;
@@ -349,8 +359,8 @@ public interface GeneratedMethod extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(method, other.method())
-                        && Objects.equals(contentBuilder, other.contentBuilder())
-                        && Objects.equals(javadoc, other.javadoc());
+                    && Objects.equals(contentBuilder, other.contentBuilder())
+                    && Objects.equals(javadoc, other.javadoc());
             }
 
             @Override

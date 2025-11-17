@@ -49,48 +49,6 @@ class TypeHandlerBasic implements TypeHandler {
         return option.declaredType().typeArguments().getFirst();
     }
 
-    /*
-    Will only create wildcards where it makes at least some sens.
-    We do not analyze the actual class if it is final though.
-     */
-    static TypeName toWildcard(TypeName typeName) {
-        if (typeName.wildcard()) {
-            return typeName;
-        }
-
-        if (typeName.generic()) {
-            return TypeName.builder()
-                    .className(typeName.className())
-                    .wildcard(true)
-                    .build();
-        }
-
-        if (TypeNames.STRING.equals(typeName) || typeName.unboxed().primitive() || typeName.array()) {
-            return typeName;
-        }
-
-        return TypeName.builder(typeName).wildcard(true).build();
-    }
-
-    static Optional<FactoryMethod> findFactory(PrototypeInfo prototype, TypeName type) {
-        return prototype.factoryMethods()
-                .stream()
-                .filter(it -> {
-                    if (it.parameters().size() == 1) {
-                        var param = it.parameters().getFirst();
-                        return param.type().equals(CONFIG) || param.type().equals(COMMON_CONFIG);
-                    }
-                    return false;
-                })
-                .filter(it -> it.returnType().equals(type))
-                .findFirst();
-
-    }
-
-    static TypeName builderReturnType() {
-        return TypeName.createFromGenericDeclaration("BUILDER");
-    }
-
     @Override
     public Optional<GeneratedMethod> optionMethod(OptionMethodType type) {
         return Optional.ofNullable(generatedMethods.get(type));
@@ -116,17 +74,21 @@ class TypeHandlerBasic implements TypeHandler {
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_SETTER_DECLARED)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
+        optionMethod(OptionMethodType.BUILDER_SETTER_RUNTIME_TYPE_PROTOTYPE)
+                .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_SETTER_CONSUMER)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_SETTER_SUPPLIER)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_ADD_COLLECTION)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
+        optionMethod(OptionMethodType.BUILDER_SINGULAR_ADD_TO_MAP_VALUE)
+                .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
+        optionMethod(OptionMethodType.BUILDER_SINGULAR_ADD_TO_MAP_VALUES)
+                .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_SINGULAR_ADD)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         optionMethod(OptionMethodType.BUILDER_SINGULAR_ADD_CONSUMER)
-                .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
-        optionMethod(OptionMethodType.BUILDER_SINGULAR_ADD_TO_MAP_VALUE)
                 .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
     }
 
@@ -151,11 +113,25 @@ class TypeHandlerBasic implements TypeHandler {
                 method.addContentLine(".as(" + builderMethod + "::config).ifPresent(this::" + setterName + ");");
             }
         } else {
-            Optional<FactoryMethod> factoryMethod = findFactory(prototype(), type());
+            Optional<FactoryMethod> factoryMethod = optionConfigured.factoryMethod();
             if (factoryMethod.isPresent()) {
                 generateFromConfig(method, factoryMethod.get());
             } else {
-                generateFromConfig(method);
+                boolean configured = false;
+                if (option().runtimeType().isPresent()) {
+                    RuntimeTypeInfo runtimeTypeInfo = option().runtimeType().get();
+                    var optionBuilder = runtimeTypeInfo.optionBuilder();
+                    generateFromConfig(method, FactoryMethod.builder()
+                            .parameterType(COMMON_CONFIG)
+                            .methodName("create")
+                            .declaringType(optionBuilder.builderMethodType())
+                            .returnType(type())
+                            .build());
+                    configured = true;
+                }
+                if (!configured) {
+                    generateFromConfig(method);
+                }
             }
 
             method.addContentLine(".ifPresent(this::" + setterName + ");");
@@ -196,19 +172,27 @@ class TypeHandlerBasic implements TypeHandler {
             // special handling, must assign to field, to avoid re-configuring
             if (type().equals(COMMON_CONFIG)) {
                 if (builderGetterOptional()) {
-                    contentBuilder.addContentLine("this.config = builder.config().map(")
+                    contentBuilder.addContent("this.config = builder.")
+                            .addContent(option().getterName())
+                            .addContent("().map(")
                             .addContent(CONFIG)
                             .addContentLine("::config).orElse(this.config);");
                 } else {
                     contentBuilder.addContentLine("this.config = ")
                             .addContent(CONFIG)
-                            .addContentLine(".config(builder.config());");
+                            .addContentLine(".config(builder.")
+                            .addContent(option().getterName())
+                            .addContentLine("());");
                 }
             } else {
                 if (builderGetterOptional()) {
-                    contentBuilder.addContentLine("this.config = builder.config().orElse(this.config);");
+                    contentBuilder.addContent("this.config = builder.")
+                            .addContent(option().getterName())
+                            .addContentLine("().orElse(this.config);");
                 } else {
-                    contentBuilder.addContentLine("this.config = builder.config();");
+                    contentBuilder.addContent("this.config = builder.")
+                            .addContent(option().getterName())
+                            .addContentLine("();");
                 }
             }
             return;
@@ -227,6 +211,10 @@ class TypeHandlerBasic implements TypeHandler {
 
     @Override
     public void fromPrototypeAssignment(ContentBuilder<?> contentBuilder) {
+        if (option().builderOptionOnly()) {
+            return;
+        }
+
         if (type().equals(CONFIG) || type().equals(COMMON_CONFIG)) {
             // special handling, must assign to field, to avoid re-configuring
             if (type().equals(COMMON_CONFIG)) {
@@ -252,6 +240,13 @@ class TypeHandlerBasic implements TypeHandler {
                 .addContent("(prototype.")
                 .addContent(option().getterName())
                 .addContentLine("());");
+
+        if (option().provider().isPresent()) {
+            // disable service discovery, as we have copied the value from a prototype
+            contentBuilder.addContent("this.")
+                    .addContent(option().name() + "DiscoverServices")
+                    .addContentLine(" = false;");
+        }
     }
 
     Field.Builder field(boolean isBuilder) {
@@ -289,13 +284,19 @@ class TypeHandlerBasic implements TypeHandler {
         generatedMethod(OptionMethodType.BUILDER_SINGULAR_ADD_TO_MAP_VALUE, prepareBuilderSingularAddToMapValue(getterJavadoc));
         generatedMethod(OptionMethodType.BUILDER_SINGULAR_ADD_TO_MAP_VALUES, prepareBuilderSingularAddToMapValues(getterJavadoc));
         generatedMethod(OptionMethodType.BUILDER_SETTER_CONSUMER, prepareSetterConsumer(getterJavadoc));
+        generatedMethod(OptionMethodType.BUILDER_SETTER_RUNTIME_TYPE_PROTOTYPE,
+                        prepareSetterPrototypeOfRuntimeType(getterJavadoc));
         generatedMethod(OptionMethodType.BUILDER_SETTER_SUPPLIER, prepareSetterSupplier(getterJavadoc));
     }
 
     TypeName asTypeArgument(TypeName topLevel) {
         return TypeName.builder(topLevel)
-                .addTypeArgument(toWildcard(type()))
+                .addTypeArgument(Utils.toWildcard(type()))
                 .build();
+    }
+
+    TypeName builderGetterType() {
+        return type();
     }
 
     GeneratedMethod prepareBuilderGetter(Javadoc javadoc) {
@@ -306,7 +307,7 @@ class TypeHandlerBasic implements TypeHandler {
                 returnType = option().declaredType();
             } else {
                 returnType = TypeName.builder(TypeNames.OPTIONAL)
-                        .addTypeArgument(type())
+                        .addTypeArgument(builderGetterType().boxed())
                         .build();
             }
         } else {
@@ -315,7 +316,7 @@ class TypeHandlerBasic implements TypeHandler {
 
         var method = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
-                .accessModifier(prototypeInfo.builderAccessModifier())
+                .accessModifier(option().accessModifier())
                 .typeName(returnType)
                 .elementName(option().getterName())
                 .update(this::deprecation)
@@ -351,7 +352,7 @@ class TypeHandlerBasic implements TypeHandler {
 
     GeneratedMethod realDeclaredBuilderSetter(Javadoc getterJavadoc) {
         TypeName typeName = type();
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -365,21 +366,23 @@ class TypeHandlerBasic implements TypeHandler {
 
         method.addParameterArgument(param -> param
                 .kind(ElementKind.PARAMETER)
-                .typeName(typeName)
+                .typeName(typeName.unboxed())
                 .elementName(name)
         );
 
         Consumer<ContentBuilder<?>> contentConsumer = it -> {
-            if (!typeName.primitive()) {
+            if (!typeName.unboxed().primitive()) {
                 it.addContent(Objects.class)
                         .addContentLine(".requireNonNull(" + name + ");");
             }
             option().decorator()
-                    .ifPresent(decorator -> it.addContent("new ")
-                            .addContent(decorator)
-                            .addContent("().decorate(this, ")
-                            .addContent(name)
-                            .addContentLine(");"));
+                    .ifPresent(decorator -> {
+                        it.addContent("new ")
+                                .addContent(decorator)
+                                .addContent("().decorate(this, ");
+                        decorateValue(it, name);
+                        it.addContentLine(");");
+                    });
 
             it.addContentLine("this." + name + " = " + name + ";");
 
@@ -391,6 +394,10 @@ class TypeHandlerBasic implements TypeHandler {
                 .javadoc(setterJavadoc(getterJavadoc, name, ""))
                 .contentBuilder(contentConsumer)
                 .build();
+    }
+
+    void decorateValue(ContentBuilder<?> contentBuilder, String optionName) {
+        contentBuilder.addContent(optionName);
     }
 
     Optional<GeneratedMethod> prepareBuilderSetterCharArray(Javadoc getterJavadoc) {
@@ -429,13 +436,90 @@ class TypeHandlerBasic implements TypeHandler {
         return Optional.empty();
     }
 
-    Optional<GeneratedMethod> prepareSetterConsumer(Javadoc getterJavadoc) {
-        if (option().builderInfo().isEmpty() && !option().declaredType().fqName().endsWith(".Builder")) {
+    Optional<GeneratedMethod> prepareSetterPrototypeOfRuntimeType(Javadoc getterJavadoc) {
+        if (option().runtimeType().isEmpty()) {
             return Optional.empty();
         }
 
-        if (option().builderInfo().isPresent()) {
-            var optionBuilder = option().builderInfo().get();
+        RuntimeTypeInfo rti = option().runtimeType().get();
+        var optionBuilder = rti.optionBuilder();
+        var factoryMethod = rti.factoryMethod();
+        String optionName = option().name();
+        Javadoc javadoc = setterJavadoc(getterJavadoc, optionName, "prototype of ");
+
+        TypeName paramType = optionBuilder.builderMethodType();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(Utils.builderReturnType())
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(paramType)
+                .elementName(optionName)
+        );
+
+        /*
+        public BUILDER option(Prototype prototype) {
+            Objects.requireNonNull(prototype);
+            option(FactoryType.factoryMethod(prototype));
+            return self();
+        }
+         */
+
+        /*
+        public BUILDER option(Prototype prototype) {
+            Objects.requireNonNull(prototype);
+            option(prototype.build());
+            return self();
+        }
+         */
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + optionName + ");")
+                    .addContent(option().setterName())
+                    .addContent("(");
+
+            factoryMethod.ifPresent(fm -> it.addContent(fm.declaringType().genericTypeName())
+                    .addContent(".")
+                    .addContent(fm.methodName())
+                    .addContent("("));
+
+            it.addContent(optionName);
+
+            if (factoryMethod.isPresent()) {
+                it.addContent(")");
+            } else {
+                it.addContent(".build()");
+            }
+
+            it.addContentLine(");");
+            it.addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    Optional<GeneratedMethod> prepareSetterConsumer(Javadoc getterJavadoc) {
+        if (option().builderInfo().isEmpty()
+                && option().runtimeType().isEmpty()
+                && !option().declaredType().fqName().endsWith(".Builder")) {
+            return Optional.empty();
+        }
+
+        if (option().runtimeType().isPresent()) {
+            RuntimeTypeInfo rti = option().runtimeType().get();
+            var optionBuilder = rti.optionBuilder();
+            var factoryMethod = rti.factoryMethod();
             Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
 
             TypeName paramType = TypeName.builder()
@@ -446,7 +530,7 @@ class TypeHandlerBasic implements TypeHandler {
             var method = TypedElementInfo.builder()
                     .kind(ElementKind.METHOD)
                     .accessModifier(option().accessModifier())
-                    .typeName(builderReturnType())
+                    .typeName(Utils.builderReturnType())
                     .elementName(option().setterName())
                     .update(this::deprecation)
                     .update(it -> option().annotations().forEach(it::addAnnotation));
@@ -467,15 +551,26 @@ class TypeHandlerBasic implements TypeHandler {
                             .addContent(optionBuilder.builderType())
                             .addContentLine("();");
                 } else {
-                    it.addContent(type())
+                    it.addContent(optionBuilder.builderMethodType())
                             .addContentLine("." + optionBuilder.builderMethodName() + "();");
                 }
 
                 it.addContentLine("consumer.accept(builder);")
-                        .addContent("this." + option().setterName() + "(builder.")
+                        .addContent("this." + option().setterName() + "(");
+
+                factoryMethod.ifPresent(fm -> it.addContent(fm.declaringType().genericTypeName())
+                        .addContent(".")
+                        .addContent(fm.methodName())
+                        .addContent("("));
+
+                it.addContent("builder.")
                         .addContent(optionBuilder.buildMethodName())
-                        .addContentLine("());")
-                        .addContentLine("return self();");
+                        .addContent("()");
+
+                factoryMethod.ifPresent(f -> it.addContent(")"));
+
+                it.addContentLine(");");
+                it.addContentLine("return self();");
             };
 
             return Optional.of(GeneratedMethod.builder()
@@ -483,18 +578,21 @@ class TypeHandlerBasic implements TypeHandler {
                                        .javadoc(javadoc)
                                        .contentBuilder(contentConsumer)
                                        .build());
-        } else {
-            // we have a builder field
-            Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "consumer", "consumer of "))
-                    .parameters(Map.of())
-                    .build();
+        }
 
-            TypeName paramType = asTypeArgument(TypeNames.CONSUMER);
+        if (option().builderInfo().isPresent()) {
+            var optionBuilder = option().builderInfo().get();
+            Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
+
+            TypeName paramType = TypeName.builder()
+                    .type(Consumer.class)
+                    .addTypeArgument(optionBuilder.builderType())
+                    .build();
 
             var method = TypedElementInfo.builder()
                     .kind(ElementKind.METHOD)
                     .accessModifier(option().accessModifier())
-                    .typeName(builderReturnType())
+                    .typeName(Utils.builderReturnType())
                     .elementName(option().setterName())
                     .update(this::deprecation)
                     .update(it -> option().annotations().forEach(it::addAnnotation));
@@ -510,18 +608,19 @@ class TypeHandlerBasic implements TypeHandler {
                         .addContentLine(".requireNonNull(consumer);")
                         .addContent("var builder = ");
 
-                if (option().defaultValue().isPresent()) {
-                    it.addContentLine("this." + option().name() + ";");
+                if (optionBuilder.builderMethodName().equals("<init>")) {
+                    it.addContent("new ")
+                            .addContent(optionBuilder.builderType())
+                            .addContentLine("();");
                 } else {
-                    String fqName = option().declaredType().fqName();
-                    // a bit dirty hack - we expect builder() method to exist on the class that owns the builder
-                    int lastDot = fqName.lastIndexOf('.');
-                    String builderMethod = fqName.substring(0, lastDot) + ".builder()";
-                    it.addContentLine(builderMethod + ";");
+                    it.addContent(optionBuilder.builderMethodType())
+                            .addContentLine("." + optionBuilder.builderMethodName() + "();");
                 }
 
                 it.addContentLine("consumer.accept(builder);")
-                        .addContentLine("this." + option().setterName() + "(builder);")
+                        .addContent("this." + option().setterName() + "(builder.")
+                        .addContent(optionBuilder.buildMethodName())
+                        .addContentLine("());")
                         .addContentLine("return self();");
             };
 
@@ -531,6 +630,55 @@ class TypeHandlerBasic implements TypeHandler {
                                        .contentBuilder(contentConsumer)
                                        .build());
         }
+        // we have a builder field
+        Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "consumer", "consumer of "))
+                .parameters(Map.of())
+                .build();
+
+        TypeName paramType = TypeName.builder()
+                .type(Consumer.class)
+                .addTypeArgument(type())
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(Utils.builderReturnType())
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(paramType)
+                .elementName("consumer")
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(consumer);")
+                    .addContent("var builder = ");
+
+            if (option().defaultValue().isPresent()) {
+                it.addContentLine("this." + option().name() + ";");
+            } else {
+                String fqName = option().declaredType().fqName();
+                // a bit dirty hack - we expect builder() method to exist on the class that owns the builder
+                int lastDot = fqName.lastIndexOf('.');
+                String builderMethod = fqName.substring(0, lastDot) + ".builder()";
+                it.addContentLine(builderMethod + ";");
+            }
+
+            it.addContentLine("consumer.accept(builder);")
+                    .addContentLine("this." + option().setterName() + "(builder);")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
     }
 
     Optional<GeneratedMethod> prepareSetterSupplier(Javadoc getterJavadoc) {
@@ -545,7 +693,7 @@ class TypeHandlerBasic implements TypeHandler {
         var method = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .accessModifier(option().accessModifier())
-                .typeName(builderReturnType())
+                .typeName(Utils.builderReturnType())
                 .elementName(option().setterName())
                 .update(this::deprecation)
                 .update(it -> option().annotations().forEach(it::addAnnotation));
@@ -571,21 +719,38 @@ class TypeHandlerBasic implements TypeHandler {
                                    .build());
     }
 
-    /**
-     * Type name to be used in setters.
-     * For generic types, this may be {@code List<? extends Type>} rather than {@code List<Type>}.
-     *
-     * @return type name to be used in generic arguments
-     */
-    TypeName setterArgumentTypeName() {
-        return type();
-    }
-
     void generateFromConfig(ContentBuilder<?> content) {
-        if (type().fqName().equals("char[]")) {
+        TypeName usedType = type();
+
+        if (usedType.fqName().equals("char[]")) {
             content.addContent(".asString().as(")
                     .addContent(String.class)
                     .addContent("::toCharArray)");
+            return;
+        }
+
+        if (usedType.equals(TypeNames.STRING)) {
+            content.addContent(".asString()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_INT)) {
+            content.addContent(".asInt()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_DOUBLE)) {
+            content.addContent(".asDouble()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_BOOLEAN)) {
+            content.addContent(".asBoolean()");
+            return;
+        }
+
+        if (usedType.boxed().equals(TypeNames.BOXED_LONG)) {
+            content.addContent(".asLong()");
             return;
         }
 
@@ -636,13 +801,6 @@ class TypeHandlerBasic implements TypeHandler {
         return prototypeInfo;
     }
 
-    boolean isConfigProperty() {
-        return "config".equals(option().name())
-                && (
-                type().equals(CONFIG)
-                        || type().equals(COMMON_CONFIG));
-    }
-
     void deprecation(TypedElementInfo.Builder method) {
         if (option().deprecation().isEmpty()) {
             return;
@@ -662,7 +820,7 @@ class TypeHandlerBasic implements TypeHandler {
             builder.putValue("forRemoval", true);
         }
 
-        method.addAnnotation(Annotations.DEPRECATED);
+        method.addAnnotation(builder.build());
     }
 
     Javadoc deprecation(Javadoc javadoc) {
@@ -679,9 +837,9 @@ class TypeHandlerBasic implements TypeHandler {
          */
         var javadocBuilder = Javadoc.builder(javadoc);
         if (alternative.isPresent()) {
-            javadocBuilder.addTag("deprecated", message + ", use {@link #" + alternative.get() + "} instead");
+            javadocBuilder.deprecation(message + ", use {@link #" + alternative.get() + "} instead");
         } else {
-            javadocBuilder.addTag("deprecated", message);
+            javadocBuilder.deprecation(message);
         }
 
         return javadocBuilder.build();
@@ -697,7 +855,7 @@ class TypeHandlerBasic implements TypeHandler {
 
     GeneratedMethod stringSetterForCharArrayBuilderSetter(Javadoc getterJavadoc) {
         TypeName typeName = TypeNames.STRING;
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
 
@@ -818,7 +976,7 @@ class TypeHandlerBasic implements TypeHandler {
         } else {
             // we must construct Javadoc, as it is missing
             getterJavadoc = Javadoc.builder()
-                    .add(capitalize(option().name()) + " option().")
+                    .add(capitalize(option().name()) + " option.")
                     .returnDescription("the " + option().name() + " option")
                     .build();
         }

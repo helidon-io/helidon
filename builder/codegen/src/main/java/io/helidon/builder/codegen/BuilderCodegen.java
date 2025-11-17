@@ -28,7 +28,6 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import io.helidon.builder.codegen.ValidationTask.ValidateConfiguredType;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtensionProvider;
 import io.helidon.codegen.CodegenContext;
@@ -57,9 +56,11 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.metadata.MetadataConstants;
 
+import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
+import static io.helidon.builder.codegen.Types.CONFIG;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSION;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_EXTENSIONS;
-import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPE;
+import static io.helidon.builder.codegen.Types.SERVICE_REGISTRY;
 
 /*
 Each option can have the following methods:
@@ -82,8 +83,6 @@ non-optional one
 class BuilderCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(BuilderCodegen.class);
 
-    // all types annotated with prototyped by (for validation)
-    private final Set<TypeName> runtimeTypes = new HashSet<>();
     // all blueprint types (for validation)
     private final Set<TypeName> blueprintTypes = new HashSet<>();
     // all types from service loader that should be supported by ServiceRegistry
@@ -124,11 +123,6 @@ class BuilderCodegen implements CodegenExtension {
 
     @Override
     public void process(RoundContext roundContext) {
-        // we need to keep the type names, as some types may not be available, as we are generating them
-        runtimeTypes.addAll(roundContext.annotatedTypes(Types.RUNTIME_PROTOTYPED_BY)
-                                    .stream()
-                                    .map(TypeInfo::typeName)
-                                    .toList());
         Collection<TypeInfo> blueprints = roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT);
         blueprintTypes.addAll(blueprints.stream()
                                       .map(TypeInfo::typeName)
@@ -153,9 +147,7 @@ class BuilderCodegen implements CodegenExtension {
         // we must collect validation information after all types are generated - so
         // we also listen on @Generated, so there is another round of annotation processing where we have all
         // types nice and ready
-        List<ValidationTask> validationTasks = new ArrayList<>();
-        validationTasks.addAll(addRuntimeTypesForValidation(this.runtimeTypes));
-        validationTasks.addAll(addBlueprintsForValidation(roundContext, this.blueprintTypes));
+        List<ValidationTask> validationTasks = new ArrayList<>(addBlueprintsForValidation(roundContext, this.blueprintTypes));
 
         Errors.Collector collector = Errors.collector();
         for (ValidationTask task : validationTasks) {
@@ -183,7 +175,7 @@ class BuilderCodegen implements CodegenExtension {
 
     private static void addCreateDefaultMethod(List<OptionHandler> options,
                                                ClassModel.Builder classModel,
-                                               TypeName prototype,
+                                               PrototypeInfo prototype,
                                                String ifaceName,
                                                String typeArgumentString,
                                                List<TypeArgument> typeArguments) {
@@ -193,12 +185,13 @@ class BuilderCodegen implements CodegenExtension {
          */
         boolean noRequired = noRequired(options);
 
-        if (noRequired) {
+        // in case there is a builder decorator, we include this method, as missing values could be fixed there
+        if (noRequired || prototype.builderDecorator().isPresent()) {
             classModel.addMethod(builder -> {
                 builder.isStatic(true)
                         .name("create")
                         .description("Create a new instance with default values.")
-                        .returnType(prototype, "a new instance")
+                        .returnType(prototype.prototypeType(), "a new instance")
                         .addContentLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
                 typeArguments.forEach(builder::addGenericArgument);
             });
@@ -331,6 +324,11 @@ class BuilderCodegen implements CodegenExtension {
                 .noneMatch(OptionInfo::required);
     }
 
+    private static boolean hasRegistryService(List<OptionInfo> options) {
+        return options.stream()
+                .anyMatch(OptionInfo::registryService);
+    }
+
     private void updateServiceLoaderResource() {
         CodegenFiler filer = ctx.filer();
         String moduleName = ctx.moduleName().orElse(null);
@@ -362,7 +360,7 @@ class BuilderCodegen implements CodegenExtension {
         /*
          All information about the prototype itself except for options
          */
-        PrototypeInfo tmpPrototypeInfo = TypeContext.create(roundContext, blueprint);
+        PrototypeInfo tmpPrototypeInfo = FactoryPrototypeInfo.create(roundContext, blueprint);
 
         // find all extensions, as these may modify handling of our types
         List<BuilderCodegenExtension> extensions = findExtensions(tmpPrototypeInfo);
@@ -371,9 +369,6 @@ class BuilderCodegen implements CodegenExtension {
         for (BuilderCodegenExtension extension : extensions) {
             tmpPrototypeInfo = extension.prototypeInfo(tmpPrototypeInfo);
         }
-
-        // now we have final prototype info - processed by all extensions, next we start collecting options
-        PrototypeInfo prototypeInfo = tmpPrototypeInfo;
 
         /*
          We must identify the first prototype/blueprint we extend, and then discover all options on interfaces we extend
@@ -386,17 +381,20 @@ class BuilderCodegen implements CodegenExtension {
         List<OptionInfo> newOptions = new ArrayList<>();
         List<OptionInfo> existingOptions = new ArrayList<>();
 
-        PrototypeOption.options(ctx, roundContext, prototypeInfo, newOptions, existingOptions);
+        FactoryOption.options(ctx, roundContext, tmpPrototypeInfo, newOptions, existingOptions);
 
         for (BuilderCodegenExtension extension : extensions) {
             newOptions = extension.options(newOptions);
         }
 
+        // now we have final prototype info - processed by all extensions, next we start collecting options
+        PrototypeInfo prototypeInfo = fixFactoryMethods(tmpPrototypeInfo, newOptions);
+
         // now for each provider, add discoverServices builder option (this is required for our code to work)
         List<OptionInfo> discoverServicesOptions = newOptions.stream()
                 .filter(it -> it.provider().isPresent() || it.registryService())
                 .map(it -> {
-                    boolean defaultValue = it.provider().get().discoverServices();
+                    boolean defaultValue = it.provider().map(OptionProvider::discoverServices).orElse(true);
 
                     String name = it.name() + "DiscoverServices";
                     String setterName = it.setterName() + "DiscoverServices";
@@ -422,6 +420,8 @@ class BuilderCodegen implements CodegenExtension {
         // ensure mutability
         newOptions = new ArrayList<>(newOptions);
         newOptions.addAll(discoverServicesOptions);
+        configOption(prototypeInfo, newOptions, existingOptions);
+        serviceRegistryOption(prototypeInfo, newOptions);
 
         /*
         We may have new options that override existing option's:
@@ -483,6 +483,133 @@ class BuilderCodegen implements CodegenExtension {
                 .toList();
 
         generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults, methodUpdate);
+    }
+
+    private void serviceRegistryOption(PrototypeInfo prototypeInfo, List<OptionInfo> newOptions) {
+        boolean registrySupport = prototypeInfo.registrySupport() || hasRegistryService(newOptions);
+
+        if (!registrySupport) {
+            return;
+        }
+
+        boolean style = prototypeInfo.recordStyle();
+        String getter = style ? "serviceRegistry" : "getServiceRegistry";
+        String setter = style ? "serviceRegistry" : "setServiceRegistry";
+
+        newOptions.add(OptionInfo.builder()
+                               .name("serviceRegistry")
+                               .declaredType(SERVICE_REGISTRY)
+                               .getterName(getter)
+                               .setterName(setter)
+                               .includeInEqualsAndHashCode(false)
+                               .includeInToString(false)
+                               .builderOptionOnly(true)
+                               .accessModifier(AccessModifier.PUBLIC)
+                               .description("Service registry used to discover providers and services.\n"
+                                                    + "Provide an explicit registry instance to use.\n"
+                                                    + "<p>\n"
+                                                    + "If not configured, the {@link "
+                                                    + Types.GLOBAL_SERVICE_REGISTRY.fqName()
+                                                    + "} would be used to discover services.")
+                               .paramDescription("service registry to use")
+                               .build());
+    }
+
+    private void configOption(PrototypeInfo prototypeInfo, List<OptionInfo> newOptions, List<OptionInfo> existingOptions) {
+        if (prototypeInfo.configured().isEmpty()) {
+            return;
+        }
+        // discover if either existing or new options contain config option
+        if (hasConfigOption(newOptions)) {
+            return;
+        }
+
+        if (hasConfigOption(existingOptions)) {
+            return;
+        }
+
+        // we must add it, for now common config to have backward compatibility
+        boolean style = prototypeInfo.recordStyle();
+        String getter = style ? "config" : "getConfig";
+        String setter = style ? "config" : "setConfig";
+
+        newOptions.add(OptionInfo.builder()
+                               .name("config")
+                               .declaredType(COMMON_CONFIG)
+                               .getterName(getter)
+                               .setterName(setter)
+                               .includeInEqualsAndHashCode(false)
+                               .includeInToString(false)
+                               .builderOptionOnly(true)
+                               .accessModifier(AccessModifier.PROTECTED)
+                               .description("Configuration used to configure this instance.")
+                               .paramDescription("config instance")
+                               .build());
+    }
+
+    private boolean hasConfigOption(List<OptionInfo> options) {
+        return options.stream()
+                .filter(it -> it.name().equals("config"))
+                .anyMatch(it -> {
+                    // we only support Config, Optional<Config> for both common and config config
+                    var optionType = it.declaredType();
+                    if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                        return true;
+                    }
+                    if (optionType.isOptional()) {
+                        optionType = optionType.typeArguments().getFirst();
+                        if (optionType.equals(CONFIG) || optionType.equals(COMMON_CONFIG)) {
+                            return true;
+                        }
+                    }
+                    throw new CodegenException("An option named \"config\" in a configured blueprint must be of type "
+                                                       + CONFIG.fqName() + " or its optional, but is: "
+                                                       + it.declaredType().fqName(),
+                                               it.interfaceMethod().map(TypedElementInfo::originatingElementValue)
+                                                       .orElse(it.name()));
+                });
+    }
+
+    @SuppressWarnings({"removal", "deprecation"})
+    private PrototypeInfo fixFactoryMethods(PrototypeInfo tmpPrototypeInfo, List<OptionInfo> newOptions) {
+        // for backward compatibility, we support factory methods of both runtime type and prototype to be mixed
+        // here, as we know all option types, we can separate them
+
+        TypeName prototypeType = tmpPrototypeInfo.prototypeType();
+
+        var builder = PrototypeInfo.builder(tmpPrototypeInfo);
+        List<GeneratedMethod> prototypeFactories = new ArrayList<>(tmpPrototypeInfo.prototypeFactories());
+
+        for (DeprecatedFactoryMethod factoryMethod : tmpPrototypeInfo.deprecatedFactoryMethods()) {
+            // if the factory method is void or does not have one parameter, it is for sure a prototype factory
+            TypedElementInfo method = factoryMethod.method();
+            TypeName returnType = method.typeName();
+
+            if (returnType.unboxed().equals(TypeNames.PRIMITIVE_VOID)
+                    || method.parameterArguments().size() != 1
+                    || Utils.typesEqual(returnType, prototypeType)) {
+                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
+                                                                            factoryMethod.method(),
+                                                                            List.of()));
+                continue;
+            }
+
+            if (newOptions.stream()
+                    .filter(it -> Utils.typesEqual(returnType, Utils.realType(it.declaredType()))
+                            || Utils.resoledTypesEqual(returnType, it.declaredType()))
+                    .findAny()
+                    .isEmpty()) {
+
+                // yep, this is a factory method to be generated
+                prototypeFactories.add(GeneratedMethods.createFactoryMethod(factoryMethod.declaringType(),
+                                                                            factoryMethod.method(),
+                                                                            List.of()));
+            }
+        }
+
+        return builder
+                .prototypeFactories(prototypeFactories)
+                .build();
     }
 
     private void copyConfiguredForDiscoverServices(OptionInfo providerOption, OptionInfo.Builder optionBuilder) {
@@ -623,13 +750,13 @@ class BuilderCodegen implements CodegenExtension {
         if (prototypeInfo.createEmptyCreate()) {
             addCreateDefaultMethod(options,
                                    classModel,
-                                   prototype,
+                                   prototypeInfo,
                                    ifaceName,
                                    typeArgumentString,
                                    typeArguments);
         }
 
-        generateCustomMethods(classModel, prototypeInfo.prototypeFactoryMethods());
+        generateCustomMethods(classModel, prototypeInfo.prototypeFactories());
         generateCustomPrototypeMethods(classModel, prototypeInfo.prototypeMethods(), false);
 
         // re-create all blueprint methods to have correct javadoc references
@@ -739,7 +866,7 @@ class BuilderCodegen implements CodegenExtension {
                                                             blueprintType));
 
             result.add(new ValidationTask.ValidateBlueprint(blueprint));
-            var typeContext = TypeContext.create(roundContext, blueprint);
+            var typeContext = FactoryPrototypeInfo.create(roundContext, blueprint);
 
             if (typeContext.runtimeType().isPresent()) {
                 result.add(new ValidationTask.ValidateBlueprintExtendsFactory(typeContext.prototypeType(),
@@ -757,22 +884,6 @@ class BuilderCodegen implements CodegenExtension {
                 .orElseThrow(() -> new IllegalArgumentException("Type " + typeName.fqName() + " is not a valid type for Factory"
                                                                         + " declared on type " + typeInfo.typeName()
                         .fqName()));
-    }
-
-    private List<? extends ValidationTask> addRuntimeTypesForValidation(Set<TypeName> runtimeTypes) {
-        return runtimeTypes.stream()
-                .map(ctx::typeInfo)
-                .flatMap(Optional::stream)
-                .map(it -> new ValidateConfiguredType(it,
-                                                      annotationTypeValue(it, RUNTIME_PROTOTYPE)))
-                .toList();
-    }
-
-    private TypeName annotationTypeValue(TypeInfo typeInfo, TypeName annotationType) {
-        return typeInfo.findAnnotation(annotationType)
-                .flatMap(Annotation::typeValue)
-                .orElseThrow(() -> new IllegalArgumentException("Type " + typeInfo.typeName()
-                        .fqName() + " has invalid ConfiguredBy annotation"));
     }
 
     private String createTypeArgumentString(List<TypeName> typeArguments) {

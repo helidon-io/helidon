@@ -18,15 +18,18 @@ package io.helidon.builder.codegen;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
 /**
  * Some static methods on custom methods (and deprecated option on the blueprint itself)
  * may be annotated with {@code Prototype.FactoryMethod}.
  * <p>
- * Such methods can be used to map from configuration to a type.
+ * Such methods can be used to map from configuration to a type, or from a prototype to a
+ * third party runtime-type.
  */
-public interface FactoryMethod {
+@Prototype.Blueprint(detach = true)
+interface FactoryMethodBlueprint {
     /**
      * Type declaring the factory method.
      *
@@ -54,4 +57,11 @@ public interface FactoryMethod {
      * @return parameter type, if any
      */
     Optional<TypeName> parameterType();
+
+    /**
+     * A factory method may be bound to a specific option.
+     *
+     * @return name of the option this factory method is bound to, if any
+     */
+    Optional<String> optionName();
 }

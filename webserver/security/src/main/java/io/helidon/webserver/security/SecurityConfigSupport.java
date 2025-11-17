@@ -29,6 +29,7 @@ class SecurityConfigSupport {
     private SecurityConfigSupport() {
     }
 
+    @SuppressWarnings("removal")
     static class SecurityFeatureConfigDecorator implements Prototype.BuilderDecorator<SecurityFeatureConfig.BuilderBase<?, ?>> {
         private static final System.Logger LOGGER = System.getLogger(SecurityFeatureConfig.class.getName());
 

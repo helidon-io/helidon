@@ -68,5 +68,16 @@ interface ScopeConfigBlueprint {
      * @param name meter name
      * @return if the meter is enabled
      */
-    boolean isMeterEnabled(String name);
+    default boolean isMeterEnabled(String name) {
+        /*
+         The following must be true for the meter to be enabled:
+
+         1. The scope itself must be enabled (that's the default).
+         2. If there is an exclude pattern, the name must not match it.
+         3. If there is an include pattern, the name must match it.
+         */
+        return enabled()
+                && exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
+                && include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
+    }
 }

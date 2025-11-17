@@ -423,6 +423,7 @@ public final class Method extends Executable {
             name(methodInfo.elementName())
                     .accessModifier(methodInfo.accessModifier())
                     .returnType(methodInfo.typeName())
+                    .update(it -> methodInfo.typeParameters().forEach(typeParam -> it.addGenericArgument(TypeArgument.create(typeParam))))
                     .update(it -> methodInfo.annotations().forEach(it::addAnnotation))
                     .isDefault(methodInfo.elementModifiers().contains(Modifier.DEFAULT))
                     .isFinal(methodInfo.elementModifiers().contains(Modifier.FINAL))

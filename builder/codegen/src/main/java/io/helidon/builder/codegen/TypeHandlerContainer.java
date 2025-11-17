@@ -63,19 +63,23 @@ abstract class TypeHandlerContainer extends TypeHandlerBasic {
                 .addContent(capitalize(option().name()))
                 .addContent("(builder.")
                 .addContent(option().getterName())
-                .addContentLine(");")
+                .addContentLine("());")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("} else {")
                 .addContent(option().setterName())
                 .addContent("(builder.")
                 .addContent(option().getterName())
-                .addContentLine(");")
+                .addContentLine("());")
                 .addContentLine("}");
     }
 
     @Override
     public void fromPrototypeAssignment(ContentBuilder<?> contentBuilder) {
+        if (option().builderOptionOnly()) {
+            return;
+        }
+
         contentBuilder.addContent("if (!this.")
                 .addContent(isMutatedField())
                 .addContentLine(") {")
@@ -88,11 +92,32 @@ abstract class TypeHandlerContainer extends TypeHandlerBasic {
                 .addContent("(prototype.")
                 .addContent(option().getterName())
                 .addContentLine("());");
+
+        if (option().provider().isPresent()) {
+            // disable service discovery, as we have copied the value from a prototype
+            contentBuilder.addContent("this.")
+                    .addContent(option().name() + "DiscoverServices")
+                    .addContentLine(" = false;");
+        }
     }
 
     @Override
     Optional<GeneratedMethod> prepareSetterConsumer(Javadoc getterJavadoc) {
-        return Optional.empty();
+        if (option().runtimeType().isEmpty()) {
+            return Optional.empty();
+        }
+        RuntimeTypeInfo runtimeTypeInfo = option().runtimeType().get();
+        if (runtimeTypeInfo.factoryMethod().isEmpty()) {
+            return Optional.empty();
+        }
+        // consumer of builder for setter of a collection can only be added
+        // if the factory method returns the collection
+        FactoryMethod factoryMethod = runtimeTypeInfo.factoryMethod().get();
+        if (!(factoryMethod.returnType().isList() || factoryMethod.returnType().isSet())) {
+            return Optional.empty();
+        }
+
+        return super.prepareSetterConsumer(getterJavadoc);
     }
 
     @Override
@@ -102,6 +127,11 @@ abstract class TypeHandlerContainer extends TypeHandlerBasic {
 
     @Override
     Optional<GeneratedMethod> prepareSetterSupplier(Javadoc getterJavadoc) {
+        return Optional.empty();
+    }
+
+    @Override
+    Optional<GeneratedMethod> prepareSetterPrototypeOfRuntimeType(Javadoc getterJavadoc) {
         return Optional.empty();
     }
 

@@ -45,7 +45,6 @@ public class BuilderCodegenProvider implements CodegenExtensionProvider {
     @Override
     public Set<TypeName> supportedAnnotations() {
         return Set.of(Types.PROTOTYPE_BLUEPRINT,
-                      Types.RUNTIME_PROTOTYPED_BY,
                       Types.GENERATED);
     }
 }

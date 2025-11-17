@@ -30,7 +30,6 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
 import static io.helidon.builder.codegen.Types.RUNTIME_API;
-import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPED_BY;
 
 abstract class ValidationTask {
     static boolean doesImplement(TypeInfo validatedType, TypeName implementedInterface) {
@@ -66,7 +65,7 @@ abstract class ValidationTask {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(ElementInfoPredicates::isStatic)
                 .filter(ElementInfoPredicates.elementName(methodName))
-                .filter(it -> returnType.equals(it.typeName()))
+                .filter(it -> Utils.typesEqual(returnType, it.typeName()))
                 .filter(it -> {
                     List<TypedElementInfo> args = it.parameterArguments();
 
@@ -77,7 +76,7 @@ abstract class ValidationTask {
                         return false;
                     }
                     TypedElementInfo typedElementInfo = args.getFirst();
-                    return argument.equals(typedElementInfo.typeName());
+                    return Utils.typesEqual(argument, typedElementInfo.typeName());
                 })
                 .findFirst()
                 .isEmpty()) {
@@ -88,7 +87,7 @@ abstract class ValidationTask {
     /**
      * Validate runtime object that is configured by a prototype.
      * <p>
-     * If annotated by {@link io.helidon.builder.codegen.Types#RUNTIME_PROTOTYPE}
+     * If a blueprint is a factory for a RuntimeType, the following must be true:
      * - RuntimeType must have "static RuntimeType create(ConfigObject)"
      * - RuntimeType must have "static RuntimeType create(Consumer<ConfigObject.Builder>)
      * - must implement {@link io.helidon.builder.codegen.Types#RUNTIME_API}
@@ -114,10 +113,8 @@ abstract class ValidationTask {
                     new ValidateCreateWithConsumerMethod(configObjectWithTypeParams, runtimeTypeInfo),
                     new ValidateImplements(runtimeTypeInfo,
                                            configuredTypeInterface,
-                                           "Type annotated with @"
-                                                   + RUNTIME_PROTOTYPED_BY.classNameWithEnclosingNames()
-                                                   + "(" + configObjectType.className()
-                                                   + ".class) must implement "
+                                           "Type created as a factory " + configObjectType.className()
+                                                   + " must implement "
                                                    + RUNTIME_API.classNameWithEnclosingNames()
                                                    + "<"
                                                    + configObjectWithTypeParams.classNameWithTypes() + ">")
@@ -241,9 +238,7 @@ abstract class ValidationTask {
 
             nestedValidators = List.of(
                     new ValidateBuilderMethod(configObjectType, runtimeTypeInfo, configObjectBuilder),
-                    new ValidateAnnotatedWith(runtimeTypeInfo,
-                                              RUNTIME_PROTOTYPED_BY,
-                                              configObjectType.genericTypeName().fqName())
+                    new ValidateConfiguredType(runtimeTypeInfo, configObjectType)
             );
         }
 
@@ -284,30 +279,6 @@ abstract class ValidationTask {
         }
     }
 
-    private static class ValidateAnnotatedWith extends ValidationTask {
-
-        private final TypeInfo typeInfo;
-        private final TypeName annotation;
-        private final String expectedValue;
-
-        ValidateAnnotatedWith(TypeInfo typeInfo, TypeName annotation, String expectedValue) {
-            this.typeInfo = typeInfo;
-            this.annotation = annotation;
-            this.expectedValue = expectedValue;
-        }
-
-        @Override
-        void validate(Errors.Collector errors) {
-            if (typeInfo.findAnnotation(annotation)
-                    .stream()
-                    .noneMatch(it -> it.value().map(expectedValue::equals).orElse(false))) {
-                errors.fatal(typeInfo.typeName(),
-                             "Type " + typeInfo.typeName().fqName()
-                                     + " must be annotated with " + annotation.fqName() + "(" + expectedValue + ")");
-            }
-        }
-    }
-
     /**
      * Validate that runtime object has a factory method to be created from prototype.
      * <pre>
@@ -334,11 +305,9 @@ abstract class ValidationTask {
                                   runtimeTypeInfo.typeName(),
                                   "create",
                                   configObjectType,
-                                  "As " + fqName + " is annotated with @"
-                                          + RUNTIME_PROTOTYPED_BY.classNameWithEnclosingNames()
-                                          + "("
+                                  "As " + fqName + " is created by a blueprint of "
                                           + configObjectType.className()
-                                          + "), the type must implement the following "
+                                          + ", the type must implement the following "
                                           + "method:\n"
                                           + "static " + runtimeTypeInfo.typeName().classNameWithTypes() + " create("
                                           + configObjectType.classNameWithTypes() + ");");

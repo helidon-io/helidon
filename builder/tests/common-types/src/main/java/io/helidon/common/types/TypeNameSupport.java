@@ -135,13 +135,11 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override")
     static String toString(TypeName instance) {
         return instance.resolvedName();
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String name(TypeName instance) {
         return calcName(instance, "$");
     }
@@ -159,7 +157,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String fqName(TypeName instance) {
         String name = calcName(instance, ".");
         StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
@@ -170,7 +167,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String declaredName(TypeName instance) {
         String name = name(instance);
         StringBuilder nameBuilder = new StringBuilder(name);
@@ -181,7 +177,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String resolvedName(TypeName instance) {
         if (instance.generic() || instance.wildcard()) {
             return resolveGenericName(instance);

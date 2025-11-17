@@ -35,7 +35,9 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.builder.codegen.Types.ARRAY_LIST;
 import static io.helidon.builder.codegen.Types.LINKED_HASH_MAP;
+import static io.helidon.builder.codegen.Types.LINKED_HASH_SET;
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.MAP;
@@ -76,16 +78,24 @@ class TypeHandlerMap extends TypeHandlerContainer {
                                       + ".asNodeList().ifPresent(nodes -> nodes.forEach"
                                       + "(node -> "
                                       + optionName + ".put(node.get(\"name\").asString().orElse(node.name()), node");
-            generateFromConfig(method);
+            if (optionConfigured.factoryMethod().isPresent()) {
+                generateFromConfig(method, optionConfigured.factoryMethod().get());
+            } else {
+                generateFromConfig(method);
+            }
             method.addContentLine(".get())));");
         }
     }
 
     @Override
     GeneratedMethod prepareBuilderSetter(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
 
         String name = option().name();
+
+        Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, name, ""))
+                .add("\nThis method replaces all values with the new ones.")
+                .build();
 
         var method = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
@@ -113,25 +123,25 @@ class TypeHandlerMap extends TypeHandlerContainer {
 
         return GeneratedMethod.builder()
                 .method(method.build())
-                .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                .javadoc(javadoc)
                 .contentBuilder(contentConsumer)
                 .build();
     }
 
     @Override
     Optional<GeneratedMethod> prepareBuilderAddCollection(Javadoc getterJavadoc) {
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
         String name = option().name();
 
         Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, name, ""))
-                .add("This method keeps existing values, then puts all new values into the map.")
+                .add("\nThis method keeps existing values, then puts all new values into the map.")
                 .build();
 
         var method = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .accessModifier(option().accessModifier())
                 .typeName(returnType)
-                .elementName(option().setterName())
+                .elementName("add" + capitalize(name))
                 .update(this::deprecation)
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
@@ -164,14 +174,14 @@ class TypeHandlerMap extends TypeHandlerContainer {
         OptionSingular singular = option().singular().get();
         String singularName = singular.name();
         String methodName = singular.methodName();
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
         String name = option().name();
 
         Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
-                .add("This method adds or replaces a value in the map.")
+                .add("\nThis method adds a new value to the map, or replaces it if the key already exists.")
                 .parameters(Map.of())
-                .addParameter("key", "key to add value for")
-                .addParameter(singularName, "value to add")
+                .addParameter("key", "key to add or replace")
+                .addParameter(singularName, "new value for the key")
                 .build();
 
         var method = TypedElementInfo.builder()
@@ -192,7 +202,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
                             .typeName(type())
-                            .elementName("value")
+                            .elementName(singularName)
                     );
         }
 
@@ -201,7 +211,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .addContentLine(".requireNonNull(key);")
                     .addContent(Objects.class)
                     .addContentLine(".requireNonNull(" + singularName + ");")
-                    .addContentLine("this." + name + ".put(key, ");
+                    .addContent("this." + name + ".put(key, ");
             secondArgToPut(it, type(), singularName);
             it.addContentLine(");");
             extraAdderContent(it);
@@ -226,11 +236,11 @@ class TypeHandlerMap extends TypeHandlerContainer {
         OptionSingular singular = option().singular().get();
         String singularName = singular.name();
         String methodName = "add" + capitalize(singularName);
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
         TypeName valueParamType = type().typeArguments().getFirst();
 
         Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
-                .add("This method adds a new value to the map value, or creates a new value.")
+                .add("\nThis method adds a new value to the map value, or creates a new value.")
                 .parameters(Map.of())
                 .addParameter("key", "key to add value for")
                 .addParameter(singularName, "value to add to the map values")
@@ -265,9 +275,9 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .addContentLine(".requireNonNull(" + singularName + ");")
                     .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
                     .addContent("v = v == null ? new ")
-                    .addContent(LINKED_HASH_MAP)
+                    .addContent(containerValueTypeImpl())
                     .addContent("<>() : new ")
-                    .addContent(LINKED_HASH_MAP)
+                    .addContent(containerValueTypeImpl())
                     .addContentLine("<>(v);")
                     .addContentLine("v.add(" + singularName + ");")
                     .addContentLine("return v;")
@@ -294,11 +304,11 @@ class TypeHandlerMap extends TypeHandlerContainer {
             return Optional.empty();
         }
         String methodName = "add" + capitalize(option().name());
-        TypeName returnType = builderReturnType();
+        TypeName returnType = Utils.builderReturnType();
         String name = option().name();
 
         Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
-                .add("This method adds new values to the map values, or creates a new mapping.")
+                .add("\nThis method adds new values to the map values, or creates a new mapping.")
                 .parameters(Map.of())
                 .addParameter("key", "key to add value for")
                 .addParameter(name, "values to add to the map values")
@@ -333,9 +343,9 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .addContentLine(".requireNonNull(" + name + ");")
                     .addContentLine("this." + option().name() + ".compute(key, (k, v) -> {")
                     .addContent("v = v == null ? new ")
-                    .addContent(LINKED_HASH_MAP)
+                    .addContent(containerValueTypeImpl())
                     .addContent("<>() : new ")
-                    .addContent(LINKED_HASH_MAP)
+                    .addContent(containerValueTypeImpl())
                     .addContentLine("<>(v);")
                     .addContentLine("v.addAll(" + name + ");")
                     .addContentLine("return v;")
@@ -354,6 +364,157 @@ class TypeHandlerMap extends TypeHandlerContainer {
     }
 
     @Override
+    Optional<GeneratedMethod> prepareBuilderSingularAddConsumer(Javadoc getterJavadoc) {
+        if (option().singular().isEmpty() ||
+                (option().builderInfo().isEmpty() && option().runtimeType().isEmpty())) {
+            return Optional.empty();
+        }
+
+        OptionSingular singular = option().singular().get();
+        String methodName = singular.methodName();
+        TypeName returnType = Utils.builderReturnType();
+
+        /*
+        builder.putOption("key", builder -> builder.port(49))
+         */
+        if (option().runtimeType().isPresent()) {
+            RuntimeTypeInfo rti = option().runtimeType().get();
+            var optionBuilder = rti.optionBuilder();
+            var factoryMethod = rti.factoryMethod();
+
+            Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                    .add("\nThis method adds a new value to the map, or replaces it if the key already exists.")
+                    .parameters(Map.of())
+                    .addParameter("key", "key to add or replace")
+                    .addParameter("consumer", "consumer of builder for new value")
+                    .build();
+
+            TypeName paramType = TypeName.builder()
+                    .type(Consumer.class)
+                    .addTypeArgument(optionBuilder.builderType())
+                    .build();
+
+            var method = TypedElementInfo.builder()
+                    .kind(ElementKind.METHOD)
+                    .accessModifier(option().accessModifier())
+                    .typeName(returnType)
+                    .elementName(methodName)
+                    .update(this::deprecation)
+                    .update(it -> option().annotations().forEach(it::addAnnotation));
+
+            method.addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(keyType)
+                            .elementName("key"))
+                    .addParameterArgument(param -> param
+                            .kind(ElementKind.PARAMETER)
+                            .typeName(paramType)
+                            .elementName("consumer")
+                    );
+
+            Consumer<ContentBuilder<?>> contentConsumer = it -> {
+                it.addContent(Objects.class)
+                        .addContentLine(".requireNonNull(consumer);")
+                        .addContent("var builder = ");
+
+                if (optionBuilder.builderMethodName().equals("<init>")) {
+                    it.addContent("new ")
+                            .addContent(optionBuilder.builderType())
+                            .addContentLine("();");
+                } else {
+                    it.addContent(optionBuilder.builderMethodType())
+                            .addContentLine("." + optionBuilder.builderMethodName() + "();");
+                }
+
+                it.addContentLine("consumer.accept(builder);")
+                        .addContent("this." + methodName + "(key, ");
+
+                factoryMethod.ifPresent(fm -> it.addContent(fm.declaringType().genericTypeName())
+                        .addContent(".")
+                        .addContent(fm.methodName())
+                        .addContent("("));
+
+                it.addContent("builder.")
+                        .addContent(optionBuilder.buildMethodName())
+                        .addContent("()");
+
+                factoryMethod.ifPresent(f -> it.addContent(")"));
+
+                it.addContentLine(");");
+                it.addContentLine("return self();");
+            };
+
+            return Optional.of(GeneratedMethod.builder()
+                                       .method(method.build())
+                                       .javadoc(setterJavadoc)
+                                       .contentBuilder(contentConsumer)
+                                       .build());
+        }
+        var optionBuilder = option().builderInfo().get();
+
+        Javadoc setterJavadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "key", ""))
+                .add("\nThis method adds a new value to the map, or replaces it if the key already exists.")
+                .parameters(Map.of())
+                .addParameter("key", "key to add or replace")
+                .addParameter("consumer", "consumer of builder for new value")
+                .build();
+
+        TypeName paramType = TypeName.builder()
+                .type(Consumer.class)
+                .addTypeArgument(optionBuilder.builderType())
+                .build();
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(keyType)
+                        .elementName("key"))
+                .addParameterArgument(param -> param
+                        .kind(ElementKind.PARAMETER)
+                        .typeName(paramType)
+                        .elementName("consumer")
+                );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(consumer);")
+                    .addContent("var builder = ");
+
+            if (optionBuilder.builderMethodName().equals("<init>")) {
+                it.addContent("new ")
+                        .addContent(optionBuilder.builderType())
+                        .addContentLine("();");
+            } else {
+                it.addContent(optionBuilder.builderMethodType())
+                        .addContentLine("." + optionBuilder.builderMethodName() + "();");
+            }
+
+            it.addContentLine("consumer.accept(builder);")
+                    .addContent("this." + methodName + "(key, ");
+
+            it.addContent("builder.")
+                    .addContent(optionBuilder.buildMethodName())
+                    .addContent("()");
+
+            it.addContentLine(");");
+            it.addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(setterJavadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    @Override
     void addFields(ClassBase.Builder<?, ?> classBuilder, boolean isBuilder) {
         Field.Builder builder = super.field(isBuilder);
         if (isBuilder && option().defaultValue().isEmpty()) {
@@ -365,10 +526,23 @@ class TypeHandlerMap extends TypeHandlerContainer {
         classBuilder.addField(builder.build());
     }
 
+    private TypeName containerValueTypeImpl() {
+        if (valueType.isList()) {
+            return ARRAY_LIST;
+        }
+        if (valueType.isSet()) {
+            return LINKED_HASH_SET;
+        }
+        if (valueType.isMap()) {
+            return LINKED_HASH_MAP;
+        }
+        return valueType;
+    }
+
     private TypeName typeOfMap(TypeName keyType, TypeName valueType) {
         return TypeName.builder(MAP)
-                .addTypeArgument(toWildcard(keyType))
-                .addTypeArgument(toWildcard(valueType))
+                .addTypeArgument(Utils.toWildcard(keyType))
+                .addTypeArgument(Utils.toWildcard(valueType))
                 .build();
     }
 

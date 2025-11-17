@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.InnerClass;
@@ -42,7 +41,6 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.BuilderCodegen.generateCustomPrototypeMethods;
 import static io.helidon.builder.codegen.Types.BUILDER_SUPPORT;
@@ -226,13 +224,6 @@ final class GenerateAbstractBuilder {
             createConfigMethod(classBuilder, prototypeInfo, options);
         }
 
-        TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
-
-        if (prototypeInfo.registrySupport()) {
-            // generate setter for service registry
-            serviceRegistrySetter(classBuilder);
-        }
-
         // first setters
         for (OptionHandler optionHandler : options) {
             if (isConfigOption(optionHandler.option())) {
@@ -250,21 +241,6 @@ final class GenerateAbstractBuilder {
         Otherwise return Optional<x>
          */
         for (OptionHandler optionHandler : options) {
-            var option = optionHandler.option();
-
-            String getterName = option.getterName();
-            if ("config".equals(getterName) && option.configured().isPresent()) {
-                if (isConfigOption(option)) {
-                    // handled elsewhere
-                    continue;
-                }
-                // now we have a method called config with wrong return type - this is not supported
-                throw new CodegenException("Configured property named \"config\" can only be of type "
-                                                   + Types.CONFIG.declaredName() + ", but is: "
-                                                   + option.declaredType().fqName(),
-                                           option.interfaceMethod().map(TypedElementInfo::originatingElementValue)
-                                                   .orElse(option.declaredType()));
-            }
             /*
             String host() {
               return host;
@@ -274,66 +250,6 @@ final class GenerateAbstractBuilder {
                     .optionMethod(OptionMethodType.BUILDER_GETTER)
                     .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         }
-
-        if (prototypeInfo.configured().isPresent()) {
-            TypeName configType = configType(options);
-
-            TypeName configReturnType = TypeName.builder()
-                    .type(Optional.class)
-                    .addTypeArgument(configType)
-                    .build();
-            Method.Builder method = Method.builder()
-                    .name("config")
-                    .description("If this instance was configured, this would be the config instance used.")
-                    .returnType(configReturnType, "config node used to configure this builder, or empty if not configured")
-                    .addContent("return ")
-                    .addContent(Optional.class)
-                    .addContentLine(".ofNullable(config);");
-            classBuilder.addMethod(method);
-        }
-    }
-
-    private static TypeName configType(List<OptionHandler> options) {
-        for (OptionHandler option : options) {
-            if (option.typeHandler().type().equals(CONFIG)) {
-                return CONFIG;
-            }
-            if (option.typeHandler().type().equals(COMMON_CONFIG)) {
-                return COMMON_CONFIG;
-            }
-        }
-        return CONFIG;
-    }
-
-    private static void serviceRegistrySetter(InnerClass.Builder classBuilder) {
-        /*
-        public BUILDER config(Config config) {
-            this.config = config;
-            config.get("server").as(String.class).ifPresent(this::server);
-            return self();
-        }
-         */
-        Javadoc javadoc = Javadoc.builder()
-                .addLine("Provide an explicit registry instance to use.")
-                .addLine("<p>")
-                .addLine("If not configured, the {@link "
-                                 + Types.GLOBAL_SERVICE_REGISTRY.fqName()
-                                 + "} would be used to discover services.")
-                .build();
-
-        Method.Builder builder = Method.builder()
-                .name("serviceRegistry")
-                .javadoc(javadoc)
-                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
-                .addParameter(param -> param.name("registry")
-                        .type(Types.SERVICE_REGISTRY)
-                        .description("service registry instance"))
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(registry);")
-                .addContentLine("this.serviceRegistry = registry;")
-                .addContentLine("return self();");
-
-        classBuilder.addMethod(builder);
     }
 
     private static void createConfigMethod(InnerClass.Builder classBuilder,
@@ -479,6 +395,9 @@ final class GenerateAbstractBuilder {
             classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
         }
         for (OptionHandler optionHandler : options) {
+            if (!isBuilder && optionHandler.option().builderOptionOnly()) {
+                continue;
+            }
             var option = optionHandler.option();
             if (isBuilder && !option.allowedValues().isEmpty()) {
                 String allowedValues = option.allowedValues()
@@ -537,6 +456,7 @@ final class GenerateAbstractBuilder {
                 .description("Handles providers and decorators.");
 
         boolean hasProvider = hasProvider(options);
+        boolean hasRegistryService = hasRegistryService(options);
 
         if (hasProvider) {
             preBuildBuilder.addAnnotation(builder -> builder.type(SuppressWarnings.class)
@@ -545,7 +465,7 @@ final class GenerateAbstractBuilder {
         prototypeInfo.superPrototype()
                 .ifPresent(it -> preBuildBuilder.addContentLine("super.preBuildPrototype();"));
 
-        if (prototypeInfo.registrySupport() || hasProvider) {
+        if (prototypeInfo.registrySupport() || hasProvider || hasRegistryService) {
             boolean configured = prototypeInfo.configured().isPresent();
 
             if (configured) {
@@ -555,7 +475,7 @@ final class GenerateAbstractBuilder {
                         .addContentLine(".empty() : this.config;");
             }
 
-            if (prototypeInfo.registrySupport()) {
+            if (prototypeInfo.registrySupport() || hasRegistryService) {
                 preBuildBuilder.addContent("var registry = ")
                         .addContent(Optional.class)
                         .addContentLine(".ofNullable(this.serviceRegistry);");
@@ -594,6 +514,12 @@ final class GenerateAbstractBuilder {
                     .addContentLine("().decorate(this);");
         }
         classBuilder.addMethod(preBuildBuilder);
+    }
+
+    private static boolean hasRegistryService(List<OptionHandler> options) {
+        return options.stream()
+                .map(OptionHandler::option)
+                .anyMatch(OptionInfo::registryService);
     }
 
     private static boolean hasProvider(List<OptionHandler> options) {
@@ -1072,7 +998,7 @@ final class GenerateAbstractBuilder {
                                           String ifaceName,
                                           boolean hasSuper) {
         List<OptionHandler> equalityFields = options.stream()
-                .filter(it -> it.option().includeInEqualsAndHashCode())
+                .filter(it -> it.option().includeInEqualsAndHashCode() && !it.option().builderOptionOnly())
                 .toList();
 
         equalsMethod(classBuilder, ifaceName, hasSuper, equalityFields);
@@ -1231,7 +1157,7 @@ final class GenerateAbstractBuilder {
                 .addContent("return \"" + typeName);
 
         List<OptionHandler> toStringFields = options.stream()
-                .filter(it -> it.option().includeInToString())
+                .filter(it -> it.option().includeInToString() && (isBuilder || !it.option().builderOptionOnly()))
                 .toList();
 
         if (toStringFields.isEmpty()) {
@@ -1269,7 +1195,7 @@ final class GenerateAbstractBuilder {
                 return "+ \"" + name + "=****\"";
             }
             // builder stores fields without optional wrapper
-            if (!isBuilder && typeName.genericTypeName().equals(OPTIONAL)) {
+            if (!isBuilder && option.declaredType().isOptional()) {
                 return "+ \"" + name + "=\" + (" + name + ".isPresent() ? \"****\" : "
                         + "\"null\")";
             }
@@ -1284,6 +1210,11 @@ final class GenerateAbstractBuilder {
         // then getters
         for (OptionHandler optionHandler : options) {
             OptionInfo option = optionHandler.option();
+
+            if (option.builderOptionOnly()) {
+                continue;
+            }
+
             String fieldName = option.name();
             String getterName = option.getterName();
 
@@ -1298,6 +1229,11 @@ final class GenerateAbstractBuilder {
                                            List<OptionHandler> options) {
         for (OptionHandler optionHandler : options) {
             OptionInfo option = optionHandler.option();
+
+            if (option.builderOptionOnly()) {
+                continue;
+            }
+
             String getterName = option.getterName();
 
             constructor.addContent("this." + option.name() + " = ");

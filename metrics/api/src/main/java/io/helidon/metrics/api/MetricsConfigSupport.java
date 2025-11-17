@@ -48,36 +48,6 @@ class MetricsConfigSupport {
                 .asOptional();
     }
 
-    /**
-     * Reports whether the specified scope is enabled, according to any scope configuration that
-     * is part of this metrics configuration.
-     *
-     * @param metricsConfig metrics configuration
-     * @param scope         scope name
-     * @return true if the scope as a whole is enabled; false otherwise
-     */
-    @Prototype.PrototypeMethod
-    static boolean isScopeEnabled(MetricsConfig metricsConfig, String scope) {
-        var scopeConfig = metricsConfig.scoping().scopes().get(scope);
-        return scopeConfig == null || scopeConfig.enabled();
-    }
-
-    /**
-     * Reports whether the specified meter within the indicated scope is enabled, according to the metrics configuration.
-     *
-     * @param metricsConfig metrics configuration
-     * @param name          meter name
-     * @param targetScope   scope within which to check
-     * @return whether the meter is enabled
-     */
-    @Prototype.PrototypeMethod
-    static boolean isMeterEnabled(MetricsConfig metricsConfig, String name, String targetScope) {
-        return metricsConfig.enabled()
-                && isScopeEnabled(metricsConfig, targetScope)
-                && (metricsConfig.scoping().scopes().get(targetScope) == null
-                            || metricsConfig.scoping().scopes().get(targetScope).isMeterEnabled(name));
-    }
-
     public static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
         @Override

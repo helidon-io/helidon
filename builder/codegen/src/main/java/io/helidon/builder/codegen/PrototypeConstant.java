@@ -25,6 +25,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.PrototypeConstantBlueprint")
 public interface PrototypeConstant extends Prototype.Api {
 
     /**
@@ -82,11 +84,10 @@ public interface PrototypeConstant extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.PrototypeConstant}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeConstant>
-            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeConstant> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private Consumer<ContentBuilder<?>> content;
         private Javadoc javadoc;
@@ -366,9 +367,9 @@ public interface PrototypeConstant extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(name, other.name())
-                        && Objects.equals(type, other.type())
-                        && Objects.equals(javadoc, other.javadoc())
-                        && Objects.equals(content, other.content());
+                    && Objects.equals(type, other.type())
+                    && Objects.equals(javadoc, other.javadoc())
+                    && Objects.equals(content, other.content());
             }
 
             @Override
@@ -383,8 +384,7 @@ public interface PrototypeConstant extends Prototype.Api {
     /**
      * Fluent API builder for {@link io.helidon.builder.codegen.PrototypeConstant}.
      */
-    class Builder extends BuilderBase<Builder, PrototypeConstant>
-            implements io.helidon.common.Builder<Builder, PrototypeConstant> {
+    class Builder extends BuilderBase<Builder, PrototypeConstant> implements io.helidon.common.Builder<Builder, PrototypeConstant> {
 
         private Builder() {
         }

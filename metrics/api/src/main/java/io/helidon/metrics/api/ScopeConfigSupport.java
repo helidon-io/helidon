@@ -26,28 +26,6 @@ class ScopeConfigSupport {
     }
 
     /**
-     * Indicates whether the specified meter is enabled according to the scope configuration.
-     *
-     * @param scopeConfig scope configuration
-     * @param name        meter name to check
-     * @return whether the meter is enabled
-     */
-    @Prototype.PrototypeMethod
-    static boolean isMeterEnabled(ScopeConfig scopeConfig, String name) {
-        /*
-         The following must be true for the meter to be enabled:
-
-         1. The scope itself must be enabled (that's the default).
-         2. If there is an exclude pattern, the name must not match it.
-         3. If there is an include pattern, the name must match it.
-         */
-        return scopeConfig.enabled()
-                && scopeConfig.exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
-                && scopeConfig.include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
-
-    }
-
-    /**
      * Sets the include expression using a {@link java.lang.String} compiled automatically
      * into a {@link java.util.regex.Pattern}.
      *

@@ -95,6 +95,7 @@ interface HttpConfigBaseBlueprint {
      * @return proxy to use, defaults to {@link Proxy#noProxy()}
      */
     @Option.Configured
+    @Option.Access("PUBLIC")
     Proxy proxy();
 
     /**

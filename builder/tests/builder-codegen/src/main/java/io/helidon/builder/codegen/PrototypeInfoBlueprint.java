@@ -102,9 +102,9 @@ interface PrototypeInfoBlueprint extends Annotated {
      * <p>
      * Sequence of checking if a default method should be an option method:
      * <nl>
-     *     <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
-     *     <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
-     *     <li>Otherwise the default method will not be an option</li>
+     * <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
+     * <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
+     * <li>Otherwise the default method will not be an option</li>
      * </nl>
      *
      * @return predicate for method names
@@ -226,16 +226,6 @@ interface PrototypeInfoBlueprint extends Annotated {
     List<GeneratedMethod> prototypeMethods();
 
     /**
-     * Factory methods to be added to the prototype.
-     * A static method annotated with {@code io.helidon.builder.api.Prototype.FactoryMethod} will be either added here,
-     * or to #factoryMethods() depending on signature.
-     *
-     * @return a list of factory methods to add to the prototype
-     */
-    @Option.Singular
-    List<GeneratedMethod> prototypeFactoryMethods();
-
-    /**
      * Additional methods to be added to the prototype builder base.
      * It is your responsibility to ensure these methods do not conflict with option methods.
      * This list does NOT contain option methods.
@@ -246,11 +236,45 @@ interface PrototypeInfoBlueprint extends Annotated {
     List<GeneratedMethod> builderMethods();
 
     /**
+     * Static factory methods to be added to the prototype, or runtime type factory methods.
+     * <p>
+     * This method exists only for backwards compatibility and will be removed in a future major version.
+     *
+     * @return a list of factory methods declared on the blueprint or a reference custom methods type
+     * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+     *         {@link #configFactories()} instead, only present for backwards compatibility
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    List<DeprecatedFactoryMethod> deprecatedFactoryMethods();
+
+    /**
+     * Static factory methods to be added to the prototype.
+     *
+     * @return a list of factory methods to add to the prototype
+     */
+    @Option.Singular("prototypeFactory")
+    List<GeneratedMethod> prototypeFactories();
+
+    /**
      * Factory methods to be used when mapping config to types.
      * These methods will never be made public.
+     * <p>
+     * Config factory methods may exist for a specific option, or for any option that matches the type.
      *
      * @return factory methods to use when mapping config to types
      */
-    @Option.Singular
-    List<FactoryMethod> factoryMethods();
+    @Option.Singular("configFactory")
+    List<FactoryMethod> configFactories();
+
+    /**
+     * Factory methods to create runtime types from a builder.
+     * If a method is available for a specific option and matches its types, a setter with a parameter of
+     * consumer of the builder type will be added to the builder base.
+     * <p>
+     * Runtime factory methods may exist for a specific option, or for any option that matches the type.
+     *
+     * @return factory methods to create runtime types from a builder
+     */
+    @Option.Singular("runtimeTypeFactory")
+    List<RuntimeTypeInfo> runtimeTypeFactories();
 }

@@ -37,6 +37,7 @@ interface OptionBuilderBlueprint {
      */
     @Option.Default("builder")
     String builderMethodName();
+
     /**
      * Type of the builder.
      *
@@ -45,9 +46,18 @@ interface OptionBuilderBlueprint {
     TypeName builderType();
 
     /**
+     * Type of the class declaring a {@link #builderMethodName()} used to get an instance of the builder to send
+     * to the generated setter with consumer.
+     *
+     * @return type declaring the builder method
+     */
+    TypeName builderMethodType();
+
+    /**
      * Name of the build method ({@code build} or {@code buildPrototype}).
      *
      * @return builder build method name
      */
+    @Option.Default("build")
     String buildMethodName();
 }
