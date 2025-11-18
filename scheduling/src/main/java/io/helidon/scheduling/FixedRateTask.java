@@ -19,8 +19,9 @@ package io.helidon.scheduling;
 import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,7 +34,7 @@ class FixedRateTask implements FixedRate {
     private final Duration initialDelay;
     private final Duration interval;
     private final ScheduledConsumer<FixedRateInvocation> actualTask;
-    private final ScheduledFuture<?> future;
+    private final Future<?> future;
     private final FixedRateConfig config;
     private final String taskId;
 
@@ -46,16 +47,21 @@ class FixedRateTask implements FixedRate {
         this.executorService = config.executor();
         this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
 
-        this.future = switch (config.delayType()) {
-            case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run,
-                                                                             initialDelay.toMillis(),
-                                                                             interval.toMillis(),
-                                                                             TimeUnit.MILLISECONDS);
-            case SINCE_PREVIOUS_END -> executorService.scheduleWithFixedDelay(this::run,
-                                                                              initialDelay.toMillis(),
-                                                                              interval.toMillis(),
-                                                                              TimeUnit.MILLISECONDS);
-        };
+        if (config.enabled()) {
+            this.future = switch (config.delayType()) {
+                case SINCE_PREVIOUS_START -> executorService.scheduleAtFixedRate(this::run,
+                                                                                 initialDelay.toMillis(),
+                                                                                 interval.toMillis(),
+                                                                                 TimeUnit.MILLISECONDS);
+                case SINCE_PREVIOUS_END -> executorService.scheduleWithFixedDelay(this::run,
+                                                                                  initialDelay.toMillis(),
+                                                                                  interval.toMillis(),
+                                                                                  TimeUnit.MILLISECONDS);
+            };
+        } else {
+            this.future = CompletableFuture.completedFuture(null);
+            LOGGER.log(Level.INFO, "Task " + taskId + " is disabled and will not be scheduled");
+        }
 
         config.taskManager().register(this);
     }
@@ -81,7 +87,9 @@ class FixedRateTask implements FixedRate {
 
     @Override
     public void close() {
-        future.cancel(false);
+        if (future != null) {
+            future.cancel(false);
+        }
         config.taskManager().remove(this);
     }
 

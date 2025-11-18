@@ -307,4 +307,25 @@ public class FixedRateSchedulingTest {
             executorService.shutdownNow();
         }
     }
+
+    @Test
+    void fixedRateDisabled() throws InterruptedException {
+        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
+        IntervalMeter meter = new IntervalMeter();
+
+        try {
+            FixedRate.builder()
+                    .executor(executorService)
+                    .interval(Duration.ofSeconds(1))
+                    .enabled(false)  // Disabled
+                    .task(inv -> meter.start().end())
+                    .build();
+
+            // Wait and verify task never executed
+            Thread.sleep(3000);
+            assertThat(meter.size(), Matchers.equalTo(0));
+        } finally {
+            executorService.shutdownNow();
+        }
+    }
 }
