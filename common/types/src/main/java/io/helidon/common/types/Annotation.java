@@ -848,21 +848,21 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             if (this.isValuesMutated) {
                 if (builder.isValuesMutated) {
                     addValues(builder.values());
-            }
+                }
             } else {
                 values(builder.values());
             }
             if (this.isPropertiesMutated) {
                 if (builder.isPropertiesMutated) {
                     addProperties(builder.properties());
-            }
+                }
             } else {
                 properties(builder.properties());
             }
             if (this.isMetaAnnotationsMutated) {
                 if (builder.isMetaAnnotationsMutated) {
                     addMetaAnnotations(builder.metaAnnotations());
-            }
+                }
             } else {
                 metaAnnotations(builder.metaAnnotations());
             }

@@ -92,7 +92,7 @@ class ImportOrganizerTest {
     @Test
     void testImportDoubleInnerType() throws IOException {
         TypeName typeNameLevel = TypeName.create("io.helidon.service.registry.Interception.Interceptor.Chain");
-        TypeName parentType = TypeName.create("io.helidon.service.registry.Interception.Interceptor");
+        TypeName topLevelType = TypeName.create("io.helidon.service.registry.Interception");
 
         assertThat(typeNameLevel.className(), is("Chain"));
         assertThat(typeNameLevel.enclosingNames(), hasItems("Interception", "Interceptor"));
@@ -100,7 +100,7 @@ class ImportOrganizerTest {
 
         Type type = Type.fromTypeName(typeNameLevel);
         assertThat(type.packageName(), is("io.helidon.service.registry"));
-        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(parentType))));
+        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(topLevelType))));
         assertThat(type.innerClass(), is(true));
 
         ImportOrganizer io = ImportOrganizer.builder()

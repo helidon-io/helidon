@@ -991,9 +991,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                     + "exports=" + exports + ","
                     + "opens=" + opens + ","
                     + "uses=" + uses + ","
-                    + "provides=" + provides + ","
-                    + "annotations=" + annotations + ","
-                    + "inheritedAnnotations=" + inheritedAnnotations
+                    + "provides=" + provides
                     + "}";
         }
 
@@ -1143,9 +1141,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                         + "exports=" + exports + ","
                         + "opens=" + opens + ","
                         + "uses=" + uses + ","
-                        + "provides=" + provides + ","
-                        + "annotations=" + annotations + ","
-                        + "inheritedAnnotations=" + inheritedAnnotations
+                        + "provides=" + provides
                         + "}";
             }
 
@@ -1158,19 +1154,17 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                     return false;
                 }
                 return Objects.equals(name, other.name())
-                        && isOpen == other.isOpen()
-                        && Objects.equals(requires, other.requires())
-                        && Objects.equals(exports, other.exports())
-                        && Objects.equals(opens, other.opens())
-                        && Objects.equals(uses, other.uses())
-                        && Objects.equals(provides, other.provides())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                    && isOpen == other.isOpen()
+                    && Objects.equals(requires, other.requires())
+                    && Objects.equals(exports, other.exports())
+                    && Objects.equals(opens, other.opens())
+                    && Objects.equals(uses, other.uses())
+                    && Objects.equals(provides, other.provides());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(name, isOpen, requires, exports, opens, uses, provides, annotations, inheritedAnnotations);
+                return Objects.hash(name, isOpen, requires, exports, opens, uses, provides);
             }
 
         }

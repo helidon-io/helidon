@@ -59,15 +59,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     }
 
     /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static TypeInfo create() {
-        return TypeInfo.builder().buildPrototype();
-    }
-
-    /**
      * Check if an annotation type has a specific meta annotation.
      *
      * @param annotation     annotation to check meta annotation for
@@ -1730,9 +1721,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     + "superTypeInfo=" + superTypeInfo + ","
                     + "elementModifiers=" + elementModifiers + ","
                     + "accessModifier=" + accessModifier + ","
-                    + "module=" + module + ","
-                    + "annotations=" + annotations + ","
-                    + "inheritedAnnotations=" + inheritedAnnotations
+                    + "module=" + module
                     + "}";
         }
 
@@ -1987,9 +1976,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         + "superTypeInfo=" + superTypeInfo + ","
                         + "elementModifiers=" + elementModifiers + ","
                         + "accessModifier=" + accessModifier + ","
-                        + "module=" + module + ","
-                        + "annotations=" + annotations + ","
-                        + "inheritedAnnotations=" + inheritedAnnotations
+                        + "module=" + module
                         + "}";
             }
 

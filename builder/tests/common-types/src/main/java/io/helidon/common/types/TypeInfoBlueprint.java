@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Represents the model object for a type.
  */
-@Prototype.Blueprint(decorator = TypeInfoSupport.TypeInfoDecorator.class)
+@Prototype.Blueprint(decorator = TypeInfoSupport.TypeInfoDecorator.class, createEmptyPublic = false)
 interface TypeInfoBlueprint extends Annotated {
     /**
      * The type name.

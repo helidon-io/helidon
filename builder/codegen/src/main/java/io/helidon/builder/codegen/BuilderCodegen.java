@@ -698,15 +698,6 @@ class BuilderCodegen implements CodegenExtension {
 
         typeArguments.forEach(classModel::addGenericArgument);
 
-        if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
-            classModel.addJavadocTag("see", "#builder()");
-        }
-        if (noRequired(options)
-                && prototypeInfo.createEmptyCreate()
-                && prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
-            classModel.addJavadocTag("see", "#create()");
-        }
-
         prototypeInfo.annotations()
                 .forEach(classModel::addAnnotation);
 
@@ -785,6 +776,14 @@ class BuilderCodegen implements CodegenExtension {
             extension.updatePrototype(prototypeInfo,
                                       optionList,
                                       classModel);
+        }
+        if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
+            classModel.addJavadocTag("see", "#builder()");
+        }
+        if (noRequired(options)
+                && prototypeInfo.createEmptyCreate()
+                && prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
+            classModel.addJavadocTag("see", "#create()");
         }
 
         ctx.addGeneratedType(prototype,

@@ -473,14 +473,16 @@ final class GenerateAbstractBuilder {
         prototypeInfo.superPrototype()
                 .ifPresent(it -> preBuildBuilder.addContentLine("super.preBuildPrototype();"));
 
-        if ((prototypeInfo.registrySupport() && hasProvider) || hasRegistryService) {
+        if (hasProvider || hasRegistryService) {
             boolean configured = prototypeInfo.configured().isPresent();
 
             if (configured) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContent("var config = this.config == null ? ")
-                        .addContent(Types.CONFIG)
-                        .addContentLine(".empty() : this.config;");
+                preBuildBuilder.addContent("var config = config().map(")
+                        .addContent(CONFIG)
+                        .addContent("::config).orElseGet(")
+                        .addContent(CONFIG)
+                        .addContentLine("::empty);");
             }
 
             if (prototypeInfo.registrySupport() || hasRegistryService) {

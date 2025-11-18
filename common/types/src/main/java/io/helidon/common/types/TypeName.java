@@ -448,12 +448,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
             addUpperBounds(prototype.upperBounds());
             componentType(prototype.componentType());
-            if (!isAnnotationsMutated) {
-                annotations.clear();
+            if (!this.isAnnotationsMutated) {
+                this.annotations.clear();
             }
             addAnnotations(prototype.annotations());
-            if (!isInheritedAnnotationsMutated) {
-                inheritedAnnotations.clear();
+            if (!this.isInheritedAnnotationsMutated) {
+                this.inheritedAnnotations.clear();
             }
             addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
@@ -471,7 +471,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             if (this.isEnclosingNamesMutated) {
                 if (builder.isEnclosingNamesMutated) {
                     addEnclosingNames(builder.enclosingNames());
-            }
+                }
             } else {
                 enclosingNames(builder.enclosingNames());
             }
@@ -483,47 +483,45 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             if (this.isTypeArgumentsMutated) {
                 if (builder.isTypeArgumentsMutated) {
                     addTypeArguments(builder.typeArguments());
-            }
+                }
             } else {
                 typeArguments(builder.typeArguments());
             }
             if (this.isTypeParametersMutated) {
                 if (builder.isTypeParametersMutated) {
                     addTypeParameters(builder.typeParameters());
-            }
+                }
             } else {
                 typeParameters(builder.typeParameters());
             }
             if (this.isLowerBoundsMutated) {
                 if (builder.isLowerBoundsMutated) {
                     addLowerBounds(builder.lowerBounds());
-            }
+                }
             } else {
                 lowerBounds(builder.lowerBounds());
             }
             if (this.isUpperBoundsMutated) {
                 if (builder.isUpperBoundsMutated) {
                     addUpperBounds(builder.upperBounds());
-            }
+                }
             } else {
                 upperBounds(builder.upperBounds());
             }
             builder.componentType().ifPresent(this::componentType);
-            if (isAnnotationsMutated) {
+            if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
+                    addAnnotations(builder.annotations());
                 }
             } else {
-                annotations.clear();
-                addAnnotations(builder.annotations);
+                annotations(builder.annotations());
             }
-            if (isInheritedAnnotationsMutated) {
+            if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
+                    addInheritedAnnotations(builder.inheritedAnnotations());
                 }
             } else {
-                inheritedAnnotations.clear();
-                addInheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
@@ -1059,6 +1057,18 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Clear all annotations.
+         *
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER clearAnnotations() {
+            this.isAnnotationsMutated = true;
+            this.annotations.clear();
+            return self();
+        }
+
+        /**
          * List of declared and known annotations for this element.
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
@@ -1069,7 +1079,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -1086,7 +1096,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -1096,14 +1106,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations declared on this element
+         * @param annotation add single the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
@@ -1112,7 +1122,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations declared on this element
+         * @param consumer consumer of builder for the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1120,7 +1130,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.annotations.add(builder.build());
+            this.addAnnotation(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all inheritedAnnotations.
+         *
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER clearInheritedAnnotations() {
+            this.isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
             return self();
         }
 
@@ -1139,7 +1161,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -1160,7 +1182,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -1174,14 +1196,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param inheritedAnnotation list of all meta annotations of this element
+         * @param inheritedAnnotation add single list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
@@ -1194,7 +1216,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param consumer list of all meta annotations of this element
+         * @param consumer consumer of builder for list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1202,7 +1224,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.inheritedAnnotations.add(builder.build());
+            this.addInheritedAnnotation(builder.build());
             return self();
         }
 
@@ -1216,7 +1238,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Functions the same as {@link Class#getSimpleName()}.
+         * Functions similar to {@link Class#getSimpleName()}.
          *
          * @return the simple class name
          */
@@ -1340,6 +1362,32 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             return Optional.ofNullable(componentType);
         }
 
+        /**
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
+         *
+         * @return the list of annotations declared on this element
+         */
+        public List<Annotation> annotations() {
+            return annotations;
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         * <p>
+         * This method does not return annotations on super types or interfaces!
+         *
+         * @return list of all meta annotations of this element
+         */
+        public List<Annotation> inheritedAnnotations() {
+            return inheritedAnnotations;
+        }
+
         @Override
         public String toString() {
             return "TypeNameBuilder{"
@@ -1394,6 +1442,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean primitive;
             private final boolean vararg;
             private final boolean wildcard;
+            private final List<Annotation> annotations;
+            private final List<Annotation> inheritedAnnotations;
             private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
             private final List<TypeName> upperBounds;
@@ -1424,22 +1474,6 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.componentType = builder.componentType().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
-            }
-
-            @Override
-            public int compareTo(TypeName o) {
-                return TypeNameSupport.compareTo(this, o);
-            }
-
-            @Override
-            public TypeName boxed() {
-                return TypeNameSupport.boxed(this);
-            }
-
-            @Override
-            public TypeName unboxed() {
-                return TypeNameSupport.unboxed(this);
-                this.componentType = builder.componentType().map(Function.identity());
             }
 
             @Override
@@ -1532,11 +1566,6 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                     return false;
                 }
                 return Objects.equals(packageName, other.packageName())
-                        && Objects.equals(className, other.className())
-                        && Objects.equals(enclosingNames, other.enclosingNames())
-                        && primitive == other.primitive()
-                        && array == other.array()
-                        && Objects.equals(componentType, other.componentType());
                     && Objects.equals(className, other.className())
                     && Objects.equals(enclosingNames, other.enclosingNames())
                     && primitive == other.primitive()
@@ -1546,7 +1575,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
 
             @Override
             public int hashCode() {
-                return Objects.hash(packageName, className, enclosingNames, primitive, array);
+                return Objects.hash(packageName, className, enclosingNames, primitive, array, componentType);
             }
 
         }

@@ -53,7 +53,7 @@ import io.helidon.builder.api.Prototype;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
-@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class)
+@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class, createEmptyPublic = false)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
