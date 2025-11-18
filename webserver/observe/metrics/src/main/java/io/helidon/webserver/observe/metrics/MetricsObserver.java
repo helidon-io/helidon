@@ -52,7 +52,6 @@ import io.helidon.webserver.spi.ServerFeature;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-@RuntimeType.PrototypedBy(MetricsObserverConfig.class)
 public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserverConfig> {
     private final MetricsObserverConfig config;
     private MetricsFeature metricsFeature;

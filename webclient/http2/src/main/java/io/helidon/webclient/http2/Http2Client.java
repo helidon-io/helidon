@@ -27,7 +27,6 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * HTTP2 client.
  */
-@RuntimeType.PrototypedBy(Http2ClientConfig.class)
 public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType.Api<Http2ClientConfig> {
     /**
      * HTTP/2 protocol ID, as used by ALPN.

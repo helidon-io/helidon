@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -37,10 +36,9 @@ import io.helidon.common.types.TypedElementInfo;
  *     <li>Factory method to be copied to the generated prototype interface</li>
  * </ul>
  *
- * @deprecated this is only present for backward compatibility and will be removed in a future version
  * @see #builder()
+ * @deprecated this is only present for backward compatibility and will be removed in a future version
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.DeprecatedFactoryMethodBlueprint")
 public interface DeprecatedFactoryMethod extends Prototype.Api {
 
     /**
@@ -79,10 +77,11 @@ public interface DeprecatedFactoryMethod extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.DeprecatedFactoryMethod}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends DeprecatedFactoryMethod> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends DeprecatedFactoryMethod>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private TypedElementInfo method;
         private TypeName declaringType;
@@ -290,7 +289,7 @@ public interface DeprecatedFactoryMethod extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(method, other.method())
-                    && Objects.equals(declaringType, other.declaringType());
+                        && Objects.equals(declaringType, other.declaringType());
             }
 
             @Override
@@ -305,7 +304,8 @@ public interface DeprecatedFactoryMethod extends Prototype.Api {
     /**
      * Fluent API builder for {@link io.helidon.builder.codegen.DeprecatedFactoryMethod}.
      */
-    class Builder extends BuilderBase<Builder, DeprecatedFactoryMethod> implements io.helidon.common.Builder<Builder, DeprecatedFactoryMethod> {
+    class Builder extends BuilderBase<Builder, DeprecatedFactoryMethod>
+            implements io.helidon.common.Builder<Builder, DeprecatedFactoryMethod> {
 
         private Builder() {
         }

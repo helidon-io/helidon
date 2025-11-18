@@ -30,7 +30,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Observer for information about loggers, and possibly to obtain log stream.
  */
-@RuntimeType.PrototypedBy(LogObserverConfig.class)
 public class LogObserver implements Observer, RuntimeType.Api<LogObserverConfig> {
     private final LogObserverConfig config;
 

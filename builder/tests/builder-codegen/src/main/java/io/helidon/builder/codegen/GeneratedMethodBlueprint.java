@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
@@ -33,7 +34,7 @@ import io.helidon.common.types.TypedElementInfo;
  *     <li>Custom factory methods are simply referenced</li>
  * </ul>
  */
-@Prototype.Blueprint(detach = true, decorator = BuilderCodegenSupport.GeneratedMethodDecorator.class)
+@Prototype.Blueprint(detach = true)
 interface GeneratedMethodBlueprint {
     /**
      * Definition of this method, including annotations (such as {@link java.lang.Override}).
@@ -53,9 +54,9 @@ interface GeneratedMethodBlueprint {
      * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
      * complicated to update it.
      * <p>
-     * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+     * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
      *
-     * @return javadoc for this method
+     * @return javadoc for this method if defined
      */
-    Javadoc javadoc();
+    Optional<Javadoc> javadoc();
 }

@@ -29,7 +29,7 @@
 
     <artifactId>helidon-builder-tests-builder-codegen</artifactId>
     <name>Helidon Builder Tests Builder Codegen</name>
-    <description>This module can be used to generate sources for helidon-buidler-codegen</description>
+    <description>This module can be used to generate sources for helidon-builder-codegen</description>
 
     <properties>
         <helidon.services.skip>true</helidon.services.skip>
@@ -51,10 +51,6 @@
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-class-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

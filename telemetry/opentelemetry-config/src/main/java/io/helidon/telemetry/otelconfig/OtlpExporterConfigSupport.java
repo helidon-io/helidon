@@ -47,12 +47,12 @@ class OtlpExporterConfigSupport {
         private CustomMethods() {
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("protocol")
         static OtlpExporterProtocolType createProtocol(Config config) {
             return OtlpExporterProtocolType.from(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("spanExporter")
         static SpanExporter createSpanExporter(Config config) {
             SpanExporterConfig exporterConfig = SpanExporterConfig.create(config);
 
@@ -64,7 +64,7 @@ class OtlpExporterConfigSupport {
             };
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("retryPolicy")
         static RetryPolicy createRetryPolicy(Config config) {
 
             RetryPolicy.RetryPolicyBuilder builder = RetryPolicy.builder();

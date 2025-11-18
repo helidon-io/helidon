@@ -29,7 +29,6 @@ import io.grpc.ClientInterceptor;
 /**
  * gRPC client.
  */
-@RuntimeType.PrototypedBy(GrpcClientConfig.class)
 public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
     /**
      * Protocol ID constant for gRPC.

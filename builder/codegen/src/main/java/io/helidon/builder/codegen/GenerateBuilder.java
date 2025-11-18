@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.builder.codegen;
 
 import java.util.List;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.Builder;
@@ -36,10 +37,11 @@ final class GenerateBuilder {
     private GenerateBuilder() {
     }
 
-    public static void generate(ClassModel.Builder classBuilder,
+    public static void generate(List<BuilderCodegenExtension> extensions,
+                                ClassModel.Builder classBuilder,
                                 PrototypeInfo prototypeInfo,
                                 List<TypeArgument> typeArguments,
-                                List<TypeName> typeArgumentNames) {
+                                List<TypeName> typeArgumentNames, List<OptionHandler> options) {
 
         TypeName prototype = prototypeInfo.prototypeType();
         TypeName runtimeType = prototypeInfo.runtimeType().orElse(prototype);
@@ -96,6 +98,7 @@ final class GenerateBuilder {
                         .returnType(runtimeType)
                         .addContentLine("return buildPrototype();"));
             }
+            extensions.forEach(it -> it.updateBuilder(prototypeInfo, Utils.options(options), builder));
         });
     }
 }

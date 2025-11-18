@@ -101,11 +101,11 @@ interface PrototypeInfoBlueprint extends Annotated {
      * The default behavior is to exclude all default methods.
      * <p>
      * Sequence of checking if a default method should be an option method:
-     * <nl>
+     * <ul>
      * <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
      * <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
      * <li>Otherwise the default method will not be an option</li>
-     * </nl>
+     * </ul>
      *
      * @return predicate for method names
      */

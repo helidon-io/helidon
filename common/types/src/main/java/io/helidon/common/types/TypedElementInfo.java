@@ -61,7 +61,176 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
      *
      * @return provides the {typeName}{space}{elementName}
      */
-    String toDeclaration();
+    default String toDeclaration() {
+        return TypedElementInfoSupport.toDeclaration(this);
+    }
+
+    /**
+     * The element used to create this instance, or {@link io.helidon.common.types.TypedElementInfo#signature()}
+     * if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code MethodInfo} (and such) when using classpath scanning.
+     *
+     * @return originating element, or the signature of this element
+     */
+    default Object originatingElementValue() {
+        return TypedElementInfoBlueprint.super.originatingElementValue();
+    }
+
+    /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Override
+    Optional<String> description();
+
+    /**
+     * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+     * the method.
+     *
+     * @return the type name of the element
+     */
+    @Override
+    TypeName typeName();
+
+    /**
+     * The element (e.g., method, field, etc) name.
+     *
+     * @return the name of the element
+     */
+    @Override
+    String elementName();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     * @see io.helidon.common.types.TypeInfo
+     * @deprecated This option is deprecated, use {@link #kind} instead
+     */
+    @Deprecated(since = "4.1.0", forRemoval = true)
+    @Override
+    String elementTypeKind();
+
+    /**
+     * The kind of element (e.g., method, field, etc).
+     *
+     * @return the element kind
+     * @see io.helidon.common.types.ElementKind
+     */
+    @Override
+    ElementKind kind();
+
+    /**
+     * The default value assigned to the element, represented as a string.
+     *
+     * @return the default value as a string
+     */
+    @Override
+    Optional<String> defaultValue();
+
+    /**
+     * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
+     *
+     * @return the list of annotations on this element's (return) type.
+     */
+    @Override
+    List<Annotation> elementTypeAnnotations();
+
+    /**
+     * Returns the component type names describing the element.
+     *
+     * @return the component type names of the element
+     */
+    @Override
+    List<TypeName> componentTypes();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @see io.helidon.common.types.TypeInfo
+     * @deprecated This option is deprecated, use {@link #elementModifiers} instead
+     */
+    @Deprecated(since = "4.1.0", forRemoval = true)
+    @Override
+    Set<String> modifiers();
+
+    /**
+     * Element modifiers.
+     *
+     * @return element modifiers
+     * @see io.helidon.common.types.Modifier
+     * @see #accessModifier()
+     */
+    @Override
+    Set<Modifier> elementModifiers();
+
+    /**
+     * Access modifier of the element.
+     *
+     * @return access modifier
+     */
+    @Override
+    AccessModifier accessModifier();
+
+    /**
+     * The enclosing type name for this typed element. Applicable when this instance represents a
+     * {@link io.helidon.common.types.ElementKind#FIELD}, or
+     * {@link io.helidon.common.types.ElementKind#METHOD}, or
+     * {@link io.helidon.common.types.ElementKind#PARAMETER}
+     *
+     * @return the enclosing type element
+     */
+    @Override
+    Optional<TypeName> enclosingType();
+
+    /**
+     * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.ElementKind#METHOD}.
+     * Each instance of this list
+     * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
+     *
+     * @return the list of parameters belonging to this method if applicable
+     */
+    @Override
+    List<TypedElementInfo> parameterArguments();
+
+    /**
+     * List of all thrown types that are checked ({@link java.lang.Exception} and {@link java.lang.Error}).
+     *
+     * @return set of thrown checked types
+     */
+    @Override
+    Set<TypeName> throwsChecked();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment we are in - it may be an {@code Element} in annotation processing,
+     * or a {@code MethodInfo} (and such) when using classpath scanning.
+     *
+     * @return originating element
+     */
+    @Override
+    Optional<Object> originatingElement();
+
+    /**
+     * Signature of this element.
+     *
+     * @return signature of this element
+     * @see io.helidon.common.types.ElementSignature
+     */
+    @Override
+    ElementSignature signature();
+
+    /**
+     * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+     * this would return the generic type {@code T} with no upper or lower bounds.
+     *
+     * @return list of type parameters of this element
+     */
+    @Override
+    List<TypeName> typeParameters();
 
     /**
      * Description, such as javadoc, if available.
@@ -243,10 +412,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
     /**
      * Fluent API builder base for {@link TypedElementInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends TypedElementInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends TypedElementInfo.BuilderBase<BUILDER, PROTOTYPE>,
+            PROTOTYPE extends TypedElementInfo>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> annotations = new ArrayList<>();
         private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
@@ -260,9 +431,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         private AccessModifier accessModifier;
         private boolean isAnnotationsMutated;
         private boolean isComponentTypesMutated;
+        private boolean isElementModifiersMutated;
         private boolean isElementTypeAnnotationsMutated;
         private boolean isInheritedAnnotationsMutated;
+        private boolean isModifiersMutated;
         private boolean isParameterArgumentsMutated;
+        private boolean isThrowsCheckedMutated;
         private boolean isTypeParametersMutated;
         private ElementKind kind;
         private ElementSignature signature;
@@ -293,35 +467,44 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             elementTypeKind(prototype.elementTypeKind());
             kind(prototype.kind());
             defaultValue(prototype.defaultValue());
-            if (!isElementTypeAnnotationsMutated) {
-                elementTypeAnnotations.clear();
+            if (!this.isElementTypeAnnotationsMutated) {
+                this.elementTypeAnnotations.clear();
             }
             addElementTypeAnnotations(prototype.elementTypeAnnotations());
-            if (!isComponentTypesMutated) {
-                componentTypes.clear();
+            if (!this.isComponentTypesMutated) {
+                this.componentTypes.clear();
             }
             addComponentTypes(prototype.componentTypes());
+            if (!this.isModifiersMutated) {
+                this.modifiers.clear();
+            }
             addModifiers(prototype.modifiers());
+            if (!this.isElementModifiersMutated) {
+                this.elementModifiers.clear();
+            }
             addElementModifiers(prototype.elementModifiers());
             accessModifier(prototype.accessModifier());
             enclosingType(prototype.enclosingType());
-            if (!isParameterArgumentsMutated) {
-                parameterArguments.clear();
+            if (!this.isParameterArgumentsMutated) {
+                this.parameterArguments.clear();
             }
             addParameterArguments(prototype.parameterArguments());
+            if (!this.isThrowsCheckedMutated) {
+                this.throwsChecked.clear();
+            }
             addThrowsChecked(prototype.throwsChecked());
             originatingElement(prototype.originatingElement());
             signature(prototype.signature());
-            if (!isTypeParametersMutated) {
-                typeParameters.clear();
+            if (!this.isTypeParametersMutated) {
+                this.typeParameters.clear();
             }
             addTypeParameters(prototype.typeParameters());
-            if (!isAnnotationsMutated) {
-                annotations.clear();
+            if (!this.isAnnotationsMutated) {
+                this.annotations.clear();
             }
             addAnnotations(prototype.annotations());
-            if (!isInheritedAnnotationsMutated) {
-                inheritedAnnotations.clear();
+            if (!this.isInheritedAnnotationsMutated) {
+                this.inheritedAnnotations.clear();
             }
             addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
@@ -340,66 +523,78 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             builder.elementTypeKind().ifPresent(this::elementTypeKind);
             builder.kind().ifPresent(this::kind);
             builder.defaultValue().ifPresent(this::defaultValue);
-            if (isElementTypeAnnotationsMutated) {
+            if (this.isElementTypeAnnotationsMutated) {
                 if (builder.isElementTypeAnnotationsMutated) {
-                    addElementTypeAnnotations(builder.elementTypeAnnotations);
+                    addElementTypeAnnotations(builder.elementTypeAnnotations());
                 }
             } else {
-                elementTypeAnnotations.clear();
-                addElementTypeAnnotations(builder.elementTypeAnnotations);
+                elementTypeAnnotations(builder.elementTypeAnnotations());
             }
-            if (isComponentTypesMutated) {
+            if (this.isComponentTypesMutated) {
                 if (builder.isComponentTypesMutated) {
-                    addComponentTypes(builder.componentTypes);
+                    addComponentTypes(builder.componentTypes());
                 }
             } else {
-                componentTypes.clear();
-                addComponentTypes(builder.componentTypes);
+                componentTypes(builder.componentTypes());
             }
-            addModifiers(builder.modifiers);
-            addElementModifiers(builder.elementModifiers);
+            if (this.isModifiersMutated) {
+                if (builder.isModifiersMutated) {
+                    addModifiers(builder.modifiers());
+                }
+            } else {
+                modifiers(builder.modifiers());
+            }
+            if (this.isElementModifiersMutated) {
+                if (builder.isElementModifiersMutated) {
+                    addElementModifiers(builder.elementModifiers());
+                }
+            } else {
+                elementModifiers(builder.elementModifiers());
+            }
             builder.accessModifier().ifPresent(this::accessModifier);
             builder.enclosingType().ifPresent(this::enclosingType);
-            if (isParameterArgumentsMutated) {
+            if (this.isParameterArgumentsMutated) {
                 if (builder.isParameterArgumentsMutated) {
-                    addParameterArguments(builder.parameterArguments);
+                    addParameterArguments(builder.parameterArguments());
                 }
             } else {
-                parameterArguments.clear();
-                addParameterArguments(builder.parameterArguments);
+                parameterArguments(builder.parameterArguments());
             }
-            addThrowsChecked(builder.throwsChecked);
+            if (this.isThrowsCheckedMutated) {
+                if (builder.isThrowsCheckedMutated) {
+                    addThrowsChecked(builder.throwsChecked());
+                }
+            } else {
+                throwsChecked(builder.throwsChecked());
+            }
             builder.originatingElement().ifPresent(this::originatingElement);
             builder.signature().ifPresent(this::signature);
-            if (isTypeParametersMutated) {
+            if (this.isTypeParametersMutated) {
                 if (builder.isTypeParametersMutated) {
-                    addTypeParameters(builder.typeParameters);
+                    addTypeParameters(builder.typeParameters());
                 }
             } else {
-                typeParameters.clear();
-                addTypeParameters(builder.typeParameters);
+                typeParameters(builder.typeParameters());
             }
-            if (isAnnotationsMutated) {
+            if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
+                    addAnnotations(builder.annotations());
                 }
             } else {
-                annotations.clear();
-                addAnnotations(builder.annotations);
+                annotations(builder.annotations());
             }
-            if (isInheritedAnnotationsMutated) {
+            if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
+                    addInheritedAnnotations(builder.inheritedAnnotations());
                 }
             } else {
-                inheritedAnnotations.clear();
-                addInheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of description.
          *
          * @return updated builder instance
          * @see #description()
@@ -440,8 +635,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
          *
-         * @param consumer consumer of builder for
-         *                 the type name of the element
+         * @param consumer consumer of builder of the type name of the element
          * @return updated builder instance
          * @see #typeName()
          */
@@ -457,8 +651,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
          *
-         * @param supplier supplier of
-         *                 the type name of the element
+         * @param supplier supplier of the type name of the element
          * @return updated builder instance
          * @see #typeName()
          */
@@ -486,9 +679,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @param elementTypeKind the element kind
          * @return updated builder instance
-         * @deprecated use {@link #kind()} instead
          * @see io.helidon.common.types.TypeInfo
          * @see #elementTypeKind()
+         * @deprecated This option is deprecated, use {@link #kind} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER elementTypeKind(String elementTypeKind) {
@@ -512,7 +705,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of defaultValue.
          *
          * @return updated builder instance
          * @see #defaultValue()
@@ -536,7 +729,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
+         * Clear all elementTypeAnnotations.
+         *
+         * @return updated builder instance
+         * @see #elementTypeAnnotations()
+         */
+        public BUILDER clearElementTypeAnnotations() {
+            this.isElementTypeAnnotationsMutated = true;
+            this.elementTypeAnnotations.clear();
+            return self();
+        }
+
+        /**
+         * The list of known annotations on the type name referenced by
+         * {@link io.helidon.common.types.TypedElementInfo#typeName()}.
          *
          * @param elementTypeAnnotations the list of annotations on this element's (return) type.
          * @return updated builder instance
@@ -544,14 +750,15 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER elementTypeAnnotations(List<? extends Annotation> elementTypeAnnotations) {
             Objects.requireNonNull(elementTypeAnnotations);
-            isElementTypeAnnotationsMutated = true;
+            this.isElementTypeAnnotationsMutated = true;
             this.elementTypeAnnotations.clear();
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
             return self();
         }
 
         /**
-         * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
+         * The list of known annotations on the type name referenced by
+         * {@link io.helidon.common.types.TypedElementInfo#typeName()}.
          *
          * @param elementTypeAnnotations the list of annotations on this element's (return) type.
          * @return updated builder instance
@@ -559,8 +766,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addElementTypeAnnotations(List<? extends Annotation> elementTypeAnnotations) {
             Objects.requireNonNull(elementTypeAnnotations);
-            isElementTypeAnnotationsMutated = true;
+            this.isElementTypeAnnotationsMutated = true;
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
+            return self();
+        }
+
+        /**
+         * Clear all componentTypes.
+         *
+         * @return updated builder instance
+         * @see #componentTypes()
+         */
+        public BUILDER clearComponentTypes() {
+            this.isComponentTypesMutated = true;
+            this.componentTypes.clear();
             return self();
         }
 
@@ -573,7 +792,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER componentTypes(List<? extends TypeName> componentTypes) {
             Objects.requireNonNull(componentTypes);
-            isComponentTypesMutated = true;
+            this.isComponentTypesMutated = true;
             this.componentTypes.clear();
             this.componentTypes.addAll(componentTypes);
             return self();
@@ -588,8 +807,23 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addComponentTypes(List<? extends TypeName> componentTypes) {
             Objects.requireNonNull(componentTypes);
-            isComponentTypesMutated = true;
+            this.isComponentTypesMutated = true;
             this.componentTypes.addAll(componentTypes);
+            return self();
+        }
+
+        /**
+         * Clear all modifiers.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeInfo
+         * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
+         */
+        @Deprecated(since = "4.1.0", forRemoval = true)
+        public BUILDER clearModifiers() {
+            this.isModifiersMutated = true;
+            this.modifiers.clear();
             return self();
         }
 
@@ -598,10 +832,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @param modifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeInfo
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER modifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
+            this.isModifiersMutated = true;
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
             return self();
@@ -612,10 +850,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @param modifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeInfo
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER addModifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
+            this.isModifiersMutated = true;
             this.modifiers.addAll(modifiers);
             return self();
         }
@@ -623,16 +865,31 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Element modifiers.
          *
-         * @param modifier element modifiers
+         * @param modifier add single element modifiers
          * @return updated builder instance
-         * @deprecated use {@link #elementModifiers()} instead
          * @see io.helidon.common.types.TypeInfo
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER addModifier(String modifier) {
             Objects.requireNonNull(modifier);
             this.modifiers.add(modifier);
+            this.isModifiersMutated = true;
+            return self();
+        }
+
+        /**
+         * Clear all elementModifiers.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
+         * @see #elementModifiers()
+         */
+        public BUILDER clearElementModifiers() {
+            this.isElementModifiersMutated = true;
+            this.elementModifiers.clear();
             return self();
         }
 
@@ -641,10 +898,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @param elementModifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
          * @see #elementModifiers()
          */
         public BUILDER elementModifiers(Set<? extends Modifier> elementModifiers) {
             Objects.requireNonNull(elementModifiers);
+            this.isElementModifiersMutated = true;
             this.elementModifiers.clear();
             this.elementModifiers.addAll(elementModifiers);
             return self();
@@ -655,10 +915,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @param elementModifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
          * @see #elementModifiers()
          */
         public BUILDER addElementModifiers(Set<? extends Modifier> elementModifiers) {
             Objects.requireNonNull(elementModifiers);
+            this.isElementModifiersMutated = true;
             this.elementModifiers.addAll(elementModifiers);
             return self();
         }
@@ -666,7 +929,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Element modifiers.
          *
-         * @param elementModifier element modifiers
+         * @param elementModifier add single element modifiers
          * @return updated builder instance
          * @see io.helidon.common.types.Modifier
          * @see #accessModifier()
@@ -675,6 +938,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         public BUILDER addElementModifier(Modifier elementModifier) {
             Objects.requireNonNull(elementModifier);
             this.elementModifiers.add(elementModifier);
+            this.isElementModifiersMutated = true;
             return self();
         }
 
@@ -692,7 +956,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of enclosingType.
          *
          * @return updated builder instance
          * @see #enclosingType()
@@ -724,7 +988,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * {@link io.helidon.common.types.ElementKind#METHOD}, or
          * {@link io.helidon.common.types.ElementKind#PARAMETER}
          *
-         * @param consumer the enclosing type element
+         * @param consumer consumer of builder of the enclosing type element
          * @return updated builder instance
          * @see #enclosingType()
          */
@@ -733,6 +997,34 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.enclosingType(builder.build());
+            return self();
+        }
+
+        /**
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link io.helidon.common.types.ElementKind#FIELD}, or
+         * {@link io.helidon.common.types.ElementKind#METHOD}, or
+         * {@link io.helidon.common.types.ElementKind#PARAMETER}
+         *
+         * @param supplier supplier of the enclosing type element
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER enclosingType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.enclosingType(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear all parameterArguments.
+         *
+         * @return updated builder instance
+         * @see #parameterArguments()
+         */
+        public BUILDER clearParameterArguments() {
+            this.isParameterArgumentsMutated = true;
+            this.parameterArguments.clear();
             return self();
         }
 
@@ -747,7 +1039,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER parameterArguments(List<? extends TypedElementInfo> parameterArguments) {
             Objects.requireNonNull(parameterArguments);
-            isParameterArgumentsMutated = true;
+            this.isParameterArgumentsMutated = true;
             this.parameterArguments.clear();
             this.parameterArguments.addAll(parameterArguments);
             return self();
@@ -764,7 +1056,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addParameterArguments(List<? extends TypedElementInfo> parameterArguments) {
             Objects.requireNonNull(parameterArguments);
-            isParameterArgumentsMutated = true;
+            this.isParameterArgumentsMutated = true;
             this.parameterArguments.addAll(parameterArguments);
             return self();
         }
@@ -774,14 +1066,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Each instance of this list
          * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
          *
-         * @param parameterArgument the list of parameters belonging to this method if applicable
+         * @param parameterArgument add single the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
          */
         public BUILDER addParameterArgument(TypedElementInfo parameterArgument) {
             Objects.requireNonNull(parameterArgument);
             this.parameterArguments.add(parameterArgument);
-            isParameterArgumentsMutated = true;
+            this.isParameterArgumentsMutated = true;
             return self();
         }
 
@@ -790,7 +1082,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Each instance of this list
          * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
          *
-         * @param consumer the list of parameters belonging to this method if applicable
+         * @param consumer consumer of builder for the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
          */
@@ -798,7 +1090,19 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             Objects.requireNonNull(consumer);
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
-            this.parameterArguments.add(builder.build());
+            this.addParameterArgument(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all throwsChecked.
+         *
+         * @return updated builder instance
+         * @see #throwsChecked()
+         */
+        public BUILDER clearThrowsChecked() {
+            this.isThrowsCheckedMutated = true;
+            this.throwsChecked.clear();
             return self();
         }
 
@@ -811,6 +1115,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER throwsChecked(Set<? extends TypeName> throwsChecked) {
             Objects.requireNonNull(throwsChecked);
+            this.isThrowsCheckedMutated = true;
             this.throwsChecked.clear();
             this.throwsChecked.addAll(throwsChecked);
             return self();
@@ -825,12 +1130,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addThrowsChecked(Set<? extends TypeName> throwsChecked) {
             Objects.requireNonNull(throwsChecked);
+            this.isThrowsCheckedMutated = true;
             this.throwsChecked.addAll(throwsChecked);
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of originatingElement.
          *
          * @return updated builder instance
          * @see #originatingElement()
@@ -856,6 +1162,18 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
+         * Clear all typeParameters.
+         *
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER clearTypeParameters() {
+            this.isTypeParametersMutated = true;
+            this.typeParameters.clear();
+            return self();
+        }
+
+        /**
          * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
          * this would return the generic type {@code T} with no upper or lower bounds.
          *
@@ -865,7 +1183,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER typeParameters(List<? extends TypeName> typeParameters) {
             Objects.requireNonNull(typeParameters);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
             this.typeParameters.clear();
             this.typeParameters.addAll(typeParameters);
             return self();
@@ -881,7 +1199,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addTypeParameters(List<? extends TypeName> typeParameters) {
             Objects.requireNonNull(typeParameters);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
             return self();
         }
@@ -890,14 +1208,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
          * this would return the generic type {@code T} with no upper or lower bounds.
          *
-         * @param typeParameter list of type parameters of this element
+         * @param typeParameter add single list of type parameters of this element
          * @return updated builder instance
          * @see #typeParameters()
          */
         public BUILDER addTypeParameter(TypeName typeParameter) {
             Objects.requireNonNull(typeParameter);
             this.typeParameters.add(typeParameter);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
             return self();
         }
 
@@ -905,7 +1223,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
          * this would return the generic type {@code T} with no upper or lower bounds.
          *
-         * @param consumer list of type parameters of this element
+         * @param consumer consumer of builder for list of type parameters of this element
          * @return updated builder instance
          * @see #typeParameters()
          */
@@ -913,7 +1231,19 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
-            this.typeParameters.add(builder.build());
+            this.addTypeParameter(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all annotations.
+         *
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER clearAnnotations() {
+            this.isAnnotationsMutated = true;
+            this.annotations.clear();
             return self();
         }
 
@@ -928,7 +1258,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -945,7 +1275,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -955,14 +1285,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations declared on this element
+         * @param annotation add single the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
@@ -971,7 +1301,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations declared on this element
+         * @param consumer consumer of builder for the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -979,7 +1309,19 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.annotations.add(builder.build());
+            this.addAnnotation(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all inheritedAnnotations.
+         *
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER clearInheritedAnnotations() {
+            this.isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
             return self();
         }
 
@@ -998,7 +1340,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -1019,7 +1361,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -1033,14 +1375,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param inheritedAnnotation list of all meta annotations of this element
+         * @param inheritedAnnotation add single list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
@@ -1053,7 +1395,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param consumer list of all meta annotations of this element
+         * @param consumer consumer of builder for list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1061,14 +1403,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.inheritedAnnotations.add(builder.build());
+            this.addInheritedAnnotation(builder.build());
             return self();
         }
 
         /**
          * Description, such as javadoc, if available.
          *
-         * @return the description
+         * @return description of this element
          */
         public Optional<String> description() {
             return Optional.ofNullable(description);
@@ -1078,7 +1420,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
          *
-         * @return the type name
+         * @return the type name of the element
          */
         public Optional<TypeName> typeName() {
             return Optional.ofNullable(typeName);
@@ -1087,7 +1429,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * The element (e.g., method, field, etc) name.
          *
-         * @return the element name
+         * @return the name of the element
          */
         public Optional<String> elementName() {
             return Optional.ofNullable(elementName);
@@ -1096,10 +1438,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * The kind of element (e.g., method, field, etc).
          *
-         * @return the element type kind
-         * @deprecated use {@link #kind()} instead
+         * @return the element kind
          * @see io.helidon.common.types.TypeInfo
-         * @see #elementTypeKind()
+         * @deprecated This option is deprecated, use {@link #kind} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public Optional<String> elementTypeKind() {
@@ -1109,9 +1450,8 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * The kind of element (e.g., method, field, etc).
          *
-         * @return the kind
+         * @return the element kind
          * @see io.helidon.common.types.ElementKind
-         * @see #kind()
          */
         public Optional<ElementKind> kind() {
             return Optional.ofNullable(kind);
@@ -1120,16 +1460,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * The default value assigned to the element, represented as a string.
          *
-         * @return the default value
+         * @return the default value as a string
          */
         public Optional<String> defaultValue() {
             return Optional.ofNullable(defaultValue);
         }
 
         /**
-         * The list of known annotations on the type name referenced by {@link io.helidon.common.types.TypedElementInfo#typeName()}.
+         * The list of known annotations on the type name referenced by
+         * {@link io.helidon.common.types.TypedElementInfo#typeName()}.
          *
-         * @return the element type annotations
+         * @return the list of annotations on this element's (return) type.
          */
         public List<Annotation> elementTypeAnnotations() {
             return elementTypeAnnotations;
@@ -1138,7 +1479,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Returns the component type names describing the element.
          *
-         * @return the component types
+         * @return the component type names of the element
          */
         public List<TypeName> componentTypes() {
             return componentTypes;
@@ -1147,10 +1488,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Element modifiers.
          *
-         * @return the modifiers
-         * @deprecated use {@link #elementModifiers()} instead
+         * @return element modifiers
          * @see io.helidon.common.types.TypeInfo
-         * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public Set<String> modifiers() {
@@ -1160,10 +1500,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Element modifiers.
          *
-         * @return the element modifiers
+         * @return element modifiers
          * @see io.helidon.common.types.Modifier
          * @see #accessModifier()
-         * @see #elementModifiers()
          */
         public Set<Modifier> elementModifiers() {
             return elementModifiers;
@@ -1172,7 +1511,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * Access modifier of the element.
          *
-         * @return the access modifier
+         * @return access modifier
          */
         public Optional<AccessModifier> accessModifier() {
             return Optional.ofNullable(accessModifier);
@@ -1184,7 +1523,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * {@link io.helidon.common.types.ElementKind#METHOD}, or
          * {@link io.helidon.common.types.ElementKind#PARAMETER}
          *
-         * @return the enclosing type
+         * @return the enclosing type element
          */
         public Optional<TypeName> enclosingType() {
             return Optional.ofNullable(enclosingType);
@@ -1195,7 +1534,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Each instance of this list
          * will be the individual {@link io.helidon.common.types.ElementKind#PARAMETER}'s for the method.
          *
-         * @return the parameter arguments
+         * @return the list of parameters belonging to this method if applicable
          */
         public List<TypedElementInfo> parameterArguments() {
             return parameterArguments;
@@ -1204,7 +1543,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         /**
          * List of all thrown types that are checked ({@link java.lang.Exception} and {@link java.lang.Error}).
          *
-         * @return the throws checked
+         * @return set of thrown checked types
          */
         public Set<TypeName> throwsChecked() {
             return throwsChecked;
@@ -1215,28 +1554,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * The type of the object depends on the environment we are in - it may be an {@code Element} in annotation processing,
          * or a {@code MethodInfo} (and such) when using classpath scanning.
          *
-         * @return the originating element
+         * @return originating element
          */
         public Optional<Object> originatingElement() {
             return Optional.ofNullable(originatingElement);
         }
 
         /**
-         * Signature of this element.
-         *
-         * @return the signature
-         * @see io.helidon.common.types.ElementSignature
-         * @see #signature()
-         */
-        public Optional<ElementSignature> signature() {
-            return Optional.ofNullable(signature);
-        }
-
-        /**
          * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
          * this would return the generic type {@code T} with no upper or lower bounds.
          *
-         * @return the type parameters
+         * @return list of type parameters of this element
          */
         public List<TypeName> typeParameters() {
             return typeParameters;
@@ -1247,7 +1575,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @return the annotations
+         * @return the list of annotations declared on this element
          */
         public List<Annotation> annotations() {
             return annotations;
@@ -1262,10 +1590,26 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @return the inherited annotations
+         * @return list of all meta annotations of this element
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;
+        }
+
+        @Override
+        public String toString() {
+            return "TypedElementInfoBuilder{"
+                    + "typeName=" + typeName + ","
+                    + "elementName=" + elementName + ","
+                    + "kind=" + kind + ","
+                    + "enclosingType=" + enclosingType + ","
+                    + "parameterArguments=" + parameterArguments + ","
+                    + "throwsChecked=" + throwsChecked + ","
+                    + "signature=" + signature + ","
+                    + "typeParameters=" + typeParameters + ","
+                    + "annotations=" + annotations + ","
+                    + "inheritedAnnotations=" + inheritedAnnotations
+                    + "}";
         }
 
         /**
@@ -1281,13 +1625,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" must not be null, but not set");
             }
             if (elementName == null) {
-                collector.fatal(getClass(), "Property \"elementName\" is required, but not set");
+                collector.fatal(getClass(), "Property \"elementName\" must not be null, but not set");
             }
             if (elementTypeKind == null) {
-                collector.fatal(getClass(), "Property \"elementTypeKind\" is required, but not set");
+                collector.fatal(getClass(), "Property \"elementTypeKind\" must not be null, but not set");
             }
             if (kind == null) {
                 collector.fatal(getClass(), "Property \"kind\" must not be null, but not set");
@@ -1310,7 +1654,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         BUILDER description(Optional<String> description) {
             Objects.requireNonNull(description);
-            this.description = description.map(java.lang.String.class::cast).orElse(this.description);
+            this.description = description.orElse(this.description);
             return self();
         }
 
@@ -1323,7 +1667,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          */
         BUILDER defaultValue(Optional<String> defaultValue) {
             Objects.requireNonNull(defaultValue);
-            this.defaultValue = defaultValue.map(java.lang.String.class::cast).orElse(this.defaultValue);
+            this.defaultValue = defaultValue.orElse(this.defaultValue);
             return self();
         }
 
@@ -1337,6 +1681,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #enclosingType()
          */
+        @SuppressWarnings("unchecked")
         BUILDER enclosingType(Optional<? extends TypeName> enclosingType) {
             Objects.requireNonNull(enclosingType);
             this.enclosingType = enclosingType.map(TypeName.class::cast).orElse(this.enclosingType);
@@ -1352,9 +1697,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #originatingElement()
          */
+        @SuppressWarnings("unchecked")
         BUILDER originatingElement(Optional<?> originatingElement) {
             Objects.requireNonNull(originatingElement);
-            this.originatingElement = originatingElement.map(java.lang.Object.class::cast).orElse(this.originatingElement);
+            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
             return self();
         }
 
@@ -1370,6 +1716,16 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             Objects.requireNonNull(signature);
             this.signature = signature;
             return self();
+        }
+
+        /**
+         * Signature of this element.
+         *
+         * @return signature of this element
+         * @see io.helidon.common.types.ElementSignature
+         */
+        Optional<ElementSignature> signature() {
+            return Optional.ofNullable(signature);
         }
 
         /**
@@ -1430,11 +1786,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
-            public String toDeclaration() {
-                return TypedElementInfoSupport.toDeclaration(this);
-            }
-
-            @Override
             public Optional<String> description() {
                 return description;
             }
@@ -1450,6 +1801,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
+            @Deprecated(since = "4.1.0", forRemoval = true)
             public String elementTypeKind() {
                 return elementTypeKind;
             }
@@ -1475,6 +1827,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
+            @Deprecated(since = "4.1.0", forRemoval = true)
             public Set<String> modifiers() {
                 return modifiers;
             }
@@ -1566,7 +1919,8 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
     /**
      * Fluent API builder for {@link TypedElementInfo}.
      */
-    class Builder extends TypedElementInfo.BuilderBase<TypedElementInfo.Builder, TypedElementInfo> implements io.helidon.common.Builder<TypedElementInfo.Builder, TypedElementInfo> {
+    class Builder extends TypedElementInfo.BuilderBase<TypedElementInfo.Builder, TypedElementInfo>
+            implements io.helidon.common.Builder<TypedElementInfo.Builder, TypedElementInfo> {
 
         private Builder() {
         }

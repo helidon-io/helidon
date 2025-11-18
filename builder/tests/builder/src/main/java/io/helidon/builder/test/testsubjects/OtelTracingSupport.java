@@ -25,7 +25,7 @@ final class OtelTracingSupport {
     private OtelTracingSupport() {
     }
 
-    @Prototype.FactoryMethod
+    @Prototype.ConfigFactoryMethod("processors")
     static List<SpanProcessorConfig> createProcessors(Config config) {
         return List.of(SpanProcessorConfig.builder()
                                .configured("some-value")

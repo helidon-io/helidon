@@ -72,7 +72,7 @@ import static io.helidon.builder.codegen.Types.PROTOTYPE_CONFIGURED;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY;
 import static io.helidon.builder.codegen.Types.RUNTIME_API;
 import static io.helidon.builder.codegen.Utils.deCapitalize;
-import static io.helidon.builder.codegen.Utils.resoledTypesEqual;
+import static io.helidon.builder.codegen.Utils.resolvedTypesEqual;
 import static io.helidon.builder.codegen.Utils.typesEqual;
 import static io.helidon.builder.codegen.ValidationTask.doesImplement;
 import static io.helidon.codegen.CodegenUtil.capitalize;
@@ -367,7 +367,7 @@ final class FactoryOption {
             }
             var factory = runtimeFactory.factoryMethod().get();
             if (Utils.typesEqual(factory.returnType(), actualType)
-                    || resoledTypesEqual(factory.returnType(), actualType)) {
+                    || resolvedTypesEqual(factory.returnType(), type)) {
                 if (factory.optionName().orElse(optionName).equals(optionName)) {
                     option.runtimeType(runtimeFactory);
                     return;
@@ -397,7 +397,7 @@ final class FactoryOption {
             }
 
             if (Utils.typesEqual(actualType, returnType)
-                    || resoledTypesEqual(type, returnType)) {
+                    || resolvedTypesEqual(type, returnType)) {
                 String supportedOption = supportedOptionName(methodName, optionName);
 
                 if (optionName.equals(supportedOption)) {
@@ -746,7 +746,7 @@ final class FactoryOption {
                     return;
                 }
             }
-            if (resoledTypesEqual(configFactory.returnType(), actualType)) {
+            if (resolvedTypesEqual(configFactory.returnType(), optionType)) {
                 if (configFactory.optionName().orElse(optionName).equals(optionName)) {
                     configured.factoryMethod(configFactory);
                     return;
@@ -780,7 +780,7 @@ final class FactoryOption {
                 // for some other option
                 continue;
             }
-            if (!(typesEqual(returnType, actualType) || resoledTypesEqual(returnType, optionType))) {
+            if (!(typesEqual(returnType, actualType) || resolvedTypesEqual(returnType, optionType))) {
                 // wrong return type
                 continue;
             }

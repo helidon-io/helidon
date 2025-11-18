@@ -31,7 +31,6 @@ import io.helidon.builder.api.RuntimeType;
  * @deprecated kindly use {@link io.helidon.common.LruCache}, we are removing this from the configurable module, as cache has
  *         only a single option, and we need it from modules that do not use configuration
  */
-@RuntimeType.PrototypedBy(LruCacheConfig.class)
 @Deprecated(forRemoval = true, since = "4.2.0")
 public final class LruCache<K, V> implements io.helidon.common.LruCache<K, V>, RuntimeType.Api<LruCacheConfig<K, V>> {
     private final LruCacheConfig<K, V> config;

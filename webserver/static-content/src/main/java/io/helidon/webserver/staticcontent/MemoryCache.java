@@ -32,7 +32,6 @@ import io.helidon.builder.api.RuntimeType;
  * Memory cache to allow in-memory storage of static content, rather than reading it from file system each time the
  * resource is requested.
  */
-@RuntimeType.PrototypedBy(MemoryCacheConfig.class)
 public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     private final MemoryCacheConfig config;
     private final long maxSize;

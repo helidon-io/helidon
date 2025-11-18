@@ -32,6 +32,8 @@ import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
+import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -54,7 +56,7 @@ import static io.helidon.builder.codegen.Types.PROTOTYPE_INCLUDE_DEFAULTS;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROTOTYPE_METHOD;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_PROVIDES;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "removal"})
 final class FactoryPrototypeInfo {
 
     private static final String BLUEPRINT = "Blueprint";
@@ -97,6 +99,8 @@ final class FactoryPrototypeInfo {
         configured(blueprint, blueprintAnnotation).ifPresent(prototype::configured);
         runtimeType(blueprint).ifPresent(prototype::runtimeType);
 
+        List<TypedElementInfo> defaultMethodsNotOptions = defaultMethodsNotOptions(blueprint, defaultMethodsPredicate);
+
         customMethodsTypeInfo(ctx, blueprint).ifPresent(it -> {
             Errors.Collector errors = Errors.collector();
 
@@ -105,7 +109,8 @@ final class FactoryPrototypeInfo {
                     it,
                     errors,
                     PROTOTYPE_PROTOTYPE_METHOD,
-                    FactoryPrototypeInfo::prototypeMethod));
+                    (collector, customMethodsType, customMethod, annotations) ->
+                            prototypeMethod(collector, customMethodsType, customMethod, annotations, defaultMethodsNotOptions)));
             prototype.builderMethods(customMethods(it,
                                                    errors,
                                                    PROTOTYPE_BUILDER_METHOD,
@@ -141,9 +146,20 @@ final class FactoryPrototypeInfo {
         // also add deprecated factory methods from the blueprint itself (as this was originally supported)
         addBlueprintDeprecatedFactoryMethods(prototype, blueprint);
 
-        copyDefaultMethods(blueprint, defaultMethodsPredicate, prototype);
+        copyDefaultMethods(blueprint, prototype, defaultMethodsNotOptions);
 
         return prototype.build();
+    }
+
+    private static List<TypedElementInfo> defaultMethodsNotOptions(TypeInfo blueprint,
+                                                                   Predicate<String> defaultMethodsPredicate) {
+        return blueprint.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(it -> it.elementModifiers().contains(Modifier.DEFAULT))
+                .filter(Predicate.not(it -> defaultMethodsPredicate.test(it.elementName())))
+                .filter(it -> !it.hasAnnotation(TypeName.create(Override.class)))
+                .toList();
     }
 
     @SuppressWarnings({"removal", "unused"})
@@ -164,19 +180,11 @@ final class FactoryPrototypeInfo {
     }
 
     private static void copyDefaultMethods(TypeInfo blueprint,
-                                           Predicate<String> defaultMethodsPredicate,
-                                           PrototypeInfo.Builder prototype) {
+                                           PrototypeInfo.Builder prototype,
+                                           List<TypedElementInfo> defaultMethodsNotOptions) {
 
         // add all default methods that are not options, and do not have an Override annotation (as that implies that method
         // is inherited from another interface
-        List<TypedElementInfo> defaultMethodsNotOptions = blueprint.elementInfo()
-                .stream()
-                .filter(ElementInfoPredicates::isMethod)
-                .filter(it -> it.elementModifiers().contains(Modifier.DEFAULT))
-                .filter(Predicate.not(it -> defaultMethodsPredicate.test(it.elementName())))
-                .filter(it -> !it.hasAnnotation(TypeName.create(Override.class)))
-                .toList();
-
         if (defaultMethodsNotOptions.isEmpty()) {
             return;
         }
@@ -185,6 +193,10 @@ final class FactoryPrototypeInfo {
                                        defaultMethodsNotOptions.getFirst().originatingElementValue());
         }
         for (TypedElementInfo method : defaultMethodsNotOptions) {
+            if (isACustomMethod(prototype, method)) {
+                // do not create defaults for custom methods
+                continue;
+            }
             prototype.addPrototypeMethod(m -> m
                     .method(newMethod -> newMethod.from(method)
                             .clearOriginatingElement())
@@ -205,6 +217,22 @@ final class FactoryPrototypeInfo {
                     )
             );
         }
+    }
+
+    private static boolean isACustomMethod(PrototypeInfo.Builder prototypeInfo, TypedElementInfo prototypeDefaultMethod) {
+        // only methods not overridden using a custom method should be copied over
+        ElementSignature signature = prototypeDefaultMethod.signature();
+        for (GeneratedMethod prototypeMethod : prototypeInfo.prototypeMethods()) {
+            if (prototypeMethod.method().signature().equals(signature)) {
+                return true;
+            }
+        }
+        for (var deprecatedMethod : prototypeInfo.deprecatedFactoryMethods()) {
+            if (deprecatedMethod.method().signature().equals(signature)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Optional<TypeName> runtimeType(TypeInfo blueprint) {
@@ -234,6 +262,8 @@ final class FactoryPrototypeInfo {
                 })
                 .addParameter("<BUILDER>", "type of the builder extending this abstract builder")
                 .addParameter("<PROTOTYPE>", "type of the prototype interface that would be built by {@link #buildPrototype()}")
+                .update(it -> blueprintJavadoc.genericsTokens()
+                        .forEach((key, lines) -> it.addParameter("<" + key + ">", lines)))
                 .build();
     }
 
@@ -279,7 +309,8 @@ final class FactoryPrototypeInfo {
 
         String methodName = referencedMethod.elementName();
         if (referencedMethod.typeName().unboxed().equals(TypeNames.PRIMITIVE_VOID)) {
-            collector.fatal("@runtimeTypeFactoryMethods must not be void, but method " + typeName.fqName() + "." + methodName + " is");
+            collector.fatal("@runtimeTypeFactoryMethods must not be void, but method "
+                                    + typeName.fqName() + "." + methodName + " is");
         }
 
         TypeName runtimeType = referencedMethod.typeName();
@@ -297,7 +328,7 @@ final class FactoryPrototypeInfo {
                 .ifPresent(methodBuilder::optionName);
 
         var builder = OptionBuilder.builder()
-                .builderMethodType(runtimeType)
+                .builderMethodType(prototypeType)
                 .builderType(Utils.prototypeBuilderType(prototypeType));
         /*
         First guess from the parameter type, then use annotation to override
@@ -328,6 +359,7 @@ final class FactoryPrototypeInfo {
 
         var builder = FactoryMethod.builder()
                 .declaringType(typeName)
+                .returnType(referencedMethod.typeName())
                 .methodName(referencedMethod.elementName())
                 .parameterType(paramType(collector, typeName, referencedMethod, "Config"));
 
@@ -355,8 +387,33 @@ final class FactoryPrototypeInfo {
     private static GeneratedMethod prototypeMethod(Errors.Collector collector,
                                                    TypeName typeName,
                                                    TypedElementInfo referencedMethod,
-                                                   List<Annotation> annotations) {
+                                                   List<Annotation> annotations,
+                                                   List<TypedElementInfo> defaultMethodsNotOptions) {
 
+        var args = new ArrayList<>(referencedMethod.parameterArguments());
+        if (!args.isEmpty()) {
+            args.removeFirst();
+        }
+        // the generated method will be "sans" the first parameter
+        TypedElementInfo tei = TypedElementInfo.builder(referencedMethod)
+                .parameterArguments(args)
+                .build();
+        var generatedSignature = tei.signature();
+
+        // if the referenced method is also a default method on the blueprint, we need to add
+        // Override annotation, and copy javadoc from it
+        for (TypedElementInfo m : defaultMethodsNotOptions) {
+            if (m.signature().equals(generatedSignature)) {
+                List<Annotation> usedAnnotations = new ArrayList<>(annotations);
+                if (Annotations.findFirst(TypeName.create(Override.class), annotations).isEmpty()) {
+                    usedAnnotations.add(Annotations.OVERRIDE);
+                }
+                return GeneratedMethods.createPrototypeMethod(typeName,
+                                                              referencedMethod,
+                                                              usedAnnotations,
+                                                              m);
+            }
+        }
         return GeneratedMethods.createPrototypeMethod(typeName,
                                                       referencedMethod,
                                                       annotations);

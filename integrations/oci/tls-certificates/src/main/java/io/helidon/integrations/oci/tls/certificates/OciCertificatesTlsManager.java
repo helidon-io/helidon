@@ -27,7 +27,6 @@ import io.helidon.common.tls.TlsManager;
  * {@link io.helidon.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
  * Certificates Service, and then allow for a scheduled update check of the Tls instance for changes.
  */
-@RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)
 public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<OciCertificatesTlsManagerConfig> {
 
     /**

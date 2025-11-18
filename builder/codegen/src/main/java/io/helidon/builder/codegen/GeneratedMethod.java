@@ -19,13 +19,13 @@ package io.helidon.builder.codegen;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -40,7 +40,6 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.GeneratedMethodBlueprint")
 public interface GeneratedMethod extends Prototype.Api {
 
     /**
@@ -63,16 +62,7 @@ public interface GeneratedMethod extends Prototype.Api {
     }
 
     /**
-     * Create a new instance with default values.
-     *
-     * @return a new instance
-     */
-    static GeneratedMethod create() {
-        return GeneratedMethod.builder().buildPrototype();
-    }
-
-    /**
-     * Definition of this method, including annotations (such as {@link Override}).
+     * Definition of this method, including annotations (such as {@link java.lang.Override}).
      *
      * @return method definition
      */
@@ -89,19 +79,20 @@ public interface GeneratedMethod extends Prototype.Api {
      * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
      * complicated to update it.
      * <p>
-     * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+     * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
      *
-     * @return javadoc for this method
+     * @return javadoc for this method if defined
      */
-    Javadoc javadoc();
+    Optional<Javadoc> javadoc();
 
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.GeneratedMethod}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends GeneratedMethod> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends GeneratedMethod>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private Consumer<ContentBuilder<?>> contentBuilder;
         private Javadoc javadoc;
@@ -194,12 +185,23 @@ public interface GeneratedMethod extends Prototype.Api {
         }
 
         /**
+         * Clear existing value of javadoc.
+         *
+         * @return updated builder instance
+         * @see #javadoc()
+         */
+        public BUILDER clearJavadoc() {
+            this.javadoc = null;
+            return self();
+        }
+
+        /**
          * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
          * complicated to update it.
          * <p>
-         * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+         * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
          *
-         * @param javadoc javadoc for this method
+         * @param javadoc javadoc for this method if defined
          * @return updated builder instance
          * @see #javadoc()
          */
@@ -213,9 +215,9 @@ public interface GeneratedMethod extends Prototype.Api {
          * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
          * complicated to update it.
          * <p>
-         * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+         * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
          *
-         * @param consumer consumer of builder of javadoc for this method
+         * @param consumer consumer of builder of javadoc for this method if defined
          * @return updated builder instance
          * @see #javadoc()
          */
@@ -231,9 +233,9 @@ public interface GeneratedMethod extends Prototype.Api {
          * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
          * complicated to update it.
          * <p>
-         * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+         * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
          *
-         * @param supplier supplier of javadoc for this method
+         * @param supplier supplier of javadoc for this method if defined
          * @return updated builder instance
          * @see #javadoc()
          */
@@ -265,9 +267,9 @@ public interface GeneratedMethod extends Prototype.Api {
          * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
          * complicated to update it.
          * <p>
-         * Nevertheless, if this is not configured, we will construct it from {@link #method()}.
+         * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
          *
-         * @return javadoc for this method
+         * @return javadoc for this method if defined
          */
         public Optional<Javadoc> javadoc() {
             return Optional.ofNullable(javadoc);
@@ -286,7 +288,6 @@ public interface GeneratedMethod extends Prototype.Api {
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
-            new BuilderCodegenSupport.GeneratedMethodDecorator().decorate(this);
         }
 
         /**
@@ -300,10 +301,24 @@ public interface GeneratedMethod extends Prototype.Api {
             if (contentBuilder == null) {
                 collector.fatal(getClass(), "Property \"contentBuilder\" must not be null, but not set");
             }
-            if (javadoc == null) {
-                collector.fatal(getClass(), "Property \"javadoc\" must not be null, but not set");
-            }
             collector.collect().checkValid();
+        }
+
+        /**
+         * Javadoc for this method. We intentionally ignore documentation on {@link #method()}, as it may be
+         * complicated to update it.
+         * <p>
+         * If not configured, no javadoc will be generated (useful for methods that override documented interface methods).
+         *
+         * @param javadoc javadoc for this method if defined
+         * @return updated builder instance
+         * @see #javadoc()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER javadoc(Optional<? extends Javadoc> javadoc) {
+            Objects.requireNonNull(javadoc);
+            this.javadoc = javadoc.map(Javadoc.class::cast).orElse(this.javadoc);
+            return self();
         }
 
         /**
@@ -312,7 +327,7 @@ public interface GeneratedMethod extends Prototype.Api {
         protected static class GeneratedMethodImpl implements GeneratedMethod {
 
             private final Consumer<ContentBuilder<?>> contentBuilder;
-            private final Javadoc javadoc;
+            private final Optional<Javadoc> javadoc;
             private final TypedElementInfo method;
 
             /**
@@ -323,7 +338,7 @@ public interface GeneratedMethod extends Prototype.Api {
             protected GeneratedMethodImpl(BuilderBase<?, ?> builder) {
                 this.method = builder.method().get();
                 this.contentBuilder = builder.contentBuilder().get();
-                this.javadoc = builder.javadoc().get();
+                this.javadoc = builder.javadoc().map(Function.identity());
             }
 
             @Override
@@ -337,7 +352,7 @@ public interface GeneratedMethod extends Prototype.Api {
             }
 
             @Override
-            public Javadoc javadoc() {
+            public Optional<Javadoc> javadoc() {
                 return javadoc;
             }
 
@@ -359,8 +374,8 @@ public interface GeneratedMethod extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(method, other.method())
-                    && Objects.equals(contentBuilder, other.contentBuilder())
-                    && Objects.equals(javadoc, other.javadoc());
+                        && Objects.equals(contentBuilder, other.contentBuilder())
+                        && Objects.equals(javadoc, other.javadoc());
             }
 
             @Override

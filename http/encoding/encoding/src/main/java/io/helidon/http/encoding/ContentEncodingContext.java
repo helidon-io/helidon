@@ -26,7 +26,6 @@ import io.helidon.http.Headers;
 /**
  * Content encoding support to obtain encoders and decoders.
  */
-@RuntimeType.PrototypedBy(ContentEncodingContextConfig.class)
 public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingContextConfig> {
     /**
      * Create a new encoding support.

@@ -26,7 +26,6 @@ import io.helidon.builder.api.RuntimeType;
  * Runs synchronous suppliers asynchronously using virtual threads. Includes
  * convenient static method to avoid creating instances of this class.
  */
-@RuntimeType.PrototypedBy(AsyncConfig.class)
 public interface Async extends RuntimeType.Api<AsyncConfig> {
 
     /**

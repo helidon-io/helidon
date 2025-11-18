@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
@@ -40,7 +39,6 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionInfoBlueprint")
 public interface OptionInfo extends Prototype.Api, Annotated {
 
     /**
@@ -115,7 +113,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     Optional<TypeName> decorator();
 
     /**
-     * Whether to include this option in generated {@link Object#toString()} method
+     * Whether to include this option in generated {@link Object#toString()} method.
      *
      * @return whether to include in the {@code toString} method
      */
@@ -153,6 +151,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     boolean sameGeneric();
 
     /**
+     * Whether this is a required option.
      * Will be true if:
      * <ul>
      *     <li>an {@code Option.Required} is present in blueprint</li>
@@ -259,10 +258,11 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionInfo>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<OptionAllowedValue> allowedValues = new ArrayList<>();
         private final List<Annotation> annotations = new ArrayList<>();
@@ -377,14 +377,14 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             if (this.isQualifiersMutated) {
                 if (builder.isQualifiersMutated) {
                     addQualifiers(builder.qualifiers());
-            }
+                }
             } else {
                 qualifiers(builder.qualifiers());
             }
             if (this.isAllowedValuesMutated) {
                 if (builder.isAllowedValuesMutated) {
                     addAllowedValues(builder.allowedValues());
-            }
+                }
             } else {
                 allowedValues(builder.allowedValues());
             }
@@ -401,14 +401,14 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
                     addAnnotations(builder.annotations());
-            }
+                }
             } else {
                 annotations(builder.annotations());
             }
             if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
                     addInheritedAnnotations(builder.inheritedAnnotations());
-            }
+                }
             } else {
                 inheritedAnnotations(builder.inheritedAnnotations());
             }
@@ -661,7 +661,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Whether to include this option in generated {@link Object#toString()} method
+         * Whether to include this option in generated {@link Object#toString()} method.
          *
          * @param includeInToString whether to include in the {@code toString} method
          * @return updated builder instance
@@ -724,6 +724,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Whether this is a required option.
          * Will be true if:
          * <ul>
          *     <li>an {@code Option.Required} is present in blueprint</li>
@@ -767,7 +768,8 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
+         *                   instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -782,7 +784,8 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifiers service registry qualifiers defined on this option (to be used when getting a service registry
+         *                   instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -796,7 +799,8 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param qualifier add single service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param qualifier add single service registry qualifiers defined on this option (to be used when getting a service
+         *                  registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -810,7 +814,8 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         /**
          * List of qualifiers for this option.
          *
-         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a service registry instance)
+         * @param consumer consumer of builder for service registry qualifiers defined on this option (to be used when getting a
+         *                 service registry instance)
          * @return updated builder instance
          * @see #qualifiers()
          */
@@ -1497,7 +1502,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
-         * Whether to include this option in generated {@link Object#toString()} method
+         * Whether to include this option in generated {@link Object#toString()} method.
          *
          * @return whether to include in the {@code toString} method
          */
@@ -1545,6 +1550,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Whether this is a required option.
          * Will be true if:
          * <ul>
          *     <li>an {@code Option.Required} is present in blueprint</li>
@@ -2176,38 +2182,65 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                     return false;
                 }
                 return Objects.equals(interfaceMethod, other.interfaceMethod())
-                    && Objects.equals(declaringType, other.declaringType())
-                    && Objects.equals(name, other.name())
-                    && Objects.equals(getterName, other.getterName())
-                    && Objects.equals(setterName, other.setterName())
-                    && Objects.equals(declaredType, other.declaredType())
-                    && Objects.equals(decorator, other.decorator())
-                    && includeInToString == other.includeInToString()
-                    && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
-                    && confidential == other.confidential()
-                    && registryService == other.registryService()
-                    && sameGeneric == other.sameGeneric()
-                    && required == other.required()
-                    && builderOptionOnly == other.builderOptionOnly()
-                    && Objects.equals(qualifiers, other.qualifiers())
-                    && Objects.equals(allowedValues, other.allowedValues())
-                    && Objects.equals(defaultValue, other.defaultValue())
-                    && Objects.equals(configured, other.configured())
-                    && Objects.equals(deprecation, other.deprecation())
-                    && Objects.equals(provider, other.provider())
-                    && Objects.equals(singular, other.singular())
-                    && Objects.equals(accessModifier, other.accessModifier())
-                    && Objects.equals(builderInfo, other.builderInfo())
-                    && Objects.equals(runtimeType, other.runtimeType())
-                    && Objects.equals(description, other.description())
-                    && Objects.equals(paramDescription, other.paramDescription())
-                    && Objects.equals(annotations, other.annotations())
-                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                        && Objects.equals(declaringType, other.declaringType())
+                        && Objects.equals(name, other.name())
+                        && Objects.equals(getterName, other.getterName())
+                        && Objects.equals(setterName, other.setterName())
+                        && Objects.equals(declaredType, other.declaredType())
+                        && Objects.equals(decorator, other.decorator())
+                        && includeInToString == other.includeInToString()
+                        && includeInEqualsAndHashCode == other.includeInEqualsAndHashCode()
+                        && confidential == other.confidential()
+                        && registryService == other.registryService()
+                        && sameGeneric == other.sameGeneric()
+                        && required == other.required()
+                        && builderOptionOnly == other.builderOptionOnly()
+                        && Objects.equals(qualifiers, other.qualifiers())
+                        && Objects.equals(allowedValues, other.allowedValues())
+                        && Objects.equals(defaultValue, other.defaultValue())
+                        && Objects.equals(configured, other.configured())
+                        && Objects.equals(deprecation, other.deprecation())
+                        && Objects.equals(provider, other.provider())
+                        && Objects.equals(singular, other.singular())
+                        && Objects.equals(accessModifier, other.accessModifier())
+                        && Objects.equals(builderInfo, other.builderInfo())
+                        && Objects.equals(runtimeType, other.runtimeType())
+                        && Objects.equals(description, other.description())
+                        && Objects.equals(paramDescription, other.paramDescription())
+                        && Objects.equals(annotations, other.annotations())
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(interfaceMethod, declaringType, name, getterName, setterName, declaredType, decorator, includeInToString, includeInEqualsAndHashCode, confidential, registryService, sameGeneric, required, builderOptionOnly, qualifiers, allowedValues, defaultValue, configured, deprecation, provider, singular, accessModifier, builderInfo, runtimeType, description, paramDescription, annotations, inheritedAnnotations);
+                return Objects.hash(interfaceMethod,
+                                    declaringType,
+                                    name,
+                                    getterName,
+                                    setterName,
+                                    declaredType,
+                                    decorator,
+                                    includeInToString,
+                                    includeInEqualsAndHashCode,
+                                    confidential,
+                                    registryService,
+                                    sameGeneric,
+                                    required,
+                                    builderOptionOnly,
+                                    qualifiers,
+                                    allowedValues,
+                                    defaultValue,
+                                    configured,
+                                    deprecation,
+                                    provider,
+                                    singular,
+                                    accessModifier,
+                                    builderInfo,
+                                    runtimeType,
+                                    description,
+                                    paramDescription,
+                                    annotations,
+                                    inheritedAnnotations);
             }
 
         }

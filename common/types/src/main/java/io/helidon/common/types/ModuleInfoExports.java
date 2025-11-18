@@ -28,7 +28,6 @@ import io.helidon.common.Errors;
  * An exports directive of a module info.
  *
  * @see #builder()
- * @see #create()
  */
 public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype.Api {
 
@@ -52,13 +51,20 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
     }
 
     /**
-     * Create a new instance with default values.
+     * Name of the exported package.
      *
-     * @return a new instance
+     * @return package name
      */
-    static ModuleInfoExports create() {
-        return ModuleInfoExports.builder().buildPrototype();
-    }
+    @Override
+    String packageName();
+
+    /**
+     * Names of target modules, empty if exported without qualification.
+     *
+     * @return list of target modules
+     */
+    @Override
+    List<String> targets();
 
     /**
      * Fluent API builder base for {@link ModuleInfoExports}.
@@ -88,8 +94,8 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
          */
         public BUILDER from(ModuleInfoExports prototype) {
             packageName(prototype.packageName());
-            if (!isTargetsMutated) {
-                targets.clear();
+            if (!this.isTargetsMutated) {
+                this.targets.clear();
             }
             addTargets(prototype.targets());
             return self();
@@ -103,13 +109,12 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
          */
         public BUILDER from(ModuleInfoExports.BuilderBase<?, ?> builder) {
             builder.packageName().ifPresent(this::packageName);
-            if (isTargetsMutated) {
+            if (this.isTargetsMutated) {
                 if (builder.isTargetsMutated) {
-                    addTargets(builder.targets);
+                    addTargets(builder.targets());
                 }
             } else {
-                targets.clear();
-                addTargets(builder.targets);
+                targets(builder.targets());
             }
             return self();
         }
@@ -128,6 +133,18 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
         }
 
         /**
+         * Clear all targets.
+         *
+         * @return updated builder instance
+         * @see #targets()
+         */
+        public BUILDER clearTargets() {
+            this.isTargetsMutated = true;
+            this.targets.clear();
+            return self();
+        }
+
+        /**
          * Names of target modules, empty if exported without qualification.
          *
          * @param targets list of target modules
@@ -136,7 +153,7 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
          */
         public BUILDER targets(List<String> targets) {
             Objects.requireNonNull(targets);
-            isTargetsMutated = true;
+            this.isTargetsMutated = true;
             this.targets.clear();
             this.targets.addAll(targets);
             return self();
@@ -151,7 +168,7 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
          */
         public BUILDER addTargets(List<String> targets) {
             Objects.requireNonNull(targets);
-            isTargetsMutated = true;
+            this.isTargetsMutated = true;
             this.targets.addAll(targets);
             return self();
         }
@@ -159,21 +176,21 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
         /**
          * Names of target modules, empty if exported without qualification.
          *
-         * @param target list of target modules
+         * @param target add single list of target modules
          * @return updated builder instance
          * @see #targets()
          */
         public BUILDER addTarget(String target) {
             Objects.requireNonNull(target);
             this.targets.add(target);
-            isTargetsMutated = true;
+            this.isTargetsMutated = true;
             return self();
         }
 
         /**
          * Name of the exported package.
          *
-         * @return the package name
+         * @return package name
          */
         public Optional<String> packageName() {
             return Optional.ofNullable(packageName);
@@ -182,7 +199,7 @@ public interface ModuleInfoExports extends ModuleInfoExportsBlueprint, Prototype
         /**
          * Names of target modules, empty if exported without qualification.
          *
-         * @return the targets
+         * @return list of target modules
          */
         public List<String> targets() {
             return targets;

@@ -28,7 +28,6 @@ import io.helidon.websocket.WsListener;
 /**
  * WebSocket client.
  */
-@RuntimeType.PrototypedBy(WsClientConfig.class)
 public interface WsClient extends RuntimeType.Api<WsClientConfig> {
     /**
      * Protocol to use to obtain an instance of WebSocket specific client from

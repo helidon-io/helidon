@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,13 @@ import io.helidon.http.HttpMediaType;
 @Prototype.Configured
 interface LogStreamConfigBlueprint {
     /**
-     * Mapper from config to HTTP Media type.
+     * This method is internal only and was used from the builder and will be removed without replacement.
+     * You can easily map HTTP media type from config using {@code config.asString().map(HttpMediaType::create)}.
      *
-     * @param config config to use
-     * @return media type parsed from the config
+     * @param config config instance
+     * @return media type mapped
      */
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.3.0")
     static HttpMediaType createContentType(Config config) {
         return config.asString().map(HttpMediaType::create).orElseThrow();
     }

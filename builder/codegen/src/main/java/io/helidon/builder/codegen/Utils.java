@@ -1,4 +1,23 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.builder.codegen;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.common.types.ResolvedType;
@@ -9,6 +28,12 @@ final class Utils {
     private Utils() {
     }
 
+    static List<OptionInfo> options(List<OptionHandler> options) {
+        return options.stream()
+                .map(OptionHandler::option)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
     static void addGeneratedMethod(ClassBase.Builder<?, ?> classModel,
                                    GeneratedMethod generatedMethod) {
         var methodInfo = generatedMethod.method();
@@ -17,8 +42,8 @@ final class Utils {
 
         classModel.addMethod(method -> {
             method.from(methodInfo)
-                    .javadoc(javadoc)
                     .update(contentBuilder::accept);
+            javadoc.ifPresent(method::javadoc);
         });
     }
 
@@ -134,7 +159,7 @@ final class Utils {
      * @param second second type
      * @return true if the types are equal
      */
-    static boolean resoledTypesEqual(TypeName first, TypeName second) {
+    static boolean resolvedTypesEqual(TypeName first, TypeName second) {
         var usedFirst = first;
         var usedSecond = second;
 

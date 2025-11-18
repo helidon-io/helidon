@@ -30,6 +30,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.InnerClass;
@@ -63,14 +64,13 @@ final class GenerateAbstractBuilder {
     private GenerateAbstractBuilder() {
     }
 
-    static void generate(ClassModel.Builder classModel,
+    static void generate(List<BuilderCodegenExtension> extensions,
+                         ClassModel.Builder classModel,
                          PrototypeInfo prototypeInfo,
-                         TypeName runtimeType,
                          List<TypeArgument> typeArguments,
                          List<TypeName> typeArgumentNames,
                          List<OptionHandler> options,
-                         List<BuilderCodegen.NewDefault> newDefaults,
-                         List<BuilderCodegen.MethodUpdate> methodUpdate) {
+                         List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
 
@@ -120,8 +120,8 @@ final class GenerateAbstractBuilder {
             fromBuilderMethod(builder, prototypeInfo, options, typeArgumentNames);
 
             // method preBuildPrototype() - handles providers, decorator
-            preBuildPrototypeMethod(builder, prototypeInfo, options);
-            validatePrototypeMethod(builder, prototypeInfo, options);
+            preBuildPrototypeMethod(extensions, builder, prototypeInfo, options);
+            validatePrototypeMethod(extensions, builder, prototypeInfo, options);
 
             //custom method adding
             addCustomBuilderMethods(builder, prototypeInfo);
@@ -137,7 +137,11 @@ final class GenerateAbstractBuilder {
                      true);
 
             // before the builder class is finished, we also generate a protected implementation
-            generatePrototypeImpl(builder, prototypeInfo, options, typeArguments, typeArgumentNames);
+            generatePrototypeImpl(extensions, builder, prototypeInfo, options, typeArguments, typeArgumentNames);
+
+            extensions.forEach(it -> it.updateBuilderBase(prototypeInfo,
+                                                          Utils.options(options),
+                                                          builder));
         });
     }
 
@@ -292,11 +296,12 @@ final class GenerateAbstractBuilder {
                         .description("configuration instance used to obtain values to update this builder"))
                 .addAnnotation(Annotations.OVERRIDE)
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(config);")
-                .addContentLine("this.config = config;");
+                .addContentLine(".requireNonNull(config);");
 
         if (prototypeInfo.superPrototype().isPresent()) {
             builder.addContentLine("super.config(config);");
+        } else {
+            builder.addContentLine("this.config = config;");
         }
 
         for (OptionHandler optionHandler : options) {
@@ -389,7 +394,9 @@ final class GenerateAbstractBuilder {
                                boolean isBuilder) {
 
         if (isBuilder && (prototypeInfo.configured().isPresent() || hasConfig(options))) {
-            classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
+            if (prototypeInfo.superPrototype().isEmpty()) {
+                classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
+            }
         }
         if (isBuilder && prototypeInfo.registrySupport()) {
             classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
@@ -447,7 +454,8 @@ final class GenerateAbstractBuilder {
         return type.equals(COMMON_CONFIG) || type.equals(CONFIG);
     }
 
-    private static void preBuildPrototypeMethod(InnerClass.Builder classBuilder,
+    private static void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
+                                                InnerClass.Builder classBuilder,
                                                 PrototypeInfo prototypeInfo,
                                                 List<OptionHandler> options) {
         Method.Builder preBuildBuilder = Method.builder()
@@ -465,7 +473,7 @@ final class GenerateAbstractBuilder {
         prototypeInfo.superPrototype()
                 .ifPresent(it -> preBuildBuilder.addContentLine("super.preBuildPrototype();"));
 
-        if (prototypeInfo.registrySupport() || hasProvider || hasRegistryService) {
+        if ((prototypeInfo.registrySupport() && hasProvider) || hasRegistryService) {
             boolean configured = prototypeInfo.configured().isPresent();
 
             if (configured) {
@@ -513,6 +521,9 @@ final class GenerateAbstractBuilder {
                     .addContent(prototypeInfo.builderDecorator().get())
                     .addContentLine("().decorate(this);");
         }
+        extensions.forEach(it -> it.updatePreBuildPrototype(prototypeInfo,
+                                                            Utils.options(options),
+                                                            preBuildBuilder));
         classBuilder.addMethod(preBuildBuilder);
     }
 
@@ -833,7 +844,7 @@ final class GenerateAbstractBuilder {
         }
     }
 
-    private static void validatePrototypeMethod(InnerClass.Builder classBuilder,
+    private static void validatePrototypeMethod(List<BuilderCodegenExtension> extensions, InnerClass.Builder classBuilder,
                                                 PrototypeInfo prototypeInfo,
                                                 List<OptionHandler> options) {
 
@@ -850,6 +861,9 @@ final class GenerateAbstractBuilder {
                 || hasAllowedValues(options)) {
             requiredValidation(validateBuilder, options);
         }
+        extensions.forEach(it -> it.updateValidatePrototype(prototypeInfo,
+                                                            Utils.options(options),
+                                                            validateBuilder));
         classBuilder.addMethod(validateBuilder);
     }
 
@@ -907,7 +921,8 @@ final class GenerateAbstractBuilder {
         validateBuilder.addContentLine("collector.collect().checkValid();");
     }
 
-    private static void generatePrototypeImpl(InnerClass.Builder classBuilder,
+    private static void generatePrototypeImpl(List<BuilderCodegenExtension> extensions,
+                                              InnerClass.Builder classBuilder,
                                               PrototypeInfo prototypeInfo,
                                               List<OptionHandler> options,
                                               List<TypeArgument> typeArguments,
@@ -990,6 +1005,8 @@ final class GenerateAbstractBuilder {
             Hash code and equals
              */
             hashCodeAndEquals(builder, options, ifaceName, superPrototype.isPresent());
+
+            extensions.forEach(it -> it.updateImplementation(prototypeInfo, Utils.options(options), builder));
         });
     }
 
@@ -1215,13 +1232,9 @@ final class GenerateAbstractBuilder {
                 continue;
             }
 
-            String fieldName = option.name();
-            String getterName = option.getterName();
-
-            classBuilder.addMethod(method -> method.name(getterName)
-                    .returnType(option.declaredType())
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .addContentLine("return " + fieldName + ";"));
+            optionHandler.typeHandler()
+                    .optionMethod(OptionMethodType.IMPL_GETTER)
+                    .ifPresent(it -> Utils.addGeneratedMethod(classBuilder, it));
         }
     }
 

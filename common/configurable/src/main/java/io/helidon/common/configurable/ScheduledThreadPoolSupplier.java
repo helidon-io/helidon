@@ -32,7 +32,6 @@ import io.helidon.common.context.Contexts;
  * Supplier of a custom scheduled thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
-@RuntimeType.PrototypedBy(ScheduledThreadPoolConfig.class)
 public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExecutorService>,
                                                           RuntimeType.Api<ScheduledThreadPoolConfig> {
 

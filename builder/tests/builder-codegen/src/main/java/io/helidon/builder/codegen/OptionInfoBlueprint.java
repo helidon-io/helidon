@@ -88,7 +88,7 @@ interface OptionInfoBlueprint extends Annotated {
     Optional<TypeName> decorator();
 
     /**
-     * Whether to include this option in generated {@link java.lang.Object#toString()} method
+     * Whether to include this option in generated {@link java.lang.Object#toString()} method.
      *
      * @return whether to include in the {@code toString} method
      */
@@ -131,6 +131,7 @@ interface OptionInfoBlueprint extends Annotated {
     boolean sameGeneric();
 
     /**
+     * Whether this is a required option.
      * Will be true if:
      * <ul>
      *     <li>an {@code Option.Required} is present in blueprint</li>

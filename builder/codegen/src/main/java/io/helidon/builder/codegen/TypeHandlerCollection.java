@@ -355,7 +355,6 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
 
         OptionSingular optionSingular = option().singular().get();
         String methodName = optionSingular.methodName();
-        String singularName = optionSingular.name();
 
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
         OptionBuilder optionBuilder = option().builderInfo().get();
@@ -468,7 +467,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             return Optional.empty();
         }
         var fm = factoryMethod.get();
-        if (!Utils.resoledTypesEqual(fm.returnType(), option().declaredType())) {
+        if (!Utils.resolvedTypesEqual(fm.returnType(), option().declaredType())) {
             return Optional.empty();
         }
 

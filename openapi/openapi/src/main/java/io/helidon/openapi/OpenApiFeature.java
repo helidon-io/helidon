@@ -41,7 +41,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Helidon Support for OpenAPI.
  */
-@RuntimeType.PrototypedBy(OpenApiFeatureConfig.class)
 public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeType.Api<OpenApiFeatureConfig> {
 
     static final String OPENAPI_ID = "openapi";

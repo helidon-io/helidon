@@ -36,7 +36,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Support for all observe providers that are available (or configured).
  */
-@RuntimeType.PrototypedBy(ObserveFeatureConfig.class)
 public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<ObserveFeatureConfig> {
     static final String OBSERVE_ID = "observe";
     static final double WEIGHT = 80;

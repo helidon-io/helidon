@@ -43,7 +43,6 @@ import io.helidon.common.config.ConfigException;
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
  * Note that this stores all the bytes in memory, so use with care!!!
  */
-@RuntimeType.PrototypedBy(ResourceConfig.class)
 public interface Resource extends RuntimeType.Api<ResourceConfig> {
     /**
      * Load resource from URI provided.

@@ -35,7 +35,6 @@ import io.helidon.common.config.Config;
  * <li>Value is permitted</li>
  * </ol>
  */
-@RuntimeType.PrototypedBy(AllowListConfig.class)
 public class AllowList implements Predicate<String>, RuntimeType.Api<AllowListConfig> {
     private static final System.Logger LOGGER = System.getLogger(AllowList.class.getName());
     private static final String ALLOWED_MATCHED_LOG_FORMAT = "Value '%s' is allowed by %s";

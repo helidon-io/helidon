@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,10 +115,6 @@ final class AptAnnotationFactory {
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
             Object value = val.accept(new ToAnnotationValueVisitor(elements), null);
-            if (value.equals("<error>")) {
-                // this is a forward-reference type
-                // the value is an Attribute$UnresolvedClass, and the classType contains a valid class name
-            }
             if (value != null) {
                 result.put(name, value);
             }

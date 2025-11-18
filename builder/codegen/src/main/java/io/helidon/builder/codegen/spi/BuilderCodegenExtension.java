@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.builder.codegen.spi;
 
 import java.util.List;
@@ -7,6 +23,7 @@ import io.helidon.builder.codegen.GeneratedMethod;
 import io.helidon.builder.codegen.OptionInfo;
 import io.helidon.builder.codegen.OptionMethodType;
 import io.helidon.builder.codegen.PrototypeInfo;
+import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 
@@ -33,9 +50,11 @@ public interface BuilderCodegenExtension {
      * and builder getter. All of these methods will be code generated. If an option is inherited from a blueprint,
      * it is still code generated, with {@link java.lang.Override} annotation.
      *
+     * @param prototypeInfo   prototype information from blueprint and previous extensions
+     * @param existingOptions list of options from blueprint and previous extensions
      * @return list of builder options
      */
-    default List<OptionInfo> options(List<OptionInfo> existingOptions) {
+    default List<OptionInfo> options(PrototypeInfo prototypeInfo, List<OptionInfo> existingOptions) {
         return existingOptions;
     }
 
@@ -43,31 +62,36 @@ public interface BuilderCodegenExtension {
      * Update the prototype interface.
      * This can add additional factory methods, constants, etc.
      * <p>
-     * Do not add properties through this method, use {@link #options(java.util.List)} instead.
+     * Do not add properties through this method, use {@link #options(io.helidon.builder.codegen.PrototypeInfo, java.util.List)}
+     * instead.
      *
-     * @param classModel prototype interface class model
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param classModel    prototype interface class model
      */
-    default void updatePrototype(ClassModel.Builder classModel) {
+    default void updatePrototype(PrototypeInfo prototypeInfo, List<OptionInfo> options, ClassModel.Builder classModel) {
     }
 
     /**
      * Update the builder base.
      * This can add additional fields, methods, constants, etc.
-     * <p>
-     * Do not add properties through this method, use {@link #options(java.util.List)} instead.
      *
-     * @param classModel builder base class model
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param classModel    builder base class model
      */
-    default void updateBuilderBase(ClassModel.Builder classModel) {
+    default void updateBuilderBase(PrototypeInfo prototypeInfo, List<OptionInfo> options, ClassBase.Builder<?, ?> classModel) {
     }
 
     /**
      * Update the {@code preBuildPrototype} method of builder base.
      * This method is called first in the builder hierarchy to handle decorators.
      *
-     * @param method method builder
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param method        method builder
      */
-    default void updatePreBuildPrototype(Method.Builder method) {
+    default void updatePreBuildPrototype(PrototypeInfo prototypeInfo, List<OptionInfo> options, Method.Builder method) {
     }
 
     /**
@@ -75,27 +99,34 @@ public interface BuilderCodegenExtension {
      * This method is called last in the builder hierarchy to handle validation, right before
      * calling the {@code build} method.
      *
-     * @param method method builder
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param method        method builder
      */
-    default void updateValidatePrototype(Method.Builder method) {
+    default void updateValidatePrototype(PrototypeInfo prototypeInfo, List<OptionInfo> options, Method.Builder method) {
     }
 
     /**
      * Update the builder.
      *
-     * @param classModel builder class model
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param classModel    builder class model
      */
-    default void updateBuilder(ClassModel.Builder classModel) {
+    default void updateBuilder(PrototypeInfo prototypeInfo, List<OptionInfo> options, ClassBase.Builder<?, ?> classModel) {
     }
 
     /**
      * Update the implementation class.
      * <p>
-     * Do not add properties through this method, use {@link #options(java.util.List)} instead.
+     * Do not add properties through this method, use {@link #options(io.helidon.builder.codegen.PrototypeInfo, java.util.List)}
+     * instead.
      *
-     * @param classModel implementation class model
+     * @param prototypeInfo prototype information
+     * @param options       list of options
+     * @param classModel    implementation class model
      */
-    default void updateImplementation(ClassModel.Builder classModel) {
+    default void updateImplementation(PrototypeInfo prototypeInfo, List<OptionInfo> options, ClassBase.Builder<?, ?> classModel) {
     }
 
     /**
@@ -106,9 +137,12 @@ public interface BuilderCodegenExtension {
      * <strong>Important note:</strong> we may add new method types in minor versions of Helidon, please make sure
      * this would not break your extension.
      *
+     * @param option     option information
      * @param method     method to modify, possibly remove, or return
      * @param methodType type of the method being processed
-     * @return update generated method
+     * @return updated generated method
      */
-    Optional<GeneratedMethod> method(GeneratedMethod method, OptionMethodType methodType);
+    default Optional<GeneratedMethod> method(OptionInfo option, GeneratedMethod method, OptionMethodType methodType) {
+        return Optional.of(method);
+    }
 }

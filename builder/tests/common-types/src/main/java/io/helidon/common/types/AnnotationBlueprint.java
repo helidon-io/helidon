@@ -72,7 +72,7 @@ interface AnnotationBlueprint {
     TypeName typeName();
 
     /**
-     * Get a key-value of all the annotation properties.
+     * Key-value map of all the annotation properties.
      *
      * @return key-value pairs of all the properties present
      * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface

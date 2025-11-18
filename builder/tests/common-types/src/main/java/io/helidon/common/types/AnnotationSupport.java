@@ -35,7 +35,7 @@ final class AnnotationSupport {
      * @param value        the annotation value
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     public static Annotation create(TypeName annoTypeName,
                                     String value) {
         return Annotation.builder().typeName(annoTypeName).value(value).build();
@@ -48,7 +48,7 @@ final class AnnotationSupport {
      * @param values       the annotation values
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     public static Annotation create(TypeName annoTypeName,
                                     Map<String, ?> values) {
         return Annotation.builder().typeName(annoTypeName).values(values).build();
@@ -60,7 +60,7 @@ final class AnnotationSupport {
      * @param annoType the annotation type
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType) {
         return Annotation.builder()
                 .typeName(TypeName.create(annoType))
@@ -73,7 +73,7 @@ final class AnnotationSupport {
      * @param annoType the annotation type
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Annotation create(TypeName annoType) {
         return Annotation.builder()
                 .typeName(annoType)
@@ -87,7 +87,7 @@ final class AnnotationSupport {
      * @param value    the annotation value
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType,
                              String value) {
         return create(TypeName.create(annoType), value);
@@ -100,7 +100,7 @@ final class AnnotationSupport {
      * @param values   the annotation values
      * @return the new instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType,
                              Map<String, ?> values) {
         return create(TypeName.create(annoType), values);

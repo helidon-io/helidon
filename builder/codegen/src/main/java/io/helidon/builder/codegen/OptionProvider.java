@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -31,7 +30,6 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionProviderBlueprint")
 public interface OptionProvider extends Prototype.Api {
 
     /**
@@ -70,10 +68,11 @@ public interface OptionProvider extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionProvider}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionProvider> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionProvider>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private boolean discoverServices;
         private TypeName providerType;
@@ -249,7 +248,7 @@ public interface OptionProvider extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(providerType, other.providerType())
-                    && discoverServices == other.discoverServices();
+                        && discoverServices == other.discoverServices();
             }
 
             @Override

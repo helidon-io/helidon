@@ -51,6 +51,8 @@ interface PrototypeConstantBlueprint {
 
     /**
      * Consumer of the content to generate the constant.
+     *
+     * @return content builder consumer to generate the constant value
      */
     Consumer<ContentBuilder<?>> content();
 }

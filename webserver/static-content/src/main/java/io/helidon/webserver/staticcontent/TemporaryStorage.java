@@ -25,7 +25,6 @@ import io.helidon.builder.api.RuntimeType;
 /**
  * Handling of temporary files.
  */
-@RuntimeType.PrototypedBy(TemporaryStorageConfig.class)
 public interface TemporaryStorage extends RuntimeType.Api<TemporaryStorageConfig> {
     /**
      * Create a new builder.

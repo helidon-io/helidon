@@ -96,7 +96,7 @@ final class OpenTelemetryConfigSupport {
          * @param config config node (node list of string nodes or a single node)
          * @return list of selected propagators
          */
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("propagators")
         static List<TextMapPropagator> createPropagators(Config config) {
 
             Stream<String> propagatorNames = config.isList()
@@ -109,7 +109,7 @@ final class OpenTelemetryConfigSupport {
                     .toList();
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("tracingConfig")
         static OpenTelemetryTracingConfig createTracingConfig(Config config) {
             return OpenTelemetryTracingConfig.create(config);
         }

@@ -44,7 +44,6 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@RuntimeType.PrototypedBy(JsonbSupportConfig.class)
 public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportConfig> {
     private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
     private static final String DEFAULT_JSON_B_NAME = "jsonb";

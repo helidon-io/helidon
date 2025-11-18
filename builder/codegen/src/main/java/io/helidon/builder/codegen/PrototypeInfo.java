@@ -31,7 +31,6 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
@@ -43,7 +42,6 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.PrototypeInfoBlueprint")
 public interface PrototypeInfo extends Prototype.Api, Annotated {
 
     /**
@@ -132,11 +130,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
      * The default behavior is to exclude all default methods.
      * <p>
      * Sequence of checking if a default method should be an option method:
-     * <nl>
+     * <ul>
      * <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
      * <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
      * <li>Otherwise the default method will not be an option</li>
-     * </nl>
+     * </ul>
      *
      * @return predicate for method names
      */
@@ -262,7 +260,7 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
      *
      * @return a list of factory methods declared on the blueprint or a reference custom methods type
      * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-    {@link #configFactories()} instead, only present for backwards compatibility
+     *         {@link #configFactories()} instead, only present for backwards compatibility
      */
     @Deprecated(since = "4.4.0", forRemoval = true)
     List<DeprecatedFactoryMethod> deprecatedFactoryMethods();
@@ -298,10 +296,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.PrototypeInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends PrototypeInfo>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<DeprecatedFactoryMethod> deprecatedFactoryMethods = new ArrayList<>();
         private final List<FactoryMethod> configFactories = new ArrayList<>();
@@ -444,77 +443,77 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
             if (this.isSuperTypesMutated) {
                 if (builder.isSuperTypesMutated) {
                     addSuperTypes(builder.superTypes());
-            }
+                }
             } else {
                 superTypes(builder.superTypes());
             }
             if (this.isProviderProvidesMutated) {
                 if (builder.isProviderProvidesMutated) {
                     addProviderProvides(builder.providerProvides());
-            }
+                }
             } else {
                 providerProvides(builder.providerProvides());
             }
             if (this.isConstantsMutated) {
                 if (builder.isConstantsMutated) {
                     addConstants(builder.constants());
-            }
+                }
             } else {
                 constants(builder.constants());
             }
             if (this.isPrototypeMethodsMutated) {
                 if (builder.isPrototypeMethodsMutated) {
                     addPrototypeMethods(builder.prototypeMethods());
-            }
+                }
             } else {
                 prototypeMethods(builder.prototypeMethods());
             }
             if (this.isBuilderMethodsMutated) {
                 if (builder.isBuilderMethodsMutated) {
                     addBuilderMethods(builder.builderMethods());
-            }
+                }
             } else {
                 builderMethods(builder.builderMethods());
             }
             if (this.isDeprecatedFactoryMethodsMutated) {
                 if (builder.isDeprecatedFactoryMethodsMutated) {
                     addDeprecatedFactoryMethods(builder.deprecatedFactoryMethods());
-            }
+                }
             } else {
                 deprecatedFactoryMethods(builder.deprecatedFactoryMethods());
             }
             if (this.isPrototypeFactoriesMutated) {
                 if (builder.isPrototypeFactoriesMutated) {
                     addPrototypeFactories(builder.prototypeFactories());
-            }
+                }
             } else {
                 prototypeFactories(builder.prototypeFactories());
             }
             if (this.isConfigFactoriesMutated) {
                 if (builder.isConfigFactoriesMutated) {
                     addConfigFactories(builder.configFactories());
-            }
+                }
             } else {
                 configFactories(builder.configFactories());
             }
             if (this.isRuntimeTypeFactoriesMutated) {
                 if (builder.isRuntimeTypeFactoriesMutated) {
                     addRuntimeTypeFactories(builder.runtimeTypeFactories());
-            }
+                }
             } else {
                 runtimeTypeFactories(builder.runtimeTypeFactories());
             }
             if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
                     addAnnotations(builder.annotations());
-            }
+                }
             } else {
                 annotations(builder.annotations());
             }
             if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
                     addInheritedAnnotations(builder.inheritedAnnotations());
-            }
+                }
             } else {
                 inheritedAnnotations(builder.inheritedAnnotations());
             }
@@ -874,11 +873,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          * The default behavior is to exclude all default methods.
          * <p>
          * Sequence of checking if a default method should be an option method:
-         * <nl>
+         * <ul>
          * <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
          * <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
          * <li>Otherwise the default method will not be an option</li>
-         * </nl>
+         * </ul>
          *
          * @param defaultMethodsPredicate predicate for method names
          * @return updated builder instance
@@ -1470,9 +1469,9 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          * Clear all deprecatedFactoryMethods.
          *
          * @return updated builder instance
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-        {@link #configFactories()} instead, only present for backwards compatibility
          * @see #deprecatedFactoryMethods()
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+         *         {@link #configFactories()} instead, only present for backwards compatibility
          */
         @Deprecated(since = "4.4.0", forRemoval = true)
         public BUILDER clearDeprecatedFactoryMethods() {
@@ -1488,9 +1487,9 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          *
          * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
          * @return updated builder instance
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-        {@link #configFactories()} instead, only present for backwards compatibility
          * @see #deprecatedFactoryMethods()
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+         *         {@link #configFactories()} instead, only present for backwards compatibility
          */
         @Deprecated(since = "4.4.0", forRemoval = true)
         public BUILDER deprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
@@ -1508,9 +1507,9 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          *
          * @param deprecatedFactoryMethods a list of factory methods declared on the blueprint or a reference custom methods type
          * @return updated builder instance
-         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-        {@link #configFactories()} instead, only present for backwards compatibility
          * @see #deprecatedFactoryMethods()
+         * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
+         *         {@link #configFactories()} instead, only present for backwards compatibility
          */
         @Deprecated(since = "4.4.0", forRemoval = true)
         public BUILDER addDeprecatedFactoryMethods(List<? extends DeprecatedFactoryMethod> deprecatedFactoryMethods) {
@@ -1979,11 +1978,11 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          * The default behavior is to exclude all default methods.
          * <p>
          * Sequence of checking if a default method should be an option method:
-         * <nl>
+         * <ul>
          * <li>Check the method signature (i.e. {@code process(java.lang.String)}, if accepted, use it as an option</li>
          * <li>Check the method name (i.e. {@code process}, if accepted, use it as an option</li>
          * <li>Otherwise the default method will not be an option</li>
-         * </nl>
+         * </ul>
          *
          * @return predicate for method names
          */
@@ -2137,7 +2136,7 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
          *
          * @return a list of factory methods declared on the blueprint or a reference custom methods type
          * @deprecated use {@link #prototypeFactories()}, or {@link #runtimeTypeFactories()}, or
-        {@link #configFactories()} instead, only present for backwards compatibility
+         *         {@link #configFactories()} instead, only present for backwards compatibility
          */
         @Deprecated(since = "4.4.0", forRemoval = true)
         public List<DeprecatedFactoryMethod> deprecatedFactoryMethods() {
@@ -2563,37 +2562,63 @@ public interface PrototypeInfo extends Prototype.Api, Annotated {
                     return false;
                 }
                 return Objects.equals(blueprint, other.blueprint())
-                    && Objects.equals(runtimeType, other.runtimeType())
-                    && Objects.equals(javadoc, other.javadoc())
-                    && Objects.equals(builderBaseJavadoc, other.builderBaseJavadoc())
-                    && Objects.equals(builderJavadoc, other.builderJavadoc())
-                    && Objects.equals(builderDecorator, other.builderDecorator())
-                    && Objects.equals(prototypeType, other.prototypeType())
-                    && Objects.equals(defaultMethodsPredicate, other.defaultMethodsPredicate())
-                    && Objects.equals(accessModifier, other.accessModifier())
-                    && Objects.equals(builderAccessModifier, other.builderAccessModifier())
-                    && createEmptyCreate == other.createEmptyCreate()
-                    && recordStyle == other.recordStyle()
-                    && Objects.equals(configured, other.configured())
-                    && registrySupport == other.registrySupport()
-                    && detachBlueprint == other.detachBlueprint()
-                    && Objects.equals(superPrototype, other.superPrototype())
-                    && Objects.equals(superTypes, other.superTypes())
-                    && Objects.equals(providerProvides, other.providerProvides())
-                    && Objects.equals(constants, other.constants())
-                    && Objects.equals(prototypeMethods, other.prototypeMethods())
-                    && Objects.equals(builderMethods, other.builderMethods())
-                    && Objects.equals(deprecatedFactoryMethods, other.deprecatedFactoryMethods())
-                    && Objects.equals(prototypeFactories, other.prototypeFactories())
-                    && Objects.equals(configFactories, other.configFactories())
-                    && Objects.equals(runtimeTypeFactories, other.runtimeTypeFactories())
-                    && Objects.equals(annotations, other.annotations())
-                    && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                        && Objects.equals(runtimeType, other.runtimeType())
+                        && Objects.equals(javadoc, other.javadoc())
+                        && Objects.equals(builderBaseJavadoc, other.builderBaseJavadoc())
+                        && Objects.equals(builderJavadoc, other.builderJavadoc())
+                        && Objects.equals(builderDecorator, other.builderDecorator())
+                        && Objects.equals(prototypeType, other.prototypeType())
+                        && Objects.equals(defaultMethodsPredicate, other.defaultMethodsPredicate())
+                        && Objects.equals(accessModifier, other.accessModifier())
+                        && Objects.equals(builderAccessModifier, other.builderAccessModifier())
+                        && createEmptyCreate == other.createEmptyCreate()
+                        && recordStyle == other.recordStyle()
+                        && Objects.equals(configured, other.configured())
+                        && registrySupport == other.registrySupport()
+                        && detachBlueprint == other.detachBlueprint()
+                        && Objects.equals(superPrototype, other.superPrototype())
+                        && Objects.equals(superTypes, other.superTypes())
+                        && Objects.equals(providerProvides, other.providerProvides())
+                        && Objects.equals(constants, other.constants())
+                        && Objects.equals(prototypeMethods, other.prototypeMethods())
+                        && Objects.equals(builderMethods, other.builderMethods())
+                        && Objects.equals(deprecatedFactoryMethods, other.deprecatedFactoryMethods())
+                        && Objects.equals(prototypeFactories, other.prototypeFactories())
+                        && Objects.equals(configFactories, other.configFactories())
+                        && Objects.equals(runtimeTypeFactories, other.runtimeTypeFactories())
+                        && Objects.equals(annotations, other.annotations())
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(blueprint, runtimeType, javadoc, builderBaseJavadoc, builderJavadoc, builderDecorator, prototypeType, defaultMethodsPredicate, accessModifier, builderAccessModifier, createEmptyCreate, recordStyle, configured, registrySupport, detachBlueprint, superPrototype, superTypes, providerProvides, constants, prototypeMethods, builderMethods, deprecatedFactoryMethods, prototypeFactories, configFactories, runtimeTypeFactories, annotations, inheritedAnnotations);
+                return Objects.hash(blueprint,
+                                    runtimeType,
+                                    javadoc,
+                                    builderBaseJavadoc,
+                                    builderJavadoc,
+                                    builderDecorator,
+                                    prototypeType,
+                                    defaultMethodsPredicate,
+                                    accessModifier,
+                                    builderAccessModifier,
+                                    createEmptyCreate,
+                                    recordStyle,
+                                    configured,
+                                    registrySupport,
+                                    detachBlueprint,
+                                    superPrototype,
+                                    superTypes,
+                                    providerProvides,
+                                    constants,
+                                    prototypeMethods,
+                                    builderMethods,
+                                    deprecatedFactoryMethods,
+                                    prototypeFactories,
+                                    configFactories,
+                                    runtimeTypeFactories,
+                                    annotations,
+                                    inheritedAnnotations);
             }
 
         }

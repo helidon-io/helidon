@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -101,12 +103,28 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     }
 
     /**
+     * Compare with another type name.
+     * First compares by {@link io.helidon.common.types.TypeName#name()}, than by
+     * {@link io.helidon.common.types.TypeName#primitive}, and finally by {@link io.helidon.common.types.TypeName#array()}.
+     *
+     * @param o type name to compare to
+     * @return comparison result
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    @Override
+    default int compareTo(TypeName o) {
+        return TypeNameSupport.compareTo(this, o);
+    }
+
+    /**
      * Return the boxed equivalent of this type.
      * If this is not a primitive type, returns this instance.
      *
      * @return boxed type for this type, or this type if not primitive
      */
-    TypeName boxed();
+    default TypeName boxed() {
+        return TypeNameSupport.boxed(this);
+    }
 
     /**
      * Return the unboxed equivalent of this type.
@@ -119,12 +137,122 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     }
 
     /**
+     * The base name that includes the package name concatenated with the class name. Similar to
+     * {@link java.lang.reflect.Type#getTypeName()}. Name contains possible enclosing types, separated
+     * by {@code $}.
+     *
+     * @return the base type name given the set package and class name, but not including the generics/parameterized types
+     */
+    @Override
+    default String name() {
+        return TypeNameSupport.name(this);
+    }
+
+    /**
      * The base generic type name, stripped of any {@link TypeName#typeArguments()}.
      * This is equivalent to the type name represented by {@link TypeName#name()}.
      *
      * @return based generic type name
      */
-    TypeName genericTypeName();
+    default TypeName genericTypeName() {
+        return TypeNameSupport.genericTypeName(this);
+    }
+
+    /**
+     * The fully qualified type name.
+     *
+     * @return the fully qualified name
+     */
+    @Override
+    default String fqName() {
+        return TypeNameSupport.fqName(this);
+    }
+
+    /**
+     * Typically used as part of code-gen, when ".class" is tacked onto the suffix of what this returns.
+     *
+     * @return same as getName() unless the type is an array, and then will add "[]" to the return
+     */
+    @Override
+    default String declaredName() {
+        return TypeNameSupport.declaredName(this);
+    }
+
+    /**
+     * The fully resolved type. This will include the generic portion of the declaration, as well as any array
+     * declaration, etc.
+     *
+     * @return the fully qualified name which includes the use of generics/parameterized types, arrays, etc.
+     */
+    @Override
+    default String resolvedName() {
+        return TypeNameSupport.resolvedName(this);
+    }
+
+    /**
+     * Class name with enclosing types, separated by {@code .}.
+     * If we have an inner class {@code Builder} of class {@code Type}, this method would return
+     * {@code Type.Builder}.
+     *
+     * @return class name with enclosing types
+     */
+    default String classNameWithEnclosingNames() {
+        return TypeNameBlueprint.super.classNameWithEnclosingNames();
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.List}.
+     *
+     * @return if this is a list
+     */
+    default boolean isList() {
+        return TypeNameBlueprint.super.isList();
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Set}.
+     *
+     * @return if this is a set
+     */
+    default boolean isSet() {
+        return TypeNameBlueprint.super.isSet();
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Map}.
+     *
+     * @return if this is a map
+     */
+    default boolean isMap() {
+        return TypeNameBlueprint.super.isMap();
+    }
+
+    /**
+     * Indicates whether this type is a {@code java.util.Optional}.
+     *
+     * @return if this is an optional
+     */
+    default boolean isOptional() {
+        return TypeNameBlueprint.super.isOptional();
+    }
+
+    /**
+     * Indicates whether this type is a {@link java.util.function.Supplier}.
+     *
+     * @return if this is a supplier
+     */
+    default boolean isSupplier() {
+        return TypeNameBlueprint.super.isSupplier();
+    }
+
+    /**
+     * Simple class name with generic declaration (if part of this name).
+     *
+     * @return class name with generics, such as {@code Consumer<java.lang.String>}, or {@code Consumer<T>}
+     */
+    default String classNameWithTypes() {
+        return TypeNameBlueprint.super.classNameWithTypes();
+    }
 
     /**
      * Functions similar to {@link Class#getPackageName()}.
@@ -211,6 +339,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
      * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
      */
+    @Deprecated(since = "4.2.0", forRemoval = true)
     @Override
     List<String> typeParameters();
 
@@ -293,8 +422,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName prototype) {
             packageName(prototype.packageName());
             className(prototype.className());
-            if (!isEnclosingNamesMutated) {
-                enclosingNames.clear();
+            if (!this.isEnclosingNamesMutated) {
+                this.enclosingNames.clear();
             }
             addEnclosingNames(prototype.enclosingNames());
             primitive(prototype.primitive());
@@ -302,20 +431,20 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             vararg(prototype.vararg());
             generic(prototype.generic());
             wildcard(prototype.wildcard());
-            if (!isTypeArgumentsMutated) {
-                typeArguments.clear();
+            if (!this.isTypeArgumentsMutated) {
+                this.typeArguments.clear();
             }
             addTypeArguments(prototype.typeArguments());
-            if (!isTypeParametersMutated) {
-                typeParameters.clear();
+            if (!this.isTypeParametersMutated) {
+                this.typeParameters.clear();
             }
             addTypeParameters(prototype.typeParameters());
-            if (!isLowerBoundsMutated) {
-                lowerBounds.clear();
+            if (!this.isLowerBoundsMutated) {
+                this.lowerBounds.clear();
             }
             addLowerBounds(prototype.lowerBounds());
-            if (!isUpperBoundsMutated) {
-                upperBounds.clear();
+            if (!this.isUpperBoundsMutated) {
+                this.upperBounds.clear();
             }
             addUpperBounds(prototype.upperBounds());
             componentType(prototype.componentType());
@@ -339,50 +468,45 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName.BuilderBase<?, ?> builder) {
             packageName(builder.packageName());
             builder.className().ifPresent(this::className);
-            if (isEnclosingNamesMutated) {
+            if (this.isEnclosingNamesMutated) {
                 if (builder.isEnclosingNamesMutated) {
-                    addEnclosingNames(builder.enclosingNames);
-                }
+                    addEnclosingNames(builder.enclosingNames());
+            }
             } else {
-                enclosingNames.clear();
-                addEnclosingNames(builder.enclosingNames);
+                enclosingNames(builder.enclosingNames());
             }
             primitive(builder.primitive());
             array(builder.array());
             vararg(builder.vararg());
             generic(builder.generic());
             wildcard(builder.wildcard());
-            if (isTypeArgumentsMutated) {
+            if (this.isTypeArgumentsMutated) {
                 if (builder.isTypeArgumentsMutated) {
-                    addTypeArguments(builder.typeArguments);
-                }
-            } else {
-                typeArguments.clear();
-                addTypeArguments(builder.typeArguments);
+                    addTypeArguments(builder.typeArguments());
             }
-            if (isTypeParametersMutated) {
+            } else {
+                typeArguments(builder.typeArguments());
+            }
+            if (this.isTypeParametersMutated) {
                 if (builder.isTypeParametersMutated) {
-                    addTypeParameters(builder.typeParameters);
-                }
-            } else {
-                typeParameters.clear();
-                addTypeParameters(builder.typeParameters);
+                    addTypeParameters(builder.typeParameters());
             }
-            if (isLowerBoundsMutated) {
+            } else {
+                typeParameters(builder.typeParameters());
+            }
+            if (this.isLowerBoundsMutated) {
                 if (builder.isLowerBoundsMutated) {
-                    addLowerBounds(builder.lowerBounds);
-                }
-            } else {
-                lowerBounds.clear();
-                addLowerBounds(builder.lowerBounds);
+                    addLowerBounds(builder.lowerBounds());
             }
-            if (isUpperBoundsMutated) {
-                if (builder.isUpperBoundsMutated) {
-                    addUpperBounds(builder.upperBounds);
-                }
             } else {
-                upperBounds.clear();
-                addUpperBounds(builder.upperBounds);
+                lowerBounds(builder.lowerBounds());
+            }
+            if (this.isUpperBoundsMutated) {
+                if (builder.isUpperBoundsMutated) {
+                    addUpperBounds(builder.upperBounds());
+            }
+            } else {
+                upperBounds(builder.upperBounds());
             }
             builder.componentType().ifPresent(this::componentType);
             if (isAnnotationsMutated) {
@@ -407,8 +531,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Update builder from the provided type.
          *
-         * @param type type to get information (package name, class name, primitive, array), can only be a class or a
-         *             {@link io.helidon.common.GenericType}
+         * @param type    type to get information (package name, class name, primitive, array)
          * @return updated builder instance
          */
         public BUILDER type(Type type) {
@@ -443,6 +566,18 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Clear all enclosingNames.
+         *
+         * @return updated builder instance
+         * @see #enclosingNames()
+         */
+        public BUILDER clearEnclosingNames() {
+            this.isEnclosingNamesMutated = true;
+            this.enclosingNames.clear();
+            return self();
+        }
+
+        /**
          * Simple names of enclosing classes (if any exist).
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
@@ -453,7 +588,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER enclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
-            isEnclosingNamesMutated = true;
+            this.isEnclosingNamesMutated = true;
             this.enclosingNames.clear();
             this.enclosingNames.addAll(enclosingNames);
             return self();
@@ -470,7 +605,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addEnclosingNames(List<String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
-            isEnclosingNamesMutated = true;
+            this.isEnclosingNamesMutated = true;
             this.enclosingNames.addAll(enclosingNames);
             return self();
         }
@@ -480,14 +615,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
          *
-         * @param enclosingName enclosing classes simple names
+         * @param enclosingName add single enclosing classes simple names
          * @return updated builder instance
          * @see #enclosingNames()
          */
         public BUILDER addEnclosingName(String enclosingName) {
             Objects.requireNonNull(enclosingName);
             this.enclosingNames.add(enclosingName);
-            isEnclosingNamesMutated = true;
+            this.isEnclosingNamesMutated = true;
             return self();
         }
 
@@ -516,7 +651,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * If this is a representation of {@link io.helidon.common.types.TypeName#array()}, this method can identify that it
+         * was declared as a vararg.
          * This may be used for method/constructor parameters (which is the only place this is supported in Java).
          *
          * @param vararg whether an array is declared as a vararg
@@ -553,15 +689,29 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Clear all typeArguments.
+         *
+         * @return updated builder instance
+         * @see #typeParameters()
+         * @see #typeArguments()
+         */
+        public BUILDER clearTypeArguments() {
+            this.isTypeArgumentsMutated = true;
+            this.typeArguments.clear();
+            return self();
+        }
+
+        /**
          * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
+         * @see #typeParameters()
          * @see #typeArguments()
          */
         public BUILDER typeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
-            isTypeArgumentsMutated = true;
+            this.isTypeArgumentsMutated = true;
             this.typeArguments.clear();
             this.typeArguments.addAll(typeArguments);
             return self();
@@ -572,11 +722,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
+         * @see #typeParameters()
          * @see #typeArguments()
          */
         public BUILDER addTypeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
-            isTypeArgumentsMutated = true;
+            this.isTypeArgumentsMutated = true;
             this.typeArguments.addAll(typeArguments);
             return self();
         }
@@ -584,7 +735,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
-         * @param typeArgument the type arguments of this type, if this type supports generics/parameterized type
+         * @param typeArgument add single the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeParameters()
          * @see #typeArguments()
@@ -592,14 +743,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addTypeArgument(TypeName typeArgument) {
             Objects.requireNonNull(typeArgument);
             this.typeArguments.add(typeArgument);
-            isTypeArgumentsMutated = true;
+            this.isTypeArgumentsMutated = true;
             return self();
         }
 
         /**
          * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
-         * @param consumer the type arguments of this type, if this type supports generics/parameterized type
+         * @param consumer consumer of builder for the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeParameters()
          * @see #typeArguments()
@@ -608,7 +759,21 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
-            this.typeArguments.add(builder.build());
+            this.addTypeArgument(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all typeParameters.
+         *
+         * @return updated builder instance
+         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
+         * @see #typeParameters()
+         */
+        @Deprecated(since = "4.2.0", forRemoval = true)
+        public BUILDER clearTypeParameters() {
+            this.isTypeParametersMutated = true;
+            this.typeParameters.clear();
             return self();
         }
 
@@ -619,11 +784,13 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
+         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
+        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER typeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
             this.typeParameters.clear();
             this.typeParameters.addAll(typeParameters);
             return self();
@@ -636,11 +803,13 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
+         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
+        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER addTypeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
             return self();
         }
@@ -650,7 +819,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * for example in declaration of the top level type (as arguments are a function of usage of the type).
          * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
          *
-         * @param typeParameter type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+         * @param typeParameter add single type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
          * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
@@ -659,7 +828,20 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addTypeParameter(String typeParameter) {
             Objects.requireNonNull(typeParameter);
             this.typeParameters.add(typeParameter);
-            isTypeParametersMutated = true;
+            this.isTypeParametersMutated = true;
+            return self();
+        }
+
+        /**
+         * Clear all lowerBounds.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #lowerBounds()
+         */
+        public BUILDER clearLowerBounds() {
+            this.isLowerBoundsMutated = true;
+            this.lowerBounds.clear();
             return self();
         }
 
@@ -671,11 +853,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param lowerBounds list of lower bounds of this type
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
          * @see #lowerBounds()
          */
         public BUILDER lowerBounds(List<? extends TypeName> lowerBounds) {
             Objects.requireNonNull(lowerBounds);
-            isLowerBoundsMutated = true;
+            this.isLowerBoundsMutated = true;
             this.lowerBounds.clear();
             this.lowerBounds.addAll(lowerBounds);
             return self();
@@ -689,11 +872,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param lowerBounds list of lower bounds of this type
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
          * @see #lowerBounds()
          */
         public BUILDER addLowerBounds(List<? extends TypeName> lowerBounds) {
             Objects.requireNonNull(lowerBounds);
-            isLowerBoundsMutated = true;
+            this.isLowerBoundsMutated = true;
             this.lowerBounds.addAll(lowerBounds);
             return self();
         }
@@ -704,7 +888,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @param lowerBound list of lower bounds of this type
+         * @param lowerBound add single list of lower bounds of this type
          * @return updated builder instance
          * @see io.helidon.common.types.TypeName#generic()
          * @see #lowerBounds()
@@ -712,7 +896,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addLowerBound(TypeName lowerBound) {
             Objects.requireNonNull(lowerBound);
             this.lowerBounds.add(lowerBound);
-            isLowerBoundsMutated = true;
+            this.isLowerBoundsMutated = true;
             return self();
         }
 
@@ -722,17 +906,29 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @param consumer list of lower bounds of this type
+         * @param consumer consumer of builder for list of lower bounds of this type
          * @return updated builder instance
          * @see io.helidon.common.types.TypeName#generic()
-         * @see #lowerBounds()
          * @see #lowerBounds()
          */
         public BUILDER addLowerBound(Consumer<TypeName.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
-            this.lowerBounds.add(builder.build());
+            this.addLowerBound(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all upperBounds.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #upperBounds()
+         */
+        public BUILDER clearUpperBounds() {
+            this.isUpperBoundsMutated = true;
+            this.upperBounds.clear();
             return self();
         }
 
@@ -744,11 +940,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param upperBounds list of upper bounds of this type
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
          * @see #upperBounds()
          */
         public BUILDER upperBounds(List<? extends TypeName> upperBounds) {
             Objects.requireNonNull(upperBounds);
-            isUpperBoundsMutated = true;
+            this.isUpperBoundsMutated = true;
             this.upperBounds.clear();
             this.upperBounds.addAll(upperBounds);
             return self();
@@ -762,11 +959,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param upperBounds list of upper bounds of this type
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
          * @see #upperBounds()
          */
         public BUILDER addUpperBounds(List<? extends TypeName> upperBounds) {
             Objects.requireNonNull(upperBounds);
-            isUpperBoundsMutated = true;
+            this.isUpperBoundsMutated = true;
             this.upperBounds.addAll(upperBounds);
             return self();
         }
@@ -777,7 +975,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @param upperBound list of upper bounds of this type
+         * @param upperBound add single list of upper bounds of this type
          * @return updated builder instance
          * @see io.helidon.common.types.TypeName#generic()
          * @see #upperBounds()
@@ -785,7 +983,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addUpperBound(TypeName upperBound) {
             Objects.requireNonNull(upperBound);
             this.upperBounds.add(upperBound);
-            isUpperBoundsMutated = true;
+            this.isUpperBoundsMutated = true;
             return self();
         }
 
@@ -795,22 +993,21 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @param consumer list of upper bounds of this type
+         * @param consumer consumer of builder for list of upper bounds of this type
          * @return updated builder instance
          * @see io.helidon.common.types.TypeName#generic()
-         * @see #upperBounds()
          * @see #upperBounds()
          */
         public BUILDER addUpperBound(Consumer<TypeName.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
-            this.upperBounds.add(builder.build());
+            this.addUpperBound(builder.build());
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of componentType.
          *
          * @return updated builder instance
          * @see #componentType()
@@ -836,7 +1033,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Component type of array.
          *
-         * @param consumer component type of array
+         * @param consumer consumer of builder of component type of array
          * @return updated builder instance
          * @see #componentType()
          */
@@ -845,6 +1042,19 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.componentType(builder.build());
+            return self();
+        }
+
+        /**
+         * Component type of array.
+         *
+         * @param supplier supplier of component type of array
+         * @return updated builder instance
+         * @see #componentType()
+         */
+        public BUILDER componentType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.componentType(supplier.get());
             return self();
         }
 
@@ -999,7 +1209,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Functions similar to {@link Class#getPackageName()}.
          *
-         * @return the package name
+         * @return the package name, never null
          */
         public String packageName() {
             return packageName;
@@ -1008,7 +1218,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Functions the same as {@link Class#getSimpleName()}.
          *
-         * @return the class name
+         * @return the simple class name
          */
         public Optional<String> className() {
             return Optional.ofNullable(className);
@@ -1019,7 +1229,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
          *
-         * @return the enclosing names
+         * @return enclosing classes simple names
          */
         public List<String> enclosingNames() {
             return enclosingNames;
@@ -1028,7 +1238,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Functions similar to {@link Class#isPrimitive()}.
          *
-         * @return the primitive
+         * @return true if this type represents a primitive type
          */
         public boolean primitive() {
             return primitive;
@@ -1037,17 +1247,18 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Functions similar to {@link Class#isArray()}.
          *
-         * @return the array
+         * @return true if this type represents a primitive array []
          */
         public boolean array() {
             return array;
         }
 
         /**
-         * If this is a representation of {@link #array()}, this method can identify that it was declared as a vararg.
+         * If this is a representation of {@link io.helidon.common.types.TypeName#array()}, this method can identify that it
+         * was declared as a vararg.
          * This may be used for method/constructor parameters (which is the only place this is supported in Java).
          *
-         * @return the vararg
+         * @return whether an array is declared as a vararg
          */
         public boolean vararg() {
             return vararg;
@@ -1056,7 +1267,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Indicates whether this type is using generics.
          *
-         * @return the generic
+         * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
          */
         public boolean generic() {
             return generic;
@@ -1065,7 +1276,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Indicates whether this type is using wildcard generics.
          *
-         * @return the wildcard
+         * @return used to represent a wildcard (e.g., "? extends SomeType")
          */
         public boolean wildcard() {
             return wildcard;
@@ -1074,9 +1285,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
-         * @return the type arguments
+         * @return the type arguments of this type, if this type supports generics/parameterized type
          * @see #typeParameters()
-         * @see #typeArguments()
          */
         public List<TypeName> typeArguments() {
             return typeArguments;
@@ -1085,10 +1295,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
          * for example in declaration of the top level type (as arguments are a function of usage of the type).
-         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the
-         * type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
          *
-         * @return the type parameters
+         * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          */
         @Deprecated(since = "4.2.0", forRemoval = true)
@@ -1102,10 +1311,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @return the lower bounds
+         * @return list of lower bounds of this type
          * @see io.helidon.common.types.TypeName#generic()
-         * @see #lowerBounds()
-         * @see #lowerBounds()
          */
         public List<TypeName> lowerBounds() {
             return lowerBounds;
@@ -1117,10 +1324,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * <p>
          * This list may only have value if this is a generic type.
          *
-         * @return the upper bounds
+         * @return list of upper bounds of this type
          * @see io.helidon.common.types.TypeName#generic()
-         * @see #upperBounds()
-         * @see #upperBounds()
          */
         public List<TypeName> upperBounds() {
             return upperBounds;
@@ -1129,10 +1334,22 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Component type of array.
          *
-         * @return the component type
+         * @return component type of array
          */
         public Optional<TypeName> componentType() {
             return Optional.ofNullable(componentType);
+        }
+
+        @Override
+        public String toString() {
+            return "TypeNameBuilder{"
+                    + "packageName=" + packageName + ","
+                    + "className=" + className + ","
+                    + "enclosingNames=" + enclosingNames + ","
+                    + "primitive=" + primitive + ","
+                    + "array=" + array + ","
+                    + "componentType=" + componentType
+                    + "}";
         }
 
         /**
@@ -1148,7 +1365,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (className == null) {
-                collector.fatal(getClass(), "Property \"className\" is required, but not set");
+                collector.fatal(getClass(), "Property \"className\" must not be null, but not set");
             }
             collector.collect().checkValid();
         }
@@ -1160,6 +1377,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #componentType()
          */
+        @SuppressWarnings("unchecked")
         BUILDER componentType(Optional<? extends TypeName> componentType) {
             Objects.requireNonNull(componentType);
             this.componentType = componentType.map(TypeName.class::cast).orElse(this.componentType);
@@ -1221,36 +1439,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public TypeName unboxed() {
                 return TypeNameSupport.unboxed(this);
+                this.componentType = builder.componentType().map(Function.identity());
             }
 
             @Override
             public String toString() {
                 return TypeNameSupport.toString(this);
-            }
-
-            @Override
-            public String name() {
-                return TypeNameSupport.name(this);
-            }
-
-            @Override
-            public TypeName genericTypeName() {
-                return TypeNameSupport.genericTypeName(this);
-            }
-
-            @Override
-            public String fqName() {
-                return TypeNameSupport.fqName(this);
-            }
-
-            @Override
-            public String declaredName() {
-                return TypeNameSupport.declaredName(this);
-            }
-
-            @Override
-            public String resolvedName() {
-                return TypeNameSupport.resolvedName(this);
             }
 
             @Override
@@ -1299,6 +1493,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
+            @Deprecated(since = "4.2.0", forRemoval = true)
             public List<String> typeParameters() {
                 return typeParameters;
             }

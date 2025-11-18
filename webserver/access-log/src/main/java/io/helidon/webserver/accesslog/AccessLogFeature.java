@@ -31,7 +31,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Service that adds support for Access logging to Server.
  */
-@RuntimeType.PrototypedBy(AccessLogConfig.class)
 public final class AccessLogFeature implements Weighted, ServerFeature, RuntimeType.Api<AccessLogConfig> {
     /**
      * Name of the {@link System#getLogger(String)} used to log access log records.

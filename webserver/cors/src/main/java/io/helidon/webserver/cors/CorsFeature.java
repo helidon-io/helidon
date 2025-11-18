@@ -29,7 +29,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Adds CORS support to Helidon WebServer.
  */
-@RuntimeType.PrototypedBy(CorsConfig.class)
 public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<CorsConfig> {
     /**
      * Default weight of the feature.

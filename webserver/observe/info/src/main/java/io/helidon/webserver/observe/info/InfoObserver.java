@@ -30,7 +30,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Observer for application information.
  */
-@RuntimeType.PrototypedBy(InfoObserverConfig.class)
 public class InfoObserver implements Observer, RuntimeType.Api<InfoObserverConfig> {
     private final InfoObserverConfig config;
 

@@ -33,7 +33,6 @@ import io.helidon.common.context.Contexts;
  * Supplier of a custom thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
-@RuntimeType.PrototypedBy(ThreadPoolConfig.class)
 public final class ThreadPoolSupplier implements Supplier<ExecutorService>, RuntimeType.Api<ThreadPoolConfig> {
     // this type is used on config blueprint, as the default value for rejection policy
     static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();

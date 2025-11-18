@@ -30,7 +30,6 @@ import io.helidon.builder.api.RuntimeType;
  *      .build()
  * }</pre>
  */
-@RuntimeType.PrototypedBy(CronConfig.class)
 public interface Cron extends RuntimeType.Api<CronConfig>, Task {
 
     /**

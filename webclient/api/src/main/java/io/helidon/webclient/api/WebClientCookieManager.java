@@ -33,7 +33,6 @@ import io.helidon.http.HeaderNames;
 /**
  * Helidon WebClient cookie manager.
  */
-@RuntimeType.PrototypedBy(WebClientCookieManagerConfig.class)
 public class WebClientCookieManager extends CookieManager implements RuntimeType.Api<WebClientCookieManagerConfig> {
 
     private static final String COOKIE = HeaderNames.COOKIE.defaultCase();

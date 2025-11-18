@@ -31,7 +31,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Config Observer configuration.
  */
-@RuntimeType.PrototypedBy(ConfigObserverConfig.class)
 public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverConfig> {
     private final ConfigObserverConfig config;
     private final List<Pattern> patterns;

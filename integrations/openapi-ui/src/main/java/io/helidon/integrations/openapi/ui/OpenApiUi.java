@@ -43,7 +43,6 @@ import io.smallrye.openapi.ui.Option;
 /**
  * An {@link OpenApiService} that serves OpenApi UI.
  */
-@RuntimeType.PrototypedBy(OpenApiUiConfig.class)
 public final class OpenApiUi implements OpenApiService, RuntimeType.Api<OpenApiUiConfig> {
 
     /**

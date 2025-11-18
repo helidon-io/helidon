@@ -27,7 +27,6 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * HTTP/1.1 client.
  */
-@RuntimeType.PrototypedBy(Http1ClientConfig.class)
 public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType.Api<Http1ClientConfig> {
     /**
      * ID of HTTP/1.1 protocol, as used for example in ALPN.

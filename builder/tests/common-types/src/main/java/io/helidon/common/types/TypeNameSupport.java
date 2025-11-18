@@ -93,6 +93,16 @@ final class TypeNameSupport {
     private TypeNameSupport() {
     }
 
+    /**
+     * Compare with another type name.
+     * First compares by {@link io.helidon.common.types.TypeName#name()}, than by
+     * {@link io.helidon.common.types.TypeName#primitive}, and finally by {@link io.helidon.common.types.TypeName#array()}.
+     *
+     * @param typeName ignored
+     * @param o type name to compare to
+     * @return comparison result
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override")
     static int compareTo(TypeName typeName, TypeName o) {
@@ -135,6 +145,7 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override")
     static String toString(TypeName instance) {
         return instance.resolvedName();
     }
@@ -258,7 +269,7 @@ final class TypeNameSupport {
      * @param type the type
      * @return type name for the provided type
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName create(Type type) {
         if (type instanceof Class<?> clazz) {
             return TypeStash.stash(clazz);
@@ -278,7 +289,7 @@ final class TypeNameSupport {
      * @param typeName the FQN of the class type
      * @return the TypeName for the provided type name
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName create(String typeName) {
         Objects.requireNonNull(typeName);
         return TypeStash.stash(typeName);
@@ -385,7 +396,7 @@ final class TypeNameSupport {
      * @param genericAliasTypeName the generic alias type name
      * @return the TypeName for the provided type name
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
         return TypeName.builder()
                 .generic(true)

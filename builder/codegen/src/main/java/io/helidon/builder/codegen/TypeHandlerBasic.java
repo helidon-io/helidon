@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.builder.codegen;
 
 import java.util.EnumMap;
@@ -272,7 +288,7 @@ class TypeHandlerBasic implements TypeHandler {
         Javadoc getterJavadoc = deprecation(getterJavadoc());
 
         generatedMethod(OptionMethodType.PROTOTYPE_GETTER, preparePrototypeGetter(getterJavadoc));
-        generatedMethod(OptionMethodType.IMPL_GETTER, prepareImplGetter(getterJavadoc));
+        generatedMethod(OptionMethodType.IMPL_GETTER, prepareImplGetter());
         generatedMethod(OptionMethodType.BUILDER_GETTER, Optional.of(prepareBuilderGetter(getterJavadoc)));
         generatedMethod(OptionMethodType.BUILDER_SETTER, Optional.of(prepareBuilderSetter(getterJavadoc)));
         generatedMethod(OptionMethodType.BUILDER_SETTER_CHAR_ARRAY, prepareBuilderSetterCharArray(getterJavadoc));
@@ -447,21 +463,7 @@ class TypeHandlerBasic implements TypeHandler {
         String optionName = option().name();
         Javadoc javadoc = setterJavadoc(getterJavadoc, optionName, "prototype of ");
 
-        TypeName paramType = optionBuilder.builderMethodType();
-
-        var method = TypedElementInfo.builder()
-                .kind(ElementKind.METHOD)
-                .accessModifier(option().accessModifier())
-                .typeName(Utils.builderReturnType())
-                .elementName(option().setterName())
-                .update(this::deprecation)
-                .update(it -> option().annotations().forEach(it::addAnnotation));
-
-        method.addParameterArgument(param -> param
-                .kind(ElementKind.PARAMETER)
-                .typeName(paramType)
-                .elementName(optionName)
-        );
+        var method = setterMethodBuilder(optionBuilder.builderMethodType(), optionName);
 
         /*
         public BUILDER option(Prototype prototype) {
@@ -522,24 +524,11 @@ class TypeHandlerBasic implements TypeHandler {
             var factoryMethod = rti.factoryMethod();
             Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
 
-            TypeName paramType = TypeName.builder()
-                    .type(Consumer.class)
-                    .addTypeArgument(optionBuilder.builderType())
-                    .build();
-
-            var method = TypedElementInfo.builder()
-                    .kind(ElementKind.METHOD)
-                    .accessModifier(option().accessModifier())
-                    .typeName(Utils.builderReturnType())
-                    .elementName(option().setterName())
-                    .update(this::deprecation)
-                    .update(it -> option().annotations().forEach(it::addAnnotation));
-
-            method.addParameterArgument(param -> param
-                    .kind(ElementKind.PARAMETER)
-                    .typeName(paramType)
-                    .elementName("consumer")
-            );
+            var method = setterMethodBuilder(TypeName.builder()
+                                                     .type(Consumer.class)
+                                                     .addTypeArgument(optionBuilder.builderType())
+                                                     .build(),
+                                             "consumer");
 
             Consumer<ContentBuilder<?>> contentConsumer = it -> {
                 it.addContent(Objects.class)
@@ -584,24 +573,10 @@ class TypeHandlerBasic implements TypeHandler {
             var optionBuilder = option().builderInfo().get();
             Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
 
-            TypeName paramType = TypeName.builder()
-                    .type(Consumer.class)
-                    .addTypeArgument(optionBuilder.builderType())
-                    .build();
-
-            var method = TypedElementInfo.builder()
-                    .kind(ElementKind.METHOD)
-                    .accessModifier(option().accessModifier())
-                    .typeName(Utils.builderReturnType())
-                    .elementName(option().setterName())
-                    .update(this::deprecation)
-                    .update(it -> option().annotations().forEach(it::addAnnotation));
-
-            method.addParameterArgument(param -> param
-                    .kind(ElementKind.PARAMETER)
-                    .typeName(paramType)
-                    .elementName("consumer")
-            );
+            var method = setterMethodBuilder(TypeName.builder()
+                                                     .type(Consumer.class)
+                                                     .addTypeArgument(optionBuilder.builderType())
+                                                     .build(), "consumer");
 
             Consumer<ContentBuilder<?>> contentConsumer = it -> {
                 it.addContent(Objects.class)
@@ -635,24 +610,10 @@ class TypeHandlerBasic implements TypeHandler {
                 .parameters(Map.of())
                 .build();
 
-        TypeName paramType = TypeName.builder()
-                .type(Consumer.class)
-                .addTypeArgument(type())
-                .build();
-
-        var method = TypedElementInfo.builder()
-                .kind(ElementKind.METHOD)
-                .accessModifier(option().accessModifier())
-                .typeName(Utils.builderReturnType())
-                .elementName(option().setterName())
-                .update(this::deprecation)
-                .update(it -> option().annotations().forEach(it::addAnnotation));
-
-        method.addParameterArgument(param -> param
-                .kind(ElementKind.PARAMETER)
-                .typeName(paramType)
-                .elementName("consumer")
-        );
+        var method = setterMethodBuilder(TypeName.builder()
+                                                 .type(Consumer.class)
+                                                 .addTypeArgument(type())
+                                                 .build(), "consumer");
 
         Consumer<ContentBuilder<?>> contentConsumer = it -> {
             it.addContent(Objects.class)
@@ -688,21 +649,7 @@ class TypeHandlerBasic implements TypeHandler {
 
         Javadoc javadoc = setterJavadoc(getterJavadoc, "supplier", "supplier of ");
 
-        TypeName paramType = asTypeArgument(TypeNames.SUPPLIER);
-
-        var method = TypedElementInfo.builder()
-                .kind(ElementKind.METHOD)
-                .accessModifier(option().accessModifier())
-                .typeName(Utils.builderReturnType())
-                .elementName(option().setterName())
-                .update(this::deprecation)
-                .update(it -> option().annotations().forEach(it::addAnnotation));
-
-        method.addParameterArgument(param -> param
-                .kind(ElementKind.PARAMETER)
-                .typeName(paramType)
-                .elementName("supplier")
-        );
+        var method = setterMethodBuilder(asTypeArgument(TypeNames.SUPPLIER), "supplier");
 
         Consumer<ContentBuilder<?>> contentConsumer = it ->
                 it.addContent(Objects.class)
@@ -890,10 +837,31 @@ class TypeHandlerBasic implements TypeHandler {
                 .build();
     }
 
+    private TypedElementInfo.Builder setterMethodBuilder(TypeName paramType, String paramName) {
+        var method = methodBuilderNoParam();
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(paramType)
+                .elementName(paramName)
+        );
+        return method;
+    }
+
+    private TypedElementInfo.Builder methodBuilderNoParam() {
+        return TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(Utils.builderReturnType())
+                .elementName(option().setterName())
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+    }
+
     /*
      * This method is always the same, regardless of option type.
      */
-    private Optional<GeneratedMethod> prepareImplGetter(Javadoc javadoc) {
+    private Optional<GeneratedMethod> prepareImplGetter() {
         if (option().builderOptionOnly()) {
             return Optional.empty();
         }
@@ -909,7 +877,6 @@ class TypeHandlerBasic implements TypeHandler {
 
         return Optional.of(GeneratedMethod.builder()
                                    .method(method.build())
-                                   .javadoc(javadoc)
                                    .contentBuilder(it -> it.addContentLine("return " + option().name() + ";"))
                                    .build());
     }
@@ -1000,7 +967,7 @@ class TypeHandlerBasic implements TypeHandler {
     private Optional<GeneratedMethod> extensions(OptionMethodType type, GeneratedMethod method) {
         GeneratedMethod result = method;
         for (BuilderCodegenExtension extension : extensions) {
-            result = extension.method(result, type)
+            result = extension.method(option(), result, type)
                     .orElse(null);
             if (result == null) {
                 // extension removed this method

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -414,7 +414,7 @@ public final class Method extends Executable {
 
         /**
          * Create all method metadata from the provided method information.
-         * This will populate annotations, return type, method name etc., except for the body.
+         * This will populate annotations, return type, method name etc., except for the body and javadoc.
          *
          * @param methodInfo method element information
          * @return updated builder
@@ -423,17 +423,14 @@ public final class Method extends Executable {
             name(methodInfo.elementName())
                     .accessModifier(methodInfo.accessModifier())
                     .returnType(methodInfo.typeName())
-                    .update(it -> methodInfo.typeParameters().forEach(typeParam -> it.addGenericArgument(TypeArgument.create(typeParam))))
+                    .update(it -> methodInfo.typeParameters()
+                            .forEach(typeParam -> it.addGenericArgument(TypeArgument.create(typeParam))))
                     .update(it -> methodInfo.annotations().forEach(it::addAnnotation))
                     .isDefault(methodInfo.elementModifiers().contains(Modifier.DEFAULT))
                     .isFinal(methodInfo.elementModifiers().contains(Modifier.FINAL))
                     .isAbstract(methodInfo.elementModifiers().contains(Modifier.ABSTRACT))
                     .isStatic(methodInfo.elementModifiers().contains(Modifier.STATIC))
                     .update(it -> addGeneratedMethodParams(methodInfo.parameterArguments(), it));
-
-            methodInfo.description()
-                    .map(Javadoc::parse)
-                    .ifPresent(this::javadoc);
 
             return this;
         }

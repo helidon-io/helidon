@@ -25,7 +25,6 @@ import io.helidon.common.tls.Tls;
 /**
  * Server that opens server sockets and handles requests through routing.
  */
-@RuntimeType.PrototypedBy(WebServerConfig.class)
 public interface WebServer extends RuntimeType.Api<WebServerConfig> {
     /**
      * The default server socket configuration name. All the default server socket

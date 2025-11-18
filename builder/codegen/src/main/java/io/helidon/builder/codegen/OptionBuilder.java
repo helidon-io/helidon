@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -34,7 +33,6 @@ import io.helidon.common.types.TypeName;
  *
  * @see #builder()
  */
-@Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.builder.codegen.OptionBuilderBlueprint")
 public interface OptionBuilder extends Prototype.Api {
 
     /**
@@ -90,10 +88,11 @@ public interface OptionBuilder extends Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionBuilder}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends OptionBuilder>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private String buildMethodName = "build";
         private String builderMethodName = "builder";
@@ -377,9 +376,9 @@ public interface OptionBuilder extends Prototype.Api {
                     return false;
                 }
                 return Objects.equals(builderMethodName, other.builderMethodName())
-                    && Objects.equals(builderType, other.builderType())
-                    && Objects.equals(builderMethodType, other.builderMethodType())
-                    && Objects.equals(buildMethodName, other.buildMethodName());
+                        && Objects.equals(builderType, other.builderType())
+                        && Objects.equals(builderMethodType, other.builderMethodType())
+                        && Objects.equals(buildMethodName, other.buildMethodName());
             }
 
             @Override

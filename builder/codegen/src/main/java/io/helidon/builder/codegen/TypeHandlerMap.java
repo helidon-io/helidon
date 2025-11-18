@@ -182,6 +182,11 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .parameters(Map.of())
                 .addParameter("key", "key to add or replace")
                 .addParameter(singularName, "new value for the key")
+                .update(it -> {
+                    if (sameGeneric) {
+                        it.addGenericArgument("TYPE", "The key and value has to use the same generic type.");
+                    }
+                })
                 .build();
 
         var method = TypedElementInfo.builder()
@@ -365,8 +370,8 @@ class TypeHandlerMap extends TypeHandlerContainer {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderSingularAddConsumer(Javadoc getterJavadoc) {
-        if (option().singular().isEmpty() ||
-                (option().builderInfo().isEmpty() && option().runtimeType().isEmpty())) {
+        if (option().singular().isEmpty()
+                || (option().builderInfo().isEmpty() && option().runtimeType().isEmpty())) {
             return Optional.empty();
         }
 

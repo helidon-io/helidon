@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -93,7 +94,8 @@ class BuilderCodegen implements CodegenExtension {
 
     BuilderCodegen(CodegenContext ctx) {
         this.ctx = ctx;
-        this.extensions = HelidonServiceLoader.create(BuilderCodegenExtensionProvider.class)
+        this.extensions = HelidonServiceLoader.create(ServiceLoader.load(BuilderCodegenExtensionProvider.class,
+                                                                         BuilderCodegen.class.getClassLoader()))
                 .asList();
     }
 
@@ -384,7 +386,7 @@ class BuilderCodegen implements CodegenExtension {
         FactoryOption.options(ctx, roundContext, tmpPrototypeInfo, newOptions, existingOptions);
 
         for (BuilderCodegenExtension extension : extensions) {
-            newOptions = extension.options(newOptions);
+            newOptions = extension.options(tmpPrototypeInfo, newOptions);
         }
 
         // now we have final prototype info - processed by all extensions, next we start collecting options
@@ -445,29 +447,22 @@ class BuilderCodegen implements CodegenExtension {
         }
 
         List<OptionInfo> options = new ArrayList<>();
-        List<MethodUpdate> methodUpdate = new ArrayList<>();
         List<NewDefault> newDefaults = new ArrayList<>();
 
-        for (String optionName : newOptionMap.keySet()) {
-            if (existingOptionMap.containsKey(optionName)) {
+        for (var optionEntry : newOptionMap.entrySet()) {
+            if (existingOptionMap.containsKey(optionEntry.getKey())) {
                 // this option already exists on super-prototype, handle it (use first default we find)
-                newOptionMap.get(optionName)
+                optionEntry.getValue()
                         .stream()
                         .filter(it -> it.defaultValue().isPresent())
                         .findFirst()
-                        .ifPresent(it -> newDefaults.add(new NewDefault(optionName,
+                        .ifPresent(it -> newDefaults.add(new NewDefault(optionEntry.getKey(),
                                                                         setterName(prototypeInfo,
-                                                                                   existingOptionMap.get(optionName)),
+                                                                                   existingOptionMap.get(optionEntry.getKey())),
                                                                         it.defaultValue().get())));
-                // and now check if new options add something
-                OptionInfo newOption = mergeOptions(newOptionMap.get(optionName));
-                OptionInfo existingOption = mergeOptions(existingOptionMap.get(optionName));
-                if (methodUpdate(newOption, existingOption)) {
-                    methodUpdate.add(new MethodUpdate(newOption, existingOption));
-                }
             } else {
                 // this is a net-new option
-                List<OptionInfo> optionInfos = newOptionMap.get(optionName);
+                List<OptionInfo> optionInfos = optionEntry.getValue();
                 if (optionInfos.size() == 1) {
                     options.add(optionInfos.getFirst());
                 } else {
@@ -482,7 +477,7 @@ class BuilderCodegen implements CodegenExtension {
                 .map(it -> OptionHandler.create(extensions, prototypeInfo, it))
                 .toList();
 
-        generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults, methodUpdate);
+        generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults);
     }
 
     private void serviceRegistryOption(PrototypeInfo prototypeInfo, List<OptionInfo> newOptions) {
@@ -525,6 +520,11 @@ class BuilderCodegen implements CodegenExtension {
         }
 
         if (hasConfigOption(existingOptions)) {
+            return;
+        }
+
+        if (prototypeInfo.superPrototype().isPresent()) {
+            // assume configurable
             return;
         }
 
@@ -596,7 +596,7 @@ class BuilderCodegen implements CodegenExtension {
 
             if (newOptions.stream()
                     .filter(it -> Utils.typesEqual(returnType, Utils.realType(it.declaredType()))
-                            || Utils.resoledTypesEqual(returnType, it.declaredType()))
+                            || Utils.resolvedTypesEqual(returnType, it.declaredType()))
                     .findAny()
                     .isEmpty()) {
 
@@ -621,21 +621,6 @@ class BuilderCodegen implements CodegenExtension {
                 .merge(configured.merge())
                 .configKey(configured.configKey() + "-discover-services")
         );
-    }
-
-    private boolean methodUpdate(OptionInfo newOption, OptionInfo existingOption) {
-        if (!newOption.annotations().equals(existingOption.annotations())) {
-            return true;
-        }
-        if (newOption.decorator().isPresent() && !newOption.decorator().equals(existingOption.decorator())) {
-            return true;
-        }
-
-        if (newOption.configured().isPresent() && !existingOption.configured().equals(newOption.configured())) {
-            return true;
-        }
-
-        return false;
     }
 
     private OptionInfo mergeOptions(List<OptionInfo> optionInfos) {
@@ -678,17 +663,28 @@ class BuilderCodegen implements CodegenExtension {
                                    List<BuilderCodegenExtension> extensions,
                                    PrototypeInfo prototypeInfo,
                                    List<OptionHandler> options,
-                                   List<NewDefault> newDefaults,
-                                   List<MethodUpdate> methodUpdate) {
+                                   List<NewDefault> newDefaults) {
 
         TypeInfo blueprint = prototypeInfo.blueprint();
         TypeName prototype = prototypeInfo.prototypeType();
         String ifaceName = prototype.className();
         List<TypeName> typeGenericArguments = blueprint.typeName().typeArguments();
         String typeArgumentString = createTypeArgumentString(typeGenericArguments);
+        var javadoc = prototypeInfo.javadoc();
         List<TypeArgument> typeArguments = typeGenericArguments
                 .stream()
-                .map(TypeArgument::create)
+                .map(it -> {
+                    var builder = TypeArgument.builder()
+                            .token(it.className());
+                    if (!it.upperBounds().isEmpty()) {
+                        it.upperBounds().forEach(builder::addBound);
+                    }
+                    List<String> tokenJavadoc = javadoc.genericsTokens().get(it.className());
+                    if (tokenJavadoc != null) {
+                        builder.description(tokenJavadoc);
+                    }
+                    return builder.build();
+                })
                 .toList();
 
         // prototype interface (with inner classes: BuilderBase, Builder, and Impl)
@@ -698,7 +694,6 @@ class BuilderCodegen implements CodegenExtension {
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  blueprint.typeName(),
                                                  prototype))
-                .javadoc(prototypeInfo.javadoc())
                 .accessModifier(prototypeInfo.accessModifier());
 
         typeArguments.forEach(classModel::addGenericArgument);
@@ -706,7 +701,9 @@ class BuilderCodegen implements CodegenExtension {
         if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
             classModel.addJavadocTag("see", "#builder()");
         }
-        if (noRequired(options) && prototypeInfo.createEmptyCreate() && prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
+        if (noRequired(options)
+                && prototypeInfo.createEmptyCreate()
+                && prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
             classModel.addJavadocTag("see", "#create()");
         }
 
@@ -762,24 +759,32 @@ class BuilderCodegen implements CodegenExtension {
         // re-create all blueprint methods to have correct javadoc references
         generatePrototypeMethods(classModel, options);
 
+        List<OptionInfo> optionList = options.stream()
+                .map(OptionHandler::option)
+                .collect(Collectors.toUnmodifiableList());
+
         // abstract class BuilderBase...
-        GenerateAbstractBuilder.generate(classModel,
+        GenerateAbstractBuilder.generate(extensions,
+                                         classModel,
                                          prototypeInfo,
-                                         prototypeInfo.runtimeType().orElseGet(prototypeInfo::prototypeType),
                                          typeArguments,
                                          typeGenericArguments,
                                          options,
-                                         newDefaults,
-                                         methodUpdate);
+                                         newDefaults);
 
         // class Builder extends BuilderBase ...
-        GenerateBuilder.generate(classModel,
+        GenerateBuilder.generate(extensions,
+                                 classModel,
                                  prototypeInfo,
                                  typeArguments,
-                                 typeGenericArguments);
+                                 typeGenericArguments,
+                                 options);
 
+        classModel.javadoc(prototypeInfo.javadoc());
         for (BuilderCodegenExtension extension : extensions) {
-            extension.updatePrototype(classModel);
+            extension.updatePrototype(prototypeInfo,
+                                      optionList,
+                                      classModel);
         }
 
         ctx.addGeneratedType(prototype,
@@ -798,7 +803,7 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     private List<BuilderCodegenExtension> findExtensions(PrototypeInfo prototypeInfo) {
-        List<Annotation> extensions = prototypeInfo.findAnnotation(PROTOTYPE_EXTENSIONS)
+        List<Annotation> extensions = prototypeInfo.blueprint().findAnnotation(PROTOTYPE_EXTENSIONS)
                 .flatMap(it -> it.annotationValues())
                 .orElseGet(List::of);
         if (!extensions.isEmpty()) {
@@ -897,9 +902,6 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     record NewDefault(String name, String setterName, Consumer<ContentBuilder<?>> defaultValue) {
-    }
-
-    record MethodUpdate(OptionInfo newValues, OptionInfo existingValues) {
     }
 
     private record ExtensionAndTypes(List<TypeName> types, BuilderCodegenExtensionProvider provider) {
