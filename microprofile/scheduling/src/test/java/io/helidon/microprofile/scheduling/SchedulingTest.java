@@ -44,11 +44,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @HelidonTest
 @DisableDiscovery
 @AddBean(SchedulingTest.ScheduledBean.class)
+@AddBean(SchedulingTest.ScheduledVetoMeBean.class)
 @AddExtension(SchedulingCdiExtension.class)
+@AddExtension(TestVetoingCdiExtension.class)
 @Configuration(configSources = "test.properties")
 public class SchedulingTest {
 
@@ -124,6 +127,12 @@ public class SchedulingTest {
     }
 
     @Test
+    void vetoedShouldNotBeInvoked() throws InterruptedException {
+        Thread.sleep(3000);
+        assertFalse(ScheduledVetoMeBean.triggered);
+    }
+
+    @Test
     void fixedRate() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least 5 times",
                    fixedRateLatch.await(3, TimeUnit.SECONDS));
@@ -196,7 +205,21 @@ public class SchedulingTest {
             duration = System.currentTimeMillis() - stamp;
             stamp = System.currentTimeMillis();
             countDownLatch.countDown();
-            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now().toString());
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now());
+        }
+    }
+
+    @ApplicationScoped
+    public static class ScheduledVetoMeBean {
+
+        private static final System.Logger LOGGER = System.getLogger(ScheduledVetoMeBean.class.getName());
+
+        static volatile boolean triggered = false;
+
+        @Scheduling.Cron("0/1 * * * * ? *")
+        public void test1sec() {
+            triggered = true;
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now());
         }
     }
 }

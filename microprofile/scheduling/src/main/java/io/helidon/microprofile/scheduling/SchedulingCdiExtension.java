@@ -112,6 +112,9 @@ public class SchedulingCdiExtension implements Extension {
         for (AnnotatedMethod<?> am : methods) {
             Class<?> aClass = am.getDeclaringType().getJavaClass();
             Bean<?> bean = beans.get(am);
+            if (bean == null) {
+                continue;
+            }
             Object beanInstance = lookup(bean, beanManager);
             Method method = am.getJavaMember();
 
