@@ -935,6 +935,15 @@
                             <rules>
                                 <dependencyConvergence>
                                     <uniqueVersions>true</uniqueVersions>
+                                    <excludes>
+                                        <!-- These artifacts consistently show up in dependency convergence violations -->
+                                        <!-- They are brought in by deprecated helidon-security-providers-google-login  -->
+                                        <!-- We exclude them from enforcement rather than use messy work-arounds -->
+                                        <exclude>com.google.http-client:google-http-client</exclude>
+                                        <exclude>com.google.http-client:google-http-client-gson</exclude>
+                                        <exclude>com.google.errorprone:error_prone_annotations</exclude>
+                                        <exclude>com.google.j2objc:j2objc-annotations</exclude>
+                                    </excludes>
                                 </dependencyConvergence>
                             </rules>
                         </configuration>
