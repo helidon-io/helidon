@@ -87,7 +87,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                 System.setProperty("helidon.config.profile", "test");
             }
             TestConfigSource testConfigSource = new TestConfigSource();
-            Services.add(ConfigSource.class, 10000D, testConfigSource);
+            Services.addNamed(ConfigSource.class, 10000D, testConfigSource, "helidon-test");
 
             Class<?> testClass = context.getRequiredTestClass();
             super.testClass(testClass);
