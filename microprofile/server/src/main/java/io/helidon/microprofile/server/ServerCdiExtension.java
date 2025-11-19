@@ -36,6 +36,7 @@ import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.ResumableSupport;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.Prioritized;
@@ -228,6 +229,25 @@ public class ServerCdiExtension implements Extension {
      */
     public int port(String name) {
         return webserver.port(name);
+    }
+
+    /**
+     * Reload TLS keystore and truststore configuration for the default socket.
+     *
+     * @param tls new TLS configuration
+     */
+    public void reloadTls(Tls tls) {
+        webserver.reloadTls(tls);
+    }
+
+    /**
+     * Reload TLS keystore and truststore configuration for the named socket.
+     *
+     * @param socketName socket name to reload TLS configuration on
+     * @param tls new TLS configuration
+     */
+    public void reloadTls(String socketName, Tls tls) {
+        webserver.reloadTls(socketName, tls);
     }
 
     /**
