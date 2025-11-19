@@ -16,8 +16,12 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @HelidonTest
 @DisableDiscovery
 @AddBeans({
-        @AddBean(ScheduledBean.class),
+        @AddBean(SchedulingTest.ScheduledBean.class),
         @AddBean(SchedulingTest.ScheduledVetoMeBean.class)
 })
 @AddExtensions({
@@ -131,7 +135,7 @@ public class SchedulingTest {
     void executedEvery2Sec() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least twice",
                 scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
-        assertDuration(TWO_SEC_MILLIS, scheduledBean.getDuration(), 2000);
+        assertDuration(TWO_SEC_MILLIS, scheduledBean.getDurations(), TWO_SEC_MILLIS);
     }
 
     @Test
@@ -182,10 +186,43 @@ public class SchedulingTest {
                 overriddenTimeUnitFuture.get(5, TimeUnit.SECONDS), equalTo(TimeUnit.SECONDS));
     }
 
-    private void assertDuration(long expectedDuration, long duration, long allowedDiscrepancy) {
-        String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";
+    private void assertDuration(long expectedDuration, List<Duration> durations, long allowedDiscrepancy) {
+        var duration = durations.get(0).toMillis();
+        String durationString = "Expected duration is " + expectedDuration + " mls, but was " + duration + " mls";
         assertThat(durationString, duration, greaterThan(expectedDuration - allowedDiscrepancy));
         assertThat(durationString, duration, lessThan(expectedDuration + allowedDiscrepancy));
+    }
+
+    @ApplicationScoped
+    public static class ScheduledBean {
+
+        private static final System.Logger LOGGER = System.getLogger(ScheduledBean.class.getName());
+
+        final CountDownLatch countDownLatch = new CountDownLatch(2);
+
+        private final List<Duration> durations = new CopyOnWriteArrayList<>();
+
+        volatile long duration = 0;
+        volatile long stamp = 0;
+
+        public CountDownLatch getCountDownLatch() {
+            return countDownLatch;
+        }
+
+        public List<Duration> getDurations() {
+            return durations;
+        }
+
+        @Scheduled("0/2 * * * * ? *")
+        public void test2sec() {
+            if(stamp != 0) {
+                duration = System.currentTimeMillis() - stamp;
+                durations.add(Duration.ofMillis(duration));
+            }
+            stamp = System.currentTimeMillis();
+            LOGGER.log(System.Logger.Level.DEBUG, () -> Thread.currentThread().getName() + " Executed at " + Instant.ofEpochMilli(stamp) + "(" + stamp);
+            countDownLatch.countDown();
+        }
     }
 
     @ApplicationScoped
