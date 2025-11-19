@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.time.LocalTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +34,7 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.scheduling.CronInvocation;
 import io.helidon.scheduling.FixedRateInvocation;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -40,14 +42,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @HelidonTest
 @DisableDiscovery
 @AddBeans({
-        @AddBean(ScheduledBean.class)
+        @AddBean(ScheduledBean.class),
+        @AddBean(SchedulingTest.ScheduledVetoMeBean.class)
 })
 @AddExtensions({
         @AddExtension(SchedulingCdiExtension.class),
+        @AddExtension(TestVetoingCdiExtension.class)
 })
 @Configuration(configSources = "test.properties")
 public class SchedulingTest {
@@ -130,6 +135,12 @@ public class SchedulingTest {
     }
 
     @Test
+    void vetoedShouldNotBeInvoked() throws InterruptedException {
+        Thread.sleep(3000);
+        assertFalse(ScheduledVetoMeBean.triggered);
+    }
+
+    @Test
     void fixedRate() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least 5 times",
                 fixedRateLatch.await(3, TimeUnit.SECONDS));
@@ -175,5 +186,19 @@ public class SchedulingTest {
         String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";
         assertThat(durationString, duration, greaterThan(expectedDuration - allowedDiscrepancy));
         assertThat(durationString, duration, lessThan(expectedDuration + allowedDiscrepancy));
+    }
+
+    @ApplicationScoped
+    public static class ScheduledVetoMeBean {
+
+        private static final System.Logger LOGGER = System.getLogger(ScheduledVetoMeBean.class.getName());
+
+        static volatile boolean triggered = false;
+
+        @Scheduled("0/1 * * * * ? *")
+        public void test1sec() {
+            triggered = true;
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now());
+        }
     }
 }
