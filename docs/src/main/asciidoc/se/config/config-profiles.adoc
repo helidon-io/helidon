@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Profile Options, Profile Options>>
 - <<Profile-Config-Source, Profile Config Source>>
 - <<Profile-File, Profile Files>>
+- <<Declarative, Declarative>>
 
 == Overview
 
@@ -291,3 +292,32 @@ See link:{config-javadoc-base-url}/io/helidon/config/spi/RetryPolicy.html[`Retry
 link:{config-javadoc-base-url}/io/helidon/config/spi/ChangeWatcher.html[`ChangeWatcher`], and
 link:{config-javadoc-base-url}/io/helidon/config/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections.
+
+== Declarative [[Declarative]]
+
+When using Helidon Declarative programming model (inversion of control, injection, annotation based), we may still be interested in the profile feature.
+
+The interaction is as follows:
+
+1. When config profile is defined, only sources from the profile are added (aligned with SE Imperative programming model)
+2. When not using a config profile, `ConfigSource` services are discovered from the service registry, i.e. you can create a custom config source as a `@Service.Singleton`
+3. If you want to have a config source that works both with a config profile, and with the default config instance, there is a solution (see below)
+4. You can also define a `ConfigSourceProvider` as a registry service (and this will work the same as in SE imperative)
+
+=== Designing a config source that integrates with profiles and default config
+
+Note that this approach will only work if you get a `Config` instance from the service registry, or if you inject a `Config` instance into your service and the service registry creates the instance.
+
+Choose a type that does not conflict with existing config source types, let's assume `my-config-type`.
+
+Create a `@Service.Singleton` service that is named with the chosen type.
+
+Inject a named `Optional<io.helidon.config.MetaConfig>` into your config source service - this will contain meta-config from the config profile, or it will be empty if a profile is not used.
+
+Create your configuration tree as needed in your custom config source.
+
+Example of such a config source:
+[source,java]
+----
+include::{sourcedir}/se/config/ConfigProfilesSnippets.java[tag=snippet_2, indent=0]
+----

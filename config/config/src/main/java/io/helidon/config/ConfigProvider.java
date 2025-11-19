@@ -53,37 +53,32 @@ class ConfigProvider implements Supplier<Config> {
                    Supplier<List<ConfigMapperProvider>> configMappers) {
         if (io.helidon.common.config.GlobalConfig.configured()) {
             config = wrapCommon(io.helidon.common.config.GlobalConfig.config());
-        } else {
-            Optional<MetaConfig> metaConfig = metaConfigSupplier.get();
-            config = Config.builder()
-                    .update(it -> metaConfig.ifPresent(metaConfigInstance ->
-                                                                     it.config(metaConfigInstance.metaConfiguration())))
-                    .update(it -> configSources.get()
-                            .forEach(it::addSource))
-                    .update(it -> {
-                        if (metaConfig.isEmpty()) {
-                            defaultConfigSources(it, configParsers);
-                        }
-                    })
-                    .disableParserServices()
-                    .update(it -> configParsers.get()
-                            .forEach(it::addParser))
-                    .disableFilterServices()
-                    .update(it -> configFilters.get()
-                            .forEach(it::addFilter))
-                    //.disableMapperServices()
-                    // cannot do this for now, removed ConfigMapperProvider from service loaded services, config does it on its
-                    // own
-                    // ObjectConfigMapper is before EnumMapper, and both are before essential and built-in
-                    .update(it -> configMappers.get()
-                            .forEach(it::addMapper))
-                    .build();
+            return;
         }
-    }
+        Optional<MetaConfig> metaConfig = metaConfigSupplier.get();
+        Config.Builder builder = Config.builder();
 
-    @Override
-    public Config get() {
-        return config;
+        if (metaConfig.isPresent()) {
+            builder.config(metaConfig.get().metaConfiguration());
+        } else {
+            builder.update(it -> configSources.get()
+                    .forEach(it::addSource))
+                    .update(it -> defaultConfigSources(it, configParsers));
+        }
+        builder.disableParserServices()
+                .update(it -> configParsers.get()
+                        .forEach(it::addParser))
+                .disableFilterServices()
+                .update(it -> configFilters.get()
+                        .forEach(it::addFilter))
+                //.disableMapperServices()
+                // cannot do this for now, removed ConfigMapperProvider from service loaded services, config does it on its
+                // own
+                // ObjectConfigMapper is before EnumMapper, and both are before essential and built-in
+                .update(it -> configMappers.get()
+                        .forEach(it::addMapper));
+
+        this.config = builder.build();
     }
 
     static Config wrapCommon(io.helidon.common.config.Config config) {
@@ -91,6 +86,11 @@ class ConfigProvider implements Supplier<Config> {
             return cfg;
         }
         return new CommonConfigWrapper(Config.empty(), config);
+    }
+
+    @Override
+    public Config get() {
+        return config;
     }
 
     private void defaultConfigSources(io.helidon.config.Config.Builder configBuilder,
