@@ -56,16 +56,13 @@
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
-        <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
-        <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
-        <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.13.1</version.lib.gson>
         <version.lib.grpc>1.73.0</version.lib.grpc>
-        <version.lib.guava>32.0.1-jre</version.lib.guava>
+        <version.lib.guava>33.3.1-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.4.0</version.lib.handlebars>
@@ -454,17 +451,10 @@
                 <version>${version.lib.etcd4j}</version>
             </dependency>
 
-            <!-- Dependency convergence. Should align with version used by io.grpc -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${version.lib.gson}</version>
-            </dependency>
-            <!-- Dependency convergence. Should align with version used by io.grpc -->
-            <dependency>
-              <groupId>io.perfmark</groupId>
-              <artifactId>perfmark-api</artifactId>
-              <version>${version.lib.perfmark-api}</version>
             </dependency>
 
             <dependency>
@@ -474,11 +464,6 @@
             </dependency>
 
             <!-- Webserver related -->
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${version.lib.guava}</version>
-            </dependency>
             <dependency>
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient</artifactId>
@@ -1173,10 +1158,9 @@
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
             <dependency>
-                <!-- required for dependency convergence, used from guava and perfmark-api -->
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_annotations</artifactId>
-                <version>${version.lib.google-error-prone}</version>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.lib.guava}</version>
             </dependency>
             <dependency>
                 <!-- if needed (as excluded from weld) -->
@@ -1401,15 +1385,6 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
                 <version>${version.lib.netty}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- For dependency convergence. google-http-client is a transitive dependency of google-api-client
-                 via multiple (non-converging) paths. Version should match what is used by google-api-client -->
-            <dependency>
-                <groupId>com.google.http-client</groupId>
-                <artifactId>google-http-client-bom</artifactId>
-                <version>${version.lib.google-http-client}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
