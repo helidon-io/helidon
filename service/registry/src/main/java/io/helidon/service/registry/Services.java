@@ -172,6 +172,7 @@ public final class Services {
      * Rules are the same as for {@link #set(Class, Object[])}.
      *
      * @param contract   contract to set
+     * @param weight     weight of the instance to add
      * @param instance   instance to use
      * @param qualifiers qualifier(s) to qualify the instance
      * @param <T>        type of the service
