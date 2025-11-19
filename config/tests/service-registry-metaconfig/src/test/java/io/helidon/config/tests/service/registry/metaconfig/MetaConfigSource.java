@@ -28,7 +28,7 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 @Service.Named(MetaConfigSource.MY_TYPE)
 class MetaConfigSource implements NodeConfigSource {
-    static final String MY_TYPE = "my-config-type";
+    static final String MY_TYPE = "registry-based-config";
 
     private final String fromMetaConfig;
 
@@ -37,7 +37,7 @@ class MetaConfigSource implements NodeConfigSource {
                         .get("app.value2")
                         .asString()
                         .asOptional())
-                .orElse("meta-config-value-not-found");
+                .orElse("registry-based-config");
     }
 
     @Override
