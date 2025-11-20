@@ -48,7 +48,7 @@ final class Utils {
     }
 
     /*
-        Will only create wildcards where it makes at least some sens.
+        Will only create wildcards where it makes at least some sense.
         We do not analyze the actual class if it is final though.
          */
     static TypeName toWildcard(TypeName typeName) {
