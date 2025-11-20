@@ -15,6 +15,9 @@
  */
 package io.helidon.webclient.discovery;
 
+import java.net.URI;
+import java.util.Map;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.discovery.Discovery;
@@ -38,6 +41,14 @@ interface WebClientDiscoveryConfigBlueprint extends Prototype.Factory<WebClientD
      */
     @Option.RegistryService
     Discovery discovery();
+
+    /**
+     * A {@link Map} of {@link URI} prefixes indexed under discovery names.
+     *
+     * @return the {@link Map}
+     */
+    @Option.Configured
+    Map<String, URI> prefixUris();
 
     /**
      * The name to assign to the runtime type ({@code discovery} by default).

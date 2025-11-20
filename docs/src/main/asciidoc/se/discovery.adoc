@@ -386,9 +386,9 @@ need to configure _prefix URIs_. URIs that match no prefix will not be subject t
 webclient:
   services:
     discovery:
-      properties:
-        helidon-discovery-EXAMPLE-prefix-uri: "https://example.com:443/" # <1>
-        helidon-discovery-TEST-prefix-uri: "https://test.example.com:443/" # <2> <3>
+      prefix-uris:
+        EXAMPLE: "https://example.com:443/" # <1>
+        TEST: "https://test.example.com:443/" # <2> <3>
 ----
 <1> Indicates that URIs starting with `https://example.com:443/` will be subject to discovery, using the discovery name
     of `EXAMPLE`
@@ -396,26 +396,6 @@ webclient:
     name of `TEST`
 <3> URIs that begin with text other than `https://example.com:443/` or `https://test.example.com:443/` will not be
     subject to discovery
-
-===== Complicated Discovery Names
-
-To use complicated discovery names for certain prefix URIs, you can link them to specific prefix URIs as follows. This
-configuration strategy is primarily for cases where, for whatever reason, the discovery name is too long or complicated
-to appear in a property name:
-
-[source,yaml]
-.`application.yaml`
-----
-webclient:
-  services:
-    discovery:
-      properties:
-        helidon-discovery-EXAMPLE-prefix-uri: "https://example.com:443/" # <1>
-        helidon-discovery-EXAMPLE-name: "My Long Complicated Discovery Name" # <2>
-----
-<1> Indicates that URIs starting with `https://example.com:443/` will be subject to discovery
-<2> Indicates that the discovery name to use for prefix URIs identified by the
-    `helidon-discovery-EXAMPLE-prefix-uri` property name will be `My Long Complicated Discovery Name`
 
 == References
 

@@ -17,14 +17,14 @@ package io.helidon.webclient.discovery;
 
 import java.lang.System.Logger;
 import java.net.URI;
-import java.util.LinkedHashSet;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.common.uri.UriInfo;
@@ -33,11 +33,9 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.WARNING;
 import static java.lang.System.getLogger;
-import static java.util.HashMap.newHashMap;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 
 /**
  * A {@link WebClientDiscovery} built and returned by the {@link WebClientDiscovery#create(WebClientDiscoveryConfig)}
@@ -65,6 +63,9 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
 
     private final WebClientDiscoveryConfig prototype;
 
+    // Immutable. Thread-safe.
+    private final Collection<? extends Entry<? extends URI, ? extends String>> discoveryNames;
+
 
     /*
      * Constructors.
@@ -74,6 +75,29 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
     DefaultWebClientDiscovery(WebClientDiscoveryConfig prototype) {
         super();
         this.prototype = requireNonNull(prototype, "prototype");
+        Map<String, URI> prefixUris = prototype.prefixUris();
+        List<Entry<URI, String>> l = new ArrayList<>(prefixUris.size());
+        for (Entry<String, URI> e : prefixUris.entrySet()) {
+            l.add(new SimpleEntry<>(uri(e.getValue().normalize()), e.getKey()));
+        }
+        // Sort from most-specific hierarchical URI to least-specific. Total order.
+        l.sort(Comparator.<Entry<URI, String>>comparingInt(e -> {
+                    int slashCount = 0;
+                    String path = e.getKey().getPath();
+                    if (path != null) {
+                        for (int i = 0; i < path.length(); i++) {
+                            if (path.charAt(i) == '/') {
+                                ++slashCount;
+                            }
+                        }
+                    }
+                    return slashCount;
+                })
+            .thenComparing(e -> e.getKey().getPath())
+            .thenComparing(Entry::getValue)
+            .reversed());
+        this.discoveryNames = unmodifiableList(l);
+        LOGGER.log(DEBUG, "Discovery names: {0}", this.discoveryNames);
     }
 
 
@@ -97,52 +121,36 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
     @Override // WebClientDiscovery (WebClientService)
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         ClientUri clientUri = request.uri();
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "Initial ClientUri: " + clientUri + "; properties: " + request.properties());
-        }
+        LOGGER.log(DEBUG, "Initial ClientUri: {0}", clientUri);
 
-        DiscoveryRequest discoveryRequest = DiscoveryRequest.of(request.properties(), request.uri()).orElse(null);
+        DiscoveryRequest discoveryRequest = DiscoveryRequest.of(this.discoveryNames, clientUri).orElse(null);
         if (discoveryRequest == null) {
-            if (LOGGER.isLoggable(DEBUG)) {
-                LOGGER.log(DEBUG, "No discovery needed for " + request.uri());
-            }
+            LOGGER.log(DEBUG, "No discovery needed for {0}", clientUri);
             return chain.proceed(request);
         }
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "DiscoveryRequest: " + discoveryRequest);
-        }
+        LOGGER.log(DEBUG, "DiscoveryRequest: {0}", discoveryRequest);
 
         URI discoveredUri = this.prototype()
             .discovery()
             .uris(discoveryRequest.discoveryName(), discoveryRequest.defaultUri())
             .getFirst()
             .uri();
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "URI discovered for " + discoveryRequest.discoveryName() + ": " + discoveredUri);
-        }
+        LOGGER.log(DEBUG, "URI discovered for {0}: {1}", discoveryRequest.discoveryName(), discoveredUri);
 
         // (Edge case. Eureka in particular does not contractually guarantee whether a URI it returns will be opaque or
         // not. An opaque URI could conceivably be OK in some possible worlds, but ClientUri doesn't handle opaque
         // URIs. Just skip it.)
         if (discoveredUri.isOpaque()) {
-            if (LOGGER.isLoggable(DEBUG)) {
-                LOGGER.log(DEBUG, "Discarding discovered URI "
-                           + discoveredUri
-                           + " because it is opaque and ClientUri does not support opaque URIs");
-            }
+            LOGGER.log(DEBUG, "Discarding discovered opaque URI {0}; ClientUri does not support opaque URIs", discoveredUri);
             return chain.proceed(request);
         }
 
         // Resolve the extra path against the discovered URI, deliberately using fully defined
         // java.net.URI#resolve(String) semantics (which reifies RFC 2396 semantics
         // (https://www.rfc-editor.org/rfc/rfc2396#section-5.2)).
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "Resolving " + discoveryRequest.extraPath() + " against " + discoveredUri);
-        }
+        LOGGER.log(DEBUG, "Resolving {0} against {1}", discoveryRequest.extraPath(), discoveredUri);
         discoveredUri = discoveredUri.resolve(discoveryRequest.extraPath());
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "Resolution result: " + discoveredUri);
-        }
+        LOGGER.log(DEBUG, "Resolution result: {0}", discoveredUri);
 
         // Install (raw) path, (possibly) new scheme, host, and port.  Deliberately leave existing query and fragment
         // alone.
@@ -160,10 +168,12 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
             clientUri.port(discoveredPort);
         }
 
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, "Final ClientUri: " + clientUri);
-        }
+        LOGGER.log(DEBUG, "Final ClientUri: {0}", clientUri);
         return chain.proceed(request);
+    }
+
+    Collection<? extends Entry<? extends URI, ? extends String>> discoveryNames() {
+        return this.discoveryNames;
     }
 
 
@@ -173,15 +183,16 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
 
 
     /**
-     * Creates and returns a {@link URI} suitable for the supplied {@link String} representation.
+     * Creates and returns a {@link URI} suitable for the supplied {@link URI} following logic used elsewhere within
+     * Helidon Web Client.
      *
      * <p>For reasons described below, this method behaves as if it executes the following (error handling elided):</p>
      *
-     * <blockquote><pre>return ClientUri.create(URI.create(s));</pre></blockquote>
+     * <blockquote><pre>return ClientUri.create(uri).toUri();</pre></blockquote>
      *
      * <p>That, in turn, is equivalent to:</p>
      *
-     * <blockquote><pre>return ClientUri.create().resolve(URI.create(s));</pre></blockquote>
+     * <blockquote><pre>return ClientUri.create().resolve(uri);</pre></blockquote>
      *
      * <p>Internally, {@link ClientUri#create()} creates a new, "empty" {@link ClientUri} instance. The act of creating
      * a new {@link ClientUri} instance, in turn, internally creates a {@link UriInfo.Builder} that is initialized with
@@ -195,38 +206,32 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
      *
      * <ul>
      *
-     * <li>a {@link String} representation of {@code http://example.com} when passed through this method will result in
-     * a {@link URI} that is effectively {@code http://example.com:80/} (note the port and path)</li>
+     * <li>A {@link URI} representing {@code http://example.com} passed to this method will result in a {@link URI}
+     * representing {@code http://example.com:80/} (note the port and path)</li>
      *
-     * <li>A {@link String} representation of {@code https://example.com} will become {@code https://example.com:443/}
-     * (note the port and path)</li>
+     * <li>A {@link URI} representing {@code https://example.com} passed to this method will result in a {@link URI}
+     * representing {@code https://example.com:443/} (note the port and path)</li>
      *
-     * <li>A {@link String representation of {@code path} will become {@code http://localhost:80/path} (note the scheme,
-     * host, port and path)</li>
+     * <li>A {@link URI} representing {@code path} passed to this method will result in a {@link URI} representing
+     * {@code http://localhost:80/path} (note the scheme, host, port and path)</li>
      *
      * </ul>
      *
-     * <p>To ensure fidelity between these kinds of Helidon WebClient- and {@link ClientUri}-supplied {@link URI}s and
-     * {@link URI}s supplied (effectively) by users, the {@link DefaultWebClientDiscovery} class needs to ensure {@link
-     * String} representations of URIs are converted into {@link URI}s using the same effective mechanism that Helidon
-     * WebClient uses internally. This method accomplishes this task.</p>
-     *
-     * @param s a valid URI representation; must not be {@code null}
-     * @return a {@link URI} representing the supplied {@link String} following Helidon conventions; never {@code null}
-     * @exception NullPointerException if {@code s} is {@code null}
-     * @exception IllegalArgumentException if {@code s} is not a valid URI representation according to the contract of
-     * the {@link URI#create(String)} method
+     * @param u a valid {@link URI}; must not be {@code null}
+     * @return a {@link URI} representing the supplied {@link URI} following Helidon Web Client conventions; never
+     * {@code null}
+     * @exception NullPointerException if {@code u} is {@code null}
+     * @exception IllegalArgumentException if {@code u} is not a valid URI representation
      * @see ClientUri#create()
      * @see ClientUri#create(URI)
      * @see ClientUri#resolve(URI)
-     * @see URI#create(String)
      * @see io.helidon.uri.common.uri.UriInfo.BuilderBase#scheme()
      * @see io.helidon.uri.common.uri.UriInfo.BuilderBase#host()
      * @see io.helidon.uri.common.uri.UriInfo.BuilderBase#port()
      * @see io.helidon.uri.common.uri.UriInfo.BuilderBase#path()
      */
-    private static URI uri(String s) {
-        return ClientUri.create(URI.create(s)).toUri();
+    private static URI uri(URI u) {
+        return ClientUri.create(u).toUri();
     }
 
 
@@ -248,76 +253,20 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
             requireNonNull(extraPath, "extraPath");
         }
 
-        static Optional<DiscoveryRequest> of(Map<String, String> properties, UriInfo uriInfo) {
-            Map<String, String> discoveryNamesById = newHashMap(properties.size());
-            NavigableMap<String, String> idsByPrefixUri = new TreeMap<>();
-            Set<String> prefixes;
-            String idsProperty = properties.getOrDefault("helidon-discovery-ids", "").trim();
-            if (idsProperty.isBlank()) {
-                // The user didn't say explicitly which properties will be of interest. Scan.
-                for (Entry<String, String> e : properties.entrySet()) {
-                    Matcher m = KEY_PATTERN.matcher(e.getKey());
-                    if (!m.find()) {
-                        continue;
-                    }
-                    String id = m.group(1); // "ID" in helidon-discovery-ID-...
-                    switch (m.group(2)) { // "name" or "prefix-uri"
-                    case "name":
-                        String discoveryName = requireNonNullElse(e.getValue(), "").trim();
-                        discoveryNamesById.put(id, discoveryName.isBlank() ? id : discoveryName);
-                        break;
-                    case "prefix-uri":
-                        discoveryNamesById.putIfAbsent(id, id);
-                        String prefix = requireNonNullElse(e.getValue(), "").trim();
-                        if (!prefix.isBlank()) {
-                            idsByPrefixUri.putIfAbsent(prefix, id);
-                        }
-                        break;
-                    default:
-                        // (Won't happen; see #KEY_PATTERN.)
-                        break;
-                    }
-                }
-                prefixes = idsByPrefixUri.descendingKeySet();
-            } else {
-                // The user basically (indirectly) stated which properties will be of interest. Use only those, and in
-                // that order.
-                prefixes = new LinkedHashSet<>();
-                String[] ids = WHITESPACE_AND_COMMAS_PATTERN.split(idsProperty, 0);
-                for (String id : ids) {
-                    if (id.isEmpty()) {
-                        continue;
-                    }
-                    String discoveryName = properties.getOrDefault("helidon-discovery-" + id + "-name", "").trim();
-                    discoveryNamesById.put(id, discoveryName.isBlank() ? id : discoveryName);
-                    String prefix = properties.getOrDefault("helidon-discovery-" + id + "-prefix-uri", "").trim();
-                    if (!prefix.isBlank()) {
-                        prefixes.add(prefix);
-                        idsByPrefixUri.computeIfAbsent(prefix, p -> id);
-                    }
-                }
+        static Optional<DiscoveryRequest> of(Collection<? extends Entry<? extends URI, ? extends String>> discoveryNames,
+                                             UriInfo uriInfo) {
+            if (discoveryNames.isEmpty()) {
+                return Optional.empty();
             }
             // The only thing we need from the UriInfo is its notional URI. So why not just pass a java.net.URI to this
             // method instead of a UriInfo if that's all we actually need?  Because mutable UriInfo implementations,
             // like ClientUri, create (and supply, via toUri()) URIs in a very specific way throughout the WebClient
             // machinery, adding and altering values in some places (such as host and port and path), and we need to
             // maintain that behavior throughout this WebClientService implementation for overall fidelity with the rest
-            // of WebClient. See #uri(String) above.
+            // of WebClient.
             URI uriInfoUri = uriInfo.toUri().normalize();
-            for (String prefix : prefixes) {
-                // Turn the properties-supplied prefix string into a URI.
-                URI prefixUri;
-                try {
-                    prefixUri = uri(prefix).normalize();
-                } catch (IllegalArgumentException e) {
-                    if (LOGGER.isLoggable(WARNING)) {
-                        LOGGER.log(WARNING, "Ignoring " + prefix + " because it is not a valid URI", e);
-                    }
-                    continue;
-                }
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, "Testing " + uriInfoUri + " to see if it is prefixed with " + prefixUri);
-                }
+            for (Entry<? extends URI, ? extends String> e : discoveryNames) {
+                URI prefixUri = e.getKey();
                 // Relativize the URI in flight against the prefix URI, using the well-defined semantics of
                 // URI#relativize(String), yielding, if there is a match, in most cases, just a simple path.
                 URI diff = prefixUri.relativize(uriInfoUri);
@@ -325,14 +274,12 @@ final class DefaultWebClientDiscovery implements WebClientDiscovery {
                     // Relativization "failed"; see
                     // https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html#relativize(java.net.URI). No
                     // problem; we just didn't match this particular prefix. Carry on to the next one.
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, "Ignoring " + prefixUri + " because it does not prefix " + uriInfoUri);
-                    }
+                    LOGGER.log(DEBUG, "Ignoring {0} because it does not prefix {1}", prefixUri, uriInfoUri);
                     continue;
                 }
                 // We matched a prefix and now have the raw materials to query Discovery. Return early.
                 return
-                    Optional.of(new DiscoveryRequest(discoveryNamesById.get(idsByPrefixUri.get(prefix)),
+                    Optional.of(new DiscoveryRequest(e.getValue(),
                                                      prefixUri,
                                                      diff.getRawPath()));
             }

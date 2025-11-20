@@ -16,17 +16,13 @@
 package io.helidon.webclient.discovery;
 
 import java.util.List;
-import java.util.Map;
 
-import io.helidon.config.Config;
-import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.spi.WebClientService;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
 class WebClientConfigTest {
@@ -41,20 +37,10 @@ class WebClientConfigTest {
         List<WebClientService> services = c.services();
         assertThat(services, hasSize(1));
         WebClientDiscovery s = (WebClientDiscovery) services.get(0);
-        // (We have the Eureka provider on the test classpath.)
+        // Ensure the service is discovered and instantiated and has its Discovery client set properly even in the
+        // absence of other configuration. (We have the Eureka provider on the test classpath.)
         assertThat(s.prototype().discovery().getClass().getName(),
                    is("io.helidon.discovery.providers.eureka.EurekaDiscoveryImpl"));
-    }
-
-    @Test
-    void testPropertiesFromConfig() {
-        WebClientConfig c = WebClientConfig.builder()
-            .config(Services.get(Config.class).get(this.getClass().getSimpleName() + "-testPropertiesFromConfig"))
-            .buildPrototype();
-        Map<String, String> properties = c.properties();
-        assertThat(properties.keySet(), hasSize(2));
-        assertThat(properties, hasEntry("helidon-discovery-TEST-prefix-uri", "http://test.example.com/"));
-        assertThat(properties, hasEntry("helidon-discovery-PROD-prefix-uri", "http://prod.example.com/"));
     }
 
 }
