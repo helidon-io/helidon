@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,9 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceInfo;
 
 /**
  * Utility class that locates the meta configuration source.
@@ -219,6 +222,25 @@ final class MetaConfigFinder {
 
         sourceListBuilder.addObject(ObjectNode.builder().addValue("type", "environment-variables").build())
                 .addObject(ObjectNode.builder().addValue("type", "system-properties").build());
+
+        // all types from service registry
+        Set<String> namedSources = GlobalServiceRegistry.registry()
+                .allServices(ConfigSource.class)
+                .stream()
+                .map(ServiceInfo::qualifiers)
+                .flatMap(Set::stream)
+                .filter(it -> it.typeName().equals(Service.Named.TYPE))
+                .flatMap(it -> it.value().stream())
+                .collect(Collectors.toSet());
+
+        for (String namedSource : namedSources) {
+            sourceListBuilder.addObject(ObjectNode.builder()
+                                                .addValue("type", namedSource)
+                                                .addObject("properties", ObjectNode.builder()
+                                                        .addValue("enabled", "false") // this is a default, use an explicit one
+                                                        .build())
+                                                .build());
+        }
 
         // all profile files
         for (String supportedSuffix : supportedSuffixes) {

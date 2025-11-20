@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
  */
 package io.helidon.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
@@ -35,34 +38,23 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.PollingStrategyProvider;
 import io.helidon.config.spi.RetryPolicy;
 import io.helidon.config.spi.RetryPolicyProvider;
+import io.helidon.service.registry.Services;
 
 /**
  * Access to Java service loaders for config sources, retry policies and polling strategies.
  */
 final class MetaProviders {
-    private static final List<ConfigSourceProvider> CONFIG_SOURCE_PROVIDERS;
     private static final List<RetryPolicyProvider> RETRY_POLICY_PROVIDERS;
     private static final List<PollingStrategyProvider> POLLING_STRATEGY_PROVIDERS;
     private static final List<ChangeWatcherProvider> CHANGE_WATCHER_PROVIDERS;
     private static final List<OverrideSourceProvider> OVERRIDE_SOURCE_PROVIDERS;
 
-    private static final Set<String> SUPPORTED_CONFIG_SOURCES = new HashSet<>();
     private static final Set<String> SUPPORTED_RETRY_POLICIES = new HashSet<>();
     private static final Set<String> SUPPORTED_POLLING_STRATEGIES = new HashSet<>();
     private static final Set<String> SUPPORTED_CHANGE_WATCHERS = new HashSet<>();
     private static final Set<String> SUPPORTED_OVERRIDE_SOURCES = new HashSet<>();
 
     static {
-        CONFIG_SOURCE_PROVIDERS = HelidonServiceLoader
-                .builder(ServiceLoader.load(ConfigSourceProvider.class))
-                .addService(new BuiltInConfigSourcesProvider())
-                .build()
-                .asList();
-
-        CONFIG_SOURCE_PROVIDERS.stream()
-                .map(ConfigSourceProvider::supported)
-                .forEach(SUPPORTED_CONFIG_SOURCES::addAll);
-
         RETRY_POLICY_PROVIDERS = HelidonServiceLoader
                 .builder(ServiceLoader.load(RetryPolicyProvider.class))
                 .addService(new BuiltInRetryPolicyProvider())
@@ -93,7 +85,6 @@ final class MetaProviders {
                 .map(ChangeWatcherProvider::supported)
                 .forEach(SUPPORTED_CHANGE_WATCHERS::addAll);
 
-
         OVERRIDE_SOURCE_PROVIDERS = HelidonServiceLoader
                 .builder(ServiceLoader.load(OverrideSourceProvider.class))
                 .addService(new BuiltinOverrideSourceProvider())
@@ -108,22 +99,43 @@ final class MetaProviders {
     private MetaProviders() {
     }
 
-    static ConfigSource configSource(String type, Config config) {
-        return CONFIG_SOURCE_PROVIDERS.stream()
+    public static ChangeWatcher<?> changeWatcher(String type, Config config) {
+        return CHANGE_WATCHER_PROVIDERS.stream()
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
+                .orElseThrow(() -> new MetaConfigException("Change watcher of type " + type + " is not supported."
+                                                                   + " Supported types: " + SUPPORTED_CHANGE_WATCHERS));
+    }
+
+    static ConfigSource configSource(String type, Config config) {
+        var all = allProviders();
+        var supported = all.stream()
+                .map(ConfigSourceProvider::supported)
+                .flatMap(Set::stream)
+                .collect(Collectors.toUnmodifiableSet());
+
+        return all.stream()
+                .filter(provider -> provider.supports(type))
+                .findFirst()
+                .map(provider -> provider.create(type, config))
+                .or(() -> findSourceFromRegistry(type))
                 .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
-                                                                        + " Supported types: " + SUPPORTED_CONFIG_SOURCES));
+                                                                   + " Supported types: " + supported));
     }
 
     static List<ConfigSource> configSources(String type, Config sourceProperties) {
-        return CONFIG_SOURCE_PROVIDERS.stream()
+        var all = allProviders();
+        var supported = all.stream()
+                .map(ConfigSourceProvider::supported)
+                .flatMap(Set::stream)
+                .collect(Collectors.toUnmodifiableSet());
+        return all.stream()
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.createMulti(type, sourceProperties))
                 .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
-                                                                        + " Supported types: " + SUPPORTED_CONFIG_SOURCES));
+                                                                   + " Supported types: " + supported));
     }
 
     static OverrideSource overrideSource(String type, Config config) {
@@ -132,7 +144,7 @@ final class MetaProviders {
                 .findFirst()
                 .map(provider -> provider.create(type, config))
                 .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
-                                                                        + " Supported types: " + SUPPORTED_OVERRIDE_SOURCES));
+                                                                   + " Supported types: " + SUPPORTED_OVERRIDE_SOURCES));
     }
 
     static PollingStrategy pollingStrategy(String type, Config config) {
@@ -141,7 +153,7 @@ final class MetaProviders {
                 .findFirst()
                 .map(provider -> provider.create(type, config))
                 .orElseThrow(() -> new MetaConfigException("Polling strategy of type " + type + " is not supported."
-                                                                        + " Supported types: " + SUPPORTED_POLLING_STRATEGIES));
+                                                                   + " Supported types: " + SUPPORTED_POLLING_STRATEGIES));
     }
 
     static RetryPolicy retryPolicy(String type, Config config) {
@@ -150,16 +162,17 @@ final class MetaProviders {
                 .findFirst()
                 .map(provider -> provider.create(type, config))
                 .orElseThrow(() -> new MetaConfigException("Retry policy of type " + type + " is not supported."
-                                                                        + " Supported types: " + SUPPORTED_RETRY_POLICIES));
+                                                                   + " Supported types: " + SUPPORTED_RETRY_POLICIES));
     }
 
-    public static ChangeWatcher<?> changeWatcher(String type, Config config) {
-        return CHANGE_WATCHER_PROVIDERS.stream()
-                .filter(provider -> provider.supports(type))
-                .findFirst()
-                .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new MetaConfigException("Change watcher of type " + type + " is not supported."
-                                                                + " Supported types: " + SUPPORTED_CHANGE_WATCHERS));
+    private static Optional<ConfigSource> findSourceFromRegistry(String type) {
+        return Services.firstNamed(ConfigSource.class, type);
+    }
+
+    private static List<ConfigSourceProvider> allProviders() {
+        var result = new ArrayList<>(Services.all(ConfigSourceProvider.class));
+        result.add(new BuiltInConfigSourcesProvider());
+        return result;
     }
 
     @Weight(0)

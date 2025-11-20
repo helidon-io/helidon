@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,18 @@
  */
 package io.helidon.docs.se.config;
 
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.config.MetaConfig;
+import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
+import io.helidon.config.spi.NodeConfigSource;
+import io.helidon.service.registry.Service;
 
 @SuppressWarnings("ALL")
 class ConfigProfilesSnippets {
@@ -53,4 +60,30 @@ class ConfigProfilesSnippets {
     }
     // end::snippet_1[]
 
+    // tag::snippet_2[]
+    @Service.Singleton
+    @Service.Named(MyProfiledConfigSource.MY_TYPE)
+    public class MyProfiledConfigSource implements NodeConfigSource {
+        static final String MY_TYPE = "my-config-type";
+
+        private final String value;
+
+        MyProfiledConfigSource(@Service.Named(MY_TYPE) Optional<MetaConfig> metaConfig) {
+            this.value = metaConfig.flatMap(it -> it.metaConfiguration()
+                            .get("app.value2")
+                            .asString()
+                            .asOptional())
+                    .orElse("meta-config-value-not-found");
+        }
+
+        @Override
+        public Optional<ConfigContent.NodeContent> load() throws ConfigException {
+            return Optional.of(ConfigContent.NodeContent.builder()
+                                       .node(ConfigNode.ObjectNode.builder()
+                                                     .addValue("app.value2", value)
+                                                     .build())
+                                       .build());
+        }
+    }
+    // end::snippet_2[]
 }
