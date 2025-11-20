@@ -43,6 +43,16 @@ public interface Task {
     }
 
     /**
+     * If task is enabled or disabled, scheduling tasks are enabled by default
+     * and can be disabled programmatically or via configuration.
+     *
+     * @return true if enabled
+     */
+    default boolean enabled() {
+        return true;
+    }
+
+    /**
      * ID used to identify this task.
      * It should be unique, as it is used to identify a single task, for example to cancel it.
      *

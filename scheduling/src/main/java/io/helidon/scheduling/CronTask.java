@@ -143,6 +143,11 @@ class CronTask implements Cron {
     }
 
     @Override
+    public boolean enabled() {
+        return config.enabled();
+    }
+
+    @Override
     public String id() {
         return taskId;
     }

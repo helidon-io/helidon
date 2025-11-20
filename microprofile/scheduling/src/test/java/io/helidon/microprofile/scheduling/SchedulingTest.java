@@ -17,8 +17,11 @@
 package io.helidon.microprofile.scheduling;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -44,11 +47,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @HelidonTest
 @DisableDiscovery
 @AddBean(SchedulingTest.ScheduledBean.class)
+@AddBean(SchedulingTest.ScheduledVetoMeBean.class)
 @AddExtension(SchedulingCdiExtension.class)
+@AddExtension(TestVetoingCdiExtension.class)
 @Configuration(configSources = "test.properties")
 public class SchedulingTest {
 
@@ -120,7 +126,13 @@ public class SchedulingTest {
     void executedEvery2Sec() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least twice",
                    scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
-        assertDuration(TWO_SEC_MILLIS, scheduledBean.getDuration(), 2000);
+        assertDuration(TWO_SEC_MILLIS, scheduledBean.getDurations(), TWO_SEC_MILLIS);
+    }
+
+    @Test
+    void vetoedShouldNotBeInvoked() throws InterruptedException {
+        Thread.sleep(3000);
+        assertFalse(ScheduledVetoMeBean.triggered);
     }
 
     @Test
@@ -166,8 +178,9 @@ public class SchedulingTest {
         );
     }
 
-    private void assertDuration(long expectedDuration, long duration, long allowedDiscrepancy) {
-        String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";
+    private void assertDuration(long expectedDuration, List<Duration> durations, long allowedDiscrepancy) {
+        var duration = durations.getFirst().toMillis();
+        String durationString = "Expected duration is " + expectedDuration + " mls, but was " + duration + " mls";
         assertThat(durationString, duration, greaterThan(expectedDuration - allowedDiscrepancy));
         assertThat(durationString, duration, lessThan(expectedDuration + allowedDiscrepancy));
     }
@@ -179,6 +192,7 @@ public class SchedulingTest {
 
         final CountDownLatch countDownLatch = new CountDownLatch(2);
 
+        private final List<Duration> durations = new CopyOnWriteArrayList<>();
 
         volatile long duration = 0;
         volatile long stamp = 0;
@@ -187,16 +201,33 @@ public class SchedulingTest {
             return countDownLatch;
         }
 
-        public long getDuration() {
-            return duration;
+        public List<Duration> getDurations() {
+            return durations;
         }
 
         @Scheduling.Cron("0/2 * * * * ? *")
         public void test2sec() {
-            duration = System.currentTimeMillis() - stamp;
+            if(stamp != 0) {
+                duration = System.currentTimeMillis() - stamp;
+                durations.add(Duration.ofMillis(duration));
+            }
             stamp = System.currentTimeMillis();
+            LOGGER.log(System.Logger.Level.DEBUG, () -> Thread.currentThread().getName() + " Executed at " + Instant.ofEpochMilli(stamp) + "(" + stamp);
             countDownLatch.countDown();
-            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now().toString());
+        }
+    }
+
+    @ApplicationScoped
+    public static class ScheduledVetoMeBean {
+
+        private static final System.Logger LOGGER = System.getLogger(ScheduledVetoMeBean.class.getName());
+
+        static volatile boolean triggered = false;
+
+        @Scheduling.Cron("0/1 * * * * ? *")
+        public void test1sec() {
+            triggered = true;
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now());
         }
     }
 }

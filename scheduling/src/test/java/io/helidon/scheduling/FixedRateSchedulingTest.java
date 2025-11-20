@@ -32,15 +32,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
-public class FixedRateSchedulingTest {
+class FixedRateSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
+
+    private final TaskManager taskManager;
+
+    FixedRateSchedulingTest(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
 
     @SuppressWarnings("removal")
     @Test
@@ -314,16 +322,18 @@ public class FixedRateSchedulingTest {
         IntervalMeter meter = new IntervalMeter();
 
         try {
-            FixedRate.builder()
+            var task = FixedRate.builder()
                     .executor(executorService)
                     .interval(Duration.ofSeconds(1))
                     .enabled(false)  // Disabled
                     .task(inv -> meter.start().end())
                     .build();
 
-            // Wait and verify task never executed
+            // Wait and verify the task never executed
             Thread.sleep(3000);
-            assertThat(meter.size(), Matchers.equalTo(0));
+            assertThat(meter.size(), equalTo(0));
+            assertThat(taskManager.tasks(), hasItem(task));
+            assertThat(task.enabled(), equalTo(false));
         } finally {
             executorService.shutdownNow();
         }
