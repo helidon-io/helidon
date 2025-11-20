@@ -30,7 +30,6 @@ import io.helidon.builder.api.RuntimeType;
  * additional attempts to invoke will end with a failed response with
  * {@link BulkheadException}.
  */
-@RuntimeType.PrototypedBy(BulkheadConfig.class)
 public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
 
     /**

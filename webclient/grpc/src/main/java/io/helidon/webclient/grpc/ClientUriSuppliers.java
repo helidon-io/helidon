@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import io.helidon.webclient.api.ClientUri;
  * Some popular implementations of the {@link io.helidon.webclient.grpc.ClientUriSupplier}
  * interface.
  */
-public class ClientUriSuppliers {
+public final class ClientUriSuppliers {
+    private ClientUriSuppliers() {
+    }
 
     /**
      * Supplies an iterator that returns URIs chosen in order from
@@ -57,6 +59,11 @@ public class ClientUriSuppliers {
             return new OrderedSupplier(clientUris);
         }
 
+        /**
+         * Creates an ordered supplier.
+         *
+         * @param clientUris URIs to cycle through in order
+         */
         protected OrderedSupplier(Collection<ClientUri> clientUris) {
             this.clientUris = List.copyOf(clientUris).iterator();
         }
@@ -101,6 +108,11 @@ public class ClientUriSuppliers {
             return new RoundRobinSupplier(clientUris.toArray(new ClientUri[]{}));
         }
 
+        /**
+         * Creates a round-robin supplier.
+         *
+         * @param clientUris URIs to cycle through
+         */
         protected RoundRobinSupplier(ClientUri[] clientUris) {
             this.clientUris = clientUris;
         }
@@ -143,6 +155,11 @@ public class ClientUriSuppliers {
             return new SingleSupplier(clientUri);
         }
 
+        /**
+         * Creates a single supplier.
+         *
+         * @param clientUri the client URI to use
+         */
         protected SingleSupplier(ClientUri clientUri) {
             this.clientUri = clientUri;
         }
@@ -186,6 +203,11 @@ public class ClientUriSuppliers {
             return new RandomSupplier(clientUris.toArray(new ClientUri[]{}));
         }
 
+        /**
+         * Creates a random supplier.
+         *
+         * @param clientUris URI to cycle through in a random order
+         */
         protected RandomSupplier(ClientUri[] clientUris) {
             this.clientUris = clientUris;
         }

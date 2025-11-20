@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.Generated;
@@ -64,6 +65,10 @@ public final class TypeNames {
      * Type name for {@link java.util.function.Supplier}.
      */
     public static final TypeName SUPPLIER = TypeName.create(Supplier.class);
+    /**
+     * Type name for {@link java.util.function.Consumer}.
+     */
+    public static final TypeName CONSUMER = TypeName.create(Consumer.class);
     /**
      * Type name for {@link java.util.Collection}.
      */

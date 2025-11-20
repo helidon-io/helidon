@@ -116,6 +116,7 @@ jobs:
         with:
           build-cache: read-only
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
+          free-space: true
           run: |
             mvn ${MVN_ARGS} \
               -DreactorRule=tests \

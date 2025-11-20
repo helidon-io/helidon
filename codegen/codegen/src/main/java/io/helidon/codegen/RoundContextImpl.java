@@ -144,20 +144,24 @@ class RoundContextImpl implements RoundContext {
     }
 
     private Optional<ClassBase> generatedClass(TypeName typeName) {
+        // inner classes must be supported as well
+        boolean isTopLevel = typeName.enclosingNames().isEmpty();
+        TypeName topLevelType = isTopLevel ? typeName : topLevelType(typeName);
+
         for (ClassCode classCode : newTypes.values()) {
-            Optional<ClassBase> inProgress = classCode.classModel().find(typeName);
+            Optional<ClassBase> inProgress = classCode.classModel().find(topLevelType);
             if (inProgress.isPresent()) {
-                return inProgress;
+                return inProgress.flatMap(it -> findInnerType(typeName, isTopLevel, it));
             }
         }
         for (ClassCode classCode : newTypesFromPreviousExtensions) {
-            Optional<ClassBase> inProgress = classCode.classModel().find(typeName);
+            Optional<ClassBase> inProgress = classCode.classModel().find(topLevelType);
             if (inProgress.isPresent()) {
                 return inProgress;
             }
         }
 
-        if (!typeName.packageName().isEmpty()) {
+        if (!topLevelType.packageName().isEmpty()) {
             return Optional.empty();
         }
 
@@ -168,7 +172,7 @@ class RoundContextImpl implements RoundContext {
 
         for (var classCode : newTypes.values()) {
             String packageName = classCode.newType().packageName();
-            TypeName toFind = TypeName.builder(typeName)
+            TypeName toFind = TypeName.builder(topLevelType)
                     .packageName(packageName)
                     .build();
             var inProgress = classCode.classModel().find(toFind);
@@ -179,7 +183,7 @@ class RoundContextImpl implements RoundContext {
 
         for (var classCode : newTypesFromPreviousExtensions) {
             String packageName = classCode.newType().packageName();
-            TypeName toFind = TypeName.builder(typeName)
+            TypeName toFind = TypeName.builder(topLevelType)
                     .packageName(packageName)
                     .build();
             var inProgress = classCode.classModel().find(toFind);
@@ -189,6 +193,42 @@ class RoundContextImpl implements RoundContext {
         }
 
         return Optional.empty();
+    }
+
+    private Optional<ClassBase> findInnerType(TypeName typeName,
+                                              boolean isTopLevel,
+                                              ClassBase it) {
+        if (isTopLevel) {
+            return Optional.of(it);
+        }
+
+        // SomeType.SomeInnerType - we have ClassBase for SomeType
+        var enclosingNames = typeName.enclosingNames();
+        ClassBase current = it;
+
+        for (int i = 1; i < enclosingNames.size(); i++) {
+            String enclosingName = enclosingNames.get(i);
+            Optional<ClassBase> inner = current.innerClasses()
+                    .stream()
+                    .filter(innerClass -> innerClass.name().equals(enclosingName))
+                    .findFirst();
+            if (inner.isPresent()) {
+                current = inner.get();
+            } else {
+                return Optional.empty();
+            }
+        }
+        return current.innerClasses()
+                .stream()
+                .filter(innerClass -> innerClass.name().equals(typeName.className()))
+                .findFirst();
+    }
+
+    private TypeName topLevelType(TypeName typeName) {
+        return TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.enclosingNames().getFirst())
+                .build();
     }
 
     Collection<ClassCode> newTypes() {

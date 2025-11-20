@@ -42,7 +42,6 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.RegistryBuilderSupport;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.Services;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -85,7 +84,6 @@ public class TypesTest {
 
         checkField(toCheck, checked, fields, "COMMON_CONFIG", Config.class);
         checkField(toCheck, checked, fields, "CONFIG", io.helidon.config.Config.class);
-        checkField(toCheck, checked, fields, "CONFIG_BUILDER", io.helidon.config.Config.Builder.class);
         checkField(toCheck, checked, fields, "GENERATED", Generated.class);
         checkField(toCheck, checked, fields, "DEPRECATED", Deprecated.class);
         checkField(toCheck, checked, fields, "LINKED_HASH_MAP", LinkedHashMap.class);
@@ -105,8 +103,14 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED", Prototype.Configured.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_PROVIDES", Prototype.Provides.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER", Prototype.Builder.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_DEPRECATED", Prototype.FactoryMethod.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_PROTOTYPE", Prototype.PrototypeFactoryMethod.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_CONFIG", Prototype.ConfigFactoryMethod.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD_RUNTIME_TYPE",
+                   Prototype.RuntimeTypeFactoryMethod.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_EXTENSIONS", Prototype.Extensions.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_EXTENSION", Prototype.Extension.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CUSTOM_METHODS", Prototype.CustomMethods.class);
-        checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD", Prototype.FactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER_METHOD", Prototype.BuilderMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_PROTOTYPE_METHOD", Prototype.PrototypeMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER_DECORATOR", Prototype.BuilderDecorator.class);
@@ -114,8 +118,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_SERVICE_REGISTRY", Prototype.RegistrySupport.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_INCLUDE_DEFAULTS", Prototype.IncludeDefaultMethods.class);
         checkField(toCheck, checked, fields, "GENERATED_EQUALITY_UTIL", GeneratedBuilder.EqualityUtil.class);
-        checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPE", RuntimeType.PrototypedBy.class);
-        checkField(toCheck, checked, fields, "RUNTIME_PROTOTYPED_BY", RuntimeType.PrototypedBy.class);
         checkField(toCheck, checked, fields, "RUNTIME_API", RuntimeType.Api.class);
         checkField(toCheck, checked, fields, "OPTION_SAME_GENERIC", Option.SameGeneric.class);
         checkField(toCheck, checked, fields, "OPTION_SINGULAR", Option.Singular.class);
@@ -126,7 +128,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_REQUIRED", Option.Required.class);
         checkField(toCheck, checked, fields, "OPTION_PROVIDER", Option.Provider.class);
         checkField(toCheck, checked, fields, "OPTION_ALLOWED_VALUES", Option.AllowedValues.class);
-        checkField(toCheck, checked, fields, "OPTION_ALLOWED_VALUE", Option.AllowedValue.class);
         checkField(toCheck, checked, fields, "OPTION_DEFAULT", Option.Default.class);
         checkField(toCheck, checked, fields, "OPTION_DEFAULT_INT", Option.DefaultInt.class);
         checkField(toCheck, checked, fields, "OPTION_DEFAULT_DOUBLE", Option.DefaultDouble.class);
@@ -141,7 +142,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_TRAVERSE_CONFIG", Option.TraverseConfig.class);
         checkField(toCheck, checked, fields, "BUILDER_SUPPORT", BuilderSupport.class);
 
-        checkField(toCheck, checked, fields, "SERVICES", Services.class);
         checkField(toCheck, checked, fields, "SERVICE_NAMED", Service.Named.class);
         checkField(toCheck, checked, fields, "SERVICE_QUALIFIER", Service.Qualifier.class);
 

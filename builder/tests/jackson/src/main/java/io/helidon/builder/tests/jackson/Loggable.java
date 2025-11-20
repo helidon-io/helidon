@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.codegen;
+package io.helidon.builder.tests.jackson;
 
-import io.helidon.codegen.classmodel.Javadoc;
-import io.helidon.common.types.TypeName;
+import java.util.Map;
 
-record CustomConstant(TypeName declaringType, TypeName fieldType, String name, Javadoc javadoc) {
+public interface Loggable {
+    Map<String, String> getDecorations();
 }

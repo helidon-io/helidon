@@ -30,7 +30,7 @@ final class VarargSupport {
      * @param options option values
      * @return a new vararg config
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static VarargConfig create(String... options) {
         return VarargConfig.builder()
                 .options(List.of(options))

@@ -31,7 +31,7 @@ class OrderSupport {
      * @param property entity property
      * @return new order definition instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Order create(String property) {
         return Order.builder()
                 .property(property)
@@ -46,7 +46,7 @@ class OrderSupport {
      * @param direction direction of the ordering
      * @return new order definition instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Order create(String property, OrderDirection direction) {
         return Order.builder()
                 .property(property)
@@ -62,7 +62,7 @@ class OrderSupport {
      * @param caseSensitive value of {@code true} for case-sensitive or {@code false} for case-sensitive ordering
      * @return new order definition instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Order create(String property, OrderDirection direction, boolean caseSensitive) {
         return Order.builder()
                 .property(property)

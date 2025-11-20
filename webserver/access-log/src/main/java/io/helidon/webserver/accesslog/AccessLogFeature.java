@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Service that adds support for Access logging to Server.
  */
-@RuntimeType.PrototypedBy(AccessLogConfig.class)
 public final class AccessLogFeature implements Weighted, ServerFeature, RuntimeType.Api<AccessLogConfig> {
     /**
      * Name of the {@link System#getLogger(String)} used to log access log records.

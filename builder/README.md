@@ -62,12 +62,12 @@ There are a few rules we required and enforce:
 2. Blueprint interface MUST be package private
 3. Blueprint interface must have a name that ends with `Blueprint`; the name before `Blueprint` will be the name of the prototype
 4. In case we use the blueprint -> prototype -> runtime type use case (see below):
-   1. The blueprint must extend `Prototype.Factory<RuntimeType>` where `RuntimeType` is the type of the runtime object
-   2. The runtime type must be annotated with `@RuntimeType.PrototypedBy(PrototypeBlueprint.class)`
-   3. The runtime type must implement `RuntimeType.Api<Prototype>`
-   4. The runtime type must have a `public static Prototype.Builder builder()` method implemented by user
-   5. The runtime type must have a `public static RuntimeType create(Prototype)` method implemented by user
-   6. The runtime type must have a `public static RuntimeType create(Consumer<Prototype.Builder>)` method implemented by user
+    1. The blueprint must extend `Prototype.Factory<RuntimeType>` where `RuntimeType` is the type of the runtime object
+    2. ~~The runtime type must be annotated with `@RuntimeType.PrototypedBy(PrototypeBlueprint.class)`~~
+    3. The runtime type must implement `RuntimeType.Api<Prototype>`
+    4. The runtime type must have a `public static Prototype.Builder builder()` method implemented by user
+    5. The runtime type must have a `public static RuntimeType create(Prototype)` method implemented by user
+    6. The runtime type must have a `public static RuntimeType create(Consumer<Prototype.Builder>)` method implemented by user
 
 ## Use Cases
 
@@ -225,20 +225,23 @@ The API has to sections:
 
 Annotations:
 
-| Annotation                  | Required | Description                                                                                                                                                                                                  |
-|-----------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Prototype.Blueprint`       | `true`   | Annotation on the blueprint interface is required to trigger annotation processing                                                                                                                           |
-| `Prototype.Implement`       | `false`  | Add additional implemented types to the generated prototype                                                                                                                                                  |
-| `Prototype.Annotated`       | `false`  | Allows adding an annotation (or annotations) to the generated class or methods                                                                                                                               |
-| `Prototype.FactoryMethod`   | `false`  | Use in generated code to mark static factory methods, also can be used on blueprint factory methods to be used during code generation, and on custom methods to mark static methods to be added to prototype |
-| `Prototype.Singular`        | `false`  | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters                                                                                                       |     
-| `Prototype.SameGeneric`     | `false`  | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`)                                                                            |
-| `Prototype.Redundant`       | `false`  | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control)                                                                                 |
-| `Prototype.Confidential`    | `false`  | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`****`)                                                                                 |
-| `Prototype.CustomMethods`   | `false`  | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods                                           |
-| `Prototype.BuilderMethod`   | `false`  | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                                                                      |
-| `Prototype.PrototypeMethod` | `false`  | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                                                                      |
-| `RuntimeType.PrototypedBy`  | `true`   | Annotation on runtime type that is created from a `Prototype`, to map it to the prototype it can be created from, used to trigger annotation processor for validation                                        |
+| Annotation                           | Required | Description                                                                                                                                                        |
+|--------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Prototype.Blueprint`                | `true`   | Annotation on the blueprint interface is required to trigger annotation processing                                                                                 |
+| `Prototype.Implement`                | `false`  | Add additional implemented types to the generated prototype                                                                                                        |
+| `Prototype.Annotated`                | `false`  | Allows adding an annotation (or annotations) to the generated class or methods                                                                                     |
+| ~~`Prototype.FactoryMethod`~~        | `false`  | Deprecated and marked for removal                                                                                                                                  |
+| `Prototype.PrototypeFactoryMethod`   | `false`  | Annotates a method in a `CustomMethods` type to be added as a static method to the prototype                                                                       |
+| `Prototype.ConfigFactoryMethod`      | `false`  | Annotates a method in a `CustomMethods` type that creates an option from `Config` on a configured type                                                             |
+| `Prototype.RuntimeTypeFactoryMethod` | `false`  | Annotates a method in a `CustomMethods` type that creates an option runtime type from its prototype (the parameter must be another prototype                       |
+| `Prototype.Singular`                 | `false`  | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters                                                             |     
+| `Prototype.SameGeneric`              | `false`  | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`)                                  |
+| `Prototype.Redundant`                | `false`  | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control)                                       |
+| `Prototype.Confidential`             | `false`  | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`****`)                                       |
+| `Prototype.CustomMethods`            | `false`  | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods |
+| `Prototype.BuilderMethod`            | `false`  | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                            |
+| `Prototype.PrototypeMethod`          | `false`  | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                            |
+| ~~`RuntimeType.PrototypedBy`~~       | `true`   | Deprecated and marked for removal                                                                                                                                  |
 
 Interfaces:
 

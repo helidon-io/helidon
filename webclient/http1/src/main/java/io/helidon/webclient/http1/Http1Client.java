@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * HTTP/1.1 client.
  */
-@RuntimeType.PrototypedBy(Http1ClientConfig.class)
 public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType.Api<Http1ClientConfig> {
     /**
      * ID of HTTP/1.1 protocol, as used for example in ALPN.

@@ -57,7 +57,6 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@RuntimeType.PrototypedBy(JacksonSupportConfig.class)
 public class JacksonSupport implements MediaSupport, RuntimeType.Api<JacksonSupportConfig> {
     private final ObjectMapper objectMapper;
     private final JacksonReader reader;

@@ -78,9 +78,31 @@ final class TypeNameSupport {
             PRIMITIVE_VOID, BOXED_VOID
     );
 
+    private static final Map<TypeName, TypeName> UNBOXED_TYPES = Map.of(
+            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
+            BOXED_BYTE, PRIMITIVE_BYTE,
+            BOXED_SHORT, PRIMITIVE_SHORT,
+            BOXED_INT, PRIMITIVE_INT,
+            BOXED_LONG, PRIMITIVE_LONG,
+            BOXED_CHAR, PRIMITIVE_CHAR,
+            BOXED_FLOAT, PRIMITIVE_FLOAT,
+            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
+            BOXED_VOID, PRIMITIVE_VOID
+    );
+
     private TypeNameSupport() {
     }
 
+    /**
+     * Compare with another type name.
+     * First compares by {@link io.helidon.common.types.TypeName#name()}, than by
+     * {@link io.helidon.common.types.TypeName#primitive}, and finally by {@link io.helidon.common.types.TypeName#array()}.
+     *
+     * @param typeName ignored
+     * @param o type name to compare to
+     * @return comparison result
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override")
     static int compareTo(TypeName typeName, TypeName o) {
@@ -109,6 +131,19 @@ final class TypeNameSupport {
                 .orElse(original);
     }
 
+    /**
+     * Return the unboxed equivalent of this type.
+     * If this is a boxed primitive, the primitive type is returned.
+     *
+     * @param original instance to unbox
+     * @return primitive type for this type, or this type if not boxed primitive type
+     */
+    @Prototype.PrototypeMethod
+    static TypeName unboxed(TypeName original) {
+        return Optional.ofNullable(UNBOXED_TYPES.get(original))
+                .orElse(original);
+    }
+
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override")
     static String toString(TypeName instance) {
@@ -116,7 +151,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String name(TypeName instance) {
         return calcName(instance, "$");
     }
@@ -134,7 +168,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String fqName(TypeName instance) {
         String name = calcName(instance, ".");
         StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
@@ -145,7 +178,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String declaredName(TypeName instance) {
         String name = name(instance);
         StringBuilder nameBuilder = new StringBuilder(name);
@@ -156,7 +188,6 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
-    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String resolvedName(TypeName instance) {
         if (instance.generic() || instance.wildcard()) {
             return resolveGenericName(instance);
@@ -238,7 +269,7 @@ final class TypeNameSupport {
      * @param type the type
      * @return type name for the provided type
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName create(Type type) {
         if (type instanceof Class<?> clazz) {
             return TypeStash.stash(clazz);
@@ -258,7 +289,7 @@ final class TypeNameSupport {
      * @param typeName the FQN of the class type
      * @return the TypeName for the provided type name
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName create(String typeName) {
         Objects.requireNonNull(typeName);
         return TypeStash.stash(typeName);
@@ -365,7 +396,7 @@ final class TypeNameSupport {
      * @param genericAliasTypeName the generic alias type name
      * @return the TypeName for the provided type name
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
         return TypeName.builder()
                 .generic(true)

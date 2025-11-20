@@ -35,7 +35,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * WebServer feature to register static content.
  */
-@RuntimeType.PrototypedBy(StaticContentConfig.class)
 public class StaticContentFeature implements Weighted, ServerFeature, RuntimeType.Api<StaticContentConfig> {
     static final String STATIC_CONTENT_ID = "static-content";
     static final double WEIGHT = 95;

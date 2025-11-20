@@ -34,7 +34,7 @@ class CriteriaConditionSupport {
      * @param parameter condition parameter
      * @return new instance of criteria condition
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static CriteriaCondition createEqual(Property property, CharSequence parameter) {
         Objects.requireNonNull(property, "Value of property is null");
         Objects.requireNonNull(parameter, "Value of parameter is null");
@@ -52,7 +52,7 @@ class CriteriaConditionSupport {
      * @param property condition entity property
      * @return new instance of criteria condition
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static CriteriaCondition createEqual(Property property) {
         Objects.requireNonNull(property, "Value of property is null");
         return CriteriaCondition.builder()

@@ -30,7 +30,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection select() {
         return Projection.builder()
                 .action(ProjectionAction.Select)
@@ -43,7 +43,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection selectDistinct() {
         return Projection.builder()
                 .action(ProjectionAction.Select)
@@ -58,7 +58,7 @@ class ProjectionSupport {
      * @param count returned records count limit
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection selectFirst(int count) {
         if (count <= 0) {
             throw new IllegalArgumentException("Value of count must be greater than 0");
@@ -75,7 +75,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection selectCount() {
         return Projection.builder()
                 .action(ProjectionAction.Select)
@@ -88,7 +88,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection selectExists() {
         return Projection.builder()
                 .action(ProjectionAction.Select)
@@ -101,7 +101,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection delete() {
         return Projection.builder()
                 .action(ProjectionAction.Delete)
@@ -113,7 +113,7 @@ class ProjectionSupport {
      *
      * @return new instance of {@link Projection}
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Projection update() {
         return Projection.builder()
                 .action(ProjectionAction.Update)

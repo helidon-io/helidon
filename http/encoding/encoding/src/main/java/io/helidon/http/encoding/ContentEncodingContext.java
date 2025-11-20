@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.http.Headers;
 /**
  * Content encoding support to obtain encoders and decoders.
  */
-@RuntimeType.PrototypedBy(ContentEncodingContextConfig.class)
 public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingContextConfig> {
     /**
      * Create a new encoding support.

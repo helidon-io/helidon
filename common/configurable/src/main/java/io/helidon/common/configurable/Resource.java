@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import io.helidon.common.config.ConfigException;
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
  * Note that this stores all the bytes in memory, so use with care!!!
  */
-@RuntimeType.PrototypedBy(ResourceConfig.class)
 public interface Resource extends RuntimeType.Api<ResourceConfig> {
     /**
      * Load resource from URI provided.

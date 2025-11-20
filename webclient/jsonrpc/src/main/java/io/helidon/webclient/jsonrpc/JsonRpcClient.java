@@ -23,7 +23,6 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * A JSON-RPC client.
  */
-@RuntimeType.PrototypedBy(JsonRpcClientConfig.class)
 public interface JsonRpcClient extends RuntimeType.Api<JsonRpcClientConfig> {
 
     /**

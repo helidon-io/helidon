@@ -41,7 +41,6 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * {@link java.util.ServiceLoader} provider implementation for Gson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@RuntimeType.PrototypedBy(GsonSupportConfig.class)
 public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportConfig> {
 
     private static final Gson GSON = new GsonBuilder().create();

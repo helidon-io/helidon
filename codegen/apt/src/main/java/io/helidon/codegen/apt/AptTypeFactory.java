@@ -162,7 +162,8 @@ public final class AptTypeFactory {
         }
         case TYPEVAR -> {
             if (!inProgress.add(typeMirror)) {
-                return Optional.empty(); // prevent infinite loop
+                // prevent infinite loop
+                return Optional.of(TypeName.createFromGenericDeclaration(typeMirror.toString()));
             }
 
             try {

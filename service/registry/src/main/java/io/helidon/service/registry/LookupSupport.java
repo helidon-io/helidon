@@ -44,7 +44,7 @@ final class LookupSupport {
          * @param dependency injection point to create lookup for
          * @return lookup to match injection point
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Lookup create(Dependency dependency) {
             return Lookup.builder()
                     .dependency(dependency)
@@ -57,7 +57,7 @@ final class LookupSupport {
          * @param contract a single contract to base the lookup on
          * @return lookup for matching services
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Lookup create(Class<?> contract) {
             return Lookup.builder()
                     .addContract(contract)
@@ -70,7 +70,7 @@ final class LookupSupport {
          * @param contract a single contract to base the lookup on
          * @return lookup for matching services
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Lookup create(TypeName contract) {
             return Lookup.builder()
                     .addContract(ResolvedType.create(contract))

@@ -32,7 +32,7 @@ class SortSupport {
      *
      * @return new query result ordering instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Sort unsorted() {
         return Sort.builder()
                 .orderBy(Collections.emptyList())
@@ -45,7 +45,7 @@ class SortSupport {
      * @param orders order definitions
      * @return new query result ordering instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Sort create(Order... orders) {
         return Sort.builder()
                 .orderBy(List.of(orders))
@@ -58,7 +58,7 @@ class SortSupport {
      * @param orders {@link List} of order definitions
      * @return new query result ordering instance
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Sort create(List<Order> orders) {
         return Sort.builder()
                 .orderBy(orders)

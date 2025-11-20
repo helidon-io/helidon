@@ -132,7 +132,7 @@ final class SchemaSupport {
          * @param clazz schema class
          * @return schema related to the provided class or empty
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Optional<Schema> find(Class<?> clazz) {
             return Services.first(JsonSchemaProvider.class, Qualifier.createNamed(clazz))
                     .map(JsonSchemaProvider::schema);
@@ -144,7 +144,7 @@ final class SchemaSupport {
          * @param jsonSchema source json schema
          * @return parsed schema object
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Schema parse(String jsonSchema) {
             Schema.Builder builder = Schema.builder();
             try (InputStream is = new ByteArrayInputStream(jsonSchema.getBytes(StandardCharsets.UTF_8))) {

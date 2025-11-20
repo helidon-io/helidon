@@ -73,22 +73,22 @@ class OpenTelemetryTracingConfigSupport {
         private CustomMethods() {
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("processorConfigs")
         static SpanProcessorConfig createProcessorConfigs(Config config) {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("sampler")
         static Sampler createSampler(Config config) {
             return OtelConfigSupport.createSampler(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("spanLimits")
         static SpanLimits createSpanLimits(Config config) {
             return OtelConfigSupport.createSpanLimits(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("exporterConfigs")
         static SpanExporter createExporterConfigs(Config config) {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
         }

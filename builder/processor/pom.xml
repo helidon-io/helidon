@@ -32,7 +32,15 @@
     <description>This module is deprecated and will be removed, please use helidon-builder-codegen in
     combination with helidon-codegen-apt</description>
 
+    <properties>
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>

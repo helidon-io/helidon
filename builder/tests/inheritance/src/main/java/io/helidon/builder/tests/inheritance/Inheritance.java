@@ -18,9 +18,6 @@ package io.helidon.builder.tests.inheritance;
 
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.RuntimeType;
-
-@RuntimeType.PrototypedBy(InheritanceConfig.class)
 class Inheritance extends InheritanceBase<InheritanceConfig> {
     private final InheritanceConfig config;
 

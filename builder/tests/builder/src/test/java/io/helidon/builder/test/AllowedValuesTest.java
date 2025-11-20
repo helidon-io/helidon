@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ class AllowedValuesTest {
 
         String message = thrown.getMessage();
         assertThat(message,
-                   containsString("Property \"restricted-options\" value is not within allowed values. "
+                   containsString("Property \"restrictedOptions\" value is not within allowed values. "
                                       + "Configured: \"BAD\", expected one of: \""));
         // we use a set, may be different order
         assertThat(message, containsString("GOOD_1"));
@@ -86,7 +86,7 @@ class AllowedValuesTest {
 
         String message = thrown.getMessage();
         assertThat(message,
-                   containsString("Property \"restricted-options-list\" contains value that is not within allowed values. "
+                   containsString("Property \"restrictedOptionsList\" contains value that is not within allowed values. "
                                       + "Configured: \"BAD\", expected one of: \""));
         // we use a set, may be different order
         assertThat(message, containsString("GOOD_1"));

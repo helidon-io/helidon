@@ -28,7 +28,6 @@ import io.helidon.common.Errors;
  * A uses directive of a module info.
  *
  * @see #builder()
- * @see #create()
  */
 public interface ModuleInfoUses extends ModuleInfoUsesBlueprint, Prototype.Api {
 
@@ -52,13 +51,12 @@ public interface ModuleInfoUses extends ModuleInfoUsesBlueprint, Prototype.Api {
     }
 
     /**
-     * Create a new instance with default values.
+     * Type of the service used by this module.
      *
-     * @return a new instance
+     * @return service
      */
-    static ModuleInfoUses create() {
-        return ModuleInfoUses.builder().buildPrototype();
-    }
+    @Override
+    TypeName service();
 
     /**
      * Fluent API builder base for {@link ModuleInfoUses}.
@@ -115,8 +113,7 @@ public interface ModuleInfoUses extends ModuleInfoUsesBlueprint, Prototype.Api {
         /**
          * Type of the service used by this module.
          *
-         * @param consumer consumer of builder for
-         *                 service
+         * @param consumer consumer of builder of service
          * @return updated builder instance
          * @see #service()
          */
@@ -131,8 +128,7 @@ public interface ModuleInfoUses extends ModuleInfoUsesBlueprint, Prototype.Api {
         /**
          * Type of the service used by this module.
          *
-         * @param supplier supplier of
-         *                 service
+         * @param supplier supplier of service
          * @return updated builder instance
          * @see #service()
          */
@@ -145,7 +141,7 @@ public interface ModuleInfoUses extends ModuleInfoUsesBlueprint, Prototype.Api {
         /**
          * Type of the service used by this module.
          *
-         * @return the service
+         * @return service
          */
         public Optional<TypeName> service() {
             return Optional.ofNullable(service);

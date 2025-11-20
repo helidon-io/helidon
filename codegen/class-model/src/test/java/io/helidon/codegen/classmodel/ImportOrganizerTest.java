@@ -42,7 +42,7 @@ class ImportOrganizerTest {
 
         Type type = Type.fromTypeName(typeNameLevel);
         assertThat(type.packageName(), is("java.lang"));
-        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(TypeName.create(System.Logger.class)))));
+        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(TypeName.create(System.class)))));
         assertThat(type.innerClass(), is(true));
 
         ImportOrganizer io = ImportOrganizer.builder()
@@ -62,9 +62,37 @@ class ImportOrganizerTest {
     }
 
     @Test
+    void testImportOrganizerHsonStruct() throws IOException {
+        TypeName typeNameStruct = TypeName.create("io.helidon.metadata.hson.Hson.Struct.Builder");
+        assertThat(typeNameStruct.className(), is("Builder"));
+        assertThat(typeNameStruct.enclosingNames(), hasItems("Hson", "Struct"));
+        assertThat(typeNameStruct.packageName(), is("io.helidon.metadata.hson"));
+
+        Type type = Type.fromTypeName(typeNameStruct);
+        assertThat(type.packageName(), is("io.helidon.metadata.hson"));
+        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(TypeName.create("io.helidon.metadata.hson.Hson")))));
+        assertThat(type.innerClass(), is(true));
+
+        ImportOrganizer io = ImportOrganizer.builder()
+                .typeName("io.helidon.NotImportant")
+                .packageName("io.helidon")
+                .addImport(type)
+                .build();
+        StringWriter writer = new StringWriter();
+        ModelWriter modelWriter = new ModelWriter(writer, "");
+        type.writeComponent(modelWriter, Set.of(), io, ClassType.CLASS);
+
+        String written = writer.toString();
+        assertThat(written, is("Hson.Struct.Builder"));
+
+        List<String> imports = io.imports();
+        assertThat(imports, hasItem("io.helidon.metadata.hson.Hson"));
+    }
+
+    @Test
     void testImportDoubleInnerType() throws IOException {
         TypeName typeNameLevel = TypeName.create("io.helidon.service.registry.Interception.Interceptor.Chain");
-        TypeName parentType = TypeName.create("io.helidon.service.registry.Interception.Interceptor");
+        TypeName topLevelType = TypeName.create("io.helidon.service.registry.Interception");
 
         assertThat(typeNameLevel.className(), is("Chain"));
         assertThat(typeNameLevel.enclosingNames(), hasItems("Interception", "Interceptor"));
@@ -72,7 +100,7 @@ class ImportOrganizerTest {
 
         Type type = Type.fromTypeName(typeNameLevel);
         assertThat(type.packageName(), is("io.helidon.service.registry"));
-        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(parentType))));
+        assertThat(type.declaringClass(), is(Optional.of(Type.fromTypeName(topLevelType))));
         assertThat(type.innerClass(), is(true));
 
         ImportOrganizer io = ImportOrganizer.builder()

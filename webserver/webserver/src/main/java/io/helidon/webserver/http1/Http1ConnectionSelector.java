@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
 /**
  * HTTP/1.1 server connection selector.
  */
-@RuntimeType.PrototypedBy(Http1ConnectionSelectorConfig.class)
 public class Http1ConnectionSelector implements ServerConnectionSelector, RuntimeType.Api<Http1ConnectionSelectorConfig> {
 
     private static final String PROTOCOL = " HTTP/1.1\r";

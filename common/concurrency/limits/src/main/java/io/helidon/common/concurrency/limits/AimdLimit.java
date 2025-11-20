@@ -31,7 +31,6 @@ import io.helidon.common.config.Config;
  * reduction when congestion is detected.
  */
 @SuppressWarnings("removal")
-@RuntimeType.PrototypedBy(AimdLimitConfig.class)
 public class AimdLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
 
     /**

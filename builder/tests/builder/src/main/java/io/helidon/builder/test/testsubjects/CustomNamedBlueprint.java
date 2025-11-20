@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import io.helidon.builder.api.Prototype;
  * changing the package name targeted for the generated class.
  */
 @Prototype.Blueprint(beanStyle = true)
-@Prototype.Annotated("com.fasterxml.jackson.annotation.JsonAutoDetect(fieldVisibility = "
-        + "com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY)")
 interface CustomNamedBlueprint {
 
     /**
@@ -48,7 +46,6 @@ interface CustomNamedBlueprint {
      * @return ignored, here for testing purposes only
      */
     @Option.Singular
-    @com.fasterxml.jackson.annotation.JsonIgnore
     List<String> getStringList();
 
     /**
@@ -57,7 +54,6 @@ interface CustomNamedBlueprint {
      * @return ignored, here for testing purposes only
      */
     @Option.Singular
-    @com.fasterxml.jackson.annotation.JsonIgnore
     Map<String, Integer> getStringToIntegerMap();
 
 }

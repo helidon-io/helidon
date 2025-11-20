@@ -53,7 +53,7 @@ import io.helidon.builder.api.Prototype;
  *     <li>arrays - available as a {@link java.util.List} of values</li>
  * </ul>
  */
-@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class)
+@Prototype.Blueprint(decorator = AnnotationSupport.AnnotationDecorator.class, createEmptyPublic = false)
 @Prototype.CustomMethods(AnnotationSupport.class)
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
@@ -72,7 +72,7 @@ interface AnnotationBlueprint {
     TypeName typeName();
 
     /**
-     * Get a key-value of all the annotation properties.
+     * Key-value map of all the annotation properties.
      *
      * @return key-value pairs of all the properties present
      * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface

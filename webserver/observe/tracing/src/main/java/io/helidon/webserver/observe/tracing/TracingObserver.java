@@ -60,7 +60,6 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 /**
  * Observer that registers tracing endpoint, and collects all tracing checks.
  */
-@RuntimeType.PrototypedBy(TracingObserverConfig.class)
 public class TracingObserver implements Observer, RuntimeType.Api<TracingObserverConfig> {
     private static final String CONTENT_READ_SPAN_NAME = "content-read";
     private static final String CONTENT_WRITE_SPAN_NAME = "content-write";

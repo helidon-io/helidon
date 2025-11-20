@@ -32,7 +32,7 @@ final class ContextRecordConfigSupport {
         /*
           Factory method to read HeaderName directly from configuration
         */
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("header")
         static HeaderName createHeader(Config config) {
             return config.asString()
                     .map(HeaderNames::create)

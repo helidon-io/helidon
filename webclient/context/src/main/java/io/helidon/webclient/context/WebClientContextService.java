@@ -28,7 +28,6 @@ import io.helidon.webclient.spi.WebClientService;
 /**
  * Client service for context propagation.
  */
-@RuntimeType.PrototypedBy(WebClientContextConfig.class)
 public class WebClientContextService implements WebClientService, RuntimeType.Api<WebClientContextConfig> {
     private final List<PropagationRecord> propagations;
     private final WebClientContextConfig config;

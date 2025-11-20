@@ -30,7 +30,6 @@ import io.helidon.builder.api.RuntimeType;
  *      .build();
  * }</pre>
  */
-@RuntimeType.PrototypedBy(FixedRateConfig.class)
 public interface FixedRate extends RuntimeType.Api<FixedRateConfig>, Task {
 
     /**

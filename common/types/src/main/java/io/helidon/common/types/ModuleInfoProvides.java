@@ -30,7 +30,6 @@ import io.helidon.common.Errors;
  * A provides directive of a module info.
  *
  * @see #builder()
- * @see #create()
  */
 public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototype.Api {
 
@@ -54,13 +53,20 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
     }
 
     /**
-     * Create a new instance with default values.
+     * Type of the service provided.
      *
-     * @return a new instance
+     * @return service type
      */
-    static ModuleInfoProvides create() {
-        return ModuleInfoProvides.builder().buildPrototype();
-    }
+    @Override
+    TypeName service();
+
+    /**
+     * List of implementations of the service.
+     *
+     * @return implementation types
+     */
+    @Override
+    List<TypeName> implementations();
 
     /**
      * Fluent API builder base for {@link ModuleInfoProvides}.
@@ -90,8 +96,8 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
          */
         public BUILDER from(ModuleInfoProvides prototype) {
             service(prototype.service());
-            if (!isImplementationsMutated) {
-                implementations.clear();
+            if (!this.isImplementationsMutated) {
+                this.implementations.clear();
             }
             addImplementations(prototype.implementations());
             return self();
@@ -105,13 +111,12 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
          */
         public BUILDER from(ModuleInfoProvides.BuilderBase<?, ?> builder) {
             builder.service().ifPresent(this::service);
-            if (isImplementationsMutated) {
+            if (this.isImplementationsMutated) {
                 if (builder.isImplementationsMutated) {
-                    addImplementations(builder.implementations);
-                }
+                    addImplementations(builder.implementations());
+            }
             } else {
-                implementations.clear();
-                addImplementations(builder.implementations);
+                implementations(builder.implementations());
             }
             return self();
         }
@@ -132,8 +137,7 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
         /**
          * Type of the service provided.
          *
-         * @param consumer consumer of builder for
-         *                 service type
+         * @param consumer consumer of builder of service type
          * @return updated builder instance
          * @see #service()
          */
@@ -148,14 +152,25 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
         /**
          * Type of the service provided.
          *
-         * @param supplier supplier of
-         *                 service type
+         * @param supplier supplier of service type
          * @return updated builder instance
          * @see #service()
          */
         public BUILDER service(Supplier<? extends TypeName> supplier) {
             Objects.requireNonNull(supplier);
             this.service(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear all implementations.
+         *
+         * @return updated builder instance
+         * @see #implementations()
+         */
+        public BUILDER clearImplementations() {
+            this.isImplementationsMutated = true;
+            this.implementations.clear();
             return self();
         }
 
@@ -168,7 +183,7 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
          */
         public BUILDER implementations(List<? extends TypeName> implementations) {
             Objects.requireNonNull(implementations);
-            isImplementationsMutated = true;
+            this.isImplementationsMutated = true;
             this.implementations.clear();
             this.implementations.addAll(implementations);
             return self();
@@ -183,7 +198,7 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
          */
         public BUILDER addImplementations(List<? extends TypeName> implementations) {
             Objects.requireNonNull(implementations);
-            isImplementationsMutated = true;
+            this.isImplementationsMutated = true;
             this.implementations.addAll(implementations);
             return self();
         }
@@ -191,21 +206,21 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
         /**
          * List of implementations of the service.
          *
-         * @param implementation implementation types
+         * @param implementation add single implementation types
          * @return updated builder instance
          * @see #implementations()
          */
         public BUILDER addImplementation(TypeName implementation) {
             Objects.requireNonNull(implementation);
             this.implementations.add(implementation);
-            isImplementationsMutated = true;
+            this.isImplementationsMutated = true;
             return self();
         }
 
         /**
          * List of implementations of the service.
          *
-         * @param consumer implementation types
+         * @param consumer consumer of builder for implementation types
          * @return updated builder instance
          * @see #implementations()
          */
@@ -213,14 +228,14 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
-            this.implementations.add(builder.build());
+            this.addImplementation(builder.build());
             return self();
         }
 
         /**
          * Type of the service provided.
          *
-         * @return the service
+         * @return service type
          */
         public Optional<TypeName> service() {
             return Optional.ofNullable(service);
@@ -229,7 +244,7 @@ public interface ModuleInfoProvides extends ModuleInfoProvidesBlueprint, Prototy
         /**
          * List of implementations of the service.
          *
-         * @return the implementations
+         * @return implementation types
          */
         public List<TypeName> implementations() {
             return implementations;

@@ -68,7 +68,6 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-@RuntimeType.PrototypedBy(SecurityHandlerConfig.class)
 public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityHandlerConfig> {
     static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
     static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";

@@ -147,6 +147,651 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         return AnnotationSupport.create(annoType, values);
     }
 
+    @Override
+    default int compareTo(Annotation o) {
+        return AnnotationSupport.compareTo(this, o);
+    }
+
+    /**
+     * The value property.
+     *
+     * @return the string value of value property
+     */
+    default Optional<String> value() {
+        return AnnotationBlueprint.super.value();
+    }
+
+    /**
+     * Get a value of an annotation property.
+     *
+     * @param property name of the annotation property
+     * @return string value of the property
+     */
+    default Optional<String> getValue(String property) {
+        return AnnotationBlueprint.super.getValue(property);
+    }
+
+    /**
+     * Annotation property for the {@value #VALUE_PROPERTY} property.
+     *
+     * @return annotation property
+     */
+    default Optional<AnnotationProperty> property() {
+        return AnnotationBlueprint.super.property();
+    }
+
+    /**
+     * Annotation property for the defined name.
+     *
+     * @param property property name
+     * @return annotation property
+     */
+    default Optional<AnnotationProperty> property(String property) {
+        return AnnotationBlueprint.super.property(property);
+    }
+
+    /**
+     * Value of the annotation as an object.
+     * The type can be either String, or any primitive type, or {@link io.helidon.common.types.Annotation},
+     * or list of these.
+     *
+     * @return object value
+     */
+    default Optional<Object> objectValue() {
+        return AnnotationBlueprint.super.objectValue();
+    }
+
+    /**
+     * Value of the annotation property as an object.
+     * The type can be either String, or any primitive type, or {@link io.helidon.common.types.Annotation},
+     * or list of these.
+     *
+     * @param property name of the annotation property
+     * @return object value
+     */
+    default Optional<Object> objectValue(String property) {
+        return AnnotationBlueprint.super.objectValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<String> stringValue() {
+        return AnnotationBlueprint.super.stringValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<String> stringValue(String property) {
+        return AnnotationBlueprint.super.stringValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<String>> stringValues() {
+        return AnnotationBlueprint.super.stringValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<String>> stringValues(String property) {
+        return AnnotationBlueprint.super.stringValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Integer> intValue() {
+        return AnnotationBlueprint.super.intValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Integer> intValue(String property) {
+        return AnnotationBlueprint.super.intValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Integer>> intValues() {
+        return AnnotationBlueprint.super.intValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Integer>> intValues(String property) {
+        return AnnotationBlueprint.super.intValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Long> longValue() {
+        return AnnotationBlueprint.super.longValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Long> longValue(String property) {
+        return AnnotationBlueprint.super.longValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Long>> longValues() {
+        return AnnotationBlueprint.super.longValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Long>> longValues(String property) {
+        return AnnotationBlueprint.super.longValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Boolean> booleanValue() {
+        return AnnotationBlueprint.super.booleanValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Boolean> booleanValue(String property) {
+        return AnnotationBlueprint.super.booleanValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Boolean>> booleanValues() {
+        return AnnotationBlueprint.super.booleanValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Boolean>> booleanValues(String property) {
+        return AnnotationBlueprint.super.booleanValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Byte> byteValue() {
+        return AnnotationBlueprint.super.byteValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Byte> byteValue(String property) {
+        return AnnotationBlueprint.super.byteValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Byte>> byteValues() {
+        return AnnotationBlueprint.super.byteValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Byte>> byteValues(String property) {
+        return AnnotationBlueprint.super.byteValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Character> charValue() {
+        return AnnotationBlueprint.super.charValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Character> charValue(String property) {
+        return AnnotationBlueprint.super.charValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Character>> charValues() {
+        return AnnotationBlueprint.super.charValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Character>> charValues(String property) {
+        return AnnotationBlueprint.super.charValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Short> shortValue() {
+        return AnnotationBlueprint.super.shortValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Short> shortValue(String property) {
+        return AnnotationBlueprint.super.shortValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Short>> shortValues() {
+        return AnnotationBlueprint.super.shortValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Short>> shortValues(String property) {
+        return AnnotationBlueprint.super.shortValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Float> floatValue() {
+        return AnnotationBlueprint.super.floatValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Float> floatValue(String property) {
+        return AnnotationBlueprint.super.floatValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Float>> floatValues() {
+        return AnnotationBlueprint.super.floatValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Float>> floatValues(String property) {
+        return AnnotationBlueprint.super.floatValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Double> doubleValue() {
+        return AnnotationBlueprint.super.doubleValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Double> doubleValue(String property) {
+        return AnnotationBlueprint.super.doubleValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Double>> doubleValues() {
+        return AnnotationBlueprint.super.doubleValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Double>> doubleValues(String property) {
+        return AnnotationBlueprint.super.doubleValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Class<?>> classValue() {
+        return AnnotationBlueprint.super.classValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Class<?>> classValue(String property) {
+        return AnnotationBlueprint.super.classValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Class<?>>> classValues() {
+        return AnnotationBlueprint.super.classValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Class<?>>> classValues(String property) {
+        return AnnotationBlueprint.super.classValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     * Alternative for {@link #classValue()}.
+     *
+     * @return value if present
+     */
+    default Optional<TypeName> typeValue() {
+        return AnnotationBlueprint.super.typeValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     * Alternative for {@link #classValue(String)}.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<TypeName> typeValue(String property) {
+        return AnnotationBlueprint.super.typeValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     * Alternative for {@link #classValues()}.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<TypeName>> typeValues() {
+        return AnnotationBlueprint.super.typeValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     * Alternative for {@link #classValues(String)}.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<TypeName>> typeValues(String property) {
+        return AnnotationBlueprint.super.typeValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @return value if present
+     */
+    default Optional<Annotation> annotationValue() {
+        return AnnotationBlueprint.super.annotationValue();
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @return value if present
+     */
+    default Optional<Annotation> annotationValue(String property) {
+        return AnnotationBlueprint.super.annotationValue(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<Annotation>> annotationValues() {
+        return AnnotationBlueprint.super.annotationValues();
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @return list of defined values if present
+     */
+    default Optional<List<Annotation>> annotationValues(String property) {
+        return AnnotationBlueprint.super.annotationValues(property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     *
+     * @param type class of the enumeration
+     * @param <T>  type of the enumeration
+     * @return value if present
+     */
+    default <T extends java.lang.Enum<T>> Optional<T> enumValue(Class<T> type) {
+        return AnnotationBlueprint.super.enumValue(type);
+    }
+
+    /**
+     * Typed value of a named property.
+     *
+     * @param property name of the annotation property
+     * @param type     class of the enumeration
+     * @param <T>      type of the enumeration
+     * @return value if present
+     */
+    default <T extends java.lang.Enum<T>> Optional<T> enumValue(String property, Class<T> type) {
+        return AnnotationBlueprint.super.enumValue(property, type);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param type class of the enumeration
+     * @param <T>  type of the enumeration
+     * @return list of defined values if present
+     */
+    default <T extends java.lang.Enum<T>> Optional<List<T>> enumValues(Class<T> type) {
+        return AnnotationBlueprint.super.enumValues(type);
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     *
+     * @param property name of the annotation property
+     * @param type     class of the enumeration
+     * @param <T>      type of the enumeration
+     * @return list of defined values if present
+     */
+    default <T extends java.lang.Enum<T>> Optional<List<T>> enumValues(String property, Class<T> type) {
+        return AnnotationBlueprint.super.enumValues(property, type);
+    }
+
+    /**
+     * Check if {@link io.helidon.common.types.Annotation#metaAnnotations()} contains an annotation of the provided type.
+     * <p>
+     * Note: we ignore {@link java.lang.annotation.Target}, {@link java.lang.annotation.Inherited},
+     * {@link java.lang.annotation.Documented}, and {@link java.lang.annotation.Retention}.
+     *
+     * @param annotationType type of annotation
+     * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotationType) {
+        return AnnotationBlueprint.super.hasMetaAnnotation(annotationType);
+    }
+
+    /**
+     * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
+     *
+     * @return the annotation type name
+     */
+    @Override
+    TypeName typeName();
+
+    /**
+     * Key-value map of all the annotation properties.
+     *
+     * @return key-value pairs of all the properties present
+     * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
+     */
+    @Deprecated(since = "4.3.0", forRemoval = true)
+    @Override
+    Map<String, Object> values();
+
+    /**
+     * List of properties defined on this annotation.
+     *
+     * @return properties
+     */
+    @Override
+    Map<String, AnnotationProperty> properties();
+
+    /**
+     * A list of inherited annotations (from the whole hierarchy).
+     *
+     * @return list of all annotations declared on the annotation type, or inherited from them
+     */
+    @Override
+    List<Annotation> metaAnnotations();
+
     /**
      * Fluent API builder base for {@link Annotation}.
      *
@@ -156,9 +801,11 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     abstract class BuilderBase<BUILDER extends Annotation.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> metaAnnotations = new ArrayList<>();
-        private final Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
-        private final Map<String, Object> values = new LinkedHashMap<>();
         private boolean isMetaAnnotationsMutated;
+        private boolean isPropertiesMutated;
+        private boolean isValuesMutated;
+        private Map<String, AnnotationProperty> properties = new LinkedHashMap<>();
+        private Map<String, Object> values = new LinkedHashMap<>();
         private TypeName typeName;
 
         /**
@@ -175,10 +822,16 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER from(Annotation prototype) {
             typeName(prototype.typeName());
+            if (!this.isValuesMutated) {
+                this.values.clear();
+            }
             addValues(prototype.values());
+            if (!this.isPropertiesMutated) {
+                this.properties.clear();
+            }
             addProperties(prototype.properties());
-            if (!isMetaAnnotationsMutated) {
-                metaAnnotations.clear();
+            if (!this.isMetaAnnotationsMutated) {
+                this.metaAnnotations.clear();
             }
             addMetaAnnotations(prototype.metaAnnotations());
             return self();
@@ -192,15 +845,26 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER from(Annotation.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
-            addValues(builder.values);
-            addProperties(builder.properties);
-            if (isMetaAnnotationsMutated) {
-                if (builder.isMetaAnnotationsMutated) {
-                    addMetaAnnotations(builder.metaAnnotations);
+            if (this.isValuesMutated) {
+                if (builder.isValuesMutated) {
+                    addValues(builder.values());
                 }
             } else {
-                metaAnnotations.clear();
-                addMetaAnnotations(builder.metaAnnotations);
+                values(builder.values());
+            }
+            if (this.isPropertiesMutated) {
+                if (builder.isPropertiesMutated) {
+                    addProperties(builder.properties());
+                }
+            } else {
+                properties(builder.properties());
+            }
+            if (this.isMetaAnnotationsMutated) {
+                if (builder.isMetaAnnotationsMutated) {
+                    addMetaAnnotations(builder.metaAnnotations());
+                }
+            } else {
+                metaAnnotations(builder.metaAnnotations());
             }
             return self();
         }
@@ -243,8 +907,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
-         * @param consumer consumer of builder for
-         *                 the annotation type name
+         * @param consumer consumer of builder of the annotation type name
          * @return updated builder instance
          * @see #typeName()
          */
@@ -259,8 +922,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
-         * @param supplier supplier of
-         *                 the annotation type name
+         * @param supplier supplier of the annotation type name
          * @return updated builder instance
          * @see #typeName()
          */
@@ -271,48 +933,61 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
+         * Key-value map of all the annotation properties.
          * This method replaces all values with the new ones.
          *
          * @param values key-value pairs of all the properties present
          * @return updated builder instance
+         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
          * @see #values()
          */
+        @Deprecated(since = "4.3.0", forRemoval = true)
         public BUILDER values(Map<String, ?> values) {
             Objects.requireNonNull(values);
             this.values.clear();
             this.values.putAll(values);
+            this.isValuesMutated = true;
             return self();
         }
 
         /**
+         * Key-value map of all the annotation properties.
          * This method keeps existing values, then puts all new values into the map.
          *
          * @param values key-value pairs of all the properties present
          * @return updated builder instance
+         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
          * @see #values()
          */
+        @Deprecated(since = "4.3.0", forRemoval = true)
         public BUILDER addValues(Map<String, ?> values) {
             Objects.requireNonNull(values);
             this.values.putAll(values);
+            this.isValuesMutated = true;
             return self();
         }
 
         /**
+         * Key-value map of all the annotation properties.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
          * @param key key to add or replace
          * @param value new value for the key
          * @return updated builder instance
+         * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
          * @see #values()
          */
+        @Deprecated(since = "4.3.0", forRemoval = true)
         public BUILDER putValue(String key, Object value) {
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
             this.values.put(key, value);
+            this.isValuesMutated = true;
             return self();
         }
 
         /**
+         * List of properties defined on this annotation.
          * This method replaces all values with the new ones.
          *
          * @param properties properties
@@ -323,10 +998,12 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             Objects.requireNonNull(properties);
             this.properties.clear();
             this.properties.putAll(properties);
+            this.isPropertiesMutated = true;
             return self();
         }
 
         /**
+         * List of properties defined on this annotation.
          * This method keeps existing values, then puts all new values into the map.
          *
          * @param properties properties
@@ -336,10 +1013,12 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         public BUILDER addProperties(Map<String, ? extends AnnotationProperty> properties) {
             Objects.requireNonNull(properties);
             this.properties.putAll(properties);
+            this.isPropertiesMutated = true;
             return self();
         }
 
         /**
+         * List of properties defined on this annotation.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
          * @param key key to add or replace
@@ -351,6 +1030,19 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             Objects.requireNonNull(key);
             Objects.requireNonNull(property);
             this.properties.put(key, property);
+            this.isPropertiesMutated = true;
+            return self();
+        }
+
+        /**
+         * Clear all metaAnnotations.
+         *
+         * @return updated builder instance
+         * @see #metaAnnotations()
+         */
+        public BUILDER clearMetaAnnotations() {
+            this.isMetaAnnotationsMutated = true;
+            this.metaAnnotations.clear();
             return self();
         }
 
@@ -363,7 +1055,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER metaAnnotations(List<? extends Annotation> metaAnnotations) {
             Objects.requireNonNull(metaAnnotations);
-            isMetaAnnotationsMutated = true;
+            this.isMetaAnnotationsMutated = true;
             this.metaAnnotations.clear();
             this.metaAnnotations.addAll(metaAnnotations);
             return self();
@@ -378,7 +1070,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         public BUILDER addMetaAnnotations(List<? extends Annotation> metaAnnotations) {
             Objects.requireNonNull(metaAnnotations);
-            isMetaAnnotationsMutated = true;
+            this.isMetaAnnotationsMutated = true;
             this.metaAnnotations.addAll(metaAnnotations);
             return self();
         }
@@ -386,21 +1078,21 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * A list of inherited annotations (from the whole hierarchy).
          *
-         * @param metaAnnotation list of all annotations declared on the annotation type, or inherited from them
+         * @param metaAnnotation add single list of all annotations declared on the annotation type, or inherited from them
          * @return updated builder instance
          * @see #metaAnnotations()
          */
         public BUILDER addMetaAnnotation(Annotation metaAnnotation) {
             Objects.requireNonNull(metaAnnotation);
             this.metaAnnotations.add(metaAnnotation);
-            isMetaAnnotationsMutated = true;
+            this.isMetaAnnotationsMutated = true;
             return self();
         }
 
         /**
          * A list of inherited annotations (from the whole hierarchy).
          *
-         * @param consumer list of all annotations declared on the annotation type, or inherited from them
+         * @param consumer consumer of builder for list of all annotations declared on the annotation type, or inherited from them
          * @return updated builder instance
          * @see #metaAnnotations()
          */
@@ -408,23 +1100,23 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.metaAnnotations.add(builder.build());
+            this.addMetaAnnotation(builder.build());
             return self();
         }
 
         /**
          * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
-         * @return the type name
+         * @return the annotation type name
          */
         public Optional<TypeName> typeName() {
             return Optional.ofNullable(typeName);
         }
 
         /**
-         * Get a key-value of all the annotation properties.
+         * Key-value map of all the annotation properties.
          *
-         * @return the values
+         * @return key-value pairs of all the properties present
          * @deprecated use {@link io.helidon.common.types.Annotation#properties} instead, and accessor methods on this interface
          */
         @Deprecated(since = "4.3.0", forRemoval = true)
@@ -435,7 +1127,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * List of properties defined on this annotation.
          *
-         * @return the properties
+         * @return properties
          */
         public Map<String, AnnotationProperty> properties() {
             return properties;
@@ -444,7 +1136,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * A list of inherited annotations (from the whole hierarchy).
          *
-         * @return the meta annotations
+         * @return list of all annotations declared on the annotation type, or inherited from them
          */
         public List<Annotation> metaAnnotations() {
             return metaAnnotations;
@@ -471,7 +1163,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" must not be null, but not set");
             }
             collector.collect().checkValid();
         }
@@ -499,16 +1191,12 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             }
 
             @Override
-            public int compareTo(Annotation o) {
-                return AnnotationSupport.compareTo(this, o);
-            }
-
-            @Override
             public TypeName typeName() {
                 return typeName;
             }
 
             @Override
+            @Deprecated(since = "4.3.0", forRemoval = true)
             public Map<String, Object> values() {
                 return values;
             }

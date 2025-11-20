@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,6 +49,18 @@ record here.
 
     <!-- This file is generating source file, and uses a lot of lines to append code -->
     <suppress files="service/codegen/src/main/java/io/helidon/service/codegen/ServiceDescriptorCodegen\.java"
+            checks="FileLength"/>
+
+    <!-- This file is a generated source file, the real code (Blueprint) is much shorter -->
+    <suppress files="builder/codegen/src/main/java/io/helidon/builder/codegen/OptionInfo\.java"
+            checks="FileLength"/>
+
+    <!-- This file is a generated source file, the real code (Blueprint) is much shorter -->
+    <suppress files="builder/codegen/src/main/java/io/helidon/builder/codegen/PrototypeInfo\.java"
+            checks="FileLength"/>
+
+    <!-- This file is a generated source file, the real code (Blueprint) is much shorter -->
+    <suppress files="common/types/src/main/java/io/helidon/common/types/TypeInfo\.java"
             checks="FileLength"/>
 
     <!--

@@ -15,7 +15,12 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
@@ -48,37 +53,67 @@ class MetricsConfigSupport {
                 .asOptional();
     }
 
-    /**
-     * Reports whether the specified scope is enabled, according to any scope configuration that
-     * is part of this metrics configuration.
-     *
-     * @param metricsConfig metrics configuration
-     * @param scope         scope name
-     * @return true if the scope as a whole is enabled; false otherwise
-     */
-    @Prototype.PrototypeMethod
-    static boolean isScopeEnabled(MetricsConfig metricsConfig, String scope) {
-        var scopeConfig = metricsConfig.scoping().scopes().get(scope);
-        return scopeConfig == null || scopeConfig.enabled();
+    @Prototype.ConfigFactoryMethod("tags")
+    static List<Tag> createTags(Config globalTagExpression) {
+        return createTags(globalTagExpression.asString().get());
     }
 
-    /**
-     * Reports whether the specified meter within the indicated scope is enabled, according to the metrics configuration.
-     *
-     * @param metricsConfig metrics configuration
-     * @param name          meter name
-     * @param targetScope   scope within which to check
-     * @return whether the meter is enabled
-     */
-    @Prototype.PrototypeMethod
-    static boolean isMeterEnabled(MetricsConfig metricsConfig, String name, String targetScope) {
-        return metricsConfig.enabled()
-                && isScopeEnabled(metricsConfig, targetScope)
-                && (metricsConfig.scoping().scopes().get(targetScope) == null
-                            || metricsConfig.scoping().scopes().get(targetScope).isMeterEnabled(name));
+    static List<Tag> createTags(String pairs) {
+        // Use a TreeMap to order by tag name.
+        Map<String, Tag> result = new TreeMap<>();
+        List<String> allErrors = new ArrayList<>();
+        String[] assignments = pairs.split("(?<!\\\\),"); // split using non-escaped equals sign
+        int position = 0;
+        for (String assignment : assignments) {
+            List<String> errorsForThisAssignment = new ArrayList<>();
+            if (assignment.isBlank()) {
+                errorsForThisAssignment.add("empty assignment at position " + position + ": " + assignment);
+            } else {
+                // Pattern should yield group 1 = tag name and group 2 = tag value.
+                Matcher matcher = MetricsConfigSupport.TAG_ASSIGNMENT_PATTERN.matcher(assignment);
+                if (!matcher.matches()) {
+                    errorsForThisAssignment.add("expected tag=value but found '" + assignment + "'");
+                } else {
+                    String name = matcher.group(1);
+                    String value = matcher.group(2);
+                    if (name.isBlank()) {
+                        errorsForThisAssignment.add("missing tag name");
+                    }
+                    if (value.isBlank()) {
+                        errorsForThisAssignment.add("missing tag value");
+                    }
+                    if (!name.matches("[A-Za-z_][A-Za-z_0-9]*")) {
+                        errorsForThisAssignment.add(
+                                "tag name must start with a letter and include only letters, digits, and underscores");
+                    }
+                    if (errorsForThisAssignment.isEmpty()) {
+                        result.put(name,
+                                   // Do not use Tag.create in the next line. That would delegate to the MetricsFactoryManager
+                                   // which, ultimately, might try to load config to set up the MetricFactory. But we are
+                                   // already trying to load config and that would set up an infinite recursive loop.
+                                   NoOpTag.create(name,
+                                                  value.replace("\\,", ",")
+                                                          .replace("\\=", "=")));
+                    }
+                }
+            }
+            if (!errorsForThisAssignment.isEmpty()) {
+                allErrors.add(String.format("Position %d with expression %s: %s",
+                                            position,
+                                            assignment,
+                                            errorsForThisAssignment));
+            }
+            position++;
+        }
+        if (!allErrors.isEmpty()) {
+            throw new IllegalArgumentException("Error(s) in tag expression: " + allErrors);
+        }
+        return result.values()
+                .stream()
+                .toList();
     }
 
-    public static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
+    static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
         @Override
         public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {

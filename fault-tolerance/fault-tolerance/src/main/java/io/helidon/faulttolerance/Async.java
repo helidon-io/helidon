@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.builder.api.RuntimeType;
  * Runs synchronous suppliers asynchronously using virtual threads. Includes
  * convenient static method to avoid creating instances of this class.
  */
-@RuntimeType.PrototypedBy(AsyncConfig.class)
 public interface Async extends RuntimeType.Api<AsyncConfig> {
 
     /**

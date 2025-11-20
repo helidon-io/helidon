@@ -29,7 +29,6 @@ import io.helidon.builder.api.RuntimeType;
  * After this period, attempts are made to check if the service is up again - if so, the circuit closes
  * and requests can process as usual again.
  */
-@RuntimeType.PrototypedBy(CircuitBreakerConfig.class)
 public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreakerConfig> {
 
     /**

@@ -42,7 +42,6 @@ import io.helidon.common.config.Config;
 /**
  * TLS configuration - common for server and client.
  */
-@RuntimeType.PrototypedBy(TlsConfig.class)
 public class Tls implements RuntimeType.Api<TlsConfig> {
 
     /**

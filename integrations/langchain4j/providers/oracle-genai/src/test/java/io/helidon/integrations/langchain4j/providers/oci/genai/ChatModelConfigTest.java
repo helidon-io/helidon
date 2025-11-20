@@ -135,7 +135,7 @@ class ChatModelConfigTest {
                         .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
                                         .get(OciGenAiChatModelConfig.CONFIG_ROOT))
                         .build());
-        assertThat(exception.getMessage(), containsString("\"model-name\" must not be null"));
+        assertThat(exception.getMessage(), containsString("Property \"modelName\" must not be null"));
     }
 
     @Test
@@ -155,7 +155,7 @@ class ChatModelConfigTest {
                         .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
                                         .get(OciGenAiChatModelConfig.CONFIG_ROOT))
                         .build());
-        assertThat(exception.getMessage(), containsString("\"compartment-id\" must not be null"));
+        assertThat(exception.getMessage(), containsString("\"compartmentId\" must not be null"));
     }
 
     @Test

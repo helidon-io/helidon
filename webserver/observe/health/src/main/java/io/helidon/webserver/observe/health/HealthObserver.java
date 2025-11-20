@@ -41,7 +41,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Observer that registers health endpoint, and collects all health checks.
  */
-@RuntimeType.PrototypedBy(HealthObserverConfig.class)
 public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverConfig> {
     private final HealthObserverConfig config;
     private final List<HealthCheck> all;

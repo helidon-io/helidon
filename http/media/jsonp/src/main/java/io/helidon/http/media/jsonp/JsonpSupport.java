@@ -43,7 +43,6 @@ import jakarta.json.JsonWriterFactory;
 /**
  * Media support implementation for JSON Processing media support.
  */
-@RuntimeType.PrototypedBy(JsonpSupportConfig.class)
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportConfig> {
     /**

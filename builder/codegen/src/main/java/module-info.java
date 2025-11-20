@@ -24,8 +24,13 @@ module io.helidon.builder.codegen {
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;
     requires io.helidon.metadata;
+    requires io.helidon.builder.api;
+    requires io.helidon.common;
 
     exports io.helidon.builder.codegen;
+    exports io.helidon.builder.codegen.spi;
+
+    uses io.helidon.builder.codegen.spi.BuilderCodegenExtensionProvider;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
             with io.helidon.builder.codegen.BuilderCodegenProvider;

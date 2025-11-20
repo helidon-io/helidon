@@ -43,7 +43,6 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
  * @see io.helidon.common.concurrency.limits.FixedLimitConfig
  */
 @SuppressWarnings("removal")
-@RuntimeType.PrototypedBy(FixedLimitConfig.class)
 public class FixedLimit extends LimitAlgorithmDeprecatedBase implements Limit, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
 
     /**
