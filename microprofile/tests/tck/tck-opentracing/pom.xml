@@ -27,12 +27,6 @@
     <artifactId>tck-opentracing</artifactId>
     <name>Helidon Microprofile Tests TCK Opentracing</name>
 
-    <properties>
-        <!-- We force the version of jackson to 2.9.0 since that's -->
-        <!-- what the TCK test forces us to use (via shrinkwrap)   -->
-        <version.lib.jackson>2.9.0</version.lib.jackson>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
