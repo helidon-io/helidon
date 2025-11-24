@@ -273,10 +273,26 @@ public final class ServiceCodegenTypes {
             TypeName.create("io.helidon.service.registry.GeneratedService.EventObserverRegistration");
 
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.InterceptionContext}.
+     */
+    public static final TypeName INTERCEPTION_CONTEXT =
+            TypeName.create("io.helidon.service.registry.InterceptionContext");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Interceptor.Chain}.
+     */
+    public static final TypeName INTERCEPTION_CHAIN =
+            TypeName.create("io.helidon.service.registry.Interception.Interceptor.Chain");
+
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Intercepted}.
      */
     public static final TypeName INTERCEPTION_INTERCEPTED =
             TypeName.create("io.helidon.service.registry.Interception.Intercepted");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.ElementInterceptor}.
+     */
+    public static final TypeName INTERCEPTION_ELEMENT_INTERCEPTOR =
+            TypeName.create("io.helidon.service.registry.Interception.ElementInterceptor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Delegate}.
      */
@@ -352,6 +368,14 @@ public final class ServiceCodegenTypes {
     public static final TypeName SET_OF_RESOLVED_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
             .build();
+
+    /**
+     * A map of resolved types to a set of resolved types.
+     */
+    public static final TypeName MAP_RESOLVED_TO_SET_OF_RESOLVED = TypeName.builder(TypeNames.MAP)
+            .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
+            .addTypeArgument(SET_OF_RESOLVED_TYPES)
+            .build();
     /**
      * A set of String.
      */
@@ -386,5 +410,3 @@ public final class ServiceCodegenTypes {
     private ServiceCodegenTypes() {
     }
 }
-
-

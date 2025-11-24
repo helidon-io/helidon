@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,6 +230,10 @@ public final class TypeHierarchy {
                 .stream()
                 .map(Annotation::typeName)
                 .forEach(result::add);
+        genericTypeAnnotations(typeInfo.typeName())
+                .stream()
+                .map(Annotation::typeName)
+                .forEach(result::add);
 
         // on fields, methods etc.
         typeInfo.elementInfo()
@@ -242,6 +246,14 @@ public final class TypeHierarchy {
         typeInfo.elementInfo()
                 .stream()
                 .map(TypedElementInfo::inheritedAnnotations)
+                .flatMap(List::stream)
+                .map(Annotation::typeName)
+                .forEach(result::add);
+
+        typeInfo.elementInfo()
+                .stream()
+                .map(TypedElementInfo::typeName)
+                .map(TypeHierarchy::genericTypeAnnotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
@@ -264,39 +276,27 @@ public final class TypeHierarchy {
                 .map(Annotation::typeName)
                 .forEach(result::add);
 
-        return result;
-        /*
-        Set<TypeName> result = new HashSet<>();
-
-        // on type
-        hierarchyAnnotations(ctx, typeInfo)
-                .stream()
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on fields, methods etc.
         typeInfo.elementInfo()
                 .stream()
-                .map(it -> hierarchyAnnotations(ctx, typeInfo, it))
+                .map(TypedElementInfo::parameterArguments)
+                .flatMap(List::stream)
+                .map(TypedElementInfo::typeName)
+                .map(TypeHierarchy::genericTypeAnnotations)
                 .flatMap(List::stream)
                 .map(Annotation::typeName)
                 .forEach(result::add);
 
-        // on parameters
-        typeInfo.elementInfo()
-                .stream()
-                .forEach(it -> {
-                    int index = 0;
-                    for (var param : it.parameterArguments()) {
-                        hierarchyAnnotations(ctx, typeInfo, it, param, index++)
-                                .stream()
-                                .map(Annotation::typeName)
-                                .forEach(result::add);
-                    }
-                });
-
         return result;
-         */
+    }
+
+    private static List<Annotation> genericTypeAnnotations(TypeName typeName) {
+        // annotations on type arguments (i.e. Set<@Valid SomeType>)
+        List<Annotation> result = new ArrayList<>();
+        for (TypeName typeArgument : typeName.typeArguments()) {
+            result.addAll(typeArgument.annotations());
+            genericTypeAnnotations(typeArgument);
+        }
+        return result;
     }
 
     private static void processMetaAnnotations(CodegenContext ctx,

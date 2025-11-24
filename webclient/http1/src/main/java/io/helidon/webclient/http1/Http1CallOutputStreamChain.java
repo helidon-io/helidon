@@ -241,6 +241,17 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 throw new IOException("Output stream already closed");
             }
 
+            // if not chunked and length known, write directly checking length at close
+            if (!chunked && contentLength > 0) {
+                if (!whenSent.isDone()) {
+                    sendPrologueAndHeader();
+                    noData = false;
+                }
+                writeContent(BufferData.create(b, off, len));
+                return;
+            }
+
+            // if length not known, try to optimize for single write
             if (!chunked) {
                 if (firstPacket == null) {
                     BufferData first = BufferData.create(len - off);
@@ -279,6 +290,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     ctx.log(LOGGER_REQ_ENTITY, System.Logger.Level.TRACE, "send data%n%s", terminating.debugDataHex());
                 }
                 writer.write(terminating);
+            } else if (contentLength > 0) {
+                if (contentLength != bytesWritten) {
+                    throw new IOException("Content length is set to " + contentLength
+                                                  + ", but the number of bytes written was " + bytesWritten);
+                }
             } else {
                 headers.remove(HeaderNames.TRANSFER_ENCODING);
                 if (noData) {

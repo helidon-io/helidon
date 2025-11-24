@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security</artifactId>
     <name>Helidon Security</name>
@@ -39,6 +39,10 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-security</artifactId>
         </dependency>
@@ -51,6 +55,10 @@
             <artifactId>helidon-common-uri</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-util</artifactId>
         </dependency>
@@ -61,6 +69,10 @@
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-reflection</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -116,6 +128,16 @@
                             <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -132,6 +154,16 @@
                     <dependency>
                         <groupId>io.helidon.config.metadata</groupId>
                         <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

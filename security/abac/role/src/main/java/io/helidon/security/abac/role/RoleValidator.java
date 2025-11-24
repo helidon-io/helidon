@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
@@ -48,7 +49,6 @@ import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 
 import jakarta.annotation.security.DenyAll;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
 /**
@@ -60,6 +60,15 @@ import jakarta.annotation.security.RolesAllowed;
  * This validator supports both {@link RolesAllowed} and {@link Roles} annotations.
  */
 public final class RoleValidator implements AbacValidator<RoleValidator.RoleConfig> {
+    private static final TypeName ROLES_ALLOWED = TypeName.create(RolesAllowed.class);
+    private static final TypeName ROLES_CONTAINER = TypeName.create(RolesContainer.class);
+    private static final TypeName ROLES = TypeName.create(Roles.class);
+    private static final TypeName DENY_ALL_JAKARTA = TypeName.create("jakarta.annotation.security.DenyAll");
+    private static final TypeName DENY_ALL_JAVAX = TypeName.create("javax.annotation.security.DenyAll");
+    private static final TypeName PERMIT_ALL = TypeName.create(PermitAll.class);
+    private static final TypeName PERMIT_ALL_JAKARTA = TypeName.create("jakarta.annotation.security.PermitAll");
+    private static final TypeName PERMIT_ALL_JAVAX = TypeName.create("javax.annotation.security.PermitAll");
+
     private RoleValidator() {
     }
 
@@ -94,44 +103,42 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
             for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
                 //Order of the annotations matters because of annotation handling.
-                List<Annotation> annotations = new ArrayList<>();
+                List<io.helidon.common.types.Annotation> annotations = new ArrayList<>();
                 for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                    annotations.addAll(securityLevel.filterAnnotations(TypeName.create(annotation), scope));
                 }
                 List<String> roles = new ArrayList<>();
                 List<String> serviceRoles = new ArrayList<>();
-                for (Annotation annotation : annotations) {
-                    if (annotation instanceof RolesAllowed) {
+                for (var annotation : annotations) {
+                    TypeName typeName = annotation.typeName();
+
+                    if (typeName.equals(ROLES_ALLOWED)) {
                         // these are user roles by default
-                        roles.addAll(Arrays.asList(((RolesAllowed) annotation).value()));
+                        roles.addAll(annotation.stringValues().orElseGet(List::of));
                         builder.permitAll(false);
                         builder.denyAll(false);
-                    } else if (annotation instanceof Roles) {
+                    } else if (typeName.equals(ROLES)) {
                         // these are configured
-                        Roles r = (Roles) annotation;
-                        if (r.subjectType() == SubjectType.USER) {
-                            roles.addAll(Arrays.asList(r.value()));
-                        } else {
-                            serviceRoles.addAll(Arrays.asList(r.value()));
-                        }
+                        addRoles(annotation, roles, serviceRoles);
+
                         builder.permitAll(false);
                         builder.denyAll(false);
-                    } else if (annotation instanceof RolesContainer container) {
-                        for (Roles role : container.value()) {
-                            if (role.subjectType() == SubjectType.USER) {
-                                roles.addAll(Arrays.asList(role.value()));
-                            } else {
-                                serviceRoles.addAll(Arrays.asList(role.value()));
-                            }
-                        }
-                        if (container.value().length != 0) {
+                    } else if (typeName.equals(ROLES_CONTAINER)) {
+                        List<io.helidon.common.types.Annotation> allRoles = annotation.annotationValues()
+                                .orElseGet(List::of);
+
+                        allRoles.forEach(it -> addRoles(it, roles, serviceRoles));
+
+                        if (!allRoles.isEmpty()) {
                             builder.permitAll(false);
                             builder.denyAll(false);
                         }
-                    } else if (annotation instanceof PermitAll) {
+                    } else if (typeName.equals(PERMIT_ALL)
+                            || typeName.equals(PERMIT_ALL_JAKARTA)
+                            || typeName.equals(PERMIT_ALL_JAVAX)) {
                         builder.permitAll(true);
                         builder.denyAll(false);
-                    } else if (annotation instanceof DenyAll) {
+                    } else if (typeName.equals(DENY_ALL_JAKARTA) || typeName.equals(DENY_ALL_JAVAX)) {
                         builder.permitAll(false);
                         builder.denyAll(true);
                     }
@@ -147,6 +154,16 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         return builder.build();
     }
 
+    private void addRoles(io.helidon.common.types.Annotation annotation, List<String> roles, List<String> serviceRoles) {
+        List<String> values = annotation.stringValues().orElseGet(List::of);
+        if (annotation.enumValue("subjectType", SubjectType.class).orElse(SubjectType.USER)
+                == SubjectType.USER) {
+            roles.addAll(values);
+        } else {
+            serviceRoles.addAll(values);
+        }
+    }
+
     @Override
     public void validate(RoleConfig config, Errors.Collector collector, ProviderRequest request) {
         if (config.denyAll()) {
@@ -158,6 +175,17 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         }
         validate(config.userRolesAllowed(), collector, request.subject(), SubjectType.USER);
         validate(config.serviceRolesAllowed(), collector, request.service(), SubjectType.SERVICE);
+    }
+
+    @Override
+    public Collection<Class<? extends Annotation>> supportedAnnotations() {
+        //Order of the annotations matters because of annotation handling.
+        return List.of(RolesAllowed.class,
+                       Roles.class,
+                       RolesContainer.class,
+                       PermitAll.class,
+                       jakarta.annotation.security.PermitAll.class,
+                       DenyAll.class);
     }
 
     private void validate(Set<String> rolesAllowed, Errors.Collector collector, Optional<Subject> subject, SubjectType type) {
@@ -186,10 +214,18 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         }
     }
 
-    @Override
-    public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        //Order of the annotations matters because of annotation handling.
-        return List.of(RolesAllowed.class, Roles.class, RolesContainer.class, PermitAll.class, DenyAll.class);
+    /**
+     * Mark a type or method as public.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.METHOD, ElementType.TYPE})
+    @Documented
+    @Inherited
+    public @interface PermitAll {
+        /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(PermitAll.class);
     }
 
     /**
@@ -203,6 +239,11 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     @Repeatable(RolesContainer.class)
     @AbacAnnotation
     public @interface Roles {
+        /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(Roles.class);
+
         /**
          * Array of roles allowed for this resource.
          *
@@ -228,6 +269,11 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     @AbacAnnotation
     public @interface RolesContainer {
         /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(RolesContainer.class);
+
+        /**
          * Repeatable annotation value.
          *
          * @return repeatable annotation
@@ -241,8 +287,8 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     public static final class RoleConfig implements AbacValidatorConfig {
         private final Set<String> userRolesAllowed = new HashSet<>();
         private final Set<String> serviceRolesAllowed = new HashSet<>();
-        private boolean permitAll;
-        private boolean denyAll;
+        private final boolean permitAll;
+        private final boolean denyAll;
 
         private RoleConfig(Builder builder) {
             this.permitAll = builder.permitAll;
@@ -405,6 +451,20 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
             }
 
             /**
+             * Load configuration data from configuration.
+             *
+             * @param config configuration located the key of this attribute config
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("user").asList(String.class).ifPresent(this::addRoles);
+                config.get("service").asList(String.class).ifPresent(this::addServiceRoles);
+                config.get("permit-all").asBoolean().ifPresent(this::permitAll);
+                config.get("deny-all").asBoolean().ifPresent(this::denyAll);
+                return this;
+            }
+
+            /**
              * Add a role to the list of roles for a service subject.
              *
              * @param role a role to add
@@ -434,20 +494,6 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
              */
             private Builder denyAll(boolean denyAll) {
                 this.denyAll = denyAll;
-                return this;
-            }
-
-            /**
-             * Load configuration data from configuration.
-             *
-             * @param config configuration located the key of this attribute config
-             * @return updated builder instance
-             */
-            public Builder config(Config config) {
-                config.get("user").asList(String.class).ifPresent(this::addRoles);
-                config.get("service").asList(String.class).ifPresent(this::addServiceRoles);
-                config.get("permit-all").asBoolean().ifPresent(this::permitAll);
-                config.get("deny-all").asBoolean().ifPresent(this::denyAll);
                 return this;
             }
         }

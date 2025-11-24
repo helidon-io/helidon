@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-bom</artifactId>
@@ -31,7 +31,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>4.3.0-SNAPSHOT</helidon.version>
+        <helidon.version>4.4.0-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -721,11 +721,6 @@
             <dependency>
                 <groupId>io.helidon.data.sql</groupId>
                 <artifactId>helidon-data-sql-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.data.sql</groupId>
-                <artifactId>helidon-data-sql-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1771,6 +1766,17 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+
+            <dependency>
+                <groupId>io.helidon.validation</groupId>
+                <artifactId>helidon-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-validation</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

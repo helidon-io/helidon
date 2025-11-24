@@ -159,4 +159,4 @@ include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_8, indent=0]
 == Reference
 
 * https://github.com/jmrozanec/cron-utils[Cron-utils GitHub page]
-* link:{scheduling-javadoc-base-url}/io/helidon/scheduling/package-summary.html[Helidon Scheduling JavaDoc]
+* link:{scheduling-javadoc-base-url}/io/helidon/microprofile/scheduling/package-summary.html[Helidon Scheduling JavaDoc]

@@ -67,6 +67,46 @@ class DynamicTableTest {
         table.maxTableSize(0L);
     }
 
+    @Test
+    void testIssue10472addOnlyOneFit() {
+        Http2Settings settings = Http2Settings.builder()
+                .add(Http2Setting.HEADER_TABLE_SIZE, 45L)
+                .build();
+
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(settings);
+        table.add(HeaderNames.create("a"), "aa"); // 35
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "a", "aa");
+        table.add(HeaderNames.create("b"), "b"); // 34
+
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "b", "b");
+
+        table.add(HeaderNames.create("c"), "c"); // 34
+        table.add(HeaderNames.create("dddd"), "ddddd"); // 41
+
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "dddd", "ddddd");
+    }
+
+    @Test
+    void testIssue10472addOnlyTwoFit() {
+        Http2Settings settings = Http2Settings.builder()
+                .add(Http2Setting.HEADER_TABLE_SIZE, 75L)
+                .build();
+
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(settings);
+        table.add(HeaderNames.create("a"), "aa"); // 35
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "a", "aa");
+        table.add(HeaderNames.create("b"), "b"); // 34
+
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "b", "b");
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 2, "a", "aa");
+
+        table.add(HeaderNames.create("c"), "c"); // 34
+        table.add(HeaderNames.create("dddd"), "ddddd"); // 41
+
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "dddd", "ddddd");
+        testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 2, "c", "c");
+    }
+
     private void testRecord(Http2Headers.DynamicTable table,
                             int index,
                             String expectedName,

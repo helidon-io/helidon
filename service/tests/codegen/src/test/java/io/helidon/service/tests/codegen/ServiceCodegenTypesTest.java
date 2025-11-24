@@ -43,6 +43,7 @@ import io.helidon.service.registry.EventManager;
 import io.helidon.service.registry.FactoryType;
 import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.Interception;
+import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.InterceptionException;
 import io.helidon.service.registry.InterceptionInvoker;
 import io.helidon.service.registry.InterceptionMetadata;
@@ -137,6 +138,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATE", Interception.ExternalDelegate.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_ELEMENT_INTERCEPTOR", Interception.ElementInterceptor.class);
 
         // api.* except for interception types
         checkField(toCheck, checked, fields, "SERVICE_FACTORY_TYPE", FactoryType.class);
@@ -150,6 +152,8 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INTERCEPT_EXCEPTION", InterceptionException.class);
         checkField(toCheck, checked, fields, "INTERCEPT_METADATA", InterceptionMetadata.class);
         checkField(toCheck, checked, fields, "INTERCEPT_INVOKER", InterceptionInvoker.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_CHAIN", Interception.Interceptor.Chain.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_CONTEXT", InterceptionContext.class);
 
         // api.* event types
         checkField(toCheck, checked, fields, "EVENT_OBSERVER", Event.Observer.class);
@@ -205,6 +209,11 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SET_OF_RESOLVED_TYPES", TypeName.builder()
                 .type(Set.class)
                 .addTypeArgument(TypeName.create(ResolvedType.class))
+                .build());
+        checkField(toCheck, checked, fields, "MAP_RESOLVED_TO_SET_OF_RESOLVED", TypeName.builder()
+                .type(Map.class)
+                .addTypeArgument(TypeName.create(ResolvedType.class))
+                .addTypeArgument(ServiceCodegenTypes.SET_OF_RESOLVED_TYPES)
                 .build());
         checkField(toCheck, checked, fields, "GENERIC_T_TYPE", TypeName.builder()
                 .className("T")

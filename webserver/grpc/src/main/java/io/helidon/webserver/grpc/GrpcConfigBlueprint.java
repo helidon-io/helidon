@@ -78,4 +78,13 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     default List<GrpcServerService> grpcServices() {
         return List.of();
     }
+
+    /**
+     * Max size of gRPC reading buffer. If receiving an entity larger than this,
+     * processing will be aborted. This can help prevent DoS attacks. Default
+     * set to 2 MB.
+     */
+    @Option.Configured
+    @Option.DefaultInt(2 * 1024 * 1024)
+    int maxReadBufferSize();
 }

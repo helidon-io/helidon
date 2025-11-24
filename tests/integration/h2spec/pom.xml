@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration.h2spec</groupId>
@@ -103,7 +103,7 @@
                     </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
@@ -114,7 +114,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>
-                            ${project.build.outputDirectory}/logging.properties
+                            ${project.build.testOutputDirectory}/logging-test.properties
                         </java.util.logging.config.file>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthorizationResponse;
@@ -44,10 +46,6 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.SecurityProvider;
 
-import jakarta.annotation.security.DenyAll;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
-
 /**
  * Attribute based access control (ABAC) provider.
  * This provider gathers all attributes to be validated on endpoint and makes sure they are all validated as expected during
@@ -58,13 +56,47 @@ import jakarta.annotation.security.RolesAllowed;
  * @see #create(Config)
  */
 public final class AbacProvider implements AuthorizationProvider {
+    /**
+     * Type name for {@code jakarta.annotation.security.RolesAllowed}.
+     */
+    public static final TypeName ROLES_ALLOWED_JAKARTA_TYPE = TypeName.create("jakarta.annotation.security.RolesAllowed");
+    /**
+     * Type name for {@code javax.annotation.security.RolesAllowed}.
+     */
+    public static final TypeName ROLES_ALLOWED_JAVAX_TYPE = TypeName.create("javax.annotation.security.RolesAllowed");
+    /**
+     * Type name for {@code jakarta.annotation.security.PermitAll}.
+     */
+    public static final TypeName PERMIT_ALL_JAKARTA_TYPE = TypeName.create("jakarta.annotation.security.PermitAll");
+    /**
+     * Type name for {@code javax.annotation.security.PermitAll}.
+     */
+    public static final TypeName PERMIT_ALL_JAVAX_TYPE = TypeName.create("javax.annotation.security.PermitAll");
+    /**
+     * Type name for {@code jakarta.annotation.security.DenyAll}.
+     */
+    public static final TypeName DENY_ALL_JAKARTA_TYPE = TypeName.create("jakarta.annotation.security.DenyAll");
+    /**
+     * Type name for {@code javax.annotation.security.DenyAll}.
+     */
+    public static final TypeName DENY_ALL_JAVAX_TYPE = TypeName.create("javax.annotation.security.DenyAll");
+
+    private static final TypeName ABAC_ANNOTATION = TypeName.create(AbacAnnotation.class);
+    private static final Set<TypeName> SUPPORTED_ANNOTATIONS = Set.of(
+      ROLES_ALLOWED_JAKARTA_TYPE,
+      ROLES_ALLOWED_JAVAX_TYPE,
+      PERMIT_ALL_JAKARTA_TYPE,
+      PERMIT_ALL_JAVAX_TYPE,
+      DENY_ALL_JAKARTA_TYPE,
+      DENY_ALL_JAVAX_TYPE);
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
-    private final Set<Class<? extends Annotation>> supportedAnnotations;
+    private final Set<TypeName> supportedAnnotations;
     private final Set<String> supportedConfigKeys;
     private final Set<Class<? extends AbacValidatorConfig>> supportedCustomObjects;
     private final boolean failOnUnvalidated;
     private final boolean failIfNoneValidated;
+    private final Set<Class<? extends Annotation>> supportedAnnotationClasses;
 
     private AbacProvider(Builder builder) {
         HelidonServiceLoader<AbacValidatorService> services =
@@ -86,7 +118,10 @@ public final class AbacProvider implements AuthorizationProvider {
             customObjects.add(v.configClass());
         });
 
-        this.supportedAnnotations = Collections.unmodifiableSet(annotations);
+        this.supportedAnnotationClasses = Set.copyOf(annotations);
+        this.supportedAnnotations = annotations.stream()
+                .map(TypeName::create)
+                .collect(Collectors.toUnmodifiableSet());
         this.supportedConfigKeys = Collections.unmodifiableSet(configKeys);
         this.supportedCustomObjects = Collections.unmodifiableSet(customObjects);
         this.failOnUnvalidated = builder.failOnUnvalidated;
@@ -123,7 +158,7 @@ public final class AbacProvider implements AuthorizationProvider {
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return supportedAnnotations;
+        return supportedAnnotationClasses;
     }
 
     @Override
@@ -159,11 +194,11 @@ public final class AbacProvider implements AuthorizationProvider {
                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
                         },
                         () -> {
-                            List<Annotation> annotationConfig = new ArrayList<>();
+                            List<io.helidon.common.types.Annotation> annotationConfig = new ArrayList<>();
                             for (SecurityLevel securityLevel : epConfig.securityLevels()) {
                                 for (Class<? extends Annotation> annotation : annotations) {
-                                    List<? extends Annotation> list = securityLevel
-                                            .combineAnnotations(annotation,
+                                    List<io.helidon.common.types.Annotation> list = securityLevel
+                                            .combineAnnotations(TypeName.create(annotation),
                                                                 EndpointConfig.AnnotationScope.values());
                                     annotationConfig.addAll(list);
                                 }
@@ -292,16 +327,24 @@ public final class AbacProvider implements AuthorizationProvider {
         for (SecurityLevel securityLevel : epConfig.securityLevels()) {
             int attributeAnnotations = 0;
             int unsupported = 0;
-            List<String> unsupportedClassNames = new LinkedList<>();
-            Map<Class<? extends Annotation>, List<Annotation>> allAnnotations = securityLevel.allAnnotations();
+            List<TypeName> unsupportedTypes = new LinkedList<>();
 
-            for (Class<? extends Annotation> type : allAnnotations.keySet()) {
-                AbacAnnotation abacAnnotation = type.getAnnotation(AbacAnnotation.class);
-                if (null != abacAnnotation || isSupportedAnnotation(type)) {
+            var allAnnotations = securityLevel.annotations();
+            Map<TypeName, List<io.helidon.common.types.Annotation>> annotationsByType = new HashMap<>();
+
+            allAnnotations.stream()
+                    .forEach(it -> annotationsByType.computeIfAbsent(it.typeName(), tt -> new ArrayList<>())
+                            .add(it));
+
+            for (var entry : annotationsByType.entrySet()) {
+                TypeName key = entry.getKey();
+                List<io.helidon.common.types.Annotation> value = entry.getValue();
+
+                if (value.getFirst().hasMetaAnnotation(ABAC_ANNOTATION) || SUPPORTED_ANNOTATIONS.contains(key)) {
                     attributeAnnotations++;
-                    if (!supportedAnnotations.contains(type)) {
+                    if (!supportedAnnotations.contains(key)) {
                         unsupported++;
-                        unsupportedClassNames.add(type.getName());
+                        unsupportedTypes.add(key);
                     }
                 }
             }
@@ -315,20 +358,14 @@ public final class AbacProvider implements AuthorizationProvider {
                 }
 
                 if (fail) {
-                    for (String unsupportedClassName : unsupportedClassNames) {
+                    for (TypeName unsupportedClassName : unsupportedTypes) {
                         collector.fatal(this,
-                                        unsupportedClassName + " attribute annotation is not supported.");
+                                        unsupportedClassName.fqName() + " attribute annotation is not supported.");
                     }
                     collector.fatal(this, "Supported annotations: " + supportedAnnotations);
                 }
             }
         }
-    }
-
-    private boolean isSupportedAnnotation(Class<? extends Annotation> type) {
-        return RolesAllowed.class.equals(type)
-                || PermitAll.class.equals(type)
-                || DenyAll.class.equals(type);
     }
 
     /**

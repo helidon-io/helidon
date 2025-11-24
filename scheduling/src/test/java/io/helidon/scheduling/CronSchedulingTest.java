@@ -36,12 +36,13 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 @SuppressWarnings("removal")
 @Testing.Test
 @Execution(ExecutionMode.CONCURRENT)
-public class CronSchedulingTest {
+class CronSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 
@@ -302,6 +303,34 @@ public class CronSchedulingTest {
                     .build());
         } finally {
             executorService.shutdown();
+        }
+    }
+
+    @Test
+    void cronDisabledProgrammatically() throws InterruptedException {
+        ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
+        IntervalMeter meter = new IntervalMeter();
+        Cron task = null;
+
+        try {
+            task = Cron.builder()
+                    .id("disabledCronTest")
+                    .executor(executorService)
+                    .expression("* * * * * ? *")  // Every second
+                    .enabled(false)  // Disabled
+                    .task(cronInvocation -> meter.start().end())
+                    .build();
+
+            // Wait and verify the task never executed
+            Thread.sleep(3000);
+            assertThat(meter.size(), Matchers.equalTo(0));
+            assertThat(taskManager.tasks(), hasItem(task));
+            assertThat(task.enabled(), is(false));
+        } finally {
+            if (task != null) {
+                task.close();
+            }
+            executorService.shutdownNow();
         }
     }
 

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
@@ -531,10 +531,6 @@
         <dependency>
             <groupId>io.helidon.data.sql</groupId>
             <artifactId>helidon-data-sql-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.sql</groupId>
-            <artifactId>helidon-data-sql-testing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.sql.datasource</groupId>
@@ -1316,6 +1312,14 @@
         <dependency>
             <groupId>io.helidon.json.schema</groupId>
             <artifactId>helidon-json-schema-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.validation</groupId>
+            <artifactId>helidon-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-validation</artifactId>
         </dependency>
     </dependencies>
 

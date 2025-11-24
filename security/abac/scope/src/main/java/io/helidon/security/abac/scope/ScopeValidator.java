@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -34,6 +33,7 @@ import java.util.Set;
 
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -107,24 +107,26 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
 
     @Override
     public ScopesConfig fromAnnotations(EndpointConfig endpointConfig) {
-        List<Scope> scopes = new ArrayList<>();
+        List<io.helidon.common.types.Annotation> scopes = new ArrayList<>();
         for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
             for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
-                List<Annotation> annotations = new ArrayList<>();
+                List<io.helidon.common.types.Annotation> annotations = new ArrayList<>();
                 for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                    annotations.addAll(securityLevel.filterAnnotations(TypeName.create(annotation), scope));
                 }
-                for (Annotation annot : annotations) {
-                    if (annot instanceof Scopes) {
-                        scopes.addAll(Arrays.asList(((Scopes) annot).value()));
-                    } else if (annot instanceof Scope) {
-                        scopes.add((Scope) annot);
+                for (var annot : annotations) {
+                    if (Scopes.TYPE.equals(annot.typeName())) {
+                        scopes.addAll(annot.annotationValues().orElseGet(List::of));
+                    } else if (Scope.TYPE.equals(annot.typeName())) {
+                        scopes.add(annot);
                     }
                 }
             }
         }
 
-        return ScopesConfig.create(scopes);
+        return ScopesConfig.create(scopes.stream()
+                                           .map(it -> it.stringValue().orElse(""))
+                                           .toArray(String[]::new));
     }
 
     @Override
@@ -186,6 +188,10 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
     @Repeatable(Scopes.class)
     public @interface Scope {
         /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(Scope.class);
+        /**
          * Name of scope the user must have to access this resource.
          *
          * @return scope name
@@ -201,6 +207,10 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
     @Documented
     @Inherited
     public @interface Scopes {
+        /**
+         * Type of this interface.
+         */
+        TypeName TYPE = TypeName.create(Scopes.class);
         /**
          * Repeatable annotation holder.
          *

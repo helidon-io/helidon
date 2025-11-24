@@ -43,7 +43,6 @@ import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
-import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Stream;
 import io.helidon.http.http2.Http2StreamState;
@@ -87,11 +86,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private StreamBuffer buffer;
 
     protected Http2ClientStream(Http2ClientConnection connection,
-                      Http2Settings serverSettings,
-                      SocketContext ctx,
-                      Http2StreamConfig http2StreamConfig,
-                      Http2ClientConfig http2ClientConfig,
-                      LockingStreamIdSequence streamIdSeq) {
+                                Http2Settings serverSettings,
+                                SocketContext ctx,
+                                Http2StreamConfig http2StreamConfig,
+                                Http2ClientConfig http2ClientConfig,
+                                LockingStreamIdSequence streamIdSeq) {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
@@ -289,7 +288,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * Writes HTTP2 headers to the stream.
      *
      * @param http2Headers the headers
-     * @param endOfStream end of stream marker
+     * @param endOfStream  end of stream marker
      */
     public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
@@ -340,7 +339,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                                                                   : 0),
                                                                streamId);
         Http2FrameData frameData = new Http2FrameData(frameHeader, entityBytes);
-        splitAndWrite(frameData);
+        write(frameData, frameData.header().flags(Http2FrameTypes.DATA).endOfStream());
     }
 
     /**
@@ -477,25 +476,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     private Http2Headers readHeaders(Http2HuffmanDecoder decoder, boolean mergeWithPrevious) {
-        Http2Headers http2Headers = Http2Headers.create(this,
-                                                        connection.getInboundDynamicTable(),
-                                                        decoder,
-                                                        mergeWithPrevious && currentHeaders != null
-                                                                ? currentHeaders
-                                                                : Http2Headers.create(WritableHeaders.create()),
-                                                        continuationData.toArray(new Http2FrameData[0]));
+        Http2Headers http2Headers =
+                connection.readHeaders(this,
+                                       decoder,
+                                       mergeWithPrevious && currentHeaders != null
+                                               ? currentHeaders
+                                               : Http2Headers.create(WritableHeaders.create()),
+                                       continuationData.toArray(new Http2FrameData[0]));
         recvListener.headers(ctx, streamId, http2Headers);
         return http2Headers;
-    }
-
-    private void splitAndWrite(Http2FrameData frameData) {
-        int maxFrameSize = this.serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue();
-
-        // Split to frames if bigger than max frame size
-        Http2FrameData[] frames = frameData.split(maxFrameSize);
-        for (Http2FrameData frame : frames) {
-            write(frame, frame.header().flags(Http2FrameTypes.DATA).endOfStream());
-        }
     }
 
     private void write(Http2FrameData frameData, boolean endOfStream) {
@@ -518,7 +507,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
         private final Set<ReadState> allowedTransitions;
 
-        ReadState(ReadState... allowedTransitions){
+        ReadState(ReadState... allowedTransitions) {
             this.allowedTransitions = Set.of(allowedTransitions);
         }
 

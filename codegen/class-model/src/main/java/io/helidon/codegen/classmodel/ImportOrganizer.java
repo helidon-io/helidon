@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,18 +205,14 @@ class ImportOrganizer {
 
         private void resolveFinalImports() {
             for (Type type : imports) {
-                //If processed type is inner class, we will be importing parent class
-                Type typeToProcess = type.declaringClass().orElse(type);
+                //If processed type is inner class, we will be importing (top level) parent class
+                Type typeToProcess = topLevelType(type);
                 String fqTypeName = typeToProcess.fqTypeName();
                 String typePackage = typeToProcess.packageName();
                 String typeSimpleName = typeToProcess.simpleTypeName();
 
                 if (type.innerClass()) {
-                    if (typeToProcess.innerClass()) {
-                        identifiedInnerClasses.put(type.fqTypeName(), fqTypeName + "." + type.simpleTypeName());
-                    } else {
-                        identifiedInnerClasses.put(type.fqTypeName(), typeSimpleName + "." + type.simpleTypeName());
-                    }
+                    identifiedInnerClasses.put(type.fqTypeName(), type.fqTypeName());
                 }
 
                 if (typePackage.equals("java.lang")) {
@@ -239,6 +236,17 @@ class ImportOrganizer {
                     finalImports.put(typeSimpleName, fqTypeName);
                 }
             }
+        }
+
+        private Type topLevelType(Type type) {
+            Type lastType = type;
+            Optional<Type> declaringClass = type.declaringClass();
+            while (declaringClass.isPresent()) {
+                lastType = declaringClass.get();
+                declaringClass = lastType.declaringClass();
+
+            }
+            return lastType;
         }
 
         private void processImportJavaLang(Type type, String typeName, String typeSimpleName) {
