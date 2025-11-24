@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -93,7 +94,7 @@ class TimeoutImpl implements Timeout {
             AtomicBoolean callReturned = new AtomicBoolean(false);
             AtomicBoolean interrupted = new AtomicBoolean(false);
 
-            executor.submit(FaultTolerance.toDelayedRunnable(() -> {
+            Future<?> monitor = executor.submit(FaultTolerance.toDelayedRunnable(() -> {
                 interruptLock.lock();
                 try {
                     if (callReturned.compareAndSet(false, true)) {
@@ -120,6 +121,11 @@ class TimeoutImpl implements Timeout {
 
                 interruptLock.lock();
                 try {
+                    boolean cancelMonitor = monitor.cancel(true);
+                    if (!cancelMonitor) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "Unable to cancel monitor thread");
+                    }
+
                     callReturned.set(true);
                     // Run invocation in current thread
                     // Clear interrupted flag here -- required for uninterruptible busy loops
