@@ -83,8 +83,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
-    private static volatile StackTraceElement[] originalCreationStackTrace;
-    private static volatile boolean hasLoggedFirstMultiInstantiationWarning = false;
+    private static StackTraceElement[] originalCreationStackTrace;
+    private static boolean hasLoggedFirstMultiInstantiationWarning = false;
     private static final Lock WARNING_INFO_LOCK = new ReentrantLock();
 
     private final io.micrometer.core.instrument.MeterRegistry delegate;
