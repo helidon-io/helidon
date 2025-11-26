@@ -17,7 +17,6 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,8 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -83,6 +85,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static volatile StackTraceElement[] originalCreationStackTrace;
     private static volatile boolean hasLoggedFirstMultiInstantiationWarning = false;
+    private static final Lock WARNING_INFO_LOCK = new ReentrantLock();
 
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
@@ -123,22 +126,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
-        if (originalCreationStackTrace == null) {
-            originalCreationStackTrace = Thread.currentThread().getStackTrace();
-        } else if (metricsConfig.warnOnMultipleRegistries()) {
-            if (!hasLoggedFirstMultiInstantiationWarning) {
-                hasLoggedFirstMultiInstantiationWarning = true;
-                LOGGER.log(Level.WARNING,
-                           "Unexpected duplicate instantiation\nOriginal instantiation from:\n{0}\n\nAdditional instantiation "
-                                   + "from:\n{1}",
-                           Arrays.toString(originalCreationStackTrace),
-                           Arrays.toString(Thread.currentThread().getStackTrace()));
-            } else {
-                LOGGER.log(Level.WARNING,
-                           "Unexpected additional instantiation from:\n{0}",
-                           Arrays.toString(Thread.currentThread().getStackTrace()));
-            }
-        }
+        checkMultipleInstantiations(metricsConfig);
     }
 
     static Builder builder(
@@ -581,6 +569,45 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     static void clearMultipleInstantiationInfo() {
         hasLoggedFirstMultiInstantiationWarning = false;
         originalCreationStackTrace = null;
+    }
+
+    private static void checkMultipleInstantiations(MetricsConfig metricsConfig) {
+        /*
+        We have not seen cases where multiple instantiations occur concurrently, but it's possible. Locking guards against the
+        very rare but probably very confusing possibility of our attempt at clarifying where multiple instantiations are occurring
+        actually getting corrupted by concurrent access to the static fields.
+         */
+        WARNING_INFO_LOCK.lock();
+        try {
+            if (originalCreationStackTrace == null) {
+                originalCreationStackTrace = Thread.currentThread().getStackTrace();
+            } else if (metricsConfig.warnOnMultipleRegistries()) {
+                if (!hasLoggedFirstMultiInstantiationWarning) {
+                    hasLoggedFirstMultiInstantiationWarning = true;
+                    LOGGER.log(Level.WARNING,
+                               "Unexpected duplicate instantiation\n"
+                                       + "Original instantiation from:\n{0}\n\n"
+                                       + "Additional instantiation from:\n{1}\n",
+
+                               stackTraceToString(originalCreationStackTrace),
+                               stackTraceToString(Thread.currentThread().getStackTrace()));
+                } else {
+                    LOGGER.log(Level.WARNING,
+                               "Unexpected additional instantiation from:\n{0}\n",
+                               stackTraceToString(Thread.currentThread().getStackTrace()));
+                }
+            }
+        } finally {
+            WARNING_INFO_LOCK.unlock();
+        }
+    }
+
+    private static String stackTraceToString(StackTraceElement[] stackTraceElements) {
+        StringJoiner joiner = new StringJoiner("\n");
+        for (StackTraceElement element : stackTraceElements) {
+            joiner.add(element.toString());
+        }
+        return joiner.toString();
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
