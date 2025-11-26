@@ -185,6 +185,16 @@ class DescribedService {
                                                                                   processedDirectContracts,
                                                                                   it));
 
+        Map<ResolvedType, Set<ResolvedType>> contractMap = new HashMap<>();
+        directContracts.forEach(directContract -> addContractToMap(roundContext,
+                                                                   serviceContracts,
+                                                                   contractMap,
+                                                                   directContract));
+        providedContracts.forEach(providedContract -> addContractToMap(roundContext,
+                                                                       serviceContracts,
+                                                                       contractMap,
+                                                                       providedContract));
+
         DescribedType serviceDescriptor;
         DescribedType providedDescriptor;
 
@@ -193,6 +203,7 @@ class DescribedService {
             serviceDescriptor = new DescribedType(serviceInfo,
                                                   serviceInfo.typeName(),
                                                   directContracts,
+                                                  contractMap,
                                                   serviceElements);
 
             providedDescriptor = null;
@@ -201,12 +212,14 @@ class DescribedService {
             serviceDescriptor = new DescribedType(serviceInfo,
                                                   serviceInfo.typeName(),
                                                   directContracts,
+                                                  contractMap,
                                                   serviceElements);
             DescribedElements providedElements = DescribedElements.create(ctx, interception, providedContracts, providedTypeInfo);
 
             providedDescriptor = new DescribedType(providedTypeInfo,
                                                    providedTypeName,
                                                    providedContracts,
+                                                   contractMap,
                                                    providedElements);
         }
 
@@ -220,6 +233,24 @@ class DescribedService {
                 providerType,
                 qualifiedProviderQualifier
         );
+    }
+
+    private static void addContractToMap(RegistryRoundContext ctx,
+                                         ServiceContracts serviceContracts,
+                                         Map<ResolvedType, Set<ResolvedType>> contractMap,
+                                         ResolvedType contract) {
+
+        var transitiveContracts = contractMap.computeIfAbsent(contract, k -> new HashSet<>());
+        transitiveContracts.add(contract);
+
+        // contract may have type arguments that are using real types, whereas the typeInfo may have generics - we need to
+        // remember the correct generic types
+        var maybeTypeInfo = ctx.typeInfo(contract.type());
+        if (maybeTypeInfo.isEmpty()) {
+            // we cannot add, as not on classpath
+            return;
+        }
+        serviceContracts.addContracts(transitiveContracts, new HashSet<>(), maybeTypeInfo.get());
     }
 
     @Override

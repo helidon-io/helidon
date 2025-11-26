@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.json.schema</groupId>
         <artifactId>helidon-json-schema-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-json-schema</artifactId>

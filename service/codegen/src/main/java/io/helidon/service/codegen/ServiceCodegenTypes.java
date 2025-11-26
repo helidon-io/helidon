@@ -368,6 +368,14 @@ public final class ServiceCodegenTypes {
     public static final TypeName SET_OF_RESOLVED_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
             .build();
+
+    /**
+     * A map of resolved types to a set of resolved types.
+     */
+    public static final TypeName MAP_RESOLVED_TO_SET_OF_RESOLVED = TypeName.builder(TypeNames.MAP)
+            .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
+            .addTypeArgument(SET_OF_RESOLVED_TYPES)
+            .build();
     /**
      * A set of String.
      */
@@ -402,5 +410,3 @@ public final class ServiceCodegenTypes {
     private ServiceCodegenTypes() {
     }
 }
-
-

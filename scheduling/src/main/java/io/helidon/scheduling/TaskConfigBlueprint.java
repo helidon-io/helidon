@@ -48,4 +48,14 @@ interface TaskConfigBlueprint {
      */
     @Option.Configured
     Optional<String> id();
+
+    /**
+     * Whether the task is enabled. If disabled, the task will not be scheduled.
+     * Default value is {@code true}.
+     *
+     * @return true if the task should be scheduled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enabled();
 }

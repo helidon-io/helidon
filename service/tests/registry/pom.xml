@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.service.tests</groupId>
         <artifactId>helidon-service-tests-project</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -57,6 +57,11 @@
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

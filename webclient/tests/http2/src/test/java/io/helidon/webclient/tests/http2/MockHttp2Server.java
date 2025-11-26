@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.webclient.tests.http2;
 
 import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.Builder;
 
@@ -55,6 +57,7 @@ class MockHttp2Server {
     static System.Logger LOGGER = System.getLogger(MockHttp2Server.class.getName());
     private final EventLoopGroup group;
     private final InetSocketAddress socketAddress;
+    private final MockServerContext mockServerContext = new MockServerContext();
 
     public MockHttp2Server(EventLoopGroup group, InetSocketAddress socketAddress) {
         this.group = group;
@@ -73,6 +76,14 @@ class MockHttp2Server {
         group.shutdownGracefully();
     }
 
+    MockServerContext mockServerContext() {
+        return mockServerContext;
+    }
+
+    void resetMockServerContext() {
+        this.mockServerContext.reset();
+    }
+
     @FunctionalInterface
     interface Handler {
         void handle(ChannelHandlerContext ctx,
@@ -83,9 +94,11 @@ class MockHttp2Server {
     }
 
     static class MockHttp2ServerBuilder implements Builder<MockHttp2ServerBuilder, MockHttp2Server> {
-
         private int port = 0;
 
+        private Http2DataHandler onDataHandler = (ctx, streamId, data, padding, endOfStream, encoder) -> 0;
+        private Http2SettingsAckHandler onSettingsAckHandler = (ctx, encoder) -> {
+        };
         private Handler onHeadersHandler = (ctx, streamId, headers, unused, encoder) -> {
             Http2Headers h = new DefaultHttp2Headers().status(HttpResponseStatus.OK.codeAsText());
             encoder.writeHeaders(ctx, streamId, h, 0, false, ctx.newPromise());
@@ -96,7 +109,7 @@ class MockHttp2Server {
                               true,
                               ctx.newPromise());
         };
-        private Handler onGoAwayHandler = (ctx, streamId, headers, data,encoder) -> {
+        private Handler onGoAwayHandler = (ctx, streamId, headers, data, encoder) -> {
 
         };
 
@@ -114,7 +127,7 @@ class MockHttp2Server {
                                     true,
                                     128);
 
-                            var mockHandler = new MockHttp2HandlerBuilder(MockHttp2ServerBuilder.this).build();
+                            Http2Handler mockHandler = new MockHttp2HandlerBuilder(MockHttp2ServerBuilder.this).build();
 
                             var upgradeHandler =
                                     new HttpServerUpgradeHandler(codec,
@@ -153,6 +166,16 @@ class MockHttp2Server {
 
         MockHttp2ServerBuilder onHeaders(Handler onHeadersHandler) {
             this.onHeadersHandler = onHeadersHandler;
+            return this;
+        }
+
+        MockHttp2ServerBuilder onData(Http2DataHandler onDataHandler) {
+            this.onDataHandler = onDataHandler;
+            return this;
+        }
+
+        MockHttp2ServerBuilder onSettingsAck(Http2SettingsAckHandler onSettingsAckHandler) {
+            this.onSettingsAckHandler = onSettingsAckHandler;
             return this;
         }
 
@@ -266,9 +289,21 @@ class MockHttp2Server {
                 }
 
                 @Override
+                public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream)
+                        throws Http2Exception {
+                    serverBuilder.onDataHandler.handle(ctx, streamId, data, padding, endOfStream, encoder());
+                    return 0;
+                }
+
+                @Override
                 public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData)
                         throws Http2Exception {
                     serverBuilder.onGoAwayHandler.handle(ctx, lastStreamId, null, debugData, encoder());
+                }
+
+                @Override
+                public void onSettingsAckRead(ChannelHandlerContext ctx) {
+                    serverBuilder.onSettingsAckHandler.handle(ctx, encoder());
                 }
             };
 
@@ -276,5 +311,54 @@ class MockHttp2Server {
             return handler;
         }
 
+    }
+
+    static class MockServerContext {
+        final Map<Integer, MockServerStream> map = new ConcurrentHashMap<>();
+
+        MockServerStream stream(int streamId) {
+            return map.computeIfAbsent(streamId, MockServerStream::new);
+        }
+
+        void reset() {
+            map.clear();
+        }
+    }
+
+    static class MockServerStream {
+        private final Integer id;
+        private final Http2Headers headers = new DefaultHttp2Headers();
+        private final Map<String, Object> ctx = new ConcurrentHashMap<>();
+
+        public MockServerStream(Integer streamId) {
+            id = streamId;
+        }
+
+        public void setHeaders(Http2Headers h) {
+            headers.setAll(h);
+        }
+
+        public Map<String, Object> ctx() {
+            return ctx;
+        }
+
+        Integer streamId() {
+            return id;
+        }
+
+        String path() {
+            return headers.path().toString();
+        }
+    }
+
+    @FunctionalInterface
+    interface Http2DataHandler {
+        int handle(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream,
+                   Http2ConnectionEncoder encoder);
+    }
+
+    @FunctionalInterface
+    interface Http2SettingsAckHandler {
+        void handle(ChannelHandlerContext ctx, Http2ConnectionEncoder encoder);
     }
 }

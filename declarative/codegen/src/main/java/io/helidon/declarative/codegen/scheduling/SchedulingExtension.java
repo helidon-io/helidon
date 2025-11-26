@@ -352,10 +352,15 @@ class SchedulingExtension implements RegistryCodegenExtension {
     private void checkTypeIsService(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         Optional<ClassModel.Builder> descriptor = roundContext.generatedType(ctx.descriptorType(typeInfo.typeName()));
         if (descriptor.isEmpty()) {
-            throw new CodegenException("Type annotated with one of the scheduling annotations is not a service itself."
-                                               + " It must be annotated with "
-                                               + SERVICE_ANNOTATION_SINGLETON.classNameWithEnclosingNames() + ".",
-                                       typeInfo.originatingElementValue());
+            // we may be in CDI (as we support the annotations on both CDI beans and Helidon Declarative Services)
+            // let's just check there is any annotation on the type
+            if (typeInfo.annotations().isEmpty()) {
+                throw new CodegenException("Type annotated with one of the scheduling annotations is not a service itself."
+                                                   + " It must be annotated with "
+                                                   + SERVICE_ANNOTATION_SINGLETON.classNameWithEnclosingNames() + ","
+                                                   + " or it must be a CDI bean (in Helidon MP).",
+                                           typeInfo.originatingElementValue());
+            }
         }
     }
 

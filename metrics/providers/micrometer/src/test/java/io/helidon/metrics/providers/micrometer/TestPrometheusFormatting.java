@@ -238,6 +238,92 @@ class TestPrometheusFormatting {
                          endsWith(OPENMETRICS_EOF)));
     }
 
+    @Test
+    void testMeterNameWithSpecialChars() {
+        Counter counterWithDashes = meterRegistry.getOrCreate(Counter.builder("counter-with-dashes"));
+        counterWithDashes.increment(3L);
+
+        Counter counterWithUmlauts = meterRegistry.getOrCreate(Counter.builder("counter-with-umlaut-äöü"));
+        counterWithUmlauts.increment(4L);
+        var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .scopeTagName(SCOPE_TAG_NAME)
+                .build();
+
+        Optional<Object> output = formatter.format();
+        assertThat("With dashes",
+                   checkAndCast(output),
+                   allOf(
+                       containsString(scopeExpr("counter_with_dashes_total",
+                                                "this_scope",
+                                                "app",
+                                                "3.0")),
+                       containsString(scopeExpr("counter_with_umlaut_____total",
+                                                "this_scope",
+                                                "app",
+                                                "4.0"))));
+
+
+    }
+
+    @Test
+    void testSelectiveByName() {
+        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByName"));
+        counter.increment();
+
+        var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("counterByName"))
+                .scopeTagName(SCOPE_TAG_NAME)
+                .build();
+
+        Optional<Object> output = formatter.format();
+        assertThat("Selective by name",
+                   checkAndCast(output),
+                   containsString(scopeExpr("counterByName_total",
+                                            "this_scope",
+                                            "app",
+                                            "1.0")));
+    }
+
+    @Test
+    void testSelectiveByNameAndScope() {
+        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByNameAndScope"));
+        counter.increment(6L);
+
+        var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .meterNameSelection(Set.of("counterByNameAndScope"))
+                .scopeSelection(Set.of("app"))
+                .scopeTagName(SCOPE_TAG_NAME)
+                .build();
+
+        Optional<Object> output = formatter.format();
+        assertThat("Selective by name and scope",
+                   checkAndCast(output),
+                   containsString(scopeExpr("counterByNameAndScope_total",
+                                            "this_scope",
+                                            "app",
+                                            "6.0")));
+    }
+
+    @Test
+    void testSelectNonExistentScope() {
+        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByBadScope"));
+        counter.increment(7L);
+
+        var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .scopeSelection(Set.of("missing"))
+                .scopeTagName(SCOPE_TAG_NAME)
+                .build();
+
+        Optional<Object> output = formatter.format();
+        assertThat("Selective by non-existent scope",
+                   output,
+                   OptionalMatcher.optionalEmpty());
+    }
+
     private static String scopeExpr(String meterName, String key, String value, String suffix) {
         return meterName + "{" + key + "=\"" + value + "\"} " + suffix;
     }

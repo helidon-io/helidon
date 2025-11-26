@@ -45,6 +45,11 @@ import io.helidon.common.types.TypeName;
  *     {@link io.helidon.service.registry.ServiceRegistry#get(Class)} must yield the same instance if the service is a
  *     singleton</li>
  * </ul>
+ *
+ * <strong>Important note:</strong> Do not use any of the methods on this class when building a Helidon Declarative
+ * application. In Helidon declarative - create your own service with higher than default {@link io.helidon.common.Weight}
+ * and it will be available for injection as expected.
+ * To get an instance, inject it into your service, do not call methods on this class.
  */
 public final class Services {
     private Services() {
@@ -140,6 +145,55 @@ public final class Services {
         Objects.requireNonNull(name);
 
         setQualified(contract, instance, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Add a named instance.
+     * <p>
+     * Rules are the same as for {@link #add(Class, double, Object)}.
+     *
+     * @param contract contract to add
+     * @param weight weight for the instance
+     * @param instance instance to add
+     * @param name name qualifier of the instance
+     * @param <T> type of the service
+     */
+    public static <T> void addNamed(Class<T> contract, double weight, T instance, String name) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(name);
+
+        addQualified(contract, weight, instance, Qualifier.createNamed(name));
+    }
+
+    /**
+     * Add a qualified instance.
+     * <p>
+     * Rules are the same as for {@link #set(Class, Object[])}.
+     *
+     * @param contract   contract to set
+     * @param weight     weight of the instance to add
+     * @param instance   instance to use
+     * @param qualifiers qualifier(s) to qualify the instance
+     * @param <T>        type of the service
+     */
+    public static <T> void addQualified(Class<T> contract, double weight, T instance, Qualifier... qualifiers) {
+        Objects.requireNonNull(contract);
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(qualifiers);
+
+        if (qualifiers.length == 0) {
+            Services.add(contract, weight, instance);
+            return;
+        }
+
+        for (Qualifier qualifier : qualifiers) {
+            Objects.requireNonNull(qualifier, "All qualifiers must be non-null");
+        }
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        if (registry instanceof CoreServiceRegistry csr) {
+            csr.addQualified(contract, weight, instance, Set.of(qualifiers));
+        }
     }
 
     /**

@@ -19,6 +19,8 @@ package io.helidon.messaging.connectors.jms;
 import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.messaging.connectors.mock.MockConnector;
 import io.helidon.messaging.connectors.mock.TestConnector;
@@ -83,15 +85,18 @@ public class AckMpTest extends AbstractMPTest {
     @Incoming("test-channel-ack-1")
     @Outgoing("mock-conn-channel")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-    public Message<String> channelAck(Message<String> msg) {
+    public CompletionStage<Message<String>> channelAck(Message<String> msg) {
         LOGGER.log(DEBUG, () -> String.format("Received %s", msg.getPayload()));
         if (msg.getPayload().startsWith("NO_ACK")) {
             LOGGER.log(DEBUG, () -> String.format("NOT Acked %s", msg.getPayload()));
+            return CompletableFuture.completedStage(msg);
         } else {
             LOGGER.log(DEBUG, () -> String.format("Acked %s", msg.getPayload()));
-            msg.ack();
+            return msg.ack().thenApply(unused -> {
+                LOGGER.log(DEBUG, () -> String.format("Ack of %s confirmed", msg.getPayload()));
+                return msg;
+            });
         }
-        return msg;
     }
 
     @Test

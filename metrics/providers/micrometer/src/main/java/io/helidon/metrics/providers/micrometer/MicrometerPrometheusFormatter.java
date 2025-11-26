@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -49,16 +49,34 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     public static final Map<MediaType, String> MEDIA_TYPE_TO_FORMAT = Map.of(
             MediaTypes.TEXT_PLAIN, TextFormat.CONTENT_TYPE_004,
             MediaTypes.APPLICATION_OPENMETRICS_TEXT, TextFormat.CONTENT_TYPE_OPENMETRICS_100);
+
+    private static final Pattern SPECIAL_CHARACTERS_MAPPED_TO_UNDERSCORE_PATTERN = Pattern.compile("[-+.!?@#$%^&*`'\\s]+");
+    private static final Pattern NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN = Pattern.compile("^[0-9_]+.*");
+    private static final Pattern NON_IDENTIFIER_PATTERN = Pattern.compile("[^A-Za-z0-9_:]");
+
     private final String scopeTagName;
-    private final Iterable<String> scopeSelection;
-    private final Iterable<String> meterNameSelection;
+    private final Set<String> scopes;
+    private final Set<String> meterNames;
     private final MediaType resultMediaType;
     private final MeterRegistry meterRegistry;
 
     private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
-        scopeSelection = builder.scopeSelection;
-        meterNameSelection = builder.meterNameSelection;
+        meterNames = (builder.meterNameSelection instanceof Set<String> namesSet)
+                ? namesSet
+                : new HashSet<>() {
+                    {
+                        builder.meterNameSelection.forEach(this::add);
+                    }
+                };
+
+        scopes = (builder.scopeSelection instanceof Set<String> scopesSet)
+                ? scopesSet
+                : new HashSet<>() {
+                    {
+                        builder.scopeSelection.forEach(this::add);
+                    }
+                };
         resultMediaType = builder.resultMediaType;
         meterRegistry = Objects.requireNonNullElseGet(builder.meterRegistry,
                                                       io.helidon.metrics.api.Metrics::globalRegistry);
@@ -84,15 +102,15 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         String result = name;
 
         // Convert special characters to underscores.
-        result = result.replaceAll("[-+.!?@#$%^&*`'\\s]+", "_");
+        result = SPECIAL_CHARACTERS_MAPPED_TO_UNDERSCORE_PATTERN.matcher(result).replaceAll("_");
 
         // Prometheus simple client adds the prefix "m_" if a meter name starts with a digit or an underscore.
-        if (result.matches("^[0-9_]+.*")) {
+        if (NON_DIGIT_OR_UNDERSCORE_PREFIX_PATTERN.matcher(result).matches()) {
             result = "m_" + result;
         }
 
         // Replace non-identifier characters.
-        result = result.replaceAll("[^A-Za-z0-9_:]", "_");
+        result = NON_IDENTIFIER_PATTERN.matcher(result).replaceAll("_");
 
         return result;
     }
@@ -123,17 +141,24 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         Optional<PrometheusMeterRegistry> prometheusMeterRegistry = prometheusMeterRegistry(meterRegistry);
         if (prometheusMeterRegistry.isPresent()) {
 
-            // Scraping the Prometheus registry lets us limit the output to include only specified names.
-            Set<String> meterNamesOfInterest = meterNamesOfInterest(prometheusMeterRegistry.get(),
-                                                                    scopeSelection,
-                                                                    meterNameSelection);
-            if (meterNamesOfInterest.isEmpty()) {
-                return Optional.empty();
+            /*
+            Optimize for the no-selection case (neither scope nor name selections were requested).
+             */
+            Set<String> meterNamesOfInterest;
+
+            if (meterNames.isEmpty() && scopes.isEmpty()) {
+                meterNamesOfInterest = null; // The Prometheus registry's scrape method treats null as "match all names."
+            } else {
+                meterNamesOfInterest = meterNamesOfInterest(prometheusMeterRegistry.get(),
+                                     scopes,
+                                     meterNames);
+                if (meterNamesOfInterest.isEmpty()) {
+                    return Optional.empty();
+                }
             }
 
             String prometheusOutput = prometheusMeterRegistry.get()
-                    .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(
-                                    resultMediaType),
+                    .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
                             meterNamesOfInterest);
 
             return prometheusOutput.isBlank() ? Optional.empty() : Optional.of(prometheusOutput);
@@ -166,31 +191,23 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
      * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
-     * @param scopeSelection          scope names to select
-     * @param meterNameSelection      meter names to select
+     * @param scopes          scope names to select
+     * @param names           meter names to select
      * @return set of matching meter names (with units and suffixes as needed) to match the names as stored in the meter registry
      */
     Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
-                                     Iterable<String> scopeSelection,
-                                     Iterable<String> meterNameSelection) {
+                                     Set<String> scopes,
+                                     Set<String> names) {
 
         Set<String> result = new HashSet<>();
 
-        var scopes = new HashSet<>();
-        scopeSelection.forEach(scopes::add);
-
-        var names = new HashSet<>();
-        meterNameSelection.forEach(names::add);
-
-        Predicate<Meter> scopePredicate = scopes.isEmpty() || scopeTagName == null || scopeTagName.isBlank()
-                ? m -> true
-                : m -> scopes.contains(m.getId().getTag(scopeTagName));
-
-        Predicate<String> namePredicate = names.isEmpty() ? n -> true : names::contains;
-
         for (Meter meter : prometheusMeterRegistry.getMeters()) {
             String meterName = meter.getId().getName();
-            if (!namePredicate.test(meterName) || !scopePredicate.test(meter)) {
+            if ((!names.isEmpty() && !names.contains(meterName))
+                || (!scopes.isEmpty()
+                            && scopeTagName != null
+                            && !scopeTagName.isBlank()
+                            && !scopes.contains(meter.getId().getTag(scopeTagName)))) {
                 continue;
             }
             Set<String> allUnitsForMeterName = new HashSet<>();
