@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,6 +80,10 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
+
+    private static volatile StackTraceElement[] originalCreationStackTrace;
+    private static volatile boolean hasLoggedFirstMultiInstantiationWarning = false;
+
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
     /*
@@ -118,6 +123,22 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
+        if (originalCreationStackTrace == null) {
+            originalCreationStackTrace = Thread.currentThread().getStackTrace();
+        } else if (metricsConfig.warnOnMultipleRegistries()) {
+            if (!hasLoggedFirstMultiInstantiationWarning) {
+                hasLoggedFirstMultiInstantiationWarning = true;
+                LOGGER.log(Level.WARNING,
+                           "Unexpected duplicate instantiation\nOriginal instantiation from:\n{0}\n\nAdditional instantiation "
+                                   + "from:\n{1}",
+                           Arrays.toString(originalCreationStackTrace),
+                           Arrays.toString(Thread.currentThread().getStackTrace()));
+            } else {
+                LOGGER.log(Level.WARNING,
+                           "Unexpected additional instantiation from:\n{0}",
+                           Arrays.toString(Thread.currentThread().getStackTrace()));
+            }
+        }
     }
 
     static Builder builder(
@@ -554,6 +575,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    // For testing.
+    static void clearMultipleInstantiationInfo() {
+        hasLoggedFirstMultiInstantiationWarning = false;
+        originalCreationStackTrace = null;
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
