@@ -496,14 +496,30 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         try {
             Set<ResolvedType> contracts = resolveContracts(contract);
             for (ResolvedType resolvedType : contracts) {
-                doAdd(resolvedType, weight, instance);
+                doAdd(resolvedType, weight, instance, Set.of());
             }
         } finally {
             stateWriteLock.unlock();
         }
     }
 
-    private <T> void doAdd(ResolvedType contract, double weight, T instance) {
+    <T> void addQualified(Class<T> contract, double weight, T instance, Set<Qualifier> qualifiers) {
+        if (!allowLateBinding) {
+            throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
+                                                       + "explicitly disabled through registry configuration: " + id);
+        }
+        stateWriteLock.lock();
+        try {
+            Set<ResolvedType> contracts = resolveContracts(contract);
+            for (ResolvedType resolvedType : contracts) {
+                doAdd(resolvedType, weight, instance, qualifiers);
+            }
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
+    private <T> void doAdd(ResolvedType contract, double weight, T instance, Set<Qualifier> qualifiers) {
         checkValidContract(contract);
         ServiceInfo serviceInfo = servicesByType.get(contract.type());
         if (serviceInfo == null) {
@@ -514,7 +530,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             }
 
             // each instance will have its own descriptor
-            setContract(contract, instance, weight, serviceInfos);
+            setContract(contract, instance, weight, serviceInfos, qualifiers);
 
             // replace the instances
             servicesByContract.put(contract, serviceInfos);
@@ -619,7 +635,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             double currentWeight = Weighted.DEFAULT_WEIGHT;
             for (T instance : instances) {
                 // each instance will have its own descriptor
-                setContract(contractType, instance, currentWeight, serviceInfos);
+                setContract(contractType, instance, currentWeight, serviceInfos, Set.of());
                 // reduce by a small number, so other things behave as expected
                 currentWeight -= 0.001;
             }
@@ -748,8 +764,12 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                 .forEach(ServiceManager::ensureBindingPlan);
     }
 
-    private <T> void setContract(ResolvedType contractType, T instance, double currentWeight, Set<ServiceInfo> serviceInfos) {
-        VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance);
+    private <T> void setContract(ResolvedType contractType,
+                                 T instance,
+                                 double currentWeight,
+                                 Set<ServiceInfo> serviceInfos,
+                                 Set<Qualifier> qualifiers) {
+        VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), currentWeight, instance, qualifiers);
         ServiceProvider<Object> provider = new ServiceProvider<>(this,
                                                                  vt);
         Activator<Object> activator = Activators.create(provider, instance);
