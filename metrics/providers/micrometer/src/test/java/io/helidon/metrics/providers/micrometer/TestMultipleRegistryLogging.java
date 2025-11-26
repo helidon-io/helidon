@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +34,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isEmptyString;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 
 class TestMultipleRegistryLogging {
 
@@ -65,7 +67,7 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
-    void testSingleRegistration() throws IOException {
+    void testSingleRegistry() throws IOException {
         Metrics.globalRegistry();
         testPrintStream.flush();
         String output = baos.toString();
@@ -73,7 +75,7 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
-    void testTwoRegistrations() throws IOException {
+    void testTwoRegistries() throws IOException {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
         testPrintStream.flush();
@@ -86,7 +88,7 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
-    void testThreeRegistrations() throws IOException {
+    void testThreeRegistries() throws IOException {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
         Metrics.createMeterRegistry();
@@ -98,6 +100,22 @@ class TestMultipleRegistryLogging {
                 containsString("Original instantiation"),
                 containsString("Additional instantiation"),
                 containsString("Unexpected additional instantiation")));
+    }
+
+    @Test
+    void testTwoRegistriesWithWarningDisabled() {
+        MetricsConfig configWithWarningsSuppressed = MetricsConfig.builder().warnOnMultipleRegistries(false).build();
+        Metrics.createMeterRegistry(configWithWarningsSuppressed);
+        Metrics.createMeterRegistry(configWithWarningsSuppressed);
+        testPrintStream.flush();
+
+        String output = baos.toString();
+        assertThat("Two meter registrations with warnings suppressed", output, allOf(
+                not(containsString("Unexpected duplicate")),
+                not(containsString("Original instantiation")),
+                not(containsString("Additional instantiation")),
+                not(containsString("Unexpected additional instantiation"))));
+
     }
 
 }
