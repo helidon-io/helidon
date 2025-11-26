@@ -279,7 +279,7 @@ interface MetricsConfigBlueprint {
     Optional<TimeUnit> jsonUnitsDefault();
 
     /**
-     * Whether to warn multiple registries without logging warnings.
+     * Whether to log warnings when multiple registries are created.
      * <p>
      * By far most applications use a single meter registry, but certain app or library programming errors can cause Helidon to
      * create more than one. By default, Helidon logs warning messages for each additional meter registry created. This
