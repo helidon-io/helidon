@@ -75,16 +75,10 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * duplicate messages being delivered.</li>
      * </ul>
      *
-     * <ul>
-     * <li>Type: enum</li>
-     * <li>Default: AUTO_ACKNOWLEDGE</li>
-     * <li>Valid Values: AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE</li>
-     * </ul>
-     *
      * @param acknowledgeMode AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE
      * @return this builder
      */
-    @ConfiguredOption
+    @ConfiguredOption("AUTO_ACKNOWLEDGE")
     public JmsConfigBuilder acknowledgeMode(AcknowledgeMode acknowledgeMode) {
         super.property("acknowledge-mode", acknowledgeMode.name());
         return this;
@@ -93,16 +87,10 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Indicates whether the session will use a local transaction.
      *
-     * <ul>
-     * <li>Type: boolean</li>
-     * <li>Default: false</li>
-     * <li>Valid Values: true, false</li>
-     * </ul>
-     *
      * @param transacted true if so
      * @return this builder
      */
-    @ConfiguredOption
+    @ConfiguredOption("false")
     public JmsConfigBuilder transacted(boolean transacted) {
         super.property("transacted", String.valueOf(transacted));
         return this;
@@ -143,16 +131,10 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Specify if connection is {@link Type#QUEUE queue}  or {@link Type#TOPIC topic}.
      *
-     * <ul>
-     * <li>Type: enum</li>
-     * <li>Default: {@link Type#QUEUE QUEUE}</li>
-     * <li>Valid Values: {@link Type#QUEUE QUEUE}, {@link Type#TOPIC TOPIC}</li>
-     * </ul>
-     *
      * @param type {@link Type#QUEUE queue} or {@link Type#TOPIC topic}
      * @return this builder
      */
-    @ConfiguredOption
+    @ConfiguredOption("QUEUE")
     public JmsConfigBuilder type(Type type) {
         super.property("type", type.toString());
         return this;
@@ -160,10 +142,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
 
     /**
      * Queue or topic name.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
      *
      * @param destination queue or topic name
      * @return this builder
@@ -177,10 +155,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Use supplied destination name and {@link Type#QUEUE QUEUE} as type.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param destination queue name
      * @return this builder
      */
@@ -193,10 +167,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
 
     /**
      * Use supplied destination name and {@link Type#TOPIC TOPIC} as type.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
      *
      * @param destination topic name
      * @return this builder
@@ -229,15 +199,10 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Timeout for polling for next message in every poll cycle in millis.
      *
-     * <ul>
-     * <li>Type: milliseconds</li>
-     * <li>Default: 50</li>
-     * </ul>
-     *
      * @param pollTimeout timeout of polling for next message
      * @return this builder
      */
-    @ConfiguredOption
+    @ConfiguredOption("50")
     public JmsConfigBuilder pollTimeout(long pollTimeout) {
         super.property("poll-timeout", String.valueOf(pollTimeout));
         return this;
@@ -246,15 +211,10 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Period for executing poll cycles in millis.
      *
-     * <ul>
-     * <li>Type: milliseconds</li>
-     * <li>Default: 100</li>
-     * </ul>
-     *
      * @param periodExecutions period for executing poll cycles in millis
      * @return this builder
      */
-    @ConfiguredOption
+    @ConfiguredOption("100")
     public JmsConfigBuilder periodExecutions(long periodExecutions) {
         super.property("period-executions", String.valueOf(periodExecutions));
         return this;
@@ -263,10 +223,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * When multiple channels share same session-group-id,
      * they share same JMS session.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
      *
      * @param sessionGroupId identifier for channels sharing same JMS session
      * @return this builder
@@ -280,10 +236,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * JNDI name of JMS factory.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param jndiJmsFactory JNDI name of JMS factory
      * @return this builder
      */
@@ -295,10 +247,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
 
     /**
      * JNDI initial factory.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
      *
      * @param jndiInitialFactory JNDI initial factory
      * @return this builder
@@ -312,10 +260,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * JNDI initial factory.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param jndiInitialFactory JNDI initial factory
      * @return this builder
      */
@@ -328,10 +272,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
     /**
      * JNDI provider url.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param jndiProviderUrl JNDI provider url
      * @return this builder
      */
@@ -343,10 +283,6 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
 
     /**
      * Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url.
-     *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
      *
      * @param initialContextProps properties used for creating JNDI initial context
      * @return this builder

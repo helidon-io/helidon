@@ -262,7 +262,7 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      */
     @ConfiguredOption("false")
     public AqConfigBuilder durable(boolean durable) {
-        super.property("durable", Boolean.toString(durable));
+        super.property("durable", String.valueOf(durable));
         return this;
     }
 
@@ -283,12 +283,12 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * any connection with the same client identifier, will not be delivered
      * to this durable subscription.
      *
-     * @param nonLocal {@code "true"} to disable delivery of local messages
+     * @param nonLocal {@code true} to disable delivery of local messages
      * @return this builder
      */
     @ConfiguredOption("false")
     public AqConfigBuilder nonLocal(boolean nonLocal) {
-        super.property("non-local", Boolean.toString(nonLocal));
+        super.property("non-local", String.valueOf(nonLocal));
         return this;
     }
 }
