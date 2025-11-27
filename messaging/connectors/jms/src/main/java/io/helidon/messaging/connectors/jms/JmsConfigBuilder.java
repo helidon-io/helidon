@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.Map;
 
 import javax.naming.spi.InitialContextFactory;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.messaging.ConnectorConfigBuilder;
 
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
@@ -28,6 +30,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 /**
  * Build Jms specific config.
  */
+@Configured
 public final class JmsConfigBuilder extends ConnectorConfigBuilder {
 
     JmsConfigBuilder() {
@@ -55,6 +58,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param factoryName connection factory name
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder namedFactory(String factoryName) {
         super.property(JmsConnector.NAMED_FACTORY_ATTRIBUTE, factoryName);
         return this;
@@ -80,6 +84,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param acknowledgeMode AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder acknowledgeMode(AcknowledgeMode acknowledgeMode) {
         super.property("acknowledge-mode", acknowledgeMode.name());
         return this;
@@ -97,6 +102,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param transacted true if so
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder transacted(boolean transacted) {
         super.property("transacted", String.valueOf(transacted));
         return this;
@@ -112,6 +118,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param username JMS connection user name
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder username(String username) {
         super.property("username", username);
         return this;
@@ -127,6 +134,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param password JMS connection password
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder password(String password) {
         super.property("password", password);
         return this;
@@ -144,6 +152,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param type {@link Type#QUEUE queue} or {@link Type#TOPIC topic}
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder type(Type type) {
         super.property("type", type.toString());
         return this;
@@ -159,6 +168,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination queue or topic name
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder destination(String destination) {
         super.property("destination", destination);
         return this;
@@ -174,6 +184,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination queue name
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder queue(String destination) {
         this.type(Type.QUEUE);
         this.destination(destination);
@@ -190,6 +201,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param destination topic name
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder topic(String destination) {
         this.type(Type.TOPIC);
         this.destination(destination);
@@ -208,6 +220,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param messageSelector message selector expression
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder messageSelector(String messageSelector) {
         super.property("message-selector", messageSelector);
         return this;
@@ -224,6 +237,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param pollTimeout timeout of polling for next message
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder pollTimeout(long pollTimeout) {
         super.property("poll-timeout", String.valueOf(pollTimeout));
         return this;
@@ -240,6 +254,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param periodExecutions period for executing poll cycles in millis
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder periodExecutions(long periodExecutions) {
         super.property("period-executions", String.valueOf(periodExecutions));
         return this;
@@ -256,6 +271,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param sessionGroupId identifier for channels sharing same JMS session
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder sessionGroupId(String sessionGroupId) {
         super.property("session-group-id", sessionGroupId);
         return this;
@@ -271,6 +287,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param jndiJmsFactory JNDI name of JMS factory
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder jndiJmsFactory(String jndiJmsFactory) {
         super.property("jndi.jms-factory", jndiJmsFactory);
         return this;
@@ -286,6 +303,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param jndiInitialFactory JNDI initial factory
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder jndiInitialFactory(String jndiInitialFactory) {
         super.property("jndi." + JmsConnector.JNDI_PROPS_ATTRIBUTE + ".java.naming.factory.initial", jndiInitialFactory);
         return this;
@@ -301,6 +319,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param jndiInitialFactory JNDI initial factory
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder jndiInitialFactory(Class<? extends InitialContextFactory> jndiInitialFactory) {
         this.jndiInitialFactory(jndiInitialFactory.getName());
         return this;
@@ -316,6 +335,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param jndiProviderUrl JNDI provider url
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder jndiProviderUrl(String jndiProviderUrl) {
         super.property("jndi." + JmsConnector.JNDI_PROPS_ATTRIBUTE + ".java.naming.provider.url", jndiProviderUrl);
         return this;
@@ -331,6 +351,7 @@ public final class JmsConfigBuilder extends ConnectorConfigBuilder {
      * @param initialContextProps properties used for creating JNDI initial context
      * @return this builder
      */
+    @ConfiguredOption
     public JmsConfigBuilder jndiInitialContextProperties(Map<String, String> initialContextProps) {
         initialContextProps.forEach((key, val) -> super.property("jndi.env-properties." + key, val));
         return this;
