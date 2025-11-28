@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.builder.codegen;
 
 import java.util.List;
 
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.Builder;
@@ -36,13 +37,16 @@ final class GenerateBuilder {
     private GenerateBuilder() {
     }
 
-    static void generate(ClassModel.Builder classBuilder,
-                         TypeName prototype,
-                         TypeName runtimeType,
-                         List<TypeArgument> typeArguments,
-                         List<TypeName> typeArgumentNames,
-                         boolean isFactory,
-                         TypeContext typeContext) {
+    public static void generate(List<BuilderCodegenExtension> extensions,
+                                ClassModel.Builder classBuilder,
+                                PrototypeInfo prototypeInfo,
+                                List<TypeArgument> typeArguments,
+                                List<TypeName> typeArgumentNames, List<OptionHandler> options) {
+
+        TypeName prototype = prototypeInfo.prototypeType();
+        TypeName runtimeType = prototypeInfo.runtimeType().orElse(prototype);
+        boolean isFactory = !prototype.equals(runtimeType);
+
         classBuilder.addInnerClass(builder -> {
             TypeName builderType = TypeName.builder()
                     .from(TypeName.create(prototype.fqName() + ".Builder"))
@@ -53,18 +57,18 @@ final class GenerateBuilder {
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                     .description("Fluent API builder for {@link " + runtimeType.className() + "}.")
                     .superType(TypeName.builder()
-                                         .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
-                                         .addTypeArguments(typeArgumentNames)
-                                         .addTypeArgument(builderType)
-                                         .addTypeArgument(prototype)
-                                         .build())
+                                       .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
+                                       .addTypeArguments(typeArgumentNames)
+                                       .addTypeArgument(builderType)
+                                       .addTypeArgument(prototype)
+                                       .build())
                     .addInterface(TypeName.builder()
                                           .from(TypeName.create(Builder.class))
                                           .addTypeArgument(builderType)
                                           .addTypeArgument(runtimeType)
                                           .build())
                     .addConstructor(constructor -> {
-                        if (typeContext.blueprintData().builderPublic()) {
+                        if (prototypeInfo.builderAccessModifier() == AccessModifier.PUBLIC) {
                             constructor.accessModifier(AccessModifier.PRIVATE);
                         } else {
                             // package private to allow instantiation
@@ -86,7 +90,7 @@ final class GenerateBuilder {
                         method.addContentLine("(this);");
                     });
             if (isFactory) {
-                GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, typeContext, true);
+                GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, prototypeInfo, runtimeType, true);
             } else {
                 // build method returns the same as buildPrototype method
                 builder.addMethod(method -> method.name("build")
@@ -94,6 +98,7 @@ final class GenerateBuilder {
                         .returnType(runtimeType)
                         .addContentLine("return buildPrototype();"));
             }
+            extensions.forEach(it -> it.updateBuilder(prototypeInfo, Utils.options(options), builder));
         });
     }
 }

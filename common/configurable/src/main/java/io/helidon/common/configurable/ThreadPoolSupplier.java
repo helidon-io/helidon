@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import io.helidon.common.context.Contexts;
  * Supplier of a custom thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
-@RuntimeType.PrototypedBy(ThreadPoolConfig.class)
 public final class ThreadPoolSupplier implements Supplier<ExecutorService>, RuntimeType.Api<ThreadPoolConfig> {
     // this type is used on config blueprint, as the default value for rejection policy
     static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();

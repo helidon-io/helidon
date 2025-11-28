@@ -28,6 +28,7 @@
     <name>Helidon WebClient gRPC</name>
 
     <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 

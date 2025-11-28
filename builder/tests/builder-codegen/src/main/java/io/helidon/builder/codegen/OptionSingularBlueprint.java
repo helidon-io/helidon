@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,27 @@
 
 package io.helidon.builder.codegen;
 
-import java.util.List;
+import io.helidon.builder.api.Prototype;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
+/**
+ * Definition of a singular option.
+ */
+@Prototype.Blueprint(detach = true)
+interface OptionSingularBlueprint {
 
-record MethodSignature(TypeName returnType, String name, List<TypeName> arguments) {
-    public static MethodSignature create(TypedElementInfo info) {
-        return new MethodSignature(info.typeName(),
-                info.elementName(),
-                info.parameterArguments().stream()
-                        .map(TypedElementInfo::typeName)
-                        .toList());
-    }
+    /**
+     * Singular form of the option name.
+     * For {@code lines}, this would be {@code line}.
+     * For {@code properties}, this should be {@code property}, so we allow customization by the user.
+     *
+     * @return singular name
+     */
+    String name();
+
+    /**
+     * Name of the singular setter method.
+     *
+     * @return method name
+     */
+    String methodName();
 }

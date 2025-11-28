@@ -16,64 +16,29 @@
 
 package io.helidon.builder.codegen;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import io.helidon.codegen.classmodel.ContentBuilder;
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
+import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 
 import static io.helidon.builder.codegen.Types.LINKED_HASH_SET;
-import static io.helidon.builder.codegen.Types.SERVICES;
 import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerSet extends TypeHandlerCollection {
 
-    TypeHandlerSet(TypeName blueprintType,
-                   TypedElementInfo annotatedMethod,
-                   String name, String getterName, String setterName, TypeName declaredType) {
-        super(blueprintType,
-              annotatedMethod,
-              name,
-              getterName,
-              setterName,
-              declaredType,
+    TypeHandlerSet(List<BuilderCodegenExtension> extensions, PrototypeInfo prototypeInfo, OptionInfo option) {
+        super(extensions,
+              prototypeInfo,
+              option,
               SET,
-              "collect(java.util.stream.Collectors.toSet())",
-              Optional.of(".map(java.util.Set::copyOf)"));
-    }
-
-    @Override
-    void updateBuilderFromServices(ContentBuilder<?> content, String builder) {
-        /*
-        builder.option(new LinkedHashSet(Services.all(Type.class)));
-         */
-        content.addContent(builder)
-                .addContent(".")
-                .addContent(setterName())
-                .addContent("(new ")
-                .addContent(LINKED_HASH_SET)
-                .addContent("(")
-                .addContent(SERVICES)
-                .addContent(".all(")
-                .addContent(actualType())
-                .addContentLine(".class)));");
-    }
-
-    @Override
-    void updateBuilderFromRegistry(ContentBuilder<?> content, String builder, String registry) {
-        /*
-        builder.option(new LinkedHashSet(registry.all(Type.class)));
-         */
-        content.addContent(builder)
-                .addContent(".")
-                .addContent(setterName())
-                .addContent("(new ")
-                .addContent(LINKED_HASH_SET)
-                .addContent("(")
-                .addContent(registry)
-                .addContent(".all(")
-                .addContent(actualType())
-                .addContentLine(".class)));");
+              LINKED_HASH_SET,
+              content -> content.addContent("collect(")
+                      .addContent(Collectors.class)
+                      .addContent(".toSet())"),
+              Optional.of(content -> content.addContent(".map(")
+                      .addContent(SET)
+                      .addContent("::copyOf)")));
     }
 
     @Override

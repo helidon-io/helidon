@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.codegen.classmodel;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,7 +91,6 @@ public final class Javadoc extends ModelComponent {
         return new Builder();
     }
 
-
     /**
      * Create new {@link Builder} instance.
      *
@@ -102,97 +102,16 @@ public final class Javadoc extends ModelComponent {
                 .from(javadoc);
     }
 
-    private static Map<String, List<List<String>>> createCopyOfTagMap(Map<String, List<List<String>>> otherTags) {
-        Map<String, List<List<String>>> newTags = new HashMap<>();
-        for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
-            newTags.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+    @Override
+    public String toString() {
+        StringWriter sw = new StringWriter();
+        ModelWriter mw = new ModelWriter(sw, "    ");
+        try {
+            writeComponent(mw, false);
+        } catch (IOException e) {
+            return "";
         }
-        return Map.copyOf(newTags);
-    }
-
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
-        writer.write("/**\n");
-        for (String line : content) {
-            if (!line.isEmpty() && Character.isWhitespace(line.charAt(0))) {
-                writer.writeLine(" *" + line);
-            } else if (line.isBlank()) {
-                writer.writeLine(" *");
-            } else {
-                writer.writeLine(" * " + line);
-            }
-        }
-        if (hasAnyOtherParts()) {
-            writer.write(" *\n");
-        }
-        for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
-            writeTagInformation(writer, "param", entry.getKey(), entry.getValue());
-        }
-        for (Map.Entry<String, List<String>> entry : genericsTokens.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith("<") && key.endsWith(">")) {
-                writeTagInformation(writer, "param", key, entry.getValue());
-            } else {
-                writeTagInformation(writer, "param", "<" + key + ">", entry.getValue());
-            }
-        }
-        if (!returnDescription.isEmpty()) {
-            writeTagInformation(writer, "return", null, returnDescription);
-        }
-        for (Map.Entry<String, List<String>> entry : throwsDesc.entrySet()) {
-            writeTagInformation(writer, "throws", entry.getKey(), entry.getValue());
-        }
-        if (!deprecation.isEmpty()) {
-            writeTagInformation(writer, "deprecated", null, deprecation);
-        }
-        for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
-            for (List<String> description : entry.getValue()) {
-                writeTagInformation(writer, entry.getKey(), null, description);
-            }
-        }
-        writer.write(" */");
-    }
-
-    private void writeTagInformation(ModelWriter writer, String paramName, String name, List<String> description)
-            throws IOException {
-        if (description.isEmpty()) {
-            if (name != null) {
-                writer.writeLine(" * @" + paramName + " " + name);
-            } else {
-                writer.writeLine(" * @" + paramName);
-            }
-        } else {
-            boolean first = true;
-            String padding;
-            if (name != null) {
-                //If there is specific name, we want this to be included into smart padding
-                //Example: @param myParam first line
-                //                        second line
-                padding = " ".repeat(1 + paramName.length() + 1 + name.length() + 1);
-            } else {
-                //There is no specific for this tag
-                //Example: @return first line
-                //                 second line
-                padding = " ".repeat(1 + paramName.length() + 1);
-            }
-            for (String line : description) {
-                if (first) {
-                    if (name != null) {
-                        writer.write(" * @" + paramName + " " + name);
-                    } else {
-                        writer.write(" * @" + paramName);
-                    }
-                    if (line.isBlank()) {
-                        writer.writeLine("");
-                    } else {
-                        writer.writeLine(" " + line);
-                    }
-                    first = false;
-                } else {
-                    writer.writeLine(" * " + padding + line);
-                }
-            }
-        }
+        return sw.toString();
     }
 
     /**
@@ -258,8 +177,130 @@ public final class Javadoc extends ModelComponent {
         return otherTags;
     }
 
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
+            throws IOException {
+        writeComponent(writer, true);
+    }
+
     boolean generate() {
         return generate;
+    }
+
+    private static Map<String, List<List<String>>> createCopyOfTagMap(Map<String, List<List<String>>> otherTags) {
+        Map<String, List<List<String>>> newTags = new HashMap<>();
+        for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
+            newTags.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        return Map.copyOf(newTags);
+    }
+
+    private void writeComponent(ModelWriter writer, boolean addComments) throws IOException {
+
+        if (addComments) {
+            writer.write("/**\n");
+        }
+
+        for (String line : content) {
+            if (addComments) {
+                writer.write(" *");
+            }
+            if (!line.isEmpty() && Character.isWhitespace(line.charAt(0))) {
+                writer.writeLine(line);
+            } else if (line.isBlank()) {
+                writer.writeLine("");
+            } else {
+                writer.writeLine(" " + line);
+            }
+        }
+        if (hasAnyOtherParts()) {
+            if (addComments) {
+                writer.write(" *");
+            }
+            writer.write("\n");
+        }
+        for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+            writeTagInformation(writer, "param", entry.getKey(), entry.getValue(), addComments);
+        }
+        for (Map.Entry<String, List<String>> entry : genericsTokens.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("<") && key.endsWith(">")) {
+                writeTagInformation(writer, "param", key, entry.getValue(), addComments);
+            } else {
+                writeTagInformation(writer, "param", "<" + key + ">", entry.getValue(), addComments);
+            }
+        }
+        if (!returnDescription.isEmpty()) {
+            writeTagInformation(writer, "return", null, returnDescription, addComments);
+        }
+        for (Map.Entry<String, List<String>> entry : throwsDesc.entrySet()) {
+            writeTagInformation(writer, "throws", entry.getKey(), entry.getValue(), addComments);
+        }
+        if (!deprecation.isEmpty()) {
+            writeTagInformation(writer, "deprecated", null, deprecation, addComments);
+        }
+        for (Map.Entry<String, List<List<String>>> entry : otherTags.entrySet()) {
+            for (List<String> description : entry.getValue()) {
+                writeTagInformation(writer, entry.getKey(), null, description, addComments);
+            }
+        }
+        if (addComments) {
+            writer.write(" */");
+        }
+    }
+
+    private void writeTagInformation(ModelWriter writer,
+                                     String paramName,
+                                     String name,
+                                     List<String> description,
+                                     boolean addComments)
+            throws IOException {
+        if (description.isEmpty()) {
+            if (addComments) {
+                writer.write(" *");
+            }
+            if (name != null) {
+                writer.writeLine(" @" + paramName + " " + name);
+            } else {
+                writer.writeLine(" @" + paramName);
+            }
+        } else {
+            boolean first = true;
+            String padding;
+            if (name != null) {
+                //If there is specific name, we want this to be included into smart padding
+                //Example: @param myParam first line
+                //                        second line
+                padding = " ".repeat(1 + paramName.length() + 1 + name.length() + 1);
+            } else {
+                //There is no specific for this tag
+                //Example: @return first line
+                //                 second line
+                padding = " ".repeat(1 + paramName.length() + 1);
+            }
+            for (String line : description) {
+                if (first) {
+                    if (addComments) {
+                        writer.write(" *");
+                    }
+                    if (name != null) {
+                        writer.write(" @" + paramName + " " + name);
+                    } else {
+                        writer.write(" @" + paramName);
+                    }
+                    if (line.isBlank()) {
+                        writer.writeLine("");
+                    } else {
+                        writer.writeLine(" " + line);
+                    }
+                    first = false;
+                } else {
+                    if (addComments) {
+                        writer.write(" *");
+                    }
+                    writer.writeLine(" " + padding + line);
+                }
+            }
+        }
     }
 
     private boolean hasAnyOtherParts() {
@@ -335,7 +376,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add parameter tag name and description.
          *
-         * @param paramName parameter name
+         * @param paramName   parameter name
          * @param description parameter description
          * @return updated builder instance
          */
@@ -346,7 +387,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add parameter tag name and description.
          *
-         * @param paramName parameter name
+         * @param paramName   parameter name
          * @param description parameter description
          * @return updated builder instance
          */
@@ -361,9 +402,21 @@ public final class Javadoc extends ModelComponent {
         }
 
         /**
+         * Replace parameter documentation with the one from the provided map.
+         *
+         * @param parameters new map of parameters
+         * @return updated builder instance
+         */
+        public Builder parameters(Map<String, List<String>> parameters) {
+            this.parameters.clear();
+            this.parameters.putAll(parameters);
+            return this;
+        }
+
+        /**
          * Add throws tag name and description.
          *
-         * @param exception exception name
+         * @param exception   exception name
          * @param description exception description
          * @return updated builder instance
          */
@@ -375,7 +428,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add throws tag name and description.
          *
-         * @param tag tag name
+         * @param tag         tag name
          * @param description tag description
          * @return updated builder instance
          */
@@ -388,7 +441,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add throws tag name and description.
          *
-         * @param tag tag name
+         * @param tag         tag name
          * @param description tag description
          * @return updated builder instance
          */
@@ -428,7 +481,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add generic argument tag name and description.
          *
-         * @param argument parameter name
+         * @param argument    parameter name
          * @param description parameter description
          * @return updated builder instance
          */
@@ -440,7 +493,7 @@ public final class Javadoc extends ModelComponent {
         /**
          * Add generic argument tag name and description.
          *
-         * @param argument parameter name
+         * @param argument    parameter name
          * @param description parameter description
          * @return updated builder instance
          */
@@ -495,10 +548,14 @@ public final class Javadoc extends ModelComponent {
             this.deprecation.addAll(javadoc.deprecation());
             this.returnDescription.addAll(javadoc.returnDescription());
             this.contentBuilder.append(String.join("\n", javadoc.content()));
-            this.parameters.putAll(javadoc.parameters());
-            this.genericArguments.putAll(javadoc.genericsTokens());
-            this.throwsDesc.putAll(javadoc.throwsDesc());
-            this.otherTags.putAll(javadoc.otherTags());
+            javadoc.parameters()
+                    .forEach((name, values) -> this.parameters.put(name, new ArrayList<>(values)));
+            javadoc.genericsTokens()
+                    .forEach((name, values) -> this.genericArguments.put(name, new ArrayList<>(values)));
+            javadoc.throwsDesc()
+                    .forEach((name, values) -> this.throwsDesc.put(name, new ArrayList<>(values)));
+            javadoc.otherTags()
+                    .forEach((name, values) -> this.otherTags.put(name, new ArrayList<>(values)));
             return this;
         }
 

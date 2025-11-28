@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ final class StaticContentConfigSupport {
         private BaseMethods() {
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("contentTypes")
         static MediaType createContentTypes(Config config) {
             return StaticContentConfigSupport.createContentTypes(config);
         }
@@ -48,7 +48,7 @@ final class StaticContentConfigSupport {
          * @param location path on file system that is the root of static content (all files under it will be available!)
          * @return a new configuration for classpath static content handler
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static FileSystemHandlerConfig create(Path location) {
             return FileSystemHandlerConfig.builder()
                     .location(location)
@@ -67,7 +67,7 @@ final class StaticContentConfigSupport {
          * @param location location on classpath
          * @return a new configuration for classpath static content handler
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static ClasspathHandlerConfig create(String location) {
             return ClasspathHandlerConfig.builder()
                     .location(location)
@@ -79,7 +79,7 @@ final class StaticContentConfigSupport {
         private StaticContentMethods() {
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("contentTypes")
         static MediaType createContentTypes(Config config) {
             return StaticContentConfigSupport.createContentTypes(config);
         }

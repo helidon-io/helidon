@@ -188,6 +188,7 @@ class AnnotationTest {
                 .addImport(Annotation.class)
                 .addImport(TypeName.class)
                 .addImport(EnumValue.class)
+                .addImport(TestEnum.class)
                 .build();
         StringWriter writer = new StringWriter();
         ModelWriter modelWriter = new ModelWriter(writer, "");

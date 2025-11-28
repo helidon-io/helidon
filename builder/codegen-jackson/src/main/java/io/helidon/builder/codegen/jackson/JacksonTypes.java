@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.codegen;
-
-import java.util.List;
-import java.util.Set;
+package io.helidon.builder.codegen.jackson;
 
 import io.helidon.common.types.TypeName;
 
-record AnnotationDataBlueprint(
-        boolean prototypePublic,
-        boolean builderPublic,
-        boolean createFromConfigPublic,
-        boolean createEmptyPublic,
-        boolean isFactory,
-        Set<TypeName> extendsList,
-        String javadoc,
-        List<TypeName> typeArguments) {
+final class JacksonTypes {
+    static final TypeName JSON_SERIALIZE = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonSerialize");
+    static final TypeName JSON_DESERIALIZE = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonDeserialize");
+    static final TypeName JSON_POJO_BUILDER = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder");
+
+    private JacksonTypes() {
+    }
 }

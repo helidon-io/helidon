@@ -53,10 +53,14 @@ class JavadocParser {
                     }
                     int secondSpace = line.indexOf(' ', space + 2);
                     if (secondSpace < 0) {
-                        throw new IllegalStateException("Failed to parse javadoc, @param without param name or docs: " + line);
+                        // no docs
+                        currentTagName = line.substring(space + 1);
+                        currentTag.add("");
+                    } else {
+                        currentTagName = line.substring(space + 1, secondSpace);
+                        currentTag.add(line.substring(secondSpace + 1));
                     }
-                    currentTagName = line.substring(space + 1, secondSpace);
-                    currentTag.add(line.substring(secondSpace + 1));
+
                     if (currentTagName.startsWith("<")) {
                         currentTagName = currentTagName.substring(1, currentTagName.indexOf(">"));
                         state = ParserState.GENERIC_PARAM;

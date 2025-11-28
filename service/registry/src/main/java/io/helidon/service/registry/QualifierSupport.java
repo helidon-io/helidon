@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class QualifierSupport {
          * @param qualifierType the qualifier type
          * @return qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier create(Class<? extends java.lang.annotation.Annotation> qualifierType) {
             Objects.requireNonNull(qualifierType);
             TypeName typeName = TypeName.create(qualifierType);
@@ -72,7 +72,7 @@ class QualifierSupport {
          * @param value         the value property
          * @return qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier create(Class<? extends java.lang.annotation.Annotation> qualifierType, String value) {
             Objects.requireNonNull(qualifierType);
             TypeName typeName = TypeName.create(qualifierType);
@@ -89,7 +89,7 @@ class QualifierSupport {
          * @param qualifierType the qualifier type
          * @return qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier create(TypeName qualifierType) {
             Objects.requireNonNull(qualifierType);
             TypeName qualifierTypeName = maybeNamed(qualifierType);
@@ -103,7 +103,7 @@ class QualifierSupport {
          * @param value         the value property
          * @return qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier create(TypeName qualifierType, String value) {
             Objects.requireNonNull(qualifierType);
             TypeName qualifierTypeName = maybeNamed(qualifierType);
@@ -119,7 +119,7 @@ class QualifierSupport {
          * @param annotation the qualifier annotation
          * @return qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier create(Annotation annotation) {
             Objects.requireNonNull(annotation);
             if (annotation instanceof Qualifier qualifier) {
@@ -137,7 +137,7 @@ class QualifierSupport {
          * @param name the name
          * @return named qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier createNamed(String name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
@@ -152,7 +152,7 @@ class QualifierSupport {
          * @param name the name
          * @return named qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier createNamed(Service.Named name) {
             Objects.requireNonNull(name);
             Qualifier.Builder builder = Qualifier.builder()
@@ -169,7 +169,7 @@ class QualifierSupport {
          * @param name the name
          * @return named qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier createNamed(Service.NamedByType name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
@@ -184,7 +184,7 @@ class QualifierSupport {
          * @param className class whose name will be used
          * @return named qualifier
          */
-        @Prototype.FactoryMethod
+        @Prototype.PrototypeFactoryMethod
         static Qualifier createNamed(Class<?> className) {
             Objects.requireNonNull(className);
             return Qualifier.builder()

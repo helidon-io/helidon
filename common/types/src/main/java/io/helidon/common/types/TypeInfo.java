@@ -59,6 +59,85 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     }
 
     /**
+     * Check if an annotation type has a specific meta annotation.
+     *
+     * @param annotation     annotation to check meta annotation for
+     * @param metaAnnotation meta annotation type
+     * @return whether the meta annotation is present on the annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotation, TypeName metaAnnotation) {
+        return TypeInfoBlueprint.super.hasMetaAnnotation(annotation, metaAnnotation);
+    }
+
+    /**
+     * Check if an annotation type has a specific meta annotation.
+     *
+     * @param annotation     annotation to check meta annotation for
+     * @param metaAnnotation meta annotation type
+     * @param inherited      whether to include meta annotations of meta annotations
+     * @return whether the meta annotation is present on the annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotation, TypeName metaAnnotation, boolean inherited) {
+        return TypeInfoBlueprint.super.hasMetaAnnotation(annotation, metaAnnotation, inherited);
+    }
+
+    /**
+     * Find a meta annotation.
+     *
+     * @param annotation     annotation to check meta annotation for
+     * @param metaAnnotation meta annotation type
+     * @return meta annotation, or empty if not defined
+     */
+    default Optional<Annotation> metaAnnotation(TypeName annotation, TypeName metaAnnotation) {
+        return TypeInfoBlueprint.super.metaAnnotation(annotation, metaAnnotation);
+    }
+
+    /**
+     * Find a meta annotation.
+     *
+     * @param annotation     annotation to check meta annotation for
+     * @param metaAnnotation meta annotation type
+     * @param inherited      whether to include meta annotations of meta annotations
+     * @return meta annotation, or empty if not defined
+     */
+    default Optional<Annotation> metaAnnotation(TypeName annotation, TypeName metaAnnotation, boolean inherited) {
+        return TypeInfoBlueprint.super.metaAnnotation(annotation, metaAnnotation, inherited);
+    }
+
+    /**
+     * The element used to create this instance, or {@link io.helidon.common.types.TypeInfo#typeName()} if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
+     *
+     * @return originating element, or the type of this type info
+     */
+    default Object originatingElementValue() {
+        return TypeInfoBlueprint.super.originatingElementValue();
+    }
+
+    /**
+     * Checks if the current type implements, or extends the provided type.
+     * This method analyzes the whole dependency tree of the current type.
+     *
+     * @param typeName type of interface to check
+     * @return the super type info, or interface type info matching the provided type, with appropriate generic declarations
+     */
+    default Optional<TypeInfo> findInHierarchy(TypeName typeName) {
+        return TypeInfoBlueprint.super.findInHierarchy(typeName);
+    }
+
+    /**
+     * Uses {@link io.helidon.common.types.TypeInfo#referencedModuleNames()} to determine if the module name is known for the
+     * given type.
+     *
+     * @param typeName the type name to lookup
+     * @return the module name if it is known
+     */
+    default Optional<String> moduleNameOf(TypeName typeName) {
+        return TypeInfoBlueprint.super.moduleNameOf(typeName);
+    }
+
+    /**
      * The type name.
      * This type name represents the type usage of this type
      * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
@@ -109,9 +188,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
      * </ul>
      *
      * @return the type element kind.
-     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
+     * @deprecated This option is deprecated, use {@link #kind} instead
      */
+    @Deprecated(since = "4.1.0", forRemoval = true)
     @Override
     String typeKind();
 
@@ -185,9 +265,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
      * Element modifiers.
      *
      * @return element modifiers
-     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
+     * @deprecated This option is deprecated, use {@link #elementModifiers} instead
      */
+    @Deprecated(since = "4.1.0", forRemoval = true)
     @Override
     Set<String> modifiers();
 
@@ -228,53 +309,34 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     Optional<Object> originatingElement();
 
     /**
-     * List of declared and known annotations for this element.
-     * Note that "known" implies that the annotation is visible, which depends
-     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
-     *
-     * @return the list of annotations declared on this element
-     */
-    @Override
-    List<Annotation> annotations();
-
-    /**
-     * List of all inherited annotations for this element. Inherited annotations are annotations declared
-     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
-     * <p>
-     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
-     * annotations, it will be returned once for each such declaration.
-     * <p>
-     * This method does not return annotations on super types or interfaces!
-     *
-     * @return list of all meta annotations of this element
-     */
-    @Override
-    List<Annotation> inheritedAnnotations();
-
-    /**
      * Fluent API builder base for {@link TypeInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends TypeInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends TypeInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> annotations = new ArrayList<>();
         private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<TypeInfo> interfaceTypeInfo = new ArrayList<>();
         private final List<TypedElementInfo> elementInfo = new ArrayList<>();
         private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
-        private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
-        private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
         private final Set<Modifier> elementModifiers = new LinkedHashSet<>();
         private final Set<String> modifiers = new LinkedHashSet<>();
         private AccessModifier accessModifier;
         private boolean isAnnotationsMutated;
         private boolean isElementInfoMutated;
+        private boolean isElementModifiersMutated;
         private boolean isInheritedAnnotationsMutated;
         private boolean isInterfaceTypeInfoMutated;
+        private boolean isModifiersMutated;
         private boolean isOtherElementInfoMutated;
+        private boolean isReferencedModuleNamesMutated;
+        private boolean isReferencedTypeNamesToAnnotationsMutated;
         private ElementKind kind;
+        private Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
+        private Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
         private Object originatingElement;
         private String description;
         private String module;
@@ -303,32 +365,44 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             description(prototype.description());
             typeKind(prototype.typeKind());
             kind(prototype.kind());
-            if (!isElementInfoMutated) {
-                elementInfo.clear();
+            if (!this.isElementInfoMutated) {
+                this.elementInfo.clear();
             }
             addElementInfo(prototype.elementInfo());
-            if (!isOtherElementInfoMutated) {
-                otherElementInfo.clear();
+            if (!this.isOtherElementInfoMutated) {
+                this.otherElementInfo.clear();
             }
             addOtherElementInfo(prototype.otherElementInfo());
+            if (!this.isReferencedTypeNamesToAnnotationsMutated) {
+                this.referencedTypeNamesToAnnotations.clear();
+            }
             addReferencedTypeNamesToAnnotations(prototype.referencedTypeNamesToAnnotations());
+            if (!this.isReferencedModuleNamesMutated) {
+                this.referencedModuleNames.clear();
+            }
             addReferencedModuleNames(prototype.referencedModuleNames());
             superTypeInfo(prototype.superTypeInfo());
-            if (!isInterfaceTypeInfoMutated) {
-                interfaceTypeInfo.clear();
+            if (!this.isInterfaceTypeInfoMutated) {
+                this.interfaceTypeInfo.clear();
             }
             addInterfaceTypeInfo(prototype.interfaceTypeInfo());
+            if (!this.isModifiersMutated) {
+                this.modifiers.clear();
+            }
             addModifiers(prototype.modifiers());
+            if (!this.isElementModifiersMutated) {
+                this.elementModifiers.clear();
+            }
             addElementModifiers(prototype.elementModifiers());
             accessModifier(prototype.accessModifier());
             module(prototype.module());
             originatingElement(prototype.originatingElement());
-            if (!isAnnotationsMutated) {
-                annotations.clear();
+            if (!this.isAnnotationsMutated) {
+                this.annotations.clear();
             }
             addAnnotations(prototype.annotations());
-            if (!isInheritedAnnotationsMutated) {
-                inheritedAnnotations.clear();
+            if (!this.isInheritedAnnotationsMutated) {
+                this.inheritedAnnotations.clear();
             }
             addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
@@ -347,53 +421,72 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             builder.description().ifPresent(this::description);
             builder.typeKind().ifPresent(this::typeKind);
             builder.kind().ifPresent(this::kind);
-            if (isElementInfoMutated) {
+            if (this.isElementInfoMutated) {
                 if (builder.isElementInfoMutated) {
-                    addElementInfo(builder.elementInfo);
+                    addElementInfo(builder.elementInfo());
                 }
             } else {
-                elementInfo.clear();
-                addElementInfo(builder.elementInfo);
+                elementInfo(builder.elementInfo());
             }
-            if (isOtherElementInfoMutated) {
+            if (this.isOtherElementInfoMutated) {
                 if (builder.isOtherElementInfoMutated) {
-                    addOtherElementInfo(builder.otherElementInfo);
+                    addOtherElementInfo(builder.otherElementInfo());
                 }
             } else {
-                otherElementInfo.clear();
-                addOtherElementInfo(builder.otherElementInfo);
+                otherElementInfo(builder.otherElementInfo());
             }
-            addReferencedTypeNamesToAnnotations(builder.referencedTypeNamesToAnnotations);
-            addReferencedModuleNames(builder.referencedModuleNames);
+            if (this.isReferencedTypeNamesToAnnotationsMutated) {
+                if (builder.isReferencedTypeNamesToAnnotationsMutated) {
+                    addReferencedTypeNamesToAnnotations(builder.referencedTypeNamesToAnnotations());
+                }
+            } else {
+                referencedTypeNamesToAnnotations(builder.referencedTypeNamesToAnnotations());
+            }
+            if (this.isReferencedModuleNamesMutated) {
+                if (builder.isReferencedModuleNamesMutated) {
+                    addReferencedModuleNames(builder.referencedModuleNames());
+                }
+            } else {
+                referencedModuleNames(builder.referencedModuleNames());
+            }
             builder.superTypeInfo().ifPresent(this::superTypeInfo);
-            if (isInterfaceTypeInfoMutated) {
+            if (this.isInterfaceTypeInfoMutated) {
                 if (builder.isInterfaceTypeInfoMutated) {
-                    addInterfaceTypeInfo(builder.interfaceTypeInfo);
+                    addInterfaceTypeInfo(builder.interfaceTypeInfo());
                 }
             } else {
-                interfaceTypeInfo.clear();
-                addInterfaceTypeInfo(builder.interfaceTypeInfo);
+                interfaceTypeInfo(builder.interfaceTypeInfo());
             }
-            addModifiers(builder.modifiers);
-            addElementModifiers(builder.elementModifiers);
+            if (this.isModifiersMutated) {
+                if (builder.isModifiersMutated) {
+                    addModifiers(builder.modifiers());
+                }
+            } else {
+                modifiers(builder.modifiers());
+            }
+            if (this.isElementModifiersMutated) {
+                if (builder.isElementModifiersMutated) {
+                    addElementModifiers(builder.elementModifiers());
+                }
+            } else {
+                elementModifiers(builder.elementModifiers());
+            }
             builder.accessModifier().ifPresent(this::accessModifier);
             builder.module().ifPresent(this::module);
             builder.originatingElement().ifPresent(this::originatingElement);
-            if (isAnnotationsMutated) {
+            if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
+                    addAnnotations(builder.annotations());
                 }
             } else {
-                annotations.clear();
-                addAnnotations(builder.annotations);
+                annotations(builder.annotations());
             }
-            if (isInheritedAnnotationsMutated) {
+            if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
+                    addInheritedAnnotations(builder.inheritedAnnotations());
                 }
             } else {
-                inheritedAnnotations.clear();
-                addInheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
@@ -420,8 +513,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
          * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
-         * @param consumer consumer of builder for
-         *                 the type name
+         * @param consumer consumer of builder of the type name
          * @return updated builder instance
          * @see #typeName()
          */
@@ -439,8 +531,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
          * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
-         * @param supplier supplier of
-         *                 the type name
+         * @param supplier supplier of the type name
          * @return updated builder instance
          * @see #typeName()
          */
@@ -476,8 +567,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
          * </ul>
          *
-         * @param consumer consumer of builder for
-         *                 raw type of this type info
+         * @param consumer consumer of builder of raw type of this type info
          * @return updated builder instance
          * @see #rawType()
          */
@@ -497,8 +587,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
          * </ul>
          *
-         * @param supplier supplier of
-         *                 raw type of this type info
+         * @param supplier supplier of raw type of this type info
          * @return updated builder instance
          * @see #rawType()
          */
@@ -524,8 +613,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The declared type name, including type parameters.
          *
-         * @param consumer consumer of builder for
-         *                 type name with declared type parameters
+         * @param consumer consumer of builder of type name with declared type parameters
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -540,8 +628,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The declared type name, including type parameters.
          *
-         * @param supplier supplier of
-         *                 type name with declared type parameters
+         * @param supplier supplier of type name with declared type parameters
          * @return updated builder instance
          * @see #declaredType()
          */
@@ -552,7 +639,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of description.
          *
          * @return updated builder instance
          * @see #description()
@@ -587,9 +674,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param typeKind the type element kind.
          * @return updated builder instance
-         * @deprecated use {@link #kind()} instead
          * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
          * @see #typeKind()
+         * @deprecated This option is deprecated, use {@link #kind} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER typeKind(String typeKind) {
@@ -619,6 +706,18 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Clear all elementInfo.
+         *
+         * @return updated builder instance
+         * @see #elementInfo()
+         */
+        public BUILDER clearElementInfo() {
+            this.isElementInfoMutated = true;
+            this.elementInfo.clear();
+            return self();
+        }
+
+        /**
          * The elements that make up the type that are relevant for processing.
          *
          * @param elementInfo the elements that make up the type that are relevant for processing
@@ -627,7 +726,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER elementInfo(List<? extends TypedElementInfo> elementInfo) {
             Objects.requireNonNull(elementInfo);
-            isElementInfoMutated = true;
+            this.isElementInfoMutated = true;
             this.elementInfo.clear();
             this.elementInfo.addAll(elementInfo);
             return self();
@@ -642,7 +741,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addElementInfo(List<? extends TypedElementInfo> elementInfo) {
             Objects.requireNonNull(elementInfo);
-            isElementInfoMutated = true;
+            this.isElementInfoMutated = true;
             this.elementInfo.addAll(elementInfo);
             return self();
         }
@@ -650,21 +749,21 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The elements that make up the type that are relevant for processing.
          *
-         * @param elementInfo the elements that make up the type that are relevant for processing
+         * @param elementInfo add single the elements that make up the type that are relevant for processing
          * @return updated builder instance
          * @see #elementInfo()
          */
         public BUILDER addElementInfo(TypedElementInfo elementInfo) {
             Objects.requireNonNull(elementInfo);
             this.elementInfo.add(elementInfo);
-            isElementInfoMutated = true;
+            this.isElementInfoMutated = true;
             return self();
         }
 
         /**
          * The elements that make up the type that are relevant for processing.
          *
-         * @param consumer the elements that make up the type that are relevant for processing
+         * @param consumer consumer of builder for the elements that make up the type that are relevant for processing
          * @return updated builder instance
          * @see #elementInfo()
          */
@@ -672,7 +771,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
-            this.elementInfo.add(builder.build());
+            this.addElementInfo(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all otherElementInfo.
+         *
+         * @return updated builder instance
+         * @see #otherElementInfo()
+         */
+        public BUILDER clearOtherElementInfo() {
+            this.isOtherElementInfoMutated = true;
+            this.otherElementInfo.clear();
             return self();
         }
 
@@ -686,7 +797,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER otherElementInfo(List<? extends TypedElementInfo> otherElementInfo) {
             Objects.requireNonNull(otherElementInfo);
-            isOtherElementInfoMutated = true;
+            this.isOtherElementInfoMutated = true;
             this.otherElementInfo.clear();
             this.otherElementInfo.addAll(otherElementInfo);
             return self();
@@ -702,7 +813,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addOtherElementInfo(List<? extends TypedElementInfo> otherElementInfo) {
             Objects.requireNonNull(otherElementInfo);
-            isOtherElementInfoMutated = true;
+            this.isOtherElementInfoMutated = true;
             this.otherElementInfo.addAll(otherElementInfo);
             return self();
         }
@@ -711,14 +822,15 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
          * processing.
          *
-         * @param otherElementInfo the elements that still make up the type, but are otherwise deemed irrelevant for processing
+         * @param otherElementInfo add single the elements that still make up the type, but are otherwise deemed irrelevant for
+         *                         processing
          * @return updated builder instance
          * @see #otherElementInfo()
          */
         public BUILDER addOtherElementInfo(TypedElementInfo otherElementInfo) {
             Objects.requireNonNull(otherElementInfo);
             this.otherElementInfo.add(otherElementInfo);
-            isOtherElementInfoMutated = true;
+            this.isOtherElementInfoMutated = true;
             return self();
         }
 
@@ -726,7 +838,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
          * processing.
          *
-         * @param consumer the elements that still make up the type, but are otherwise deemed irrelevant for processing
+         * @param consumer consumer of builder for the elements that still make up the type, but are otherwise deemed irrelevant
+         *                 for processing
          * @return updated builder instance
          * @see #otherElementInfo()
          */
@@ -734,12 +847,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
-            this.otherElementInfo.add(builder.build());
+            this.addOtherElementInfo(builder.build());
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          * This method replaces all values with the new ones.
@@ -748,16 +862,18 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
-        public BUILDER referencedTypeNamesToAnnotations(
-                Map<? extends TypeName, List<Annotation>> referencedTypeNamesToAnnotations) {
+        public BUILDER referencedTypeNamesToAnnotations(Map<? extends TypeName,
+                List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.clear();
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
+            this.isReferencedTypeNamesToAnnotationsMutated = true;
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          * This method keeps existing values, then puts all new values into the map.
@@ -770,17 +886,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
+            this.isReferencedTypeNamesToAnnotationsMutated = true;
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          * This method adds a new value to the map value, or creates a new value.
          *
-         * @param key key to add to
-         * @param referencedTypeNamesToAnnotation additional value for the key
+         * @param key                             key to add value for
+         * @param referencedTypeNamesToAnnotation value to add to the map values
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
@@ -792,17 +910,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 v.add(referencedTypeNamesToAnnotation);
                 return v;
             });
+            this.isReferencedTypeNamesToAnnotationsMutated = true;
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
-         * This method adds a new value to the map value, or creates a new value.
+         * This method adds new values to the map values, or creates a new mapping.
          *
-         * @param key key to add to
-         * @param referencedTypeNamesToAnnotations additional values for the key
+         * @param key                              key to add value for
+         * @param referencedTypeNamesToAnnotations values to add to the map values
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
@@ -814,16 +934,18 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 v.addAll(referencedTypeNamesToAnnotations);
                 return v;
             });
+            this.isReferencedTypeNamesToAnnotationsMutated = true;
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
-         * @param key key to add or replace
+         * @param key                             key to add or replace
          * @param referencedTypeNamesToAnnotation new value for the key
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
@@ -832,6 +954,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(key);
             Objects.requireNonNull(referencedTypeNamesToAnnotation);
             this.referencedTypeNamesToAnnotations.put(key, List.copyOf(referencedTypeNamesToAnnotation));
+            this.isReferencedTypeNamesToAnnotationsMutated = true;
             return self();
         }
 
@@ -847,6 +970,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.clear();
             this.referencedModuleNames.putAll(referencedModuleNames);
+            this.isReferencedModuleNamesMutated = true;
             return self();
         }
 
@@ -861,6 +985,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER addReferencedModuleNames(Map<? extends TypeName, String> referencedModuleNames) {
             Objects.requireNonNull(referencedModuleNames);
             this.referencedModuleNames.putAll(referencedModuleNames);
+            this.isReferencedModuleNamesMutated = true;
             return self();
         }
 
@@ -868,7 +993,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Populated if the (external) module name containing the type is known.
          * This method adds a new value to the map, or replaces it if the key already exists.
          *
-         * @param key key to add or replace
+         * @param key                  key to add or replace
          * @param referencedModuleName new value for the key
          * @return updated builder instance
          * @see #referencedModuleNames()
@@ -877,11 +1002,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(key);
             Objects.requireNonNull(referencedModuleName);
             this.referencedModuleNames.put(key, referencedModuleName);
+            this.isReferencedModuleNamesMutated = true;
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of superTypeInfo.
          *
          * @return updated builder instance
          * @see #superTypeInfo()
@@ -907,7 +1033,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The parent/super class for this type info.
          *
-         * @param consumer the super type
+         * @param consumer consumer of builder of the super type
          * @return updated builder instance
          * @see #superTypeInfo()
          */
@@ -920,6 +1046,31 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * The parent/super class for this type info.
+         *
+         * @param supplier supplier of the super type
+         * @return updated builder instance
+         * @see #superTypeInfo()
+         */
+        public BUILDER superTypeInfo(Supplier<? extends TypeInfo> supplier) {
+            Objects.requireNonNull(supplier);
+            this.superTypeInfo(supplier.get());
+            return self();
+        }
+
+        /**
+         * Clear all interfaceTypeInfo.
+         *
+         * @return updated builder instance
+         * @see #interfaceTypeInfo()
+         */
+        public BUILDER clearInterfaceTypeInfo() {
+            this.isInterfaceTypeInfoMutated = true;
+            this.interfaceTypeInfo.clear();
+            return self();
+        }
+
+        /**
          * The interface classes for this type info.
          *
          * @param interfaceTypeInfo the interface type info
@@ -928,7 +1079,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER interfaceTypeInfo(List<? extends TypeInfo> interfaceTypeInfo) {
             Objects.requireNonNull(interfaceTypeInfo);
-            isInterfaceTypeInfoMutated = true;
+            this.isInterfaceTypeInfoMutated = true;
             this.interfaceTypeInfo.clear();
             this.interfaceTypeInfo.addAll(interfaceTypeInfo);
             return self();
@@ -943,7 +1094,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addInterfaceTypeInfo(List<? extends TypeInfo> interfaceTypeInfo) {
             Objects.requireNonNull(interfaceTypeInfo);
-            isInterfaceTypeInfoMutated = true;
+            this.isInterfaceTypeInfoMutated = true;
             this.interfaceTypeInfo.addAll(interfaceTypeInfo);
             return self();
         }
@@ -951,21 +1102,21 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The interface classes for this type info.
          *
-         * @param interfaceTypeInfo the interface type info
+         * @param interfaceTypeInfo add single the interface type info
          * @return updated builder instance
          * @see #interfaceTypeInfo()
          */
         public BUILDER addInterfaceTypeInfo(TypeInfo interfaceTypeInfo) {
             Objects.requireNonNull(interfaceTypeInfo);
             this.interfaceTypeInfo.add(interfaceTypeInfo);
-            isInterfaceTypeInfoMutated = true;
+            this.isInterfaceTypeInfoMutated = true;
             return self();
         }
 
         /**
          * The interface classes for this type info.
          *
-         * @param consumer the interface type info
+         * @param consumer consumer of builder for the interface type info
          * @return updated builder instance
          * @see #interfaceTypeInfo()
          */
@@ -973,7 +1124,22 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = TypeInfo.builder();
             consumer.accept(builder);
-            this.interfaceTypeInfo.add(builder.build());
+            this.addInterfaceTypeInfo(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all modifiers.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
+         * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
+         */
+        @Deprecated(since = "4.1.0", forRemoval = true)
+        public BUILDER clearModifiers() {
+            this.isModifiersMutated = true;
+            this.modifiers.clear();
             return self();
         }
 
@@ -982,10 +1148,14 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param modifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER modifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
+            this.isModifiersMutated = true;
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
             return self();
@@ -996,10 +1166,14 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param modifiers element modifiers
          * @return updated builder instance
+         * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
+        @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER addModifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
+            this.isModifiersMutated = true;
             this.modifiers.addAll(modifiers);
             return self();
         }
@@ -1007,16 +1181,31 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Element modifiers.
          *
-         * @param modifier element modifiers
+         * @param modifier add single element modifiers
          * @return updated builder instance
-         * @deprecated use {@link #elementModifiers()} instead
          * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
          * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public BUILDER addModifier(String modifier) {
             Objects.requireNonNull(modifier);
             this.modifiers.add(modifier);
+            this.isModifiersMutated = true;
+            return self();
+        }
+
+        /**
+         * Clear all elementModifiers.
+         *
+         * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
+         * @see #elementModifiers()
+         */
+        public BUILDER clearElementModifiers() {
+            this.isElementModifiersMutated = true;
+            this.elementModifiers.clear();
             return self();
         }
 
@@ -1025,10 +1214,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param elementModifiers set of modifiers that are present on the type (and that we understand)
          * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
          * @see #elementModifiers()
          */
         public BUILDER elementModifiers(Set<? extends Modifier> elementModifiers) {
             Objects.requireNonNull(elementModifiers);
+            this.isElementModifiersMutated = true;
             this.elementModifiers.clear();
             this.elementModifiers.addAll(elementModifiers);
             return self();
@@ -1039,10 +1231,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @param elementModifiers set of modifiers that are present on the type (and that we understand)
          * @return updated builder instance
+         * @see io.helidon.common.types.Modifier
+         * @see #accessModifier()
          * @see #elementModifiers()
          */
         public BUILDER addElementModifiers(Set<? extends Modifier> elementModifiers) {
             Objects.requireNonNull(elementModifiers);
+            this.isElementModifiersMutated = true;
             this.elementModifiers.addAll(elementModifiers);
             return self();
         }
@@ -1050,7 +1245,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Type modifiers.
          *
-         * @param elementModifier set of modifiers that are present on the type (and that we understand)
+         * @param elementModifier add single set of modifiers that are present on the type (and that we understand)
          * @return updated builder instance
          * @see io.helidon.common.types.Modifier
          * @see #accessModifier()
@@ -1059,6 +1254,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER addElementModifier(Modifier elementModifier) {
             Objects.requireNonNull(elementModifier);
             this.elementModifiers.add(elementModifier);
+            this.isElementModifiersMutated = true;
             return self();
         }
 
@@ -1076,7 +1272,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of module.
          *
          * @return updated builder instance
          * @see #module()
@@ -1100,7 +1296,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of originatingElement.
          *
          * @return updated builder instance
          * @see #originatingElement()
@@ -1112,7 +1308,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
+         * processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
          * @param originatingElement originating element
@@ -1122,6 +1319,18 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER originatingElement(Object originatingElement) {
             Objects.requireNonNull(originatingElement);
             this.originatingElement = originatingElement;
+            return self();
+        }
+
+        /**
+         * Clear all annotations.
+         *
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER clearAnnotations() {
+            this.isAnnotationsMutated = true;
+            this.annotations.clear();
             return self();
         }
 
@@ -1136,7 +1345,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -1153,7 +1362,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -1163,14 +1372,14 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations declared on this element
+         * @param annotation add single the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
@@ -1179,7 +1388,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations declared on this element
+         * @param consumer consumer of builder for the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -1187,7 +1396,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.annotations.add(builder.build());
+            this.addAnnotation(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all inheritedAnnotations.
+         *
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER clearInheritedAnnotations() {
+            this.isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
             return self();
         }
 
@@ -1206,7 +1427,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -1227,7 +1448,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -1241,14 +1462,14 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param inheritedAnnotation list of all meta annotations of this element
+         * @param inheritedAnnotation add single list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
@@ -1261,7 +1482,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param consumer list of all meta annotations of this element
+         * @param consumer consumer of builder for list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -1269,7 +1490,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.inheritedAnnotations.add(builder.build());
+            this.addInheritedAnnotation(builder.build());
             return self();
         }
 
@@ -1293,7 +1514,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
          * </ul>
          *
-         * @return the raw type
+         * @return raw type of this type info
          */
         public Optional<TypeName> rawType() {
             return Optional.ofNullable(rawType);
@@ -1302,7 +1523,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The declared type name, including type parameters.
          *
-         * @return the declared type
+         * @return type name with declared type parameters
          */
         public Optional<TypeName> declaredType() {
             return Optional.ofNullable(declaredType);
@@ -1311,7 +1532,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Description, such as javadoc, if available.
          *
-         * @return the description
+         * @return description of this element
          */
         public Optional<String> description() {
             return Optional.ofNullable(description);
@@ -1327,10 +1548,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
          * </ul>
          *
-         * @return the type kind
-         * @deprecated use {@link #kind()} instead
+         * @return the type element kind.
          * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-         * @see #typeKind()
+         * @deprecated This option is deprecated, use {@link #kind} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public Optional<String> typeKind() {
@@ -1347,7 +1567,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *     <li>{@link io.helidon.common.types.ElementKind#ANNOTATION_TYPE}</li>
          * </ul>
          *
-         * @return the kind
+         * @return element kind of this type
          */
         public Optional<ElementKind> kind() {
             return Optional.ofNullable(kind);
@@ -1356,7 +1576,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The elements that make up the type that are relevant for processing.
          *
-         * @return the element info
+         * @return the elements that make up the type that are relevant for processing
          */
         public List<TypedElementInfo> elementInfo() {
             return elementInfo;
@@ -1366,18 +1586,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * The elements that make up this type that are considered "other", or being skipped because they are irrelevant to
          * processing.
          *
-         * @return the other element info
+         * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
          */
         public List<TypedElementInfo> otherElementInfo() {
             return otherElementInfo;
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and
+         * any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          *
-         * @return the referenced type names to annotations
+         * @return all referenced types
          */
         public Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations() {
             return referencedTypeNamesToAnnotations;
@@ -1386,7 +1607,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Populated if the (external) module name containing the type is known.
          *
-         * @return the referenced module names
+         * @return type names to its associated defining module name
          */
         public Map<TypeName, String> referencedModuleNames() {
             return referencedModuleNames;
@@ -1395,7 +1616,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * The parent/super class for this type info.
          *
-         * @return the super type info
+         * @return the super type
          */
         public Optional<TypeInfo> superTypeInfo() {
             return Optional.ofNullable(superTypeInfo);
@@ -1413,10 +1634,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Element modifiers.
          *
-         * @return the modifiers
-         * @deprecated use {@link #elementModifiers()} instead
+         * @return element modifiers
          * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-         * @see #modifiers()
+         * @deprecated This option is deprecated, use {@link #elementModifiers} instead
          */
         @Deprecated(since = "4.1.0", forRemoval = true)
         public Set<String> modifiers() {
@@ -1426,10 +1646,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Type modifiers.
          *
-         * @return the element modifiers
+         * @return set of modifiers that are present on the type (and that we understand)
          * @see io.helidon.common.types.Modifier
          * @see #accessModifier()
-         * @see #elementModifiers()
          */
         public Set<Modifier> elementModifiers() {
             return elementModifiers;
@@ -1438,7 +1657,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Access modifier.
          *
-         * @return the access modifier
+         * @return access modifier
          */
         public Optional<AccessModifier> accessModifier() {
             return Optional.ofNullable(accessModifier);
@@ -1447,7 +1666,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         /**
          * Module of this type, if available.
          *
-         * @return the module
+         * @return module name
          */
         public Optional<String> module() {
             return Optional.ofNullable(module);
@@ -1455,10 +1674,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
+         * processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
-         * @return the originating element
+         * @return originating element
          */
         public Optional<Object> originatingElement() {
             return Optional.ofNullable(originatingElement);
@@ -1469,7 +1689,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @return the annotations
+         * @return the list of annotations declared on this element
          */
         public List<Annotation> annotations() {
             return annotations;
@@ -1484,7 +1704,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @return the inherited annotations
+         * @return list of all meta annotations of this element
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;
@@ -1501,9 +1721,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     + "superTypeInfo=" + superTypeInfo + ","
                     + "elementModifiers=" + elementModifiers + ","
                     + "accessModifier=" + accessModifier + ","
-                    + "module=" + module + ","
-                    + "annotations=" + annotations + ","
-                    + "inheritedAnnotations=" + inheritedAnnotations
+                    + "module=" + module
                     + "}";
         }
 
@@ -1520,7 +1738,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" must not be null, but not set");
             }
             if (rawType == null) {
                 collector.fatal(getClass(), "Property \"rawType\" must not be null, but not set");
@@ -1529,10 +1747,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 collector.fatal(getClass(), "Property \"declaredType\" must not be null, but not set");
             }
             if (typeKind == null) {
-                collector.fatal(getClass(), "Property \"typeKind\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeKind\" must not be null, but not set");
             }
             if (kind == null) {
-                collector.fatal(getClass(), "Property \"kind\" is required, but not set");
+                collector.fatal(getClass(), "Property \"kind\" must not be null, but not set");
             }
             if (accessModifier == null) {
                 collector.fatal(getClass(), "Property \"accessModifier\" must not be null, but not set");
@@ -1549,7 +1767,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         BUILDER description(Optional<String> description) {
             Objects.requireNonNull(description);
-            this.description = description.map(java.lang.String.class::cast).orElse(this.description);
+            this.description = description.orElse(this.description);
             return self();
         }
 
@@ -1560,6 +1778,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #superTypeInfo()
          */
+        @SuppressWarnings("unchecked")
         BUILDER superTypeInfo(Optional<? extends TypeInfo> superTypeInfo) {
             Objects.requireNonNull(superTypeInfo);
             this.superTypeInfo = superTypeInfo.map(TypeInfo.class::cast).orElse(this.superTypeInfo);
@@ -1575,22 +1794,24 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         BUILDER module(Optional<String> module) {
             Objects.requireNonNull(module);
-            this.module = module.map(java.lang.String.class::cast).orElse(this.module);
+            this.module = module.orElse(this.module);
             return self();
         }
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
+         * processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
          * @param originatingElement originating element
          * @return updated builder instance
          * @see #originatingElement()
          */
+        @SuppressWarnings("unchecked")
         BUILDER originatingElement(Optional<?> originatingElement) {
             Objects.requireNonNull(originatingElement);
-            this.originatingElement = originatingElement.map(java.lang.Object.class::cast).orElse(this.originatingElement);
+            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
             return self();
         }
 
@@ -1668,6 +1889,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             }
 
             @Override
+            @Deprecated(since = "4.1.0", forRemoval = true)
             public String typeKind() {
                 return typeKind;
             }
@@ -1708,6 +1930,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             }
 
             @Override
+            @Deprecated(since = "4.1.0", forRemoval = true)
             public Set<String> modifiers() {
                 return modifiers;
             }
@@ -1753,9 +1976,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         + "superTypeInfo=" + superTypeInfo + ","
                         + "elementModifiers=" + elementModifiers + ","
                         + "accessModifier=" + accessModifier + ","
-                        + "module=" + module + ","
-                        + "annotations=" + annotations + ","
-                        + "inheritedAnnotations=" + inheritedAnnotations
+                        + "module=" + module
                         + "}";
             }
 

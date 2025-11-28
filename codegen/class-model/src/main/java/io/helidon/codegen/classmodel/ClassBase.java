@@ -98,7 +98,10 @@ public abstract class ClassBase extends AnnotatedComponent {
      * @return methods
      */
     public List<Method> methods() {
-        return List.copyOf(methods);
+        List<Method> result = new ArrayList<>(methods);
+        result.addAll(staticMethods);
+
+        return List.copyOf(result);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.webclient.api.HttpClientConfig;
  * HTTP/1.1. full webclient configuration.
  */
 @Prototype.Blueprint
+@Prototype.Configured
 interface Http1ClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<Http1Client> {
     /**
      * HTTP/1.1 specific configuration.

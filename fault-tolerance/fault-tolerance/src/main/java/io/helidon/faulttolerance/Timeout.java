@@ -24,7 +24,6 @@ import io.helidon.builder.api.RuntimeType;
 /**
  * Timeout attempts to terminate execution after defined duration of time.
  */
-@RuntimeType.PrototypedBy(TimeoutConfig.class)
 public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
 
     /**

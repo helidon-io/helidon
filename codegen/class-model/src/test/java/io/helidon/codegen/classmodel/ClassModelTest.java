@@ -30,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ClassModelTest {
     private static final String EXPECTED_AT_SIGN_IN_TEXT = """
             package io.helidon.codegen.classmodel;
-
+            
             import java.util.List;
             import java.util.Optional;
             
@@ -39,20 +39,52 @@ class ClassModelTest {
               public void create() {
                 service(List.of("@default"), Optional.class)
               }
-
+            
             }
             """;
 
     private static final String EXPECTED_VARARG = """
             package io.helidon.codegen.classmodel;
-
+            
             public class Vararg {
             
               public void create(String... name) {
               }
-
+            
             }
             """;
+    private static final String EXPECTED_WITH_INNER_TYPE = """
+            package io.helidon.codegen.classmodel;
+            
+            public class WithInner {
+            
+              public WithInner.Inner test() {
+              }
+            
+              public static class Inner {
+            
+              }
+            
+            }
+            """;
+
+    @Test
+    void testInnerClass() throws IOException {
+        StringWriter sw = new StringWriter();
+
+        ClassModel.builder()
+                .packageName("io.helidon.codegen.classmodel")
+                .name("WithInner")
+                .addInnerClass(inner -> inner.name("Inner")
+                        .isStatic(true))
+                .addMethod(m -> m
+                        .name("test")
+                        .returnType(TypeName.create("io.helidon.codegen.classmodel.WithInner.Inner")))
+                .build()
+                .write(sw, "  ");
+
+        assertThat(sw.toString(), is(EXPECTED_WITH_INNER_TYPE));
+    }
 
     @Test
     void testAtSignInText() throws IOException {
