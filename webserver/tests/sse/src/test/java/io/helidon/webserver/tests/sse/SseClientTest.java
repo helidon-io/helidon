@@ -45,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Disabled
 class SseClientTest extends SseBaseTest {
 
+    private static final System.Logger LOGGER = System.getLogger(SseClientTest.class.getName());
     private final Http1Client client;
 
     SseClientTest(WebServer webServer, Http1Client client) {
@@ -145,9 +146,12 @@ class SseClientTest extends SseBaseTest {
 
     @Test
     void testSseJson1() throws InterruptedException {
+        LOGGER.log(System.Logger.Level.ERROR, "testSseJson1 called");
         try (Http1ClientResponse r = client.get("/sseJson1").header(ACCEPT_EVENT_STREAM).request()) {
+            LOGGER.log(System.Logger.Level.ERROR, "testSseJson1 client called");
             CountDownLatch latch = new CountDownLatch(1);
             r.source(SseSource.TYPE, event -> {
+                LOGGER.log(System.Logger.Level.ERROR, "testSseJson1 source called");
                 JsonObject json = event.data(JsonObject.class);
                 assertThat(json, is(notNullValue()));
                 assertThat(json.getString("hello"), is("world"));
@@ -159,9 +163,12 @@ class SseClientTest extends SseBaseTest {
 
     @Test
     void testSseJson2() throws InterruptedException {
+        LOGGER.log(System.Logger.Level.ERROR, "testSseJson2 called");
         try (Http1ClientResponse r = client.get("/sseJson2").header(ACCEPT_EVENT_STREAM).request()) {
+            LOGGER.log(System.Logger.Level.ERROR, "testSseJson2 client called");
             CountDownLatch latch = new CountDownLatch(1);
             r.source(SseSource.TYPE, event -> {
+                LOGGER.log(System.Logger.Level.ERROR, "testSseJson2 source called");
                 HelloWorld json = event.data(HelloWorld.class, MediaTypes.APPLICATION_JSON);
                 assertThat(json, is(notNullValue()));
                 assertThat(json.getHello(), is("world"));
