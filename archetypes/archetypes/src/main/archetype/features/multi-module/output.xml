@@ -21,14 +21,15 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <variables>
-        <text path="basedir">${module-name}</text>
+        <text path="basedir">module1</text>
     </variables>
     <output>
         <template source="files/pom.xml.hbs" target="../pom.xml" engine="mustache"/>
         <model>
-            <value key="module-name">${module-name}</value>
             <list key="module-names">
-                <value>${module-name}</value>
+                <map>
+                    <value key="module-name">module1</value>
+                </map>
             </list>
         </model>
     </output>

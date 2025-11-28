@@ -35,7 +35,7 @@
                     <replace regex="version" replacement="${version}"/>
                 </transformation>
                 <transformation id="basedir">
-                    <replace regex="^(?![^}]+(?:[\\/]|$))(.*)$" replacement="${basedir}/$1"/>
+                    <replace regex="^(?!\Qmodule1\E)(.*)$" replacement="${basedir}/$1"/>
                 </transformation>
             </output>
         </method>
