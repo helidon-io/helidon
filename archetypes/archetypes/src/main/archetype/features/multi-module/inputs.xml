@@ -25,10 +25,6 @@
                  name="Multi-module Project"
                  description="Generate a multi-module project with one submodule"
                  optional="true"
-                 default="false">
-            <inputs>
-                <text id="module-name" name="Module name" optional="true" default="module1" global="true"/>
-            </inputs>
-        </boolean>
+                 default="false"/>
     </inputs>
 </archetype-script>

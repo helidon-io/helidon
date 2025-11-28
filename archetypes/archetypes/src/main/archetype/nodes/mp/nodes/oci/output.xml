@@ -32,7 +32,7 @@
         </method>
         <method name="parent">
             <output>
-                <templates engine="mustache" transformations="basedir,hbs">
+                <templates engine="mustache" transformations="hbs">
                     <directory>/nodes/mp/files</directory>
                     <includes>
                         <include>.helidon.hbs</include>
@@ -48,31 +48,18 @@
         </method>
         <method name="client">
             <output>
-                <transformation id="basedir-client">
-                    <replace regex="^(?![^}]+(?:[\\/]|$))(.*)$" replacement="client/$1"/>
-                </transformation>
-                <templates engine="mustache" transformations="basedir-client,hbs">
+                <templates engine="mustache" transformations="hbs">
                     <directory>files</directory>
                     <includes>
                         <include>client/pom.xml.hbs</include>
                         <include>client/README.md.hbs</include>
                     </includes>
                 </templates>
-                <model>
-                    <list key="module-names">
-                        <map>
-                            <value key="module-names">client</value>
-                        </map>
-                    </list>
-                </model>
             </output>
         </method>
         <method name="server">
             <output>
-                <transformation id="basedir-server">
-                    <replace regex="^(?![^}]+(?:[\\/]|$))(.*)$" replacement="server/$1"/>
-                </transformation>
-                <templates engine="mustache" transformations="basedir-server,hbs,packaged">
+                <templates engine="mustache" transformations="hbs,packaged">
                     <directory>files</directory>
                     <includes>
                         <include>server/src/main/resources/application.yaml</include>
@@ -87,11 +74,6 @@
                     </includes>
                 </templates>
                 <model>
-                    <list key="module-names">
-                        <map>
-                            <value key="module-names">server</value>
-                        </map>
-                    </list>
                     <list key="pom-properties">
                         <map>
                             <value key="key">mainClass</value>
@@ -210,10 +192,7 @@
         </method>
         <method name="spec">
             <output>
-                <transformation id="basedir-spec">
-                    <replace regex="^(?![^}]+(?:[\\/]|$))(.*)$" replacement="spec/$1"/>
-                </transformation>
-                <files transformations="basedir-spec">
+                <files>
                     <directory>files</directory>
                     <includes>
                         <include>spec/api.yaml</include>
