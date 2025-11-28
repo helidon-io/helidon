@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!--suppress GrazieInspection -->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <text path="media.json-lib" if="!(${media} contains 'json')"/>
+    </variables>
+
+    <exec src="nodes/jackson/output.xml" if="${media.json-lib} == 'jackson'"/>
+    <exec src="nodes/jsonb/output.xml" if="${media.json-lib} == 'jsonb'"/>
+    <exec src="nodes/jsonp/output.xml" if="${media.json-lib} == 'jsonp'"/>
+    <exec src="nodes/multipart/output.xml" if="${media} contains 'multipart'"/>
+
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged" if="!(${media} contains 'json')">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/java/**/GreetService.java.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="media-json-jackson" if="${media} contains 'json' &amp;&amp; ${media.json-lib} == 'jackson'">true</value>
+            <value key="media-json-jackson" if="!(${media} contains 'json' &amp;&amp; ${media.json-lib} == 'jackson')">false</value>
+            <list key="readme-exercise-the-application">
+                <value order="900" if="${media} contains 'json'" file="files/README.md"/>
+            </list>
+            <list key="dependencies" if="${media} contains 'multipart' || ${media.json-lib} == 'jsonp'">
+                <map order="500">
+                    <value key="groupId">jakarta.json</value>
+                    <value key="artifactId">jakarta.json-api</value>
+                </map>
+                <map order="500">
+                    <value key="groupId">io.helidon.http.media</value>
+                    <value key="artifactId">helidon-http-media-jsonp</value>
+                </map>
+            </list>
+            <list key="application-yaml">
+                <value file="files/src/main/resources/greeting.yaml"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>

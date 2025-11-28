@@ -1,0 +1,3 @@
+    - path: "/simple-greet"
+      methods: ["get"]
+      authenticate: true

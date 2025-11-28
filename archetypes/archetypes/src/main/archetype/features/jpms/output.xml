@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/java/**/module-info.java.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <!-- need to guard each require with a variable to avoid duplication -->
+            <list key="module-requires">
+                <value if="${requires-java-logging}">java.logging</value>
+                <value if="${requires-jakarta-annotation}">jakarta.annotation</value>
+                <value if="${requires-jakarta-cdi}">jakarta.cdi</value>
+                <value if="${requires-jakarta-inject}">jakarta.inject</value>
+                <value if="${requires-jakarta-json}">jakarta.json</value>
+                <value if="${requires-jakarta-json-bind}">jakarta.json.bind</value>
+                <value if="${requires-jakarta-persistence}">jakarta.persistence</value>
+                <value if="${requires-jakarta-transaction}">jakarta.transaction</value>
+                <value if="${requires-jakarta-ws-rs}">jakarta.ws.rs</value>
+                <value if="${requires-jakarta-xml-bind}">jakarta.xml.bind</value>
+                <value if="${requires-io-helidon}">io.helidon</value>
+                <value if="${requires-io-helidon-common-pki}">io.helidon.common.pki</value>
+                <value if="${requires-io-helidon-config}">io.helidon.config</value>
+                <value if="${requires-io-helidon-cors}">io.helidon.cors</value>
+                <value if="${requires-io-helidon-dbclient}">io.helidon.dbclient</value>
+                <value if="${requires-io-helidon-dbclient-metrics}">io.helidon.dbclient.metrics</value>
+                <value if="${requires-io-helidon-dbclient-tracing}">io.helidon.dbclient.tracing</value>
+                <value if="${requires-io-helidon-faulttolerance}">io.helidon.faulttolerance</value>
+                <value if="${requires-io-helidon-health-checks}">io.helidon.health.checks</value>
+                <value if="${requires-io-helidon-http}">io.helidon.http</value>
+                <value if="${requires-io-helidon-http-media-multipart}">io.helidon.http.media.multipart</value>
+                <value if="${requires-io-helidon-logging-common}">io.helidon.logging.common</value>
+                <value if="${requires-io-helidon-metrics-api}">io.helidon.metrics.api</value>
+                <value if="${requires-io-helidon-microprofile-cors}">io.helidon.microprofile.cors</value>
+                <value if="${requires-io-helidon-microprofile-faulttolerance}">io.helidon.microprofile.faulttolerance</value>
+                <value if="${requires-io-helidon-microprofile-jwt-auth}">io.helidon.microprofile.jwt.auth</value>
+                <value if="${requires-io-helidon-microprofile-metrics}">io.helidon.microprofile.metrics</value>
+                <value if="${requires-io-helidon-microprofile-openapi}">io.helidon.microprofile.openapi</value>
+                <value if="${requires-io-helidon-microprofile-telemetry}">io.helidon.microprofile.telemetry</value>
+                <value if="${requires-io-helidon-microprofile-config}">io.helidon.microprofile.config</value>
+                <value if="${requires-io-helidon-security}">io.helidon.security</value>
+                <value if="${requires-io-helidon-security-annotations}">io.helidon.security.annotations</value>
+                <value if="${requires-io-helidon-security-integration-common}">io.helidon.security.integration.common</value>
+                <value if="${requires-io-helidon-security-providers-common}">io.helidon.security.providers.common</value>
+                <value if="${requires-io-helidon-security-providers-google-login}">io.helidon.security.providers.google.login</value>
+                <value if="${requires-io-helidon-security-providers-httpauth}">io.helidon.security.providers.httpauth</value>
+                <value if="${requires-io-helidon-security-providers-httpsign}">io.helidon.security.providers.httpsign</value>
+                <value if="${requires-io-helidon-security-providers-jwt}">io.helidon.security.providers.jwt</value>
+                <value if="${requires-io-helidon-security-providers-oidc}">io.helidon.security.providers.oidc</value>
+                <value if="${requires-io-helidon-tracing}">io.helidon.tracing</value>
+                <value if="${requires-io-helidon-webclient-http1}">io.helidon.webclient.http1</value>
+                <value if="${requires-io-helidon-webclient-security}">io.helidon.webclient.security</value>
+                <value if="${requires-io-helidon-webserver}">io.helidon.webserver</value>
+                <value if="${requires-io-helidon-webserver-context}">io.helidon.webserver.context</value>
+                <value if="${requires-io-helidon-webserver-cors}">io.helidon.webserver.cors</value>
+                <value if="${requires-io-helidon-webserver-http2}">io.helidon.webserver.http2</value>
+                <value if="${requires-io-helidon-webserver-observe}">io.helidon.webserver.observe</value>
+                <value if="${requires-io-helidon-webserver-observe-health}">io.helidon.webserver.observe.health</value>
+                <value if="${requires-io-helidon-webserver-observe-metrics}">io.helidon.webserver.observe.metrics</value>
+                <value if="${requires-io-helidon-webserver-observe-tracing}">io.helidon.webserver.observe.tracing</value>
+                <value if="${requires-io-helidon-webserver-security}">io.helidon.webserver.security</value>
+                <value if="${requires-io-helidon-webserver-staticcontent}">io.helidon.webserver.staticcontent</value>
+                <value if="${requires-jersey-media-multipart}">jersey.media.multipart</value>
+                <value if="${requires-org-jvnet-mimepull}">org.jvnet.mimepull</value>
+                <value if="${requires-com-fasterxml-jackson-annotation}">com.fasterxml.jackson.annotation</value>
+                <value if="${requires-com-fasterxml-jackson-core}">com.fasterxml.jackson.core</value>
+                <value if="${requires-com-oracle-coherence}">com.oracle.coherence</value>
+                <value if="${requires-com-oracle-coherence-cdi}">com.oracle.coherence.cdi</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

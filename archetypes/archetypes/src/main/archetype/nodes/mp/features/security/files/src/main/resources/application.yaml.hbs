@@ -1,0 +1,9 @@
+{{#yaml-config-entries}}{{.}}{{/yaml-config-entries}}
+{{#security}}
+security:
+  providers:
+{{#security-providers}}{{.}}{{/security-providers}}
+  web-server:
+    paths:
+{{#security-server-paths}}{{.}}{{/security-server-paths}}
+{{/security}}

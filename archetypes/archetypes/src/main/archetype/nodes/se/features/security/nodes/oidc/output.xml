@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-security">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-oidc">true</boolean>
+    </variables>
+    <output>
+        <model>
+            <list key="security-providers">
+                <value file="files/src/main/resources/application.yaml"/>
+            </list>
+            <list key="security-server-paths">
+                <value file="files/src/main/resources/security-server-paths.yaml"/>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-oidc</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-idcs-mapper</value>
+                </map>
+            </list>
+            <list key="Main-java-imports">
+                <value>java.util.Optional</value>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>io.helidon.common.context.Contexts</value>
+                <value>io.helidon.http.HttpMediaTypes</value>
+                <value>io.helidon.security.Security</value>
+                <value>io.helidon.security.SecurityContext</value>
+                <value>io.helidon.security.Subject</value>
+                <value>io.helidon.security.providers.oidc.OidcFeature</value>
+            </list>
+            <list key="Main-main">
+                <value><![CDATA[
+        Security security = Security.create(config.get("security"));
+        // this is needed for proper encryption/decryption of cookies
+        Contexts.globalContext().register(security);]]>
+                </value>
+            </list>
+            <list key="Main-routing">
+                <value><![CDATA[
+        if (Config.global().get("security.enabled").asBoolean().orElse(true)) {
+            // IDCS requires a web resource for redirects
+            routing.addFeature(OidcFeature.create(Config.global()));
+        }]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[
+            // web server does not (yet) have possibility to configure routes in config files, so explicit...
+            .get("/rest/profile", (req, res) -> {
+                Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                res.send("Response from config based service, you are: \n" + securityContext
+                    .flatMap(SecurityContext::user)
+                    .map(Subject::toString)
+                    .orElse("Security context is null"));
+            })
+            .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]>
+                </value>
+            </list>
+            <list key="readme-sections">
+                <value file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+
+</archetype-script>

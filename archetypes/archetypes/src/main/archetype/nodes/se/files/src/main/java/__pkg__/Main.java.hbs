@@ -1,0 +1,90 @@
+package {{package}};
+{{#Main-java-imports}}
+{{#first}}
+
+{{/first}}
+import {{.}};
+{{/Main-java-imports}}
+{{#Main-helidon-imports}}
+{{#first}}
+
+{{/first}}
+import {{.}};
+{{/Main-helidon-imports}}
+{{#Main-other-imports}}
+{{#first}}
+
+{{/first}}
+import {{.}};
+{{/Main-other-imports}}
+{{#Main-static-imports}}
+{{#first}}
+
+{{/first}}
+import {{.}};
+{{/Main-static-imports}}
+
+/**
+ * The application main class.
+ */
+public class Main {
+{{#main-class-fields}}
+{{#first}}
+
+{{/first}}
+{{.}}
+{{/main-class-fields}}
+
+    /**
+     * Application main entry point.
+     * @param args command line arguments.
+     */
+    public static void main(String[] args) {
+
+        // load logging configuration
+        LogConfig.configureRuntime();
+
+        // initialize global config from default configuration
+        Config config = Config.create();
+        Config.global(config);
+{{#Main-main}}
+{{#first}}
+
+{{/first}}
+{{.}}
+{{/Main-main}}
+
+        WebServer server = WebServer.builder()
+                .config(config.get("server"))
+{{#Main-server-builder}}
+{{.}}
+{{/Main-server-builder}}
+                .routing(Main::routing)
+                .build()
+                .start();
+{{#Main-after-server}}
+{{#first}}
+
+{{/first}}
+{{.}}
+{{/Main-after-server}}
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
+{{#Main-logging}}
+{{.}}
+{{/Main-logging}}
+    }
+
+    /**
+     * Updates HTTP Routing.
+     */
+    static void routing(HttpRouting.Builder routing) {
+{{#Main-routing}}
+{{.}}
+{{/Main-routing}}
+        routing{{#Main-routing-builder}}{{.}}{{#last}};{{/last}}{{/Main-routing-builder}}
+    }
+{{#Main-class-content}}
+{{.}}
+{{/Main-class-content}}
+}

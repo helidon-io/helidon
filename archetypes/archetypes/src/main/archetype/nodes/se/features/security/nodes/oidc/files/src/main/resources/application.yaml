@@ -1,0 +1,26 @@
+  - oidc:
+    client-id: "your-client-id"
+    client-secret: "changeit"
+    identity-uri: "https://your-tenant-id.identity.oracle.com"
+    # A prefix used for custom scopes
+    scope-audience: "http://localhost:7987/test-application"
+    proxy-host: ""
+    # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
+    # If explicitly defined, will override host header
+    # frontend-uri: "http://localhost:7987"
+    # support for non-public signature JWK (and maybe other IDCS specific handling)
+    server-type: "idcs"
+    logout-enabled: true
+    # Can define just a path, host will be taken from header
+    post-logout-uri: "/loggedout"
+    # We want to redirect to login page (and token can be received either through cookie or header)
+    redirect: true
+  - idcs-role-mapper:
+      multitenant: false
+      oidc-config:
+      # we must repeat IDCS configuration, as in this case
+      # IDCS serves both as open ID connect authenticator and
+      # as a role mapper. Using minimal configuration here
+      client-id: "your-client-id"
+      client-secret: "changeit"
+      identity-uri: "https://your-tenant-id.identity.oracle.com"

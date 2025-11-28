@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-webclient-security">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-jwt">true</boolean>
+        <boolean path="requires-io-helidon-webclient-http1">true</boolean>
+        <boolean path="requires-io-helidon-webserver-context">true</boolean>
+    </variables>
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/JwtOverrideService.java.hbs</include>
+            </includes>
+        </templates>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/backend-service-jwt.yaml</include>
+                <include>src/*/resources/**/client-service-jwt.yaml</include>
+                <include>src/*/resources/**/signing-jwk.json</include>
+                <include>src/*/resources/**/verifying-jwk.json</include>
+            </includes>
+        </files>
+        <model>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient-security</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-http-auth</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-jwt</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.bundles</value>
+                    <value key="artifactId">helidon-bundles-config</value>
+                </map>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>io.helidon.config.Config</value>
+                <value>io.helidon.config.ConfigSources</value>
+                <value>io.helidon.http.HeaderNames</value>
+                <value>io.helidon.security.Principal</value>
+                <value>io.helidon.security.SecurityContext</value>
+                <value>io.helidon.security.Subject</value>
+                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.webserver.WebServerConfig</value>
+                <value>io.helidon.webserver.security.SecurityHttpFeature</value>
+            </list>
+            <list key="Main-main">
+                <value><![CDATA[
+        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));
+        Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));]]>
+                </value>
+            </list>
+            <list key="Main-after-server">
+                <value><![CDATA[
+        server.context().register(server);]]>
+                </value>
+            </list>
+            <list key="Main-server-builder">
+                <value><![CDATA[
+                // backend that prints the current user
+                .putSocket("backend", socket -> socket
+                        .routing(routing -> routing
+                                .addFeature(SecurityHttpFeature.create(backendConfig.get("security.web-server")))
+                                .get("/hello", (req, res) -> {
+
+                                    // This is the token. It should be bearer <signed JWT base64 encoded>
+                                    req.headers().first(HeaderNames.AUTHORIZATION)
+                                            .ifPresent(System.out::println);
+
+                                    String username = req.context()
+                                            .get(SecurityContext.class)
+                                            .flatMap(SecurityContext::user)
+                                            .map(Subject::principal)
+                                            .map(Principal::getName)
+                                            .orElse("Anonymous");
+
+                                    res.send(username);
+                                })))]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[
+            .addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
+            .register(new JwtOverrideService())]]>
+                </value>
+            </list>
+            <list key="Main-routing">
+                <value><![CDATA[
+        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));]]>
+                </value>
+            </list>
+            <list key="readme-sections">
+                <value file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>
