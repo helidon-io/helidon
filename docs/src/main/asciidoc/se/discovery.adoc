@@ -31,6 +31,9 @@ include::{rootdir}/includes/se.adoc[]
 * <<API Usage, API Usage>>
 * <<Providers, Providers>>
 ** <<Eureka,Eureka>>
+* <<Integrations, Integrations>>
+** <<Web Client Discovery Integration, Web Client>>
+* <<References, References>>
 
 == Overview
 
@@ -308,3 +311,95 @@ discovery: # <1>
 
 Users of the Helidon Eureka Discovery provider may also be interested in the (related)
 xref:{docdir}/integrations/eureka/eureka-registration.adoc[Eureka Server Service Instance Registration] feature.
+
+== Integrations
+
+Helidon integrates a <<Providers,Discovery provider>> with other Helidon modules as described below.
+
+=== Web Client Discovery Integration
+
+Helidon integrates a <<Providers,Discovery provider>> with xref:webclient.adoc[Web Client].
+
+==== Maven Coordinates
+
+To include the Helidon Web Client Discovery integration in your project, you add the Web Client Discovery integration
+dependency as well as a <<Providers,Discovery provider>> dependency (see
+xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]):
+
+[source,xml]
+.`pom.xml`
+----
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-discovery</artifactId> <!--1-->
+        <scope>runtime</scope> <!--2-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.discovery.providers</groupId>
+        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--3-->
+        <scope>runtime</scope> <!--4-->
+    </dependency>
+</dependencies>
+----
+<1> Helidon Web Client Discovery integration dependency.
+<2> The scope for the integration. `runtime` since the integration is never required at compile time.
+<3> Helidon <<Eureka, Eureka Discovery provider>> dependency (for example).
+<4> The scope for the provider. Use `runtime` if you have no interest in provider-specific classes and methods (the most
+    common case). Use `compile` if you plan to call provider-specific methods.
+
+The behavior of the Web Client Discovery integration is
+link:{webclient-discovery-javadoc-base-url}/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)[fully
+specified and documented].
+
+==== Configuration
+
+The Helidon Web Client Discovery integration can be configured using xref:config/introduction.adoc[Helidon
+Config]. Examples shown below are in YAML, but are expressible in any format and any location that Helidon Config
+supports.
+
+Because the Helidon Web Client Discovery integration is fundamentally a
+xref:webclient.adoc#_adding_service_to_webclient[Web Client Service], you configure it under a Web Client's `services`
+configuration node:
+
+[source,yaml]
+.`application.yaml`
+----
+webclient:
+  services:
+    discovery: # <1>
+----
+<1> Indicates that the Web Client Discovery integration should apply to this Web Client configuration. More configuration
+    is required; see below.
+
+You also configure the Discovery provider in use following its documentation. See, for example,
+<<_configuration,Eureka configuration>>.
+
+==== Configuring URIs
+
+To mark URIs requested by a Web Client as subject to discovery, and to use discovery names appropriate for them, you
+need to configure _prefix URIs_. URIs that match no prefix will not be subject to discovery:
+
+[source,yaml]
+.`application.yaml`
+----
+webclient:
+  services:
+    discovery:
+      prefix-uris:
+        EXAMPLE: "https://example.com:443/" # <1>
+        TEST: "https://test.example.com:443/" # <2> <3>
+----
+<1> Indicates that URIs starting with `https://example.com:443/` will be subject to discovery, using the discovery name
+    of `EXAMPLE`
+<2> Indicates that URIs starting with `https://test.example.com:443/` will be subject to discovery, using the discovery
+    name of `TEST`
+<3> URIs that begin with text other than `https://example.com:443/` or `https://test.example.com:443/` will not be
+    subject to discovery
+
+== References
+
+* link:{discovery-javadoc-base-url}/module-summary.html[Discovery Javadoc]
+* link:{discovery-providers-eureka-javadoc-base-url}/module-summary.html[Eureka Discovery Provider Javadoc]
+* link:{webclient-discovery-javadoc-base-url}/module-summary.html[Web Client Discovery Integration Javadoc]
+* xref:webclient.adoc[Helidon Web Client]

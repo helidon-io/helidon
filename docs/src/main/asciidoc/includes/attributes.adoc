@@ -207,6 +207,7 @@ endif::[]
 :configurable-javadoc-base-url: {javadoc-base-url}/io.helidon.common.configurable
 :context-javadoc-base-url: {javadoc-base-url}/io.helidon.common.context
 :cors-javadoc-base-url: {javadoc-base-url}/io.helidon.cors
+:discovery-providers-eureka-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery.providers.eureka
 :discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.discovery
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
@@ -248,6 +249,7 @@ endif::[]
 
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webclient-api-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient.api
+:webclient-discovery-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient.discovery
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent
 :webserver-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.cors
