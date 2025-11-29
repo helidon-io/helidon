@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
-- <<Config Example, Config Example>>
+- <<Config, Config>>
+- <<Consuming Messages, Consuming Messages>>
+- <<Producing Messages, Producing Messages>>
 - <<NACK Strategy, NACK Strategy>>
 - <<Examples, Examples>>
 
@@ -48,7 +50,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
-== Config Example
+== Config
 
 [source,yaml]
 .Example of connector config:
@@ -78,12 +80,19 @@ mp.messaging:
 <1> Kafka client consumer's property auto.offset.reset configuration for `from-kafka` channel only
 <2> Kafka client's property link:{kafka-client-base-url}#consumerconfigs_bootstrap.servers[bootstrap.servers] configuration for all channels using the connector
 
+TIP: Besides the following configuration options, any property from https://kafka.apache.org/documentation/#consumerconfigs[consumer] or https://kafka.apache.org/documentation/#producerconfigs[producer] configuration can be passed to the underlying Kafka client.
+
+include::{rootdir}/config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder.adoc[tag=config,leveloffset=+1]
+
+== Consuming Messages
+
 [source,java]
 .Example of consuming from Kafka:
 ----
 include::{sourcedir}/mp/reactivemessaging/KafkaSnippets.java[tag=snippet_1, indent=0]
 ----
 
+== Producing Messages
 
 [source,java]
 .Example of producing to Kafka:

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
@@ -43,6 +42,7 @@ module io.helidon.messaging.connectors.jms {
     requires static io.helidon.common.features.api;
     requires static jakarta.cdi;
     requires static jakarta.inject;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.messaging;
