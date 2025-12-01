@@ -16,12 +16,12 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.testing.MultiStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.not;
 
 class TestMultipleRegistryLogging {
 
+    private static MultiStream multiStream;
     private static ByteArrayOutputStream baos;
     private static PrintStream originalErr;
     private static PrintStream testPrintStream;
@@ -47,7 +48,8 @@ class TestMultipleRegistryLogging {
         baos = new ByteArrayOutputStream();
         originalErr = System.err;
         testPrintStream = new PrintStream(baos);
-        System.setErr(testPrintStream);
+        multiStream = MultiStream.create(baos, testPrintStream);
+        System.setErr(multiStream);
     }
 
     @BeforeEach
@@ -63,11 +65,12 @@ class TestMultipleRegistryLogging {
     @AfterAll
     static void afterAll() {
         MMeterRegistry.clearMultipleInstantiationInfo();
+        multiStream.close();
         System.setErr(originalErr);
     }
 
     @Test
-    void testSingleRegistry() throws IOException {
+    void testSingleRegistry() {
         Metrics.globalRegistry();
         testPrintStream.flush();
         String output = baos.toString();
@@ -75,7 +78,7 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
-    void testTwoRegistries() throws IOException {
+    void testTwoRegistries() {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
         testPrintStream.flush();
@@ -88,7 +91,7 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
-    void testThreeRegistries() throws IOException {
+    void testThreeRegistries() {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
         Metrics.createMeterRegistry();

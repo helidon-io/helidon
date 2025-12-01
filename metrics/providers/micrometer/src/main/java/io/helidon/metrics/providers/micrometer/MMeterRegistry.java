@@ -567,8 +567,13 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     // For testing.
     static void clearMultipleInstantiationInfo() {
-        hasLoggedFirstMultiInstantiationWarning = false;
-        originalCreationStackTrace = null;
+        WARNING_INFO_LOCK.lock();
+        try {
+            hasLoggedFirstMultiInstantiationWarning = false;
+            originalCreationStackTrace = null;
+        } finally {
+            WARNING_INFO_LOCK.unlock();
+        }
     }
 
     private static void checkMultipleInstantiations(MetricsConfig metricsConfig) {
