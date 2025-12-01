@@ -1,4 +1,3 @@
-
 security:
   provider-policy:
     type: "COMPOSITE"
