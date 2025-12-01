@@ -15,13 +15,16 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.testing.MultiStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -29,27 +32,27 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.isEmptyString;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 
 class TestMultipleRegistryLogging {
 
-    private static MultiStream multiStream;
-    private static ByteArrayOutputStream baos;
-    private static PrintStream originalErr;
-    private static PrintStream testPrintStream;
+    private static final Logger mmeterRegisteryLogger = Logger.getLogger(MMeterRegistry.class.getName());
+    private static TestHandler testHandler;
 
     @BeforeAll
     static void beforeAll() {
-        baos = new ByteArrayOutputStream();
-        originalErr = System.err;
-        testPrintStream = new PrintStream(baos);
-        multiStream = MultiStream.create(baos, testPrintStream);
-        System.setErr(multiStream);
+        testHandler = TestHandler.create();
+        mmeterRegisteryLogger.addHandler(testHandler);
+    }
+
+    @AfterAll
+    static void afterAll() {
+        MMeterRegistry.clearMultipleInstantiationInfo();
+        mmeterRegisteryLogger.removeHandler(testHandler);
     }
 
     @BeforeEach
@@ -59,35 +62,25 @@ class TestMultipleRegistryLogging {
 
     @AfterEach
     void tearDown() {
-        baos.reset();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        MMeterRegistry.clearMultipleInstantiationInfo();
-        multiStream.close();
-        System.setErr(originalErr);
+        testHandler.clear();
     }
 
     @Test
     void testSingleRegistry() {
         Metrics.globalRegistry();
-        testPrintStream.flush();
-        String output = baos.toString();
-        assertThat("Single meter registry", output, isEmptyString());
+        assertThat("Single meter registry", testHandler.messages(), hasSize(0));
     }
 
     @Test
     void testTwoRegistries() {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
-        testPrintStream.flush();
 
-        String output = baos.toString();
-        assertThat("Two meter registries", output, allOf(
-                containsString("Unexpected duplicate"),
-                containsString("Original instantiation"),
-                containsString("Additional instantiation")));
+        assertThat("Two meter registries", testHandler.messages(),
+                   hasItem(allOf(
+                           containsString("Unexpected duplicate"),
+                           containsString("Original instantiation"),
+                           containsString("Additional instantiation"))));
     }
 
     @Test
@@ -95,14 +88,16 @@ class TestMultipleRegistryLogging {
         Metrics.globalRegistry();
         Metrics.createMeterRegistry();
         Metrics.createMeterRegistry();
-        testPrintStream.flush();
 
-        String output = baos.toString();
-        assertThat("Three meter registries", output, allOf(
-                containsString("Unexpected duplicate"),
-                containsString("Original instantiation"),
-                containsString("Additional instantiation"),
-                containsString("Unexpected additional instantiation")));
+        assertThat("Three meter registries",
+                   testHandler.messages(),
+                   allOf(
+                           hasItem(allOf(
+                                   containsString("Unexpected duplicate"),
+                                   containsString("Original instantiation"),
+                                   containsString("Additional instantiation"))),
+                           hasItem(
+                                   containsString("Unexpected additional instantiation"))));
     }
 
     @Test
@@ -110,15 +105,42 @@ class TestMultipleRegistryLogging {
         MetricsConfig configWithWarningsSuppressed = MetricsConfig.builder().warnOnMultipleRegistries(false).build();
         Metrics.createMeterRegistry(configWithWarningsSuppressed);
         Metrics.createMeterRegistry(configWithWarningsSuppressed);
-        testPrintStream.flush();
 
-        String output = baos.toString();
-        assertThat("Two meter registrations with warnings suppressed", output, allOf(
-                not(containsString("Unexpected duplicate")),
-                not(containsString("Original instantiation")),
-                not(containsString("Additional instantiation")),
-                not(containsString("Unexpected additional instantiation"))));
+        assertThat("Two meter registrations with warnings suppressed", testHandler.messages, hasSize(0));
 
+    }
+
+    private static class TestHandler extends Handler {
+
+        private final List<String> messages = Collections.synchronizedList(new ArrayList<>());
+
+        // For testing.
+        static TestHandler create() {
+            return new TestHandler();
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            messages.add(record.getMessage());
+        }
+
+        @Override
+        public void flush() {
+
+        }
+
+        @Override
+        public void close() {
+
+        }
+
+        List<String> messages() {
+            return List.copyOf(messages);
+        }
+
+        void clear() {
+            messages.clear();
+        }
     }
 
 }
