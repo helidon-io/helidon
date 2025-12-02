@@ -60,20 +60,6 @@ public class DeclarativeExample {
     }
     // end::snippet_3[]
 
-    // tag::snippet_8[]
-    @Validation.NotNull
-    @Validation.String.NotBlank
-    public @interface NonNullNotBlank {
-    }
-    // end::snippet_1[]
-
-    // tag::snippet_9[]
-    @Validation.NotNull // will add not-null constraint as well
-    @Validation.Constraint
-    public @interface CustomConstraint {
-    }
-    // end::snippet_2[]
-
     // tag::snippet_1[]
     @Service.GenerateBinding // generated binding to bypass discovery and runtime binding
     public static class Main {
@@ -85,7 +71,7 @@ public class DeclarativeExample {
             ServiceRegistryManager.start(ApplicationBinding.create());
         }
     }
-    // end::snippet_4[]
+    // end::snippet_1[]
 
     // tag::snippet_2[]
     @RestServer.Endpoint // identifies this class as a server endpoint
@@ -109,7 +95,7 @@ public class DeclarativeExample {
                     .build();
         }
     }
-    // end::snippet_5[]
+    // end::snippet_2[]
 
     // tag::snippet_4[]
     @Service.Singleton
@@ -125,6 +111,7 @@ public class DeclarativeExample {
             return "default";
         }
     }
+    // end::snippet_4[]
 
     // tag::snippet_5[]
     @Service.Singleton
@@ -134,23 +121,36 @@ public class DeclarativeExample {
             // do something every 5 seconds
         }
     }
-    // end::snippet_7[]
+    // end::snippet_5[]
+
 
     @Validation.Validated
     record MyType(@Validation.String.Pattern(".*valid.*") @Validation.NotNull String validString,
                   @Validation.Integer.Min(42) int validInt) {
     }
-    // end::snippet_8[]
 
     // tag::snippet_7[]
     @Service.Singleton
     static class ValidatedService {
-        @Validation.String.NotBlank
-            // validates the response
+        @Validation.String.NotBlank // validates the response
         String process(@Validation.Valid @Validation.NotNull MyType myType) {
             // result of the logic
             return "some result";
         }
+    }
+    // end::snippet_7[]
+
+    // tag::snippet_8[]
+    @Validation.NotNull
+    @Validation.String.NotBlank
+    public @interface NonNullNotBlank {
+    }
+    // end::snippet_8[]
+
+    // tag::snippet_9[]
+    @Validation.NotNull // will add not-null constraint as well
+    @Validation.Constraint
+    public @interface CustomConstraint {
     }
     // end::snippet_9[]
 
