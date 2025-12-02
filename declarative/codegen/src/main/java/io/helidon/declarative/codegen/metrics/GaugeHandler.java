@@ -98,20 +98,20 @@ class GaugeHandler {
 
     private void addPreDestroy(ClassModel.Builder classModel,
                                int gaugeCount) {
-        Method.Builder postConstruct = Method.builder()
+        Method.Builder preDestroy = Method.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY))
                 .name("preDestroy")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        postConstruct.addContentLine("var meters = meterRegistrySupplier.get();");
+        preDestroy.addContentLine("var meters = meterRegistrySupplier.get();");
 
         for (int i = 0; i < gaugeCount; i++) {
-            postConstruct.addContent("meters.remove(this.gauge_")
+            preDestroy.addContent("meters.remove(this.gauge_")
                     .addContent(String.valueOf(i))
                     .addContentLine(");");
         }
 
-        classModel.addMethod(postConstruct);
+        classModel.addMethod(preDestroy);
     }
 
     private void addPostConstruct(ClassModel.Builder classModel,
@@ -136,7 +136,6 @@ class GaugeHandler {
         /*
         this.gauge_1 = meters.getOrCreate(Gauge.builder("TestEndpoint.gaugeValue",
                                                                    () -> endpoint.get().gaugeValue())
-                                                             .tags(tags)
                                                              .description("Gauge annotation on method gaugeValue()")
                                                              .tags(tags)
                                                              .baseUnit("bytes")

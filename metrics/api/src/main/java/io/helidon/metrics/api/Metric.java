@@ -200,6 +200,7 @@ public final class Metric {
      */
     @Repeatable(Tags.class)
     @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.CLASS)
     public @interface Tag {
         /**
          * Tag key.
@@ -220,6 +221,7 @@ public final class Metric {
      * Container for {@link io.helidon.metrics.api.Metric.Tag} repeating annotation.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.CLASS)
     public @interface Tags {
         /**
          * Tags of this repeating container.

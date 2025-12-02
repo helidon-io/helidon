@@ -214,7 +214,7 @@ class MetricsExtension implements RegistryCodegenExtension {
             TypeInfo typeInfo = types.get(type);
             if (typeInfo == null) {
                 typeInfo = roundContext.typeInfo(type).orElseThrow(() -> new CodegenException("No type info found for type "
-                                                                                                      + type));
+                                                                                                      + type.fqName()));
             }
             checkTypeIsService(roundContext, typeInfo);
             handler.handle(typeInfo, gauges);
