@@ -84,6 +84,7 @@ The following features are currently implemented:
 - <<Dec-Scheduling, Scheduling>>
 - <<Dec-Validation, Validation>>
 - <<Dec-Security, Security>>
+- <<Dec-Metrics, Metrics>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -390,3 +391,29 @@ Supported annotations:
 - `jakarta.annotation.security.DenyAll` - annotated method will not be callable with any kind of authentication or authorization
 - link:{security-javadoc-base-url}/io/helidon/security/abac/role/RoleValidator.Roles.html[`io.helidon.security.abac.role.RoleValidator.Roles`] - provide a set of roles that can access a resource, implies authentication is required
 - `jakarta.annotation.security.RolesAllowed` - same as above (`RoleValidator.Roles`)
+
+=== Metrics [[Dec-Metrics]]
+
+Add support for the following meters:
+
+- Counter
+- Timer
+- Gauge
+
+Method annotations:
+
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Counted.html[`io.helidon.metrics.api.Metric.Counted`] - adds a counter metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Timed.html[`io.helidon.metrics.api.Metric.Timed`] - adds a timer metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Gauge.html[`io.helidon.metrics.api.Metric.Gauge`] - marks a method that returns a number as a gauge
+
+[source,java]
+.Example of a counted method
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_11, indent=0]
+----
+
+[source,java]
+.Example of a gauge
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_12, indent=0]
+----

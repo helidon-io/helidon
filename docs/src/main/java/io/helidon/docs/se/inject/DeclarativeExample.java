@@ -28,6 +28,7 @@ import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.metrics.api.Metric;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
@@ -189,6 +190,28 @@ public class DeclarativeExample {
         }
     }
     // end::snippet_10[]
+
+    // tag::snippet_11[]
+    @Service.Singleton
+    static class MeteredService {
+        @Metric.Counted
+        void counted()  {
+            // whenever invoked through service interface, counter is incremented
+        }
+    }
+    // end::snippet_11[]
+
+    // tag::snippet_12[]
+    @Service.Singleton
+    static class ServiceWithAGauge {
+        private volatile int perentage = 0;
+
+        @Metric.Gauge(unit = "percent")
+        int gauge()  {
+            return this.perentage;
+        }
+    }
+    // end::snippet_12[]
 
 
     private static class ApplicationBinding {
