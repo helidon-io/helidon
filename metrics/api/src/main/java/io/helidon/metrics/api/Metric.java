@@ -142,11 +142,12 @@ public final class Metric {
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Interception.Intercepted
+    @Target(ElementType.METHOD)
     public @interface Gauge {
         /**
          * Name of the gauge.
          *
-         * @return counter name
+         * @return gauge name
          */
         String value() default "";
 

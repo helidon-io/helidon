@@ -202,6 +202,7 @@ class GaugeHandler {
         }
 
         classModel.addConstructor(ctr -> ctr
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addParameter(meterRegistry -> meterRegistry
                         .name("meterRegistrySupplier")

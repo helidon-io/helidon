@@ -204,11 +204,11 @@ public class DeclarativeExample {
     // tag::snippet_12[]
     @Service.Singleton
     static class ServiceWithAGauge {
-        private volatile int perentage = 0;
+        private volatile int percentage = 0;
 
         @Metric.Gauge(unit = "percent")
         int gauge()  {
-            return this.perentage;
+            return this.percentage;
         }
     }
     // end::snippet_12[]
