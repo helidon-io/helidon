@@ -47,6 +47,7 @@
         <module>codegen</module>
         <module>http</module>
         <module>scheduling</module>
+        <module>metrics</module>
     </modules>
 
 </project>
