@@ -148,7 +148,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        effectiveConnection = connection == null ? obtainConnection(serviceRequest, timeout) : connection;
+        effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
@@ -317,7 +317,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return true;
     }
 
-    private ClientConnection obtainConnection(WebClientServiceRequest request, Duration requestReadTimeout) {
+    private ClientConnection obtainConnection(WebClientServiceRequest request) {
         var address = originalRequest.address();
         UnixDomainSocketAddress udsAddress = address.filter(a -> a instanceof UnixDomainSocketAddress)
                 .map(UnixDomainSocketAddress.class::cast)
@@ -326,20 +326,20 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (udsAddress == null) {
             return http1Client.connectionCache()
                     .connection(http1Client,
-                                requestReadTimeout,
                                 tls,
                                 proxy,
                                 request.uri(),
                                 request.headers(),
                                 keepAlive);
+        } else {
+            return http1Client.connectionCache()
+                    .connection(http1Client,
+                                tls,
+                                request.uri(),
+                                request.headers(),
+                                keepAlive,
+                                udsAddress);
         }
-        return http1Client.connectionCache()
-                .connection(http1Client,
-                            tls,
-                            request.uri(),
-                            request.headers(),
-                            keepAlive,
-                            udsAddress);
     }
 
     static class ContentLengthInputStream extends InputStream {
