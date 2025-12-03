@@ -230,10 +230,23 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         private Duration min;
         private Duration max;
         private Boolean publishPercentileHistogram;
+        private TimeUnit baseTimeUnit;
 
         private Builder(String name) {
             super(name, io.micrometer.core.instrument.Timer.builder(name));
             percentiles(MDistributionStatisticsConfig.Builder.DEFAULT_PERCENTILES);
+        }
+
+        @Override
+        public Builder baseUnit(String baseUnit) {
+            this.baseTimeUnit = TimeUnit.valueOf(baseUnit);
+            return identity();
+        }
+
+        @Override
+        public Timer.Builder baseUnit(TimeUnit baseUnit) {
+            this.baseTimeUnit = baseUnit;
+            return identity();
         }
 
         @Override
