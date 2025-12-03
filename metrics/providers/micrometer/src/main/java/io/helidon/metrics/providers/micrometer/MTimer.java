@@ -239,7 +239,9 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         public Builder baseUnit(String baseUnit) {
-            this.baseTimeUnit = TimeUnit.valueOf(baseUnit.toUpperCase(Locale.ROOT));
+            if (baseUnit != null && !baseUnit.isBlank()) {
+                this.baseTimeUnit = TimeUnit.valueOf(baseUnit.toUpperCase(Locale.ROOT));
+            }
             return identity();
         }
 
