@@ -402,15 +402,21 @@ Add support for the following meters:
 
 Method annotations:
 
-- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Counted.html[`io.helidon.metrics.api.Metric.Counted`] - adds a counter metric to the metric registry for method executions
-- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Timed.html[`io.helidon.metrics.api.Metric.Timed`] - adds a timer metric to the metric registry for method executions
-- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metric.Gauge.html[`io.helidon.metrics.api.Metric.Gauge`] - marks a method that returns a number as a gauge
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Counted.html[`io.helidon.metrics.api.Metrics.Counted`] - adds a counter metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Timed.html[`io.helidon.metrics.api.Metrics.Timed`] - adds a timer metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Gauge.html[`io.helidon.metrics.api.Metrics.Gauge`] - marks a method that returns a number as a gauge
+
+In addition, we can use link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Tag.html[`io.helidon.metrics.api.Metrics.Tag`] annotation on a type, method, or as a `tags` property of an annotation to add tags to the metric. Tags from type definition will be added to all metrics on the type, tags on methods on all metrics on the method, and tags in the metric annotation will only be used by that metric.
+
+The example below shows additional tags. The counter on method `counted` will have the following tags: `service=Metered;method=counted` (and of course the scope tag that is always added).
 
 [source,java]
-.Example of a counted method
+.Example of a counted method with type tags and counter tags
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_11, indent=0]
 ----
+
+A gauge is a method that returns a `Number`, and is invoked by the metrics implementation to obtain a value. Example below shows a definition of a `Gauge`. Note that a `unit` is mandatory for gauges.
 
 [source,java]
 .Example of a gauge

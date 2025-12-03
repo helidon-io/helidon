@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.http.Http;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metric;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.RestServer;
 
@@ -29,8 +29,8 @@ import io.helidon.webserver.http.RestServer;
 @RestServer.Endpoint
 @Http.Path("/endpoint")
 @Service.Singleton
-@Metric.Tag(key = "endpoint", value = "TestEndpoint")
-@Metric.Tag(key = "application", value = "MyNiceApp")
+@Metrics.Tag(key = "endpoint", value = "TestEndpoint")
+@Metrics.Tag(key = "application", value = "MyNiceApp")
 class TestEndpoint {
     private final MeterRegistry meterRegistry;
     private final AtomicInteger gaugeValue = new AtomicInteger();
@@ -42,14 +42,14 @@ class TestEndpoint {
 
     @Http.GET
     @Http.Path("/counted")
-    @Metric.Counted(tags = @Metric.Tag(key = "location", value = "method"))
+    @Metrics.Counted(tags = @Metrics.Tag(key = "location", value = "method"))
     String counted() {
         return "counted";
     }
 
     @Http.GET
     @Http.Path("/timed")
-    @Metric.Timed(value = "my-timed-metric", absoluteName = true)
+    @Metrics.Timed(value = "my-timed-metric", absoluteName = true)
     String timed() {
         return "timed";
     }
@@ -67,7 +67,7 @@ class TestEndpoint {
         return "gauge set";
     }
 
-    @Metric.Gauge(unit = Meter.BaseUnits.BYTES)
+    @Metrics.Gauge(unit = Meter.BaseUnits.BYTES)
     int gaugeValue() {
         return gaugeValue.get();
     }

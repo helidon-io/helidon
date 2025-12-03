@@ -19,11 +19,11 @@ package io.helidon.declarative.codegen.metrics;
 import io.helidon.common.types.TypeName;
 
 final class MetricsTypes {
-    static final TypeName ANNOTATION_TAG = TypeName.create("io.helidon.metrics.api.Metric.Tag");
-    static final TypeName ANNOTATION_TAGS = TypeName.create("io.helidon.metrics.api.Metric.Tags");
-    static final TypeName ANNOTATION_COUNTED = TypeName.create("io.helidon.metrics.api.Metric.Counted");
-    static final TypeName ANNOTATION_TIMED = TypeName.create("io.helidon.metrics.api.Metric.Timed");
-    static final TypeName ANNOTATION_GAUGE = TypeName.create("io.helidon.metrics.api.Metric.Gauge");
+    static final TypeName ANNOTATION_TAG = TypeName.create("io.helidon.metrics.api.Metrics.Tag");
+    static final TypeName ANNOTATION_TAGS = TypeName.create("io.helidon.metrics.api.Metrics.Tags");
+    static final TypeName ANNOTATION_COUNTED = TypeName.create("io.helidon.metrics.api.Metrics.Counted");
+    static final TypeName ANNOTATION_TIMED = TypeName.create("io.helidon.metrics.api.Metrics.Timed");
+    static final TypeName ANNOTATION_GAUGE = TypeName.create("io.helidon.metrics.api.Metrics.Gauge");
 
     static final TypeName METER_REGISTRY = TypeName.create("io.helidon.metrics.api.MeterRegistry");
     static final TypeName GAUGE = TypeName.create("io.helidon.metrics.api.Gauge");

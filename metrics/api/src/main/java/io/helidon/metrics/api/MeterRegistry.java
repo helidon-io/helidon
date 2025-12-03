@@ -26,6 +26,25 @@ import java.util.function.Predicate;
  * Manages the look-up and registration of meters.
  */
 public interface MeterRegistry extends Wrapper {
+    /**
+     * Creates a meter registry, not saved as the global registry, using default metrics config information based on global
+     * config.
+     *
+     * @return new meter registry
+     */
+    static MeterRegistry create() {
+        return create(MetricsConfig.create());
+    }
+
+    /**
+     * Creates a meter registry, not saved as the global registry, based on the provided metrics config.
+     *
+     * @param metricsConfig metrics config
+     * @return new meter registry
+     */
+    static MeterRegistry create(MetricsConfig metricsConfig) {
+        return MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+    }
 
     /**
      * Returns all previously-registered meters.

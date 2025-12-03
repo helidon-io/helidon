@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metric;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -63,11 +63,11 @@ class DeclarativeCodegenMetricsTypesTest {
             fields.put(name, declaredField);
         }
 
-        checkField(toCheck, checked, fields, "ANNOTATION_TAG", Metric.Tag.class);
-        checkField(toCheck, checked, fields, "ANNOTATION_TAGS", Metric.Tags.class);
-        checkField(toCheck, checked, fields, "ANNOTATION_COUNTED", Metric.Counted.class);
-        checkField(toCheck, checked, fields, "ANNOTATION_TIMED", Metric.Timed.class);
-        checkField(toCheck, checked, fields, "ANNOTATION_GAUGE", Metric.Gauge.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_TAG", Metrics.Tag.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_TAGS", Metrics.Tags.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_COUNTED", Metrics.Counted.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_TIMED", Metrics.Timed.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_GAUGE", Metrics.Gauge.class);
 
         checkField(toCheck, checked, fields, "METER_REGISTRY", MeterRegistry.class);
         checkField(toCheck, checked, fields, "GAUGE", Gauge.class);
