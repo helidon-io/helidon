@@ -38,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class TestTimer {
@@ -288,6 +289,23 @@ class TestTimer {
             Stream.of(timer, otherTimer, defaultUnitsTimer, secondsUnitsTimer)
                             .forEach(localMeterRegistry::remove);
         }
+
+    }
+
+    @Test
+    void checkBaseUnitValidation() {
+        String metricsConfig = """
+                metrics:
+                  timers:
+                    base-units-default: milliseconds""";
+
+        Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
+        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
+                                                                               .build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> localMeterRegistry.getOrCreate(Timer.builder("withIllegalUnits")
+                                                             .baseUnit("fortnights")),
+                                                          "Illegal unit 'fortnights'");
 
     }
 
