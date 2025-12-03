@@ -378,7 +378,7 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_10, indent=0]
 Security provides protection of WebServer endpoints.
 
 Identity propagation (when using a WebClient) depends on configuration of the client and configuration of security.
-We currently do not have declarative way of modifying client behavior.
+We currently do not have a declarative way of modifying client behavior.
 
 Supported annotations:
 
