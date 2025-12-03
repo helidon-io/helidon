@@ -147,7 +147,7 @@ public class TcpClientConnection implements ClientConnection {
             this.helidonSocket = PlainSocket.client(socket, channelId);
         }
 
-        this.reader = new DataReader(helidonSocket);
+        this.reader = DataReader.create(helidonSocket);
         int writeBufferSize = webClient.prototype().writeBufferSize();
         this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
