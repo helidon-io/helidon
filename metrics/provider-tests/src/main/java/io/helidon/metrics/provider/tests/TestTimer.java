@@ -303,9 +303,9 @@ class TestTimer {
         MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
                                                                                .build());
         assertThrows(IllegalArgumentException.class,
-                     () -> localMeterRegistry.getOrCreate(Timer.builder("withIllegalUnits")
-                                                             .baseUnit("fortnights")),
-                                                          "Illegal unit 'fortnights'");
+                     () -> Timer.builder("withIllegalUnits")
+                             .baseUnit("fortnights"),
+                             "Illegal unit 'fortnights'");
 
     }
 
