@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class DataReaderTest {
 
         byte[] data = "00\r0\r\n".getBytes(StandardCharsets.US_ASCII);
         AtomicReference<byte[]> ref = new AtomicReference<>(data);
-        DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
+        DataReader dataReader = DataReader.create(() -> ref.getAndSet(null), true);
 
         int n = 2;
         assertThat(dataReader.findNewLine(n), is(n));
@@ -50,7 +50,7 @@ class DataReaderTest {
 
         byte[] data = "00\r\r\r\n".getBytes(StandardCharsets.US_ASCII);
         AtomicReference<byte[]> ref = new AtomicReference<>(data);
-        DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
+        DataReader dataReader = DataReader.create(() -> ref.getAndSet(null), true);
 
         int n = 5;
         assertThat(dataReader.findNewLine(n), is(4));
@@ -63,7 +63,7 @@ class DataReaderTest {
 
         byte[] data = "00\r00\r\n00".getBytes(StandardCharsets.US_ASCII);
         AtomicReference<byte[]> ref = new AtomicReference<>(data);
-        DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
+        DataReader dataReader = DataReader.create(() -> ref.getAndSet(null), true);
 
         int n = 4;
         assertThat(dataReader.findNewLine(n), is(n));

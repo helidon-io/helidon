@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class MultiPartImpl extends MultiPart {
         this.endBoundary = "--" + boundary + "--";
         this.maxNewLine = this.boundary.length() + 6;
         byte[] readBuffer = new byte[1024];
-        this.dataReader = new DataReader(() -> {
+        this.dataReader = DataReader.create(() -> {
             try {
                 int r = stream.read(readBuffer);
                 if (r == -1) {

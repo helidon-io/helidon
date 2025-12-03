@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class Http1HeadersParserTest {
 
     @Test
     void testHeadersAreCaseInsensitive() {
-        DataReader reader = new DataReader(() -> (
+        DataReader reader = DataReader.create(() -> (
                 "Set-Cookie: c1=v1\r\nSet-Cookie: c2=v2\r\n"
                         + "Header: hv1\r\nheader: hv2\r\nheaDer: hv3\r\n"
                         + "\r\n").getBytes(StandardCharsets.US_ASCII));
@@ -83,7 +83,7 @@ class Http1HeadersParserTest {
 
     private static WritableHeaders<?> getHeaders(String headerName, String headerValue, boolean validate) {
         DataReader reader =
-                new DataReader(() -> (headerName + ":" + headerValue + "\r\n" + "\r\n").getBytes(StandardCharsets.US_ASCII));
+                DataReader.create(() -> (headerName + ":" + headerValue + "\r\n" + "\r\n").getBytes(StandardCharsets.US_ASCII));
         return Http1HeadersParser.readHeaders(reader, 1024, validate);
     }
 
