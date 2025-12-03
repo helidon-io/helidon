@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,12 +22,6 @@
     <test name="microprofile-config TCK">
         <packages>
             <package name="org.eclipse.microprofile.config.tck.*">
-                <!-- 
-                    Currently failing because requires this PR:
-                    https://github.com/eclipse/microprofile-config/pull/743
-                    Ignoring meanwhile microprofile-config 3.1 is not released
-                -->
-                <exclude name="org.eclipse.microprofile.config.tck.broken"></exclude>
             </package>
         </packages>
     </test>
