@@ -229,7 +229,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
 
     /**
      * Maximal size of the connection cache for a single connection key.
-     * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DSN address lookup, and proxy.
+     * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DNS address lookup, and proxy.
      * <p>
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections
