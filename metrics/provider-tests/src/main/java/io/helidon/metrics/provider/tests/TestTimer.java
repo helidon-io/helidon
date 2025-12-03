@@ -294,14 +294,6 @@ class TestTimer {
 
     @Test
     void checkBaseUnitValidation() {
-        String metricsConfig = """
-                metrics:
-                  timers:
-                    base-units-default: milliseconds""";
-
-        Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
-        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
-                                                                               .build());
         assertThrows(IllegalArgumentException.class,
                      () -> Timer.builder("withIllegalUnits")
                              .baseUnit("fortnights"),
