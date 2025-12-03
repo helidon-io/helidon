@@ -200,8 +200,9 @@ public interface Timer extends Meter, HistogramSupport {
          * Units for the timer; developers are encouraged to use {@link #baseUnit(java.util.concurrent.TimeUnit)} instead.
          * <p>
          * By convention and specification, Prometheus output always uses {@code SECONDS}. Helidon's JSON output honors the
-         * {@code baseUnit} setting, and Helidon requires the value to be one of the {@link java.util.concurrent.TimeUnit}
-         * enum values.
+         * {@code baseUnit} setting if configuration so indicates, and Helidon requires the value to be one of
+         * the {@link java.util.concurrent.TimeUnit} enum values. (See the Helidon SE metrics documentation about understanding
+         * the JSON metrics data format.)
          *
          * @param baseUnit timer unit
          * @return updated builder
@@ -213,7 +214,8 @@ public interface Timer extends Meter, HistogramSupport {
          * Units for the timer.
          * <p>
          * By convention and specification, Prometheus output always uses {@code SECONDS}. Helidon's JSON output honors the
-         * {@code baseUnit} setting.
+         * {@code baseUnit} setting if configuration so indicates. (See the Helidon SE metrics documentation about understanding
+         * the JSON metrics data format.)
          *
          * @param baseUnit timer unit
          * @return updated builder
