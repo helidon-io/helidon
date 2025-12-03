@@ -131,4 +131,16 @@ Note: this is a work in progress, not listing the full set of contracts yet!
 |N/A
 |Health check instances to be added to WebServer health observer
 |N/A
+|`io.helidon.metrics.api`
+`MetricsFactory`
+|90
+|`io.helidon.metrics.api`
+|Factory of meter registries
+|N/A
+|`io.helidon.metrics.api`
+`MeterRegistry`
+|90
+|`io.helidon.metrics.api`
+|The "global" meter registry, can be used to create/get custom metrics that cannot be achieved through interception
+|N/A
 |===

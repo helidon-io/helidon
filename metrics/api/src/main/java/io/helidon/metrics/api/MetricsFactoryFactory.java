@@ -18,10 +18,13 @@ package io.helidon.metrics.api;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
 class MetricsFactoryFactory implements Supplier<MetricsFactory> {
     private final Config config;
 
