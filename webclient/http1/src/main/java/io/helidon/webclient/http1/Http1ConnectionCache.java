@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.http1;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +180,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private boolean finishRequest(Queue<TcpClientConnection> connectionQueue, TcpClientConnection conn) {
         if (conn.isConnected()) {
             // this must be done before we return the connection to the queue, to avoid race condition, where another client
-            // nay take the connection from the queue, and we would set it as idle after that
+            // may take the connection from the queue, and we would set it as idle after that
             // mark it as idle to stay blocked at read for closed conn detection
             conn.helidonSocket().idle();
 
