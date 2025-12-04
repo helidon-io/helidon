@@ -29,7 +29,7 @@ import io.helidon.common.features.api.Preview;
 @SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.micronaut.data {
 
-    requires io.micronaut.inject;
+    requires io.micronaut.micronaut_inject;
     requires jakarta.annotation;
     requires java.sql;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ module io.helidon.integrations.micronaut.cdi {
     requires jakarta.inject;
     requires microprofile.config.api;
 
-    requires transitive io.micronaut.aop;
-    requires transitive io.micronaut.core;
-    requires transitive io.micronaut.inject;
+    requires transitive io.micronaut.micronaut_aop;
+    requires transitive io.micronaut.micronaut_core;
+    requires transitive io.micronaut.micronaut_inject;
     requires transitive jakarta.annotation;
     requires transitive jakarta.cdi;
 
