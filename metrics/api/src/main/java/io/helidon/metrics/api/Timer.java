@@ -197,6 +197,34 @@ public interface Timer extends Meter, HistogramSupport {
     interface Builder extends Meter.Builder<Builder, Timer> {
 
         /**
+         * Units for the timer; developers are encouraged to use {@link #baseUnit(java.util.concurrent.TimeUnit)} instead.
+         * <p>
+         * By convention and specification, Prometheus output always uses {@code SECONDS}. Helidon's JSON output honors the
+         * {@code baseUnit} setting if configuration so indicates, and Helidon requires the value to be one of
+         * the {@link java.util.concurrent.TimeUnit} enum values. (See the Helidon SE metrics documentation about understanding
+         * the JSON metrics data format.)
+         *
+         * @param baseUnit timer unit
+         * @return updated builder
+         */
+        @Override
+        Builder baseUnit(String baseUnit);
+
+        /**
+         * Units for the timer.
+         * <p>
+         * By convention and specification, Prometheus output always uses {@code SECONDS}. Helidon's JSON output honors the
+         * {@code baseUnit} setting if configuration so indicates. (See the Helidon SE metrics documentation about understanding
+         * the JSON metrics data format.)
+         *
+         * @param baseUnit timer unit
+         * @return updated builder
+         */
+        default Builder baseUnit(TimeUnit baseUnit) {
+            return baseUnit(baseUnit.toString());
+        }
+
+        /**
          * Sets the percentiles to compute and publish (expressing, for example, the 95th percentile as 0.95).
          *
          * @param percentiles percentiles to compute and publish
