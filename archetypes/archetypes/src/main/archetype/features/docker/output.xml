@@ -25,11 +25,8 @@
                 <transformation id="z-dot-jlink">
                     <replace regex="^(.*)$" replacement="$1.jlink"/>
                 </transformation>
-
-                <!-- TODO top level for all modules -->
                 <file source="files/.dockerignore" target="dockerignore"/>
-                <!-- TODO fix multi modules docker build -->
-                <templates transformations="basedir,hbs" engine="mustache">
+                <templates engine="mustache" transformations="hbs,basedir">
                     <directory>files</directory>
                     <includes>
                         <include>Dockerfile.hbs</include>
@@ -38,7 +35,7 @@
                         <value key="jlink">false</value>
                     </model>
                 </templates>
-                <templates transformations="basedir,hbs,z-dot-jlink" engine="mustache" if="${docker.jlink-image}">
+                <templates engine="mustache" transformations="hbs,z-dot-jlink,basedir" if="${docker.jlink-image}">
                     <directory>files</directory>
                     <includes>
                         <include>Dockerfile.hbs</include>

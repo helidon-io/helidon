@@ -1,4 +1,4 @@
         - path: "/rest/profile"
-          methods: ["get"]
+          methods: ["GET"]
           authenticate: true
           roles-allowed: ["my_admins"]

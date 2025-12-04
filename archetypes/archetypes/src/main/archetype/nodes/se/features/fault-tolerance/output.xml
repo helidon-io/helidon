@@ -24,13 +24,13 @@
         <boolean path="requires-io-helidon-faulttolerance">true</boolean>
     </variables>
     <output>
-        <templates engine="mustache" transformations="mustache,packaged">
+        <templates engine="mustache" transformations="mustache,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/WebClientMain.java.mustache</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/FtService.java.hbs</include>

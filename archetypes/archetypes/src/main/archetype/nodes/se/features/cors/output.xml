@@ -33,8 +33,6 @@
                     <value key="artifactId">helidon-webserver-cors</value>
                 </map>
             </list>
-
-
             <list key="application-yaml">
                 <value file="files/application.yaml"/>
             </list>
@@ -43,7 +41,6 @@
 ]]>
                 </value>
             </list>
-
             <list key="MainTest-java-imports">
                 <value>java.util.Optional</value>
             </list>
@@ -62,11 +59,11 @@
     @Test
     void testAnonymousGreetWithCors() {
         try (Http1ClientResponse response = client.get()
-.path("/cors-greet")
-.headers(it -> it
-        .set(ORIGIN, "http://foo.com")
-        .set(HOST, "here.com"))
-.request()) {
+                .path("/cors-greet")
+                .headers(it -> it
+                        .set(ORIGIN, "http://foo.com")
+                        .set(HOST, "here.com"))
+                .request()) {
 
             assertThat(response.status().code(), is(200));
             String payload = response.entity().as(String.class);
@@ -74,7 +71,7 @@
             Headers responseHeaders = response.headers();
             Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
             assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN_NAME + " is absent",
-    allowOrigin.isPresent(), is(true));
+                    allowOrigin.isPresent(), is(true));
             assertThat(allowOrigin.get(), is("http://foo.com"));
         }
     }
