@@ -1,0 +1,3 @@
+    - path: "/rest/profile"
+      methods: ["get"]
+      authenticate: true

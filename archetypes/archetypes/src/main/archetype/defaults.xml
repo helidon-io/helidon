@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <text path="basedir">.</text>
+
+        <boolean path="requires-helidon-microprofile-metrics">false</boolean>
+
+        <!-- modules variables -->
+        <boolean path="requires-java-logging">false</boolean>
+        <boolean path="requires-jakarta-annotation">false</boolean>
+        <boolean path="requires-jakarta-cdi">false</boolean>
+        <boolean path="requires-jakarta-inject">false</boolean>
+        <boolean path="requires-jakarta-json">false</boolean>
+        <boolean path="requires-jakarta-json-bind">false</boolean>
+        <boolean path="requires-jakarta-persistence">false</boolean>
+        <boolean path="requires-jakarta-transaction">false</boolean>
+        <boolean path="requires-jakarta-ws-rs">false</boolean>
+        <boolean path="requires-jakarta-xml-bind">false</boolean>
+        <boolean path="requires-io-helidon">false</boolean>
+        <boolean path="requires-io-helidon-common-pki">false</boolean>
+        <boolean path="requires-io-helidon-config">false</boolean>
+        <boolean path="requires-io-helidon-cors">false</boolean>
+        <boolean path="requires-io-helidon-dbclient">false</boolean>
+        <boolean path="requires-io-helidon-dbclient-metrics">false</boolean>
+        <boolean path="requires-io-helidon-dbclient-tracing">false</boolean>
+        <boolean path="requires-io-helidon-faulttolerance">false</boolean>
+        <boolean path="requires-io-helidon-health-checks">false</boolean>
+        <boolean path="requires-io-helidon-http">false</boolean>
+        <boolean path="requires-io-helidon-http-media-multipart">false</boolean>
+        <boolean path="requires-io-helidon-logging-common">false</boolean>
+        <boolean path="requires-io-helidon-metrics-api">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-cors">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-faulttolerance">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-jwt-auth">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-metrics">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-openapi">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-telemetry">false</boolean>
+        <boolean path="requires-io-helidon-microprofile-config">false</boolean>
+        <boolean path="requires-io-helidon-security">false</boolean>
+        <boolean path="requires-io-helidon-security-annotations">false</boolean>
+        <boolean path="requires-io-helidon-security-integration-common">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-common">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-google-login">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-httpsign">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-httpauth">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-jwt">false</boolean>
+        <boolean path="requires-io-helidon-security-providers-oidc">false</boolean>
+        <boolean path="requires-io-helidon-tracing">false</boolean>
+        <boolean path="requires-io-helidon-webclient">false</boolean>
+        <boolean path="requires-io-helidon-webclient-http1">false</boolean>
+        <boolean path="requires-io-helidon-webclient-security">false</boolean>
+        <boolean path="requires-io-helidon-webserver">false</boolean>
+        <boolean path="requires-io-helidon-webserver-context">false</boolean>
+        <boolean path="requires-io-helidon-webserver-cors">false</boolean>
+        <boolean path="requires-io-helidon-webserver-http2">false</boolean>
+        <boolean path="requires-io-helidon-webserver-observe">false</boolean>
+        <boolean path="requires-io-helidon-webserver-observe-health">false</boolean>
+        <boolean path="requires-io-helidon-webserver-observe-metrics">false</boolean>
+        <boolean path="requires-io-helidon-webserver-observe-tracing">false</boolean>
+        <boolean path="requires-io-helidon-webserver-security">false</boolean>
+        <boolean path="requires-io-helidon-webserver-staticcontent">false</boolean>
+        <boolean path="requires-jersey-media-multipart">false</boolean>
+        <boolean path="requires-org-jvnet-mimepull">false</boolean>
+        <boolean path="requires-com-fasterxml-jackson-annotation">false</boolean>
+        <boolean path="requires-com-fasterxml-jackson-core">false</boolean>
+        <boolean path="requires-com-oracle-coherence">false</boolean>
+        <boolean path="requires-com-oracle-coherence-cdi">false</boolean>
+    </variables>
+</archetype-script>

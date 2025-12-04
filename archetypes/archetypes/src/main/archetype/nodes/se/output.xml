@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-webserver">true</boolean>
+        <boolean path="requires-io-helidon-http">true</boolean>
+        <boolean path="requires-io-helidon-config">true</boolean>
+        <boolean path="requires-io-helidon-logging-common">true</boolean>
+    </variables>
+
+    <!-- media step -->
+    <exec src="features/media/output.xml"/>
+
+    <!-- security step -->
+    <exec src="features/security/output.xml" if="${security}"/>
+
+    <!-- database step -->
+    <exec src="features/database/output.xml" if="${db}"/>
+
+    <!--  extra step  -->
+    <exec src="features/webclient/output.xml" if="${extra} contains 'webclient'"/>
+    <exec src="features/cors/output.xml" if="${extra} contains 'cors'"/>
+    <exec src="features/fault-tolerance/output.xml" if="${extra} contains 'fault-tolerance'"/>
+    <exec src="features/coherence/output.xml" if="${extra} contains 'coherence'"/>
+
+    <!-- observability step -->
+    <exec src="features/metrics/output.xml" if="${metrics}"/>
+    <exec src="features/health/output.xml" if="${health}"/>
+    <exec src="features/tracing/output.xml" if="${tracing}"/>
+
+    <exec src="nodes/database/output.xml" if="${app-type} == 'database'"/>
+    <exec src="nodes/quickstart/output.xml" if="${app-type} == 'quickstart'"/>
+
+    <output>
+        <templates engine="mustache" transformations="hbs,packaged,basedir" if="${app-type} != 'oci'">
+            <directory>../../files</directory>
+            <includes>
+                <include>src/main/java/**/package-info.java.hbs</include>
+            </includes>
+        </templates>
+
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/java/**/Main.java.hbs</include>
+                <include>src/test/java/**/AbstractMainTest.java.hbs</include>
+                <include>src/test/java/**/MainIT.java.hbs</include>
+                <include>src/test/java/**/MainTest.java.hbs</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="hbs,basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/application.yaml.hbs</include>
+                <include>src/main/resources/logging.properties.hbs</include>
+                <include>src/test/resources/application-test.yaml.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="app-type">${app-type}</value>
+            <value key="multi-module">${multi-module}</value>
+            <list key="pom-properties">
+                <map>
+                    <value key="key">mainClass</value>
+                    <value key="value">${package}.Main</value>
+                </map>
+            </list>
+            <value key="parent-artifactId">helidon-se</value>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.logging</value>
+                    <value key="artifactId">helidon-logging-jul</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map order="999">
+                    <value key="groupId">io.helidon.webserver</value>
+                    <value key="artifactId">helidon-webserver</value>
+                </map>
+                <map order="999">
+                    <value key="groupId">io.helidon.config</value>
+                    <value key="artifactId">helidon-config-yaml</value>
+                </map>
+                <map order="1">
+                    <value key="groupId">org.junit.jupiter</value>
+                    <value key="artifactId">junit-jupiter-api</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">org.hamcrest</value>
+                    <value key="artifactId">hamcrest-all</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="2">
+                    <value key="groupId">io.helidon.webserver.testing.junit5</value>
+                    <value key="artifactId">helidon-webserver-testing-junit5</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="99" if="!(${extra} contains 'webclient') || ${security}">
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
+                    <value key="scope" if="!${security}">test</value>
+                </map>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>io.helidon.logging.common.LogConfig</value>
+                <value>io.helidon.config.Config</value>
+                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.webserver.http.HttpRouting</value>
+            </list>
+            <list key="MainTest-helidon-imports">
+                <value>io.helidon.http.Status</value>
+                <value>io.helidon.webclient.api.ClientResponseTyped</value>
+                <value>io.helidon.webclient.http1.Http1Client</value>
+                <value>io.helidon.webclient.http1.Http1ClientResponse</value>
+                <value>io.helidon.webserver.http.HttpRouting</value>
+                <value>io.helidon.webserver.testing.junit5.SetUpRoute</value>
+            </list>
+            <list key="MainTest-other-imports">
+                <value>org.junit.jupiter.api.Test</value>
+            </list>
+            <list key="MainTest-static-imports">
+                <value>org.hamcrest.MatcherAssert.assertThat</value>
+                <value>org.hamcrest.Matchers.is</value>
+            </list>
+            <list key="GreetService-imports">
+                <value>io.helidon.config.Config</value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[
+            .register("/greet", new GreetService())]]></value>
+            </list>
+            <value key="main-method-javadoc"><![CDATA[
+    /**
+     * Application main entry point.
+     * @param args command line arguments.
+     */]]>
+            </value>
+            <list key="main-class-fields">
+                <value order="0"><![CDATA[
+    /**
+     * Cannot be instantiated.
+     */
+    private Main() {
+    }]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value order="99"><![CDATA[
+            .get("/simple-greet", (req, res) -> res.send("Hello World!"))]]>
+                </value>
+            </list>
+            <list key="MainTest-tests">
+                <value order="99"><![CDATA[
+    @Test
+    void testSimpleGreet() {
+        ClientResponseTyped<String> response = client.get("/simple-greet").request(String.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello World!"));
+    }]]>
+                </value>
+            </list>
+            <list key="readme-exercise-the-application">
+                <value order="999" file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>

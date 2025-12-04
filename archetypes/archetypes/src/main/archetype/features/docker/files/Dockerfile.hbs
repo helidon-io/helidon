@@ -1,0 +1,107 @@
+# 1st stage, build the app
+FROM container-registry.oracle.com/java/jdk-no-fee-term:21 as build
+
+# Install maven
+WORKDIR /usr/share
+RUN set -x && \
+    curl -O https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
+    tar -xvf apache-maven-*-bin.tar.gz  && \
+    rm apache-maven-*-bin.tar.gz && \
+    mv apache-maven-* maven && \
+    ln -s /usr/share/maven/bin/mvn /bin/
+
+WORKDIR /helidon
+
+# Create a first layer to cache the "Maven World" in the local repository.
+# Incremental docker builds will always resume after that, unless you update
+# the pom
+ADD pom.xml .
+{{#multi-module}}
+{{#module-names}}
+ADD {{.}}/pom.xml {{.}}/pom.xml
+{{/module-names}}
+{{/multi-module}}
+RUN mvn package \
+{{#multi-module}}
+    -pl {{module-name}} -am \
+{{/multi-module}}
+{{#native-image}}
+    -Pnative-image -Dnative.image.skip \
+{{/native-image}}
+{{#jlink}}
+    -Pjlink-image -DskipJavaImage \
+{{/jlink}}
+{{#eclipselink}}
+    -Declipselink.weave.skip \
+{{/eclipselink}}
+{{#openapi-generator}}
+    -DskipOpenApiGenerate \
+{{/openapi-generator}}
+    -Dmaven.test.skip
+
+# Do the Maven build!
+# Incremental docker builds will resume here when you change sources
+{{#multi-module}}
+{{#module-names}}
+ADD {{.}}/src {{.}}/src
+{{/module-names}}
+RUN mvn package \
+    -pl {{module-name}} -am \
+{{#native-image}}
+    -Pnative-image \
+{{/native-image}}
+{{#jlink}}
+    -Pjlink-image \
+{{/jlink}}
+    -Dmaven.test.skip
+{{/multi-module}}
+{{^multi-module}}
+ADD src src
+RUN mvn package \
+{{#native-image}}
+    -Pnative-image \
+{{/native-image}}
+{{#jlink}}
+    -Pjlink-image \
+{{/jlink}}
+    -Dmaven.test.skip
+{{/multi-module}}
+
+RUN echo "done!"
+
+# 2nd stage, build the runtime image
+{{#native-image}}
+FROM scratch
+WORKDIR /helidon
+
+# Copy the binary built in the 1st stage
+COPY --from=build /helidon/target/{{artifactId}} .
+
+ENTRYPOINT ["./{{artifactId}}"]
+{{/native-image}}
+{{^native-image}}
+{{#jlink}}
+FROM debian:stretch-slim
+WORKDIR /helidon
+COPY --from=build /helidon/target/{{artifactId}}-jri ./
+ENTRYPOINT ["/bin/bash", "/helidon/bin/start"]
+{{/jlink}}
+{{^jlink}}
+FROM container-registry.oracle.com/java/jdk-no-fee-term:21
+WORKDIR /helidon
+
+# Copy the binary built in the 1st stage
+{{#multi-module}}
+COPY --from=build /helidon/{{module-name}}/target/{{artifactId}}.jar ./
+COPY --from=build /helidon/{{module-name}}/target/libs ./libs
+{{/multi-module}}
+{{^multi-module}}
+COPY --from=build /helidon/target/{{artifactId}}.jar ./
+COPY --from=build /helidon/target/libs ./libs
+{{/multi-module}}
+
+CMD ["java", "-jar", "{{basedir}}/{{artifactId}}.jar"]
+{{/jlink}}
+{{/native-image}}
+
+EXPOSE 8080
