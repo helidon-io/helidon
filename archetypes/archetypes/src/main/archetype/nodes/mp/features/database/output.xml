@@ -36,7 +36,7 @@
     <exec src="nodes/oracledb/output.xml"  if="${db.server} == 'oracledb'"/>
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/Pokemon.java.hbs</include>
@@ -110,7 +110,6 @@
                     <value key="artifactId">jakarta.el</value>
                     <value key="scope">runtime</value>
                 </map>
-                <!-- TODO - find out why this if condition -->
                 <map if="${media.json-lib} != 'jackson'">
                     <value key="groupId">jakarta.xml.bind</value>
                     <value key="artifactId">jakarta.xml.bind-api</value>

@@ -29,7 +29,7 @@
         <boolean path="requires-io-helidon-security-providers-httpsign">true</boolean>
     </variables>
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/*/java/**/Service1.java.hbs</include>

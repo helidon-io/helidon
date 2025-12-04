@@ -30,7 +30,7 @@
     <exec src="nodes/zipkin/output.xml" if="${tracing.provider} == 'zipkin'"/>
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/TracedService.java.hbs</include>

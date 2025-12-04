@@ -23,7 +23,7 @@
         <boolean path="requires-io-helidon-microprofile-openapi">true</boolean>
     </variables>
     <output>
-        <templates transformations="basedir,packaged,hbs" engine="mustache">
+        <templates transformations="packaged,hbs,basedir" engine="mustache">
             <directory>files</directory>
             <includes>
                 <include>**/*.hbs</include>

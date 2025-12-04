@@ -31,7 +31,7 @@
     <exec src="nodes/multipart/output.xml" if="${media} contains 'multipart'"/>
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,packaged" if="!(${media} contains 'json')">
+        <templates engine="mustache" transformations="hbs,packaged,basedir" if="!(${media} contains 'json')">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/GreetService.java.hbs</include>

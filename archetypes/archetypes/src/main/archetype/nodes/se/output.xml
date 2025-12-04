@@ -51,15 +51,14 @@
     <exec src="nodes/quickstart/output.xml" if="${app-type} == 'quickstart'"/>
 
     <output>
-        <!-- ${app-type} is unresolved on upper output.xml -->
-        <templates engine="mustache" transformations="basedir,hbs,packaged" if="${app-type} != 'oci'">
+        <templates engine="mustache" transformations="hbs,packaged,basedir" if="${app-type} != 'oci'">
             <directory>../../files</directory>
             <includes>
                 <include>src/main/java/**/package-info.java.hbs</include>
             </includes>
         </templates>
 
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/Main.java.hbs</include>
@@ -68,7 +67,7 @@
                 <include>src/test/java/**/MainTest.java.hbs</include>
             </includes>
         </templates>
-        <templates engine="mustache" transformations="basedir,hbs">
+        <templates engine="mustache" transformations="hbs,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/resources/application.yaml.hbs</include>

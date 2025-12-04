@@ -24,7 +24,7 @@
         <boolean path="requires-com-oracle-coherence">true</boolean>
     </variables>
     <output>
-        <templates transformations="basedir,hbs,packaged" engine="mustache">
+        <templates transformations="hbs,packaged,basedir" engine="mustache">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/__pkg__/Person.java.hbs</include>

@@ -21,7 +21,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,gav">
+        <templates engine="mustache" transformations="hbs,gav,basedir">
             <directory>files</directory>
             <includes>
                 <include>**/native-image.properties.hbs</include>

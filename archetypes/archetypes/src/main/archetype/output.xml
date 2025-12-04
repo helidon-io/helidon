@@ -35,7 +35,7 @@
                     <replace regex="version" replacement="${version}"/>
                 </transformation>
                 <transformation id="basedir">
-                    <replace regex="^(?!\Qmodule1\E)(.*)$" replacement="${basedir}/$1"/>
+                    <replace regex="^(.*)$" replacement="${basedir}/$1"/>
                 </transformation>
             </output>
         </method>
@@ -65,7 +65,7 @@
     <exec src="features/customize-project/output.xml"/>
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>.helidon.hbs</include>

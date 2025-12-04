@@ -59,8 +59,7 @@
     <exec src="nodes/quickstart/output.xml" if="${app-type} == 'quickstart'"/>
 
     <output if="${app-type} != 'oci'">
-        <!-- ${app-type} is unresolved on upper output.xml -->
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>../../files</directory>
             <includes>
                 <include>src/main/java/**/package-info.java.hbs</include>
@@ -73,7 +72,7 @@
                 <include>src/main/resources/META-INF/beans.xml</include>
             </includes>
         </files>
-        <templates engine="mustache" transformations="basedir,hbs,packaged">
+        <templates engine="mustache" transformations="hbs,packaged,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/resources/META-INF/microprofile-config.properties.hbs</include>

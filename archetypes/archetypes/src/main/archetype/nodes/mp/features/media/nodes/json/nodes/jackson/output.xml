@@ -26,7 +26,7 @@
         <boolean path="requires-jakarta-xml-bind">true</boolean>
     </variables>
     <output>
-        <templates transformations="basedir,packaged,hbs" engine="mustache">
+        <templates transformations="packaged,hbs,basedir" engine="mustache">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/Message.java.hbs</include>

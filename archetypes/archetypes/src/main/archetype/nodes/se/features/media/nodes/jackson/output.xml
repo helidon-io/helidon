@@ -27,7 +27,7 @@
     </variables>
 
     <output>
-        <templates transformations="basedir,packaged,hbs" engine="mustache">
+        <templates engine="mustache" transformations="packaged,hbs,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/GreetService.java.hbs</include>

@@ -31,7 +31,7 @@
     <exec src="nodes/abac/output.xml" if="${security.atz} contains 'abac'"/>
 
     <output>
-        <templates engine="mustache" transformations="basedir,hbs">
+        <templates engine="mustache" transformations="hbs,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/resources/application.yaml.hbs</include>

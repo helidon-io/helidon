@@ -24,7 +24,8 @@
     <exec src="nodes/json/output.xml" if="${media} contains 'json'"/>
     <exec src="nodes/multipart/output.xml" if="${media} contains 'multipart'"/>
     <output if="!(${media} contains 'json')">
-        <templates engine="mustache" transformations="basedir,packaged,hbs">
+        <!-- use basedir last everywhere -->
+        <templates engine="mustache" transformations="packaged,hbs,basedir">
             <directory>files</directory>
             <includes>
                 <include>src/main/java/**/SimpleGreetResource.java.hbs</include>
