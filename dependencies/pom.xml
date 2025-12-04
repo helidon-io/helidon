@@ -140,7 +140,7 @@
         <version.lib.netty>4.1.126.Final</version.lib.netty>
         <version.lib.oci>3.77.0</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
-        <version.lib.ojdbc>${version.lib.ojdbc.family}.9.0.25.07</version.lib.ojdbc>
+        <version.lib.ojdbc>${version.lib.ojdbc.family}.26.0.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
