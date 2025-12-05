@@ -1039,6 +1039,10 @@ effectively _negotiating_ the content encoding of the response. If none of the
 advertised encodings is supported by the WebServer, the response is returned
 uncompressed.
 
+Handlers can encode the response and set the appropriate header to preempt encoding by the
+WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
+response will not be additionally compressed.
+
 === Configuring HTTP Encoding
 
 HTTP encoding support is discovered automatically by WebServer from the classpath, or it can be customized programmatically.
