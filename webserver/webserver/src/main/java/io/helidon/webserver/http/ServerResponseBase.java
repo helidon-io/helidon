@@ -269,9 +269,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected OutputStream contentEncode(OutputStream outputStream) {
         if (contentEncodingContext.contentEncodingEnabled()) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
-            encoder.headers(headers());
+            boolean changed = encoder.headers(headers());
 
-            return encoder.apply(outputStream);
+            return changed ? encoder.apply(outputStream)  : outputStream;
         }
         return outputStream;
     }

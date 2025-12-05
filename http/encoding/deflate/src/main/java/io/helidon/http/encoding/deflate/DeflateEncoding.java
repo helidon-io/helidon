@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,9 +92,13 @@ public class DeflateEncoding implements ContentEncoding {
             }
 
             @Override
-            public void headers(WritableHeaders<?> headers) {
-                headers.add(CONTENT_ENCODING_DEFLATE);
-                headers.remove(HeaderNames.CONTENT_LENGTH);
+            public boolean headers(WritableHeaders<?> headers) {
+                if (!headers.contains(CONTENT_ENCODING_DEFLATE)) {
+                    headers.add(CONTENT_ENCODING_DEFLATE);
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
+                    return true;
+                }
+                return false;
             }
         };
     }
