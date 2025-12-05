@@ -61,7 +61,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final HttpPrologue originalPrologue;
     private final int requestId;
     private final String authority;
-    private final LazyValue<Http2ServerRequestEntity> entity;
+    private final LazyValue<ReadableEntity> entity;
     private final HttpSecurity security;
     private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
     private final LimitAlgorithm.Outcome limitOutcome;
@@ -81,6 +81,7 @@ class Http2ServerRequest implements RoutingRequest {
                        Http2Headers headers,
                        ContentDecoder decoder,
                        int requestId,
+                       boolean hasEntity,
                        Supplier<BufferData> entitySupplier,
                        LimitAlgorithm.Outcome limitOutcome) {
         this.ctx = ctx;
@@ -92,12 +93,17 @@ class Http2ServerRequest implements RoutingRequest {
         this.authority = headers.authority();
         this.limitOutcome = limitOutcome;
 
-        this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
-                                                                             decoder,
-                                                                             it -> entitySupplier.get(),
-                                                                             NO_OP_RUNNABLE,
-                                                                             this.headers,
-                                                                             ctx.listenerContext().mediaContext()));
+        if (hasEntity) {
+            this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
+                                                                                 decoder,
+                                                                                 it -> entitySupplier.get(),
+                                                                                 NO_OP_RUNNABLE,
+                                                                                 this.headers,
+                                                                                 ctx.listenerContext().mediaContext()));
+        } else {
+            this.entity = LazyValue.create(Http2ServerRequestNoEntity.create());
+        }
+
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -107,9 +113,18 @@ class Http2ServerRequest implements RoutingRequest {
                                      Http2Headers headers,
                                      ContentDecoder decoder,
                                      int streamId,
+                                     boolean hasEntity,
                                      Supplier<BufferData> entitySupplier,
                                      LimitAlgorithm.Outcome limitOutcome) {
-        return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier, limitOutcome);
+        return new Http2ServerRequest(ctx,
+                                      security,
+                                      httpPrologue,
+                                      headers,
+                                      decoder,
+                                      streamId,
+                                      hasEntity,
+                                      entitySupplier,
+                                      limitOutcome);
     }
 
     @Override
