@@ -134,19 +134,39 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint:-path</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.common.features</groupId>
                             <artifactId>helidon-common-features-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-inject-java</artifactId>
+                            <version>${version.lib.micronaut}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-core-processor</artifactId>
+                            <version>${version.lib.micronaut}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut.validation</groupId>
+                            <artifactId>micronaut-validation-processor</artifactId>
+                            <version>${version.lib.micronaut.validation}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut.data</groupId>
+                            <artifactId>micronaut-data-processor</artifactId>
+                            <version>${version.lib.micronaut.data}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.integrations.micronaut</groupId>
+                            <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -154,70 +174,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <!-- This fails on Java 24, until we resolve the problem, just limit to 21 -->
-            <id>java-21</id>
-            <activation>
-                <jdk>21</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>default-testCompile</id>
-                                <goals>
-                                    <goal>testCompile</goal>
-                                </goals>
-                                <configuration>
-                                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                                    <annotationProcessorPaths>
-                                        <path>
-                                            <groupId>io.micronaut</groupId>
-                                            <artifactId>micronaut-inject-java</artifactId>
-                                            <version>${version.lib.micronaut}</version>
-                                        </path>
-                                        <path>
-                                            <groupId>io.micronaut</groupId>
-                                            <artifactId>micronaut-core-processor</artifactId>
-                                            <version>${version.lib.micronaut}</version>
-                                        </path>
-                                        <path>
-                                            <groupId>io.micronaut.validation</groupId>
-                                            <artifactId>micronaut-validation-processor</artifactId>
-                                            <version>${version.lib.micronaut.validation}</version>
-                                        </path>
-                                        <path>
-                                            <groupId>io.micronaut.data</groupId>
-                                            <artifactId>micronaut-data-processor</artifactId>
-                                            <version>${version.lib.micronaut.data}</version>
-                                        </path>
-                                        <path>
-                                            <groupId>io.helidon.integrations.micronaut</groupId>
-                                            <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
-                                            <version>${helidon.version}</version>
-                                        </path>
-                                    </annotationProcessorPaths>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <!-- Disable tests on Java 24, until we resolve the problem -->
-            <id>not-java-21</id>
-            <activation>
-                <jdk>!21</jdk>
-            </activation>
-            <properties>
-                <skipTests>true</skipTests>
-            </properties>
-        </profile>
-    </profiles>
 </project>

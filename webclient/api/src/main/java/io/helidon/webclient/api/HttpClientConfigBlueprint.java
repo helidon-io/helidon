@@ -49,12 +49,13 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
-     * Config method to get {@link io.helidon.webclient.api.ClientUri}.
+     * This method is internal only and was used from the builder and will be removed without replacement.
+     * You can easily map ClientUri from config using {@code config.asString().map(ClientUri::create)}.
      *
-     * @param config configuration instance
-     * @return client URI for the config node
+     * @param config config instance
+     * @return client URI mapped
      */
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.3.0")
     static ClientUri createBaseUri(Config config) {
         return config.as(URI.class).map(ClientUri::create).orElseThrow();
     }

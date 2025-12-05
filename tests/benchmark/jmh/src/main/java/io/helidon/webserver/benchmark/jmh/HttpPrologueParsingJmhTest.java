@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,14 @@ public class HttpPrologueParsingJmhTest {
 
     @Benchmark
     public void techEmpower(Blackhole bh) {
-        HttpPrologue prologue = new Http1Prologue(new DataReader(() -> TECHEMPOWER_PROLOGUE), 1024, false)
+        HttpPrologue prologue = new Http1Prologue(DataReader.create(() -> TECHEMPOWER_PROLOGUE), 1024, false)
                 .readPrologue();
         bh.consume(prologue);
     }
 
     @Benchmark
     public void encoded(Blackhole bh) {
-        HttpPrologue prologue = new Http1Prologue(new DataReader(() -> ENCODED_PROLOGUE), 1024, false)
+        HttpPrologue prologue = new Http1Prologue(DataReader.create(() -> ENCODED_PROLOGUE), 1024, false)
                 .readPrologue();
         bh.consume(prologue);
     }

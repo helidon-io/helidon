@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Support for all observe providers that are available (or configured).
  */
-@RuntimeType.PrototypedBy(ObserveFeatureConfig.class)
 public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<ObserveFeatureConfig> {
     static final String OBSERVE_ID = "observe";
     static final double WEIGHT = 80;

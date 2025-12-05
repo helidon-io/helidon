@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class Http1PrologueTest {
     @Test
     void testOk() {
-        DataReader reader = new DataReader(() -> "GET / HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        DataReader reader = DataReader.create(() -> "GET / HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
         Http1Prologue p = new Http1Prologue(reader, 100, false);
 
         HttpPrologue prologue = p.readPrologue();
@@ -49,7 +49,7 @@ class Http1PrologueTest {
     @Test
     void testUriTooLong() {
         // make sure this regression does not happen again
-        DataReader reader = new DataReader(() -> "GET /01234567890123456789012 HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        DataReader reader = DataReader.create(() -> "GET /01234567890123456789012 HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
         Http1Prologue p = new Http1Prologue(reader, 20, false);
 
         RequestException e = assertThrows(RequestException.class, p::readPrologue);
@@ -60,7 +60,7 @@ class Http1PrologueTest {
 
     @Test
     void testHttp10Error() {
-        DataReader reader = new DataReader(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
+        DataReader reader = DataReader.create(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
         Http1Prologue p = new Http1Prologue(reader, 100, false);
 
         try {

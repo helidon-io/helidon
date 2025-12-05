@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -29,7 +30,6 @@ import io.helidon.common.Errors;
  * Module info type information.
  *
  * @see #builder()
- * @see #create()
  */
 public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
 
@@ -53,13 +53,89 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
     }
 
     /**
-     * Create a new instance with default values.
+     * The element used to create this instance, or {@link io.helidon.common.types.TypeInfo#typeName()} if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
      *
-     * @return a new instance
+     * @return originating element, or the type of this type info
      */
-    static ModuleTypeInfo create() {
-        return ModuleTypeInfo.builder().buildPrototype();
+    default Object originatingElementValue() {
+        return ModuleTypeInfoBlueprint.super.originatingElementValue();
     }
+
+    /**
+     * Module name.
+     *
+     * @return name of this module
+     */
+    @Override
+    String name();
+
+    /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Override
+    Optional<String> description();
+
+    /**
+     * Whether this is an open module.
+     *
+     * @return if open
+     */
+    @Override
+    boolean isOpen();
+
+    /**
+     * List of requires directives.
+     *
+     * @return requires
+     */
+    @Override
+    List<ModuleInfoRequires> requires();
+
+    /**
+     * List of exports directives.
+     *
+     * @return exports
+     */
+    @Override
+    List<ModuleInfoExports> exports();
+
+    /**
+     * List of opens directives.
+     *
+     * @return opens
+     */
+    @Override
+    List<ModuleInfoOpens> opens();
+
+    /**
+     * List of uses directives.
+     *
+     * @return uses
+     */
+    @Override
+    List<ModuleInfoUses> uses();
+
+    /**
+     * List of provides directives.
+     *
+     * @return provides
+     */
+    @Override
+    List<ModuleInfoProvides> provides();
+
+    /**
+     * The element used to create this instance.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
+     *
+     * @return originating element
+     */
+    @Override
+    Optional<Object> originatingElement();
 
     /**
      * Fluent API builder base for {@link ModuleTypeInfo}.
@@ -105,33 +181,33 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             name(prototype.name());
             description(prototype.description());
             isOpen(prototype.isOpen());
-            if (!isRequiresMutated) {
-                requires.clear();
+            if (!this.isRequiresMutated) {
+                this.requires.clear();
             }
             addRequires(prototype.requires());
-            if (!isExportsMutated) {
-                exports.clear();
+            if (!this.isExportsMutated) {
+                this.exports.clear();
             }
             addExports(prototype.exports());
-            if (!isOpensMutated) {
-                opens.clear();
+            if (!this.isOpensMutated) {
+                this.opens.clear();
             }
             addOpens(prototype.opens());
-            if (!isUsesMutated) {
-                uses.clear();
+            if (!this.isUsesMutated) {
+                this.uses.clear();
             }
             addUses(prototype.uses());
-            if (!isProvidesMutated) {
-                provides.clear();
+            if (!this.isProvidesMutated) {
+                this.provides.clear();
             }
             addProvides(prototype.provides());
             originatingElement(prototype.originatingElement());
-            if (!isAnnotationsMutated) {
-                annotations.clear();
+            if (!this.isAnnotationsMutated) {
+                this.annotations.clear();
             }
             addAnnotations(prototype.annotations());
-            if (!isInheritedAnnotationsMutated) {
-                inheritedAnnotations.clear();
+            if (!this.isInheritedAnnotationsMutated) {
+                this.inheritedAnnotations.clear();
             }
             addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
@@ -147,62 +223,55 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             builder.name().ifPresent(this::name);
             builder.description().ifPresent(this::description);
             isOpen(builder.isOpen());
-            if (isRequiresMutated) {
+            if (this.isRequiresMutated) {
                 if (builder.isRequiresMutated) {
-                    addRequires(builder.requires);
+                    addRequires(builder.requires());
                 }
             } else {
-                requires.clear();
-                addRequires(builder.requires);
+                requires(builder.requires());
             }
-            if (isExportsMutated) {
+            if (this.isExportsMutated) {
                 if (builder.isExportsMutated) {
-                    addExports(builder.exports);
+                    addExports(builder.exports());
                 }
             } else {
-                exports.clear();
-                addExports(builder.exports);
+                exports(builder.exports());
             }
-            if (isOpensMutated) {
+            if (this.isOpensMutated) {
                 if (builder.isOpensMutated) {
-                    addOpens(builder.opens);
+                    addOpens(builder.opens());
                 }
             } else {
-                opens.clear();
-                addOpens(builder.opens);
+                opens(builder.opens());
             }
-            if (isUsesMutated) {
+            if (this.isUsesMutated) {
                 if (builder.isUsesMutated) {
-                    addUses(builder.uses);
+                    addUses(builder.uses());
                 }
             } else {
-                uses.clear();
-                addUses(builder.uses);
+                uses(builder.uses());
             }
-            if (isProvidesMutated) {
+            if (this.isProvidesMutated) {
                 if (builder.isProvidesMutated) {
-                    addProvides(builder.provides);
+                    addProvides(builder.provides());
                 }
             } else {
-                provides.clear();
-                addProvides(builder.provides);
+                provides(builder.provides());
             }
             builder.originatingElement().ifPresent(this::originatingElement);
-            if (isAnnotationsMutated) {
+            if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
-                    addAnnotations(builder.annotations);
+                    addAnnotations(builder.annotations());
                 }
             } else {
-                annotations.clear();
-                addAnnotations(builder.annotations);
+                annotations(builder.annotations());
             }
-            if (isInheritedAnnotationsMutated) {
+            if (this.isInheritedAnnotationsMutated) {
                 if (builder.isInheritedAnnotationsMutated) {
-                    addInheritedAnnotations(builder.inheritedAnnotations);
+                    addInheritedAnnotations(builder.inheritedAnnotations());
                 }
             } else {
-                inheritedAnnotations.clear();
-                addInheritedAnnotations(builder.inheritedAnnotations);
+                inheritedAnnotations(builder.inheritedAnnotations());
             }
             return self();
         }
@@ -221,7 +290,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of description.
          *
          * @return updated builder instance
          * @see #description()
@@ -257,6 +326,18 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Clear all requires.
+         *
+         * @return updated builder instance
+         * @see #requires()
+         */
+        public BUILDER clearRequires() {
+            this.isRequiresMutated = true;
+            this.requires.clear();
+            return self();
+        }
+
+        /**
          * List of requires directives.
          *
          * @param requires requires
@@ -265,7 +346,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER requires(List<? extends ModuleInfoRequires> requires) {
             Objects.requireNonNull(requires);
-            isRequiresMutated = true;
+            this.isRequiresMutated = true;
             this.requires.clear();
             this.requires.addAll(requires);
             return self();
@@ -280,7 +361,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addRequires(List<? extends ModuleInfoRequires> requires) {
             Objects.requireNonNull(requires);
-            isRequiresMutated = true;
+            this.isRequiresMutated = true;
             this.requires.addAll(requires);
             return self();
         }
@@ -288,21 +369,21 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of requires directives.
          *
-         * @param require requires
+         * @param require add single requires
          * @return updated builder instance
          * @see #requires()
          */
         public BUILDER addRequire(ModuleInfoRequires require) {
             Objects.requireNonNull(require);
             this.requires.add(require);
-            isRequiresMutated = true;
+            this.isRequiresMutated = true;
             return self();
         }
 
         /**
          * List of requires directives.
          *
-         * @param consumer requires
+         * @param consumer consumer of builder for requires
          * @return updated builder instance
          * @see #requires()
          */
@@ -310,7 +391,19 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = ModuleInfoRequires.builder();
             consumer.accept(builder);
-            this.requires.add(builder.build());
+            this.addRequire(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all exports.
+         *
+         * @return updated builder instance
+         * @see #exports()
+         */
+        public BUILDER clearExports() {
+            this.isExportsMutated = true;
+            this.exports.clear();
             return self();
         }
 
@@ -323,7 +416,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER exports(List<? extends ModuleInfoExports> exports) {
             Objects.requireNonNull(exports);
-            isExportsMutated = true;
+            this.isExportsMutated = true;
             this.exports.clear();
             this.exports.addAll(exports);
             return self();
@@ -338,7 +431,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addExports(List<? extends ModuleInfoExports> exports) {
             Objects.requireNonNull(exports);
-            isExportsMutated = true;
+            this.isExportsMutated = true;
             this.exports.addAll(exports);
             return self();
         }
@@ -346,21 +439,21 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of exports directives.
          *
-         * @param export exports
+         * @param export add single exports
          * @return updated builder instance
          * @see #exports()
          */
         public BUILDER addExport(ModuleInfoExports export) {
             Objects.requireNonNull(export);
             this.exports.add(export);
-            isExportsMutated = true;
+            this.isExportsMutated = true;
             return self();
         }
 
         /**
          * List of exports directives.
          *
-         * @param consumer exports
+         * @param consumer consumer of builder for exports
          * @return updated builder instance
          * @see #exports()
          */
@@ -368,7 +461,19 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = ModuleInfoExports.builder();
             consumer.accept(builder);
-            this.exports.add(builder.build());
+            this.addExport(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all opens.
+         *
+         * @return updated builder instance
+         * @see #opens()
+         */
+        public BUILDER clearOpens() {
+            this.isOpensMutated = true;
+            this.opens.clear();
             return self();
         }
 
@@ -381,7 +486,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER opens(List<? extends ModuleInfoOpens> opens) {
             Objects.requireNonNull(opens);
-            isOpensMutated = true;
+            this.isOpensMutated = true;
             this.opens.clear();
             this.opens.addAll(opens);
             return self();
@@ -396,7 +501,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addOpens(List<? extends ModuleInfoOpens> opens) {
             Objects.requireNonNull(opens);
-            isOpensMutated = true;
+            this.isOpensMutated = true;
             this.opens.addAll(opens);
             return self();
         }
@@ -404,21 +509,21 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of opens directives.
          *
-         * @param open opens
+         * @param open add single opens
          * @return updated builder instance
          * @see #opens()
          */
         public BUILDER addOpen(ModuleInfoOpens open) {
             Objects.requireNonNull(open);
             this.opens.add(open);
-            isOpensMutated = true;
+            this.isOpensMutated = true;
             return self();
         }
 
         /**
          * List of opens directives.
          *
-         * @param consumer opens
+         * @param consumer consumer of builder for opens
          * @return updated builder instance
          * @see #opens()
          */
@@ -426,7 +531,19 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = ModuleInfoOpens.builder();
             consumer.accept(builder);
-            this.opens.add(builder.build());
+            this.addOpen(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all uses.
+         *
+         * @return updated builder instance
+         * @see #uses()
+         */
+        public BUILDER clearUses() {
+            this.isUsesMutated = true;
+            this.uses.clear();
             return self();
         }
 
@@ -439,7 +556,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER uses(List<? extends ModuleInfoUses> uses) {
             Objects.requireNonNull(uses);
-            isUsesMutated = true;
+            this.isUsesMutated = true;
             this.uses.clear();
             this.uses.addAll(uses);
             return self();
@@ -454,7 +571,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addUses(List<? extends ModuleInfoUses> uses) {
             Objects.requireNonNull(uses);
-            isUsesMutated = true;
+            this.isUsesMutated = true;
             this.uses.addAll(uses);
             return self();
         }
@@ -462,21 +579,21 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of uses directives.
          *
-         * @param use uses
+         * @param use add single uses
          * @return updated builder instance
          * @see #uses()
          */
         public BUILDER addUse(ModuleInfoUses use) {
             Objects.requireNonNull(use);
             this.uses.add(use);
-            isUsesMutated = true;
+            this.isUsesMutated = true;
             return self();
         }
 
         /**
          * List of uses directives.
          *
-         * @param consumer uses
+         * @param consumer consumer of builder for uses
          * @return updated builder instance
          * @see #uses()
          */
@@ -484,7 +601,19 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = ModuleInfoUses.builder();
             consumer.accept(builder);
-            this.uses.add(builder.build());
+            this.addUse(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all provides.
+         *
+         * @return updated builder instance
+         * @see #provides()
+         */
+        public BUILDER clearProvides() {
+            this.isProvidesMutated = true;
+            this.provides.clear();
             return self();
         }
 
@@ -497,7 +626,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER provides(List<? extends ModuleInfoProvides> provides) {
             Objects.requireNonNull(provides);
-            isProvidesMutated = true;
+            this.isProvidesMutated = true;
             this.provides.clear();
             this.provides.addAll(provides);
             return self();
@@ -512,7 +641,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addProvides(List<? extends ModuleInfoProvides> provides) {
             Objects.requireNonNull(provides);
-            isProvidesMutated = true;
+            this.isProvidesMutated = true;
             this.provides.addAll(provides);
             return self();
         }
@@ -520,21 +649,21 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of provides directives.
          *
-         * @param provide provides
+         * @param provide add single provides
          * @return updated builder instance
          * @see #provides()
          */
         public BUILDER addProvide(ModuleInfoProvides provide) {
             Objects.requireNonNull(provide);
             this.provides.add(provide);
-            isProvidesMutated = true;
+            this.isProvidesMutated = true;
             return self();
         }
 
         /**
          * List of provides directives.
          *
-         * @param consumer provides
+         * @param consumer consumer of builder for provides
          * @return updated builder instance
          * @see #provides()
          */
@@ -542,12 +671,12 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = ModuleInfoProvides.builder();
             consumer.accept(builder);
-            this.provides.add(builder.build());
+            this.addProvide(builder.build());
             return self();
         }
 
         /**
-         * Clear existing value of this property.
+         * Clear existing value of originatingElement.
          *
          * @return updated builder instance
          * @see #originatingElement()
@@ -559,8 +688,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
-         * processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
          * @param originatingElement originating element
@@ -570,6 +698,18 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         public BUILDER originatingElement(Object originatingElement) {
             Objects.requireNonNull(originatingElement);
             this.originatingElement = originatingElement;
+            return self();
+        }
+
+        /**
+         * Clear all annotations.
+         *
+         * @return updated builder instance
+         * @see #annotations()
+         */
+        public BUILDER clearAnnotations() {
+            this.isAnnotationsMutated = true;
+            this.annotations.clear();
             return self();
         }
 
@@ -584,7 +724,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.clear();
             this.annotations.addAll(annotations);
             return self();
@@ -601,7 +741,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             this.annotations.addAll(annotations);
             return self();
         }
@@ -611,14 +751,14 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations declared on this element
+         * @param annotation add single the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
         public BUILDER addAnnotation(Annotation annotation) {
             Objects.requireNonNull(annotation);
             this.annotations.add(annotation);
-            isAnnotationsMutated = true;
+            this.isAnnotationsMutated = true;
             return self();
         }
 
@@ -627,7 +767,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations declared on this element
+         * @param consumer consumer of builder for the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -635,7 +775,19 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.annotations.add(builder.build());
+            this.addAnnotation(builder.build());
+            return self();
+        }
+
+        /**
+         * Clear all inheritedAnnotations.
+         *
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER clearInheritedAnnotations() {
+            this.isInheritedAnnotationsMutated = true;
+            this.inheritedAnnotations.clear();
             return self();
         }
 
@@ -654,7 +806,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.clear();
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
@@ -675,7 +827,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
             Objects.requireNonNull(inheritedAnnotations);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             this.inheritedAnnotations.addAll(inheritedAnnotations);
             return self();
         }
@@ -689,14 +841,14 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param inheritedAnnotation list of all meta annotations of this element
+         * @param inheritedAnnotation add single list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
         public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
             Objects.requireNonNull(inheritedAnnotation);
             this.inheritedAnnotations.add(inheritedAnnotation);
-            isInheritedAnnotationsMutated = true;
+            this.isInheritedAnnotationsMutated = true;
             return self();
         }
 
@@ -709,7 +861,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @param consumer list of all meta annotations of this element
+         * @param consumer consumer of builder for list of all meta annotations of this element
          * @return updated builder instance
          * @see #inheritedAnnotations()
          */
@@ -717,14 +869,14 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
-            this.inheritedAnnotations.add(builder.build());
+            this.addInheritedAnnotation(builder.build());
             return self();
         }
 
         /**
          * Module name.
          *
-         * @return the name
+         * @return name of this module
          */
         public Optional<String> name() {
             return Optional.ofNullable(name);
@@ -733,7 +885,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * Description, such as javadoc, if available.
          *
-         * @return the description
+         * @return description of this element
          */
         public Optional<String> description() {
             return Optional.ofNullable(description);
@@ -742,7 +894,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * Whether this is an open module.
          *
-         * @return the is open
+         * @return if open
          */
         public boolean isOpen() {
             return isOpen;
@@ -751,7 +903,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of requires directives.
          *
-         * @return the requires
+         * @return requires
          */
         public List<ModuleInfoRequires> requires() {
             return requires;
@@ -760,7 +912,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of exports directives.
          *
-         * @return the exports
+         * @return exports
          */
         public List<ModuleInfoExports> exports() {
             return exports;
@@ -769,7 +921,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of opens directives.
          *
-         * @return the opens
+         * @return opens
          */
         public List<ModuleInfoOpens> opens() {
             return opens;
@@ -778,7 +930,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of uses directives.
          *
-         * @return the uses
+         * @return uses
          */
         public List<ModuleInfoUses> uses() {
             return uses;
@@ -787,7 +939,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
         /**
          * List of provides directives.
          *
-         * @return the provides
+         * @return provides
          */
         public List<ModuleInfoProvides> provides() {
             return provides;
@@ -795,11 +947,10 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
-         * processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
-         * @return the originating element
+         * @return originating element
          */
         public Optional<Object> originatingElement() {
             return Optional.ofNullable(originatingElement);
@@ -810,7 +961,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @return the annotations
+         * @return the list of annotations declared on this element
          */
         public List<Annotation> annotations() {
             return annotations;
@@ -825,7 +976,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          * <p>
          * This method does not return annotations on super types or interfaces!
          *
-         * @return the inherited annotations
+         * @return list of all meta annotations of this element
          */
         public List<Annotation> inheritedAnnotations() {
             return inheritedAnnotations;
@@ -840,9 +991,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                     + "exports=" + exports + ","
                     + "opens=" + opens + ","
                     + "uses=" + uses + ","
-                    + "provides=" + provides + ","
-                    + "annotations=" + annotations + ","
-                    + "inheritedAnnotations=" + inheritedAnnotations
+                    + "provides=" + provides
                     + "}";
         }
 
@@ -872,23 +1021,23 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
          */
         BUILDER description(Optional<String> description) {
             Objects.requireNonNull(description);
-            this.description = description.map(s -> s).orElse(this.description);
+            this.description = description.orElse(this.description);
             return self();
         }
 
         /**
          * The element used to create this instance.
-         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation
-         * processing,
+         * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
          * or a {@code ClassInfo} when using classpath scanning.
          *
          * @param originatingElement originating element
          * @return updated builder instance
          * @see #originatingElement()
          */
+        @SuppressWarnings("unchecked")
         BUILDER originatingElement(Optional<?> originatingElement) {
             Objects.requireNonNull(originatingElement);
-            this.originatingElement = originatingElement.map(java.lang.Object.class::cast).orElse(this.originatingElement);
+            this.originatingElement = originatingElement.map(Object.class::cast).orElse(this.originatingElement);
             return self();
         }
 
@@ -916,14 +1065,14 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
              */
             protected ModuleTypeInfoImpl(ModuleTypeInfo.BuilderBase<?, ?> builder) {
                 this.name = builder.name().get();
-                this.description = builder.description();
+                this.description = builder.description().map(Function.identity());
                 this.isOpen = builder.isOpen();
                 this.requires = List.copyOf(builder.requires());
                 this.exports = List.copyOf(builder.exports());
                 this.opens = List.copyOf(builder.opens());
                 this.uses = List.copyOf(builder.uses());
                 this.provides = List.copyOf(builder.provides());
-                this.originatingElement = builder.originatingElement();
+                this.originatingElement = builder.originatingElement().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
@@ -992,9 +1141,7 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                         + "exports=" + exports + ","
                         + "opens=" + opens + ","
                         + "uses=" + uses + ","
-                        + "provides=" + provides + ","
-                        + "annotations=" + annotations + ","
-                        + "inheritedAnnotations=" + inheritedAnnotations
+                        + "provides=" + provides
                         + "}";
             }
 
@@ -1007,19 +1154,17 @@ public interface ModuleTypeInfo extends ModuleTypeInfoBlueprint, Prototype.Api {
                     return false;
                 }
                 return Objects.equals(name, other.name())
-                        && isOpen == other.isOpen()
-                        && Objects.equals(requires, other.requires())
-                        && Objects.equals(exports, other.exports())
-                        && Objects.equals(opens, other.opens())
-                        && Objects.equals(uses, other.uses())
-                        && Objects.equals(provides, other.provides())
-                        && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                    && isOpen == other.isOpen()
+                    && Objects.equals(requires, other.requires())
+                    && Objects.equals(exports, other.exports())
+                    && Objects.equals(opens, other.opens())
+                    && Objects.equals(uses, other.uses())
+                    && Objects.equals(provides, other.provides());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(name, isOpen, requires, exports, opens, uses, provides, annotations, inheritedAnnotations);
+                return Objects.hash(name, isOpen, requires, exports, opens, uses, provides);
             }
 
         }

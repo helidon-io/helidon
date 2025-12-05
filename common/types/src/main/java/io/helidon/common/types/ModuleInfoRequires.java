@@ -26,7 +26,6 @@ import io.helidon.common.Errors;
  * A requires directive of a module info.
  *
  * @see #builder()
- * @see #create()
  */
 public interface ModuleInfoRequires extends ModuleInfoRequiresBlueprint, Prototype.Api {
 
@@ -50,13 +49,28 @@ public interface ModuleInfoRequires extends ModuleInfoRequiresBlueprint, Prototy
     }
 
     /**
-     * Create a new instance with default values.
+     * Whether this is a {@code requires static} declaration.
      *
-     * @return a new instance
+     * @return if requires static
      */
-    static ModuleInfoRequires create() {
-        return ModuleInfoRequires.builder().buildPrototype();
-    }
+    @Override
+    boolean isStatic();
+
+    /**
+     * Whether this is a {@code requires transitive} declaration.
+     *
+     * @return if requires transitive
+     */
+    @Override
+    boolean isTransitive();
+
+    /**
+     * The module we depend on.
+     *
+     * @return module name we depend on
+     */
+    @Override
+    String dependency();
 
     /**
      * Fluent API builder base for {@link ModuleInfoRequires}.
@@ -144,7 +158,7 @@ public interface ModuleInfoRequires extends ModuleInfoRequiresBlueprint, Prototy
         /**
          * Whether this is a {@code requires static} declaration.
          *
-         * @return the is static
+         * @return if requires static
          */
         public boolean isStatic() {
             return isStatic;
@@ -153,7 +167,7 @@ public interface ModuleInfoRequires extends ModuleInfoRequiresBlueprint, Prototy
         /**
          * Whether this is a {@code requires transitive} declaration.
          *
-         * @return the is transitive
+         * @return if requires transitive
          */
         public boolean isTransitive() {
             return isTransitive;
@@ -162,7 +176,7 @@ public interface ModuleInfoRequires extends ModuleInfoRequiresBlueprint, Prototy
         /**
          * The module we depend on.
          *
-         * @return the dependency
+         * @return module name we depend on
          */
         public Optional<String> dependency() {
             return Optional.ofNullable(dependency);

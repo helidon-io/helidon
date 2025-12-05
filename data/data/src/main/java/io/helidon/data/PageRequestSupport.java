@@ -31,7 +31,7 @@ class PageRequestSupport {
      * @param size requested page size
      * @return pageable query result request
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static PageRequest create(int page, int size) {
         return PageRequest.builder()
                 .page(page)
@@ -46,7 +46,7 @@ class PageRequestSupport {
      * @param page page number
      * @return pageable query result request
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static PageRequest create(int page) {
         return PageRequest.builder()
                 .page(page)

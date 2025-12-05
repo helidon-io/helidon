@@ -33,7 +33,16 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
+            <!-- this is a transitive dep of common-types anyway -->
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
@@ -42,6 +51,11 @@
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-class-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-reflection</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

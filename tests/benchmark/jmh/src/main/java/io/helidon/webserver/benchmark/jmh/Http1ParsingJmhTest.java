@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,14 +68,14 @@ public class Http1ParsingJmhTest {
 
     @Benchmark
     public void singleBuffer(Blackhole bh) {
-        DataReader reader = new DataReader(() -> SINGLE_BUFFER);
+        DataReader reader = DataReader.create(() -> SINGLE_BUFFER);
         readRequest(bh, reader);
     }
 
     @Benchmark
     public void multiBuffer(Blackhole bh) {
         Iterator<byte[]> iterator = MULTI_BUFFER.iterator();
-        DataReader reader = new DataReader(() -> {
+        DataReader reader = DataReader.create(() -> {
             if (iterator.hasNext()) {
                 return iterator.next();
             }
@@ -86,7 +86,7 @@ public class Http1ParsingJmhTest {
 
     @Benchmark
     public void longHeader(Blackhole bh) {
-        DataReader reader = new DataReader(() -> longMessage);
+        DataReader reader = DataReader.create(() -> longMessage);
         readRequest(bh, reader);
     }
 

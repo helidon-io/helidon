@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,21 +39,36 @@ class ConcreteType extends Type {
         if (typeName.enclosingNames().isEmpty()) {
             this.declaringType = null;
         } else {
-            String parents = String.join(".", typeName.enclosingNames());
-            TypeName parent;
-            if (typeName.packageName().isEmpty()) {
-                parent = TypeName.create(parents);
-            } else {
-                parent = TypeName.create(typeName.packageName() + "." + parents);
-            }
-
-            this.declaringType = Type.fromTypeName(parent);
+            this.declaringType = topLevelParent(typeName);
         }
         this.typeParams = List.copyOf(builder.typeParams);
     }
 
     static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ConcreteType that = (ConcreteType) o;
+        return isArray() == that.isArray()
+                && Objects.equals(typeName.resolvedName(), that.typeName.resolvedName());
+    }
+
+    @Override
+    public String toString() {
+        return typeName.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isArray(), typeName.resolvedName());
     }
 
     @Override
@@ -90,7 +105,10 @@ class ConcreteType extends Type {
     @Override
     String fqTypeName() {
         if (innerClass()) {
-            return typeName.classNameWithEnclosingNames();
+            if (typeName.packageName().isBlank()) {
+                return typeName.classNameWithEnclosingNames();
+            }
+            return typeName.packageName() + "." + typeName.classNameWithEnclosingNames();
         } else {
             return typeName.name();
         }
@@ -131,31 +149,15 @@ class ConcreteType extends Type {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ConcreteType that = (ConcreteType) o;
-        return isArray() == that.isArray()
-                && Objects.equals(typeName.resolvedName(), that.typeName.resolvedName());
-    }
-
-    @Override
-    public String toString() {
-        return typeName.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(isArray(), typeName.resolvedName());
-    }
-
-    @Override
     TypeName typeName() {
         return typeName;
+    }
+
+    private static Type topLevelParent(TypeName typeName) {
+        return Type.fromTypeName(TypeName.builder(typeName)
+                                         .enclosingNames(List.of())
+                                         .className(typeName.enclosingNames().getFirst())
+                                         .build());
     }
 
     static final class Builder extends ModelComponent.Builder<Builder, ConcreteType> {

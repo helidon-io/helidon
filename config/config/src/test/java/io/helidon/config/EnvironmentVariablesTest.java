@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,46 @@ import static org.hamcrest.Matchers.nullValue;
 public class EnvironmentVariablesTest {
 
     static Map<String, String> env(final String... additionalPairs) {
-        return add(new HashMap<>(System.getenv()), additionalPairs);
+        // never use the current real environment
+        Map<String, String> env = new HashMap<>();
+        env.put("PATH", "/Users/theUser/bin");
+        env.put("NO_PROXY", "localhost");
+        env.put("COLORTERM", "truecolor");
+        env.put("LOGNAME", "theUser");
+        env.put("HOMEBREW.REPOSITORY", "/opt/homebrew");
+        env.put("TERM_PROGRAM_VERSION", "465");
+        env.put("PWD", "/Users/theUser/helidon");
+        env.put("INFOPATH", "/opt/homebrew/share/info:");
+        env.put("SHELL", "/bin/zsh");
+        env.put("OLDPWD", "/Users/theUser/helidon");
+        env.put("HOMEBREW_CELLAR", "/opt/homebrew/Cellar");
+        env.put("TMPDIR", "/var/folders/0d/urgarhs/T/");
+        env.put("XPC_FLAGS", "0x0");
+        env.put("TERM_SESSION_ID", "ABCDEF");
+        env.put("JAVA_HOME", "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home");
+        env.put("TERM", "xterm-256color");
+        env.put("HTTP_PROXY", "example.com:80");
+        env.put("HOMEBREW_PREFIX", "/opt/homebrew");
+        env.put("LANG", "en_US.UTF-8");
+        env.put("HTTPS_PROXY", "example.com:80");
+        env.put("HOMEBREW_REPOSITORY", "/opt/homebrew");
+        env.put("XPC_SERVICE_NAME", "0");
+        env.put("MAVEN_CMD_LINE_ARGS", " clean install");
+        env.put("TERM_PROGRAM", "Apple_Terminal");
+        env.put("MAVEN_PROJECTBASEDIR", "/Users/theUser/Development/GitHub/helidon");
+        env.put("USER", "theUser");
+        env.put("SSH_AUTH_SOCK", "/private/tmp/com.apple.launchd.asdfasdf/Listeners");
+        env.put("OSLogRateLimit", "64");
+        env.put("HOME", "/Users/theUser");
+        env.put("XMODIFIERS", "@im=ibus");
+        env.put("simple", "unmapped-env-value");
+        env.put("FOO_BAR", "mapped-env-value");
+        env.put("_underscore", "mappend-env-value");
+        env.put("com_ACME_size", "mapped-env-value");
+        env.put("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "mapped-env-value");
+        env.put("CONFIG_SOURCE_TEST_PROPERTY", "This Is My ENV VARS Value.");
+
+        return add(env, additionalPairs);
     }
 
     static Map<String, String> toMap(final String... pairs) {

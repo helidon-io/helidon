@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import io.helidon.common.GenericType;
  * the underlying class *IF* the generic type represents a simple class (e.g. not a generic type declaration)</li>
  * </ul>
  */
-@RuntimeType.PrototypedBy(MappersConfig.class)
 public interface Mappers extends RuntimeType.Api<MappersConfig> {
     /**
      * Create a new builder to customize configuration of {@link io.helidon.common.mapper.Mappers}.

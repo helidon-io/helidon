@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
 import io.helidon.webserver.spi.ServerFeature;
-import io.helidon.webserver.spi.ServerFeature.ServerFeatureContext;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static java.lang.System.Logger.Level.INFO;
@@ -36,7 +35,6 @@ import static java.lang.System.getLogger;
  *
  * @see EurekaRegistrationServerFeatureProvider#create(io.helidon.common.Config, String)
  */
-@RuntimeType.PrototypedBy(EurekaRegistrationConfig.class)
 public final class EurekaRegistrationServerFeature implements RuntimeType.Api<EurekaRegistrationConfig>, ServerFeature, Weighted {
 
     static final String EUREKA_ID = "eureka";

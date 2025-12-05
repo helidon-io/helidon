@@ -28,7 +28,7 @@ class ConnectionHandlerTest {
 
     @Test
     void testHttp10Prologue() {
-        DataReader reader = new DataReader(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
+        DataReader reader = DataReader.create(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
         assertThat(ConnectionHandler.isHttp10Connection(reader), is(true));
     }
 }

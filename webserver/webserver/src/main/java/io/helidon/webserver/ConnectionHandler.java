@@ -140,7 +140,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
             }
 
-            reader = new DataReader(new MapExceptionDataSupplier(helidonSocket));
+            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
             writer = SocketWriter.create(listenerContext.executor(),
                                          helidonSocket,
                                          listenerConfig.writeQueueLength(),

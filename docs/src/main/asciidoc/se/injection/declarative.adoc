@@ -83,6 +83,7 @@ The following features are currently implemented:
 - <<Dec-FT, Fault Tolerance>>
 - <<Dec-Scheduling, Scheduling>>
 - <<Dec-Validation, Validation>>
+- <<Dec-Security, Security>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -371,3 +372,21 @@ For each constraint annotation, there MUST be a service that validates it.
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_10, indent=0]
 ----
+
+=== Security [[Dec-Security]]
+
+Security provides protection of WebServer endpoints.
+
+Identity propagation (when using a WebClient) depends on configuration of the client and configuration of security.
+We currently do not have a declarative way of modifying client behavior.
+
+Supported annotations:
+
+- `io.helidon.security.annotations.Authenticated` - mark an endpoint or a method as requiring authentication
+- `io.helidon.security.annotations.Authorized` - mark an endpoint or a method as requiring authorization
+- `io.helidon.security.annotations.Audited` - mark an endpoint or a method as requiring audit logging
+- `io.helidon.security.abac.role.RoleValidator.PermitAll` - annotated method does not require any authentication or authorization (even if endpoint does)
+- `jakarta.annotation.security.PermitAll` - same as `RoleValidator.PermitAll`
+- `jakarta.annotation.security.DenyAll` - annotated method will not be callable with any kind of authentication or authorization
+- link:{security-javadoc-base-url}/io/helidon/security/abac/role/RoleValidator.Roles.html[`io.helidon.security.abac.role.RoleValidator.Roles`] - provide a set of roles that can access a resource, implies authentication is required
+- `jakarta.annotation.security.RolesAllowed` - same as above (`RoleValidator.Roles`)
