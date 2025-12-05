@@ -98,6 +98,7 @@ based on the SE QuickStart sample app.
 The following example shows how to use configuration to customize how OpenAPI works, in this case changing the
 endpoint where Helidon provides the OpenAPI document.
 
+// tag::web-context-config-example[]
 .Configure OpenAPI behavior
 [source,yaml]
 ----
@@ -111,6 +112,7 @@ server:
 <1> The `port` and `host` settings are for the server as a whole, not specifically for OpenAPI.
 <2> The `openapi` subsection within `features` contains OpenAPI settings.
 <3> Changes the endpoint for returning the OpenAPI document from the default `/openapi` to `/myopenapi`.
+// end::web-context-config-example[]
 
 Most Helidon {flavor-uc} applications need only add the dependency as explained above; Helidon discovers and registers OpenAPI
 automatically. The example below shows how to create and register `OpenApiFeature` explicitly instead.
