@@ -103,7 +103,8 @@ class EurekaRegistrationServerFeatureIT {
         assertThat(this.ws.isRunning(), is(true));
         Thread.sleep(500L); // wait for the registration/renewal attempt to happen in the background
         try (var response = this.wc
-             .get("/v2/apps/" + ((EurekaRegistrationServerFeature)this.ws.prototype()
+             .get()
+             .path("/v2/apps/" + ((EurekaRegistrationServerFeature)this.ws.prototype()
                                  .features()
                                  .get(0))
                   .prototype()
