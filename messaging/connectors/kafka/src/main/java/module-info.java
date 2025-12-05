@@ -38,6 +38,7 @@ module io.helidon.messaging.connectors.kafka {
     requires org.reactivestreams;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static kafka.clients;
