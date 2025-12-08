@@ -69,13 +69,15 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     public void halfClose() {
         socket().log(LOGGER, DEBUG, "halfClose called");
         if (responseReceived) {
-            Headers headers = responseHeaders.httpHeaders();
-            if (headers.contains(STATUS_NAME)) {
-                Header status = headers.get(STATUS_NAME);
-                close(Status.fromCodeValue(status.getInt()));
-            } else {
-                close(Status.OK);
+            if (responseHeaders != null) {
+                Headers headers = responseHeaders.httpHeaders();
+                if (headers.contains(STATUS_NAME)) {
+                    Header status = headers.get(STATUS_NAME);
+                    close(Status.fromCodeValue(status.getInt()));
+                    return;
+                }
             }
+            close(Status.OK);
         } else {
             close(Status.UNKNOWN);
         }

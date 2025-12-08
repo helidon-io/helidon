@@ -105,7 +105,7 @@ class EchoServiceTest {
     }
 
     @Test
-    void testEchoInject() throws InterruptedException, ExecutionException, TimeoutException {
+    void testEchoInject() {
         String result = proxyClient.echo("Howdy");
         assertThat(result, is("Howdy"));
     }
