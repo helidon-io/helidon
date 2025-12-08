@@ -28,6 +28,7 @@ import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
@@ -106,7 +107,7 @@ public class DeclarativeExample {
         }
 
         // method that would be called if #algorithm fails with an IOException
-        String fallbackAlgorithm()  {
+        String fallbackAlgorithm() {
             return "default";
         }
     }
@@ -116,7 +117,7 @@ public class DeclarativeExample {
     @Service.Singleton
     static class CacheService {
         @Scheduling.FixedRate("PT5S")
-        void checkCache()  {
+        void checkCache() {
             // do something every 5 seconds
         }
     }
@@ -190,6 +191,28 @@ public class DeclarativeExample {
     }
     // end::snippet_10[]
 
+    // tag::snippet_11[]
+    @Service.Singleton
+    @Metrics.Tag(key = "service", value = "Metered")
+    static class MeteredService {
+        @Metrics.Counted(tags = @Metrics.Tag(key = "method", value = "counted"))
+        void counted() {
+            // whenever invoked through service interface, counter is incremented
+        }
+    }
+    // end::snippet_11[]
+
+    // tag::snippet_12[]
+    @Service.Singleton
+    static class ServiceWithAGauge {
+        private volatile int percentage = 0;
+
+        @Metrics.Gauge(unit = "percent")
+        int gauge() {
+            return this.percentage;
+        }
+    }
+    // end::snippet_12[]
 
     private static class ApplicationBinding {
         static Binding create() {

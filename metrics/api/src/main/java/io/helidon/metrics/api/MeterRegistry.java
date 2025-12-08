@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,25 @@ import java.util.function.Predicate;
  * Manages the look-up and registration of meters.
  */
 public interface MeterRegistry extends Wrapper {
+    /**
+     * Creates a meter registry, not saved as the global registry, using default metrics config information based on global
+     * config.
+     *
+     * @return new meter registry
+     */
+    static MeterRegistry create() {
+        return create(MetricsConfig.create());
+    }
+
+    /**
+     * Creates a meter registry, not saved as the global registry, based on the provided metrics config.
+     *
+     * @param metricsConfig metrics config
+     * @return new meter registry
+     */
+    static MeterRegistry create(MetricsConfig metricsConfig) {
+        return MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+    }
 
     /**
      * Returns all previously-registered meters.

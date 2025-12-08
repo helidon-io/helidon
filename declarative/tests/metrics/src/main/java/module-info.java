@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-module io.helidon.declarative.tests.http {
+/**
+ * Tests for declarative metrics.
+ */
+module io.helidon.declarative.tests.metrics {
     requires io.helidon.http;
-    requires io.helidon.common.media.type;
-    requires io.helidon.webserver;
-    requires io.helidon.service.registry;
-    requires jakarta.json;
-    requires io.helidon.config.yaml;
     requires io.helidon.logging.common;
-    requires io.helidon.metrics.systemmeters;
-    requires io.helidon.scheduling;
-    requires io.helidon.webclient.api;
-    requires io.helidon.faulttolerance;
     requires io.helidon.metrics.api;
+    requires io.helidon.service.registry;
+    requires io.helidon.webserver;
 
-    // Security related dependencies
-    requires io.helidon.security;
-    requires io.helidon.webserver.security;
-    requires io.helidon.security.abac.role;
-    requires io.helidon.security.integration.common;
-    requires io.helidon.security.annotations;
+    // needed for generated binding
+    requires io.helidon.config.yaml;
 
-    exports io.helidon.declarative.tests.http;
+    exports io.helidon.declarative.tests.metrics;
 }
