@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,4 +70,22 @@ public class ConfiguredLimitTest {
         assertThat("Initial limit", prototype.initialLimit(), is(14));
         assertThat("Backoff ratio", prototype.backoffRatio(), is(0.74));
     }
+
+    @Test
+    public void testThroughput() {
+        LimitUsingConfig limitConfig = LimitUsingConfig.create(config.get("third"));
+        Optional<Limit> configuredLimit = limitConfig.concurrencyLimit();
+        assertThat(configuredLimit, not(Optional.empty()));
+        Limit limit = configuredLimit.get();
+
+        assertThat(limit.name(), is("throughput"));
+        assertThat(limit.type(), is("throughput"));
+
+        ThroughputLimitConfig prototype = ((ThroughputLimit) limit).prototype();
+        assertThat("RateLimitingAlgorithm", prototype.rateLimitingAlgorithm(),
+            is(RateLimitingAlgorithmType.TOKEN_BUCKET));
+        assertThat("Amount", prototype.amount(), is(500));
+        assertThat("Duration", prototype.duration(), is(Duration.ofSeconds(5)));
+    }
+
 }

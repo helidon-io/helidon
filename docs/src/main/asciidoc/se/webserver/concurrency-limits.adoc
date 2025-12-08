@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,15 +35,15 @@ a network link, etc.
 
 In those cases, and when scaling of those components is not feasible or simply not desirable,
 it may be beneficial
-to limit the number of concurrent requests accepted by the Helidon webserver in
+to limit the number of concurrent requests accepted by the Helidon webserver or the throughput in
 order to improve the overall experience. When doing so, it should also be possible
 to establish rules for those requests that cannot be serviced immediately,
 as well as how to grow or shrink the number of _permits_ available in the system.
 
 == Setting Concurrency Limits
 
-Helidon now includes support for two independent concurrency limit strategies:
-fixed and AIMD (Arithmetic Increase Multiplicative Decrease) as well as an SPI
+Helidon now includes support for three independent concurrency limit strategies:
+fixed, AIMD (Arithmetic Increase Multiplicative Decrease), and throughput as well as an SPI
 to provide alternative `LimitProvider` implementations.
 
 Concurrency limits can be configured directly on the Webserver or as a _feature_.
@@ -144,12 +144,49 @@ is exhausted. Queueing is disabled by default in both fixed and
 AIMD strategies, so `queue-length` must be set to a positive number
 to enable this feature.
 
-Neither of the two strategies shown above enables queues by default.
+The following example uses a throughput concurrency strategy established at the
+Webserver level &mdash;impacting only the _default_ socket&mdash; that limits
+the throughput to 1000 requests over a duration of 5 seconds, a queue of 200 requests to accommodate
+potential request bursts and a queue timeout of 1 second:
+[source,yaml]
+----
+server:
+  concurrency-limit:
+    throughput:
+      amount: 1000
+      duration: PT5S
+      queue-length: 200
+      queue-timeout: PT1S
+----
+
+With this configuration, a total of 1000 requests can be processed over a duration of 5 seconds,
+with subsequent requests being queued, if space is available, and any request that sits in the queue for more than
+1 second will be rejected. Unlike the fixed concurrency strategy that has a set number of permits, the throughput
+concurrency strategy gains (or "refills") permits as time passes based on the selected rate limiting algorithm.
+There are two rate limiting algorithms available:
+* TOKEN_BUCKET: Permits start at the configured amount and refill up to that amount over the duration. This is the default algorithm.
+* FIXED_RATE: There is only ever one permit and, if consumed, a new permit is generated at the necessary rate to achieve the configured throughput. This algorithm is also called "leaky bucket". It is very important to configure queuing as this algorithm almost always has a backlog.
+
+Here is the same example showing the configuration of the `FIXED_RATE` rate limiting algorithm:
+[source,yaml]
+----
+server:
+  concurrency-limit:
+    throughput:
+      amount: 1000
+      duration: PT5S
+      rate-limiting-algorithm: FIXED_RATE
+      queue-length: 200
+      queue-timeout: PT1S
+----
+
+None of the strategies shown above enables queues by default.
 
 For more information about configuring these Concurrency Limit
 strategies see:
 
 - xref:{rootdir}/config/io_helidon_common_concurrency_limits_FixedLimit.adoc[FixedLimit]
+- xref:{rootdir}/config/io_helidon_common_concurrency_limits_ThroughputLimit.adoc[ThroughputLimit]
 - xref:{rootdir}/config/io_helidon_common_concurrency_limits_AimdLimit.adoc[AimdLimit]
 
 == Metrics
