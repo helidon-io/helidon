@@ -39,6 +39,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
@@ -101,7 +102,7 @@ class Http2ServerRequest implements RoutingRequest {
                                                                                  this.headers,
                                                                                  ctx.listenerContext().mediaContext()));
         } else {
-            this.entity = LazyValue.create(Http2ServerRequestNoEntity.create());
+            this.entity = LazyValue.create(ReadableEntityBase.empty());
         }
 
     }

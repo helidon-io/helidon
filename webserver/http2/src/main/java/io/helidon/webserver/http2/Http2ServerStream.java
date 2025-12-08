@@ -249,6 +249,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
+            if (expectedLength == 0) {
+                hasEntity = false;
+            }
         }
     }
 
