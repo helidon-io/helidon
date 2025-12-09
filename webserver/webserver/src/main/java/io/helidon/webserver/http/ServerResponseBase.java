@@ -267,7 +267,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @return output stream to write plain data to
      */
     protected OutputStream contentEncode(OutputStream outputStream) {
-        if (contentEncodingContext.contentEncodingEnabled()) {
+        if (contentEncodingContext.contentEncodingEnabled() && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
 
