@@ -172,6 +172,13 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
         }
     }
 
+    /**
+     * Write to the underlying socket/channel from the provided buffer.
+     * The buffer is not flipped.
+     *
+     * @param buffer buffer to write
+     * @return number of bytes written
+     */
     protected int write(ByteBuffer buffer) {
         try {
             return delegate.write(buffer);
@@ -180,6 +187,13 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
         }
     }
 
+    /**
+     * Read from the underlying socket/channel into the provided buffer.
+     * The buffer is not flipped.
+     *
+     * @param buffer buffer to read to
+     * @return number of bytes read
+     */
     protected int read(ByteBuffer buffer) {
         try {
             return delegate.read(buffer);

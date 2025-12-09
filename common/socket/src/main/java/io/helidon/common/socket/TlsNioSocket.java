@@ -314,12 +314,7 @@ public final class TlsNioSocket extends NioSocket {
                     throw new IllegalStateException("Unexpected status: " + status);
                 }
 
-                if (result == null) {
-                    // it is never null, but to satisfy bad analysis of this switch...
-                    status = SSLEngineResult.HandshakeStatus.FINISHED;
-                } else {
-                    status = result.getHandshakeStatus();
-                }
+                status = result.getHandshakeStatus();
             }
         } finally {
             handshakeLock.unlock();
