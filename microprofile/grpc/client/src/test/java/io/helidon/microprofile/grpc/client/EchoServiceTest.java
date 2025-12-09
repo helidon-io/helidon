@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.grpc.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -30,15 +32,16 @@ import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webclient.grpc.GrpcClient;
 
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.grpc.core.ResponseHelper.complete;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @HelidonTest
 @AddBean(EchoServiceTest.EchoService.class)
@@ -102,24 +105,59 @@ class EchoServiceTest {
     }
 
     @Test
-    void testEchoInject() throws InterruptedException, ExecutionException, TimeoutException {
-        CompletableFuture<String> future = new CompletableFuture<>();
+    void testEchoInject() {
+        String result = proxyClient.echo("Howdy");
+        assertThat(result, is("Howdy"));
+    }
+
+    @Test
+    void testEchoMany() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        List<String> values = new ArrayList<>();
         StreamObserver<String> observer = new StreamObserver<>() {
             @Override
             public void onNext(String value) {
-                future.complete(value);
+                values.add(value);
             }
 
             @Override
             public void onError(Throwable t) {
+                future.completeExceptionally(t);
+            }
+
+            @Override
+            public void onCompleted() {
+                future.complete(values);
+            }
+        };
+        proxyClient.echoMany("Howdy", observer);
+        assertThat(future.get(5, TimeUnit.SECONDS), is(List.of("Howdy", "Howdy", "Howdy")));
+    }
+
+    @Test
+    void testEchoError() {
+        assertThrows(StatusRuntimeException.class, () -> proxyClient.echo("[FAIL]"));
+    }
+
+    @Test
+    void testEchoManyError() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        StreamObserver<String> observer = new StreamObserver<>() {
+            @Override
+            public void onNext(String value) {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                future.completeExceptionally(t);
             }
 
             @Override
             public void onCompleted() {
             }
         };
-        proxyClient.echo("Howdy", observer);
-        assertThat(future.get(5, TimeUnit.SECONDS), is("Howdy"));
+        proxyClient.echoMany("[FAIL]", observer);
+        assertThrows(Exception.class, () -> future.get(5, TimeUnit.SECONDS));
     }
 
     @Grpc.GrpcService
@@ -127,10 +165,24 @@ class EchoServiceTest {
     public static class EchoService {
 
         @Grpc.Unary("Echo")
-        public void echo(String request, StreamObserver<String> observer) {
+        public String echo(String request) {
+            if (request.equals("[FAIL]")) {
+                throw new RuntimeException("Method call failed");
+            }
+            return request;
+        }
+
+        @Grpc.ServerStreaming("EchoMany")
+        public void echoMany(String request, StreamObserver<String> observer) {
             try {
-                complete(observer, request);
-            } catch (IllegalStateException e) {
+                if (request.equals("[FAIL]")) {
+                    throw new RuntimeException("Method call failed");
+                }
+                observer.onNext(request);
+                observer.onNext(request);
+                observer.onNext(request);
+                observer.onCompleted();
+            }  catch (Exception e) {
                 observer.onError(e);
             }
         }
@@ -142,6 +194,9 @@ class EchoServiceTest {
     public interface EchoServiceClient {
 
         @Grpc.Unary("Echo")
-        void echo(String request, StreamObserver<String> observer);
+        String echo(String request);
+
+        @Grpc.ServerStreaming("EchoMany")
+        void echoMany(String request, StreamObserver<String> observer);
     }
 }

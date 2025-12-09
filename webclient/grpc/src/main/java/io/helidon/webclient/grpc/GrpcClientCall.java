@@ -26,6 +26,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
+import io.helidon.http.Headers;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
@@ -166,10 +169,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 socket().log(LOGGER, DEBUG, "[Reading thread] started");
 
                 // read response headers
+                Status status = Status.OK;
                 boolean headersRead = false;
                 do {
                     try {
-                        clientStream().readHeaders();
+                        Http2Headers headers = clientStream().readHeaders();
+                        if (headers.httpHeaders().contains(STATUS_NAME)) {
+                            Header grpcStatus = headers.httpHeaders().get(STATUS_NAME);
+                            status = Status.fromCodeValue(grpcStatus.getInt());
+                        }
                         headersRead = true;
                     } catch (StreamTimeoutException e) {
                         handleStreamTimeout(e);
@@ -201,7 +209,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 }
 
                 // attempt to drain our receiving queue if permits arrive on time
-                Status status = Status.OK;
                 if (!receivingQueue.isEmpty()) {
                     Duration waitTime = grpcClient().prototype().protocolConfig().nextRequestWaitTime();
                     do {
@@ -216,7 +223,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     } while (!receivingQueue.isEmpty());
                 }
 
-                // report onClose call with status
+                // report onClose call with final status
+                if (clientStream().trailers().isDone()) {
+                    Headers trailers = clientStream().trailers().get();
+                    if (trailers.contains(STATUS_NAME)) {
+                        status = Status.fromCodeValue(trailers.get(STATUS_NAME).getInt());
+                    }
+                }
                 responseListener().onClose(status, EMPTY_METADATA);
             } catch (StreamTimeoutException e) {
                 responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
