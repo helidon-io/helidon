@@ -42,7 +42,8 @@ class GrpcHeadersUtilTest {
         metadata.put(key, "almond");
         WritableHeaders<?> headers = WritableHeaders.create();
         GrpcHeadersUtil.updateHeaders(headers, metadata);
-        assertThat(headers.size(), is(2));
+        // there is exactly one header name: `Cookie`
+        assertThat(headers.size(), is(1));
         List<String> values = headers.get(HeaderNames.COOKIE).allValues();
         assertThat(values, hasItem("sugar"));
         assertThat(values, hasItem("almond"));

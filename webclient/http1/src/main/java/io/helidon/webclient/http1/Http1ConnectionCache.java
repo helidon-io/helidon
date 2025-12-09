@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +35,7 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.ClientConnectionCache;
 
@@ -49,7 +51,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
-    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
+    private final Map<ConnectionKey, LinkedBlockingDeque<ClientConnection>> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
     protected Http1ConnectionCache(boolean shared) {
@@ -65,6 +67,28 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
+                                Tls tls,
+                                ClientUri uri,
+                                ClientRequestHeaders headers,
+                                boolean defaultKeepAlive,
+                                UnixDomainSocketAddress address) {
+
+        boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
+        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
+        if (keepAlive) {
+            return keepAliveUnixDomainConnection(http1Client, effectiveTls, uri, address);
+        } else {
+            return UnixDomainSocketClientConnection.create(http1Client.webClient(),
+                                                           effectiveTls,
+                                                           ALPN_ID,
+                                                           address,
+                                                           it -> false,
+                                                           it -> {
+                                                           });
+        }
+    }
+
+    ClientConnection connection(Http1ClientImpl http1Client,
                                 Duration requestReadTimeout,
                                 Tls tls,
                                 Proxy proxy,
@@ -76,7 +100,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (keepAlive) {
             return keepAliveConnection(http1Client, requestReadTimeout, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(http1Client, effectiveTls, uri, proxy);
+            return oneOffConnection(http1Client, effectiveTls, uri, proxy, null);
         }
     }
 
@@ -84,7 +108,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     public void evict() {
         cache.values().stream()
                 .flatMap(Collection::stream)
-                .forEach(TcpClientConnection::closeResource);
+                .forEach(ClientConnection::closeResource);
     }
 
     @Override
@@ -110,6 +134,52 @@ class Http1ConnectionCache extends ClientConnectionCache {
         return false;
     }
 
+    private ClientConnection keepAliveUnixDomainConnection(Http1ClientImpl http1Client,
+                                                           Tls tls,
+                                                           ClientUri uri,
+                                                           UnixDomainSocketAddress address) {
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
+
+        Http1ClientConfig clientConfig = http1Client.clientConfig();
+
+        ConnectionKey connectionKey = ConnectionKey.create(uri.scheme(),
+                                                           "unix:" + address.getPath().toString(),
+                                                           0,
+                                                           tls,
+                                                           clientConfig.dnsResolver(),
+                                                           clientConfig.dnsAddressLookup(),
+                                                           Proxy.noProxy());
+
+        LinkedBlockingDeque<ClientConnection> connectionQueue =
+                cache.computeIfAbsent(connectionKey,
+                                      it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
+
+        ClientConnection connection;
+        while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
+        }
+
+        if (connection == null) {
+            connection = UnixDomainSocketClientConnection.create(http1Client.webClient(),
+                                                                 tls,
+                                                                 ALPN_ID,
+                                                                 address,
+                                                                 conn -> finishRequest(connectionQueue, conn),
+                                                                 conn -> {
+                                                                 })
+                    .connect();
+        } else {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, String.format("[%s] UNIX socket client connection obtained %s",
+                                                connection.channelId(),
+                                                Thread.currentThread().getName()));
+            }
+        }
+        return connection;
+    }
+
+
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
                                                  Duration requestReadTimeout,
                                                  Tls tls,
@@ -130,11 +200,11 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                                            clientConfig.dnsAddressLookup(),
                                                            proxy);
 
-        LinkedBlockingDeque<TcpClientConnection> connectionQueue =
+        LinkedBlockingDeque<ClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
                                       it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
 
-        TcpClientConnection connection;
+        ClientConnection connection;
         while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
         }
 
@@ -159,7 +229,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private ClientConnection oneOffConnection(Http1ClientImpl http1Client,
                                               Tls tls,
                                               ClientUri uri,
-                                              Proxy proxy) {
+                                              Proxy proxy, UnixDomainSocketAddress address) {
 
         WebClient webClient = http1Client.webClient();
         Http1ClientConfig clientConfig = http1Client.clientConfig();
@@ -180,7 +250,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
                 .connect();
     }
 
-    private boolean finishRequest(LinkedBlockingDeque<TcpClientConnection> connectionQueue, TcpClientConnection conn) {
+    private boolean finishRequest(LinkedBlockingDeque<ClientConnection> connectionQueue, ClientConnection conn) {
         if (conn.isConnected()) {
             try {
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {

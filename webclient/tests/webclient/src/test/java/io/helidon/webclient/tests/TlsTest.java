@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,18 +78,18 @@ public class TlsTest {
 
     @Test
     public void testConnectionOnHttpsWithHttp() {
-        RuntimeException ex = assertThrows(IncorrectNewLineException.class, () ->
+        // do not check exception type
+        // this changed when we switched to NIO
+        assertThrows(RuntimeException.class, () ->
                 client.get().request(String.class));
-        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
     @Test
     public void testConnectionOnHttpsWithHttpWithoutKeepAlive() {
-        RuntimeException ex = assertThrows(IncorrectNewLineException.class,
+        assertThrows(RuntimeException.class,
                 () -> client.get()
                         .keepAlive(false)
                         .request(String.class));
-        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
 }

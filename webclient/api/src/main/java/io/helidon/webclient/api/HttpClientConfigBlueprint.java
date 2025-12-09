@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -67,6 +68,14 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @Option.Configured
     Optional<ClientUri> baseUri();
+
+    /**
+     * Base address used by the client in all requests.
+     * This may be either an Inet address or a UNIX domain socket address.
+     *
+     * @return base address of the client requests
+     */
+    Optional<SocketAddress> baseAddress();
 
     /**
      * Base query used by the client in all requests.

@@ -16,7 +16,10 @@
 
 package io.helidon.webclient.api;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
 import java.util.ServiceLoader;
 
 import io.helidon.builder.api.Prototype;
@@ -157,6 +160,31 @@ class HttpClientConfigSupport {
         @Prototype.ConfigFactoryMethod("baseUri")
         static ClientUri createBaseUri(Config config) {
             return config.as(URI.class).map(ClientUri::create).orElseThrow();
+        }
+
+        @Prototype.ConfigFactoryMethod("baseAddress")
+        static SocketAddress createBaseAddress(Config config) {
+            String address = config.asString().get();
+            // unix:/path/to/socket
+            if (address.startsWith("unix:")) {
+                String path = address.substring(7);
+                return UnixDomainSocketAddress.of(path);
+            }
+            // must be localhost:8080 or similar (localhost, :8080 are also OK)
+            int col = address.indexOf(':');
+            String host;
+            int port;
+            if (col == 0) {
+                host = "localhost";
+                port = Integer.parseInt(address.substring(1));
+            } else if (col > 0) {
+                host = address.substring(0, col);
+                port = Integer.parseInt(address.substring(col + 1));
+            } else {
+                host = address;
+                port = 80;
+            }
+            return new InetSocketAddress(host, port);
         }
     }
 

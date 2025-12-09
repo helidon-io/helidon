@@ -168,10 +168,10 @@ public class DataReader {
         ensureAvailable();
         byte[] bytes = head.bytes;
         int pos = head.position;
-        if (bytes[pos] == Bytes.CR_BYTE && ((pos + 1 < bytes.length) ? bytes[pos + 1] : head.next().peek()) == Bytes.LF_BYTE) {
-            return true;
+        if (pos + 1 < bytes.length) {
+            return bytes[pos] == Bytes.CR_BYTE && bytes[pos + 1] == Bytes.LF_BYTE;
         }
-        return false;
+        return bytes[pos] == Bytes.CR_BYTE && head.next().peek() == Bytes.LF_BYTE;
     }
 
     /**

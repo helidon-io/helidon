@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.UnixDomainSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -147,22 +148,43 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         }
 
         if ("https".equals(resolvedUri.scheme()) && tls().enabled() && !tcpProtocols.isEmpty()) {
-            // use ALPN
-            ConnectionKey connectionKey = ConnectionKey.create(resolvedUri.scheme(),
-                                                               resolvedUri.host(),
-                                                               resolvedUri.port(),
-                                                               tls(),
-                                                               clientConfig().dnsResolver(),
-                                                               clientConfig().dnsAddressLookup(),
-                                                               proxy());
+            // we may use UNIX domain socket here
+            UnixDomainSocketAddress unixSocketAddress = null;
+            if (address().isPresent()) {
+                var address = address().get();
+                if (address instanceof UnixDomainSocketAddress udsa) {
+                    unixSocketAddress = udsa;
+                }
+            }
+            ClientConnection connection;
 
-            // this is a temporary connection, used to determine which protocol is supported, next
-            // call to the same remote location will be obtained from cache
-            TcpClientConnection connection = TcpClientConnection.create(webClient,
-                                                                        connectionKey,
-                                                                        tcpProtocolIds,
-                                                                        conn -> true,
-                                                                        conn -> {});
+            if (unixSocketAddress == null) {
+                // use ALPN
+                ConnectionKey connectionKey = ConnectionKey.create(resolvedUri.scheme(),
+                                                                   resolvedUri.host(),
+                                                                   resolvedUri.port(),
+                                                                   tls(),
+                                                                   clientConfig().dnsResolver(),
+                                                                   clientConfig().dnsAddressLookup(),
+                                                                   proxy());
+
+                // this is a temporary connection, used to determine which protocol is supported, next
+                // call to the same remote location will be obtained from cache
+                connection = TcpClientConnection.create(webClient,
+                                                        connectionKey,
+                                                        tcpProtocolIds,
+                                                        conn -> false,
+                                                        conn -> {
+                                                        });
+            } else {
+                connection = UnixDomainSocketClientConnection.create(webClient,
+                                                                     tls(),
+                                                                     tcpProtocolIds,
+                                                                     unixSocketAddress,
+                                                                     conn -> false,
+                                                                     conn -> {
+                                                                     });
+            }
             connection.connect();
             HelidonSocket socket = connection.helidonSocket();
             if (socket.protocolNegotiated()) {

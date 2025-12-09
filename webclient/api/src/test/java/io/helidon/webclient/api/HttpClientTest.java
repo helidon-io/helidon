@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
@@ -228,6 +229,11 @@ class HttpClientTest {
         @Override
         public int maxRedirects() {
             return 5;
+        }
+
+        @Override
+        public FakeHttpClientRequest address(SocketAddress socketAddress) {
+            return this;
         }
     }
 }

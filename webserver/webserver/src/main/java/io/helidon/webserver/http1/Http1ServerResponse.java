@@ -407,7 +407,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         boolean forcedChunkedEncoding = false;
         headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
-        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;

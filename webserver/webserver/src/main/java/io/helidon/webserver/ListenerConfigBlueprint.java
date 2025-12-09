@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.nio.channels.ServerSocketChannel;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +117,15 @@ interface ListenerConfigBlueprint {
      * @return address to use
      */
     InetAddress address();
+
+    /**
+     * The address to bind to. This is to permit both Internet Address ({@code <host>:<port>}) and Unix Domain socket
+     * ({@code unix:/path/to/socket}). If this is set it will override {@link #host()}, {@link #address()} and {@link #port()}.
+     *
+     * @return the socket address to bind on.
+     */
+    @Option.Configured
+    Optional<SocketAddress> bindAddress();
 
     /**
      * Port of the default socket.
@@ -402,6 +413,23 @@ interface ListenerConfigBlueprint {
     }
 
     /**
+     * Update the server socket with configured socket options.
+     *
+     * @param socket socket to update
+     */
+    @SuppressWarnings("unchecked")
+    default void configureSocket(ServerSocketChannel socket) {
+        for (Map.Entry<SocketOption<?>, Object> entry : listenerSocketOptions().entrySet()) {
+            try {
+                SocketOption<Object> opt = (SocketOption<Object>) entry.getKey();
+                socket.setOption(opt, entry.getValue());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    /**
      * Configuration for this listener's error handling.
      *
      * @return error handling
@@ -431,4 +459,13 @@ interface ListenerConfigBlueprint {
      */
     @Option.Configured
     boolean ignoreInvalidNamedRouting();
+
+    /**
+     * If set to {@code true}, use NIO socket channel, instead of a socket. Listener will always be a channel.
+     *
+     * @return whether to use NIO socket channel, defaults to {@code true}
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean useNio();
 }
