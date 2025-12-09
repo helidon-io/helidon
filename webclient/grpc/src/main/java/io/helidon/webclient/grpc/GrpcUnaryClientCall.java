@@ -19,6 +19,9 @@ package io.helidon.webclient.grpc;
 import java.time.Duration;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
+import io.helidon.http.Headers;
+import io.helidon.http.http2.Http2Headers;
 
 import io.grpc.CallOptions;
 import io.grpc.MethodDescriptor;
@@ -40,6 +43,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile boolean closeCalled;
     private volatile boolean requestSent;
     private volatile boolean responseReceived;
+    private volatile Http2Headers responseHeaders;
 
     GrpcUnaryClientCall(GrpcChannel grpcChannel,
                         MethodDescriptor<ReqT, ResT> methodDescriptor,
@@ -64,7 +68,19 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void halfClose() {
         socket().log(LOGGER, DEBUG, "halfClose called");
-        close(responseReceived ? Status.OK : Status.UNKNOWN);
+        if (responseReceived) {
+            if (responseHeaders != null) {
+                Headers headers = responseHeaders.httpHeaders();
+                if (headers.contains(STATUS_NAME)) {
+                    Header status = headers.get(STATUS_NAME);
+                    close(Status.fromCodeValue(status.getInt()));
+                    return;
+                }
+            }
+            close(Status.OK);
+        } else {
+            close(Status.UNKNOWN);
+        }
     }
 
     @Override
@@ -89,8 +105,8 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             bytesSent().addAndGet(serialized.length);
         }
 
-        // read response headers
-        clientStream().readHeaders();
+        // read response headers, or trailers if an error occurred
+        responseHeaders = clientStream().readHeaders();
 
         while (isRemoteOpen()) {
             // trailers or eos received?
