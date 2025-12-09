@@ -114,17 +114,17 @@ import static org.hamcrest.Matchers.not;
 // Simple proxy loadbalancer for coordinators
 @AddConfig(key = "server.sockets.0.name", value = CoordinatorClusterDeploymentService.LOAD_BALANCER_NAME)
 @AddConfig(key = "server.sockets.0.port", value = "0")
-@AddConfig(key = "server.sockets.0.bind-address", value = "localhost")
+@AddConfig(key = "server.sockets.0.host", value = "localhost")
 
 // Coordinator A
 @AddConfig(key = "server.sockets.1.name", value = CoordinatorClusterDeploymentService.COORDINATOR_A_NAME)
 @AddConfig(key = "server.sockets.1.port", value = "0")
-@AddConfig(key = "server.sockets.1.bind-address", value = "localhost")
+@AddConfig(key = "server.sockets.1.host", value = "localhost")
 
 // Coordinator B
 @AddConfig(key = "server.sockets.2.name", value = CoordinatorClusterDeploymentService.COORDINATOR_B_NAME)
 @AddConfig(key = "server.sockets.2.port", value = "0")
-@AddConfig(key = "server.sockets.2.bind-address", value = "localhost")
+@AddConfig(key = "server.sockets.2.host", value = "localhost")
 public class LoadBalancedCoordinatorTest {
 
     private static final System.Logger LOGGER = System.getLogger(LoadBalancedCoordinatorTest.class.getName());

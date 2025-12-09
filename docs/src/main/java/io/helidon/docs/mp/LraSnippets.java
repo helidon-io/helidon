@@ -311,7 +311,7 @@ class LraSnippets {
     @HelidonTest
     @AddBean(TestLraCoordinator.class)
     @AddConfig(key = "server.sockets.500.port", value = "8070") //<1>
-    @AddConfig(key = "server.sockets.500.bind-address", value = "custom.bind.name") //<2>
+    @AddConfig(key = "server.sockets.500.host", value = "custom.bind.name") //<2>
     @AddConfig(key = "helidon.lra.coordinator.persistence", value = "true") //<3>
     @AddConfig(key = "helidon.lra.participant.use-build-time-index", value = "true") //<4>
     public class LraCustomConfigTest {

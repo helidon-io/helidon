@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.is;
 // Set up the metrics endpoint on its own socket
 @AddConfig(key = "server.sockets.0.name", value = "metrics")
 // No port setting, so use any available one
-@AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
+@AddConfig(key = "server.sockets.0.host", value = "0.0.0.0")
 @AddConfig(key = "server.features.observe.sockets", value = "metrics")
 @AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
 @AddConfig(key = "metrics.permit-all", value = "true")
