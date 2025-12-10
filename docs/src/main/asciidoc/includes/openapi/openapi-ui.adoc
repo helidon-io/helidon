@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 :screen-capture-start: openapi-ui-screen-capture-greeting-{flavor-lc}-start.png
 :screen-capture-expanded: openapi-ui-screen-capture-greeting-{flavor-lc}-expanded.png
 ifdef::mp-flavor[:ui-config-prefix: mp.openapi.services.ui]
-ifdef::se-flavor[:ui-config-prefix: openapi.services.ui]
+ifdef::se-flavor[:ui-config-prefix: server.features.openapi.services.ui]
 // end::preamble[]
 
 // tag::intro[]
@@ -138,7 +138,7 @@ image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen
 == Configuration
 To use configuration to control how the Helidon OpenAPI UI service behaves, add
 ifdef::mp-flavor[`{ui-config-prefix}` settings to your `META-INF/microprofile-config.properties` file.]
-ifdef::se-flavor[an `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.]
+ifdef::se-flavor[a `{ui-config-prefix}` section to your configuration file, such as `application.yaml`.]
 
 include::{rootdir}/config/io_helidon_integrations_openapi_ui_OpenApiUi.adoc[tag=config,leveloffset=+1]
 The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
@@ -147,19 +147,14 @@ The default UI `web-context` value is the web context for your `OpenApiFeature` 
 
 // tag::config-details[]
 
-You can use configuration to affect the UI path in two ways:
+You can use configuration to affect the UI path in these ways:
 
 * Configure the OpenAPI endpoint path (the `/openapi` part).
 +
 Recall that you can xref:{openapi-page}#config[configure the Helidon OpenAPI component] to change where it serves the OpenAPI document.
 +
-.Configuring the OpenAPI web context
 ifdef::se-flavor[]
-[source,yaml]
-----
-openapi:
-  web-context: /my-openapi
-----
+include::{openapi-page}[tag=web-context-config-example]
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
@@ -169,19 +164,25 @@ mp.openapi.web-context=/my-openapi
 endif::mp-flavor[]
 +
 In this case, the path for the UI component is your customized OpenAPI path with `/ui` as a suffix.
-With the example above, the UI responds at `/my-openapi/ui` and
-Helidon uses standard content negotiation at `/my-openapi` to return either the OpenAPI document or the UI.
+With the example above, the UI responds at `/myopenapi/ui` and
+Helidon uses standard content negotiation at `/myopenapi` to return either the OpenAPI document or the UI.
 * Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
 +
 .Configuring the OpenAPI UI web context
 ifdef::se-flavor[]
 [source,yaml]
 ----
-openapi:
-  services:
-    ui:
-      web-context: /my-ui
+server:
+  port: 8080
+  host: 0.0.0.0
+  features:
+    openapi:
+      services:
+        ui:                     <1>
+          web-context: /my-ui   <2>
 ----
+<1> Introduces OpenAPI UI settings
+<2> Specifies an alternate path for the UI
 endif::se-flavor[]
 ifdef::mp-flavor[]
 [source,properties]
