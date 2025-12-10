@@ -125,11 +125,11 @@ public final class TlsSocket extends PlainSocket {
     }
 
     Optional<Principal> tlsPrincipal() {
-        return Optional.of(sslSocket.getSession().getLocalPrincipal());
+        return Optional.ofNullable(sslSocket.getSession().getLocalPrincipal());
     }
 
     Optional<Certificate[]> tlsCertificates() {
-        return Optional.of(sslSocket.getSession().getLocalCertificates());
+        return Optional.ofNullable(sslSocket.getSession().getLocalCertificates());
     }
 
     /**

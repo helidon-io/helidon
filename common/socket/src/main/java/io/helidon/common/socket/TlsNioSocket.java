@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,6 +51,10 @@ public final class TlsNioSocket extends NioSocket {
     private ByteBuffer myNetData;
     private ByteBuffer peerNetData;
     private boolean closed;
+
+    private volatile PeerInfo localPeer;
+    private volatile PeerInfo remotePeer;
+    private volatile byte[] lastSslSessionId;
 
     private TlsNioSocket(SocketChannel delegate, SSLEngine sslEngine, String channelId, String serverChannelId) {
         super(delegate, channelId, serverChannelId);
@@ -97,12 +103,28 @@ public final class TlsNioSocket extends NioSocket {
 
     @Override
     public PeerInfo remotePeer() {
-        return PeerInfoImpl.createRemote(this);
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (remotePeer == null) {
+            this.remotePeer = PeerInfoImpl.createRemote(this);
+        }
+        return this.remotePeer;
     }
 
     @Override
     public PeerInfo localPeer() {
-        return PeerInfoImpl.createLocal(this);
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (localPeer == null) {
+            this.localPeer = PeerInfoImpl.createLocal(this);
+        }
+        return this.localPeer;
     }
 
     @Override
@@ -112,13 +134,17 @@ public final class TlsNioSocket extends NioSocket {
 
     @Override
     public boolean protocolNegotiated() {
-        String protocol = protocol();
-        return protocol != null && !protocol.isBlank();
+        String protocol = engine.getApplicationProtocol();
+        return protocol != null && !protocol.isEmpty();
     }
 
     @Override
     public String protocol() {
-        return engine.getApplicationProtocol();
+        String protocol = engine.getApplicationProtocol();
+        if (protocol == null || protocol.isEmpty()) {
+            throw new NoSuchElementException("No protocol negotiated, guard with #protocolNegotiated()");
+        }
+        return protocol;
     }
 
     @Override
@@ -198,11 +224,11 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     Optional<Principal> tlsPrincipal() {
-        return Optional.of(engine.getSession().getLocalPrincipal());
+        return Optional.ofNullable(engine.getSession().getLocalPrincipal());
     }
 
     Optional<Certificate[]> tlsCertificates() {
-        return Optional.of(engine.getSession().getLocalCertificates());
+        return Optional.ofNullable(engine.getSession().getLocalCertificates());
     }
 
     void doClosure() throws IOException {
@@ -432,5 +458,23 @@ public final class TlsNioSocket extends NioSocket {
             return buf;
         }
         return ByteBuffer.allocate(proposedCapacity).put(buf.flip());
+    }
+
+    /**
+     * Check if TLS renegotiation happened,
+     * if so ssl session id would have changed.
+     *
+     * @return true if tls was renegotiated
+     */
+    boolean renegotiated() {
+        byte[] currentSessionId = engine.getSession().getId();
+
+        // Intentionally avoiding locking and MessageDigest.isEqual
+        if (Arrays.equals(currentSessionId, lastSslSessionId)) {
+            return false;
+        }
+
+        lastSslSessionId = currentSessionId;
+        return true;
     }
 }
