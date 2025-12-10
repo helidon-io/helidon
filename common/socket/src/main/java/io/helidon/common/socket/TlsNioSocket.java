@@ -403,7 +403,7 @@ public final class TlsNioSocket extends NioSocket {
 
     private SSLEngineResult wrapAndSend(ByteBuffer appData, boolean ignoreClose) throws SSLException {
         if (closed && !ignoreClose) {
-            throw new UncheckedIOException(new SSLException("Engine is closed"));
+            throw new SSLException("Engine is closed");
         }
         SSLEngineResult.Status status;
         SSLEngineResult result;
