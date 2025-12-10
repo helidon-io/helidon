@@ -51,6 +51,7 @@
         <module>inheritance</module>
         <module>jackson</module>
         <module>builder-codegen</module>
+        <module>custom-void-method</module>
     </modules>
 
 </project>
