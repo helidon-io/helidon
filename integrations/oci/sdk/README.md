@@ -4,6 +4,10 @@ There are two different approaches for [OCI SDK](https://docs.oracle.com/en-us/i
 * **Helidon MP** (using _CDI_). For this refer to the [cdi](./cdi) module.
 * **Helidon SE** (not using _CDI_). For this refer to the information below.
 
+
+> [!WARNING]
+> The Helidon SE support described below is deprecated in favor of [helidon-integrations-oci module](../oci)
+
 ## Helidon Service Registry and OCI SDK Integration
 This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Helidon SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Service Registry](../../../service) and terminology before continuing further.
 
@@ -11,18 +15,8 @@ The **Helidon Service Registry** offers two modules for integrating with the **O
 
 1. The [codegen](./codegen) module is required to be on your annotation processor [APT] classpath. It is not needed at runtime, however. When used on the APT classpath, it will observe cases where your application uses the _@Service.Inject_ annotation on API services from the **OCI SDK**.  When it finds such cases, it generates service source code representing the API service you are injecting. These generated _Services_ will then be used by the **Helidon Service Registry** at runtime.
 
-2. The [runtime](./runtime) module is required to be on your runtime classpath, but is not needed at compile time. This module supplies the default implementation for OCI's authentication providers, as well as other OCI extensibility classes (see the [javadoc](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/package-info.java) for details).
-
-
-### MP Modules
-* [cdi](./cdi) - required to be added as a normal dependency in your final application.
-
-
-### Non-MP Modules
-* [processor](./processor) - required to be in the APT classpath.
-* [runtime](./runtime) - required to be added as a normal dependency in your final application.
-* [tests](./tests) - tests for OCI SDK integration.
-
+2. The [runtime](./runtime) module is required to be on your runtime classpath, but is not needed at compile time. This module supplies the default implementation for OCI's authentication providers, as well as other OCI extensibility classes (see the [javadoc](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/package-info.java) for configuration details). The [OciExtension](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciExtension.java) class is the
+main access point for programmatically obtaining the global [OciConfig](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciConfigBlueprint.java) configuration.
 
 ### Usage
 
@@ -97,4 +91,4 @@ Besides being able to inject OCI SDK APIs, note also that these contracts are in
 See the [runtime](./runtime) module for additional notes for configuration and programmatic accessors.
 
 ### How it works
-See the [InjectionProcessorObserverForOci](processor/src/main/java/io/helidon/integrations/oci/sdk/processor/InjectionProcessorObserverForOCI.java) for a more technical description for how the processor observes _@Inject_ usage. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjunction with the [runtime](./runtime) module on the classpath.
+See the [OciInjectionCodegenObserver](codegen/src/main/java/io/helidon/integrations/oci/sdk/codegen/OciInjectionCodegenObserver.java) for a more technical description for how the processor observes _@Inject_ usage. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjunction with the [runtime](./runtime) module on the classpath.

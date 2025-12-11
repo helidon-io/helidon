@@ -17,4 +17,5 @@
 /**
  * Helidon Service Registry Integrations to support OCI SDK.
  */
+@Deprecated(forRemoval = true, since = "4.3")
 package io.helidon.integrations.oci.sdk.runtime;
