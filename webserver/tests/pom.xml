@@ -49,6 +49,7 @@
         <module>webserver</module>
         <module>websocket</module>
         <module>jsonrpc</module>
+        <module>unix-domain-socket</module>
     </modules>
 
     <properties>

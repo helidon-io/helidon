@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.ConnectionConfig;
@@ -47,6 +48,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class MtlsTest {
+    static {
+        LogConfig.initClass();
+    }
+
     private static WebServer server;
     private final int port;
 

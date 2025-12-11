@@ -67,7 +67,6 @@ public class CoordinatorDeployer {
                             // reuse port second time(TckRecoveryTests does redeploy)
                             "server.sockets.0.port", String.valueOf(coordinatorPort.get()),
                             "server.sockets.0.worker-count", "16",
-                            "server.sockets.0.bind-address", "localhost",
                             "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator",
                             "helidon.lra.coordinator.recovery-interval", "100",
                             "helidon.lra.coordinator.timeout", "3000"

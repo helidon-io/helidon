@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -115,7 +116,7 @@ public class CutConnectionTest {
             assertThat(exec.awaitTermination(TIME_OUT_SEC, TimeUnit.SECONDS), is(true));
             server.stop();
             SocketClosedLog log = ASSERTING_HANDLER.socketClosedLog.get(TIME_OUT_SEC, TimeUnit.SECONDS);
-            assertThat(log.record.getLevel(), is(Level.FINE));
+            assertThat(log.record.getLevel(), is(Level.FINER));
         } finally {
             WEBSERVER_LOGGER.removeHandler(ASSERTING_HANDLER);
             WEBSERVER_LOGGER.setLevel(originalLevel);
@@ -123,11 +124,12 @@ public class CutConnectionTest {
     }
 
 
-    private record SocketClosedLog(LogRecord record, SocketException e) {
+    private record SocketClosedLog(LogRecord record, Exception e) {
 
     }
 
     /**
+     * Now logged on io.helidon.webserver.ConnectionHandler (after switch to SocketChannel from Socket).
      * DEBUG level logging for attempts to write to closed socket is expected:
      * <pre>{@code
      * 023.05.23 14:51:53 FINE io.helidon.webserver.http2.Http2Connection !thread!: Socket error on writer thread
@@ -157,6 +159,11 @@ public class CutConnectionTest {
                 t = t.getCause();
             }
             if (t instanceof SocketException e) {
+                // Socket
+                socketClosedLog.complete(new SocketClosedLog(record, e));
+            }
+            if (t instanceof ClosedChannelException e) {
+                // NIO SocketChannel
                 socketClosedLog.complete(new SocketClosedLog(record, e));
             }
         }

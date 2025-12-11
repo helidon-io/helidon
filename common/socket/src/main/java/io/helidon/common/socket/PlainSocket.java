@@ -110,6 +110,8 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
     @Override
     public void close() {
         try {
+            delegate.shutdownOutput();
+            delegate.shutdownInput();
             delegate.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ class ContentLengthTest {
     }
 
     @Test
-    void longerData(Http2TestClient client) throws ExecutionException, InterruptedException, TimeoutException {
+    void longerData(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
 
         assertFalse(consumeExceptionFuture.isDone());
@@ -132,15 +132,9 @@ class ContentLengthTest {
                             "Request data length doesn't correspond to the content-length header.",
                             TIMEOUT);
 
-        // content length discrepancy is discovered when consuming request data
-        var e = consumeExceptionFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        assertThat(e, Matchers.instanceOf(RequestException.class));
-        assertThat(e.getMessage(), is("Stream is closed."));
-
-        // stream is closed, sending is not possible
-        e = sendExceptionFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        assertThat(e, Matchers.instanceOf(IllegalStateException.class));
-        assertThat(e.getMessage(), is("Stream is already closed."));
+        /*
+        Now this fails already in connection, we never reach routing.
+         */
     }
 
     @Test

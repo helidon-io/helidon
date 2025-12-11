@@ -93,7 +93,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns a port number the default server socket is bound to and is listening on;
-     * or {@code -1} if unknown or not active.
+     * or {@code -1} if unknown (i.e. Unix Domain Socket) or not active.
      * <p>
      * It is supported only when server is running.
      *
@@ -105,7 +105,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns a port number an additional named server socket is bound to and is listening on;
-     * or {@code -1} if unknown or not active.
+     * or {@code -1} if unknown (i.e. Unix Domain Socket) or not active.
      *
      * @param socketName the name of an additional named server socket
      * @return a listen port; or {@code -1} if socket name is unknown or the server socket is not active

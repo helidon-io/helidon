@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -317,14 +318,28 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request, Duration requestReadTimeout) {
+        var address = originalRequest.address();
+        UnixDomainSocketAddress udsAddress = address.filter(a -> a instanceof UnixDomainSocketAddress)
+                .map(UnixDomainSocketAddress.class::cast)
+                .orElse(null);
+
+        if (udsAddress == null) {
+            return http1Client.connectionCache()
+                    .connection(http1Client,
+                                requestReadTimeout,
+                                tls,
+                                proxy,
+                                request.uri(),
+                                request.headers(),
+                                keepAlive);
+        }
         return http1Client.connectionCache()
                 .connection(http1Client,
-                            requestReadTimeout,
                             tls,
-                            proxy,
                             request.uri(),
                             request.headers(),
-                            keepAlive);
+                            keepAlive,
+                            udsAddress);
     }
 
     static class ContentLengthInputStream extends InputStream {

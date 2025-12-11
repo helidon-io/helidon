@@ -16,7 +16,10 @@
 
 package io.helidon.webclient.api;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +80,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final String requestId;
     private final MediaContext mediaContext;
 
+    private SocketAddress socketAddress;
     private String uriTemplate;
     private boolean skipUriEncoding;
     private boolean followRedirects;
@@ -124,6 +128,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this.keepAlive = clientConfig.keepAlive();
 
         this.requestId = nextRequestId(protocolId);
+
+        // this must be after we set clientUri, as it is used from the method
+        clientConfig.baseAddress()
+                .ifPresent(this::address);
     }
 
     @Override
@@ -136,6 +144,22 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public T uri(URI uri) {
         this.uriTemplate = null;
         this.clientUri.resolve(uri);
+        return identity();
+    }
+
+    @Override
+    public T address(SocketAddress socketAddress) {
+        if (socketAddress instanceof InetSocketAddress inet) {
+            this.clientUri.host(inet.getHostString())
+                    .port(inet.getPort());
+            this.socketAddress = null;
+        } else if (socketAddress instanceof UnixDomainSocketAddress) {
+            this.clientUri.host("localhost")
+                    .port(0);
+            this.socketAddress = socketAddress;
+        } else {
+            throw new IllegalArgumentException("Unsupported socket address type: " + socketAddress.getClass().getName());
+        }
         return identity();
     }
 
@@ -385,6 +409,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public Optional<Boolean> sendExpectContinue() {
         return Optional.ofNullable(sendExpectContinue);
+    }
+
+    @Override
+    public Optional<SocketAddress> address() {
+        return Optional.ofNullable(socketAddress);
     }
 
     protected abstract R doSubmit(Object entity);

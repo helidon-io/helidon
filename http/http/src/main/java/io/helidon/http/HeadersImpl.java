@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,10 +35,10 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
      Optimization for most commonly used header names
      */
     private final Header[] knownHeaders = new Header[KNOWN_HEADER_SIZE];
-    private IntSet knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
 
     // custom (unknown) headers are slower
     private Map<HeaderName, Header> customHeaders = null;
+    private final BitSet knownHeaderIndices = new BitSet(KNOWN_HEADER_SIZE);
 
     HeadersImpl() {
     }
@@ -86,7 +87,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public int size() {
-        return (customHeaders == null ? 0 : customHeaders.size()) + knownHeaderIndices.size();
+        return (customHeaders == null ? 0 : customHeaders.size()) + knownHeaderIndices.cardinality();
     }
 
     @Override
@@ -173,7 +174,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             customHeaders().put(name, usedHeader);
         } else {
             knownHeaders[index] = usedHeader;
-            knownHeaderIndices.add(index);
+            knownHeaderIndices.set(index);
         }
         return (T) this;
     }
@@ -181,7 +182,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     @Override
     public T clear() {
         Arrays.fill(knownHeaders, null);
-        knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
+        knownHeaderIndices.clear();
         customHeaders().clear();
         return (T) this;
     }
@@ -231,7 +232,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             int index = ((HeaderNameEnum) name).ordinal();
             Header value = knownHeaders[index];
             knownHeaders[index] = null;
-            knownHeaderIndices.remove(index);
+            knownHeaderIndices.clear(index);
             return value;
         }
         return customHeaders().remove(name);

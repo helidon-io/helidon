@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.http;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * HTTP header name.
@@ -53,5 +55,14 @@ public sealed interface HeaderName permits HeaderNameImpl, HeaderNameEnum {
      */
     default boolean isPseudoHeader() {
         return lowerCase().charAt(0) == ':';
+    }
+
+    /**
+     * Name bytes of the {@link #defaultCase()} in US-ASCII encoding.
+     *
+     * @return name bytes
+     */
+    default byte[] nameBytes() {
+        return defaultCase().getBytes(StandardCharsets.US_ASCII);
     }
 }

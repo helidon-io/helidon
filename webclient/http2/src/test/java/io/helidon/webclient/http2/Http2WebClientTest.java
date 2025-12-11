@@ -108,6 +108,7 @@ class Http2WebClientTest {
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
+        serverBuilder.useNio(false);
         executorService = Executors.newFixedThreadPool(10);
 
         Keys privateKeyConfig =

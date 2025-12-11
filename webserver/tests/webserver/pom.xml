@@ -24,7 +24,7 @@
         <version>4.4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-weserver-tests-webserver</artifactId>
+    <artifactId>helidon-webserver-tests-webserver</artifactId>
     <name>Helidon WebServer Tests Legacy</name>
     <description>WebServer tests</description>
 

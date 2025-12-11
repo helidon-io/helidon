@@ -18,11 +18,15 @@ package io.helidon.webserver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +43,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLServerSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -62,6 +65,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
+import static java.lang.System.Logger.Level.WARNING;
 
 class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
@@ -79,7 +83,7 @@ class ServerListener implements ListenerContext {
     private final DirectHandlers directHandlers;
     private final Tls tls;
     private final SocketOptions connectionOptions;
-    private final InetSocketAddress configuredAddress;
+    private final SocketAddress configuredAddress;
     private final Duration gracePeriod;
 
     private final MediaContext mediaContext;
@@ -92,7 +96,7 @@ class ServerListener implements ListenerContext {
     private volatile boolean running;
     private volatile boolean inCheckpoint;
     private volatile int connectedPort;
-    private volatile ServerSocket serverSocket;
+    private volatile ServerSocketChannel serverSocket;
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
 
@@ -155,11 +159,15 @@ class ServerListener implements ListenerContext {
         // to do anything else (writers etc.)
         this.sharedExecutor = ExecutorsFactory.newServerListenerSharedExecutor();
 
-        int port = listenerConfig.port();
-        if (port < 1) {
-            port = 0;
-        }
-        this.configuredAddress = new InetSocketAddress(listenerConfig.address(), port);
+        this.configuredAddress = listenerConfig.bindAddress()
+                .orElseGet(() -> {
+                    int port = listenerConfig.port();
+                    if (port < 1) {
+                        port = 0;
+                    }
+                    return new InetSocketAddress(listenerConfig.address(), port);
+                });
+
         this.router = router;
 
         // handle idle connection timeout
@@ -221,7 +229,7 @@ class ServerListener implements ListenerContext {
         return router;
     }
 
-    InetSocketAddress configuredAddress() {
+    SocketAddress configuredAddress() {
         return configuredAddress;
     }
 
@@ -238,6 +246,14 @@ class ServerListener implements ListenerContext {
         try {
             // Stop listening for connections
             serverSocket.close();
+            if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
+                try {
+                    // UNIX socket files are created automatically, but they are not deleted when the channel is closed
+                    Files.deleteIfExists(udsa.getPath());
+                } catch (IOException e) {
+                    LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
+                }
+            }
             // Stop handling any new requests on all active connections
             activeConnections().forEach(connection -> connection.close(false));
             if (shutdownExecutors) {
@@ -271,7 +287,6 @@ class ServerListener implements ListenerContext {
         closeFuture.join();
     }
 
-    @SuppressWarnings("resource")
     void start() {
         router.beforeStart();
         startIt();
@@ -279,11 +294,19 @@ class ServerListener implements ListenerContext {
 
     private void startIt() {
         try {
-            SSLServerSocket sslServerSocket = tls.enabled() ? tls.createServerSocket() : null;
-            serverSocket = tls.enabled() ? sslServerSocket : new ServerSocket();
+            if (configuredAddress instanceof UnixDomainSocketAddress) {
+                serverSocket = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+            } else {
+                serverSocket = ServerSocketChannel.open();
+            }
+            if (tls.enabled()) {
+                // basic validation of the configuration
+                tls.newEngine();
+            }
             listenerConfig.configureSocket(serverSocket);
 
             serverSocket.bind(configuredAddress, listenerConfig.backlog());
+            this.connectedPort = serverSocket.getLocalAddress() instanceof InetSocketAddress ias ? ias.getPort() : -1;
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to start server", e);
         }
@@ -292,21 +315,32 @@ class ServerListener implements ListenerContext {
 
         running = true;
 
-        InetAddress inetAddress = serverSocket.getInetAddress();
-        this.connectedPort = serverSocket.getLocalPort();
-
         if (LOGGER.isLoggable(INFO)) {
-            String format;
-            if (tls.enabled()) {
-                format = "[%s] https://%s:%s bound for socket '%s'";
+            if (configuredAddress instanceof InetSocketAddress inetAddress) {
+                String format;
+                if (tls.enabled()) {
+                    format = "[%s] https://%s:%s bound for socket '%s'";
+                } else {
+                    format = "[%s] http://%s:%s bound for socket '%s'";
+                }
+                LOGGER.log(INFO, String.format(format,
+                                               serverChannelId,
+                                               inetAddress.getHostString(),
+                                               connectedPort,
+                                               socketName));
             } else {
-                format = "[%s] http://%s:%s bound for socket '%s'";
+                String format;
+                if (tls.enabled()) {
+                    format = "[%s] %s bound for secure socket '%s'";
+                } else {
+                    format = "[%s] %s bound for socket '%s'";
+                }
+                LOGGER.log(INFO, String.format(format,
+                                               serverChannelId,
+                                               configuredAddress,
+                                               socketName));
             }
-            LOGGER.log(INFO, String.format(format,
-                                           serverChannelId,
-                                           inetAddress.getHostAddress(),
-                                           connectedPort,
-                                           socketName));
+
 
             if (LOGGER.isLoggable(TRACE)) {
                 if (listenerConfig.writeQueueLength() <= 1) {
@@ -361,19 +395,19 @@ class ServerListener implements ListenerContext {
                 // this must be done before we accept, and the semaphore must be released when connection is finished
                 connectionSemaphore.acquire();
                 // if accept fails itself, we consider it end of story, the listener is broken
-                Socket socket = serverSocket.accept();
+                SocketChannel socket = serverSocket.accept();
 
                 try {
                     connectionOptions.configureSocket(socket);
                     ConnectionHandler handler = new ConnectionHandler(this,
-                                                    connectionSemaphore,
-                                                    requestLimit,
-                                                    connectionProviders,
-                                                    activeConnections,
-                                                    socket,
-                                                    serverChannelId,
-                                                    router,
-                                                    tls);
+                                                                      connectionSemaphore,
+                                                                      requestLimit,
+                                                                      connectionProviders,
+                                                                      activeConnections,
+                                                                      socket,
+                                                                      serverChannelId,
+                                                                      router,
+                                                                      tls);
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
@@ -401,6 +435,12 @@ class ServerListener implements ListenerContext {
 
                     // we never started the handler, so we must release the semaphore here
                     connectionSemaphore.release();
+                }
+            } catch (AsynchronousCloseException e) {
+                if (inCheckpoint) {
+                    break;
+                } else if (running) {
+                    stop();
                 }
             } catch (SocketException e) {
                 if (!e.getMessage().contains("Socket closed")) {

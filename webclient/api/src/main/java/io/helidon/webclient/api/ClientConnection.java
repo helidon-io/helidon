@@ -78,4 +78,22 @@ public interface ClientConnection extends ReleasableResource {
      */
     default void allowExpectContinue(boolean allowExpectContinue) {
     }
+
+    /**
+     * Check whether this connection is connected.
+     *
+     * @return true if connected, false otherwise
+     */
+    default boolean isConnected() {
+        return true;
+    }
+
+    /**
+     * Connect this connection.
+     *
+     * @return this instance
+     */
+    default ClientConnection connect() {
+        return this;
+    }
 }

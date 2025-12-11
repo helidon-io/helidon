@@ -214,6 +214,7 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
      * notified when the task completes.
      */
     private static class ThreadBoundFuture<T> extends CompletableFuture<T> implements Runnable {
+        private static final System.Logger LOGGER = System.getLogger(ThreadBoundFuture.class.getName());
 
         private final ThreadPerTaskExecutor executor;
         private final Callable<T> task;
@@ -241,6 +242,9 @@ class ThreadPerTaskExecutor implements HelidonTaskExecutor {
                 complete(result);
             } catch (Throwable e) {
                 completeExceptionally(e);
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    LOGGER.log(System.Logger.Level.DEBUG, "Exception thrown from task", e);
+                }
             } finally {
                 executor.taskComplete(thread);
             }
