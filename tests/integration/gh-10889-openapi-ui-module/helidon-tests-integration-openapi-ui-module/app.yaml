@@ -1,0 +1,37 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: helidon-tests-integration-openapi-ui-module
+  labels:
+    app: helidon-tests-integration-openapi-ui-module
+spec:
+  type: ClusterIP
+  selector:
+    app: helidon-tests-integration-openapi-ui-module
+  ports:
+    - name: tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: helidon-tests-integration-openapi-ui-module
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helidon-tests-integration-openapi-ui-module
+  template:
+    metadata:
+      labels:
+        app: helidon-tests-integration-openapi-ui-module
+        version: v1
+    spec:
+      containers:
+      - name: helidon-tests-integration-openapi-ui-module
+        image: helidon-tests-integration-openapi-ui-module
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
