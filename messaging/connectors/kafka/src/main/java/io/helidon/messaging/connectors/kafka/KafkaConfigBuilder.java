@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.messaging.connectors.kafka;
 
 import java.util.regex.Pattern;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.messaging.ConnectorConfigBuilder;
 
 import org.apache.kafka.common.serialization.Deserializer;
@@ -28,6 +30,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 /**
  * Build Kafka specific config.
  */
+@Configured
 public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
 
     KafkaConfigBuilder() {
@@ -64,6 +67,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param servers list of host/port pairs
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder bootstrapServers(String servers) {
         super.property("bootstrap.servers", servers);
         return this;
@@ -75,6 +79,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param topics topic name
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder topic(String... topics) {
         super.property("topic", String.join(",", topics));
         return this;
@@ -86,6 +91,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param topics "dead letter queue" topics to be used in case message is nacked
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder dlqTopic(String... topics) {
         super.property("dlq-topic", String.join(",", topics));
         return this;
@@ -97,6 +103,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param topicPattern topic name regex pattern
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder topicPattern(Pattern topicPattern) {
         super.property("topic.pattern", topicPattern.pattern());
         return this;
@@ -108,6 +115,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param topicPattern topic name regex pattern
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder topicPattern(String topicPattern) {
         super.property("topic.pattern", topicPattern);
         return this;
@@ -124,6 +132,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param groupId consumer group identifier
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder groupId(String groupId) {
         super.property("group.id", groupId);
         return this;
@@ -140,6 +149,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param enableAutoCommit true for automatic offset committing
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder enableAutoCommit(boolean enableAutoCommit) {
         super.property("enable.auto.commit", String.valueOf(enableAutoCommit));
         return this;
@@ -151,6 +161,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param keySerializer class responsible for key serializing
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder keySerializer(Class<? extends Serializer<?>> keySerializer) {
         super.property("key.serializer", keySerializer.getName());
         return this;
@@ -162,6 +173,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param keyDeserializer class responsible for key de-serializing
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder keyDeserializer(Class<? extends Deserializer<?>> keyDeserializer) {
         super.property("key.deserializer", keyDeserializer.getName());
         return this;
@@ -173,6 +185,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param valueSerializer class responsible for value serializing
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder valueSerializer(Class<? extends Serializer<?>> valueSerializer) {
         super.property("value.serializer", valueSerializer.getName());
         return this;
@@ -184,6 +197,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param valueDeserializer class responsible for value de-serializing
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder valueDeserializer(Class<? extends Deserializer<?>> valueDeserializer) {
         super.property("value.deserializer", valueDeserializer.getName());
         return this;
@@ -193,8 +207,10 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * The maximum time to block polling loop in milliseconds.
      *
      * @param pollTimeout time to block polling loop in milliseconds
+     *
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder pollTimeout(long pollTimeout) {
         super.property("poll.timeout", String.valueOf(pollTimeout));
         return this;
@@ -206,6 +222,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param periodExecutions in milliseconds
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder periodExecutions(long periodExecutions) {
         super.property("period.executions", String.valueOf(periodExecutions));
         return this;
@@ -230,6 +247,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param autoOffsetReset [latest, earliest, none]
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder autoOffsetReset(AutoOffsetReset autoOffsetReset) {
         super.property("auto.offset.reset", autoOffsetReset.name().toLowerCase());
         return this;
@@ -271,6 +289,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param batchSize batch size in bytes
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder batchSize(int batchSize) {
         super.property("batch.size", String.valueOf(batchSize));
         return this;
@@ -307,6 +326,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param acks acknowledge mode
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder acks(String acks) {
         super.property("acks", acks);
         return this;
@@ -329,6 +349,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param bufferMemory bytes of memory
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder bufferMemory(long bufferMemory) {
         super.property("buffer.memory", String.valueOf(bufferMemory));
         return this;
@@ -348,6 +369,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param compressionType compression type
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder compressionType(String compressionType) {
         super.property("compression.type", compressionType);
         return this;
@@ -374,6 +396,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param retries number of retries
      * @return this builder
      */
+    @ConfiguredOption
     public KafkaConfigBuilder retries(int retries) {
         super.property("retries", String.valueOf(retries));
         return this;
