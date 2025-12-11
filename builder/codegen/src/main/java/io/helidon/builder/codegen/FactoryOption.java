@@ -221,7 +221,7 @@ final class FactoryOption {
         // we must validate - any candidate that is void, or has parameters is a bad candidate
         var collector = Errors.collector();
         for (TypedElementInfo candidate : candidates) {
-            if (candidate.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
+            if (candidate.typeName().unboxed().equals(TypeNames.PRIMITIVE_VOID)) {
                 collector.warn("Builder definition methods cannot have void return type "
                                        + "(must be getters): "
                                        + typeInfo.typeName().fqName() + "." + candidate.elementName());
@@ -243,6 +243,12 @@ final class FactoryOption {
                     };
                     logger.log(level, errorMessage.getMessage());
                 });
+
+        // now filter out the candidates that are not valid (void or with parameters) - user must take care of them
+        candidates = candidates.stream()
+                .filter(it -> !it.typeName().unboxed().equals(TypeNames.PRIMITIVE_VOID))
+                .filter(it -> it.parameterArguments().isEmpty())
+                .toList();
 
         return candidates;
     }
