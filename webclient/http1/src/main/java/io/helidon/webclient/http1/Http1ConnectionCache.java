@@ -89,28 +89,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
     ClientConnection connection(Http1ClientImpl http1Client,
                                 Tls tls,
-                                ClientUri uri,
-                                ClientRequestHeaders headers,
-                                boolean defaultKeepAlive,
-                                UnixDomainSocketAddress address) {
-
-        boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
-        Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
-        if (keepAlive) {
-            return keepAliveUnixDomainConnection(http1Client, effectiveTls, uri, address);
-        } else {
-            return UnixDomainSocketClientConnection.create(http1Client.webClient(),
-                                                           effectiveTls,
-                                                           ALPN_ID,
-                                                           address,
-                                                           it -> false,
-                                                           it -> {
-                                                           });
-        }
-    }
-
-    ClientConnection connection(Http1ClientImpl http1Client,
-                                Tls tls,
                                 Proxy proxy,
                                 ClientUri uri,
                                 ClientRequestHeaders headers,
