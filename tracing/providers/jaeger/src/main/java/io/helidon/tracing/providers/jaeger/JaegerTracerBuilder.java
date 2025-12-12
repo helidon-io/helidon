@@ -622,6 +622,17 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return this;
     }
 
+    /**
+     * Add a span exporter.
+     *
+     * @param spanExporter span exporter to use
+     * @return updated builder instance
+     */
+    public JaegerTracerBuilder addSpanExporter(SpanExporter spanExporter) {
+        adHocExporters.add(spanExporter);
+        return this;
+    }
+
     private SpanProcessor spanProcessor(SpanExporter exporter) {
         return switch (spanProcessorType) {
             case BATCH -> BatchSpanProcessor.builder(exporter)
