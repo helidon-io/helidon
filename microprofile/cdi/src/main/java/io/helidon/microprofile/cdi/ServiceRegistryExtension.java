@@ -93,6 +93,8 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
     private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
+    // and tracer must be excluded as well, as we need to create it in its CDI extension
+    private static final ResolvedType TRACER = ResolvedType.create("io.helidon.tracing.Tracer");
 
     /**
      * Creates a new {@link ServiceRegistryExtension}.
@@ -178,6 +180,10 @@ public class ServiceRegistryExtension implements Extension {
             }
             if (service.contracts().contains(SECURITY)) {
                 // workaround - we must use `SecurityCdiExtension`, as it has public methods with security builder...
+                continue;
+            }
+            if (service.contracts().contains(TRACER)) {
+                // workaround - we must use `TelemetryCdiExtension`
                 continue;
             }
             addServiceInfo(abd, bm, registry, processedTypes, service);
