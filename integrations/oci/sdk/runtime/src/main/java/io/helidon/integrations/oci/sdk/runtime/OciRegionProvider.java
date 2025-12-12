@@ -27,6 +27,7 @@ import com.oracle.bmc.Region;
 /**
  * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.service.registry.Dependency} context.
  */
+@Deprecated(forRemoval = true, since = "4.3")
 @Service.Singleton
 class OciRegionProvider implements Service.InjectionPointFactory<Region> {
 

@@ -52,6 +52,7 @@ import static io.helidon.common.types.Annotations.findFirst;
  * @see OciConfigBlueprint
  * @see OciConfig
  */
+@Deprecated(forRemoval = true, since = "4.3")
 @Service.Singleton
 class OciAuthenticationDetailsProvider implements Service.InjectionPointFactory<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());

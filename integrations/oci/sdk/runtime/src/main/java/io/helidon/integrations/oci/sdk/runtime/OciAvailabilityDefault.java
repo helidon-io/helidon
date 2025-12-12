@@ -32,6 +32,7 @@ import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsP
  * This (overridable) implementation will check the {@link OciConfig} for {@code IMDS} availability. And if it is found to be
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
  */
+@Deprecated(forRemoval = true, since = "4.3")
 @Service.Singleton
 class OciAvailabilityDefault implements OciAvailability {
     private static final String OPC_PATH = getOpcPath(METADATA_SERVICE_BASE_URL);

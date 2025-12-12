@@ -30,6 +30,7 @@ import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
  * for {@link io.helidon.service.codegen.spi.InjectCodegenObserverProvider} that creates an observer
  * watching for injections of OCI types, and that generates appropriate services for them.
  */
+@Deprecated(forRemoval = true, since = "4.3")
 public class OciInjectCodegenObserverProvider implements InjectCodegenObserverProvider {
     static final Option<Set<String>> OPTION_TYPENAME_EXCEPTIONS =
             Option.createSet("inject.oci.codegenExclusions",
