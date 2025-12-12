@@ -16,8 +16,6 @@
 package io.helidon.microprofile.telemetry;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.List;
 
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
@@ -73,13 +71,11 @@ public class TelemetryCdiExtension implements Extension {
         boolean trace = false;
         String template = "%1$s.%2$s";
         Span.Kind kind = Span.Kind.INTERNAL;
-        List<Tracing.Tag> tags = new ArrayList<>();
 
         if (topLevel != null) {
             trace = true;
             template = topLevel.value();
             kind = topLevel.kind();
-            tags.addAll(List.of(topLevel.tags()));
         }
 
         for (AnnotatedMethodConfigurator<?> method : configurator.methods()) {
@@ -95,7 +91,6 @@ public class TelemetryCdiExtension implements Extension {
                 if (methodLevel.kind() != Span.Kind.INTERNAL) {
                     kind = methodLevel.kind();
                 }
-                tags.addAll(List.of(methodLevel.tags()));
             }
             var finalTemplate = template;
             var finalKind = kind;
@@ -111,7 +106,7 @@ public class TelemetryCdiExtension implements Extension {
 
                 @Override
                 public SpanKind kind() {
-                    return switch(finalKind) {
+                    return switch (finalKind) {
                         case INTERNAL -> SpanKind.INTERNAL;
                         case SERVER -> SpanKind.SERVER;
                         case CLIENT -> SpanKind.CLIENT;
