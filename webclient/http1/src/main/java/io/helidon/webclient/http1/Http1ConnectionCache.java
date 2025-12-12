@@ -17,13 +17,12 @@
 package io.helidon.webclient.http1;
 
 import java.net.UnixDomainSocketAddress;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.tls.Tls;
@@ -50,7 +49,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final String HTTPS = "https";
     private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
-    private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
+
     private final Map<ConnectionKey, LinkedBlockingDeque<ClientConnection>> cache = new ConcurrentHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -89,7 +88,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
-                                Duration requestReadTimeout,
                                 Tls tls,
                                 Proxy proxy,
                                 ClientUri uri,
@@ -98,9 +96,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(http1Client, requestReadTimeout, effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(http1Client, effectiveTls, uri, proxy, null);
+            return oneOffConnection(http1Client, effectiveTls, uri, proxy);
         }
     }
 
@@ -181,7 +179,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
 
     private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
-                                                 Duration requestReadTimeout,
                                                  Tls tls,
                                                  ClientUri uri,
                                                  Proxy proxy) {
@@ -200,7 +197,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                                            clientConfig.dnsAddressLookup(),
                                                            proxy);
 
-        LinkedBlockingDeque<ClientConnection> connectionQueue =
+        Queue<ClientConnection> connectionQueue =
                 cache.computeIfAbsent(connectionKey,
                                       it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
 
@@ -229,7 +226,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private ClientConnection oneOffConnection(Http1ClientImpl http1Client,
                                               Tls tls,
                                               ClientUri uri,
-                                              Proxy proxy, UnixDomainSocketAddress address) {
+                                              Proxy proxy) {
 
         WebClient webClient = http1Client.webClient();
         Http1ClientConfig clientConfig = http1Client.clientConfig();
@@ -250,34 +247,29 @@ class Http1ConnectionCache extends ClientConnectionCache {
                 .connect();
     }
 
-    private boolean finishRequest(LinkedBlockingDeque<ClientConnection> connectionQueue, ClientConnection conn) {
+    private boolean finishRequest(Queue<ClientConnection> connectionQueue, ClientConnection conn) {
         if (conn.isConnected()) {
-            try {
-                if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
-                    conn.helidonSocket().idle(); // mark it as idle to stay blocked at read for closed conn detection
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
-                                                        conn.channelId(),
-                                                        Thread.currentThread().getName()));
-                    }
-                    return true;
-                } else {
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
-                                                        conn.channelId(),
-                                                        Thread.currentThread().getName()));
-                    }
-                }
-            } catch (InterruptedException e) {
+            // this must be done before we return the connection to the queue, to avoid race condition, where another client
+            // may take the connection from the queue, and we would set it as idle after that
+            // mark it as idle to stay blocked at read for closed conn detection
+            conn.helidonSocket().idle();
+
+            if (connectionQueue.offer(conn)) {
                 if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection due to '%s' %s",
+                    LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
                                                     conn.channelId(),
-                                                    e.getMessage(),
                                                     Thread.currentThread().getName()));
                 }
+                return true;
+            }
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
+                                                conn.channelId(),
+                                                Thread.currentThread().getName()));
             }
         }
 
+        // connection will be closed by the caller, no need to do anything else here
         return false;
     }
 }

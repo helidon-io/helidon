@@ -16,6 +16,10 @@
 
 package io.helidon.webserver.tests;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Status;
@@ -33,8 +37,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class ResponseListenerTest {
     private static final AtomicBoolean BEFORE_SEND_CALLED = new AtomicBoolean(false);
-    private static final AtomicBoolean WHEN_SENT_CALLED = new AtomicBoolean(false);
     private static final AtomicBoolean WHEN_BEFORE_SEND = new AtomicBoolean(false);
+    private static CompletableFuture<Boolean> whenSentCompleted = new CompletableFuture<>();
 
     private final Http1Client client;
 
@@ -48,11 +52,11 @@ class ResponseListenerTest {
             res.beforeSend(() -> {
                         res.status(Status.PARTIAL_CONTENT_206);
                         BEFORE_SEND_CALLED.set(true);
-                        if (WHEN_SENT_CALLED.get()) {
+                        if (whenSentCompleted.isDone()) {
                             WHEN_BEFORE_SEND.set(true);
                         }
                     })
-                    .whenSent(() -> WHEN_SENT_CALLED.set(true));
+                    .whenSent(() -> whenSentCompleted.complete(true));
 
             res.send("done");
         });
@@ -60,13 +64,13 @@ class ResponseListenerTest {
 
     @AfterEach
     void afterEach() {
-        WHEN_SENT_CALLED.set(false);
+        whenSentCompleted = new CompletableFuture<>();
         WHEN_BEFORE_SEND.set(false);
         BEFORE_SEND_CALLED.set(false);
     }
 
     @Test
-    void testCalls() {
+    void testCalls() throws ExecutionException, InterruptedException, TimeoutException {
         var response = client.get("/").request(String.class);
 
         assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
@@ -74,6 +78,9 @@ class ResponseListenerTest {
 
         assertThat("whenSent called before beforeSend", WHEN_BEFORE_SEND.get(), is(false));
         assertThat("beforeSend not called", BEFORE_SEND_CALLED.get(), is(true));
-        assertThat("whenSent not called", WHEN_SENT_CALLED.get(), is(true));
+        // there is a race condition - `whenSent` is called after the response is sent, so we may get a response here before
+        // it is completed by the server; ergo we must use a future. The other values are guaranteed to be set before
+        // the response is sent
+        assertThat("whenSent not called", whenSentCompleted.get(5, TimeUnit.SECONDS), is(true));
     }
 }
