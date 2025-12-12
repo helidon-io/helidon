@@ -270,7 +270,7 @@ jobs:
           - { group: r1, start: 1, end: 25 }
           - { group: r2, start: 26, end: 50 }
           - { group: r3, start: 51, end: 75 }
-          - { group: r4, start: 75, end: 100 }
+          - { group: r4, start: 76, end: 100 }
           - { group: r5, start: 101, end: -1 }
           - { packaging: jar }
     runs-on: ubuntu-22.04

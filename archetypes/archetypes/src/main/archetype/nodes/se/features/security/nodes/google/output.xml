@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-webserver-context">true</boolean>
+        <boolean path="requires-io-helidon-webserver-staticcontent">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-google-login">true</boolean>
+    </variables>
+    <output>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/static.js/google-app.js</include>
+            </includes>
+        </files>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/WEB/google-login.html</include>
+            </includes>
+        </files>
+        <model>
+            <list key="security-server-paths">
+                <value file="files/src/main/resources/security-server-paths.yaml"/>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-google-login</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.bundles</value>
+                    <value key="artifactId">helidon-bundles-config</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.webserver</value>
+                    <value key="artifactId">helidon-webserver-static-content</value>
+                </map>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>java.util.Optional</value>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>io.helidon.http.HttpMediaTypes</value>
+                <value>io.helidon.security.Security</value>
+                <value>io.helidon.security.SecurityContext</value>
+                <value>io.helidon.security.Subject</value>
+                <value>io.helidon.security.providers.google.login.GoogleTokenProvider</value>
+                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.webserver.WebServerConfig</value>
+                <value>io.helidon.webserver.context.ContextFeature</value>
+                <value>io.helidon.webserver.security.SecurityFeature</value>
+                <value>io.helidon.webserver.staticcontent.StaticContentService</value>
+            </list>
+            <list key="Main-main">
+                <value><![CDATA[
+        Security security = Security.builder()
+                .addProvider(GoogleTokenProvider.builder()
+                        .clientId("your-client-id.apps.googleusercontent.com"))
+                .build();]]>
+                </value>
+            </list>
+            <list key="Main-server-builder">
+                <value><![CDATA[
+                .featuresDiscoverServices(false)
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build())]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[
+            .get("/rest/profile", SecurityFeature.authenticate(),
+                 (req, res) -> {
+                        Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                        res.send("Response from builder based service, you are: \n" + securityContext
+                            .flatMap(SecurityContext::user)
+                            .map(Subject::toString)
+                            .orElse("Security context is null"));
+                        res.next();
+                    })
+            .register(StaticContentService.create("/WEB"))]]>
+                </value>
+            </list>
+            <list key="Main-logging">
+                <value><![CDATA[
+        System.out.println("Check Google login http://localhost:" + server.port() + "/google-login.html");]]>
+                </value>
+            </list>
+            <list key="security-properties">
+                <value file="files/src/main/resources/security-properties.yaml"/>
+            </list>
+            <list key="security-providers">
+                <value file="files/src/main/resources/application.yaml"/>
+            </list>
+            <list key="readme-sections" >
+                <value file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>

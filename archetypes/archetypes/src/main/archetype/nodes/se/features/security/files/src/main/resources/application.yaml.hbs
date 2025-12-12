@@ -1,0 +1,8 @@
+{{#security}}
+security:
+  config.require-encryption: false
+  properties:
+{{#security-properties}}{{.}}{{/security-properties}}
+  providers:
+{{#security-providers}}{{.}}{{/security-providers}}
+{{/security}}

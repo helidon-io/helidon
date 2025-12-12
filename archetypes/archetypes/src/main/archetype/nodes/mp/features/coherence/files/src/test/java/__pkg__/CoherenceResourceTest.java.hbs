@@ -1,0 +1,39 @@
+package {{package}};
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+
+import io.helidon.microprofile.testing.junit5.HelidonTest;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+@HelidonTest
+class CoherenceResourceTest {
+    @Inject
+    private WebTarget target;
+
+    @Test
+    void testCreditScore() {
+
+        final String JSON_PAYLOAD = """
+            {
+            "ssn" : "123-45-6789",
+            "firstName" : "Frank",
+            "lastName" : "Helidon",
+            "dateOfBirth" : "02/19/2019"
+            }
+            """;
+
+        try (Response r = target.path("creditscore")
+                .request()
+                .post(Entity.entity(JSON_PAYLOAD, MediaType.APPLICATION_JSON))) {
+            assertThat(r.getStatus(), is(200));
+        }
+    }
+}
