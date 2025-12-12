@@ -33,6 +33,8 @@ import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracing;
 import io.helidon.validation.Validation;
 import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
@@ -213,6 +215,25 @@ public class DeclarativeExample {
         }
     }
     // end::snippet_12[]
+
+    // tag::snippet_13[]
+    @Service.Singleton
+    @Tracing.Traced(tags = @Tracing.Tag(key = "service", value = "TracedService"),
+                    kind = Span.Kind.SERVER)
+    static class TracedService {
+        // end::snippet_13[]
+
+        // tag::snippet_14[]
+        @Http.GET
+        @Http.Path("/greet")
+        @Tracing.Traced(value = "explicit-name", tags = @Tracing.Tag(key = "custom", value = "customValue"))
+        String greet(@Http.HeaderParam("User-Agent") @Tracing.TagParam String userAgent) {
+            return "Hello!";
+        }
+        // end::snippet_14[]
+    }
+
+
 
     private static class ApplicationBinding {
         static Binding create() {
