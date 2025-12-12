@@ -37,7 +37,7 @@ public final class Tracing {
      * A service method is a non-private method on a {@link io.helidon.service.registry.ServiceRegistry} service.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     @Interception.Intercepted
     public @interface Traced {
         /**
@@ -73,7 +73,7 @@ public final class Tracing {
      * Tags are added to spans (alternative term is Span Attribute).
      */
     @Target({})
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface Tag {
         /**
          * Tag key.
@@ -95,9 +95,12 @@ public final class Tracing {
      * Tags are added to spans (alternative term is Span Attribute).
      * <p>
      * Tag key is either explicitly defined, or inferred from the parameter name, tag value is the parameter value.
+     * <p>
+     * Note that when this annotation is used with runtime processing (i.e. in Helidon MP), the value MUST be defined,
+     * as names of parameters are not retained in compiled Java classes.
      */
     @Target(ElementType.PARAMETER)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface TagParam {
         /**
          * Tag key. Defaults to parameter name.
