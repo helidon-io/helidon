@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.tracing.providers.opentelemetry;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.ServiceLoader;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.config.Config;
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanListener;
+import io.helidon.tracing.Tracer;
+
+import io.opentelemetry.api.GlobalOpenTelemetry;
+
+class OpenTelemetryTracerImpl extends OpenTelemetryTracerConfig.BuilderBase.OpenTelemetryTracerConfigImpl implements Tracer {
+
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerImpl.class.getName());
+
+    private final List<SpanListener> spanListeners = new ArrayList<>();
+
+    @Override
+    public void inject(SpanContext spanContext, HeaderProvider inboundHeadersProvider, HeaderConsumer outboundHeadersConsumer) {
+//        super.inject(spanContext, inboundHeadersProvider, outboundHeadersConsumer);
+    }
+
+    @Override
+    public Optional<SpanContext> extract(HeaderProvider headersProvider) {
+//        return super.extract(headersProvider);
+        return Optional.empty();
+    }
+
+    @Override
+    public Span.Builder<?> spanBuilder(String name) {
+//        return super.spanBuilder(name);
+        return null;
+    }
+
+    /**
+     * Create an instance providing a builder.
+     *
+     * @param builder extending builder base of this prototype
+     */
+    protected OpenTelemetryTracerImpl(BuilderBase<?, ?> builder) {
+        super(builder);
+
+        if (enabled() && registerGlobal()) {
+            try {
+                GlobalOpenTelemetry.set(openTelemetry());
+                var globalHelidonTracer = HelidonOpenTelemetry.create(openTelemetry(),
+                                                                      delegate(),
+                                                                      Map.of());
+                Tracer.global(globalHelidonTracer);
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to set global OpenTelemetry as requested by tracing settings", e);
+            }
+        }
+
+        spanListeners.addAll(HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+        spanListeners.addAll(builder.spanListeners());
+
+    }
+
+//    static OpenTelemetryTracerImpl create(Config config) {
+//        return OpenTelemetryTracerBuilder.create()
+//                .config(config)
+//                .build();
+//    }
+
+    @Override
+    public Tracer register(SpanListener spanListener) {
+        spanListeners.add(spanListener);
+        return this;
+    }
+
+    @Override
+    public List<SpanListener> spanListeners() {
+        return Collections.unmodifiableList(spanListeners);
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> tracerClass) {
+        if (tracerClass.isInstance(delegate())) {
+            return tracerClass.cast(delegate());
+        }
+        return tracerClass.cast(this); //super.unwrap(tracerClass);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof OpenTelemetryTracerImpl that)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        return Objects.equals(spanListeners, that.spanListeners);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), spanListeners);
+    }
+
+    @Override
+    public String toString() {
+        return "OpenTelemetryTracerImpl{"
+                + super.toString()
+                + "spanListeners=" + spanListeners
+                + '}';
+    }
+}
