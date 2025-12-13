@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,8 @@ class TestRollbackScenarios {
     )
     private EntityManager jpaTransactionScopedSynchronizedEntityManager;
 
+    private boolean hibernate;
+
 
     /*
      * Constructors.
@@ -85,6 +87,7 @@ class TestRollbackScenarios {
 
     @BeforeEach
     void startCdiContainer() {
+        this.hibernate = Boolean.parseBoolean(System.getProperty("helidon.hibernate"));
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         assertThat(initializer, notNullValue());
@@ -271,12 +274,28 @@ class TestRollbackScenarios {
         }
         tm.rollback();
 
-        // Remove the author properly.
+        // Remove the (detached) author properly.
         tm.begin();
         assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
         assertThat(em.isJoinedToTransaction(), is(true));
         assertThat(em.contains(author), is(false));
-        author = em.merge(author);
+        // Hibernate versions above 6.6 seem to violate the very explicit JPA specification. See
+        // https://docs.jboss.org/hibernate/orm/6.6/migration-guide/migration-guide.html#merge-versioned-deleted Then
+        // see
+        // https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1#merging-detached-entity-state,
+        // first bullet point, which reads:
+        //
+        //  "If X is a detached entity, the state of X is copied onto a pre-existing managed entity instance X' of the
+        //  same identity **or a new managed copy X' of X is created.**"
+        //
+        // We have to handle this by hand here by creating a new, functionally interchangeable author and persisting
+        // it. Note that Eclipselink follows the specification text to the letter.
+        if (this.hibernate) {
+            author = new Author("John Kennedy");
+            em.persist(author);
+        } else {
+            author = em.merge(author);
+        }
         em.remove(author);
         tm.commit();
         assertThat(em.contains(author), is(false));

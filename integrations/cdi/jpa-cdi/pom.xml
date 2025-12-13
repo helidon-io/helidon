@@ -300,6 +300,7 @@
                     <reportNameSuffix>eclipselink</reportNameSuffix>
                     <skip>${eclipselink.skip}</skip>
                     <systemPropertyVariables>
+                        <helidon.hibernate>false</helidon.hibernate>
                         <helidon.jta.immediateEnlistment>${helidon.jta.immediateEnlistment}</helidon.jta.immediateEnlistment>
                         <helidon.jta.interposedSynchronizations>${helidon.jta.interposedSynchronizations}</helidon.jta.interposedSynchronizations>
                         <helidon.jta.preemptiveEnlistmentChecks>${helidon.jta.preemptiveEnlistmentChecks}</helidon.jta.preemptiveEnlistmentChecks>
@@ -324,6 +325,9 @@
                             </classpathDependencyExcludes>
                             <reportNameSuffix>hibernate</reportNameSuffix>
                             <skip>${hibernate.skip}</skip>
+                            <systemPropertyVariables>
+                                <helidon.hibernate>true</helidon.hibernate>
+                            </systemPropertyVariables>
                             <testClassesDirectory>${project.build.directory}/hibernate/test-classes</testClassesDirectory>
                         </configuration>
                     </execution>
