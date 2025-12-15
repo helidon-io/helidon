@@ -1,0 +1,30 @@
+package {{package}};
+
+{{#MainTest-java-imports}}
+import {{.}};
+{{/MainTest-java-imports}}
+
+{{#MainTest-helidon-imports}}
+import {{.}};
+{{/MainTest-helidon-imports}}
+
+{{#MainTest-other-imports}}
+import {{.}};
+{{/MainTest-other-imports}}
+
+{{#MainTest-static-imports}}
+import {{.}};
+{{/MainTest-static-imports}}
+
+@HelidonTest
+class MainTest {
+{{#MainTest-static-fields}}
+{{.}}
+{{/MainTest-static-fields}}
+
+    @Inject
+    private WebTarget target;
+{{#MainTest-methods}}
+{{.}}
+{{/MainTest-methods}}
+}

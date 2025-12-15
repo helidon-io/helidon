@@ -1,0 +1,35 @@
+
+### Build the application
+
+1. Build without running a test
+    ```bash
+    mvn clean package -DskipTests
+    ```
+2. Build with run default test profile using mocked unit tests
+    ```bash
+    mvn clean package
+    ```
+3. Build and run `test` test profile that performs authentication for OCI services via .oci config file
+    ```bash
+    mvn clean package -Ptest
+    ```
+4. Build and execute `prod` test profile that performs OCI services authentication via instance
+principal when running it in an oci compute instance.
+    ```bash
+    mvn clean package -Pprod
+    ```
+
+### Run the application
+
+1. Default with no profile will use `config_file,instance_principals,resource_principal` authentication strategy
+    ```bash
+    java -jar server/target/{{artifactId}}.jar
+    ```
+2. `test` profile will use user principal via oci config file authentication
+    ```bash
+    java -Dconfig.profile=test -jar server/target/{{artifactId}}.jar
+    ```
+3. `prod` profile will use instance principal authentication
+    ```bash
+    java -Dconfig.profile=prod -jar server/target/{{artifactId}}.jar
+    ```

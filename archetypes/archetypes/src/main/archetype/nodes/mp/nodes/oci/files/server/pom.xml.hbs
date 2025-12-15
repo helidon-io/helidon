@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>{{groupId}}</groupId>
+        <artifactId>{{parent-artifactId}}</artifactId>
+        <version>{{project-version}}</version>
+    </parent>
+    <artifactId>{{artifactId}}</artifactId>
+    <version>{{project-version}}</version>
+
+    {{#mainClass}}
+    <properties>
+        <mainClass>{{mainClass}}</mainClass>
+    </properties>
+
+    {{/mainClass}}
+    <dependencies>
+        {{#dependencies}}
+        <dependency>
+            <groupId>{{groupId}}</groupId>
+            <artifactId>{{artifactId}}</artifactId>
+            {{#version}}
+            <version>{{.}}</version>
+            {{/version}}
+            {{#scope}}
+            <scope>{{.}}</scope>
+            {{/scope}}
+            {{#type}}
+            <type>{{.}}</type>
+            {{/type}}
+            {{#optional}}
+            <optional>{{.}}</optional>
+            {{/optional}}
+            {{#exclusions}}
+            {{#first}}
+            <exclusions>
+            {{/first}}
+                <exclusion>
+                    <groupId>{{groupId}}</groupId>
+                    <artifactId>{{artifactId}}</artifactId>
+                </exclusion>
+            {{#first}}
+            </exclusions>
+            {{/first}}
+            {{/exclusions}}
+        </dependency>
+        {{/dependencies}}
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+{{#maven-plugins}}
+{{.}}
+{{/maven-plugins}}
+        </plugins>
+    </build>
+{{#maven-profiles}}
+{{.}}
+{{/maven-profiles}}
+</project>

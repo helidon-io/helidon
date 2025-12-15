@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/META-INF/init_script.sql</include>
+            </includes>
+        </files>
+        <model>
+            <value key="helidon-test">false</value>
+            <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
+            <value key="readme-native-docker">docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2</value>
+            <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
+            <value key="integration-artifactId">ojdbc</value>
+            <value key="db">OracleDB</value>
+            <value key="start-db" file="files/README.md"/>
+            <list key="main-persistence-properties">
+                <map if="${db.jpa-impl} == 'hibernate'">
+                    <value key="name">hibernate.column_ordering_strategy</value>
+                    <value key="value">legacy</value>
+                    <value key="name">hibernate.dialect</value>
+                    <value key="value">org.hibernate.dialect.OracleDialect</value>
+                </map>
+                <map if="${db.jpa-impl} == 'eclipselink'">
+                    <value key="name">eclipselink.target-database</value>
+                    <value key="value">org.eclipse.persistence.platform.database.OraclePlatform</value>
+                </map>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.integrations.db</value>
+                    <value key="artifactId">ojdbc</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">com.oracle.database.jdbc</value>
+                    <value key="artifactId">ucp</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map order="99">
+                    <value key="groupId">com.h2database</value>
+                    <value key="artifactId">h2</value>
+                    <value key="scope">test</value>
+                </map>
+            </list>
+            <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
+            <value key="databaseUrl">jdbc:oracle:thin:@localhost:1521:XE</value>
+            <value key="dbUser">sys as sysdba</value>
+            <value key="userPassword">oracle</value>
+        </model>
+    </output>
+</archetype-script>

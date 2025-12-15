@@ -1,0 +1,27 @@
+## Building a Native Image
+
+The generation of native binaries requires an installation of GraalVM 22.1.0+.
+Make sure you have GraalVM locally installed:
+
+```shell
+$GRAALVM_HOME/bin/native-image --version
+```
+
+You can build a native binary using Maven as follows:
+
+```shell
+mvn -Pnative-image install -DskipTests
+```
+
+The generation of the executable binary may take a few minutes to complete depending on
+your hardware and operating system. When completed, the executable file will be available
+under the `target` directory and be named after the artifact ID you have chosen during the
+project generation phase.
+
+Run the executable:
+
+```shell
+./target/{{artifactId}}
+```
+
+Yep, it starts fast. You can exercise the application’s endpoints as before.

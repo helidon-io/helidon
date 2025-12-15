@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <methods>
+        <method name="metric-microprofile-json">
+            <output if="${media} contains 'json'">
+                <model>
+                    <list key="SimpleGreetService-methods">
+                        <value><![CDATA[
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Counted(name = PERSONALIZED_GETS_COUNTER_NAME,
+             absolute = true,
+             description = PERSONALIZED_GETS_COUNTER_DESCRIPTION)
+    @Timed(name = GETS_TIMER_NAME,
+           description = GETS_TIMER_DESCRIPTION,
+           unit = MetricUnits.SECONDS,
+           absolute = true)
+    public Message getMessage(@PathParam("name") String name) {
+        String message = String.format("Hello %s", name);
+        return new Message(message);
+    }]]>
+                        </value>
+                    </list>
+                    <list key="MainTest-methods">
+                        <value><![CDATA[
+    @Test
+    void testMicroprofileMetrics() {
+        Message message = target.path("simple-greet/Joe")
+                .request()
+                .get(Message.class);
+
+        assertThat(message.getMessage(), is("Hello Joe"));
+        Counter counter = registry.counter("personalizedGets");
+        double before = counter.getCount();
+
+        message = target.path("simple-greet/Eric")
+                .request()
+                .get(Message.class);
+
+        assertThat(message.getMessage(), is("Hello Eric"));
+        double after = counter.getCount();
+        assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
+    }]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="metric-microprofile">
+            <output if="!(${media} contains 'json')">
+                <model>
+                    <list key="SimpleGreetService-methods">
+                        <value><![CDATA[
+    @Path("/{name}")
+    @GET
+    @Counted(name = PERSONALIZED_GETS_COUNTER_NAME,
+             absolute = true,
+             description = PERSONALIZED_GETS_COUNTER_DESCRIPTION)
+    @Timed(name = GETS_TIMER_NAME,
+           description = GETS_TIMER_DESCRIPTION,
+           unit = MetricUnits.SECONDS,
+           absolute = true)
+    public String getMessage(@PathParam("name") String name) {
+        return String.format("Hello %s", name);
+    }]]>
+                        </value>
+                    </list>
+                    <list key="MainTest-methods">
+                        <value><![CDATA[
+    @Test
+    void testMicroprofileMetrics() {
+        String message = target.path("simple-greet/Joe")
+                .request()
+                .get(String.class);
+
+        assertThat(message, is("Hello Joe"));
+        Counter counter = registry.counter("personalizedGets");
+        double before = counter.getCount();
+
+        message = target.path("simple-greet/Eric")
+                .request()
+                .get(String.class);
+
+        assertThat(message, is("Hello Eric"));
+        double after = counter.getCount();
+        assertEquals(1d, after - before, "Difference in personalized greeting counter between successive calls");
+    }]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <!-- intersection with json feature -->
+    <call method="metric-microprofile-json"/>
+    <call method="metric-microprofile"/>
+    <variables>
+        <boolean path="requires-io-helidon-microprofile-metrics">true</boolean>
+    </variables>
+    <output>
+        <model>
+            <value key="metrics.provider">${metrics.provider}</value>
+            <list key="readme-sections">
+                <value file="files/README.md"/>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">org.eclipse.microprofile.metrics</value>
+                    <value key="artifactId">microprofile-metrics-api</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.metrics</value>
+                    <value key="artifactId">helidon-microprofile-metrics</value>
+                    <list key="exclusions" if="!${metrics.builtin}">
+                        <map>
+                            <value key="groupId">io.helidon.metrics</value>
+                            <value key="artifactId">helidon-metrics-system-meters</value>
+                        </map>
+                    </list>
+                </map>
+            </list>
+            <list key="SimpleGreetService-imports">
+                <value>org.eclipse.microprofile.metrics.MetricUnits</value>
+                <value>org.eclipse.microprofile.metrics.annotation.Counted</value>
+                <value>org.eclipse.microprofile.metrics.annotation.Timed</value>
+                <value>jakarta.ws.rs.PathParam</value>
+            </list>
+            <list key="SimpleGreetResource-static-fields">
+                <value><![CDATA[
+    private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
+    private static final String GETS_TIMER_NAME = "allGets";
+    private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations";]]>
+                </value>
+            </list>
+            <list key="MainTest-java-imports">
+                <value>org.eclipse.microprofile.metrics.Counter</value>
+                <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
+            </list>
+            <list key="MainTest-helidon-imports">
+                <value>io.helidon.metrics.api.MetricsFactory</value>
+            </list>
+            <list key="MainTest-other-imports">
+                <value>org.junit.jupiter.api.AfterAll</value>
+            </list>
+            <list key="MainTest-static-imports">
+                <value>static org.junit.jupiter.api.Assertions.assertEquals</value>
+            </list>
+            <list key="MainTest-methods" order="999">
+                <value><![CDATA[
+    @AfterAll
+    static void clear() {
+        MetricsFactory.closeAll();
+    }]]>
+                </value>
+            </list>
+            <list key="MainTest-static-fields">
+                <value><![CDATA[
+    @Inject
+    private MetricRegistry registry;]]>
+                </value>
+            </list>
+        </model>
+    </output>
+</archetype-script>
