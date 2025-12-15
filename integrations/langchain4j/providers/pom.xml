@@ -42,6 +42,7 @@
         <module>cohere</module>
         <module>coherence</module>
         <module>mock</module>
+        <module>google-gemini</module>
     </modules>
 
     <build>
