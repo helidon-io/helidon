@@ -155,7 +155,7 @@ dependency in the application's [pom.xml](pom.xml):
         </dependency>
 ```
 
-For more details about the Helidon metrics, please check out the [Helidon MP Metrics Guide](https://helidon.io/docs/v3/#/mp/guides/metrics)
+For more details about the Helidon metrics, please check out the [Helidon MP Metrics Guide](https://helidon.io/docs/v3/mp/guides/metrics)
 particularly the following relevant sections:
 1. `Controlling Metrics Behavior` - has various options to manage the behaviour of the helidon metrics
 2. `Application-Specific Metrics Data` - allows application-specific metrics to be created using CDI.
@@ -182,9 +182,9 @@ where annotated with Application-Specific metrics such as @Counted and @Timed as
 
 ## Health Checks
 Helidon supports built-in and custom liveness and readiness health checks. Refer to 
-[MicroProfile Health](https://helidon.io/docs/v3/#/mp/health) for an overview and how to set up this
+[MicroProfile Health](https://helidon.io/docs/v3/mp/health) for an overview and how to set up this
 feature. For more details on how to use it including creating custom health checks, check out 
-[Helidon MP Health Check Guide](https://helidon.io/docs/v3/#/mp/guides/health).
+[Helidon MP Health Check Guide](https://helidon.io/docs/v3/mp/guides/health).
 src.main.java.{{package}}.server.GreetLivenessCheck.java and src.main.java.{{package}}.server.GreetReadinessCheck.java had been added
 in the application to demonstrate custom liveness and readiness check, respectively. Liveness can be retrieved via
 `/health/live` and readiness via `/health/ready`. Check out [Run and exercise the application](#run-and-exercise-the-application)
@@ -197,7 +197,7 @@ and currently has the following parameters:
 1. `app.greeting` - The greeting word and currently set to `Hello`
 2. `server.host` - Host IP address of the server application and currently set to accept all at `0.0.0.0`
 3. `server.port` - Host port of the server application and currently set to `8080`
-4. `metrics.rest-request.enabled` - Enables rest request metrics and currently set `true`. Please see [Controlling REST.request Metrics](https://helidon.io/docs/v3/#/mp/guides/metrics#controlling-rest-request-metrics) for more information.
+4. `metrics.rest-request.enabled` - Enables rest request metrics and currently set `true`. Please see [Controlling REST.request Metrics](https://helidon.io/docs/v3/mp/guides/metrics#controlling-rest-request-metrics) for more information.
 5. `oci.monitoring.compartmentId` - Compartment Id used for the sending custom metrics. Please see [Publishing Custom Metrics](https://docs.oracle.com/en-us/iaas/Content/Monitoring/Tasks/publishingcustommetrics.htm#Publishing_Custom_Metrics) for more details.
 6. `oci.monitoring.namespace` - Monitoring namespace configured for sending metrics. Please see [Publishing Custom Metrics](https://docs.oracle.com/en-us/iaas/Content/Monitoring/Tasks/publishingcustommetrics.htm#Publishing_Custom_Metrics) for more information.
 7. `oci.logging.id` - Custom log id configured. Please see [Custom Logs Monitoring](#Custom-Logs-Monitoring) for more information.
