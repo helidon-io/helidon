@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.gson;
 
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.builder.api.Option;
@@ -23,6 +24,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 import com.google.gson.Gson;
+import com.google.gson.TypeAdapterFactory;
 
 /**
  * Configuration of the {@link GsonSupport}.
@@ -58,5 +60,13 @@ interface GsonSupportConfigBlueprint extends Prototype.Factory<GsonSupport> {
     @Option.Singular("property")
     @Option.Configured
     Map<String, Boolean> properties();
+
+    /**
+     * Additional type adapter factories.
+     *
+     * @return type adapter factories
+     */
+    @Option.Singular("typeAdapterFactory")
+    List<TypeAdapterFactory> typeAdapterFactories();
 
 }
