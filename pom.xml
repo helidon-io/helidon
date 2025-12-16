@@ -75,8 +75,6 @@
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
-        <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
-        <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit-platform>1.9.3</version.lib.junit-platform>
