@@ -52,14 +52,14 @@ class HelidonParameterizedType implements ParameterizedType {
             // Check that information is equivalent
             ParameterizedType that = (ParameterizedType) o;
 
-            if (this == that)
+            if (this == that) {
                 return true;
+            }
 
             Type thatRawType = that.getRawType();
 
-            return Objects.equals(type, thatRawType) &&
-                    Arrays.equals(typeArgs,
-                                  that.getActualTypeArguments());
+            return Objects.equals(type, thatRawType)
+                    && Arrays.equals(typeArgs, that.getActualTypeArguments());
         } else {
             return false;
         }

@@ -356,7 +356,7 @@ class ArrayJsonParser implements JsonParser {
         int firstRun = Math.min(stringBufferLength, readableBytes);
         byte b;
         int stringBuffIndex = 0;
-        for (;stringBuffIndex < firstRun; stringBuffIndex++) {
+        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
             b = this.buffer[index++];
             if (b == '"') {
                 currentIndex = --index;
@@ -981,7 +981,8 @@ class ArrayJsonParser implements JsonParser {
     }
 
     /**
-     * Decodes a UTF-8 encoded byte sequence into one or more UTF-16 characters (using surrogates for Unicode code points above U+FFFF).
+     * Decodes a UTF-8 encoded byte sequence into one or more UTF-16 characters (using surrogates for Unicode code points above
+     * U+FFFF).
      * This method handles variable-length UTF-8 sequences (2, 3, or 4 bytes) as defined by RFC 3629.
      *
      * UTF-8 encoding uses variable byte sequences to represent Unicode code points:
@@ -1067,7 +1068,8 @@ class ArrayJsonParser implements JsonParser {
      *
      * @param currentByte the first byte of the UTF-8 sequence (must have high bit set, indicating multibyte sequence)
      * @return the decoded char value if the code point fits in a single char
-     * @throws JsonException if the UTF-8 sequence is invalid, incomplete, or represents a code point that would require surrogates
+     * @throws JsonException if the UTF-8 sequence is invalid, incomplete, or represents a code point that would require
+     * surrogates
      */
     private char decodeUtf8ToChar(byte currentByte) {
         if ((currentByte & 0xE0) == 0xC0) {

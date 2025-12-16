@@ -239,6 +239,11 @@ public class GenericType<T> implements Type {
         private Builder() {
         }
 
+        /**
+         * Builds the GenericType instance.
+         *
+         * @return the built GenericType
+         */
         public GenericType<T> build() {
             if (baseType == null) {
                 throw new IllegalStateException("Base type has to be set");
@@ -251,21 +256,45 @@ public class GenericType<T> implements Type {
             return new GenericType<>(parameterizedType, baseType);
         }
 
+        /**
+         * Sets the base type for this generic type.
+         *
+         * @param baseType the base class type
+         * @return this builder
+         */
         public Builder<T> baseType(Class<?> baseType) {
             this.baseType = baseType;
             return this;
         }
 
+        /**
+         * Adds a generic parameter using the provided GenericType.
+         *
+         * @param genericParameter the generic parameter to add
+         * @return this builder
+         */
         public Builder<T> addGenericParameter(GenericType<?> genericParameter) {
             this.genericParameters.add(genericParameter.type());
             return this;
         }
 
+        /**
+         * Adds a generic parameter using the provided Type.
+         *
+         * @param genericParameter the generic parameter to add
+         * @return this builder
+         */
         public Builder<T> addGenericParameter(Type genericParameter) {
             this.genericParameters.add(genericParameter);
             return this;
         }
 
+        /**
+         * Adds a generic parameter by building a nested GenericType using the provided consumer.
+         *
+         * @param consumer the consumer to configure the nested builder
+         * @return this builder
+         */
         public Builder<T> addGenericParameter(Consumer<Builder<T>> consumer) {
             Builder<T> builder = new Builder<T>();
             consumer.accept(builder);
