@@ -108,6 +108,7 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4j's AI Se
     ** xref:jlama.adoc#_jlamaembeddingmodel[`JlamaEmbeddingModel`]
     ** xref:jlama.adoc#_jlamalanguagemodel[`JlamaLanguageModel`]
 * xref:codegen-provider.adoc[*LangChain4j Model Provider Generator*]
+* xref:mock.adoc[*LangChain4j Mock ChatModel*]
 
 NOTE: This integration does not limit the use of other LangChain4j components in your application. The components listed above receive special treatment, meaning they can be automatically created based on configuration.
 
