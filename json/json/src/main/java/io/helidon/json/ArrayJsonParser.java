@@ -33,9 +33,13 @@ class ArrayJsonParser implements JsonParser {
     static final int INT_SIZE_BORDER = Integer.MAX_VALUE / 10;
     static final long LONG_SIZE_BORDER = Long.MAX_VALUE / 10;
 
+    //Lookup table used for transformation of a number character in a byte form to its int equvalent
     static final int[] WHOLE_NUMBER_PARTS = new int[256];
+    //Contains true for any number related char
     static final boolean[] VALID_NUMBER_PARTS = new boolean[256];
+    //Lookup table for whitespace detection
     static final boolean[] WHITESPACE_CHARS = new boolean[256];
+    //Lookup table for converting hexadecimal characters to their numeric values
     static final int[] HEX_DIGITS = new int[256];
 
     /**
@@ -49,23 +53,6 @@ class ArrayJsonParser implements JsonParser {
             1000000000000000000.0, 10000000000000000000.0, 1.0e20, 1.0e21, 1.0e22
     };
     static final int POW10_DOUBLE_CACHE_SIZE = POW10_DOUBLE_CACHE.length;
-    /**
-     * Cached POW10 for float fast path calculations.
-     */
-    private static final float[] POW10_FLOAT_CACHE = {
-            1.0f,           // 10^0
-            10.0f,          // 10^1
-            100.0f,         // 10^2
-            1000.0f,        // 10^3
-            10000.0f,       // 10^4
-            100000.0f,      // 10^5
-            1000000.0f,     // 10^6
-            10000000.0f,    // 10^7
-            100000000.0f,   // 10^8
-            1000000000.0f,  // 10^9
-            1.0e10f         // 10^10
-    };
-    private static final int POW10_FLOAT_CACHE_SIZE = POW10_FLOAT_CACHE.length;
 
     static {
         Arrays.fill(WHOLE_NUMBER_PARTS, -1);
@@ -133,8 +120,6 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public byte nextToken() {
-        //Optimization for faster reading data without a space
-        //No loop is used.
         byte b;
         if (++currentIndex == bufferLength) {
             throw createException("Unexpected end of the JSON found");
@@ -143,7 +128,6 @@ class ArrayJsonParser implements JsonParser {
         if (!WHITESPACE_CHARS[b & 0xFF]) {
             return b;
         }
-        //If space or white character was used between tokens, we should still try to optimize
         if (++currentIndex == bufferLength) {
             throw createException("Unexpected end of the JSON found");
         }
@@ -173,36 +157,18 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonValue readJsonValue() {
-        switch (currentByte()) {
-        case '{':
-            return readJsonObject();
-        case '[':
-            return readJsonArray();
-        case '"':
-            return readJsonString();
-        case '-':
-        case '.':
-        case '+':
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return readJsonNumber();
-        case 't':
-        case 'f':
-            return JsonBoolean.create(readBoolean());
-        case 'n':
-            checkNull();
-            return JsonNull.instance();
-        default:
-            throw createException("Unexpected JSON value type", currentByte());
-        }
+        return switch (currentByte()) {
+            case '{' -> readJsonObject();
+            case '[' -> readJsonArray();
+            case '"' -> readJsonString();
+            case '-', '.', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
+            case 't', 'f' -> JsonBoolean.create(readBoolean());
+            case 'n' -> {
+                checkNull();
+                yield JsonNull.instance();
+            }
+            default -> throw createException("Unexpected JSON value type", currentByte());
+        };
     }
 
     @Override
