@@ -93,17 +93,6 @@ final class JsonStreamParser extends ArrayJsonParser {
         } else if (!hasNext()) {
             throw createException("Incomplete JSON");
         }
-        //Based on recommended offset basis and prime values.
-        //        int fnv1aHash = FNV_OFFSET_BASIS;
-        //        byte b;
-        //        while (true) {
-        //            b = readNextByte();
-        //            if (b == '"') {
-        //                return fnv1aHash;
-        //            }
-        //            fnv1aHash ^= (b & 0xFF);
-        //            fnv1aHash *= FNV_PRIME;
-        //        }
 
         int i = currentIndex + 1;
         while (true) {
@@ -492,34 +481,7 @@ final class JsonStreamParser extends ArrayJsonParser {
         try {
             if (bufferingJsonValue) {
                 // When buffering a JSON value (e.g., string or number), we need to preserve the value across reads
-                if (jsonValueStart > 0) {
-                    // Move the partial value to the beginning of the buffer to make room for more data
-                    int valueLen = bufferLength - jsonValueStart;
-                    System.arraycopy(buffer, jsonValueStart, buffer, 0, valueLen);
-                    currentIndex = valueLen - 1; // Position at end of moved value
-                    jsonValueStart = 0; // Reset start position
-                    int lastRead = inputStream.read(buffer, valueLen, buffer.length - valueLen);
-                    if (lastRead == -1) {
-                        finished = true;
-                        bufferLength = valueLen; // Only the moved value remains
-                    } else {
-                        bufferLength = valueLen + lastRead;
-                        finished = false;
-                    }
-                } else {
-                    // Buffer is full of the value, need to expand
-                    int newCap = buffer.length + configuredBufferSize;
-                    byte[] tmp = new byte[newCap];
-                    System.arraycopy(buffer, 0, tmp, 0, bufferLength); // Copy existing data
-                    int lastRead = inputStream.read(tmp, bufferLength, configuredBufferSize);
-                    buffer = tmp; // Replace buffer
-                    if (lastRead == -1) {
-                        finished = true;
-                    } else {
-                        bufferLength = bufferLength + lastRead;
-                        finished = false;
-                    }
-                }
+                jsonNumberBuffering();
             } else if (currentIndex == bufferLength) {
                 // For structural parsing, keep one byte of look-ahead to detect value boundaries
                 // Preserve the byte before currentIndex to allow backtracking
@@ -549,6 +511,37 @@ final class JsonStreamParser extends ArrayJsonParser {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void jsonNumberBuffering() throws IOException {
+        if (jsonValueStart > 0) {
+            // Move the partial value to the beginning of the buffer to make room for more data
+            int valueLen = bufferLength - jsonValueStart;
+            System.arraycopy(buffer, jsonValueStart, buffer, 0, valueLen);
+            currentIndex = valueLen - 1; // Position at end of moved value
+            jsonValueStart = 0; // Reset start position
+            int lastRead = inputStream.read(buffer, valueLen, buffer.length - valueLen);
+            if (lastRead == -1) {
+                finished = true;
+                bufferLength = valueLen; // Only the moved value remains
+            } else {
+                bufferLength = valueLen + lastRead;
+                finished = false;
+            }
+        } else {
+            // Buffer is full of the value, need to expand
+            int newCap = buffer.length + configuredBufferSize;
+            byte[] tmp = new byte[newCap];
+            System.arraycopy(buffer, 0, tmp, 0, bufferLength); // Copy existing data
+            int lastRead = inputStream.read(tmp, bufferLength, configuredBufferSize);
+            buffer = tmp; // Replace buffer
+            if (lastRead == -1) {
+                finished = true;
+            } else {
+                bufferLength = bufferLength + lastRead;
+                finished = false;
+            }
         }
     }
 }

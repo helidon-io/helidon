@@ -33,7 +33,7 @@ class ArrayJsonParser implements JsonParser {
     static final int INT_SIZE_BORDER = Integer.MAX_VALUE / 10;
     static final long LONG_SIZE_BORDER = Long.MAX_VALUE / 10;
 
-    //Lookup table used for transformation of a number character in a byte form to its int equvalent
+    //Lookup table used for transformation of a number character in a byte form to its int equivalent
     static final int[] WHOLE_NUMBER_PARTS = new int[256];
     //Contains true for any number related char
     static final boolean[] VALID_NUMBER_PARTS = new boolean[256];
