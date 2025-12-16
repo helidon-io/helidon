@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@ package io.helidon.common;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Represents a full type including generics declaration, to avoid information loss due to type erasure.
@@ -73,6 +76,7 @@ public class GenericType<T> implements Type {
 
     private final Type type;
     private final Class<?> rawType;
+    private final boolean isClass;
 
     /**
      * Constructs a new generic type, using the provided generic type information and
@@ -88,7 +92,8 @@ public class GenericType<T> implements Type {
     public static <N> GenericType<N> create(Type genericType) throws IllegalArgumentException {
         Objects.requireNonNull(genericType);
 
-        return new GenericType<>(genericType, GenericTypeUtil.rawClass(genericType));
+        Type type = genericType instanceof GenericType<?> genType ? genType.type : genericType;
+        return new GenericType<>(type, GenericTypeUtil.rawClass(type));
     }
 
     /**
@@ -113,9 +118,20 @@ public class GenericType<T> implements Type {
         return GenericType.<N>create(object.getClass());
     }
 
+    /**
+     * Create a new fluent builder instance.
+     *
+     * @return a new builder instance
+     * @param <T> the generic type parameter
+     */
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
+    }
+
     private GenericType(Type type, Class<?> rawType) {
         this.type = type;
         this.rawType = rawType;
+        this.isClass = rawType.equals(type);
     }
 
     /**
@@ -129,6 +145,7 @@ public class GenericType<T> implements Type {
     protected GenericType() throws IllegalArgumentException {
         this.type = GenericTypeUtil.typeArgument(getClass(), GenericType.class);
         this.rawType = GenericTypeUtil.rawClass(type);
+        this.isClass = rawType.equals(type);
     }
 
     /**
@@ -164,7 +181,7 @@ public class GenericType<T> implements Type {
      *         List<String>}
      */
     public boolean isClass() {
-        return rawType.equals(type);
+        return isClass;
     }
 
     /**
@@ -198,6 +215,9 @@ public class GenericType<T> implements Type {
         if (obj instanceof GenericType) {
             return ((GenericType<?>) obj).type.equals(this.type);
         }
+        if (obj instanceof Type t) {
+            return t.equals(type);
+        }
         return false;
     }
 
@@ -205,4 +225,54 @@ public class GenericType<T> implements Type {
     public String toString() {
         return type.toString();
     }
+
+    /**
+     * Builder of the Generic type.
+     *
+     * @param <T> the generic type parameter
+     */
+    public static final class Builder<T> implements io.helidon.common.Builder<Builder<T>, GenericType<T>> {
+
+        private Class<?> baseType;
+        private final List<Type> genericParameters = new ArrayList<>();
+
+        private Builder() {
+        }
+
+        public GenericType<T> build() {
+            if (baseType == null) {
+                throw new IllegalStateException("Base type has to be set");
+            }
+            if (genericParameters.isEmpty()) {
+                return new GenericType<>(baseType, baseType);
+            }
+            Type[] genericParametersArray = genericParameters.toArray(new Type[0]);
+            HelidonParameterizedType parameterizedType = new HelidonParameterizedType(baseType, genericParametersArray);
+            return new GenericType<>(parameterizedType, baseType);
+        }
+
+        public Builder<T> baseType(Class<?> baseType) {
+            this.baseType = baseType;
+            return this;
+        }
+
+        public Builder<T> addGenericParameter(GenericType<?> genericParameter) {
+            this.genericParameters.add(genericParameter.type());
+            return this;
+        }
+
+        public Builder<T> addGenericParameter(Type genericParameter) {
+            this.genericParameters.add(genericParameter);
+            return this;
+        }
+
+        public Builder<T> addGenericParameter(Consumer<Builder<T>> consumer) {
+            Builder<T> builder = new Builder<T>();
+            consumer.accept(builder);
+            this.genericParameters.add(builder.build());
+            return this;
+        }
+
+    }
+
 }
