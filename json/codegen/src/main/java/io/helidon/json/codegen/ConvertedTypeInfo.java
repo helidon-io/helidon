@@ -27,6 +27,7 @@ import java.util.Set;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -45,6 +46,8 @@ import static java.util.function.Predicate.not;
 
 record ConvertedTypeInfo(TypeName converterType,
                          TypeName originalType,
+                         TypeName wildcardsGenerics,
+                         TypeName objectsGenerics,
                          boolean nullable,
                          boolean failOnUnknown,
                          Map<String, JsonProperty> jsonProperties,
@@ -84,10 +87,12 @@ record ConvertedTypeInfo(TypeName converterType,
                 .flatMap(annotation -> annotation.stringValue("value"))
                 .orElse(CodegenOptions.CODEGEN_JSON_ORDER.value(ctx.options()));
         Map<String, JsonProperty.Builder> properties = new LinkedHashMap<>();
-        discoverFields(properties, typeInfo, nullable);
-        discoverGetAndSetMethods(properties, typeInfo, recordAccessors);
+        LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics = new LinkedHashMap<>();
+        discoverAllResolvedGenerics(typeInfo, resolvedGenerics, Map.of());
+        discoverFields(properties, typeInfo, nullable, resolvedGenerics);
+        discoverGetAndSetMethods(properties, typeInfo, recordAccessors, resolvedGenerics);
         Optional<Annotation> builderAnnotation = typeInfo.findAnnotation(Types.JSON_BUILDER_INFO);
-        Optional<BuilderInfo> builderInfo = builderAnnotation.flatMap(it -> it.stringValue())
+        Optional<BuilderInfo> builderInfo = builderAnnotation.flatMap(Annotation::stringValue)
                 .map(TypeName::create)
                 .flatMap(ctx::typeInfo)
                 .flatMap(it -> processBuilderInfoFromClass(it,
@@ -97,17 +102,40 @@ record ConvertedTypeInfo(TypeName converterType,
                                                            builderAnnotation.get().stringValue("buildMethod").get(),
                                                            properties))
                 .or(() -> processBuilderInfo(typeInfo, properties, ctx));
-        CreatorInfo creatorInfo = discoverCreator(properties, typeInfo);
+        CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
         Map<String, JsonProperty> jsonProperties = finalizeJsonProperties(properties);
         Comparator<String> orderComparator = PROPERTY_ORDER.getOrDefault(orderStrategy, (o1, o2) -> 0);
         return new ConvertedTypeInfo(converterTypeName,
                                      typeInfo.typeName(),
+                                     transformGenerics(typeInfo.typeName(), TypeArgument.create("?")),
+                                     transformGenerics(typeInfo.typeName(), TypeArgument.create(OBJECT)),
                                      nullable,
                                      failOnUnknown,
                                      jsonProperties,
                                      orderComparator,
                                      creatorInfo,
                                      builderInfo);
+    }
+
+    private static void discoverAllResolvedGenerics(TypeInfo typeInfo,
+                                                    LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics,
+                                                    Map<String, TypeName> childGenerics) {
+        Map<String, TypeName> typeGenerics = new LinkedHashMap<>();
+        TypeName typeName = typeInfo.typeName();
+        for (int i = 0; i < typeName.typeParameters().size(); i++) {
+            String parameterName = typeName.typeParameters().get(i);
+            TypeName typeValue = typeName.typeArguments().get(i);
+            if (typeValue.generic()) {
+                //We will try to resolve it from the child actual parameters
+                typeValue = childGenerics.getOrDefault(typeValue.toString(), typeValue);
+            }
+            typeGenerics.put(parameterName, typeValue);
+        }
+        resolvedGenerics.put(typeName.fqName(), typeGenerics);
+
+        Optional<TypeInfo> superTypeInfo = typeInfo.superTypeInfo();
+        superTypeInfo.ifPresent(info -> discoverAllResolvedGenerics(info, resolvedGenerics, typeGenerics));
+
     }
 
     static boolean needsResolving(TypeName typeName) {
@@ -174,11 +202,13 @@ record ConvertedTypeInfo(TypeName converterType,
 
             TypedElementInfo parameter = method.parameterArguments().getFirst();
 
-            properties.computeIfAbsent(propertyName, name -> JsonProperty.builder())
-                    .usedInBuilder(true)
+            JsonProperty.Builder jsonPropertyBuilder = properties.computeIfAbsent(propertyName,
+                                                                                  name -> JsonProperty.builder());
+
+            jsonPropertyBuilder.usedInBuilder(true)
                     .setterName(methodName)
                     .deserializationNameIfNotSet(propertyName)
-                    .deserializationType(resolveGenerics(parameter.typeName(), builderTypeInfo))
+                    .deserializationType(resolveGenerics(parameter.typeName(), builderTypeInfo, resolvedGenerics))
                     .deserializationName(obtainStringFromAnnotation(parameter, Types.JSON_PROPERTY))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, Types.JSON_CONVERTER))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, Types.JSON_DESERIALIZER));
@@ -218,9 +248,12 @@ record ConvertedTypeInfo(TypeName converterType,
                 .findFirst();
     }
 
-    private static void discoverFields(Map<String, JsonProperty.Builder> properties, TypeInfo typeInfo, boolean nullable) {
+    private static void discoverFields(Map<String, JsonProperty.Builder> properties,
+                                       TypeInfo typeInfo,
+                                       boolean nullable,
+                                       LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
         typeInfo.superTypeInfo()
-                .ifPresent(superType -> discoverFields(properties, superType, nullable));
+                .ifPresent(superType -> discoverFields(properties, superType, nullable, resolvedGenerics));
 
         List<TypedElementInfo> fields = typeInfo.elementInfo()
                 .stream()
@@ -230,7 +263,7 @@ record ConvertedTypeInfo(TypeName converterType,
 
         for (TypedElementInfo field : fields) {
             String fieldName = field.elementName();
-            TypeName fieldType = resolveGenerics(field.typeName(), typeInfo);
+            TypeName fieldType = resolveGenerics(field.typeName(), typeInfo, resolvedGenerics);
             JsonProperty.Builder builder = JsonProperty.builder()
                     .fieldName(fieldName)
                     .deserializationName(fieldName)
@@ -255,13 +288,14 @@ record ConvertedTypeInfo(TypeName converterType,
 
     private static String discoverGetAndSetMethods(Map<String, JsonProperty.Builder> properties,
                                                    TypeInfo typeInfo,
-                                                   String accessorStyle) {
+                                                   String accessorStyle,
+                                                   LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
         String detectedAccessorStyle = typeInfo.superTypeInfo()
-                .map(superType -> discoverGetAndSetMethods(properties, superType, accessorStyle))
+                .map(superType -> discoverGetAndSetMethods(properties, superType, accessorStyle, resolvedGenerics))
                 .orElse(accessorStyle);
 
         for (TypeInfo interf : typeInfo.interfaceTypeInfo()) {
-            discoverGetAndSetMethods(properties, interf, detectedAccessorStyle);
+            discoverGetAndSetMethods(properties, interf, detectedAccessorStyle, resolvedGenerics);
         }
 
         List<TypedElementInfo> methods = List.of();
@@ -287,7 +321,7 @@ record ConvertedTypeInfo(TypeName converterType,
                 JsonProperty.Builder property = properties.computeIfAbsent(propertyName, name -> JsonProperty.builder())
                         .getterName(methodName)
                         .serializationNameIfNotSet(propertyName)
-                        .serializationType(resolveGenerics(method.typeName(), typeInfo))
+                        .serializationType(resolveGenerics(method.typeName(), typeInfo, resolvedGenerics))
                         .serializationName(obtainStringFromAnnotation(method, Types.JSON_PROPERTY))
                         .serializer(obtainTypeNameFromAnnotation(method, Types.JSON_CONVERTER));
                 obtainBooleanFromAnnotation(method, Types.JSON_IGNORE).ifPresent(property::getterIgnored);
@@ -296,10 +330,11 @@ record ConvertedTypeInfo(TypeName converterType,
             } else if (typeInfo.kind() != ElementKind.RECORD && isSetter(method, detectedAccessorStyle)) {
                 String prefix = detectedAccessorStyle.equals("RECORD") ? "" : "set"; //setter style getters in regular classes
                 String propertyName = methodToFieldName(prefix, methodName);
+                TypeName parameterType = method.parameterArguments().getFirst().typeName();
                 JsonProperty.Builder property = properties.computeIfAbsent(propertyName, name -> JsonProperty.builder())
                         .setterName(methodName)
                         .deserializationNameIfNotSet(propertyName)
-                        .deserializationType(resolveGenerics(method.parameterArguments().getFirst().typeName(), typeInfo))
+                        .deserializationType(resolveGenerics(parameterType, typeInfo, resolvedGenerics))
                         .deserializationName(obtainStringFromAnnotation(method, Types.JSON_PROPERTY))
                         .deserializer(obtainTypeNameFromAnnotation(method, Types.JSON_CONVERTER));
                 obtainBooleanFromAnnotation(method, Types.JSON_IGNORE).ifPresent(property::setterIgnored);
@@ -320,7 +355,9 @@ record ConvertedTypeInfo(TypeName converterType,
                 .toList();
     }
 
-    private static CreatorInfo discoverCreator(Map<String, JsonProperty.Builder> properties, TypeInfo typeInfo) {
+    private static CreatorInfo discoverCreator(Map<String, JsonProperty.Builder> properties,
+                                               TypeInfo typeInfo,
+                                               LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
         List<TypedElementInfo> creators = typeInfo.elementInfo()
                 .stream()
                 .filter(info -> info.hasAnnotation(Types.JSON_CREATOR))
@@ -358,7 +395,7 @@ record ConvertedTypeInfo(TypeName converterType,
             properties.computeIfAbsent(parameterName, name -> JsonProperty.builder())
                     .usedInCreator(true)
                     .deserializationName(parameterName)
-                    .deserializationType(resolveGenerics(parameter.typeName(), typeInfo))
+                    .deserializationType(resolveGenerics(parameter.typeName(), typeInfo, resolvedGenerics))
                     .deserializationName(obtainStringFromAnnotation(parameter, Types.JSON_PROPERTY))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, Types.JSON_CONVERTER))
                     .deserializer(obtainTypeNameFromAnnotation(parameter, Types.JSON_DESERIALIZER));
@@ -366,19 +403,19 @@ record ConvertedTypeInfo(TypeName converterType,
         return new CreatorInfo(creatorKind, creatorMethod, parameterNames);
     }
 
-    private static TypeName resolveGenerics(TypeName elementTypeName, TypeInfo typeInfo) {
+    private static TypeName resolveGenerics(TypeName elementTypeName,
+                                            TypeInfo typeInfo,
+                                            LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
         if (needsResolving(elementTypeName)) {
             if (elementTypeName.generic()) {
-                int index = typeInfo.typeName().typeParameters().indexOf(elementTypeName.className());
-                if (index == -1) {
-                    return elementTypeName;
-                }
-                return typeInfo.typeName().typeArguments().get(index);
+                var typeGenerics = resolvedGenerics.getOrDefault(typeInfo.typeName().fqName(), EMPTY_LINKED_HASHMAP);
+                return typeGenerics.getOrDefault(elementTypeName.name(), elementTypeName);
             }
             TypeName.Builder builder = TypeName.builder()
                     .from(elementTypeName)
                     .typeArguments(List.of());
-            elementTypeName.typeArguments().forEach(arg -> builder.addTypeArgument(resolveGenerics(arg, typeInfo)));
+            elementTypeName.typeArguments().forEach(
+                    arg -> builder.addTypeArgument(resolveGenerics(arg, typeInfo, resolvedGenerics)));
             return builder.build();
         }
         return elementTypeName;
@@ -487,7 +524,14 @@ record ConvertedTypeInfo(TypeName converterType,
                     }
                     return Optional.empty();
                 });
+    }
 
+    private static TypeName transformGenerics(TypeName typeName, TypeArgument transformTo) {
+        TypeName.Builder builder = TypeName.builder(typeName).clearTypeArguments();
+        for (int i = 0; i < typeName.typeArguments().size(); i++) {
+            builder.addTypeArgument(transformTo);
+        }
+        return builder.build();
     }
 
 }

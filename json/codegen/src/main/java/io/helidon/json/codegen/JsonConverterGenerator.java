@@ -63,13 +63,10 @@ class JsonConverterGenerator {
     private JsonConverterGenerator() {
     }
 
-    static void generateConverter(ClassBase.Builder<?, ?> classBuilder,
-                                  ConvertedTypeInfo converterInfo,
-                                  TypeInfo annotatedType,
-                                  boolean factory) {
+    static void generateConverter(ClassBase.Builder<?, ?> classBuilder, ConvertedTypeInfo converterInfo, boolean factory) {
         TypeName converterInterfaceType = TypeName.builder()
                 .from(Types.JSON_CONVERTER_TYPE)
-                .addTypeArgument(annotatedType.typeName())
+                .addTypeArgument(converterInfo.wildcardsGenerics())
                 .build();
 
         Map<String, TypeToConfigure> toConfigure = new HashMap<>();
@@ -255,7 +252,7 @@ class JsonConverterGenerator {
                                              Map<String, TypeToConfigure> toConfigure) {
         method.name("serialize")
                 .addParameter(param -> param.name("generator").type(Types.JSON_GENERATOR))
-                .addParameter(param -> param.name("instance").type(converterInfo.originalType()))
+                .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
                 .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
                 .addAnnotation(Annotation.create(Override.class))
                 .addContentLine("generator.writeObjectStart();");
@@ -291,10 +288,11 @@ class JsonConverterGenerator {
                             fn = "serializer" + ensureUpperStart(type);
                         }
                         if (!createdSerializers.contains(fn)) {
+                            TypeName serializerArgument = resolved.generic() ? TypeNames.OBJECT : resolved;
                             createdSerializers.add(fn);
                             TypeName converterType = TypeName.builder()
                                     .from(Types.JSON_SERIALIZER_TYPE)
-                                    .addTypeArgument(resolved)
+                                    .addTypeArgument(serializerArgument)
                                     .build();
                             classBuilder.addField(fieldBuilder -> fieldBuilder.name(fn)
                                     .isVolatile(true)
@@ -345,7 +343,7 @@ class JsonConverterGenerator {
                 .toList();
 
         method.name("deserialize")
-                .returnType(converterInfo.originalType())
+                .returnType(converterInfo.wildcardsGenerics())
                 .addParameter(param -> param.name("parser").type(Types.JSON_PARSER))
                 .addAnnotation(Annotation.create(Override.class))
                 .addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
@@ -377,7 +375,7 @@ class JsonConverterGenerator {
                             .addContentLine("}");
                 });
         if (hasCreator) {
-            TypeName originalType = converterInfo.originalType();
+            TypeName originalType = converterInfo.objectsGenerics();
             if (creatorKind == ElementKind.METHOD) {
                 method.addContent(originalType).addContent(" instance = ")
                         .addContent(originalType).addContent("." + creatorInfo.method() + "(");
@@ -405,7 +403,7 @@ class JsonConverterGenerator {
             }
         } else if (hasBuilder) {
             BuilderInfo builderInfo = converterInfo.builderInfo().get();
-            method.addContent(converterInfo.originalType())
+            method.addContent(converterInfo.objectsGenerics())
                     .addContent(" instance = builder.")
                     .addContent(builderInfo.buildMethodName())
                     .addContentLine("();");
@@ -544,7 +542,7 @@ class JsonConverterGenerator {
             method.addContentLine("throw parser.createException(\"The following properties were required to be present, "
                                           + "but none were found: " + required + "\");");
         } else if (hasCreator) {
-            TypeName originalType = converterInfo.originalType();
+            TypeName originalType = converterInfo.objectsGenerics();
 
             method.addContent("return ");
             if (creatorKind == ElementKind.METHOD) {
@@ -585,15 +583,15 @@ class JsonConverterGenerator {
                         .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type, DEFAULT_TYPE_VALUE).get() + ";");
             }
         } else if (creatorKind == ElementKind.METHOD) {
-            TypeName originalType = converterInfo.originalType();
+            TypeName originalType = converterInfo.objectsGenerics();
             method.addContent(originalType).addContent(" instance = ")
                     .addContent(originalType).addContent("." + creatorInfo.method() + "();");
         } else if (hasBuilder) {
             BuilderInfo builderInfo = converterInfo.builderInfo().get();
             TypeName builder = builderInfo.builderType();
-            TypeName originalType = converterInfo.originalType();
             method.addContent(builder).addContent(" builder = ");
             if (builderInfo.builderMethodName().isPresent()) {
+                TypeName originalType = converterInfo.originalType().genericTypeName();
                 method.addContent(originalType).addContentLine(".builder();");
             } else {
                 method.addContent("new ").addContent(builder).addContentLine("();");
@@ -610,7 +608,7 @@ class JsonConverterGenerator {
                         .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type, DEFAULT_TYPE_VALUE).get() + ";");
             }
         } else {
-            TypeName originalType = converterInfo.originalType();
+            TypeName originalType = converterInfo.objectsGenerics();
             method.addContent(originalType).addContent(" instance = new ")
                     .addContent(originalType).addContentLine("();");
         }
@@ -638,7 +636,7 @@ class JsonConverterGenerator {
         method.name("type")
                 .returnType(builder -> builder.type(TypeName.builder()
                                                             .from(TypeNames.GENERIC_TYPE)
-                                                            .addTypeArgument(converterInfo.originalType())
+                                                            .addTypeArgument(converterInfo.wildcardsGenerics())
                                                             .build()))
                 .addAnnotation(Annotation.create(Override.class))
                 .addContent("return ")
@@ -650,7 +648,7 @@ class JsonConverterGenerator {
         method.name("type")
                 .returnType(builder -> builder.type(TypeName.builder()
                                                             .from(TypeNames.GENERIC_TYPE)
-                                                            .addTypeArgument(converterInfo.originalType())
+                                                            .addTypeArgument(converterInfo.wildcardsGenerics())
                                                             .build()))
                 .addAnnotation(Annotation.create(Override.class))
                 .addContent("return ")
@@ -697,7 +695,24 @@ class JsonConverterGenerator {
                                                Set<String> processedTypes,
                                                Map<String, TypeToConfigure> toConfigure) {
         TypeName resolvedType = PRIMITIVE_TO_BOXED.getOrDefault(type, type);
-        if (!type.typeArguments().isEmpty()) {
+        if (type.typeArguments().isEmpty()) {
+            String converterFieldName = "deserializer" + ensureUpperStart(type);
+            if (!processedTypes.contains(converterFieldName)) {
+                //Deserializer for this type has not been created yet.
+                processedTypes.add(converterFieldName); //To ensure deserializer reusability
+                TypeName deserializerArgument = resolvedType.generic() ? TypeNames.OBJECT : resolvedType;
+                TypeName fieldType = TypeName.builder(Types.JSON_DESERIALIZER_TYPE).addTypeArgument(deserializerArgument).build();
+                classBuilder.addField(builder -> builder.name(converterFieldName)
+                        .isVolatile(true)
+                        .type(fieldType));
+                toConfigure.putIfAbsent(converterFieldName, new TypeToConfigure(TypeConfigMode.DESERIALIZATION,
+                                                                                converterFieldName,
+                                                                                resolvedType,
+                                                                                type,
+                                                                                fieldType));
+            }
+            valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, converterFieldName);
+        } else {
             //Type contains generics
             String fieldName = "deserializer" + ensureUpperStart(jsonProperty.deserializationName().orElseThrow());
             TypeName fieldType = TypeName.builder(Types.JSON_DESERIALIZER_TYPE).addTypeArgument(resolvedType).build();
@@ -710,22 +725,6 @@ class JsonConverterGenerator {
                                                                    type,
                                                                    fieldType));
             valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, fieldName);
-        } else {
-            String converterFieldName = "deserializer" + ensureUpperStart(type);
-            if (!processedTypes.contains(converterFieldName)) {
-                //Deserializer for this type has not been created yet.
-                processedTypes.add(converterFieldName); //To ensure deserializer reusability
-                TypeName fieldType = TypeName.builder(Types.JSON_DESERIALIZER_TYPE).addTypeArgument(resolvedType).build();
-                classBuilder.addField(builder -> builder.name(converterFieldName)
-                        .isVolatile(true)
-                        .type(fieldType));
-                toConfigure.putIfAbsent(converterFieldName, new TypeToConfigure(TypeConfigMode.DESERIALIZATION,
-                                                                                converterFieldName,
-                                                                                resolvedType,
-                                                                                type,
-                                                                                fieldType));
-            }
-            valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, converterFieldName);
         }
     }
 

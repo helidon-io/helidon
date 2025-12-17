@@ -64,7 +64,7 @@ class JsonCodegen implements CodegenExtension {
                                            .type(TypeNames.WEIGHT)
                                            .addParameter("value", Weighted.DEFAULT_WEIGHT - 5)
                                            .build());
-            JsonConverterGenerator.generateConverter(builder, convertedTypeInfo, typeInfo, false);
+            JsonConverterGenerator.generateConverter(builder, convertedTypeInfo, false);
         } else {
             generatedType = TypeName.builder()
                     .from(annotatedTypeName)

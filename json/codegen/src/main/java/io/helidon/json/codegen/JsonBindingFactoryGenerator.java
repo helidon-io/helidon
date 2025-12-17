@@ -37,29 +37,27 @@ class JsonBindingFactoryGenerator {
     }
 
     static void generateBindingFactory(ClassBase.Builder<?, ?> classBuilder, TypeInfo annotatedType, CodegenContext ctx) {
+        ConvertedTypeInfo convertedTypeInfo = ConvertedTypeInfo.create(annotatedType, ctx);
         classBuilder.addAnnotation(b -> b.type(Types.SERVICE_REGISTRY_PER_LOOKUP))
-                .addGenericArgument(TypeArgument.create("T"))
                 .addAnnotation(Annotation.builder()
                                        .type(TypeNames.WEIGHT)
                                        .addParameter("value", Weighted.DEFAULT_WEIGHT - 5)
                                        .build())
                 .addInterface(TypeName.builder()
                                       .from(Types.JSON_BINDING_FACTORY_TYPED)
-                                      .addTypeArgument(annotatedType.typeName())
+                                      .addTypeArgument(convertedTypeInfo.wildcardsGenerics())
                                       .build());
 
-        ConvertedTypeInfo convertedTypeInfo = ConvertedTypeInfo.create(annotatedType, ctx);
         InnerClass.Builder converterClassBuilder = InnerClass.builder()
                 .name(convertedTypeInfo.converterType().className())
                 .accessModifier(AccessModifier.PRIVATE)
-                .addGenericArgument(TypeArgument.create("T"))
                 .isFinal(true)
                 .isStatic(true)
                 .addField(builder -> builder.isFinal(true).type(Type.class).name("type"))
                 .addConstructor(builder -> builder.accessModifier(AccessModifier.PACKAGE_PRIVATE)
                         .addParameter(param -> param.type(Type.class).name("type"))
                         .addContent("this.type = type;"));
-        JsonConverterGenerator.generateConverter(converterClassBuilder, convertedTypeInfo, annotatedType, true);
+        JsonConverterGenerator.generateConverter(converterClassBuilder, convertedTypeInfo, true);
         classBuilder.addInnerClass(converterClassBuilder)
                 .addMethod(method -> addCreateDeserializerMethodClass(method, convertedTypeInfo))
                 .addMethod(method -> addCreateDeserializerMethodGenerics(method, convertedTypeInfo))
@@ -71,7 +69,7 @@ class JsonBindingFactoryGenerator {
     private static void addCreateDeserializerMethodClass(Method.Builder method, ConvertedTypeInfo convertedTypeInfo) {
         TypeName classType = TypeName.builder()
                 .type(Class.class)
-                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.originalType()))
+                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.wildcardsGenerics()))
                 .build();
         addCreateDeserializerMethod(method, convertedTypeInfo, classType, false);
     }
@@ -79,7 +77,7 @@ class JsonBindingFactoryGenerator {
     private static void addCreateDeserializerMethodGenerics(Method.Builder method, ConvertedTypeInfo convertedTypeInfo) {
         TypeName classType = TypeName.builder()
                 .from(Types.GENERIC_TYPE)
-                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.originalType()))
+                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.wildcardsGenerics()))
                 .build();
         addCreateDeserializerMethod(method, convertedTypeInfo, classType, true);
     }
@@ -92,18 +90,18 @@ class JsonBindingFactoryGenerator {
                 .addAnnotation(Annotation.create(Override.class))
                 .returnType(builder -> builder.type(TypeName.builder()
                                                             .from(Types.JSON_DESERIALIZER_TYPE)
-                                                            .addTypeArgument(convertedTypeInfo.originalType())
+                                                            .addTypeArgument(convertedTypeInfo.wildcardsGenerics())
                                                             .build()))
                 .addParameter(builder -> builder.type(parameter).name("type"))
                 .addContent("return new ")
                 .addContent(convertedTypeInfo.converterType())
-                .addContentLine(genericType ? "<>(type.type());" : "<>(type);");
+                .addContentLine(genericType ? "(type.type());" : "(type);");
     }
 
     private static void addCreateSerializerMethodClass(Method.Builder method, ConvertedTypeInfo convertedTypeInfo) {
         TypeName classType = TypeName.builder()
                 .type(Class.class)
-                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.originalType()))
+                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.wildcardsGenerics()))
                 .build();
         addCreateSerializerMethod(method, convertedTypeInfo, classType, false);
     }
@@ -111,7 +109,7 @@ class JsonBindingFactoryGenerator {
     private static void addCreateSerializerMethodGenerics(Method.Builder method, ConvertedTypeInfo convertedTypeInfo) {
         TypeName classType = TypeName.builder()
                 .from(Types.GENERIC_TYPE)
-                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.originalType()))
+                .addTypeArgument(it -> it.from(TypeArgument.create("?")).addUpperBound(convertedTypeInfo.wildcardsGenerics()))
                 .build();
         addCreateSerializerMethod(method, convertedTypeInfo, classType, true);
     }
@@ -124,12 +122,12 @@ class JsonBindingFactoryGenerator {
                 .addAnnotation(Annotation.create(Override.class))
                 .returnType(builder -> builder.type(TypeName.builder()
                                                             .from(Types.JSON_SERIALIZER_TYPE)
-                                                            .addTypeArgument(convertedTypeInfo.originalType())
+                                                            .addTypeArgument(convertedTypeInfo.wildcardsGenerics())
                                                             .build()))
                 .addParameter(builder -> builder.type(parameter).name("type"))
                 .addContent("return new ")
                 .addContent(convertedTypeInfo.converterType())
-                .addContentLine(genericType ? "<>(type.type());" : "<>(type);");
+                .addContentLine(genericType ? "(type.type());" : "(type);");
     }
 
     private static void addTypeMethod(Method.Builder method, ConvertedTypeInfo convertedTypeInfo) {
