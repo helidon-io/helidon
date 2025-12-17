@@ -83,6 +83,7 @@
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
+        <version.lib.commons-text>1.15.0</version.lib.commons-text>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <!--
         !Version statement! - end
@@ -973,6 +974,12 @@
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-provider-api</artifactId>
                 <version>${version.lib.maven-wagon}</version>
+            </dependency>
+            <dependency>
+                <!-- force upgrade -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.lib.commons-text}</version>
             </dependency>
             <dependency>
                 <!--
