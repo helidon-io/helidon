@@ -157,6 +157,16 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
      * @param config the rule configuration
      * @return a new {@code MockChatRule}
      */
+    static MockChatRule create(Config config) {
+        return MockChatRule.create(MockChatRuleConfig.create(config));
+    }
+
+    /**
+     * Creates a {@link MockChatRule} from the given configuration.
+     *
+     * @param config the rule configuration
+     * @return a new {@code MockChatRule}
+     */
     static MockChatRule create(MockChatRuleConfig config) {
         return new MockChatRule() {
             @Override
@@ -181,15 +191,5 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
                 return MockChatRule.super.mock(concatenatedReq);
             }
         };
-    }
-
-    /**
-     * Creates a {@link MockChatRule} from the given configuration.
-     *
-     * @param config the rule configuration
-     * @return a new {@code MockChatRule}
-     */
-    static MockChatRule create(Config config) {
-        return MockChatRule.create(MockChatRuleConfig.create(config));
     }
 }
