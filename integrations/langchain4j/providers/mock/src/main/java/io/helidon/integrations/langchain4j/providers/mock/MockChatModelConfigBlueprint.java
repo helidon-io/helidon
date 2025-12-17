@@ -24,7 +24,6 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint
 @Prototype.RegistrySupport
 @Prototype.Configured(MockChatModelConfigBlueprint.CONFIG_ROOT)
-@Prototype.CustomMethods(MockChatModelSupport.class)
 interface MockChatModelConfigBlueprint extends Prototype.Factory<MockChatModel> {
 
     /**

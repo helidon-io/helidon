@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.config.Config;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
@@ -180,5 +181,15 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
                 return MockChatRule.super.mock(concatenatedReq);
             }
         };
+    }
+
+    /**
+     * Creates a {@link MockChatRule} from the given configuration.
+     *
+     * @param config the rule configuration
+     * @return a new {@code MockChatRule}
+     */
+    static MockChatRule create(Config config) {
+        return MockChatRule.create(MockChatRuleConfig.create(config));
     }
 }
