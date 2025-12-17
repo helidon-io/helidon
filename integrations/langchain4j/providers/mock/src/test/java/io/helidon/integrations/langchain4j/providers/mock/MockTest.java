@@ -32,29 +32,6 @@ import static org.hamcrest.Matchers.is;
 @Testing.Test
 class MockTest {
 
-    @Ai.Service
-    public interface HelidonSupportService {
-
-        @SystemMessage("You are a Helidon expert!")
-        String chat(String prompt);
-    }
-
-    @Service.Singleton
-    static class CustomMockChatRule implements MockChatRule {
-        @Override
-        public boolean matches(ChatRequest req) {
-            return req.messages().stream()
-                    .filter(m -> ChatMessageType.USER.equals(m.type()))
-                    .map(UserMessage.class::cast)
-                    .anyMatch(m -> m.singleText().equals("Custom rule match"));
-        }
-
-        @Override
-        public String mock(String unused) {
-            return "Custom mock response";
-        }
-    }
-
     @Test
     void defaultMockResponse(HelidonSupportService aiService) {
         assertThat(aiService.chat("How can I create a new Helidon project?"), is("Mock response!"));
@@ -73,5 +50,29 @@ class MockTest {
     @Test
     void customMockResponse(HelidonSupportService aiService) {
         assertThat(aiService.chat("Custom rule match"), is("Custom mock response"));
+    }
+
+    @Ai.Service
+    public interface HelidonSupportService {
+
+        @SystemMessage("You are a Helidon expert!")
+        String chat(String prompt);
+    }
+
+    @Service.Singleton
+    static class CustomMockChatRule implements MockChatRule {
+
+        @Override
+        public boolean matches(ChatRequest req) {
+            return req.messages().stream()
+                    .filter(m -> ChatMessageType.USER.equals(m.type()))
+                    .map(UserMessage.class::cast)
+                    .anyMatch(m -> m.singleText().equals("Custom rule match"));
+        }
+
+        @Override
+        public String mock(String unused) {
+            return "Custom mock response";
+        }
     }
 }
