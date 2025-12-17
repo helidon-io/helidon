@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Represents a JSON string value.
  */
@@ -71,7 +73,7 @@ public final class JsonString extends JsonValue {
     }
 
     String resolveValue() {
-        resolvedValue = new String(buffer, start, length);
+        resolvedValue = new String(buffer, start, length, StandardCharsets.UTF_8);
         return resolvedValue;
     }
 
@@ -81,10 +83,10 @@ public final class JsonString extends JsonValue {
             return true;
         }
         String value = value();
-        if (obj instanceof String string) {
-            return value.equals(string);
-        } else if (obj instanceof JsonString jsonString) {
+        if (obj instanceof JsonString jsonString) {
             return jsonString.value().equals(value);
+        } else if (obj instanceof String string) {
+            return value.equals(string);
         }
         return false;
     }

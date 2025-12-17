@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -602,7 +603,7 @@ class ArrayJsonParser implements JsonParser {
         if (delegateToJava) {
             currentIndex = i;
             skipNumber();
-            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1));
+            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
         }
 
         // Calculate the base decimal exponent

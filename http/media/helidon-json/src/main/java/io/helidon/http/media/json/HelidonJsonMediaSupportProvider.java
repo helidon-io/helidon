@@ -28,6 +28,15 @@ import io.helidon.http.media.spi.MediaSupportProvider;
  * JSON serialization and deserialization in HTTP requests and responses.
  */
 public class HelidonJsonMediaSupportProvider implements MediaSupportProvider, Weighted {
+
+    /**
+     * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
+     */
+    @Deprecated
+    public HelidonJsonMediaSupportProvider() {
+        super();
+    }
+
     @Override
     public String configKey() {
         return HelidonJsonSupport.HELIDON_JSON_DEFAULT_NAME;

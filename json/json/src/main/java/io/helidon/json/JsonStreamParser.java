@@ -19,6 +19,7 @@ package io.helidon.json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 final class JsonStreamParser extends ArrayJsonParser {
 
@@ -298,7 +299,7 @@ final class JsonStreamParser extends ArrayJsonParser {
         if (delegateToJava) {
             skipNumber();
             bufferingJsonValue = false;
-            return Double.parseDouble(new String(buffer, jsonValueStart, currentIndex - jsonValueStart));
+            return Double.parseDouble(new String(buffer, jsonValueStart, currentIndex - jsonValueStart, StandardCharsets.UTF_8));
         }
 
         // Calculate the base decimal exponent
