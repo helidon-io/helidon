@@ -17,6 +17,7 @@
 /**
  * Code generation for Helidon Service Registry for the OCI SDK.
  */
+@Deprecated(forRemoval = true, since = "4.3")
 module io.helidon.integrations.oci.sdk.codegen {
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;

@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddExtension;
 import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;

@@ -80,6 +80,7 @@ import static java.util.function.Predicate.not;
  *     not be processed.</li>
  * </ul>
  */
+@Deprecated(forRemoval = true, since = "4.3")
 class OciInjectionCodegenObserver implements InjectCodegenObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
 
