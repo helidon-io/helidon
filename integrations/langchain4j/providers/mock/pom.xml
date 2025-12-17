@@ -21,24 +21,17 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations.langchain4j</groupId>
-        <artifactId>helidon-integrations-langchain4j-project</artifactId>
+        <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+        <artifactId>helidon-integrations-langchain4j-providers-project</artifactId>
         <version>4.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>helidon-integrations-langchain4j</artifactId>
-    <name>Helidon Integrations Langchain4j</name>
+    <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
+    <name>Helidon Integrations Langchain4j Providers Mock</name>
+    <description>Langchain4j Mock ChatModel for testing purposes</description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-config</artifactId>
@@ -52,28 +45,24 @@
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-api</artifactId>
+            <groupId>io.helidon.integrations.langchain4j</groupId>
+            <artifactId>helidon-integrations-langchain4j</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-agentic</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-mcp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -81,13 +70,13 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.testing</groupId>
-            <artifactId>helidon-testing-junit5</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -96,13 +85,23 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -144,17 +143,17 @@
                             <artifactId>helidon-common-features-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.integrations.langchain4j</groupId>
+                            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.config.metadata</groupId>
                         <artifactId>helidon-config-metadata-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
@@ -175,6 +174,11 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.features</groupId>
+                        <artifactId>helidon-common-features-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

@@ -18,29 +18,23 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Langchain4j main integration module and API.
+ * Provides integration with MockChatModel.
  */
-@Features.Name("Langchain4j")
-@Features.Description("Langchain4j Integration")
+@Features.Name("Langchain4j MockChatModel")
+@Features.Description("Langchain4j MockChatModel")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
-@Features.Path("Langchain4j")
-@Features.Aot(value = false, description = "Not yet supported in native image")
+@Features.Path({"Langchain4j", "MockChatModel"})
 @Features.Preview
-module io.helidon.integrations.langchain4j {
+module io.helidon.integrations.langchain4j.providers.mock {
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.service.registry;
     requires langchain4j.core;
-    requires langchain4j;
-    requires io.helidon.metrics.api;
-    requires langchain4j.mcp;
+
+    requires transitive io.helidon.service.registry;
+    requires transitive io.helidon.integrations.langchain4j;
+    requires transitive io.helidon.config;
     requires io.helidon.common;
-    requires langchain4j.agentic;
+    requires io.helidon.builder.api;
 
-    exports io.helidon.integrations.langchain4j;
-
-    provides dev.langchain4j.spi.services.TokenStreamAdapter
-            with io.helidon.integrations.langchain4j.TokenStreamToStreamAdapter;
+    exports io.helidon.integrations.langchain4j.providers.mock;
 }
