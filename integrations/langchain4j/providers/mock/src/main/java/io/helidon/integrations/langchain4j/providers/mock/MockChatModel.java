@@ -39,16 +39,6 @@ public class MockChatModel implements RuntimeType.Api<MockChatModelConfig>, Chat
         this.config = config;
     }
 
-    @Override
-    public ChatResponse doChat(ChatRequest chatRequest) {
-        for (var rule : config.rules()) {
-            if (rule.matches(chatRequest)) {
-                return rule.doMock(chatRequest);
-            }
-        }
-        return MockChatRule.DEFAULT_RULE.doMock(chatRequest);
-    }
-
     /**
      * Creates a new {@link MockChatModel} instance using the provided configuration.
      *
@@ -69,6 +59,16 @@ public class MockChatModel implements RuntimeType.Api<MockChatModelConfig>, Chat
         MockChatModelConfig.Builder builder = MockChatModelConfig.builder();
         consumer.accept(builder);
         return create(builder.buildPrototype());
+    }
+
+    @Override
+    public ChatResponse doChat(ChatRequest chatRequest) {
+        for (var rule : config.rules()) {
+            if (rule.matches(chatRequest)) {
+                return rule.doMock(chatRequest);
+            }
+        }
+        return MockChatRule.DEFAULT_RULE.doMock(chatRequest);
     }
 
     /**

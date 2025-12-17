@@ -41,8 +41,7 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
      */
     MockChatModelFactory(Config config) {
         var configBuilder = MockChatModelConfig.builder()
-            .config(config.get(MockChatModelConfigBlueprint
-            .CONFIG_ROOT));
+                .config(config.get(MockChatModelConfigBlueprint.CONFIG_ROOT));
         model = () -> buildModel(configBuilder);
     }
 
@@ -54,7 +53,7 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
      */
     protected static Optional<MockChatModel> buildModel(MockChatModelConfig.Builder configBuilder) {
         if (!configBuilder.enabled()) {
-                return Optional.empty();
+            return Optional.empty();
         }
         return Optional.of(create(configBuilder.buildPrototype()));
     }
@@ -67,7 +66,7 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
      */
     static MockChatModel create(MockChatModelConfig config) {
         if (!config.enabled()) {
-                throw new IllegalStateException("Cannot create a model when the configuration is disabled.");
+            throw new IllegalStateException("Cannot create a model when the configuration is disabled.");
         }
         return config.build();
     }
@@ -76,11 +75,11 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
     public List<Service.QualifiedInstance<MockChatModel>> services() {
         var modelOptional = model().get();
         if (modelOptional.isEmpty()) {
-                return List.of();
+            return List.of();
         }
         var theModel = modelOptional.get();
         return List.of(Service.QualifiedInstance.create(theModel),
-            Service.QualifiedInstance.create(theModel, MockConstants.QUALIFIER));
+                       Service.QualifiedInstance.create(theModel, MockConstants.QUALIFIER));
     }
 
     private Supplier<Optional<MockChatModel>> model() {

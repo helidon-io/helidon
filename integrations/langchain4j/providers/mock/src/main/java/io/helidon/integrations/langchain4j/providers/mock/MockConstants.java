@@ -22,9 +22,9 @@ import io.helidon.service.registry.Qualifier;
  * Constants for 'mock' Lc4j provider.
  */
 class MockConstants {
-    private MockConstants() {
-    }
-
     static final String NAME = "mock";
     static final Qualifier QUALIFIER = Qualifier.createNamed(NAME);
+
+    private MockConstants() {
+    }
 }

@@ -47,6 +47,45 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
     MockChatRule DEFAULT_RULE = req -> true;
 
     /**
+     * Returns a new {@link MockChatRuleConfig.Builder} for building rule configurations.
+     *
+     * @return a builder instance
+     */
+    static MockChatRuleConfig.Builder builder() {
+        return MockChatRuleConfig.builder();
+    }
+
+    /**
+     * Creates a {@link MockChatRule} using a builder consumer to configure the rule.
+     *
+     * @param consumer a consumer that modifies the {@link MockChatRuleConfig.Builder}
+     * @return a new {@code MockChatRule}
+     */
+    static MockChatRule create(Consumer<MockChatRuleConfig.Builder> consumer) {
+        return builder().update(consumer).build();
+    }
+
+    /**
+     * Creates a {@link MockChatRule} from the given configuration.
+     *
+     * @param config the rule configuration
+     * @return a new {@code MockChatRule}
+     */
+    static MockChatRule create(Config config) {
+        return MockChatRule.create(MockChatRuleConfig.create(config));
+    }
+
+    /**
+     * Creates a {@link MockChatRule} from the given configuration.
+     *
+     * @param config the rule configuration
+     * @return a new {@code MockChatRule}
+     */
+    static MockChatRule create(MockChatRuleConfig config) {
+        return new MyMockChatRuleImpl(config);
+    }
+
+    /**
      * Determines whether this rule matches the given chat request.
      *
      * @param req the chat request to evaluate
@@ -130,66 +169,5 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining());
-    }
-
-    /**
-     * Returns a new {@link MockChatRuleConfig.Builder} for building rule configurations.
-     *
-     * @return a builder instance
-     */
-    static MockChatRuleConfig.Builder builder() {
-        return MockChatRuleConfig.builder();
-    }
-
-    /**
-     * Creates a {@link MockChatRule} using a builder consumer to configure the rule.
-     *
-     * @param consumer a consumer that modifies the {@link MockChatRuleConfig.Builder}
-     * @return a new {@code MockChatRule}
-     */
-    static MockChatRule create(Consumer<MockChatRuleConfig.Builder> consumer) {
-        return builder().update(consumer).build();
-    }
-
-    /**
-     * Creates a {@link MockChatRule} from the given configuration.
-     *
-     * @param config the rule configuration
-     * @return a new {@code MockChatRule}
-     */
-    static MockChatRule create(Config config) {
-        return MockChatRule.create(MockChatRuleConfig.create(config));
-    }
-
-    /**
-     * Creates a {@link MockChatRule} from the given configuration.
-     *
-     * @param config the rule configuration
-     * @return a new {@code MockChatRule}
-     */
-    static MockChatRule create(MockChatRuleConfig config) {
-        return new MockChatRule() {
-            @Override
-            public boolean matches(ChatRequest req) {
-                return config.pattern().asMatchPredicate().test(concatMessages(req.messages()));
-            }
-
-            @Override
-            public MockChatRuleConfig prototype() {
-                return config;
-            }
-
-            @Override
-            public String mock(String concatenatedReq) {
-                if (config.response().isPresent()) {
-                    return config.response().get();
-                }
-                if (config.template().isPresent()) {
-                    return concatenatedReq.replaceFirst(config.pattern().pattern(),
-                                                        config.template().get());
-                }
-                return MockChatRule.super.mock(concatenatedReq);
-            }
-        };
     }
 }
