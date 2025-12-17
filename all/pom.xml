@@ -917,6 +917,10 @@
             <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
