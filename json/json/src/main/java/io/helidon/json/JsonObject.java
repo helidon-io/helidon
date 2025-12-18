@@ -35,7 +35,7 @@ public final class JsonObject extends JsonValue {
     static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());
 
     private final List<Pair> pairs;
-    private LinkedHashMap<String, JsonValue> content;
+    private final LinkedHashMap<String, JsonValue> content;
     private final boolean resolved;
 
     private JsonObject(List<Pair> pairs) {
@@ -372,7 +372,6 @@ public final class JsonObject extends JsonValue {
 
     private void ensureResolvedKeys() {
         if (!resolved) {
-            this.content = new LinkedHashMap<>(pairs.size());
             for (Pair pair : pairs) {
                 content.put(pair.key.resolveValue(), pair.value);
             }
