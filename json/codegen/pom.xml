@@ -28,6 +28,10 @@
     <name>Helidon JSON Codegen</name>
     <artifactId>helidon-json-codegen</artifactId>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.codegen</groupId>

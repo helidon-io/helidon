@@ -23,6 +23,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.InnerClass;
+import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.Weighted;
@@ -43,6 +44,9 @@ class JsonBindingFactoryGenerator {
                                        .type(TypeNames.WEIGHT)
                                        .addParameter("value", Weighted.DEFAULT_WEIGHT - 5)
                                        .build())
+                .javadoc(Javadoc.builder()
+                                 .add("Json binding factory for {@link " + annotatedType.typeName().fqName() + "}.")
+                                 .build())
                 .addInterface(TypeName.builder()
                                       .from(Types.JSON_BINDING_FACTORY_TYPED)
                                       .addTypeArgument(convertedTypeInfo.wildcardsGenerics())

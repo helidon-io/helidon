@@ -704,10 +704,11 @@ class ArrayJsonParser implements JsonParser {
         // This optimized loop scans the buffer directly without calling readNextByte() for each character.
         int fnv1aHash = FNV_OFFSET_BASIS;
         byte b;
-        currentIndex++;
-        for (; currentIndex < bufferLength; currentIndex++) {
-            b = buffer[currentIndex];
+        int i = ++currentIndex;
+        for (; i < bufferLength; i++) {
+            b = buffer[i];
             if (b == '"') {
+                currentIndex = i;
                 return fnv1aHash;
             }
             fnv1aHash ^= (b & 0xFF);

@@ -246,13 +246,13 @@ public interface JsonParser {
     String readString();
 
     /**
-     * Reads a string value and returns its hash code.
+     * Reads a string value and returns its FNV-1a hash.
      * <p>
      * This method is optimized for performance when only string comparison
      * is needed, avoiding string object allocation.
      * </p>
      *
-     * @return the hash code of the string value
+     * @return the hash of the string value
      * @throws JsonException if the next token is not a string or parsing fails
      */
     int readStringAsHash();
