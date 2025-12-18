@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.metadata.codegen;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +39,7 @@ final class ConfiguredType {
     The type we are processing that has @Configured annotation
      */
     private final TypeName annotatedClass;
-    private final List<TypeName> inherited = new LinkedList<>();
+    private final Set<TypeName> inherited = new LinkedHashSet<>();
     private final ConfiguredAnnotation configured;
 
     ConfiguredType(ConfiguredAnnotation configured, TypeName annotatedClass, TypeName targetClass, boolean typeDefinition) {
