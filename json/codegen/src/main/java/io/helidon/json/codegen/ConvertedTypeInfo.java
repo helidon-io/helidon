@@ -301,6 +301,9 @@ record ConvertedTypeInfo(TypeName converterType,
             obtainBooleanFromAnnotation(field, Types.JSON_IGNORE).ifPresent(builder::propertyIgnored);
             field.findAnnotation(Types.JSON_REQUIRED).ifPresent(annotation -> builder.required(true));
             obtainBooleanFromAnnotation(field, Types.JSON_SERIALIZE_NULLS).ifPresent(builder::nullable);
+            if (field.elementModifiers().contains(Modifier.TRANSIENT)) {
+                builder.propertyIgnored(true);
+            }
             properties.put(fieldName, builder);
         }
     }

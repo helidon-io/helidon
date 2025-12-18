@@ -45,6 +45,18 @@ public class IgnoreRequiredTest {
     }
 
     @Test
+    public void testTransientField() {
+        TransientField entity = new TransientField("included", "ignored");
+        String json = HELIDON.serialize(entity);
+        assertThat(json, is("{\"includedField\":\"included\"}"));
+
+        TransientField deserialized = HELIDON.deserialize("{\"includedField\":\"test\",\"ignoredField\":\"should_be_ignored\"}",
+                                                          TransientField.class);
+        assertThat(deserialized.getIncludedField(), is("test"));
+        assertThat(deserialized.getIgnoredField(), nullValue());
+    }
+
+    @Test
     public void testIgnoreMethod() {
         IgnoreMethod entity = new IgnoreMethod("included", "ignored");
         String json = HELIDON.serialize(entity);
@@ -139,6 +151,36 @@ public class IgnoreRequiredTest {
         }
 
         public IgnoreField(String included, String ignored) {
+            this.includedField = included;
+            this.ignoredField = ignored;
+        }
+
+        public String getIncludedField() {
+            return includedField;
+        }
+
+        public void setIncludedField(String includedField) {
+            this.includedField = includedField;
+        }
+
+        public String getIgnoredField() {
+            return ignoredField;
+        }
+
+        public void setIgnoredField(String ignoredField) {
+            this.ignoredField = ignoredField;
+        }
+    }
+
+    @Json.Entity
+    static class TransientField {
+        private String includedField;
+        private transient String ignoredField;
+
+        public TransientField() {
+        }
+
+        public TransientField(String included, String ignored) {
             this.includedField = included;
             this.ignoredField = ignored;
         }
