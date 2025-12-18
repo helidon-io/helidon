@@ -25,11 +25,16 @@ module io.helidon.tracing.providers.opentelemetry {
     requires io.helidon.config;
     requires io.helidon.service.registry;
     requires io.opentelemetry.context;
+    requires io.opentelemetry.exporter.otlp;
     requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.sdk;
+    requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.semconv;
 
     requires transitive io.helidon.tracing;
     requires transitive io.opentelemetry.api;
+    requires java.logging;
 
     exports io.helidon.tracing.providers.opentelemetry;
 

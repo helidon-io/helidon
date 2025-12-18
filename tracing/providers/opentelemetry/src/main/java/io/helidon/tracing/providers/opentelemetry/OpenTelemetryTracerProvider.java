@@ -15,7 +15,6 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,7 +79,10 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
                                     + "Tracer.global(HelidonOpenTelemetry.create(ot, tracer). Using global open telemetry");
                         }
                         OpenTelemetry ot = GlobalOpenTelemetry.get();
-                        return new OpenTelemetryTracer(ot, ot.getTracer("helidon-service"), Map.of());
+                        return OpenTelemetryTracer.builder()
+                                .openTelemetry(ot)
+                                .delegate(ot.getTracer("helidon-service"))
+                                .build();
                     });
         });
     }
@@ -138,7 +140,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
 
     @Override
     public TracerBuilder<?> createBuilder() {
-        return OpenTelemetryTracer.builder();
+        return OpenTelemetryTracerBuilder.create();
     }
 
     @Override
