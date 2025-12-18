@@ -18,6 +18,7 @@ package io.helidon.json.codegen;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ record ConvertedTypeInfo(TypeName converterType,
                          Map<String, JsonProperty> jsonProperties,
                          Comparator<String> orderedProperties,
                          CreatorInfo creatorInfo,
-                         Optional<BuilderInfo> builderInfo) {
+                         Optional<BuilderInfo> builderInfo, Map<TypeName, Integer> genericParamsWithIndexes) {
 
     private static final Set<ElementSignature> IGNORED_METHODS = Set.of(
             // equals, hash code and toString
@@ -87,8 +88,9 @@ record ConvertedTypeInfo(TypeName converterType,
                 .flatMap(annotation -> annotation.stringValue("value"))
                 .orElse(CodegenOptions.CODEGEN_JSON_ORDER.value(ctx.options()));
         Map<String, JsonProperty.Builder> properties = new LinkedHashMap<>();
-        LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics = new LinkedHashMap<>();
-        discoverAllResolvedGenerics(typeInfo, resolvedGenerics, Map.of());
+        Map<String, Map<String, TypeName>> resolvedGenerics = new LinkedHashMap<>();
+        Map<TypeName, Integer> genericParamsWithIndexes = obtainGenericParamsWithIndexes(typeInfo);
+        discoverAllPossibleGenerics(typeInfo, resolvedGenerics, Map.of());
         discoverFields(properties, typeInfo, nullable, resolvedGenerics);
         discoverGetAndSetMethods(properties, typeInfo, recordAccessors, resolvedGenerics);
         Optional<Annotation> builderAnnotation = typeInfo.findAnnotation(Types.JSON_BUILDER_INFO);
@@ -98,10 +100,10 @@ record ConvertedTypeInfo(TypeName converterType,
                 .flatMap(it -> processBuilderInfoFromClass(it,
                                                            typeInfo,
                                                            null,
-                                                           builderAnnotation.get().stringValue("methodPrefix").get(),
-                                                           builderAnnotation.get().stringValue("buildMethod").get(),
-                                                           properties))
-                .or(() -> processBuilderInfo(typeInfo, properties, ctx));
+                                                           builderAnnotation,
+                                                           properties,
+                                                           resolvedGenerics))
+                .or(() -> processBuilderInfo(typeInfo, properties, ctx, resolvedGenerics));
         CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
         Map<String, JsonProperty> jsonProperties = finalizeJsonProperties(properties);
         Comparator<String> orderComparator = PROPERTY_ORDER.getOrDefault(orderStrategy, (o1, o2) -> 0);
@@ -114,13 +116,25 @@ record ConvertedTypeInfo(TypeName converterType,
                                      jsonProperties,
                                      orderComparator,
                                      creatorInfo,
-                                     builderInfo);
+                                     builderInfo,
+                                     genericParamsWithIndexes);
     }
 
-    private static void discoverAllResolvedGenerics(TypeInfo typeInfo,
-                                                    LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics,
+    private static Map<TypeName, Integer> obtainGenericParamsWithIndexes(TypeInfo typeInfo) {
+        //We need to find all the generic parameters of the currently created type. No super types needed.
+        //This is needed for later converter generation, so we can determine a proper index to get the runtime type from
+        List<TypeName> typeArguments = typeInfo.typeName().typeArguments();
+        Map<TypeName, Integer> argumentsWithIndexes = new HashMap<>();
+        for (int i = 0; i < typeArguments.size(); i++) {
+            argumentsWithIndexes.put(typeArguments.get(i), i);
+        };
+        return argumentsWithIndexes;
+    }
+
+    private static void discoverAllPossibleGenerics(TypeInfo typeInfo,
+                                                    Map<String, Map<String, TypeName>> resolvedGenerics,
                                                     Map<String, TypeName> childGenerics) {
-        Map<String, TypeName> typeGenerics = new LinkedHashMap<>();
+        Map<String, TypeName> typeGenerics = new HashMap<>();
         TypeName typeName = typeInfo.typeName();
         for (int i = 0; i < typeName.typeParameters().size(); i++) {
             String parameterName = typeName.typeParameters().get(i);
@@ -134,8 +148,7 @@ record ConvertedTypeInfo(TypeName converterType,
         resolvedGenerics.put(typeName.fqName(), typeGenerics);
 
         Optional<TypeInfo> superTypeInfo = typeInfo.superTypeInfo();
-        superTypeInfo.ifPresent(info -> discoverAllResolvedGenerics(info, resolvedGenerics, typeGenerics));
-
+        superTypeInfo.ifPresent(info -> discoverAllPossibleGenerics(info, resolvedGenerics, typeGenerics));
     }
 
     static boolean needsResolving(TypeName typeName) {
@@ -149,7 +162,8 @@ record ConvertedTypeInfo(TypeName converterType,
 
     private static Optional<BuilderInfo> processBuilderInfo(TypeInfo createdTypeInfo,
                                                             Map<String, JsonProperty.Builder> properties,
-                                                            CodegenContext ctx) {
+                                                            CodegenContext ctx,
+                                                            Map<String, Map<String, TypeName>> resolvedGenerics) {
         Optional<TypedElementInfo> builderMethod = findHelidonBuilderMethod(createdTypeInfo, ctx);
         if (builderMethod.isEmpty()) {
             return Optional.empty();
@@ -160,17 +174,22 @@ record ConvertedTypeInfo(TypeName converterType,
         return processBuilderInfoFromClass(builderTypeInfo,
                                            createdTypeInfo,
                                            builderMethod.get().elementName(),
-                                           "",
-                                           "build",
-                                           properties);
+                                           Optional.empty(),
+                                           properties,
+                                           resolvedGenerics);
     }
 
     private static Optional<BuilderInfo> processBuilderInfoFromClass(TypeInfo builderTypeInfo,
                                                                      TypeInfo createdTypeInfo,
                                                                      String builderMethodName,
-                                                                     String builderMethodPrefix,
-                                                                     String buildMethod,
-                                                                     Map<String, JsonProperty.Builder> properties) {
+                                                                     Optional<Annotation> builderAnnotation,
+                                                                     Map<String, JsonProperty.Builder> properties,
+                                                                     Map<String, Map<String, TypeName>> resolvedGenerics) {
+        String builderMethodPrefix = builderAnnotation.flatMap(it -> it.stringValue("methodPrefix"))
+                .orElse("");
+        String buildMethod = builderAnnotation.flatMap(it -> it.stringValue("buildMethod"))
+                .orElse("build");
+
         if (!checkBuildMethod(builderTypeInfo, createdTypeInfo, buildMethod)) {
             throw new CodegenException("Build method with the name \"" + buildMethod
                                                + "\" does not exist or does not return: " + createdTypeInfo.typeName().fqName(),
@@ -251,7 +270,7 @@ record ConvertedTypeInfo(TypeName converterType,
     private static void discoverFields(Map<String, JsonProperty.Builder> properties,
                                        TypeInfo typeInfo,
                                        boolean nullable,
-                                       LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
+                                       Map<String, Map<String, TypeName>> resolvedGenerics) {
         typeInfo.superTypeInfo()
                 .ifPresent(superType -> discoverFields(properties, superType, nullable, resolvedGenerics));
 
@@ -289,7 +308,7 @@ record ConvertedTypeInfo(TypeName converterType,
     private static String discoverGetAndSetMethods(Map<String, JsonProperty.Builder> properties,
                                                    TypeInfo typeInfo,
                                                    String accessorStyle,
-                                                   LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
+                                                   Map<String, Map<String, TypeName>> resolvedGenerics) {
         String detectedAccessorStyle = typeInfo.superTypeInfo()
                 .map(superType -> discoverGetAndSetMethods(properties, superType, accessorStyle, resolvedGenerics))
                 .orElse(accessorStyle);
@@ -357,7 +376,7 @@ record ConvertedTypeInfo(TypeName converterType,
 
     private static CreatorInfo discoverCreator(Map<String, JsonProperty.Builder> properties,
                                                TypeInfo typeInfo,
-                                               LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
+                                               Map<String, Map<String, TypeName>> resolvedGenerics) {
         List<TypedElementInfo> creators = typeInfo.elementInfo()
                 .stream()
                 .filter(info -> info.hasAnnotation(Types.JSON_CREATOR))
@@ -405,10 +424,10 @@ record ConvertedTypeInfo(TypeName converterType,
 
     private static TypeName resolveGenerics(TypeName elementTypeName,
                                             TypeInfo typeInfo,
-                                            LinkedHashMap<String, LinkedHashMap<String, TypeName>> resolvedGenerics) {
+                                            Map<String, Map<String, TypeName>> resolvedGenerics) {
         if (needsResolving(elementTypeName)) {
             if (elementTypeName.generic()) {
-                var typeGenerics = resolvedGenerics.getOrDefault(typeInfo.typeName().fqName(), EMPTY_LINKED_HASHMAP);
+                var typeGenerics = resolvedGenerics.getOrDefault(typeInfo.typeName().fqName(), Map.of());
                 return typeGenerics.getOrDefault(elementTypeName.name(), elementTypeName);
             }
             TypeName.Builder builder = TypeName.builder()

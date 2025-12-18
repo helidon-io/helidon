@@ -82,7 +82,7 @@ class JsonConverterGenerator {
                                                             toConfigure));
 
         if (factory) {
-            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure));
+            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure, converterInfo));
             classBuilder.addMethod(method -> addTypeMethodFactory(method, converterInfo));
         } else {
             classBuilder.addMethod(method -> addConfigurationMethod(method, toConfigure));
@@ -98,7 +98,9 @@ class JsonConverterGenerator {
         initializeNoRuntimeResolving(method, toConfigure);
     }
 
-    private static void addConfigurationFactory(Method.Builder method, Map<String, TypeToConfigure> toConfigure) {
+    private static void addConfigurationFactory(Method.Builder method,
+                                                Map<String, TypeToConfigure> toConfigure,
+                                                ConvertedTypeInfo convertedTypeInfo) {
         method.name("configure")
                 .addAnnotation(Annotation.create(Override.class))
                 .addParameter(builder -> builder.type(Types.JSON_BINDING_CONFIGURATOR).name(CONFIGURE_PARAM));
@@ -116,13 +118,15 @@ class JsonConverterGenerator {
 
         Map<String, Consumer<Method.Builder>> createdTypeSetters = new HashMap<>();
         MethodNameCounter counter = new MethodNameCounter();
+        Map<TypeName, Integer> paramIndexes = convertedTypeInfo.genericParamsWithIndexes();
         for (TypeToConfigure typeToConfigure : needsRuntimeResolving) {
             String fieldName = typeToConfigure.fieldName();
             TypeName typeName = typeToConfigure.resolved;
             String obtainMethod = typeToConfigure.mode.method;
-            if (typeName.typeArguments().isEmpty()) {
+            if (typeName.generic()) {
+                int index = paramIndexes.get(typeName);
                 method.addContent(fieldName + " = " + CONFIGURE_PARAM + "." + obtainMethod + "(")
-                        .addContentLine("parameterizedType.getActualTypeArguments()[0]);");
+                        .addContentLine("parameterizedType.getActualTypeArguments()[" + index + "]);");
             } else {
                 Consumer<Method.Builder> builderConsumer;
                 if (createdTypeSetters.containsKey(typeName.resolvedName())) {
