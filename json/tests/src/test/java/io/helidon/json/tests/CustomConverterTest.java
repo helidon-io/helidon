@@ -114,6 +114,11 @@ public class CustomConverterTest {
         public void serialize(Generator generator, String instance, boolean writeNulls) {
             generator.write(instance + "_custom_converter");
         }
+
+        @Override
+        public boolean isMapKeySerializer() {
+            return true;
+        }
     }
 
     @Json.Entity

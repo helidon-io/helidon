@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 
 public class GenericFieldsTest {
 
@@ -56,8 +57,9 @@ public class GenericFieldsTest {
         obj.setProperties(Map.of("key1", "value1", "key2", "value2"));
 
         String expected = "{\"id\":\"123\",\"properties\":{\"key1\":\"value1\",\"key2\":\"value2\"}}";
+        String expected2 = "{\"id\":\"123\",\"properties\":{\"key2\":\"value2\",\"key1\":\"value1\"}}";
         String json = HELIDON.serialize(obj);
-        assertThat(json, is(expected));
+        assertThat(json, isOneOf(expected, expected2));
 
         ClassWithMapField deserialized = HELIDON.deserialize(json, ClassWithMapField.class);
         assertThat(deserialized.getId(), is("123"));
