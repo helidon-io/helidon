@@ -127,7 +127,7 @@ record ConvertedTypeInfo(TypeName converterType,
         Map<TypeName, Integer> argumentsWithIndexes = new HashMap<>();
         for (int i = 0; i < typeArguments.size(); i++) {
             argumentsWithIndexes.put(typeArguments.get(i), i);
-        };
+        }
         return argumentsWithIndexes;
     }
 

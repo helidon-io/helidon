@@ -85,8 +85,6 @@ public final class JsonString extends JsonValue {
         String value = value();
         if (obj instanceof JsonString jsonString) {
             return jsonString.value().equals(value);
-        } else if (obj instanceof String string) {
-            return value.equals(string);
         }
         return false;
     }

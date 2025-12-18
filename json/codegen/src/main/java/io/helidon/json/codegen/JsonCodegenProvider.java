@@ -31,6 +31,16 @@ import io.helidon.common.types.TypeName;
  * </p>
  */
 public class JsonCodegenProvider implements CodegenExtensionProvider {
+
+    /**
+     * Public constructor is required for {@link java.util.ServiceLoader}.
+     *
+     * @deprecated please do not use directly
+     */
+    @Deprecated
+    public JsonCodegenProvider() {
+    }
+
     @Override
     public CodegenExtension create(CodegenContext ctx, TypeName generatorType) {
         return new JsonCodegen(ctx);

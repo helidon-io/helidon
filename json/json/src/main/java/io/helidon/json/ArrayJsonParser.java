@@ -23,6 +23,7 @@ import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 
+@SuppressWarnings("checkstyle:FileLength")
 class ArrayJsonParser implements JsonParser {
 
     static final int FNV_OFFSET_BASIS = 0x811c9dc5;
@@ -659,7 +660,7 @@ class ArrayJsonParser implements JsonParser {
         if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
             skipNumber();
             // Delegate to Java for exact result
-            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1));
+            return Double.parseDouble(new String(buffer, start, currentIndex - start + 1, StandardCharsets.UTF_8));
         }
 
         // FAST PATH: Handle common cases ourselves

@@ -33,7 +33,6 @@ import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.Executable;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.ElementKind;
-import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
