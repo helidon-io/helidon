@@ -263,6 +263,7 @@ public class GenericType<T> implements Type {
          * @return this builder
          */
         public Builder<T> baseType(Class<?> baseType) {
+            Objects.requireNonNull(baseType);
             this.baseType = baseType;
             return this;
         }
@@ -274,6 +275,7 @@ public class GenericType<T> implements Type {
          * @return this builder
          */
         public Builder<T> addGenericParameter(GenericType<?> genericParameter) {
+            Objects.requireNonNull(genericParameter);
             this.genericParameters.add(genericParameter.type());
             return this;
         }
@@ -285,6 +287,7 @@ public class GenericType<T> implements Type {
          * @return this builder
          */
         public Builder<T> addGenericParameter(Type genericParameter) {
+            Objects.requireNonNull(genericParameter);
             this.genericParameters.add(genericParameter);
             return this;
         }
@@ -296,6 +299,7 @@ public class GenericType<T> implements Type {
          * @return this builder
          */
         public Builder<T> addGenericParameter(Consumer<Builder<T>> consumer) {
+            Objects.requireNonNull(consumer);
             Builder<T> builder = new Builder<T>();
             consumer.accept(builder);
             this.genericParameters.add(builder.build());

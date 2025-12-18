@@ -36,7 +36,11 @@ import static io.helidon.json.ArrayJsonParser.SHORT_SIZE_BORDER;
 import static io.helidon.json.ArrayJsonParser.VALID_NUMBER_PARTS;
 import static io.helidon.json.ArrayJsonParser.WHITESPACE_CHARS;
 import static io.helidon.json.ArrayJsonParser.WHOLE_NUMBER_PARTS;
-
+/*
+This class is having mostly the same method implementations as ArrayJsonParser does.
+I will need to think carefully about how to do the abstraction right, but for the first version,
+I have decided to leave it like this and with a duplicit code.
+ */
 final class JsonStreamParser implements JsonParser {
 
     private static final int DEFAULT_BUFFER_SIZE = 512;
