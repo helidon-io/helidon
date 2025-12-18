@@ -41,7 +41,6 @@ This class is having mostly the same method implementations as ArrayJsonParser d
 I will need to think carefully about how to do the abstraction right, but for the first version,
 I have decided to leave it like this and with a duplicit code.
  */
-@SuppressWarnings("checkstyle:FileLength")
 final class JsonStreamParser implements JsonParser {
 
     private static final int DEFAULT_BUFFER_SIZE = 512;

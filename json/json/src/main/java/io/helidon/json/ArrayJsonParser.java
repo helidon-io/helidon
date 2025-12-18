@@ -23,7 +23,6 @@ import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 
-@SuppressWarnings("checkstyle:FileLength")
 class ArrayJsonParser implements JsonParser {
 
     static final int FNV_OFFSET_BASIS = 0x811c9dc5;
