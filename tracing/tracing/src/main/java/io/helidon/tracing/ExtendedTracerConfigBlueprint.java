@@ -44,6 +44,7 @@ interface ExtendedTracerConfigBlueprint {
      *
      * @return tracing collector URI
      */
+    @Option.Configured("uri")
     Optional<URI> collectorUri();
 
     /**
@@ -84,7 +85,7 @@ interface ExtendedTracerConfigBlueprint {
      * @return tracer-level string-valued tags
      */
     @Option.Configured("tags")
-    @Option.Singular("tracerTag")
+    @Option.Singular
     Map<String, String> tracerTags();
 
     /**
