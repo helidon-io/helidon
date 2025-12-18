@@ -34,7 +34,6 @@ module io.helidon.tracing.providers.opentelemetry {
 
     requires transitive io.helidon.tracing;
     requires transitive io.opentelemetry.api;
-    requires java.logging;
 
     exports io.helidon.tracing.providers.opentelemetry;
 
