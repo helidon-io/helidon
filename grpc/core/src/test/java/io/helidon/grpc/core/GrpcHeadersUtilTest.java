@@ -15,6 +15,8 @@
  */
 package io.helidon.grpc.core;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,6 +49,20 @@ class GrpcHeadersUtilTest {
         List<String> values = headers.get(HeaderNames.COOKIE).allValues();
         assertThat(values, hasItem("sugar"));
         assertThat(values, hasItem("almond"));
+    }
+
+    @Test
+    void testUpdateBinaryHeaders() {
+        Metadata metadata = new Metadata();
+        Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
+        byte[] mySecret = "my-secret".getBytes(StandardCharsets.UTF_8);
+        metadata.put(key, mySecret);
+        WritableHeaders<?> headers = WritableHeaders.create();
+        GrpcHeadersUtil.updateHeaders(headers, metadata);
+        assertThat(headers.size(), is(1));
+        List<String> values = headers.get(HeaderNames.create("secret-bin")).allValues();
+        byte[] value = Base64.getDecoder().decode(values.getFirst().getBytes(StandardCharsets.UTF_8));
+        assertThat(new String(value, StandardCharsets.UTF_8), is("my-secret"));
     }
 
     @Test
