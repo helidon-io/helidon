@@ -85,10 +85,11 @@ class ArrayBindingFactory implements JsonBindingFactory<Object[]> {
             }
             generator.writeArrayStart();
             for (Object value : instance) {
-                if (value == null && !writeNulls) {
-                    continue;
+                if (value == null) {
+                    serializer.serializeNull(generator);
+                } else {
+                    serializer.serialize(generator, value, writeNulls);
                 }
-                serializer.serialize(generator, value, writeNulls);
             }
             generator.writeArrayEnd();
         }

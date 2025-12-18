@@ -41,7 +41,7 @@ public class GenericClassesTest {
         String json = HELIDON.serialize(container);
         assertThat(json, is(expected));
 
-        GenericType<Container<String>> type = new GenericType<Container<String>>() { };
+        GenericType<Container<String>> type = new GenericType<>() { };
         Container<String> deserialized = HELIDON.deserialize(json, type);
         assertThat(deserialized.getValue(), is("hello"));
     }
@@ -56,7 +56,7 @@ public class GenericClassesTest {
         String json = HELIDON.serialize(pair);
         assertThat(json, is(expected));
 
-        GenericType<Pair<String, Integer>> type = new GenericType<Pair<String, Integer>>() { };
+        GenericType<Pair<String, Integer>> type = new GenericType<>() { };
         Pair<String, Integer> deserialized = HELIDON.deserialize(json, type);
         assertThat(deserialized.getFirst(), is("key"));
         assertThat(deserialized.getSecond(), is(42));
@@ -74,7 +74,7 @@ public class GenericClassesTest {
         String json = HELIDON.serialize(nested);
         assertThat(json, is(expected));
 
-        GenericType<Container<Pair<String, Integer>>> type = new GenericType<Container<Pair<String, Integer>>>() { };
+        GenericType<Container<Pair<String, Integer>>> type = new GenericType<>() { };
         Container<Pair<String, Integer>> deserialized = HELIDON.deserialize(json, type);
         assertThat(deserialized.getValue().getFirst(), is("nested"));
         assertThat(deserialized.getValue().getSecond(), is(123));
@@ -91,7 +91,7 @@ public class GenericClassesTest {
         String json = HELIDON.serialize(triple);
         assertThat(json, is(expected));
 
-        GenericType<Triple<String, Integer, Boolean>> type = new GenericType<Triple<String, Integer, Boolean>>() { };
+        GenericType<Triple<String, Integer, Boolean>> type = new GenericType<>() { };
         Triple<String, Integer, Boolean> deserialized = HELIDON.deserialize(json, type);
         assertThat(deserialized.getFirst(), is("test"));
         assertThat(deserialized.getSecond(), is(100));
@@ -113,7 +113,7 @@ public class GenericClassesTest {
         String json = HELIDON.serialize(obj);
         assertThat(json, is(expected));
 
-        GenericType<GenericClassWithMixedFields<String>> type = new GenericType<GenericClassWithMixedFields<String>>() { };
+        GenericType<GenericClassWithMixedFields<String>> type = new GenericType<>() { };
         GenericClassWithMixedFields<String> deserialized = HELIDON.deserialize(json, type);
         assertThat(deserialized.getId(), is("item123"));
         assertThat(deserialized.getName(), is("Test Item"));

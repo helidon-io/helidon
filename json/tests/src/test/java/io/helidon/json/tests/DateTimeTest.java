@@ -27,11 +27,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.binding.Json;
@@ -126,6 +128,17 @@ public class DateTimeTest {
         String json = HELIDON.serialize(original);
         Calendar deserialized = HELIDON.deserialize(json, Calendar.class);
         assertThat(deserialized.getTime(), is(original.getTime()));
+    }
+
+    @Test
+    public void testGregorianCalendarConverter() {
+        // Note: month is 0-based
+        GregorianCalendar original = new GregorianCalendar(2023, 9, 15, 14, 30, 45);
+        original.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String json = HELIDON.serialize(original);
+        assertThat(json, is("\"2023-10-15T14:30:45Z[UTC]\""));
+        GregorianCalendar deserialized = HELIDON.deserialize(json, GregorianCalendar.class);
+        assertThat(deserialized.getTimeInMillis(), is(original.getTimeInMillis()));
     }
 
     @Test

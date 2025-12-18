@@ -111,7 +111,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (Generator generator = Generator.create(outputStream)) {
             JsonSerializer<Object> converter = (JsonSerializer<Object>) serializer(obj.getClass());
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -128,7 +128,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
             if (obj == null) {
                 converter.serializeNull(generator);
             } else {
-                converter.serialize(generator, obj, true);
+                converter.serialize(generator, obj, false);
             }
         } catch (RuntimeException e) {
             throw e;
@@ -146,7 +146,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
             if (obj == null) {
                 converter.serializeNull(generator);
             } else {
-                converter.serialize(generator, obj, true);
+                converter.serialize(generator, obj, false);
             }
         } catch (RuntimeException e) {
             throw e;
@@ -170,7 +170,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(outputStream)) {
             JsonSerializer<Object> converter = (JsonSerializer<Object>) serializer(obj.getClass());
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -191,7 +191,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(outputStream)) {
             JsonSerializer<? super T> converter = serializer(type);
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -212,7 +212,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(outputStream)) {
             JsonSerializer<? super T> converter = serializer(type);
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -234,7 +234,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(writer)) {
             JsonSerializer<Object> converter = (JsonSerializer<Object>) serializer(obj.getClass());
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -255,7 +255,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(writer)) {
             JsonSerializer<? super T> converter = serializer(type);
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -276,7 +276,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
         try (Generator generator = Generator.create(writer)) {
             JsonSerializer<? super T> converter = serializer(type);
-            converter.serialize(generator, obj, true);
+            converter.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

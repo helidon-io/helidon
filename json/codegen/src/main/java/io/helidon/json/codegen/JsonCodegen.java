@@ -66,9 +66,12 @@ class JsonCodegen implements CodegenExtension {
                                            .build());
             JsonConverterGenerator.generateConverter(builder, convertedTypeInfo, false);
         } else {
+            String classNameWithEnclosingNames = typeInfo.typeName().classNameWithEnclosingNames();
+            String replacedDot = classNameWithEnclosingNames.replace(".", "_");
+            String typeBaseName = typeInfo.typeName().fqName().replace(classNameWithEnclosingNames, replacedDot);
+            TypeName converterTypeName = TypeName.create(typeBaseName + "_BindingFactory");
             generatedType = TypeName.builder()
-                    .from(annotatedTypeName)
-                    .className(annotatedTypeName.className() + "_BindingFactory")
+                    .from(converterTypeName)
                     .build();
             builder = ClassModel.builder().type(generatedType);
             JsonBindingFactoryGenerator.generateBindingFactory(builder, typeInfo, ctx);
