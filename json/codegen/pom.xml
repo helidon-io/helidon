@@ -27,10 +27,7 @@
 
     <name>Helidon JSON Codegen</name>
     <artifactId>helidon-json-codegen</artifactId>
-
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
+    <description>Code generator for the JSON Binding converters</description>
 
     <dependencies>
         <dependency>
