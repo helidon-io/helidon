@@ -117,7 +117,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -135,7 +135,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -153,7 +153,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     @Override

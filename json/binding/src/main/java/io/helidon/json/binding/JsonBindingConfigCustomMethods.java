@@ -30,7 +30,7 @@ class JsonBindingConfigCustomMethods {
      * @param converter registered converter
      */
     @Prototype.BuilderMethod
-    static <T> void addConverter(JsonBindingConfig.BuilderBase<?, ?> builder, JsonConverter<T> converter) {
+    static void addConverter(JsonBindingConfig.BuilderBase<?, ?> builder, JsonConverter<?> converter) {
         builder.addSerializer(converter)
                 .addDeserializer(converter);
     }
