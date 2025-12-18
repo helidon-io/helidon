@@ -25,6 +25,12 @@ public abstract sealed class JsonValue
     static final byte[] EMPTY_BYTES = new byte[0];
 
     /**
+     * The JsonValue constructor.
+     */
+    JsonValue()  {
+    }
+
+    /**
      * A new fluent API builder to construct an {@link JsonObject}.
      *
      * @return a new builder
