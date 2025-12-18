@@ -71,8 +71,13 @@ public final class HelidonOpenTelemetry {
      * @param tags      tracer tags
      * @return Helidon {@link io.helidon.tracing.Tracer}
      */
-    public static OpenTelemetryTracer create(OpenTelemetry telemetry, Tracer tracer, Map<String, String> tags) {
-        return new OpenTelemetryTracer(telemetry, tracer, tags);
+    public static io.helidon.tracing.Tracer create(OpenTelemetry telemetry, Tracer tracer, Map<String, String> tags) {
+        return OpenTelemetryTracerBuilder.create()
+                .serviceName("helidon-service")
+                .openTelemetry(telemetry)
+                .delegate(tracer)
+                .tracerTags(tags)
+                .build();
     }
 
     /**
@@ -145,7 +150,11 @@ public final class HelidonOpenTelemetry {
      * @return an OpenTelemetry {@code Tracer} and {@link io.helidon.tracing.Wrapper} able to notify span lifecycle listeners
      */
     public static <T extends Tracer & Wrapper> T callbackEnabledFrom(Tracer otelTracer) {
-        return callbackEnabledFrom(new OpenTelemetryTracer(GlobalOpenTelemetry.get(), otelTracer, Map.of()));
+        return callbackEnabledFrom(OpenTelemetryTracerBuilder.create()
+                                           .serviceName("callback-enabled-otel-tracer")
+                                           .openTelemetry(GlobalOpenTelemetry.get())
+                                           .delegate(otelTracer)
+                                           .build());
     }
 
     /**
