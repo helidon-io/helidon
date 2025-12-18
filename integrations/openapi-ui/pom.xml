@@ -135,6 +135,23 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <!--
+                The following tests a bug fix, without which an added line to the project's module-info.java file triggers a
+                compiler error.
+                -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

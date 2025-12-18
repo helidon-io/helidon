@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Integration test for OpenAPI UI options set programmatically.
- */
-module io.helidon.tests.integration.openapi.ui.module {
-    requires io.helidon.config;
-    requires io.helidon.http;
-    requires io.helidon.integrations.openapi.ui;
-    requires io.helidon.logging.common;
-    requires io.helidon.webserver;
-    requires jakarta.json;
-    requires io.helidon.openapi;
 
+package io.helidon.integrations.openapi.ui.it;
+
+import io.helidon.integrations.openapi.ui.OpenApiUi;
+public class Main {
+
+    public static void main(String[] args) {
+        var ui = OpenApiUi.builder()
+                .webContext("/my-ui")
+                .build();
+    }
 }
