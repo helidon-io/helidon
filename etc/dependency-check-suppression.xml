@@ -250,6 +250,15 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-4949</cve>
 </suppress>
 
-
+<!-- False Positive.
+     Confusing helidon-webserver-static-content with https://github.com/static-web-server/static-web-server/
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.webserver:helidon-webserver-static-content:2.6.13-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.webserver/helidon-webserver-static-content@.*$</packageUrl>
+   <cve>CVE-2025-67487</cve>
+</suppress>
 
 </suppressions>
