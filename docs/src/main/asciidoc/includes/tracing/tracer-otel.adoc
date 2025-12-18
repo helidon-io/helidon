@@ -22,9 +22,14 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 // end::setup[]
 
 // tag::intro[]
-Helidon is integrated with OpenTelemetry and OpenTelemetry tracing.
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry.
 ifdef::se-flavor[]
-The xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert full control over  OpenTelemetry and OpenTelemetry tracing behavior.
+This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryConfig` builder]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
+
+That said, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
+
+The xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over  OpenTelemetry and OpenTelemetry tracing behavior.
+
 endif::se-flavor[]
 ifdef::mp-flavor[]
 The xref:{rootdir}/mp/telemetry.adoc[Helidon MP Telemetry doc page] describes how to use Helidon's support for MicroProfile Telemetry to control OpenTelemetry.
@@ -32,11 +37,10 @@ The xref:{rootdir}/mp/telemetry.adoc[Helidon MP Telemetry doc page] describes ho
 Avoid using both the OpenTelemetry tracing support described here and support for MicroProfile Telemetry as the results are unpredictable.
 
 endif::mp-flavor[]
-In contrast, this page describes support for controlling OpenTelemetry tracing using the `tracing` config section and builder. Intended primarily to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either an OTLP gRPC span exporter or an OTLP HTTP one; other span exporters are available only using the `telemetry` settings.
 
 [NOTE]
 .Avoid specifying both `telemetry` and `tracing`
-Helidon applies settings under `telemetry` or prepared using the telemetry builder over OpenTelemetry settings under `tracing` or set up with the tracer builder. Specifying both does not confuse Helidon but might confuse users.
+If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
 
 
 // end::intro[]

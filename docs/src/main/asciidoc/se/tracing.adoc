@@ -93,17 +93,10 @@ For OpenTelemetry:
 ----
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId> <!--1-->
-    <scope>runtime</scope>
-</dependency>
-<dependency>
-    <groupId>io.helidon.telemetry</groupId>
-    <artifactId>helidon-telemetry-opentelemetry-config</artifactId> <!--2-->
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
     <scope>runtime</scope>
 </dependency>
 ----
-<1> Allows your service to send tracing information using OpenTelemetry exporters.
-<2> Allows you to configure the behavior of OpenTelemetry as a whole and OpenTelemetry tracing in the `telemetry` config section.
 
 For OpenTracing (deprecated):
 [source,xml]
