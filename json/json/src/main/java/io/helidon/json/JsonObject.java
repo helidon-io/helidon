@@ -34,9 +34,9 @@ public final class JsonObject extends JsonValue {
 
     static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());
 
-    private List<Pair> pairs;
+    private final List<Pair> pairs;
     private LinkedHashMap<String, JsonValue> content;
-    private boolean resolved;
+    private final boolean resolved;
 
     private JsonObject(List<Pair> pairs) {
         this.pairs = pairs;

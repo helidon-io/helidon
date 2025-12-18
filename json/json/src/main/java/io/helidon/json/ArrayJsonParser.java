@@ -91,17 +91,13 @@ class ArrayJsonParser implements JsonParser {
         }
     }
 
-    int stringBufferLength = 64;
-    char[] stringBuffer = new char[stringBufferLength];
-    boolean expectLowSurrogate = false;
+    private int stringBufferLength = 64;
+    private char[] stringBuffer = new char[stringBufferLength];
+    private boolean expectLowSurrogate = false;
 
-    byte[] buffer;
-    int currentIndex = 0;
-    int bufferLength;
-
-    ArrayJsonParser() {
-        this(new byte[500]);
-    }
+    private final byte[] buffer;
+    private int currentIndex = 0;
+    private final int bufferLength;
 
     ArrayJsonParser(byte[] buffer) {
         this.buffer = buffer;
@@ -720,6 +716,7 @@ class ArrayJsonParser implements JsonParser {
         throw createException("Unexpected end of string value. Probably incomplete JSON");
     }
 
+    @Override
     public JsonException createException(String message) {
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
@@ -806,89 +803,6 @@ class ArrayJsonParser implements JsonParser {
             }
         }
         this.currentIndex = this.bufferLength - 1;
-    }
-
-    private char[] readStringCharArray() {
-        int readableBytes = bufferLength - currentIndex - 1;
-        int firstRun = Math.min(stringBufferLength, readableBytes);
-        int stringBuffIndex = 0;
-        byte b;
-        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
-            b = this.buffer[++currentIndex];
-            if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            }
-            if (b == '\\' || b < 0) {
-                //Specialized character handling is likely required
-                //Either escaped sequence or multibyte detected
-                currentIndex--;
-                break;
-            }
-            stringBuffer[stringBuffIndex] = (char) b;
-        }
-
-        if (stringBuffIndex == stringBufferLength) {
-            increaseStringBuffer();
-        }
-
-        while (hasNext()) {
-            b = readNextByte();
-            if (b == '\\') {
-                stringBuffer[stringBuffIndex++] = processEscapedSequence();
-            } else if (b == '"') {
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            } else if ((b & 0x80) == 0) {
-                stringBuffer[stringBuffIndex++] = (char) b;
-            } else {
-                stringBuffIndex = decodeUtf8(stringBuffIndex, b);
-            }
-            if (stringBuffIndex == stringBufferLength) {
-                increaseStringBuffer();
-            }
-        }
-        throw createException("End of the string expected. Incomplete JSON");
-    }
-
-    private char[] readNumberAsCharArray() {
-        int readableBytes = bufferLength - currentIndex;
-        int firstRun = Math.min(stringBufferLength, readableBytes);
-        stringBuffer[0] = (char) currentByte();
-        int stringBuffIndex = 1;
-        byte b;
-        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
-            b = this.buffer[++currentIndex];
-            if (!VALID_NUMBER_PARTS[b]) {
-                currentIndex--;
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            }
-            stringBuffer[stringBuffIndex] = (char) b;
-        }
-        if (stringBuffIndex == stringBufferLength) {
-            increaseStringBuffer();
-        }
-
-        while (hasNext()) {
-            b = readNextByte();
-            if (!VALID_NUMBER_PARTS[b]) {
-                currentIndex--;
-                char[] chars = new char[stringBuffIndex];
-                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-                return chars;
-            }
-            stringBuffer[stringBuffIndex++] = (char) b;
-            if (stringBuffIndex == stringBufferLength) {
-                increaseStringBuffer();
-            }
-        }
-        char[] chars = new char[stringBuffIndex];
-        System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
-        return chars;
     }
 
     char processEscapedSequence() {
@@ -1014,6 +928,89 @@ class ArrayJsonParser implements JsonParser {
 
     void increaseStringBuffer() {
         increaseStringBuffer(stringBufferLength * 2);
+    }
+
+    private char[] readStringCharArray() {
+        int readableBytes = bufferLength - currentIndex - 1;
+        int firstRun = Math.min(stringBufferLength, readableBytes);
+        int stringBuffIndex = 0;
+        byte b;
+        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
+            b = this.buffer[++currentIndex];
+            if (b == '"') {
+                char[] chars = new char[stringBuffIndex];
+                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
+                return chars;
+            }
+            if (b == '\\' || b < 0) {
+                //Specialized character handling is likely required
+                //Either escaped sequence or multibyte detected
+                currentIndex--;
+                break;
+            }
+            stringBuffer[stringBuffIndex] = (char) b;
+        }
+
+        if (stringBuffIndex == stringBufferLength) {
+            increaseStringBuffer();
+        }
+
+        while (hasNext()) {
+            b = readNextByte();
+            if (b == '\\') {
+                stringBuffer[stringBuffIndex++] = processEscapedSequence();
+            } else if (b == '"') {
+                char[] chars = new char[stringBuffIndex];
+                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
+                return chars;
+            } else if ((b & 0x80) == 0) {
+                stringBuffer[stringBuffIndex++] = (char) b;
+            } else {
+                stringBuffIndex = decodeUtf8(stringBuffIndex, b);
+            }
+            if (stringBuffIndex == stringBufferLength) {
+                increaseStringBuffer();
+            }
+        }
+        throw createException("End of the string expected. Incomplete JSON");
+    }
+
+    private char[] readNumberAsCharArray() {
+        int readableBytes = bufferLength - currentIndex;
+        int firstRun = Math.min(stringBufferLength, readableBytes);
+        stringBuffer[0] = (char) currentByte();
+        int stringBuffIndex = 1;
+        byte b;
+        for (; stringBuffIndex < firstRun; stringBuffIndex++) {
+            b = this.buffer[++currentIndex];
+            if (!VALID_NUMBER_PARTS[b]) {
+                currentIndex--;
+                char[] chars = new char[stringBuffIndex];
+                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
+                return chars;
+            }
+            stringBuffer[stringBuffIndex] = (char) b;
+        }
+        if (stringBuffIndex == stringBufferLength) {
+            increaseStringBuffer();
+        }
+
+        while (hasNext()) {
+            b = readNextByte();
+            if (!VALID_NUMBER_PARTS[b]) {
+                currentIndex--;
+                char[] chars = new char[stringBuffIndex];
+                System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
+                return chars;
+            }
+            stringBuffer[stringBuffIndex++] = (char) b;
+            if (stringBuffIndex == stringBufferLength) {
+                increaseStringBuffer();
+            }
+        }
+        char[] chars = new char[stringBuffIndex];
+        System.arraycopy(stringBuffer, 0, chars, 0, stringBuffIndex);
+        return chars;
     }
 
     private void increaseStringBuffer(int size) {

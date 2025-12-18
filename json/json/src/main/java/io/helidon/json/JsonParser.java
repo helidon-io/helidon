@@ -134,32 +134,6 @@ public interface JsonParser {
     }
 
     /**
-     * Create an empty JSON parser with no content.
-     * <p>
-     * This parser has no tokens and {@link #hasNext()} will always return false.
-     * Useful for testing or as a placeholder.
-     * </p>
-     *
-     * @return an empty JsonParser instance
-     */
-    static JsonParser empty() {
-        return new ArrayJsonParser();
-    }
-
-    /**
-     * Create an empty streaming JSON parser.
-     * <p>
-     * This parser has no content and {@link #hasNext()} will always return false.
-     * Useful for testing streaming scenarios or as a placeholder.
-     * </p>
-     *
-     * @return an empty streaming JsonParser instance
-     */
-    static JsonParser emptyStream() {
-        return new JsonStreamParser();
-    }
-
-    /**
      * Checks if there are more tokens available in the JSON stream.
      * <p>
      * This method should be called before attempting to read any tokens
