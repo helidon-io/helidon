@@ -356,23 +356,4 @@ abstract class ValueSkipTest {
 
     abstract JsonParser createParser(String template);
 
-    static class JsonStreamParserValueSkipTest extends ValueSkipTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8));
-            return JsonParser.create(stream, 6);
-        }
-
-    }
-
-    static class JsonParserValueSkipTest extends ValueSkipTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            return JsonParser.create(template);
-        }
-
-    }
-
 }

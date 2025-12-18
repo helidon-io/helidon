@@ -513,23 +513,4 @@ abstract class StringValueTest {
 
     abstract JsonParser createParser(String template);
 
-    static class JsonStreamParserStringTest extends StringValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8));
-            return JsonParser.create(stream, 6);
-        }
-
-    }
-
-    static class JsonParserStringTest extends StringValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            return JsonParser.create(template);
-        }
-
-    }
-
 }

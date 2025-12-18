@@ -164,23 +164,4 @@ abstract class SingleValueTest {
 
     abstract JsonParser createParser(String template);
 
-    static class JsonStreamParserSingleValueTest extends SingleValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8));
-            return JsonParser.create(stream, 6);
-        }
-
-    }
-
-    static class JsonParserSingleValueTest extends SingleValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            return JsonParser.create(template);
-        }
-
-    }
-
 }

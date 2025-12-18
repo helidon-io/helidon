@@ -242,20 +242,4 @@ abstract class ParserStateTest {
 
     abstract JsonParser createParser(String template);
 
-    static class ArrayParserStateTest extends ParserStateTest {
-        @Override
-        JsonParser createParser(String template) {
-            return JsonParser.create(template);
-        }
-    }
-
-    static class StreamParserStateTest extends ParserStateTest {
-        @Override
-        JsonParser createParser(String template) {
-            byte[] bytes = template.getBytes(StandardCharsets.UTF_8);
-            ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-            return JsonParser.create(stream, 64);
-        }
-    }
-
 }

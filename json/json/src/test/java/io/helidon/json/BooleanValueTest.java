@@ -16,9 +16,6 @@
 
 package io.helidon.json;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -213,24 +210,5 @@ abstract class BooleanValueTest {
     }
 
     abstract JsonParser createParser(String template);
-
-    static class JsonStreamParserBooleanTest extends BooleanValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            ByteArrayInputStream stream = new ByteArrayInputStream(template.getBytes(StandardCharsets.UTF_8));
-            return JsonParser.create(stream, 6);
-        }
-
-    }
-
-    static class JsonParserBooleanTest extends BooleanValueTest {
-
-        @Override
-        JsonParser createParser(String template) {
-            return JsonParser.create(template);
-        }
-
-    }
 
 }
