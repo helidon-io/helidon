@@ -37,8 +37,25 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
+import static io.helidon.common.types.TypeNames.BOXED_BYTE;
+import static io.helidon.common.types.TypeNames.BOXED_CHAR;
+import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
+import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
+import static io.helidon.common.types.TypeNames.BOXED_INT;
+import static io.helidon.common.types.TypeNames.BOXED_LONG;
+import static io.helidon.common.types.TypeNames.BOXED_SHORT;
+import static io.helidon.common.types.TypeNames.BOXED_VOID;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 import static io.helidon.json.codegen.ConvertedTypeInfo.needsResolving;
-import static io.helidon.json.codegen.Types.PRIMITIVE_TO_BOXED;
 import static java.util.function.Predicate.not;
 
 class JsonConverterGenerator {
@@ -57,6 +74,17 @@ class JsonConverterGenerator {
             TypeNames.PRIMITIVE_LONG, () -> 0,
             TypeNames.PRIMITIVE_FLOAT, () -> "0.0F",
             TypeNames.PRIMITIVE_DOUBLE, () -> "0.0"
+    );
+    private static final Map<TypeName, TypeName> PRIMITIVE_TO_BOXED = Map.of(
+            PRIMITIVE_BOOLEAN, BOXED_BOOLEAN,
+            PRIMITIVE_BYTE, BOXED_BYTE,
+            PRIMITIVE_SHORT, BOXED_SHORT,
+            PRIMITIVE_INT, BOXED_INT,
+            PRIMITIVE_LONG, BOXED_LONG,
+            PRIMITIVE_CHAR, BOXED_CHAR,
+            PRIMITIVE_FLOAT, BOXED_FLOAT,
+            PRIMITIVE_DOUBLE, BOXED_DOUBLE,
+            PRIMITIVE_VOID, BOXED_VOID
     );
     private static final String WRITE_NULLS = "writeNulls";
 

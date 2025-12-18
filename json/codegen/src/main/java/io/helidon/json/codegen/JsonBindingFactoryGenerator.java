@@ -48,7 +48,7 @@ class JsonBindingFactoryGenerator {
                                  .add("Json binding factory for {@link " + annotatedType.typeName().fqName() + "}.")
                                  .build())
                 .addInterface(TypeName.builder()
-                                      .from(Types.JSON_BINDING_FACTORY_TYPED)
+                                      .from(Types.JSON_BINDING_FACTORY)
                                       .addTypeArgument(convertedTypeInfo.wildcardsGenerics())
                                       .build());
 
