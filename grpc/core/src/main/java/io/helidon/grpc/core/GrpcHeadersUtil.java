@@ -46,7 +46,7 @@ public class GrpcHeadersUtil {
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
                 Metadata.Key<byte[]> key = Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER);
                 byte[] binary = metadata.get(key);
-                headers.add(HeaderNames.create(name, new String(encoder.encode(binary), US_ASCII)));
+                headers.add(HeaderNames.create(name), new String(encoder.encode(binary), US_ASCII));
             } else {
                 Metadata.Key<String> key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
                 Iterable<String> ascii = metadata.getAll(key);
