@@ -47,19 +47,21 @@ interface JsonPropertyBlueprint {
 
     Optional<FormatInfo> numberFormat();
 
-    boolean propertyIgnored();
+    boolean fieldIgnored();
 
     boolean required();
 
-    boolean getterIgnored();
+    Optional<Boolean> getterIgnored();
 
-    boolean setterIgnored();
+    Optional<Boolean> setterIgnored();
 
     boolean usedInCreator();
 
     boolean usedInBuilder();
 
-    boolean directFieldAccess();
+    boolean directFieldWrite();
+
+    boolean directFieldRead();
 
     boolean nullable();
 

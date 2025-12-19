@@ -163,7 +163,11 @@ class JsonConverterGenerator {
                 if (createdTypeSetters.containsKey(typeName.resolvedName())) {
                     builderConsumer = createdTypeSetters.get(typeName.resolvedName());
                 } else {
-                    builderConsumer = constructComplexGenericType(method, typeName, createdTypeSetters, counter);
+                    builderConsumer = constructComplexGenericType(method,
+                                                                  typeName,
+                                                                  createdTypeSetters,
+                                                                  counter,
+                                                                  convertedTypeInfo);
                     createdTypeSetters.put(typeName.resolvedName(), builderConsumer);
                 }
                 method.addContent(fieldName + " = " + CONFIGURE_PARAM + "." + obtainMethod + "(");
@@ -214,11 +218,14 @@ class JsonConverterGenerator {
     private static Consumer<Method.Builder> constructComplexGenericType(Method.Builder method,
                                                                         TypeName typeName,
                                                                         Map<String, Consumer<Method.Builder>> createdTypeSetters,
-                                                                        MethodNameCounter counter) {
+                                                                        MethodNameCounter counter,
+                                                                        ConvertedTypeInfo convertedTypeInfo) {
+        Map<TypeName, Integer> paramIndexes = convertedTypeInfo.genericParamsWithIndexes();
         if (typeName.typeArguments().isEmpty()) {
             if (needsResolving(typeName)) {
+                int index = paramIndexes.get(typeName);
                 return builder -> builder.addContent(TypeNames.GENERIC_TYPE)
-                        .addContent(".create(parameterizedType.getActualTypeArguments()[0])");
+                        .addContent(".create(parameterizedType.getActualTypeArguments()[" + index + "])");
             } else {
                 return builder -> builder.addContent(TypeNames.GENERIC_TYPE)
                         .addContent(".create(").addContent(typeName).addContent(")");
@@ -232,7 +239,8 @@ class JsonConverterGenerator {
                     Consumer<Method.Builder> parameterValue = constructComplexGenericType(method,
                                                                                           typeArgument,
                                                                                           createdTypeSetters,
-                                                                                          counter);
+                                                                                          counter,
+                                                                                          convertedTypeInfo);
                     parameterValueSetters.add(parameterValue);
                     createdTypeSetters.putIfAbsent(typeArgument.resolvedName(), parameterValue);
                 }
@@ -294,8 +302,7 @@ class JsonConverterGenerator {
         List<JsonProperty> jsonProperties = converterInfo.jsonProperties()
                 .values()
                 .stream()
-                .filter(not(JsonProperty::propertyIgnored))
-                .filter(it -> !it.getterIgnored() || it.directFieldAccess())
+                .filter(JsonConverterGenerator::usableForSerialization)
                 .sorted((o1, o2) -> converterInfo.orderedProperties()
                         .compare(o1.serializationName().orElseThrow(),
                                  o2.serializationName().orElseThrow()))
@@ -343,7 +350,7 @@ class JsonConverterGenerator {
                     });
 
             String accessor = jsonProperty.getterName()
-                    .filter(getterName -> !jsonProperty.getterIgnored())
+                    .filter(getterName -> !jsonProperty.getterIgnored().orElse(false))
                     .map(getterName -> getterName + "()")
                     .or(jsonProperty::fieldName)
                     .orElseThrow();
@@ -356,6 +363,15 @@ class JsonConverterGenerator {
                                             + jsonProperty.nullable() + ");");
         }
         method.addContentLine("generator.writeObjectEnd();");
+    }
+
+    private static boolean usableForSerialization(JsonProperty property) {
+        if ((property.getterIgnored().isPresent() && property.getterIgnored().get()) || property.getterName().isEmpty()) {
+            return !property.fieldIgnored() && property.directFieldRead();
+        } else if (property.fieldIgnored()) {
+            return false; //Field is ignored
+        }
+        return property.getterName().isPresent();
     }
 
     /**
@@ -373,8 +389,7 @@ class JsonConverterGenerator {
         List<JsonProperty> jsonProperties = converterInfo.jsonProperties()
                 .values()
                 .stream()
-                .filter(not(JsonProperty::propertyIgnored))
-                .filter(it -> !it.setterIgnored() || it.directFieldAccess())
+                .filter(JsonConverterGenerator::usableForDeserialization)
                 .toList();
 
         method.name("deserialize")
@@ -390,6 +405,21 @@ class JsonConverterGenerator {
         earlyReturnForEmptyObjects(method, converterInfo, jsonProperties, hasCreator, creatorKind, creatorInfo, hasBuilder);
         propertyProcessing(classBuilder, method, converterInfo, toConfigure, jsonProperties, hasCreator, hasBuilder);
         createFinalInstanceCreation(method, converterInfo, jsonProperties, hasCreator, creatorKind, creatorInfo, hasBuilder);
+    }
+
+    private static boolean usableForDeserialization(JsonProperty property) {
+        if ((property.setterIgnored().isPresent() && property.setterIgnored().get()) || property.setterName().isEmpty()) {
+            if (property.fieldIgnored()) {
+                return false; //Field is ignored
+            }
+            if (property.usedInBuilder() || property.usedInCreator()) {
+                return true;
+            }
+            return property.directFieldWrite();
+        } else if (property.fieldIgnored()) {
+            return false; //Field is ignored
+        }
+        return property.setterName().isPresent();
     }
 
     private static void createFinalInstanceCreation(Method.Builder method,
@@ -425,7 +455,7 @@ class JsonConverterGenerator {
             method.addContent(properties).addContentLine(");");
             for (JsonProperty property : jsonProperties) {
                 if (!property.usedInCreator()) {
-                    if (property.directFieldAccess()) {
+                    if (property.directFieldWrite()) {
                         method.addContentLine("instance." + property.fieldName().orElseThrow() + " = "
                                                       + property.deserializationName()
                                 .orElseThrow() + PROPERTY_NAME_SUFFIX + ";");
@@ -447,7 +477,7 @@ class JsonConverterGenerator {
                     //This property is handled by the builder
                     continue;
                 }
-                if (property.directFieldAccess()) {
+                if (property.directFieldWrite()) {
                     method.addContentLine("instance." + property.fieldName().orElseThrow() + " = "
                                                   + property.deserializationName()
                             .orElseThrow() + PROPERTY_NAME_SUFFIX + ";");
@@ -796,7 +826,7 @@ class JsonConverterGenerator {
                             + "(parser.checkNull() ? " + reference + ".deserializeNull() : "
                             + reference + ".deserialize(parser));")
                     .orElseGet(() -> property.fieldName()
-                            .filter(it -> property.directFieldAccess())
+                            .filter(it -> property.directFieldWrite())
                             .map(fieldName -> instanceName + "." + fieldName
                                     + " = parser.checkNull() ? " + reference + ".deserializeNull() : "
                                     + reference + ".deserialize(parser);")

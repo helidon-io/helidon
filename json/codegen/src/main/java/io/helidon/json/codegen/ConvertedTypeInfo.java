@@ -289,7 +289,9 @@ record ConvertedTypeInfo(TypeName converterType,
                     .serializationName(fieldName)
                     .deserializationType(fieldType)
                     .serializationType(fieldType)
-                    .directFieldAccess(field.accessModifier() != AccessModifier.PRIVATE)
+                    .directFieldRead(field.accessModifier() != AccessModifier.PRIVATE)
+                    .directFieldWrite(field.accessModifier() != AccessModifier.PRIVATE
+                                              && !field.elementModifiers().contains(Modifier.FINAL))
                     .nullable(nullable);
 
             obtainStringFromAnnotation(field, Types.JSON_PROPERTY)
@@ -298,11 +300,11 @@ record ConvertedTypeInfo(TypeName converterType,
                     .ifPresent(value -> builder.serializer(value).deserializer(value));
             obtainTypeNameFromAnnotation(field, Types.JSON_SERIALIZER).ifPresent(builder::serializer);
             obtainTypeNameFromAnnotation(field, Types.JSON_DESERIALIZER).ifPresent(builder::deserializer);
-            obtainBooleanFromAnnotation(field, Types.JSON_IGNORE).ifPresent(builder::propertyIgnored);
+            obtainBooleanFromAnnotation(field, Types.JSON_IGNORE).ifPresent(builder::fieldIgnored);
             field.findAnnotation(Types.JSON_REQUIRED).ifPresent(annotation -> builder.required(true));
             obtainBooleanFromAnnotation(field, Types.JSON_SERIALIZE_NULLS).ifPresent(builder::nullable);
             if (field.elementModifiers().contains(Modifier.TRANSIENT)) {
-                builder.propertyIgnored(true);
+                builder.fieldIgnored(true);
             }
             properties.put(fieldName, builder);
         }
@@ -377,7 +379,7 @@ record ConvertedTypeInfo(TypeName converterType,
                 .toList();
     }
 
-    private static CreatorInfo discoverCreator(Map<String, JsonProperty.Builder> properties,
+    private static CreatorInfo  discoverCreator(Map<String, JsonProperty.Builder> properties,
                                                TypeInfo typeInfo,
                                                Map<String, Map<String, TypeName>> resolvedGenerics) {
         List<TypedElementInfo> creators = typeInfo.elementInfo()
@@ -521,9 +523,13 @@ record ConvertedTypeInfo(TypeName converterType,
         Map<String, JsonProperty> finalProperties = new LinkedHashMap<>(properties.size());
         for (Map.Entry<String, JsonProperty.Builder> entry : properties.entrySet()) {
             JsonProperty.Builder builder = entry.getValue();
-            if (!builder.directFieldAccess() && builder.setterName().isEmpty() && builder.getterName().isEmpty()) {
+            if (!builder.directFieldRead()              // Field cant be read from
+                    && !builder.directFieldWrite()      // Field cant be written to
+                    && builder.setterName().isEmpty()   // Has no setter
+                    && builder.getterName().isEmpty()   // Has no getter
+                    && !builder.usedInBuilder()         // Is not used in the builder
+                    && !builder.usedInCreator()) {      // Is not used in the creator
                 //Ignore
-                //This is a private field with no accessor builderMethodName set
                 continue;
             }
             finalProperties.put(entry.getKey(), builder.build());
