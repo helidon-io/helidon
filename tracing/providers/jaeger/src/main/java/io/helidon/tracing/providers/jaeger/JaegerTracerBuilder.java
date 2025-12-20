@@ -616,12 +616,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 .toList();
     }
 
-    // Primarily for testing
-    JaegerTracerBuilder exporter(SpanExporter spanExporter) {
-        adHocExporters.add(spanExporter);
-        return this;
-    }
-
     /**
      * Add a span exporter.
      *

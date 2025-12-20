@@ -122,7 +122,7 @@ public class TelemetryCdiExtension implements Extension {
             });
 
             for (AnnotatedParameterConfigurator<?> param : method.params()) {
-                var tagParam = param.getAnnotated().getAnnotation(Tracing.TagParam.class);
+                var tagParam = param.getAnnotated().getAnnotation(Tracing.ParamTag.class);
                 if (tagParam == null) {
                     continue;
                 }

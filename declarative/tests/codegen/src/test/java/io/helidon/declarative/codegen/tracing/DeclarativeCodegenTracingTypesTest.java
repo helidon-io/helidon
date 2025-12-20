@@ -61,7 +61,7 @@ class DeclarativeCodegenTracingTypesTest {
         }
 
         checkField(toCheck, checked, fields, "ANNOTATION_TRACED", Tracing.Traced.class);
-        checkField(toCheck, checked, fields, "ANNOTATION_TAG_PARAM", Tracing.TagParam.class);
+        checkField(toCheck, checked, fields, "ANNOTATION_TAG_PARAM", Tracing.ParamTag.class);
 
         checkField(toCheck, checked, fields, "TRACER", Tracer.class);
         checkField(toCheck, checked, fields, "SPAN_KIND", Span.Kind.class);

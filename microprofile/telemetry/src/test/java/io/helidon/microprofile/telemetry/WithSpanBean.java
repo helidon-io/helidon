@@ -38,7 +38,7 @@ class WithSpanBean {
     // combining with SE annotations, to ensure both work
     @Tracing.Traced(TEST_SPAN_NAME_OBJECT)
     void runWithAttrsObject(@SpanAttribute String bString,
-                            @Tracing.TagParam(LONG_ATTR_NAME) Long bLong) {
+                            @Tracing.ParamTag(LONG_ATTR_NAME) Long bLong) {
 
     }
 }

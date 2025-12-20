@@ -121,8 +121,8 @@ class WithSpanInterceptor {
                     helidonSpanBuilder.tag(attrName, pValue.toString());
                 }
             }
-            if (p.isAnnotationPresent(Tracing.TagParam.class)) {
-                Tracing.TagParam spanAttribute = p.getAnnotation(Tracing.TagParam.class);
+            if (p.isAnnotationPresent(Tracing.ParamTag.class)) {
+                Tracing.ParamTag spanAttribute = p.getAnnotation(Tracing.ParamTag.class);
                 var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
                 Class<?> paramType = p.getType();
                 Object pValue = context.getParameters()[i];

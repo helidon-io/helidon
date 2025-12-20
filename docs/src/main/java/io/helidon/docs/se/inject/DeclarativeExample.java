@@ -227,7 +227,7 @@ public class DeclarativeExample {
         @Http.GET
         @Http.Path("/greet")
         @Tracing.Traced(value = "explicit-name", tags = @Tracing.Tag(key = "custom", value = "customValue"))
-        String greet(@Http.HeaderParam("User-Agent") @Tracing.TagParam String userAgent) {
+        String greet(@Http.HeaderParam("User-Agent") @Tracing.ParamTag String userAgent) {
             return "Hello!";
         }
         // end::snippet_14[]
