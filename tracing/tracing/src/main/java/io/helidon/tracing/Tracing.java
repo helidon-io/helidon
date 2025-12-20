@@ -101,7 +101,7 @@ public final class Tracing {
      */
     @Target(ElementType.PARAMETER)
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface TagParam {
+    public @interface ParamTag {
         /**
          * Tag key. Defaults to parameter name.
          *

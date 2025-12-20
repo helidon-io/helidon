@@ -20,7 +20,7 @@ import io.helidon.common.types.TypeName;
 
 final class TracingTypes {
     static final TypeName ANNOTATION_TRACED = TypeName.create("io.helidon.tracing.Tracing.Traced");
-    static final TypeName ANNOTATION_TAG_PARAM = TypeName.create("io.helidon.tracing.Tracing.TagParam");
+    static final TypeName ANNOTATION_TAG_PARAM = TypeName.create("io.helidon.tracing.Tracing.ParamTag");
 
     static final TypeName TRACER = TypeName.create("io.helidon.tracing.Tracer");
     static final TypeName SPAN_KIND = TypeName.create("io.helidon.tracing.Span.Kind");
