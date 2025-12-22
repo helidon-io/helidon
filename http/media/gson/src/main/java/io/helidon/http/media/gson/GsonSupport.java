@@ -17,11 +17,13 @@ package io.helidon.http.media.gson;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
@@ -34,6 +36,7 @@ import io.helidon.http.media.MediaSupport;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapterFactory;
 
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
@@ -81,10 +84,15 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
         Objects.requireNonNull(config, "Config must not be null");
         Objects.requireNonNull(name, "Name must not be null");
 
-        return builder()
+        GsonSupportConfig.Builder builder = builder()
                 .name(name)
-                .config(config)
-                .build();
+                .config(config);
+
+        // Enable the registering of custom type adapters by using service providers for TypeAdapterFactory.
+        HelidonServiceLoader.create(ServiceLoader.load(TypeAdapterFactory.class))
+                .forEach(builder::addTypeAdapterFactory);
+
+        return builder.build();
     }
 
     /**
@@ -248,7 +256,7 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
         @Override
         public void decorate(GsonSupportConfig.BuilderBase<?, ?> target) {
             if (target.gson().isEmpty()) {
-                if (target.properties().isEmpty()) {
+                if (target.properties().isEmpty() && target.typeAdapterFactories().isEmpty()) {
                     target.gson(GSON);
                 } else {
                     GsonBuilder builder = new GsonBuilder();
@@ -258,6 +266,8 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
                             .filter(Map.Entry::getValue)
                             .filter(entry -> BOOLEAN_PROPERTIES.containsKey(entry.getKey()))
                             .forEach(entry -> BOOLEAN_PROPERTIES.get(entry.getKey()).accept(builder));
+                    target.typeAdapterFactories()
+                            .forEach(builder::registerTypeAdapterFactory);
                     target.gson(builder.create());
                 }
             }
