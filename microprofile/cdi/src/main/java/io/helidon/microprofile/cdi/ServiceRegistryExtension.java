@@ -93,6 +93,7 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
     private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
+    private static final ResolvedType OPEN_TELEMETRY = ResolvedType.create("io.opentelemetry.api.OpenTelemetry");
 
     /**
      * Creates a new {@link ServiceRegistryExtension}.
@@ -176,8 +177,10 @@ public class ServiceRegistryExtension implements Extension {
                 // we do not want to re-insert CDI beans into CDI, obviously
                 continue;
             }
-            if (service.contracts().contains(SECURITY)) {
-                // workaround - we must use `SecurityCdiExtension`, as it has public methods with security builder...
+            if (service.contracts().contains(SECURITY)
+                    || service.contracts().contains(OPEN_TELEMETRY)) {
+                // workaround - we must use `SecurityCdiExtension` , as it has public methods with security builder...
+                // same for `TelemetryCdiExtension.
                 continue;
             }
             addServiceInfo(abd, bm, registry, processedTypes, service);
