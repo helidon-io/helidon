@@ -11,6 +11,29 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.3.3]
+
+This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Builders: Correctly discover parent configured blueprints even when from a different module [10986](https://github.com/helidon-io/helidon/pull/10986)
+- Fault Tolerance: Terminate monitor thread created by the timeout implementation when supplier returns [10855](https://github.com/helidon-io/helidon/pull/10855)
+- gRPC: Fix problem handling server-side gRPC errors. Handles grpc-status headers [10958](https://github.com/helidon-io/helidon/pull/10958)
+- gRPC: Fix "typo" in header name construction. Use the correct create method [10989](https://github.com/helidon-io/helidon/pull/10989)
+- Metrics: Improve Prometheus output performance [10856](https://github.com/helidon-io/helidon/pull/10856)
+- OCI: Fully deprecate old OCI SE support [10971](https://github.com/helidon-io/helidon/pull/10971)
+- OpenAPI: Export package from OpenAPI UI integration module [10988](https://github.com/helidon-io/helidon/pull/10988)
+- OpenAPI: Fix incorrect config examples and text for customizing UI settings in SE [10957](https://github.com/helidon-io/helidon/pull/10957)
+- OTel: Fix concurrent update problem in test log handler [10959](https://github.com/helidon-io/helidon/pull/10959)
+- WebClient: Do not switch to chunked encoding in webclient when the length is known [10854](https://github.com/helidon-io/helidon/pull/10854)
+- Build: Make sure we have a plugin dependency for features codegen annotation processor path. [10982](https://github.com/helidon-io/helidon/pull/10982)
+- Dependencies: Upgrade apache commons-text to 1.15.0 (#10976) [10980](https://github.com/helidon-io/helidon/pull/10980)
+- Dependencies: Upgrade Netty to 4.1.130.Final [10981](https://github.com/helidon-io/helidon/pull/10981)
+- Tests: Free disk space in tests job [10852](https://github.com/helidon-io/helidon/pull/10852)
+
 ## [4.3.2]
 
 This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
@@ -2217,6 +2240,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.3.3]: https://github.com/oracle/helidon/compare/4.3.2...4.3.3
 [4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
 [4.3.1]: https://github.com/oracle/helidon/compare/4.3.0...4.3.1
 [4.3.0]: https://github.com/oracle/helidon/compare/4.2.7...4.3.0
