@@ -57,12 +57,12 @@ public interface Header extends Value<String> {
     HeaderName headerName();
 
     /**
-     * All values concatenated using a comma.
+     * All values concatenated using a comma and a space.
      *
      * @return all values joined by a comma
      */
     default String values() {
-        return String.join(",", allValues());
+        return String.join(", ", allValues());
     }
 
     /**

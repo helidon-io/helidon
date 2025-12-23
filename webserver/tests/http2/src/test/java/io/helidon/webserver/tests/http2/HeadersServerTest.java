@@ -48,14 +48,13 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @ServerTest
 public class HeadersServerTest {
@@ -63,6 +62,7 @@ public class HeadersServerTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
+    private static final Header STREAM_RESULT_OK = HeaderValues.create("stream-result", "OK");
     private final Http2Client client;
 
     HeadersServerTest(WebServer server) {
@@ -116,7 +116,7 @@ public class HeadersServerTest {
         ));
         router.route(Http2Route.route(GET, "/trailers-stream",
                                       (req, res) -> {
-                                          res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
+                                          res.headers().add(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
                                           try (var os = res.outputStream()) {
                                               os.write(DATA.getBytes());
                                               os.write(DATA.getBytes());
@@ -175,7 +175,7 @@ public class HeadersServerTest {
                 .toList();
 
         assertThat(res.statusCode(), is(200));
-        assertThat(actual, Matchers.containsInAnyOrder(expected.toArray(new String[0])));
+        assertThat(actual, containsInAnyOrder(expected.toArray(new String[0])));
     }
 
     @Test
@@ -197,7 +197,7 @@ public class HeadersServerTest {
                 HttpResponse.BodyHandlers.ofString());
 
         assertThat(res.statusCode(), is(200));
-        assertThat(List.of(res.body().split("\n")), Matchers.containsInAnyOrder(expected.toArray(new String[0])));
+        assertThat(List.of(res.body().split("\n")), containsInAnyOrder(expected.toArray(new String[0])));
     }
 
     @Test
@@ -250,7 +250,32 @@ public class HeadersServerTest {
         try (var is = res.entity()) {
             is.readAllBytes();
         }
+        List<String> trailerNames = res.headers()
+                .get(HeaderNames.TRAILER)
+                .allValues();
+
+        assertThat(trailerNames, containsInAnyOrder("test-trailer"));
+
         assertThat(res.trailers(), hasHeader(TEST_TRAILER_HEADER));
+    }
+
+    @Test
+    void trailersStreamWithTeTrailers() throws IOException {
+        ClientResponseTyped<InputStream> res = client
+                .get("/trailers-stream")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(InputStream.class);
+        try (var is = res.entity()) {
+            is.readAllBytes();
+        }
+        List<String> trailerNames = res.headers()
+                .get(HeaderNames.TRAILER)
+                .allValues(true);
+
+        assertThat(trailerNames, containsInAnyOrder("test-trailer", "stream-result"));
+
+        assertThat(res.trailers(), hasHeader(TEST_TRAILER_HEADER));
+        assertThat(res.trailers(), hasHeader(STREAM_RESULT_OK));
     }
 
     @Test
@@ -273,8 +298,7 @@ public class HeadersServerTest {
 
         assertThat(res.status(), is(Status.INTERNAL_SERVER_ERROR_500));
         assertThat(res.entity(), is(
-                "Trailers are supported only when request came with 'TE: trailers' header or "
-                        + "response headers have trailer names definition 'Trailer: <trailer-name>'"));
+                "Trailers are supported only when response headers have trailer names definition 'Trailer: <trailer-name>'"));
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

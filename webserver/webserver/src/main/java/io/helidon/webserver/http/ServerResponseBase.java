@@ -58,6 +58,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     /**
+     * Stream result OK.
+     */
+    protected static final Header STREAM_RESULT_OK = HeaderValues.create(STREAM_RESULT_NAME, "OK");
+
+    /**
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
