@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-data-codegen-project</artifactId>
         <groupId>io.helidon.data.codegen</groupId>
-        <version>4.3.3-SNAPSHOT</version>
+        <version>4.3.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
