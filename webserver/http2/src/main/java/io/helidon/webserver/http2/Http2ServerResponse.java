@@ -127,8 +127,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                                    "Status must be configured on response, "
                                                                            + "do not set HTTP/2 pseudo headers"));
 
-            boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS)
-                    || headers.contains(HeaderNames.TRAILER);
+            // we only send trailers if they are present in the response headers, as this indicate there will be
+            // trailers set later on
+            // even when client sends "te: trailers", we do not send trailers unless we have them
+            boolean sendTrailers = sendTrailers(headers);
 
             beforeSend();
 
@@ -194,14 +196,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     public ServerResponseHeaders headers() {
         return headers;
     }
+
     @Override
     public ServerResponseTrailers trailers() {
-        if (request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
+        if (sendTrailers(headers)) {
             return trailers;
         }
         throw new IllegalStateException(
-                "Trailers are supported only when request came with 'TE: trailers' header or "
-                        + "response headers have trailer names definition 'Trailer: <trailer-name>'");
+                "Trailers are supported only when response headers have trailer names definition 'Trailer: <trailer-name>'");
     }
 
     @Override
@@ -258,6 +260,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         } else {
             this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
         }
+    }
+
+    private static boolean sendTrailers(ServerResponseHeaders headers) {
+        return headers.contains(HeaderNames.TRAILER);
     }
 
     private static class BlockingOutputStream extends OutputStream {
@@ -322,13 +328,20 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             this.closed = true;
-            boolean sendTrailers =
-                    request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
+            boolean sendTrailers = Http2ServerResponse.sendTrailers(headers);
+
             if (firstByte) {
+                // if sendTrailers, will not send end-of-stream
                 sendFirstChunkOnly(sendTrailers);
+                if (sendTrailers) {
+                    // send trailers and end-of-stream
+                    sendTrailers();
+                }
             } else if (sendTrailers) {
+                // send trailers and end-of-stream
                 sendTrailers();
             } else {
+                // just send end-of-stream
                 bytesWritten += stream.writeData(BufferData.empty(), true);
             }
             responseCloseRunnable.run();
@@ -395,8 +408,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void sendTrailers(){
-            if (response.streamResult != null) {
-                trailers.set(STREAM_RESULT_NAME, response.streamResult);
+            if (headers.contains(HeaderNames.TRAILER)
+                    && headers.get(HeaderNames.TRAILER).allValues().contains("stream-result")) {
+                // only send if configured
+                if (response.streamResult == null) {
+                    // we must set the trailer, as we announced it
+                    trailers.set(STREAM_RESULT_OK);
+                } else {
+                    trailers.set(STREAM_RESULT_NAME, response.streamResult);
+                }
             }
             if (beforeTrailers != null) {
                 beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));

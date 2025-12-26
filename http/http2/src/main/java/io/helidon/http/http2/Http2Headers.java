@@ -445,7 +445,8 @@ public class Http2Headers {
         }
 
         for (Header header : headers) {
-            String value = header.get();
+            // send all values of the header
+            String value = header.values();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();
 
