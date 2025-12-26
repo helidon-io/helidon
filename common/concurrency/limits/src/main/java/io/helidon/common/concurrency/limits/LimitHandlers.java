@@ -65,15 +65,28 @@ class LimitHandlers {
         private final int queueLength;
         private final long timeoutMillis;
         private final Supplier<Token> tokenSupplier;
+        private final long maxWaitMillis;
+        private final Optional<Runnable> beforeAcquire;
 
         QueuedSemaphoreHandler(Semaphore semaphore,
                                int queueLength,
                                Duration queueTimeout,
                                Supplier<Token> tokenSupplier) {
+            this(semaphore, queueLength, queueTimeout, tokenSupplier, 0, null);
+        }
+
+        QueuedSemaphoreHandler(Semaphore semaphore,
+                               int queueLength,
+                               Duration queueTimeout,
+                               Supplier<Token> tokenSupplier,
+                               long maxWaitMillis,
+                               Runnable beforeAcquire) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
             this.timeoutMillis = queueTimeout.toMillis();
             this.tokenSupplier = tokenSupplier;
+            this.maxWaitMillis = maxWaitMillis;
+            this.beforeAcquire = Optional.ofNullable(beforeAcquire);
         }
 
         @Override
@@ -84,17 +97,29 @@ class LimitHandlers {
             }
 
             try {
-                if (wait) {
-                    if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
-                        return Optional.empty();
-                    }
-                } else if (!semaphore.tryAcquire()) {
-                    return Optional.empty();
-                }
+                return wait ? tryAcquireWithWait() : tryAcquireWithoutWait();
             } catch (InterruptedException e) {
                 return Optional.empty();
             }
-            return Optional.of(tokenSupplier.get());
+        }
+
+        private Optional<Token> tryAcquireWithWait() throws InterruptedException {
+            long remainingWaitMillis = timeoutMillis;
+            long waitMillis = maxWaitMillis > 0 ? Math.min(maxWaitMillis, timeoutMillis) : timeoutMillis;
+            do {
+                long actualWaitMillis = Math.min(waitMillis, remainingWaitMillis);
+                beforeAcquire.ifPresent(Runnable::run);
+                if (semaphore.tryAcquire(actualWaitMillis, TimeUnit.MILLISECONDS)) {
+                    return Optional.of(tokenSupplier.get());
+                }
+                remainingWaitMillis -= actualWaitMillis;
+            } while (remainingWaitMillis > 0);
+            return Optional.empty();
+        }
+
+        private Optional<Token> tryAcquireWithoutWait() {
+            beforeAcquire.ifPresent(Runnable::run);
+            return semaphore.tryAcquire() ? Optional.of(tokenSupplier.get()) : Optional.empty();
         }
 
         @Override

@@ -34,4 +34,10 @@
         <Bug pattern="DLS_DEAD_LOCAL_STORE_SHADOWS_FIELD"/>
     </Match>
 
+    <Match>
+        <!-- Generated code declares an unused variable. -->
+        <Class name="io.helidon.common.concurrency.limits.ThroughputLimitConfig$BuilderBase" />
+        <Bug pattern="DLS_DEAD_LOCAL_STORE_SHADOWS_FIELD"/>
+    </Match>
+
 </FindBugsFilter>
