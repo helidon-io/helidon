@@ -2147,5 +2147,13 @@
         ]
       }
     ]
+  },
+  {
+    "name": "org.hibernate.event.spi.PostUpsertEventListener[]",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "unsafeAllocated": true
   }
 ]
