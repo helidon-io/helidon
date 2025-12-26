@@ -497,6 +497,7 @@ final class FactoryOption {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(ElementInfoPredicates::isStatic)
                 .filter(elementName("builder"))
+                .filter(it -> it.typeName().typeArguments().isEmpty()) //Builders with generics not supported
                 .filter(ElementInfoPredicates::hasNoArgs)
                 // Has to have public no-param build method returning right type
                 .filter(it -> ctx.typeInfo(it.typeName()).stream()
