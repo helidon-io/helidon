@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.se;
 
+import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -89,5 +90,15 @@ class SchedulingSnippets {
                 .task(inv -> System.out.println("Method invoked " + inv.description()))
                 .build();
         // end::snippet_6[]
+    }
+
+    void snippet_7() {
+        // tag::snippet_7[]
+        Cron.builder()
+                .expression("0 0 9 * * ?")
+                .zone(ZoneId.of("America/New_York"))
+                .task(inv -> System.out.println("Executes every day at 9:00 AM Eastern Time"))
+                .build();
+        // end::snippet_7[]
     }
 }

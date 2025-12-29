@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,21 @@ For more complicated interval definition, Cron expression can be leveraged with
 ----
 include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_3, indent=0]
 ----
+
+==== Timezone Configuration
+
+By default, Cron expressions are evaluated using the system's default timezone. You can specify a custom timezone
+to control when the cron expression triggers, regardless of the system's timezone.
+
+[source,java]
+.Scheduling with custom timezone
+----
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_7, indent=0]
+----
+
+The timezone determines when the cron expression triggers. For example, a cron expression `0 0 9 * * ?`
+(every day at 9:00 AM) with zone `America/New_York` will trigger at 9:00 AM Eastern Time,
+regardless of the server's timezone setting.
 
 include::{rootdir}/config/io_helidon_scheduling_Cron.adoc[tag=config,leveloffset=+2]
 
