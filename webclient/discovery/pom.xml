@@ -30,7 +30,6 @@
     <properties>
         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
         <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

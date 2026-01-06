@@ -1781,6 +1781,22 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- JSON support -->
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json-binding</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.helidon.validation</groupId>
