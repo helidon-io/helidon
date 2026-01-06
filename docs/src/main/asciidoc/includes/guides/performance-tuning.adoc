@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ server:
   idle-connection-period: PT2M  # Check idle connections every 2 minutes
   idle-connection-timeout: PT5M # Close connections that have been idle for 5 minutes
   max-concurrent-requests: NNNN # Maximum number of concurrent requests. -1 is unlimited.
+  max-requests-per-second: NNNN # Maximum throughput of requests over a one-second duration. -1 is unlimited.
   max-tcp-connections: NNNN     # Max number of concurrent tcp connections. -1 is unlimited.
   max-in-memory-entity: NNNNNN  # Entities smaller than this are buffered in memory vs streamed (bytes)
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)

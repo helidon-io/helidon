@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * Concurrency limits API and default implementations.
- *
- * @see io.helidon.common.concurrency.limits.Limit
- * @see io.helidon.common.concurrency.limits.FixedLimit
- * @see io.helidon.common.concurrency.limits.ThroughputLimit
- */
 package io.helidon.common.concurrency.limits;
+
+/**
+ * Rate limiting algorithms controlling the generation of tokens for requests.
+ */
+public enum RateLimitingAlgorithmType {
+  /**
+   * Requests require tokens from a bucket that fills over time.
+   */
+  TOKEN_BUCKET,
+  /**
+   * Requests are processed at a fixed rate.
+   */
+  FIXED_RATE
+}

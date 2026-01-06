@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,6 +31,12 @@
     <Match>
         <!-- Generated code declares an unused variable. -->
         <Class name="io.helidon.common.concurrency.limits.FixedLimitConfig$BuilderBase" />
+        <Bug pattern="DLS_DEAD_LOCAL_STORE_SHADOWS_FIELD"/>
+    </Match>
+
+    <Match>
+        <!-- Generated code declares an unused variable. -->
+        <Class name="io.helidon.common.concurrency.limits.ThroughputLimitConfig$BuilderBase" />
         <Bug pattern="DLS_DEAD_LOCAL_STORE_SHADOWS_FIELD"/>
     </Match>
 
