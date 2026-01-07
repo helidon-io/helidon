@@ -35,5 +35,6 @@ interface GoogleGeminiLc4jProvider {
      * @return List of harm category vs threshold settings
      */
     @Option.Configured
+    @Option.Singular
     List<GeminiSafetySetting> safetySettings();
 }
