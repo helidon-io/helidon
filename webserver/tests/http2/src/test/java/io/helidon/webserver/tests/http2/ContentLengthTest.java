@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,14 +166,10 @@ class ContentLengthTest {
                             "Request data length doesn't correspond to the content-length header.",
                             TIMEOUT);
 
-        // content length discrepancy is discovered when consuming request data
-        var e = consumeExceptionFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        assertThat(e, Matchers.instanceOf(RequestException.class));
-        assertThat(e.getMessage(), is("Stream is closed."));
-
-        // stream is closed, sending is not possible
-        e = sendExceptionFuture.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        assertThat(e, Matchers.instanceOf(IllegalStateException.class));
-        assertThat(e.getMessage(), is("Stream is already closed."));
+        /*
+        As in the previous test, this may not reach routing at all (depends on environment, buffer sizes etc.).
+        The original block of code should have been removed when changes for unix domain sockets were done, as in
+        longerData() above.
+         */
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -616,8 +616,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 .toList();
     }
 
-    // Primarily for testing
-    JaegerTracerBuilder exporter(SpanExporter spanExporter) {
+    /**
+     * Add a span exporter.
+     *
+     * @param spanExporter span exporter to use
+     * @return updated builder instance
+     */
+    public JaegerTracerBuilder addSpanExporter(SpanExporter spanExporter) {
         adHocExporters.add(spanExporter);
         return this;
     }

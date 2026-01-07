@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.tracing;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.observe.spi.ObserveProvider;
@@ -49,6 +50,7 @@ public class TracingObserveProvider implements ObserveProvider {
         Config tracingConfig = config.root().get("tracing");
         Tracer tracer = Contexts.globalContext()
                 .get(Tracer.class)
+                .or(() -> Services.first(Tracer.class))
                 .orElseGet(() -> {
                     if (tracingConfig.exists()) {
                         return TracerBuilder.create(tracingConfig)

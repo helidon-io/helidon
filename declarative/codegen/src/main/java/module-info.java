@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ module io.helidon.declarative.codegen {
     requires io.helidon.declarative.codegen.model;
     requires io.helidon.common;
     requires io.helidon.common.types;
+
     exports io.helidon.declarative.codegen;
 
     exports io.helidon.declarative.codegen.http;
@@ -32,13 +33,14 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.http.webserver.spi;
     // typed web client
     exports io.helidon.declarative.codegen.http.restclient;
-
     // fault tolerance (fallback, retry, circuit breaker)
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
     exports io.helidon.declarative.codegen.scheduling;
     // validation
     exports io.helidon.declarative.codegen.validation;
+    // tracing
+    exports io.helidon.declarative.codegen.tracing;
 
     uses io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 
@@ -48,7 +50,8 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,
-                    io.helidon.declarative.codegen.metrics.MetricsExtensionProvider;
+                    io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
+                    io.helidon.declarative.codegen.tracing.TracingExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;

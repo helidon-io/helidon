@@ -48,6 +48,7 @@
         <module>http</module>
         <module>scheduling</module>
         <module>metrics</module>
+        <module>tracing</module>
     </modules>
 
 </project>

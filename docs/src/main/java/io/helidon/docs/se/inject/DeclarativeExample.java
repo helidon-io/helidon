@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import io.helidon.scheduling.Scheduling;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracing;
 import io.helidon.validation.Validation;
 import io.helidon.validation.ValidatorContext;
 import io.helidon.validation.ValidatorResponse;
@@ -213,6 +215,25 @@ public class DeclarativeExample {
         }
     }
     // end::snippet_12[]
+
+    // tag::snippet_13[]
+    @Service.Singleton
+    @Tracing.Traced(tags = @Tracing.Tag(key = "service", value = "TracedService"),
+                    kind = Span.Kind.SERVER)
+    static class TracedService {
+        // end::snippet_13[]
+
+        // tag::snippet_14[]
+        @Http.GET
+        @Http.Path("/greet")
+        @Tracing.Traced(value = "explicit-name", tags = @Tracing.Tag(key = "custom", value = "customValue"))
+        String greet(@Http.HeaderParam("User-Agent") @Tracing.ParamTag String userAgent) {
+            return "Hello!";
+        }
+        // end::snippet_14[]
+    }
+
+
 
     private static class ApplicationBinding {
         static Binding create() {

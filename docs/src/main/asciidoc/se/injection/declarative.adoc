@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ The following features are currently implemented:
 - <<Dec-Validation, Validation>>
 - <<Dec-Security, Security>>
 - <<Dec-Metrics, Metrics>>
+- <<Dec-Tracing, Tracing>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -422,4 +423,36 @@ A gauge is a method that returns a `Number`, and is invoked by the metrics imple
 .Example of a gauge
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_12, indent=0]
+----
+
+=== Tracing [[Dec-Tracing]]
+
+Add support for tracing of methods.
+This feature will add a new span for each annotated method (or all methods on an annotated type).
+
+Annotations:
+
+- link:{tracing-javadoc}/io/helidon/tracing/Tracing.Traced.html[`io.helidon.tracing.Tracing.Traced`] - all methods on the annotated type are will be traced, or the annotated method will be traced
+- link:{tracing-javadoc}/io/helidon/tracing/Tracing.ParamTag.html[`io.helidon.tracing.Tracing.ParamTag`] - the annotated method parameter will be added as a tag to the span
+
+
+Notes on defaults:
+
+- if a `kind` is defined to other value than `INTERNAL`, it will be used unless a `kind` other than `INTERNAL` is defined on a method annotation (i.e. it is not possible to have `SERVER` on type, and `INTERNAL` on method)
+- span name defaults to `fully-qualified-class-name.method-name`
+
+The following example shows annotation on a type. This would make all methods traced with span kind of `SERVER`, and with a tag `service` with value `TracedService`.
+
+[source,java]
+.Example of traced type
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_13, indent=0]
+----
+
+A traced method with an explicit span name, adding a tag with a constant value, and a tag with a value from annotated parameter. The tag name defaults to parameter name (`userAgent` in this case).
+
+[source,java]
+.Annotated traced method
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_14, indent=0]
 ----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ class JaegerTracerBuilderTest {
         builder.addTracerTag("tracerLevelTag", "val-1");
         JaegerTracerBuilder jaegerTracerBuilder = builder.unwrap(JaegerTracerBuilder.class);
         jaegerTracerBuilder.scheduleDelay(Duration.ofMillis(100)); // for faster test runs
-        jaegerTracerBuilder.exporter(new TestSpanExporterProvider().createExporter(null));
+        jaegerTracerBuilder.addSpanExporter(new TestSpanExporterProvider().createExporter(null));
         Tracer tracer = builder.build();
 
         Span span = tracer.spanBuilder("testSpan").tag("spanLevelTag", "val-2").start();
