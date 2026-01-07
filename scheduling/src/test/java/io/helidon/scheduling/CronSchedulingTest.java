@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package io.helidon.scheduling;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -334,4 +337,89 @@ class CronSchedulingTest {
         }
     }
 
+    /**
+     * Verifies that when a custom timezone is configured via {@code .zone()},
+     * the cron task calculates the next execution time relative to that zone.
+     * <p>
+     * <b>Concept:</b>
+     * By default, Cron schedulers use the system's default timezone. This test ensures that
+     * providing a specific {@code ZoneId} forces the internal calculation to align with that zone's
+     * wall-clock time.
+     * <p>
+     * <b>Test Strategy:</b>
+     * <ol>
+     *   <li>Identify a test zone guaranteed to have a different wall-clock hour than the system zone.</li>
+     *   <li>Calculate a specific target time exactly <b>N seconds in the future</b> relative to that test zone.</li>
+     *   <li>Generate a strict Cron expression for that exact second (Sec, Min, Hour, Day, Month, Year).</li>
+     *   <li>Start the scheduler with the configured test zone.</li>
+     * </ol>
+     * <p>
+     * <b>Expected Result:</b>
+     * <ul>
+     *   <li><b>If timezone is respected:</b> The scheduler waits N seconds and fires when the wall-clock time matches the target.</li>
+     *   <li><b>If timezone is ignored:</b> The scheduler compares the strict Cron expression (e.g., 09:00) against the System clock (e.g., 14:00), finds no match, and the task does not execute.</li>
+     * </ul>
+     */
+    @Test
+    void cronWithCustomZone() throws InterruptedException {
+        var executorService = ScheduledThreadPoolSupplier.create().get();
+        var latch = new CountDownLatch(1);
+        var task = (Cron) null;
+
+        try {
+            var now = Instant.now();
+            var systemZone = ZoneId.systemDefault();
+            var systemNow = now.atZone(systemZone);
+
+            // Choose a test zone guaranteed to be different from system:
+            // If system is UTC, use New York (UTC-5 or UTC-4 depending on DST)
+            // If system is NOT UTC, use UTC
+            // This ensures the hour will be different in most cases
+            var testZone = "UTC".equals(systemZone.getId())
+                    ? ZoneId.of("America/New_York")
+                    : ZoneId.of("UTC");
+
+            var testZoneNow = now.atZone(testZone);
+
+            // If the random choice resulted in the same hour (e.g. London Winter vs UTC),
+            // switch to Tokyo to guarantee a difference.
+            if (testZoneNow.getHour() == systemNow.getHour()) {
+                testZone = ZoneId.of("Asia/Tokyo");
+            }
+
+            // Calculate a "Sniper" Target: 3 seconds in the future
+            var targetTime = now.atZone(testZone).plusSeconds(3);
+
+            // Strict Cron: Run exactly at [Sec] [Min] [Hour]
+            // Format: "sec min hour day month day-of-week year"
+            var cronExpression = String.format("%d %d %d %d %d ? %d",
+                    targetTime.getSecond(),
+                    targetTime.getMinute(),
+                    targetTime.getHour(),
+                    targetTime.getDayOfMonth(),
+                    targetTime.getMonthValue(),
+                    targetTime.getYear()
+            );
+
+            task = Cron.builder()
+                    .id("cronWithCustomZone")
+                    .executor(executorService)
+                    .expression(cronExpression)
+                    .zone(testZone)
+                    .task(inv -> latch.countDown())
+                    .build();
+
+            // If timezone is respected: scheduler waits N seconds, fires, latch opens
+            // If timezone is ignored: scheduler compares System Time to Target Time, they don't match, nothing happens
+            var executed = latch.await(10, TimeUnit.SECONDS);
+
+            assertThat("Task should execute at the specific scheduled time in the target timezone", executed, is(true));
+        } finally {
+            if (task != null) {
+                task.close();
+            }
+
+            executorService.shutdownNow();
+        }
+    }
 }
