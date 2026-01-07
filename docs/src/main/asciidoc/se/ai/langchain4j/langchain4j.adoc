@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -107,6 +107,9 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4j's AI Se
     ** xref:jlama.adoc#_jlamastreamingchatmodel[`JlamaStreamingChatModel`]
     ** xref:jlama.adoc#_jlamaembeddingmodel[`JlamaEmbeddingModel`]
     ** xref:jlama.adoc#_jlamalanguagemodel[`JlamaLanguageModel`]
+* xref:gemini.adoc[*Google Gemini*]
+    ** xref:gemini.adoc#_googleaigeminichatmodel[`GoogleAiGeminiChatModel`]
+    ** xref:jlama.adoc#_googleaigeministreamingchatmodel[`GoogleAiGeminiStreamingChatModel`]
 * xref:codegen-provider.adoc[*LangChain4j Model Provider Generator*]
 * xref:mock.adoc[*LangChain4j Mock ChatModel*]
 
