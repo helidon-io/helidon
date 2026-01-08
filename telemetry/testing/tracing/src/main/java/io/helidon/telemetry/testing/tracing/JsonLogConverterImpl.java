@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,10 @@ import static org.hamcrest.Matchers.hasSize;
 
 class JsonLogConverterImpl implements JsonLogConverter {
 
+    // Delay up to one minute for the trace results to appear in the in-memory collector.
+    private static final int RETRY_COUNT = Integer.getInteger(JsonLogConverter.class.getName() + ".retryCount", 10 * 120);
+    private static final int RETRY_DELAY_MS = Integer.getInteger(JsonLogConverter.class.getName() + ".retryDelayMs", 500);
+
     /**
      * The format emits all attribute values as strings, but each attribute value has a key indicating its datatype.
      */
@@ -79,7 +83,9 @@ class JsonLogConverterImpl implements JsonLogConverter {
                                                             .filter(resourceScopeSpans ->
                                                                             !resourceScopeSpans.scopeSpans().isEmpty())
                                                             .toList(),
-                                                    hasSize(expectedCount));
+                                                    hasSize(expectedCount),
+                                                    RETRY_COUNT,
+                                                    RETRY_DELAY_MS);
     }
 
     /**
