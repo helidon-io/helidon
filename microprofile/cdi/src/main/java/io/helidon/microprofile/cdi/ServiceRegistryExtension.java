@@ -179,14 +179,16 @@ public class ServiceRegistryExtension implements Extension {
                 // we do not want to re-insert CDI beans into CDI, obviously
                 continue;
             }
-            if (service.contracts().contains(SECURITY)
-                    || service.contracts().contains(OPEN_TELEMETRY)) {
+            if (service.contracts().contains(SECURITY)) {
                 // workaround - we must use `SecurityCdiExtension` , as it has public methods with security builder...
-                // same for `TelemetryCdiExtension.
                 continue;
             }
             if (service.contracts().contains(TRACER)) {
                 // workaround - we must use `TelemetryCdiExtension`
+                continue;
+            }
+            if (service.contracts().contains(OPEN_TELEMETRY)) {
+                // workaround = use `TelemetryCdiExtension`
                 continue;
             }
             addServiceInfo(abd, bm, registry, processedTypes, service);
