@@ -35,7 +35,6 @@ module io.helidon.tracing {
     requires transitive io.helidon.config;
     requires io.helidon.logging.common;
     requires io.helidon.service.registry;
-    requires io.helidon.config;
 
     exports io.helidon.tracing;
     exports io.helidon.tracing.spi;
