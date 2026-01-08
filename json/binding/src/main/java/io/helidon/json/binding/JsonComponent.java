@@ -34,7 +34,7 @@ public interface JsonComponent<T> {
     /**
      * Configures this component with the provided configurator.
      * <p>
-     * This method allows the component to register itself or perform
+     * This method allows the component to perform
      * any necessary setup during the JSON binding configuration process.
      * The default implementation does nothing.
      * </p>
