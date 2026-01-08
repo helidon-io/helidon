@@ -34,8 +34,7 @@ final class JsonControlValue extends JsonValue {
 
     @Override
     public JsonValueType type() {
-        //Intentional to avoid adding unwanted values to the enum
-        return null;
+        return JsonValueType.UNKNOWN;
     }
 
     @Override

@@ -488,7 +488,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     private void writeNull(OutputStream outputStream) {
         try {
             outputStream.write(NULL_BYTES);
-            outputStream.flush();
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write null bytes to JSON output stream.", e);
         }
@@ -497,7 +496,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     private void writeNull(Writer writer) {
         try {
             writer.write(NULL_CHARS);
-            writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write null chars to JSON writer.", e);
         }

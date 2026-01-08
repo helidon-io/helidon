@@ -33,6 +33,7 @@ import io.helidon.json.JsonValue;
  * and deserializing JSON back to Java objects. It supports various input/output
  * formats including strings, streams, readers, writers, and byte arrays.
  * </p>
+ * Serialization methods must accept null as the value to serialize.
  */
 public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
@@ -87,6 +88,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object to a JSON string.
+     * If the provided object is null, returns the string {@code null}.
      *
      * @param obj the object to serialize, this parameter may be {@code null}
      * @return the JSON string representation
@@ -95,8 +97,9 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object of a specific type to a JSON string.
+     * If the provided object is null, returns the string {@code null}.
      *
-     * @param obj  the object to serialize
+     * @param obj  the object to serialize, this parameter may be {@code null}
      * @param type the class type of the object
      * @param <T>  the type of the object
      * @return     the JSON string representation
@@ -105,8 +108,9 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object of a generic type to a JSON string.
+     * If the provided object is null, returns the string {@code null}.
      *
-     * @param obj  the object to serialize
+     * @param obj  the object to serialize, this parameter may be {@code null}
      * @param type the generic type of the object
      * @param <T>  the type of the object
      * @return     the JSON string representation
@@ -115,17 +119,19 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object to JSON and writes it to an OutputStream.
+     * If the provided object is null, writes the bytes of the string {@code null} to the output stream.
      *
      * @param outputStream the output stream to write to
-     * @param obj          the object to serialize
+     * @param obj          the object to serialize, this parameter may be {@code null}
      */
     void serialize(OutputStream outputStream, Object obj);
 
     /**
      * Serializes an object of a specific type to JSON and writes it to an OutputStream.
+     * If the provided object is null, writes the bytes of the string {@code null} to the output stream.
      *
      * @param outputStream the output stream to write to
-     * @param obj          the object to serialize
+     * @param obj          the object to serialize, this parameter may be {@code null}
      * @param type         the class type of the object
      * @param <T>          the type of the object
      */
@@ -133,9 +139,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object of a generic type to JSON and writes it to an OutputStream.
+     * If the provided object is null, writes the bytes of the string {@code null} to the output stream.
      *
      * @param outputStream the output stream to write to
-     * @param obj          the object to serialize
+     * @param obj          the object to serialize, this parameter may be {@code null}
      * @param type         the generic type of the object
      * @param <T>          the type of the object
      */
@@ -143,17 +150,19 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object to JSON and writes it to a Writer.
+     * If the provided object is null, writes the characters of {@code null} to the writer.
      *
      * @param writer the writer to write to
-     * @param obj    the object to serialize
+     * @param obj    the object to serialize, this parameter may be {@code null}
      */
     void serialize(Writer writer, Object obj);
 
     /**
      * Serializes an object of a specific type to JSON and writes it to a Writer.
+     * If the provided object is null, writes the characters of {@code null} to the writer.
      *
      * @param writer the writer to write to
-     * @param obj    the object to serialize
+     * @param obj    the object to serialize, this parameter may be {@code null}
      * @param type   the class type of the object
      * @param <T>    the type of the object
      */
@@ -161,9 +170,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
 
     /**
      * Serializes an object of a generic type to JSON and writes it to a Writer.
+     * If the provided object is null, writes the characters of {@code null} to the writer.
      *
      * @param writer the writer to write to
-     * @param obj    the object to serialize
+     * @param obj    the object to serialize, this parameter may be {@code null}
      * @param type   the generic type of the object
      * @param <T>    the type of the object
      */

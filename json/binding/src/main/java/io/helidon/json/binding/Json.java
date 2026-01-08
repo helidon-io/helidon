@@ -49,6 +49,8 @@ public final class Json {
 
     /**
      * Specifies a custom deserializer class for a type, field, method, or parameter.
+     * The class specified by this annotation must have a public or package-private no-arg constructor.
+     * Helidon uses this constructor to instantiate the deserializer.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
@@ -65,6 +67,8 @@ public final class Json {
 
     /**
      * Specifies a custom serializer class for a type, field, or method.
+     * The class specified by this annotation must have a public or package-private no-arg constructor.
+     * Helidon uses this constructor to instantiate the serializer.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD})
@@ -81,6 +85,8 @@ public final class Json {
 
     /**
      * Specifies a custom converter class for a type, field, method, or parameter.
+     * The class specified by this annotation must have a public or package-private no-arg constructor.
+     * Helidon uses this constructor to instantiate the converter.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
