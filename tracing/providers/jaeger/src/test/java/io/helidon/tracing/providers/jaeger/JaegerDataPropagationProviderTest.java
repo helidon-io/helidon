@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -30,6 +33,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JaegerDataPropagationProviderTest {
 
     private final JaegerDataPropagationProvider provider = new JaegerDataPropagationProvider();
+
+    @BeforeEach
+    void setup() {
+        GlobalOpenTelemetry.resetForTest();
+    }
 
     @Test
     void dataPropagationTest() {
