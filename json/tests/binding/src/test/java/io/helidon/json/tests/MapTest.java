@@ -23,6 +23,7 @@ import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,7 +34,12 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class MapTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testMapSerialization() {
@@ -43,7 +49,7 @@ public class MapTest {
         map.put("key3", "value3");
 
         String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
-        assertThat(HELIDON.serialize(map), is(expected));
+        assertThat(jsonBinding.serialize(map), is(expected));
     }
 
     @Test
@@ -51,7 +57,7 @@ public class MapTest {
         String json = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
 
         GenericType<Map<String, String>> type = new GenericType<>() { };
-        Map<String, String> map = HELIDON.deserialize(json, type);
+        Map<String, String> map = jsonBinding.deserialize(json, type);
 
         assertThat(map, notNullValue());
         assertThat(map, instanceOf(HashMap.class));
@@ -69,7 +75,7 @@ public class MapTest {
         map.put("key3", null);
 
         String expected = "{\"key1\":null,\"key2\":null,\"key3\":null}";
-        assertThat(HELIDON.serialize(map), is(expected));
+        assertThat(jsonBinding.serialize(map), is(expected));
     }
 
     @Test
@@ -77,7 +83,7 @@ public class MapTest {
         String json = "{\"key1\":null,\"key2\":null,\"key3\":null}";
 
         GenericType<Map<String, String>> type = new GenericType<>() { };
-        Map<String, String> map = HELIDON.deserialize(json, type);
+        Map<String, String> map = jsonBinding.deserialize(json, type);
 
         assertThat(map, notNullValue());
         assertThat(map, instanceOf(HashMap.class));

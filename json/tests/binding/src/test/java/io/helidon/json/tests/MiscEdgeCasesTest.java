@@ -30,6 +30,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,54 +44,59 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class MiscEdgeCasesTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testNullObjectSerialization() {
-        String json = HELIDON.serialize(null);
+        String json = jsonBinding.serialize(null);
         assertThat(json, is("null"));
     }
 
     @Test
     public void testNullDeserialization() {
-        TestBean deserialized = HELIDON.deserialize("null", TestBean.class);
+        TestBean deserialized = jsonBinding.deserialize("null", TestBean.class);
         assertThat(deserialized, is(nullValue()));
     }
 
     @Test
     public void testEmptyJsonObject() {
         String json = "{}";
-        EmptyBean bean = HELIDON.deserialize(json, EmptyBean.class);
+        EmptyBean bean = jsonBinding.deserialize(json, EmptyBean.class);
         assertThat(bean, is(instanceOf(EmptyBean.class)));
     }
 
     @Test
     public void testEmptyArrayDeserialization() {
         GenericType<List<String>> listType = new GenericType<>() { };
-        List<String> list = HELIDON.deserialize("[]", listType);
+        List<String> list = jsonBinding.deserialize("[]", listType);
         assertThat(list.size(), is(0));
     }
 
     @Test
     public void testEmptyMapDeserialization() {
         GenericType<Map<String, String>> mapType = new GenericType<>() { };
-        Map<String, String> map = HELIDON.deserialize("{}", mapType);
+        Map<String, String> map = jsonBinding.deserialize("{}", mapType);
         assertThat(map.size(), is(0));
     }
 
     @Test
     public void testInvalidJsonThrowsException() {
-        assertThrows(JsonException.class, () -> HELIDON.deserialize("{invalid", TestBean.class));
-        assertThrows(JsonException.class, () -> HELIDON.deserialize("[invalid", List.class));
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize("{invalid", TestBean.class));
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize("[invalid", List.class));
     }
 
     @Test
     public void testArraysWithNulls() {
         String[] arrayWithNulls = {"first", null, "third"};
-        String json = HELIDON.serialize(arrayWithNulls);
+        String json = jsonBinding.serialize(arrayWithNulls);
         assertThat(json, is("[\"first\",null,\"third\"]"));
 
-        String[] deserialized = HELIDON.deserialize(json, String[].class);
+        String[] deserialized = jsonBinding.deserialize(json, String[].class);
         assertThat(deserialized[0], is("first"));
         assertThat(deserialized[1], is(nullValue()));
         assertThat(deserialized[2], is("third"));
@@ -102,10 +108,10 @@ public class MiscEdgeCasesTest {
         bean.setNested(null);
         bean.setValue("test");
 
-        String json = HELIDON.serialize(bean);
+        String json = jsonBinding.serialize(bean);
         assertThat(json, is("{\"value\":\"test\"}"));
 
-        NestedBean deserialized = HELIDON.deserialize("{\"nested\":null,\"value\":\"test\"}", NestedBean.class);
+        NestedBean deserialized = jsonBinding.deserialize("{\"nested\":null,\"value\":\"test\"}", NestedBean.class);
         assertThat(deserialized.getNested(), is(nullValue()));
         assertThat(deserialized.getValue(), is("test"));
     }
@@ -116,10 +122,10 @@ public class MiscEdgeCasesTest {
         bean.setEmptyList(Collections.emptyList());
         bean.setEmptyMap(Collections.emptyMap());
 
-        String json = HELIDON.serialize(bean);
+        String json = jsonBinding.serialize(bean);
         assertThat(json, is("{\"emptyList\":[],\"emptyMap\":{}}"));
 
-        CollectionBean deserialized = HELIDON.deserialize(json, CollectionBean.class);
+        CollectionBean deserialized = jsonBinding.deserialize(json, CollectionBean.class);
         assertThat(deserialized.getEmptyList().size(), is(0));
         assertThat(deserialized.getEmptyMap().size(), is(0));
     }
@@ -128,7 +134,7 @@ public class MiscEdgeCasesTest {
     public void testDeserializeFromInputStream() throws IOException {
         String jsonData = "{\"value\":\"stream test\"}";
         try (InputStream inputStream = new ByteArrayInputStream(jsonData.getBytes(StandardCharsets.UTF_8))) {
-            TestBean bean = HELIDON.deserialize(inputStream, TestBean.class);
+            TestBean bean = jsonBinding.deserialize(inputStream, TestBean.class);
             assertThat(bean.getValue(), is("stream test"));
         }
     }
@@ -137,7 +143,7 @@ public class MiscEdgeCasesTest {
     public void testDeserializeFromInputStreamWithBufferSize() throws IOException {
         String jsonData = "{\"value\":\"buffered stream test\"}";
         try (InputStream inputStream = new ByteArrayInputStream(jsonData.getBytes(StandardCharsets.UTF_8))) {
-            TestBean bean = HELIDON.deserialize(inputStream, 1024, TestBean.class);
+            TestBean bean = jsonBinding.deserialize(inputStream, 1024, TestBean.class);
             assertThat(bean.getValue(), is("buffered stream test"));
         }
     }
@@ -145,10 +151,10 @@ public class MiscEdgeCasesTest {
     @Test
     public void testBooleanPrimitives() {
         boolean[] booleans = {true, false, true};
-        String json = HELIDON.serialize(booleans);
+        String json = jsonBinding.serialize(booleans);
         assertThat(json, is("[true,false,true]"));
 
-        boolean[] deserialized = HELIDON.deserialize(json, boolean[].class);
+        boolean[] deserialized = jsonBinding.deserialize(json, boolean[].class);
         assertThat(deserialized[0], is(true));
         assertThat(deserialized[1], is(false));
         assertThat(deserialized[2], is(true));
@@ -157,10 +163,10 @@ public class MiscEdgeCasesTest {
     @Test
     public void testCharPrimitives() {
         char[] chars = {'a', 'b', 'c'};
-        String json = HELIDON.serialize(chars);
+        String json = jsonBinding.serialize(chars);
         assertThat(json, is("[\"a\",\"b\",\"c\"]"));
 
-        char[] deserialized = HELIDON.deserialize(json, char[].class);
+        char[] deserialized = jsonBinding.deserialize(json, char[].class);
         assertThat(deserialized[0], is('a'));
         assertThat(deserialized[1], is('b'));
         assertThat(deserialized[2], is('c'));

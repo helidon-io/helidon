@@ -20,13 +20,19 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class InterfaceAnnotationsTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testJsonbPropertyIfcInheritance() {
@@ -35,7 +41,7 @@ public class InterfaceAnnotationsTest {
         pojo.setPropertyB("BB");
 
         String json = "{\"propA\":\"AA\",\"propB\":\"BB\"}";
-        assertEquals(json, HELIDON.serialize(pojo));
+        assertEquals(json, jsonBinding.serialize(pojo));
     }
 
     interface InterfacedPojoA {

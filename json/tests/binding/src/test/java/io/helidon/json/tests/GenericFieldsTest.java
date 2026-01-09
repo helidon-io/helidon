@@ -25,6 +25,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,7 +34,12 @@ import static org.hamcrest.Matchers.isOneOf;
 
 public class GenericFieldsTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testClassWithGenericListField() {
@@ -42,10 +48,10 @@ public class GenericFieldsTest {
         obj.setValues(List.of("a", "b", "c"));
 
         String expected = "{\"name\":\"test\",\"values\":[\"a\",\"b\",\"c\"]}";
-        String json = HELIDON.serialize(obj);
+        String json = jsonBinding.serialize(obj);
         assertThat(json, is(expected));
 
-        ClassWithListField deserialized = HELIDON.deserialize(json, ClassWithListField.class);
+        ClassWithListField deserialized = jsonBinding.deserialize(json, ClassWithListField.class);
         assertThat(deserialized.getName(), is("test"));
         assertThat(deserialized.getValues(), is(List.of("a", "b", "c")));
     }
@@ -58,10 +64,10 @@ public class GenericFieldsTest {
 
         String expected = "{\"id\":\"123\",\"properties\":{\"key1\":\"value1\",\"key2\":\"value2\"}}";
         String expected2 = "{\"id\":\"123\",\"properties\":{\"key2\":\"value2\",\"key1\":\"value1\"}}";
-        String json = HELIDON.serialize(obj);
+        String json = jsonBinding.serialize(obj);
         assertThat(json, isOneOf(expected, expected2));
 
-        ClassWithMapField deserialized = HELIDON.deserialize(json, ClassWithMapField.class);
+        ClassWithMapField deserialized = jsonBinding.deserialize(json, ClassWithMapField.class);
         assertThat(deserialized.getId(), is("123"));
         assertThat(deserialized.getProperties().get("key1"), is("value1"));
         assertThat(deserialized.getProperties().get("key2"), is("value2"));
@@ -73,9 +79,9 @@ public class GenericFieldsTest {
         obj.setTitle("example");
         obj.setTags(Set.of("tag1", "tag2", "tag3"));
 
-        String json = HELIDON.serialize(obj);
+        String json = jsonBinding.serialize(obj);
 
-        ClassWithSetField deserialized = HELIDON.deserialize(json, ClassWithSetField.class);
+        ClassWithSetField deserialized = jsonBinding.deserialize(json, ClassWithSetField.class);
         assertThat(deserialized.getTitle(), is("example"));
         assertThat(deserialized.getTags(), is(Set.of("tag1", "tag2", "tag3")));
     }
@@ -89,7 +95,7 @@ public class GenericFieldsTest {
         ClassWithNestedGenerics obj = new ClassWithNestedGenerics();
         obj.setData(map);
 
-        String json = HELIDON.serialize(obj);
+        String json = jsonBinding.serialize(obj);
 
         assertThat(json, is(expected));
     }
@@ -106,11 +112,12 @@ public class GenericFieldsTest {
         settings.put("notifications", "enabled");
         obj.setSettings(settings);
 
-        String expected = "{\"id\":\"user123\",\"name\":\"John Doe\",\"age\":30,\"tags\":[\"admin\",\"premium\"],\"settings\":{\"theme\":\"dark\",\"notifications\":\"enabled\"}}";
-        String json = HELIDON.serialize(obj);
+        String expected = "{\"id\":\"user123\",\"name\":\"John Doe\",\"age\":30,\"tags\":[\"admin\",\"premium\"],"
+                + "\"settings\":{\"theme\":\"dark\",\"notifications\":\"enabled\"}}";
+        String json = jsonBinding.serialize(obj);
         assertThat(json, is(expected));
 
-        ClassWithMixedFields deserialized = HELIDON.deserialize(json, ClassWithMixedFields.class);
+        ClassWithMixedFields deserialized = jsonBinding.deserialize(json, ClassWithMixedFields.class);
         assertThat(deserialized.getId(), is("user123"));
         assertThat(deserialized.getName(), is("John Doe"));
         assertThat(deserialized.getAge(), is(30));

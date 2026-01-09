@@ -20,48 +20,54 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SerializeNullsTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testJsonNullableOnRecord() {
         JsonNullableOnRecord instance = new JsonNullableOnRecord(null, null);
-        assertEquals("{\"someField\":null,\"someField2\":null}", HELIDON.serialize(instance));
+        assertEquals("{\"someField\":null,\"someField2\":null}", jsonBinding.serialize(instance));
     }
 
     @Test
     public void testJsonNullableOnRecordComponent() {
         JsonNullableOnRecordComponent instance = new JsonNullableOnRecordComponent(null, null);
-        assertEquals("{\"someField\":null}", HELIDON.serialize(instance));
+        assertEquals("{\"someField\":null}", jsonBinding.serialize(instance));
     }
 
     @Test
     public void testJsonNullableOverrideOnField() {
         NullableOverrideOnField instance = new NullableOverrideOnField();
-        assertEquals("{\"field2\":null}", HELIDON.serialize(instance));
+        assertEquals("{\"field2\":null}", jsonBinding.serialize(instance));
     }
 
     @Test
     public void testJsonNullableOverrideOnMethod() {
         NullableOverrideOnMethod instance = new NullableOverrideOnMethod();
-        assertEquals("{\"field2\":null}", HELIDON.serialize(instance));
+        assertEquals("{\"field2\":null}", jsonBinding.serialize(instance));
     }
 
     @Test
     public void testJsonNullableFromParent() {
         NullableChild instance = new NullableChild();
-        assertEquals("{\"field\":null}", HELIDON.serialize(instance));
+        assertEquals("{\"field\":null}", jsonBinding.serialize(instance));
     }
 
     @Test
     public void testJsonNullableFromParentOverride() {
         NonNullableChild instance = new NonNullableChild();
-        assertEquals("{}", HELIDON.serialize(instance));
+        assertEquals("{}", jsonBinding.serialize(instance));
     }
 
     @Json.Entity

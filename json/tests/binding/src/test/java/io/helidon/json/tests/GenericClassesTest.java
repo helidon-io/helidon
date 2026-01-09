@@ -23,6 +23,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,7 +31,12 @@ import static org.hamcrest.Matchers.is;
 
 public class GenericClassesTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testGenericContainerClass() {
@@ -38,11 +44,11 @@ public class GenericClassesTest {
         container.setValue("hello");
 
         String expected = "{\"value\":\"hello\"}";
-        String json = HELIDON.serialize(container);
+        String json = jsonBinding.serialize(container);
         assertThat(json, is(expected));
 
         GenericType<Container<String>> type = new GenericType<>() { };
-        Container<String> deserialized = HELIDON.deserialize(json, type);
+        Container<String> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized.getValue(), is("hello"));
     }
 
@@ -53,11 +59,11 @@ public class GenericClassesTest {
         pair.setSecond(42);
 
         String expected = "{\"first\":\"key\",\"second\":42}";
-        String json = HELIDON.serialize(pair);
+        String json = jsonBinding.serialize(pair);
         assertThat(json, is(expected));
 
         GenericType<Pair<String, Integer>> type = new GenericType<>() { };
-        Pair<String, Integer> deserialized = HELIDON.deserialize(json, type);
+        Pair<String, Integer> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized.getFirst(), is("key"));
         assertThat(deserialized.getSecond(), is(42));
     }
@@ -71,11 +77,11 @@ public class GenericClassesTest {
         nested.setValue(innerPair);
 
         String expected = "{\"value\":{\"first\":\"nested\",\"second\":123}}";
-        String json = HELIDON.serialize(nested);
+        String json = jsonBinding.serialize(nested);
         assertThat(json, is(expected));
 
         GenericType<Container<Pair<String, Integer>>> type = new GenericType<>() { };
-        Container<Pair<String, Integer>> deserialized = HELIDON.deserialize(json, type);
+        Container<Pair<String, Integer>> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized.getValue().getFirst(), is("nested"));
         assertThat(deserialized.getValue().getSecond(), is(123));
     }
@@ -88,11 +94,11 @@ public class GenericClassesTest {
         triple.setThird(true);
 
         String expected = "{\"first\":\"test\",\"second\":100,\"third\":true}";
-        String json = HELIDON.serialize(triple);
+        String json = jsonBinding.serialize(triple);
         assertThat(json, is(expected));
 
         GenericType<Triple<String, Integer, Boolean>> type = new GenericType<>() { };
-        Triple<String, Integer, Boolean> deserialized = HELIDON.deserialize(json, type);
+        Triple<String, Integer, Boolean> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized.getFirst(), is("test"));
         assertThat(deserialized.getSecond(), is(100));
         assertThat(deserialized.getThird(), is(true));
@@ -110,11 +116,11 @@ public class GenericClassesTest {
                 + "\"name\":\"Test Item\","
                 + "\"value\":\"generic value\","
                 + "\"tags\":[\"important\",\"featured\"]}";
-        String json = HELIDON.serialize(obj);
+        String json = jsonBinding.serialize(obj);
         assertThat(json, is(expected));
 
         GenericType<GenericClassWithMixedFields<String>> type = new GenericType<>() { };
-        GenericClassWithMixedFields<String> deserialized = HELIDON.deserialize(json, type);
+        GenericClassWithMixedFields<String> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized.getId(), is("item123"));
         assertThat(deserialized.getName(), is("Test Item"));
         assertThat(deserialized.getValue(), is("generic value"));
@@ -135,10 +141,10 @@ public class GenericClassesTest {
                 + "\"superParentList\":[\"item1\",\"item2\"],"
                 + "\"parentField\":\"parent value\","
                 + "\"childField\":100}";
-        String json = HELIDON.serialize(child);
+        String json = jsonBinding.serialize(child);
         assertThat(json, is(expected));
 
-        ChildClass deserialized = HELIDON.deserialize(json, ChildClass.class);
+        ChildClass deserialized = jsonBinding.deserialize(json, ChildClass.class);
         assertThat(deserialized.superParentField(), is(42));
         assertThat(deserialized.secondSuperParentField(), is("inherited value"));
         assertThat(deserialized.superParentList(), is(List.of("item1", "item2")));

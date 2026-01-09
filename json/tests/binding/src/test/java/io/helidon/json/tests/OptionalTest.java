@@ -25,6 +25,7 @@ import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,17 +33,22 @@ import static org.hamcrest.Matchers.is;
 
 public class OptionalTest {
 
-    private static final JsonBinding JSON_BINDING = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     void testEmptyOptional() {
         Optional<Object> optional = Optional.empty();
         String expected = "null";
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        Optional<Object> deserialized = JSON_BINDING.deserialize(expected, new GenericType<>() { });
+        Optional<Object> deserialized = jsonBinding.deserialize(expected, new GenericType<>() { });
         assertThat(deserialized, is(optional));
     }
 
@@ -52,11 +58,11 @@ public class OptionalTest {
         String expected = "\"Hello\"";
 
         GenericType<Optional<String>> genericType = new GenericType<>() { };
-        String serialized = JSON_BINDING.serialize(optional, genericType);
+        String serialized = jsonBinding.serialize(optional, genericType);
 
         assertThat(serialized, is(expected));
 
-        Optional<String> deserialized = JSON_BINDING.deserialize(expected, genericType);
+        Optional<String> deserialized = jsonBinding.deserialize(expected, genericType);
         assertThat(deserialized, is(optional));
     }
 
@@ -64,11 +70,11 @@ public class OptionalTest {
     void testEmptyOptionalInt() {
         OptionalInt optional = OptionalInt.empty();
         String expected = "null";
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalInt deserialized = JSON_BINDING.deserialize(expected, OptionalInt.class);
+        OptionalInt deserialized = jsonBinding.deserialize(expected, OptionalInt.class);
         assertThat(deserialized, is(optional));
     }
 
@@ -77,11 +83,11 @@ public class OptionalTest {
         OptionalInt optional = OptionalInt.of(123);
         String expected = "123";
 
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalInt deserialized = JSON_BINDING.deserialize(expected, OptionalInt.class);
+        OptionalInt deserialized = jsonBinding.deserialize(expected, OptionalInt.class);
         assertThat(deserialized, is(optional));
     }
 
@@ -89,11 +95,11 @@ public class OptionalTest {
     void testEmptyOptionalLong() {
         OptionalLong optional = OptionalLong.empty();
         String expected = "null";
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalLong deserialized = JSON_BINDING.deserialize(expected, OptionalLong.class);
+        OptionalLong deserialized = jsonBinding.deserialize(expected, OptionalLong.class);
         assertThat(deserialized, is(optional));
     }
 
@@ -102,11 +108,11 @@ public class OptionalTest {
         OptionalLong optional = OptionalLong.of(123);
         String expected = "123";
 
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalLong deserialized = JSON_BINDING.deserialize(expected, OptionalLong.class);
+        OptionalLong deserialized = jsonBinding.deserialize(expected, OptionalLong.class);
         assertThat(deserialized, is(optional));
     }
 
@@ -114,11 +120,11 @@ public class OptionalTest {
     void testEmptyOptionalDouble() {
         OptionalDouble optional = OptionalDouble.empty();
         String expected = "null";
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalDouble deserialized = JSON_BINDING.deserialize(expected, OptionalDouble.class);
+        OptionalDouble deserialized = jsonBinding.deserialize(expected, OptionalDouble.class);
         assertThat(deserialized, is(optional));
     }
 
@@ -127,11 +133,11 @@ public class OptionalTest {
         OptionalDouble optional = OptionalDouble.of(123.456);
         String expected = "123.456";
 
-        String serialized = JSON_BINDING.serialize(optional);
+        String serialized = jsonBinding.serialize(optional);
 
         assertThat(serialized, is(expected));
 
-        OptionalDouble deserialized = JSON_BINDING.deserialize(expected, OptionalDouble.class);
+        OptionalDouble deserialized = jsonBinding.deserialize(expected, OptionalDouble.class);
         assertThat(deserialized, is(optional));
     }
 

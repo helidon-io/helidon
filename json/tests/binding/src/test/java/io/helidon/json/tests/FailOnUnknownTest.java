@@ -21,6 +21,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,13 +30,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FailOnUnknownTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testFailOnUnknownDisabled() {
         // Without @FailOnUnknown, unknown properties should be ignored
         String json = "{\"knownField\":\"value\",\"unknownField\":\"ignored\"}";
-        NoFailOnUnknown entity = HELIDON.deserialize(json, NoFailOnUnknown.class);
+        NoFailOnUnknown entity = jsonBinding.deserialize(json, NoFailOnUnknown.class);
         assertThat(entity.knownField, is("value"));
     }
 
@@ -43,14 +49,14 @@ public class FailOnUnknownTest {
     public void testFailOnUnknownEnabled() {
         // With @FailOnUnknown, unknown properties should cause failure
         String json = "{\"knownField\":\"value\",\"unknownField\":\"should_fail\"}";
-        assertThrows(JsonException.class, () -> HELIDON.deserialize(json, FailOnUnknownEnabled.class));
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize(json, FailOnUnknownEnabled.class));
     }
 
     @Test
     public void testFailOnUnknownEnabledKnownOnly() {
         // With @FailOnUnknown, but only known properties, should succeed
         String json = "{\"knownField\":\"value\"}";
-        FailOnUnknownEnabled entity = HELIDON.deserialize(json, FailOnUnknownEnabled.class);
+        FailOnUnknownEnabled entity = jsonBinding.deserialize(json, FailOnUnknownEnabled.class);
         assertThat(entity.knownField, is("value"));
     }
 

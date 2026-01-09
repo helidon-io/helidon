@@ -19,6 +19,7 @@ package io.helidon.json.tests;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -26,16 +27,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CharacterTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testAsciiChar() {
         String expected = "\"a\"";
         char c = 'a';
-        String jsonValue = HELIDON.serialize(c);
+        String jsonValue = jsonBinding.serialize(c);
         assertThat(jsonValue, is(expected));
 
-        char deserialized = HELIDON.deserialize(jsonValue, char.class);
+        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
         assertThat(deserialized, is(c));
     }
 
@@ -43,10 +49,10 @@ public class CharacterTest {
     public void testUTF8Char() {
         String expected = "\"ř\"";
         char c = 'ř';
-        String jsonValue = HELIDON.serialize(c);
+        String jsonValue = jsonBinding.serialize(c);
         assertThat(jsonValue, is(expected));
 
-        char deserialized = HELIDON.deserialize(jsonValue, char.class);
+        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
         assertThat(deserialized, is(c));
     }
 
@@ -54,7 +60,7 @@ public class CharacterTest {
     public void testUnicodeChar() {
         String jsonValue = "\"\\u0041\"";
 
-        char deserialized = HELIDON.deserialize(jsonValue, char.class);
+        char deserialized = jsonBinding.deserialize(jsonValue, char.class);
         assertThat(deserialized, is('A'));
     }
 }

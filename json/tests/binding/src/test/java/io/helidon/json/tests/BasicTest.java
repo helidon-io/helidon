@@ -20,6 +20,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,19 +30,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class BasicTest {
 
     private static final String EXPECTED_VALUE = "{\"value\":\"abc\"}";
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testSimpleSerialize() {
         StringWrapper wrapper = new StringWrapper();
         wrapper.setValue("abc");
-        String val = HELIDON.serialize(wrapper);
+        String val = jsonBinding.serialize(wrapper);
         assertThat(val, is(EXPECTED_VALUE));
     }
 
     @Test
     public void testSimpleDeserializer() {
-        StringWrapper stringWrapper = HELIDON.deserialize(EXPECTED_VALUE, StringWrapper.class);
+        StringWrapper stringWrapper = jsonBinding.deserialize(EXPECTED_VALUE, StringWrapper.class);
         assertEquals("abc", stringWrapper.value);
     }
 

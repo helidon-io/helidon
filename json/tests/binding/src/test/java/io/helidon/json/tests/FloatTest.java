@@ -20,6 +20,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,48 +29,53 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class FloatTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testFloatSerialization() {
         FloatModel model = new FloatModel(123.456F, 456.789F);
 
         String expected = "{\"object\":123.456,\"primitive\":456.789}";
-        assertThat(HELIDON.serialize(model), is(expected));
+        assertThat(jsonBinding.serialize(model), is(expected));
     }
 
     @Test
     public void testFloatDeserializationFromFloatAsStringValue() {
-        FloatModel floatModel = HELIDON.deserialize("{\"object\":\"123.456\",\"primitive\":\"456.789\"}", FloatModel.class);
+        FloatModel floatModel = jsonBinding.deserialize("{\"object\":\"123.456\",\"primitive\":\"456.789\"}", FloatModel.class);
         assertThat(floatModel.object, is(123.456F));
         assertThat(floatModel.primitive, is(456.789F));
     }
 
     @Test
     public void testFloatDeserializationFromFloatRawValue() {
-        FloatModel floatModel = HELIDON.deserialize("{\"object\":123.456,\"primitive\":456.789}", FloatModel.class);
+        FloatModel floatModel = jsonBinding.deserialize("{\"object\":123.456,\"primitive\":456.789}", FloatModel.class);
         assertThat(floatModel.object, is(123.456F));
         assertThat(floatModel.primitive, is(456.789F));
     }
 
     @Test
     public void testRawFloats() {
-        Float value = HELIDON.deserialize("123.456", Float.class);
+        Float value = jsonBinding.deserialize("123.456", Float.class);
         assertThat(value, is(123.456F));
-        value = HELIDON.deserialize("123.456", float.class);
+        value = jsonBinding.deserialize("123.456", float.class);
         assertThat(value, is(123.456F));
-        value = HELIDON.deserialize("\"123.456\"", Float.class);
+        value = jsonBinding.deserialize("\"123.456\"", Float.class);
         assertThat(value, is(123.456F));
-        value = HELIDON.deserialize("\"123.456\"", float.class);
+        value = jsonBinding.deserialize("\"123.456\"", float.class);
         assertThat(value, is(123.456F));
-        value = HELIDON.deserialize("null", Float.class);
+        value = jsonBinding.deserialize("null", Float.class);
         assertThat(value, is(nullValue()));
-        value = HELIDON.deserialize("null", float.class);
+        value = jsonBinding.deserialize("null", float.class);
         assertThat(value, is(0.0F));
 
-        String serialized = HELIDON.serialize(123.456F);
+        String serialized = jsonBinding.serialize(123.456F);
         assertThat(serialized, is("123.456"));
-        serialized = HELIDON.serialize(Float.valueOf(123.456F));
+        serialized = jsonBinding.serialize(Float.valueOf(123.456F));
         assertThat(serialized, is("123.456"));
     }
 

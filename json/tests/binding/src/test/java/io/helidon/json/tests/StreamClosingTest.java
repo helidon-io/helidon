@@ -31,6 +31,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -41,14 +42,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class StreamClosingTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
     private static final String JSON_DATA = "{\"value\":\"test\"}";
     private static final TestObject TEST_OBJECT = new TestObject("test");
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testSerializeOutputStreamNotClosed() {
         TestOutputStream outputStream = new TestOutputStream();
-        HELIDON.serialize(outputStream, TEST_OBJECT);
+        jsonBinding.serialize(outputStream, TEST_OBJECT);
         assertTrue(outputStream.isOpen(), "OutputStream should remain open after serialize");
         assertDoesNotThrow(() -> outputStream.write(1), "OutputStream should still be writable");
     }
@@ -56,7 +62,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeOutputStreamNullObjectNotClosed() {
         TestOutputStream outputStream = new TestOutputStream();
-        HELIDON.serialize(outputStream, (Object) null);
+        jsonBinding.serialize(outputStream, (Object) null);
         assertTrue(outputStream.isOpen(), "OutputStream should remain open after serialize null");
         assertDoesNotThrow(() -> outputStream.write(1), "OutputStream should still be writable");
     }
@@ -64,7 +70,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeOutputStreamWithTypeNotClosed() {
         TestOutputStream outputStream = new TestOutputStream();
-        HELIDON.serialize(outputStream, TEST_OBJECT, TestObject.class);
+        jsonBinding.serialize(outputStream, TEST_OBJECT, TestObject.class);
         assertTrue(outputStream.isOpen(), "OutputStream should remain open after serialize with type");
         assertDoesNotThrow(() -> outputStream.write(1), "OutputStream should still be writable");
     }
@@ -72,7 +78,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeOutputStreamWithGenericTypeNotClosed() {
         TestOutputStream outputStream = new TestOutputStream();
-        HELIDON.serialize(outputStream, TEST_OBJECT, Object.class);
+        jsonBinding.serialize(outputStream, TEST_OBJECT, Object.class);
         assertTrue(outputStream.isOpen(), "OutputStream should remain open after serialize with generic type");
         assertDoesNotThrow(() -> outputStream.write(1), "OutputStream should still be writable");
     }
@@ -80,7 +86,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeWriterNotClosed() {
         TestWriter writer = new TestWriter();
-        HELIDON.serialize(writer, TEST_OBJECT);
+        jsonBinding.serialize(writer, TEST_OBJECT);
         assertTrue(writer.isOpen(), "Writer should remain open after serialize");
         assertDoesNotThrow(() -> writer.write("test"), "Writer should still be writable");
     }
@@ -88,7 +94,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeWriterNullObjectNotClosed() {
         TestWriter writer = new TestWriter();
-        HELIDON.serialize(writer, (Object) null);
+        jsonBinding.serialize(writer, (Object) null);
         assertTrue(writer.isOpen(), "Writer should remain open after serialize null");
         assertDoesNotThrow(() -> writer.write("test"), "Writer should still be writable");
     }
@@ -96,7 +102,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeWriterWithTypeNotClosed() {
         TestWriter writer = new TestWriter();
-        HELIDON.serialize(writer, TEST_OBJECT, TestObject.class);
+        jsonBinding.serialize(writer, TEST_OBJECT, TestObject.class);
         assertTrue(writer.isOpen(), "Writer should remain open after serialize with type");
         assertDoesNotThrow(() -> writer.write("test"), "Writer should still be writable");
     }
@@ -104,7 +110,7 @@ public class StreamClosingTest {
     @Test
     public void testSerializeWriterWithGenericTypeNotClosed() {
         TestWriter writer = new TestWriter();
-        HELIDON.serialize(writer, TEST_OBJECT, Object.class);
+        jsonBinding.serialize(writer, TEST_OBJECT, Object.class);
         assertTrue(writer.isOpen(), "Writer should remain open after serialize with generic type");
         assertDoesNotThrow(() -> writer.write("test"), "Writer should still be writable");
     }
@@ -112,7 +118,7 @@ public class StreamClosingTest {
     @Test
     public void testDeserializeInputStreamNotClosed() {
         TestInputStream inputStream = new TestInputStream(JSON_DATA.getBytes(StandardCharsets.UTF_8));
-        HELIDON.deserialize(inputStream, TestObject.class);
+        jsonBinding.deserialize(inputStream, TestObject.class);
         assertTrue(inputStream.isOpen(), "InputStream should remain open after deserialize");
         assertDoesNotThrow(() -> inputStream.read(), "InputStream should still be readable");
     }
@@ -120,7 +126,7 @@ public class StreamClosingTest {
     @Test
     public void testDeserializeInputStreamWithBufferSizeNotClosed() {
         TestInputStream inputStream = new TestInputStream(JSON_DATA.getBytes(StandardCharsets.UTF_8));
-        HELIDON.deserialize(inputStream, 1024, TestObject.class);
+        jsonBinding.deserialize(inputStream, 1024, TestObject.class);
         assertTrue(inputStream.isOpen(), "InputStream should remain open after deserialize with buffer size");
         assertDoesNotThrow(() -> inputStream.read(), "InputStream should still be readable");
     }
@@ -128,7 +134,7 @@ public class StreamClosingTest {
     @Test
     public void testDeserializeReaderNotClosed() {
         TestReader reader = new TestReader(JSON_DATA);
-        HELIDON.deserialize(reader, TestObject.class);
+        jsonBinding.deserialize(reader, TestObject.class);
         assertTrue(reader.isOpen(), "Reader should remain open after deserialize");
         assertDoesNotThrow(() -> reader.read(), "Reader should still be readable");
     }

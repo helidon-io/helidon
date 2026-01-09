@@ -19,6 +19,7 @@ package io.helidon.json.codegen;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ record ConvertedTypeInfo(TypeName converterType,
         String classNameWithEnclosingNames = typeInfo.typeName().classNameWithEnclosingNames();
         String replacedDot = classNameWithEnclosingNames.replace(".", "_");
         String nameBase = typeInfo.typeName().fqName().replace(classNameWithEnclosingNames, replacedDot);
-        TypeName converterTypeName = TypeName.create(nameBase + "_GeneratedConverter");
+        TypeName converterTypeName = TypeName.create(nameBase + "__GeneratedConverter");
         AccessorStyle recordAccessors = typeInfo.annotation(JsonTypes.JSON_ENTITY)
                 .enumValue("accessorStyle", AccessorStyle.class)
                 .orElse(AccessorStyle.AUTO);
@@ -172,6 +173,7 @@ record ConvertedTypeInfo(TypeName converterType,
         TypeName builderTypeName = builderMethod.get().typeName();
         TypeInfo builderTypeInfo = ctx.typeInfo(builderTypeName)
                 .orElseThrow(() -> new CodegenException("Could not find builder type: " + builderTypeName, createdTypeInfo));
+        discoverAllPossibleGenerics(builderTypeInfo, resolvedGenerics, Map.of());
         return processBuilderInfoFromClass(builderTypeInfo,
                                            createdTypeInfo,
                                            builderMethod.get().elementName(),
@@ -197,20 +199,46 @@ record ConvertedTypeInfo(TypeName converterType,
                                        createdTypeInfo);
         }
 
+        processBuilderMethods(builderTypeInfo, builderTypeInfo, properties, resolvedGenerics, builderMethodPrefix);
+
+        return Optional.of(new BuilderInfo(builderTypeInfo.typeName(),
+                                           Optional.ofNullable(builderMethodName),
+                                           buildMethod));
+    }
+
+    private static void processBuilderMethods(TypeInfo builderTypeInfo, //The builder we are using
+                                              TypeInfo currentTypeInfo, //Currently processed type info
+                                              Map<String, JsonProperty.Builder> properties,
+                                              Map<String, Map<String, TypeName>> resolvedGenerics,
+                                              String builderMethodPrefix) {
+        currentTypeInfo.superTypeInfo()
+                .ifPresent(superType -> processBuilderMethods(builderTypeInfo,
+                                                              superType,
+                                                              properties,
+                                                              resolvedGenerics,
+                                                              builderMethodPrefix));
+
+        for (TypeInfo interf : currentTypeInfo.interfaceTypeInfo()) {
+            processBuilderMethods(builderTypeInfo, interf, properties, resolvedGenerics, builderMethodPrefix);
+        }
+
         // Find all builder methods (withXXX methods)
-        List<TypedElementInfo> builderMethods = builderTypeInfo.elementInfo()
+        List<TypedElementInfo> builderMethods = currentTypeInfo.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(not(ElementInfoPredicates::isPrivate))
                 .filter(not(ElementInfoPredicates::isStatic))
+                .filter(method -> !method.hasAnnotation(JsonTypes.JSON_IGNORE))
                 .filter(method -> method.elementName().startsWith(builderMethodPrefix))
-                .filter(it -> it.typeName().equals(builderTypeInfo.typeName()))
+                .filter(it -> resolveGenerics(it.typeName(), currentTypeInfo, resolvedGenerics)
+                        .equals(builderTypeInfo.typeName()))
                 .filter(it -> it.parameterArguments().size() == 1)
+                .filter(it -> !it.elementName().equals("from")) //To ignore "from" methods of the generated Builder
                 .filter(not(ConvertedTypeInfo::isIgnored))
                 .toList();
 
         // Configure properties with builder methods
-        List<String> builderProperties = new ArrayList<>();
+        Set<String> builderProperties = new HashSet<>();
         for (TypedElementInfo method : builderMethods) {
             String methodName = method.elementName();
             String propertyName = methodToFieldName(builderMethodPrefix, methodName);
@@ -235,11 +263,6 @@ record ConvertedTypeInfo(TypeName converterType,
 
             builderProperties.add(propertyName);
         }
-
-        return Optional.of(new BuilderInfo(builderTypeInfo.typeName(),
-                                           Optional.ofNullable(builderMethodName),
-                                           buildMethod,
-                                           builderProperties));
     }
 
     private static boolean checkBuildMethod(TypeInfo builderTypeInfo, TypeInfo originalTypeInfo, String buildMethodName) {

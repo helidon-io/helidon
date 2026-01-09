@@ -24,6 +24,7 @@ import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +33,12 @@ import static org.hamcrest.Matchers.is;
 
 public class ListTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testListSerialization() {
@@ -40,7 +46,7 @@ public class ListTest {
 
         String expected = "[\"a\",\"b\",\"c\"]";
 
-        String json = HELIDON.serialize(list);
+        String json = jsonBinding.serialize(list);
         assertThat(json, is(expected));
     }
 
@@ -51,7 +57,7 @@ public class ListTest {
         String json = "[\"a\",\"b\",\"c\"]";
 
         GenericType<List<String>> type = new GenericType<>() { };
-        List<String> deserialized = HELIDON.deserialize(json, type);
+        List<String> deserialized = jsonBinding.deserialize(json, type);
         assertThat(deserialized, is(list));
     }
 
@@ -62,17 +68,17 @@ public class ListTest {
         String json = "[\"a\",\"b\",\"c\"]";
 
         GenericType<List<String>> listType = new GenericType<>() { };
-        List<String> deserialized = HELIDON.deserialize(json, listType);
+        List<String> deserialized = jsonBinding.deserialize(json, listType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(ArrayList.class));
 
         GenericType<ArrayList<String>> arrayListType = new GenericType<>() { };
-        deserialized = HELIDON.deserialize(json, arrayListType);
+        deserialized = jsonBinding.deserialize(json, arrayListType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(ArrayList.class));
 
         GenericType<LinkedList<String>> linkedListType = new GenericType<>() { };
-        deserialized = HELIDON.deserialize(json, linkedListType);
+        deserialized = jsonBinding.deserialize(json, linkedListType);
         assertThat(deserialized, is(list));
         assertThat(deserialized, instanceOf(LinkedList.class));
     }

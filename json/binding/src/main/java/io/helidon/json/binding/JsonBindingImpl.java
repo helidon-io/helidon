@@ -400,8 +400,14 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
                     factory = (JsonBindingFactory<T>) bindingFactories.get(Set.class);
                 }
                 if (factory == null) {
-                    throw new IllegalStateException("Serializer/Converter/BindingFactory for type "
-                                                            + type + " is not registered");
+                    serializer = (JsonSerializer<T>) iterateInterfaces(type);
+                    if (serializer == null) {
+                        throw new IllegalStateException("Serializer/Converter/BindingFactory for type "
+                                                                + type + " is not registered");
+                    }
+                    runtimeSerializers.putIfAbsent(type, serializer);
+                    runtimeIdentitySerializers.putIfAbsent(type, serializer);
+                    return serializer;
                 }
             }
             JsonSerializer<T> factorySerializer = factory.createSerializer(type);
@@ -412,6 +418,27 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         } finally {
             serializerLock.writeLock().unlock();
         }
+    }
+
+    private JsonSerializer<?> iterateInterfaces(Class<?> type) {
+        for (Class<?> anInterface : type.getInterfaces()) {
+            JsonSerializer<?> serializer = initialIdentitySerializers.get(anInterface);
+            if (serializer != null) {
+                return serializer;
+            }
+            serializer = runtimeIdentitySerializers.get(anInterface);
+            if (serializer != null) {
+                return serializer;
+            }
+            Class<?>[] interfaces = anInterface.getInterfaces();
+            if (interfaces.length > 0) {
+                serializer = iterateInterfaces(anInterface);
+            }
+            if (serializer != null) {
+                return serializer;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -447,8 +474,17 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
                     factory = (JsonBindingFactory<T>) bindingFactories.get(Set.class);
                 }
                 if (factory == null) {
-                    throw new IllegalStateException("Serializer/Converter/BindingFactory for type "
-                                                            + type + " is not registered");
+                    serializer = (JsonSerializer<T>) iterateInterfaces(rawType);
+                    if (serializer == null) {
+                        throw new IllegalStateException("Serializer/Converter/BindingFactory for type "
+                                                                + type + " is not registered");
+                    }
+                    runtimeSerializers.putIfAbsent(type, serializer);
+                    runtimeSerializers.putIfAbsent(type.type(), serializer);
+                    if (type.isClass()) {
+                        runtimeIdentitySerializers.putIfAbsent(rawType, serializer);
+                    }
+                    return serializer;
                 }
             }
             JsonSerializer<T> factorySerializer = factory.createSerializer(type);

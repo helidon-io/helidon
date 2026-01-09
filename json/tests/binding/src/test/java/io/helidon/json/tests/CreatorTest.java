@@ -23,6 +23,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -31,12 +32,17 @@ import static org.hamcrest.Matchers.is;
 
 public class CreatorTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testRootConstructor() {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25}";
-        CreatorConstructorPojo pojo = HELIDON.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
@@ -45,7 +51,7 @@ public class CreatorTest {
     @Test
     public void testRootFactoryMethod() {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25}";
-        CreatorFactoryMethodPojo pojo = HELIDON.deserialize(json, CreatorFactoryMethodPojo.class);
+        CreatorFactoryMethodPojo pojo = jsonBinding.deserialize(json, CreatorFactoryMethodPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
@@ -54,7 +60,7 @@ public class CreatorTest {
     @Test
     public void testCreatorWithNullParameters() {
         String json = "{\"str1\":\"abc\",\"str2\":null,\"bigDec\":25}";
-        CreatorConstructorPojo pojo = HELIDON.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
@@ -63,7 +69,7 @@ public class CreatorTest {
     @Test
     public void testCreatorWithMissingParameters() {
         String json = "{\"str1\":\"abc\",\"bigDec\":25}";
-        CreatorConstructorPojo pojo = HELIDON.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
@@ -72,7 +78,7 @@ public class CreatorTest {
     @Test
     public void testCreatorWithExtraProperties() {
         String json = "{\"str1\":\"abc\",\"str2\":\"def\",\"bigDec\":25,\"extra\":\"ignored\"}";
-        CreatorConstructorPojo pojo = HELIDON.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, is("abc"));
         assertThat(pojo.str2, is("def"));
         assertThat(pojo.bigDec, is(new BigDecimal("25")));
@@ -81,7 +87,7 @@ public class CreatorTest {
     @Test
     public void testEmptyObjectDeserialization() {
         String json = "{}";
-        CreatorConstructorPojo pojo = HELIDON.deserialize(json, CreatorConstructorPojo.class);
+        CreatorConstructorPojo pojo = jsonBinding.deserialize(json, CreatorConstructorPojo.class);
         assertThat(pojo.str1, nullValue());
         assertThat(pojo.str2, nullValue());
         assertThat(pojo.bigDec, nullValue());
@@ -90,7 +96,7 @@ public class CreatorTest {
     @Test
     public void testCreatorWithPrimitiveTypes() {
         String json = "{\"value\":42}";
-        CreatorWithPrimitives pojo = HELIDON.deserialize(json, CreatorWithPrimitives.class);
+        CreatorWithPrimitives pojo = jsonBinding.deserialize(json, CreatorWithPrimitives.class);
         assertThat(pojo.value, is(42));
         assertThat(pojo.flag, is(false)); // default value
     }
@@ -98,7 +104,7 @@ public class CreatorTest {
     @Test
     public void testGenericCreatorParameter() {
         String json = "{\"testPersons\": [{\"name\": \"name1\"}]}";
-        Persons persons = HELIDON.deserialize(json, Persons.class);
+        Persons persons = jsonBinding.deserialize(json, Persons.class);
         assertThat(persons.hiddenPersons.size(), is(1));
         assertThat(persons.hiddenPersons.iterator().next().getName(), is("name1"));
     }
@@ -106,7 +112,7 @@ public class CreatorTest {
     @Test
     public void testCreatorParameterNaming() {
         String json = "{\"string\":\"someText\", \"someParam\":null }";
-        ParameterNameTester result = HELIDON.deserialize(json, ParameterNameTester.class);
+        ParameterNameTester result = jsonBinding.deserialize(json, ParameterNameTester.class);
         assertThat(result.name, is("someText"));
         assertThat(result.secondParam, nullValue());
     }

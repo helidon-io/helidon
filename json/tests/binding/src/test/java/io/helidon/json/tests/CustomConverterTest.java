@@ -24,6 +24,7 @@ import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,7 +32,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CustomConverterTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testCustomConverterOverTheBuilder() {
@@ -79,8 +85,8 @@ public class CustomConverterTest {
                 + "\"fieldWithSerializer\":\"with serializer_custom_converter\"}";
         CustomFieldSerializer expectedDeserialized = new CustomFieldSerializer("without serializer",
                                                                                "with serializer_custom_converter");
-        assertThat(HELIDON.serialize(instance), is(expected));
-        assertThat(HELIDON.deserialize(expected, CustomFieldSerializer.class), is(expectedDeserialized));
+        assertThat(jsonBinding.serialize(instance), is(expected));
+        assertThat(jsonBinding.deserialize(expected, CustomFieldSerializer.class), is(expectedDeserialized));
     }
 
     @Test
@@ -90,8 +96,8 @@ public class CustomConverterTest {
                 + "\"fieldWithDeserializer\":\"with deserializer\"}";
         CustomFieldDeserializer expectedDeserialized = new CustomFieldDeserializer("without deserializer",
                                                                                    "with deserializer_deserialized");
-        assertThat(HELIDON.serialize(instance), is(expected));
-        assertThat(HELIDON.deserialize(expected, CustomFieldDeserializer.class), is(expectedDeserialized));
+        assertThat(jsonBinding.serialize(instance), is(expected));
+        assertThat(jsonBinding.deserialize(expected, CustomFieldDeserializer.class), is(expectedDeserialized));
     }
 
     static class StringConverter implements JsonConverter<String> {

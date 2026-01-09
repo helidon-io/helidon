@@ -21,6 +21,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -30,43 +31,48 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EnumTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testRootEnumProcessing() {
         String expected = "\"VALUE1\"";
-        String json = HELIDON.serialize(TestEnum.VALUE1);
+        String json = jsonBinding.serialize(TestEnum.VALUE1);
         assertThat(json, is(expected));
 
-        TestEnum testEnum = HELIDON.deserialize(expected, TestEnum.class);
+        TestEnum testEnum = jsonBinding.deserialize(expected, TestEnum.class);
         assertThat(testEnum, is(TestEnum.VALUE1));
     }
 
     @Test
     public void testEnumInObject() {
         String expected = "{\"enumValue\":\"VALUE2\"}";
-        String json = HELIDON.serialize(new RecordWithEnum(TestEnum.VALUE2));
+        String json = jsonBinding.serialize(new RecordWithEnum(TestEnum.VALUE2));
         assertThat(json, is(expected));
 
-        RecordWithEnum recordWithEnum = HELIDON.deserialize(expected, RecordWithEnum.class);
+        RecordWithEnum recordWithEnum = jsonBinding.deserialize(expected, RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(TestEnum.VALUE2));
     }
 
     @Test
     public void testEnumInObjectAsNull() {
-        String json = HELIDON.serialize(new RecordWithEnum(null));
+        String json = jsonBinding.serialize(new RecordWithEnum(null));
         assertThat(json, is("{}"));
 
         String expected = "{\"enumValue\":null}";
-        RecordWithEnum recordWithEnum = HELIDON.deserialize(expected, RecordWithEnum.class);
+        RecordWithEnum recordWithEnum = jsonBinding.deserialize(expected, RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(nullValue()));
-        recordWithEnum = HELIDON.deserialize("{}", RecordWithEnum.class);
+        recordWithEnum = jsonBinding.deserialize("{}", RecordWithEnum.class);
         assertThat(recordWithEnum.enumValue, is(nullValue()));
     }
 
     @Test
     public void testInvalidEnumValue() {
-        assertThrows(JsonException.class, () -> HELIDON.deserialize("\"INVALID\"", TestEnum.class));
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize("\"INVALID\"", TestEnum.class));
     }
 
     enum TestEnum {

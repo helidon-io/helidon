@@ -20,6 +20,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -28,16 +29,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ArrayTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testOneDimensionPrimitiveArray() {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);
-        String serializedJson = HELIDON.serialize(recordWithArray);
+        String serializedJson = jsonBinding.serialize(recordWithArray);
         assertThat(serializedJson, is("{\"intArray\":[1,2,3]}"));
 
-        OneDimensionPrimitiveArray deserialized = HELIDON.deserialize(serializedJson, OneDimensionPrimitiveArray.class);
+        OneDimensionPrimitiveArray deserialized = jsonBinding.deserialize(serializedJson, OneDimensionPrimitiveArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.intArray(), is(expectedArray));
     }
@@ -46,10 +52,10 @@ public class ArrayTest {
     public void testTwoDimensionPrimitiveArray() {
         int[][] expectedArray = {{1, 2, 3}, {4, 5}, {7}};
         TwoDimensionPrimitiveArray recordWithArray = new TwoDimensionPrimitiveArray(expectedArray);
-        String serializedJson = HELIDON.serialize(recordWithArray);
+        String serializedJson = jsonBinding.serialize(recordWithArray);
         assertThat(serializedJson, is("{\"intArray\":[[1,2,3],[4,5],[7]]}"));
 
-        TwoDimensionPrimitiveArray deserialized = HELIDON.deserialize(serializedJson, TwoDimensionPrimitiveArray.class);
+        TwoDimensionPrimitiveArray deserialized = jsonBinding.deserialize(serializedJson, TwoDimensionPrimitiveArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.intArray(), is(expectedArray));
     }
@@ -58,10 +64,11 @@ public class ArrayTest {
     public void testOneDimensionReferenceTypeArray() {
         String[] expectedArray = {"Hi", "Hello"};
         OneDimensionReferenceTypeArray recordWithArray = new OneDimensionReferenceTypeArray(expectedArray);
-        String serializedJson = HELIDON.serialize(recordWithArray);
+        String serializedJson = jsonBinding.serialize(recordWithArray);
         assertThat(serializedJson, is("{\"stringArray\":[\"Hi\",\"Hello\"]}"));
 
-        OneDimensionReferenceTypeArray deserialized = HELIDON.deserialize(serializedJson, OneDimensionReferenceTypeArray.class);
+        OneDimensionReferenceTypeArray deserialized = jsonBinding.deserialize(serializedJson,
+                                                                              OneDimensionReferenceTypeArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.stringArray(), is(expectedArray));
     }
@@ -70,10 +77,11 @@ public class ArrayTest {
     public void testTwoDimensionReferenceTypeArray() {
         String[][] expectedArray = {{"Hi", "Hello"}, {"Test", "value", "is here"}};
         TwoDimensionReferenceTypeArray recordWithArray = new TwoDimensionReferenceTypeArray(expectedArray);
-        String serializedJson = HELIDON.serialize(recordWithArray);
+        String serializedJson = jsonBinding.serialize(recordWithArray);
         assertThat(serializedJson, is("{\"stringArray\":[[\"Hi\",\"Hello\"],[\"Test\",\"value\",\"is here\"]]}"));
 
-        TwoDimensionReferenceTypeArray deserialized = HELIDON.deserialize(serializedJson, TwoDimensionReferenceTypeArray.class);
+        TwoDimensionReferenceTypeArray deserialized = jsonBinding.deserialize(serializedJson,
+                                                                              TwoDimensionReferenceTypeArray.class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized.stringArray(), is(expectedArray));
     }
@@ -81,10 +89,10 @@ public class ArrayTest {
     @Test
     public void testCharArray() {
         char[] expectedArray = {'a', 'b', 'c'};
-        String serializedJson = HELIDON.serialize(expectedArray);
+        String serializedJson = jsonBinding.serialize(expectedArray);
         assertThat(serializedJson, is("[\"a\",\"b\",\"c\"]"));
 
-        char[] deserialized = HELIDON.deserialize(serializedJson, char[].class);
+        char[] deserialized = jsonBinding.deserialize(serializedJson, char[].class);
         assertThat(deserialized, notNullValue());
         assertThat(deserialized, is(expectedArray));
     }

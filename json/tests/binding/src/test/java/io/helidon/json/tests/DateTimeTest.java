@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +39,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,77 +47,82 @@ import static org.hamcrest.Matchers.is;
 
 public class DateTimeTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testLocalDate() {
         LocalDate original = LocalDate.of(2023, 10, 15);
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15\""));
-        LocalDate deserialized = HELIDON.deserialize(json, LocalDate.class);
+        LocalDate deserialized = jsonBinding.deserialize(json, LocalDate.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testLocalTime() {
         LocalTime original = LocalTime.of(14, 30, 45);
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"14:30:45\""));
-        LocalTime deserialized = HELIDON.deserialize(json, LocalTime.class);
+        LocalTime deserialized = jsonBinding.deserialize(json, LocalTime.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testLocalDateTime() {
         LocalDateTime original = LocalDateTime.of(2023, 10, 15, 14, 30, 45);
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T14:30:45\""));
-        LocalDateTime deserialized = HELIDON.deserialize(json, LocalDateTime.class);
+        LocalDateTime deserialized = jsonBinding.deserialize(json, LocalDateTime.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testOffsetDateTime() {
         OffsetDateTime original = OffsetDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.ofHours(2));
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T14:30:45+02:00\""));
-        OffsetDateTime deserialized = HELIDON.deserialize(json, OffsetDateTime.class);
+        OffsetDateTime deserialized = jsonBinding.deserialize(json, OffsetDateTime.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testZonedDateTime() {
         ZonedDateTime original = ZonedDateTime.of(2023, 10, 15, 14, 30, 45, 0, ZoneOffset.ofHours(2));
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T14:30:45+02:00\""));
-        ZonedDateTime deserialized = HELIDON.deserialize(json, ZonedDateTime.class);
+        ZonedDateTime deserialized = jsonBinding.deserialize(json, ZonedDateTime.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testInstant() {
         Instant original = Instant.parse("2023-10-15T12:30:45Z");
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T12:30:45Z\""));
-        Instant deserialized = HELIDON.deserialize(json, Instant.class);
+        Instant deserialized = jsonBinding.deserialize(json, Instant.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testPeriod() {
         Period original = Period.of(1, 2, 3);
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"P1Y2M3D\""));
-        Period deserialized = HELIDON.deserialize(json, Period.class);
+        Period deserialized = jsonBinding.deserialize(json, Period.class);
         assertThat(deserialized, is(original));
     }
 
     @Test
     public void testDate() {
         Date original = Date.from(Instant.parse("2023-10-15T12:30:45Z"));
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T12:30:45Z[UTC]\""));
-        Date deserialized = HELIDON.deserialize(json, Date.class);
+        Date deserialized = jsonBinding.deserialize(json, Date.class);
         assertThat(deserialized, is(original));
     }
 
@@ -125,8 +130,8 @@ public class DateTimeTest {
     public void testCalendar() {
         Calendar original = Calendar.getInstance();
         original.setTime(Date.from(Instant.parse("2023-10-15T12:30:45Z")));
-        String json = HELIDON.serialize(original);
-        Calendar deserialized = HELIDON.deserialize(json, Calendar.class);
+        String json = jsonBinding.serialize(original);
+        Calendar deserialized = jsonBinding.deserialize(json, Calendar.class);
         assertThat(deserialized.getTime(), is(original.getTime()));
     }
 
@@ -135,9 +140,9 @@ public class DateTimeTest {
         // Note: month is 0-based
         GregorianCalendar original = new GregorianCalendar(2023, 9, 15, 14, 30, 45);
         original.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String json = HELIDON.serialize(original);
+        String json = jsonBinding.serialize(original);
         assertThat(json, is("\"2023-10-15T14:30:45Z[UTC]\""));
-        GregorianCalendar deserialized = HELIDON.deserialize(json, GregorianCalendar.class);
+        GregorianCalendar deserialized = jsonBinding.deserialize(json, GregorianCalendar.class);
         assertThat(deserialized.getTimeInMillis(), is(original.getTimeInMillis()));
     }
 
@@ -148,9 +153,9 @@ public class DateTimeTest {
         bean.setInstant(Instant.parse("2023-10-15T12:30:45Z"));
         bean.setPeriod(Period.of(1, 2, 3));
 
-        String json = HELIDON.serialize(bean);
+        String json = jsonBinding.serialize(bean);
         assertThat(json, is("{\"localDate\":\"2023-10-15\",\"instant\":\"2023-10-15T12:30:45Z\",\"period\":\"P1Y2M3D\"}"));
-        DateTimeBean deserialized = HELIDON.deserialize(json, DateTimeBean.class);
+        DateTimeBean deserialized = jsonBinding.deserialize(json, DateTimeBean.class);
 
         assertThat(deserialized.getLocalDate(), is(bean.getLocalDate()));
         assertThat(deserialized.getInstant(), is(bean.getInstant()));
@@ -164,11 +169,11 @@ public class DateTimeTest {
         dateList.add(LocalDate.of(2023, 10, 16));
         dateList.add(LocalDate.of(2023, 10, 17));
 
-        String json = HELIDON.serialize(dateList);
+        String json = jsonBinding.serialize(dateList);
         assertThat(json, is("[\"2023-10-15\",\"2023-10-16\",\"2023-10-17\"]"));
 
         GenericType<List<LocalDate>> listType = new GenericType<>() { };
-        List<LocalDate> deserialized = HELIDON.deserialize(json, listType);
+        List<LocalDate> deserialized = jsonBinding.deserialize(json, listType);
 
         assertThat(deserialized.size(), is(3));
         assertThat(deserialized.get(0), is(dateList.get(0)));
@@ -182,11 +187,11 @@ public class DateTimeTest {
         dateTimeMap.put("start", OffsetDateTime.of(2023, 10, 15, 9, 1, 1, 0, ZoneOffset.ofHours(1)));
         dateTimeMap.put("end", OffsetDateTime.of(2023, 10, 15, 17, 0, 0, 0, ZoneOffset.ofHours(1)));
 
-        String json = HELIDON.serialize(dateTimeMap);
+        String json = jsonBinding.serialize(dateTimeMap);
         assertThat(json, is("{\"start\":\"2023-10-15T09:01:01+01:00\",\"end\":\"2023-10-15T17:00+01:00\"}"));
 
         GenericType<Map<String, OffsetDateTime>> mapType = new GenericType<>() { };
-        Map<String, OffsetDateTime> deserialized = HELIDON.deserialize(json, mapType);
+        Map<String, OffsetDateTime> deserialized = jsonBinding.deserialize(json, mapType);
 
         assertThat(deserialized.size(), is(2));
         assertThat(deserialized.get("start"), is(dateTimeMap.get("start")));
@@ -201,8 +206,8 @@ public class DateTimeTest {
                 Optional.empty()
         );
 
-        String json = HELIDON.serialize(model);
-        OptionalDateTimeModel deserialized = HELIDON.deserialize(json, OptionalDateTimeModel.class);
+        String json = jsonBinding.serialize(model);
+        OptionalDateTimeModel deserialized = jsonBinding.deserialize(json, OptionalDateTimeModel.class);
 
         assertThat(deserialized.optionalLocalDate, is(model.optionalLocalDate));
         assertThat(deserialized.optionalInstant, is(model.optionalInstant));

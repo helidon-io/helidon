@@ -20,6 +20,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,48 +32,53 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class BooleanTest {
 
-    private static final JsonBinding HELIDON = Services.get(JsonBinding.class);
+    private static JsonBinding jsonBinding;
+
+    @BeforeAll
+    public static void init() {
+        jsonBinding = Services.get(JsonBinding.class);
+    }
 
     @Test
     public void testBooleanSerialization() throws Exception {
         BooleanModel booleanModel = new BooleanModel(true, false);
 
         String expected = "{\"field1\":true,\"field2\":false}";
-        assertThat(HELIDON.serialize(booleanModel), is(expected));
+        assertThat(jsonBinding.serialize(booleanModel), is(expected));
     }
 
     @Test
     public void testBooleanDeserializationFromBooleanAsStringValue() throws Exception {
-        BooleanModel booleanModel = HELIDON.deserialize("{\"field1\":\"true\",\"field2\":\"true\"}", BooleanModel.class);
+        BooleanModel booleanModel = jsonBinding.deserialize("{\"field1\":\"true\",\"field2\":\"true\"}", BooleanModel.class);
         assertThat(booleanModel.field1, is(true));
         assertThat(booleanModel.field2, is(true));
     }
 
     @Test
     public void testBooleanDeserializationFromBooleanRawValue() throws Exception {
-        BooleanModel booleanModel = HELIDON.deserialize("{\"field1\":false,\"field2\":false}", BooleanModel.class);
+        BooleanModel booleanModel = jsonBinding.deserialize("{\"field1\":false,\"field2\":false}", BooleanModel.class);
         assertThat(booleanModel.field1, is(false));
         assertThat(booleanModel.field2, is(false));
     }
 
     @Test
     public void testRawBooleans() {
-        Boolean bool = HELIDON.deserialize("true", Boolean.class);
+        Boolean bool = jsonBinding.deserialize("true", Boolean.class);
         assertThat(bool, is(true));
-        bool = HELIDON.deserialize("true", boolean.class);
+        bool = jsonBinding.deserialize("true", boolean.class);
         assertThat(bool, is(true));
-        bool = HELIDON.deserialize("false", Boolean.class);
+        bool = jsonBinding.deserialize("false", Boolean.class);
         assertThat(bool, is(false));
-        bool = HELIDON.deserialize("false", boolean.class);
+        bool = jsonBinding.deserialize("false", boolean.class);
         assertThat(bool, is(false));
-        bool = HELIDON.deserialize("null", Boolean.class);
+        bool = jsonBinding.deserialize("null", Boolean.class);
         assertThat(bool, nullValue());
-        bool = HELIDON.deserialize("null", boolean.class);
+        bool = jsonBinding.deserialize("null", boolean.class);
         assertThat(bool, is(false));
 
-        String result = HELIDON.serialize(true);
+        String result = jsonBinding.serialize(true);
         assertThat(result, is("true"));
-        result = HELIDON.serialize(false);
+        result = jsonBinding.serialize(false);
         assertThat(result, is("false"));
     }
 
@@ -85,62 +91,62 @@ public class BooleanTest {
         assertThat(JsonBinding.create().serialize(primitives), is(arrayJson));
         assertThat(JsonBinding.create().serialize(referenceTypes), is(arrayJson));
 
-        assertThat(HELIDON.deserialize(arrayJson, boolean[].class), is(primitives));
-        assertThat(HELIDON.deserialize(arrayJson, Boolean[].class), is(referenceTypes));
+        assertThat(jsonBinding.deserialize(arrayJson, boolean[].class), is(primitives));
+        assertThat(jsonBinding.deserialize(arrayJson, Boolean[].class), is(referenceTypes));
     }
 
     @Test
     public void testBooleanWithLeadingWhitespace() {
         String jsonWithWhitespace = "  true";
-        Boolean result = HELIDON.deserialize(jsonWithWhitespace, Boolean.class);
+        Boolean result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithWhitespace = "  false";
-        result = HELIDON.deserialize(jsonWithWhitespace, Boolean.class);
+        result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 
     @Test
     public void testBooleanWithTrailingWhitespace() {
         String jsonWithWhitespace = "true  ";
-        Boolean result = HELIDON.deserialize(jsonWithWhitespace, Boolean.class);
+        Boolean result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithWhitespace = "false  ";
-        result = HELIDON.deserialize(jsonWithWhitespace, Boolean.class);
+        result = jsonBinding.deserialize(jsonWithWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 
     @Test
     public void testBooleanWithTabs() {
         String jsonWithTabs = "\ttrue\t";
-        Boolean result = HELIDON.deserialize(jsonWithTabs, Boolean.class);
+        Boolean result = jsonBinding.deserialize(jsonWithTabs, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithTabs = "\tfalse\t";
-        result = HELIDON.deserialize(jsonWithTabs, Boolean.class);
+        result = jsonBinding.deserialize(jsonWithTabs, Boolean.class);
         assertThat(result, is(false));
     }
 
     @Test
     public void testBooleanWithNewlines() {
         String jsonWithNewlines = "\ntrue\n";
-        Boolean result = HELIDON.deserialize(jsonWithNewlines, Boolean.class);
+        Boolean result = jsonBinding.deserialize(jsonWithNewlines, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithNewlines = "\nfalse\n";
-        result = HELIDON.deserialize(jsonWithNewlines, Boolean.class);
+        result = jsonBinding.deserialize(jsonWithNewlines, Boolean.class);
         assertThat(result, is(false));
     }
 
     @Test
     public void testBooleanWithMixedWhitespace() {
         String jsonWithMixedWhitespace = " \t\n true \t\n ";
-        Boolean result = HELIDON.deserialize(jsonWithMixedWhitespace, Boolean.class);
+        Boolean result = jsonBinding.deserialize(jsonWithMixedWhitespace, Boolean.class);
         assertThat(result, is(true));
 
         jsonWithMixedWhitespace = " \t\n false \t\n ";
-        result = HELIDON.deserialize(jsonWithMixedWhitespace, Boolean.class);
+        result = jsonBinding.deserialize(jsonWithMixedWhitespace, Boolean.class);
         assertThat(result, is(false));
     }
 
