@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -476,7 +476,7 @@ final class GenerateAbstractBuilder {
         if (hasProvider || hasRegistryService) {
             boolean configured = prototypeInfo.configured().isPresent();
 
-            if (configured) {
+            if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
                 preBuildBuilder.addContent("var config = config().map(")
                         .addContent(CONFIG)
@@ -527,6 +527,20 @@ final class GenerateAbstractBuilder {
                                                             Utils.options(options),
                                                             preBuildBuilder));
         classBuilder.addMethod(preBuildBuilder);
+    }
+
+    private static boolean hasConfiguredRegistryServiceOrProvider(List<OptionHandler> options) {
+        boolean configured = options.stream()
+                .map(OptionHandler::option)
+                .filter(OptionInfo::registryService)
+                .anyMatch(it -> it.configured().isPresent());
+        if (configured) {
+            return true;
+        }
+        return options.stream()
+                .map(OptionHandler::option)
+                .filter(it -> it.provider().isPresent())
+                .anyMatch(it -> it.configured().isPresent());
     }
 
     private static boolean hasRegistryService(List<OptionHandler> options) {

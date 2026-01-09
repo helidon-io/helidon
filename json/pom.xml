@@ -36,7 +36,19 @@
 
     <modules>
         <module>schema</module>
+        <module>codegen</module>
+        <module>binding</module>
+        <module>json</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.Size;
+import io.helidon.common.Weight;
 
 /**
  * Commonly used type names.
@@ -212,6 +213,10 @@ public final class TypeNames {
      * Helidon {@link io.helidon.common.GenericType}.
      */
     public static final TypeName GENERIC_TYPE = TypeName.create(GenericType.class);
+    /**
+     * Type name for {@link io.helidon.common.Weight}.
+     */
+    public static final TypeName WEIGHT = TypeName.create(Weight.class);
     /**
      * Type name for {@link io.helidon.common.Size}.
      */

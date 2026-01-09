@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,9 +337,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
      *
      * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
-     * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
      */
-    @Deprecated(since = "4.2.0", forRemoval = true)
     @Override
     List<String> typeParameters();
 
@@ -765,10 +763,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * Clear all typeParameters.
          *
          * @return updated builder instance
-         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
-        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER clearTypeParameters() {
             this.isTypeParametersMutated = true;
             this.typeParameters.clear();
@@ -782,10 +778,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
-         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
-        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER typeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             this.isTypeParametersMutated = true;
@@ -801,10 +795,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
-         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
-        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER addTypeParameters(List<String> typeParameters) {
             Objects.requireNonNull(typeParameters);
             this.isTypeParametersMutated = true;
@@ -819,10 +811,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameter add single type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
-         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
-        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER addTypeParameter(String typeParameter) {
             Objects.requireNonNull(typeParameter);
             this.typeParameters.add(typeParameter);
@@ -1320,9 +1310,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
          *
          * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
-         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          */
-        @Deprecated(since = "4.2.0", forRemoval = true)
         public List<String> typeParameters() {
             return typeParameters;
         }
@@ -1527,7 +1515,6 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
-            @Deprecated(since = "4.2.0", forRemoval = true)
             public List<String> typeParameters() {
                 return typeParameters;
             }

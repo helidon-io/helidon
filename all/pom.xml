@@ -1318,6 +1318,14 @@
             <artifactId>helidon-discovery-providers-eureka</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.json.schema</groupId>
             <artifactId>helidon-json-schema</artifactId>
         </dependency>

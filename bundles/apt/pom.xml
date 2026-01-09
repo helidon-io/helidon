@@ -38,6 +38,7 @@
         - Helidon Data
         - Helidon JSON Schema
         - Helidon LangChain4j
+        - Helidon JSON
         Does not contain:
         - Helidon Copyright extension
     </description>
@@ -76,6 +77,10 @@
         <dependency>
             <groupId>io.helidon.integrations.langchain4j</groupId>
             <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-codegen</artifactId>
         </dependency>
     </dependencies>
 

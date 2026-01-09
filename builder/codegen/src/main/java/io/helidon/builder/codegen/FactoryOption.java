@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -497,6 +497,7 @@ final class FactoryOption {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(ElementInfoPredicates::isStatic)
                 .filter(elementName("builder"))
+                .filter(it -> it.typeName().typeArguments().isEmpty()) //Builders with generics not supported
                 .filter(ElementInfoPredicates::hasNoArgs)
                 // Has to have public no-param build method returning right type
                 .filter(it -> ctx.typeInfo(it.typeName()).stream()

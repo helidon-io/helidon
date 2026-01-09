@@ -26,6 +26,7 @@
     </parent>
 
     <artifactId>helidon-json-schema-tests-codegen</artifactId>
+    <name>Helidon JSON Schema Tests Codegen</name>
 
     <dependencies>
         <dependency>

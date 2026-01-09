@@ -26,6 +26,7 @@
     </parent>
 
     <artifactId>helidon-json-schema-tests-service-registry</artifactId>
+    <name>Helidon JSON Schema Tests Service Registry</name>
 
     <dependencies>
         <dependency>

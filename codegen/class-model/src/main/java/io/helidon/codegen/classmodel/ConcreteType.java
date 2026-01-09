@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,19 @@ class ConcreteType extends Type {
             writer.write(">");
         }
         if (isArray()) {
-            writer.write("[]");
+            Optional<TypeName> componentType = this.typeName.componentType();
+            while (componentType.isPresent()) {
+                TypeName current = componentType.get();
+                if (current.array()) {
+                    writer.append("[]");
+                    componentType = current.componentType();
+                } else {
+                    break;
+                }
+            }
+            if (this.typeName.array()) {
+                writer.append("[]");
+            }
         }
     }
 
