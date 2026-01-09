@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.common.Errors;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementSignature;
@@ -81,6 +82,7 @@ final class FactoryPrototypeInfo {
                 .blueprint(blueprint)
                 .prototypeType(prototypeType)
                 .detachBlueprint(blueprintAnnotation.booleanValue("detach").orElse(false))
+                .annotations(annotations(blueprint))
                 .defaultMethodsPredicate(defaultMethodsPredicate)
                 .accessModifier(prototypeAccessModifier(blueprintAnnotation))
                 .builderAccessModifier(builderAccessModifier(blueprintAnnotation))
@@ -431,22 +433,26 @@ final class FactoryPrototypeInfo {
                 .filter(ElementInfoPredicates::isStatic)
                 .filter(ElementInfoPredicates.hasAnnotation(requiredAnnotation))
                 .map(it -> {
-                    // annotations to be added to generated code
-                    List<Annotation> annotations = it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
-                            .flatMap(Annotation::stringValues)
-                            .orElseGet(List::of)
-                            .stream()
-                            .map(String::trim) // to remove spaces after commas when used
-                            .filter(Predicate.not(String::isBlank)) // we do not care about blank values
-                            .map(io.helidon.codegen.classmodel.Annotation::parse)
-                            .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
-                            .toList();
+                    List<Annotation> annotations = annotations(it);
 
                     return methodProcessor.process(errors,
                                                    customMethodsType.typeName(),
                                                    it,
                                                    annotations);
                 })
+                .toList();
+    }
+
+    private static List<Annotation> annotations(Annotated it) {
+        // annotations to be added to generated code
+        return it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
+                .flatMap(Annotation::stringValues)
+                .orElseGet(List::of)
+                .stream()
+                .map(String::trim) // to remove spaces after commas when used
+                .filter(Predicate.not(String::isBlank)) // we do not care about blank values
+                .map(io.helidon.codegen.classmodel.Annotation::parse)
+                .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
                 .toList();
     }
 
