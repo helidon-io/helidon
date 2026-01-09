@@ -29,26 +29,22 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
-import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Test that JsonBinding methods do not close streams, readers, or writers.
- */
+@Testing.Test
 public class StreamClosingTest {
 
     private static final String JSON_DATA = "{\"value\":\"test\"}";
     private static final TestObject TEST_OBJECT = new TestObject("test");
-    private static JsonBinding jsonBinding;
+    private final JsonBinding jsonBinding;
 
-    @BeforeAll
-    public static void init() {
-        jsonBinding = Services.get(JsonBinding.class);
+    StreamClosingTest(JsonBinding jsonBinding) {
+        this.jsonBinding = jsonBinding;
     }
 
     @Test

@@ -18,9 +18,8 @@ package io.helidon.json.tests;
 
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
-import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,13 +28,13 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test
 public class AnnotationsTest {
 
-    private static JsonBinding jsonBinding;
+    private final JsonBinding jsonBinding;
 
-    @BeforeAll
-    public static void init() {
-        jsonBinding = Services.get(JsonBinding.class);
+    AnnotationsTest(JsonBinding jsonBinding) {
+        this.jsonBinding = jsonBinding;
     }
 
     @Test

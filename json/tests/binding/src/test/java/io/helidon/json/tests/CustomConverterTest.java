@@ -22,21 +22,20 @@ import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonConverter;
-import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testing.Test
 public class CustomConverterTest {
 
-    private static JsonBinding jsonBinding;
+    private final JsonBinding jsonBinding;
 
-    @BeforeAll
-    public static void init() {
-        jsonBinding = Services.get(JsonBinding.class);
+    CustomConverterTest(JsonBinding jsonBinding) {
+        this.jsonBinding = jsonBinding;
     }
 
     @Test

@@ -21,9 +21,8 @@ import java.util.Map;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
-import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,13 +31,13 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+@Testing.Test
 public class MapTest {
 
-    private static JsonBinding jsonBinding;
+    private final JsonBinding jsonBinding;
 
-    @BeforeAll
-    public static void init() {
-        jsonBinding = Services.get(JsonBinding.class);
+    MapTest(JsonBinding jsonBinding) {
+        this.jsonBinding = jsonBinding;
     }
 
     @Test
