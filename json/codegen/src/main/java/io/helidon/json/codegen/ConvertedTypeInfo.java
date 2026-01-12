@@ -38,6 +38,7 @@ import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.TypeNames.OBJECT;
@@ -65,6 +66,12 @@ record ConvertedTypeInfo(TypeName converterType,
             ElementSignature.createMethod(STRING, "toString", List.of())
     );
 
+    private static final Set<TypeName> IGNORED_BUILDER_METHOD_PARAM_TYPES = Set.of(
+            TypeNames.CONSUMER,
+            TypeNames.OPTIONAL,
+            TypeNames.SUPPLIER
+    );
+
     private static final Map<String, Comparator<String>> PROPERTY_ORDER = Map.of(
             "ALPHABETICAL", Comparator.naturalOrder(),
             "REVERSE_ALPHABETICAL", Comparator.reverseOrder());
@@ -82,13 +89,13 @@ record ConvertedTypeInfo(TypeName converterType,
         }
         boolean nullable = obtainClassAnnotationFromHierarchy(JsonTypes.JSON_SERIALIZE_NULLS, typeInfo)
                 .flatMap(Annotation::booleanValue)
-                .orElse(CodegenOptions.CODEGEN_JSON_NULL.value(ctx.options()));
+                .orElse(JsonCodegenOptions.CODEGEN_JSON_NULL.value(ctx.options()));
         boolean failOnUnknown = obtainClassAnnotationFromHierarchy(JsonTypes.JSON_FAIL_ON_UNKNOWN, typeInfo)
                 .flatMap(Annotation::booleanValue)
-                .orElse(CodegenOptions.CODEGEN_JSON_UNKNOWN.value(ctx.options()));
+                .orElse(JsonCodegenOptions.CODEGEN_JSON_UNKNOWN.value(ctx.options()));
         String orderStrategy = obtainClassAnnotationFromHierarchy(JsonTypes.JSON_PROPERTY_ORDER, typeInfo)
                 .flatMap(Annotation::stringValue)
-                .orElse(CodegenOptions.CODEGEN_JSON_ORDER.value(ctx.options()));
+                .orElse(JsonCodegenOptions.CODEGEN_JSON_ORDER.value(ctx.options()));
         Map<String, JsonProperty.Builder> properties = new LinkedHashMap<>();
         Map<String, Map<String, TypeName>> resolvedGenerics = new LinkedHashMap<>();
         Map<TypeName, Integer> genericParamsWithIndexes = obtainGenericParamsWithIndexes(typeInfo);
@@ -234,6 +241,8 @@ record ConvertedTypeInfo(TypeName converterType,
                         .equals(builderTypeInfo.typeName()))
                 .filter(it -> it.parameterArguments().size() == 1)
                 .filter(it -> !it.elementName().equals("from")) //To ignore "from" methods of the generated Builder
+                .filter(it -> !it.elementName().equals("config")) //To ignore "configure" methods of the generated Builder
+                .filter(it -> !IGNORED_BUILDER_METHOD_PARAM_TYPES.contains(it.typeName().genericTypeName()))
                 .filter(not(ConvertedTypeInfo::isIgnored))
                 .toList();
 

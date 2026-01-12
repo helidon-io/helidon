@@ -38,7 +38,7 @@ final class JsonControlValue extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         throw new UnsupportedOperationException("This is a parser token placeholder value. Serialization is not supported.");
     }
 

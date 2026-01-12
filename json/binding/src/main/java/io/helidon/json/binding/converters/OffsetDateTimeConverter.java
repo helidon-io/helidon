@@ -21,7 +21,7 @@ import java.time.OffsetDateTime;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -33,7 +33,7 @@ class OffsetDateTimeConverter implements JsonConverter<OffsetDateTime> {
     private static final GenericType<OffsetDateTime> TYPE = GenericType.create(OffsetDateTime.class);
 
     @Override
-    public void serialize(Generator generator, OffsetDateTime instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, OffsetDateTime instance, boolean writeNulls) {
         generator.write(instance.toString());
     }
 

@@ -42,7 +42,7 @@ final class JsonTypes {
     static final TypeName JSON_BINDING_FACTORY = TypeName.create("io.helidon.json.binding.JsonBindingFactory");
     static final TypeName JSON_SERIALIZERS = TypeName.create("io.helidon.json.binding.Serializers");
 
-    static final TypeName JSON_GENERATOR = TypeName.create("io.helidon.json.Generator");
+    static final TypeName JSON_GENERATOR = TypeName.create("io.helidon.json.JsonGenerator");
     static final TypeName BYTES = TypeName.create("io.helidon.common.buffers.Bytes");
     static final TypeName JSON_PARSER = TypeName.create("io.helidon.json.JsonParser");
 

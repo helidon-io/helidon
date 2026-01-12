@@ -21,7 +21,7 @@ import java.util.OptionalDouble;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonConverter;
@@ -39,7 +39,7 @@ class OptionalDoubleConverter implements JsonConverter<OptionalDouble> {
     private JsonSerializer<Double> serializer;
 
     @Override
-    public void serialize(Generator generator, OptionalDouble instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, OptionalDouble instance, boolean writeNulls) {
         if (instance.isEmpty()) {
             generator.writeNull();
             return;

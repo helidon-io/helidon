@@ -32,26 +32,26 @@ import java.io.Writer;
  * and handles proper JSON syntax including quotes, commas, and brackets.
  * </p>
  */
-public interface Generator extends AutoCloseable {
+public interface JsonGenerator extends AutoCloseable {
 
     /**
-     * Create a {@link Generator} instance to write to the provided {@link OutputStream}.
+     * Create a {@link JsonGenerator} instance to write to the provided {@link OutputStream}.
      *
      * @param outputStream output stream to write to
      * @return new Generator instance
      */
-    static Generator create(OutputStream outputStream) {
-        return new GeneratorOutputStream(outputStream);
+    static JsonGenerator create(OutputStream outputStream) {
+        return new JsonGeneratorOutputStream(outputStream);
     }
 
     /**
-     * Create a {@link Generator} instance to write to the provided {@link Writer}.
+     * Create a {@link JsonGenerator} instance to write to the provided {@link Writer}.
      *
      * @param writer writer to write to
      * @return new Generator instance
      */
-    static Generator create(Writer writer) {
-        return new GeneratorWriter(writer);
+    static JsonGenerator create(Writer writer) {
+        return new JsonGeneratorWriter(writer);
     }
 
     /**
@@ -64,7 +64,7 @@ public interface Generator extends AutoCloseable {
      * @param key the key value to write
      * @return this generator for method chaining
      */
-    Generator writeKey(String key);
+    JsonGenerator writeKey(String key);
 
     /**
      * Write a key-value pair with a string value.
@@ -73,7 +73,7 @@ public interface Generator extends AutoCloseable {
      * @param value the string value
      * @return this generator for method chaining
      */
-    Generator write(String key, String value);
+    JsonGenerator write(String key, String value);
 
     /**
      * Write a key-value pair with an int value.
@@ -82,7 +82,7 @@ public interface Generator extends AutoCloseable {
      * @param value the int value
      * @return this generator for method chaining
      */
-    Generator write(String key, int value);
+    JsonGenerator write(String key, int value);
 
     /**
      * Write a key-value pair with a long value.
@@ -91,7 +91,7 @@ public interface Generator extends AutoCloseable {
      * @param value the long value
      * @return this generator for method chaining
      */
-    Generator write(String key, long value);
+    JsonGenerator write(String key, long value);
 
     /**
      * Write a key-value pair with a float value.
@@ -100,7 +100,7 @@ public interface Generator extends AutoCloseable {
      * @param value the float value
      * @return this generator for method chaining
      */
-    Generator write(String key, float value);
+    JsonGenerator write(String key, float value);
 
     /**
      * Write a key-value pair with a double value.
@@ -109,7 +109,7 @@ public interface Generator extends AutoCloseable {
      * @param value the double value
      * @return this generator for method chaining
      */
-    Generator write(String key, double value);
+    JsonGenerator write(String key, double value);
 
     /**
      * Write a key-value pair with a boolean value.
@@ -118,7 +118,7 @@ public interface Generator extends AutoCloseable {
      * @param value the boolean value
      * @return this generator for method chaining
      */
-    Generator write(String key, boolean value);
+    JsonGenerator write(String key, boolean value);
 
     /**
      * Write a key-value pair with a char value.
@@ -127,7 +127,7 @@ public interface Generator extends AutoCloseable {
      * @param value the char value
      * @return this generator for method chaining
      */
-    Generator write(String key, char value);
+    JsonGenerator write(String key, char value);
 
     /**
      * Write a key-value pair with a JsonValue.
@@ -136,7 +136,7 @@ public interface Generator extends AutoCloseable {
      * @param value the JsonValue
      * @return this generator for method chaining
      */
-    Generator write(String key, JsonValue value);
+    JsonGenerator write(String key, JsonValue value);
 
     /**
      * Write a string value.
@@ -144,7 +144,7 @@ public interface Generator extends AutoCloseable {
      * @param value the string value
      * @return this generator for method chaining
      */
-    Generator write(String value);
+    JsonGenerator write(String value);
 
     /**
      * Write a byte value.
@@ -152,7 +152,7 @@ public interface Generator extends AutoCloseable {
      * @param value the byte value
      * @return this generator for method chaining
      */
-    Generator write(byte value);
+    JsonGenerator write(byte value);
 
     /**
      * Write a short value.
@@ -160,7 +160,7 @@ public interface Generator extends AutoCloseable {
      * @param value the short value
      * @return this generator for method chaining
      */
-    Generator write(short value);
+    JsonGenerator write(short value);
 
     /**
      * Write an int value.
@@ -168,7 +168,7 @@ public interface Generator extends AutoCloseable {
      * @param value the int value
      * @return this generator for method chaining
      */
-    Generator write(int value);
+    JsonGenerator write(int value);
 
     /**
      * Write a long value.
@@ -176,7 +176,7 @@ public interface Generator extends AutoCloseable {
      * @param value the long value
      * @return this generator for method chaining
      */
-    Generator write(long value);
+    JsonGenerator write(long value);
 
     /**
      * Write a float value.
@@ -184,7 +184,7 @@ public interface Generator extends AutoCloseable {
      * @param value the float value
      * @return this generator for method chaining
      */
-    Generator write(float value);
+    JsonGenerator write(float value);
 
     /**
      * Write a double value.
@@ -192,7 +192,7 @@ public interface Generator extends AutoCloseable {
      * @param value the double value
      * @return this generator for method chaining
      */
-    Generator write(double value);
+    JsonGenerator write(double value);
 
     /**
      * Write a boolean value.
@@ -200,7 +200,7 @@ public interface Generator extends AutoCloseable {
      * @param value the boolean value
      * @return this generator for method chaining
      */
-    Generator write(boolean value);
+    JsonGenerator write(boolean value);
 
     /**
      * Write a char value.
@@ -208,7 +208,7 @@ public interface Generator extends AutoCloseable {
      * @param value the char value
      * @return this generator for method chaining
      */
-    Generator write(char value);
+    JsonGenerator write(char value);
 
     /**
      * Write a JsonValue.
@@ -216,42 +216,42 @@ public interface Generator extends AutoCloseable {
      * @param value the JsonValue to write
      * @return this generator for method chaining
      */
-    Generator write(JsonValue value);
+    JsonGenerator write(JsonValue value);
 
     /**
      * Write a null value.
      *
      * @return this generator for method chaining
      */
-    Generator writeNull();
+    JsonGenerator writeNull();
 
     /**
      * Write the start of a JSON array.
      *
      * @return this generator for method chaining
      */
-    Generator writeArrayStart();
+    JsonGenerator writeArrayStart();
 
     /**
      * Write the end of a JSON array.
      *
      * @return this generator for method chaining
      */
-    Generator writeArrayEnd();
+    JsonGenerator writeArrayEnd();
 
     /**
      * Write the start of a JSON object.
      *
      * @return this generator for method chaining
      */
-    Generator writeObjectStart();
+    JsonGenerator writeObjectStart();
 
     /**
      * Write the end of a JSON object.
      *
      * @return this generator for method chaining
      */
-    Generator writeObjectEnd();
+    JsonGenerator writeObjectEnd();
 
     /**
      * This method does not close the stream it is writing to.

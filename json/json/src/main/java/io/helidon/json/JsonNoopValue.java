@@ -32,7 +32,7 @@ final class JsonNoopValue extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         throw new UnsupportedOperationException("This is noop placeholder value. Serialization is not supported");
     }
 

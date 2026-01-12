@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -33,7 +33,7 @@ class ZonedDateTimeConverter implements JsonConverter<ZonedDateTime> {
     private static final GenericType<ZonedDateTime> TYPE = GenericType.create(ZonedDateTime.class);
 
     @Override
-    public void serialize(Generator generator, ZonedDateTime instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, ZonedDateTime instance, boolean writeNulls) {
         generator.write(instance.toString());
     }
 

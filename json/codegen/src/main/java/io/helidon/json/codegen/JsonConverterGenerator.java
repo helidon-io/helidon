@@ -76,17 +76,6 @@ class JsonConverterGenerator {
             TypeNames.PRIMITIVE_FLOAT, () -> "0.0F",
             TypeNames.PRIMITIVE_DOUBLE, () -> "0.0"
     );
-    private static final Map<TypeName, TypeName> PRIMITIVE_TO_BOXED = Map.of(
-            PRIMITIVE_BOOLEAN, BOXED_BOOLEAN,
-            PRIMITIVE_BYTE, BOXED_BYTE,
-            PRIMITIVE_SHORT, BOXED_SHORT,
-            PRIMITIVE_INT, BOXED_INT,
-            PRIMITIVE_LONG, BOXED_LONG,
-            PRIMITIVE_CHAR, BOXED_CHAR,
-            PRIMITIVE_FLOAT, BOXED_FLOAT,
-            PRIMITIVE_DOUBLE, BOXED_DOUBLE,
-            PRIMITIVE_VOID, BOXED_VOID
-    );
     private static final String WRITE_NULLS = "writeNulls";
 
     private JsonConverterGenerator() {
@@ -323,7 +312,7 @@ class JsonConverterGenerator {
                     })
                     .orElseGet(() -> {
                         TypeName type = jsonProperty.serializationType().orElseThrow();
-                        TypeName resolved = PRIMITIVE_TO_BOXED.getOrDefault(type, type);
+                        TypeName resolved = type.boxed();
                         String fn;
                         if (!resolved.typeArguments().isEmpty()) {
                             fn = "serializer" + ensureUpperStart(jsonProperty.serializationName().orElseThrow());
@@ -772,7 +761,7 @@ class JsonConverterGenerator {
                                                boolean hasBuilder,
                                                Set<String> processedTypes,
                                                Map<String, TypeToConfigure> toConfigure) {
-        TypeName resolvedType = PRIMITIVE_TO_BOXED.getOrDefault(type, type);
+        TypeName resolvedType = type.boxed();
         if (type.typeArguments().isEmpty()) {
             String converterFieldName = "deserializer" + ensureUpperStart(type);
             if (!processedTypes.contains(converterFieldName)) {

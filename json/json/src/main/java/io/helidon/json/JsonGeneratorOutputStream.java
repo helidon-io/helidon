@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
 
-class GeneratorOutputStream extends AbstractGenerator {
+class JsonGeneratorOutputStream extends AbstractJsonGenerator {
 
     private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
 
@@ -32,14 +32,14 @@ class GeneratorOutputStream extends AbstractGenerator {
     private int index = 0;
     private boolean closed;
 
-    GeneratorOutputStream(OutputStream outputStream) {
+    JsonGeneratorOutputStream(OutputStream outputStream) {
         this.outputStream = outputStream;
     }
 
     @Override
     void ensureCapacity(int extra) {
         if (index + extra >= buffer.length) {
-            flushBuffer();
+            writeBuffer();
         }
     }
 
@@ -174,7 +174,7 @@ class GeneratorOutputStream extends AbstractGenerator {
         }
     }
 
-    private void flushBuffer() {
+    private void writeBuffer() {
         if (index == 0) {
             return;
         }

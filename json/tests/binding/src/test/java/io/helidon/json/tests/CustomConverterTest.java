@@ -17,7 +17,7 @@
 package io.helidon.json.tests;
 
 import io.helidon.common.GenericType;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
@@ -116,7 +116,7 @@ public class CustomConverterTest {
         }
 
         @Override
-        public void serialize(Generator generator, String instance, boolean writeNulls) {
+        public void serialize(JsonGenerator generator, String instance, boolean writeNulls) {
             generator.write(instance + "_custom_converter");
         }
 

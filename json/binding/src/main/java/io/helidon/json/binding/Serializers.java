@@ -16,7 +16,7 @@
 
 package io.helidon.json.binding;
 
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 
 /**
  * Utility class for serialization operations.
@@ -39,7 +39,7 @@ public final class Serializers {
      * @param writeNulls whether to write null values
      * @param <T> the type of the instance
      */
-    public static <T> void serialize(Generator generator,
+    public static <T> void serialize(JsonGenerator generator,
                                      JsonSerializer<T> serializer,
                                      T instance,
                                      String key,

@@ -100,7 +100,7 @@ public final class JsonString extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         generator.write(value());
     }
 }

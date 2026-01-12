@@ -21,7 +21,7 @@ import java.util.OptionalLong;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonConverter;
@@ -39,7 +39,7 @@ class OptionalLongConverter implements JsonConverter<OptionalLong> {
     private JsonSerializer<Long> serializer;
 
     @Override
-    public void serialize(Generator generator, OptionalLong instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, OptionalLong instance, boolean writeNulls) {
         if (instance.isEmpty()) {
             generator.writeNull();
             return;

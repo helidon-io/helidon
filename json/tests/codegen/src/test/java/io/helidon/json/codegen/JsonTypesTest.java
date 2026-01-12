@@ -24,10 +24,9 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.Builder;
-import io.helidon.common.GenericType;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.types.TypeName;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBindingConfigurator;
@@ -97,7 +96,7 @@ class JsonTypesTest {
         checkField(toCheck, checked, fields, "JSON_BINDING_CONFIGURATOR", JsonBindingConfigurator.class);
         checkField(toCheck, checked, fields, "JSON_BINDING_FACTORY", JsonBindingFactory.class);
         checkField(toCheck, checked, fields, "JSON_SERIALIZERS", Serializers.class);
-        checkField(toCheck, checked, fields, "JSON_GENERATOR", Generator.class);
+        checkField(toCheck, checked, fields, "JSON_GENERATOR", JsonGenerator.class);
         checkField(toCheck, checked, fields, "JSON_PARSER", JsonParser.class);
 
         checkField(toCheck, checked, fields, "BUILDER_TYPE", Builder.class);

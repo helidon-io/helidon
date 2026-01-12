@@ -24,7 +24,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonBindingFactory;
@@ -79,7 +79,7 @@ class OptionalBindingFactory implements JsonBindingFactory<Optional<?>> {
         }
 
         @Override
-        public void serialize(Generator generator, Optional<?> instance, boolean writeNulls) {
+        public void serialize(JsonGenerator generator, Optional<?> instance, boolean writeNulls) {
             if (instance.isEmpty()) {
                 generator.writeNull();
                 return;

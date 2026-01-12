@@ -26,7 +26,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonConverter;
@@ -103,7 +103,7 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
         }
 
         @Override
-        public void serialize(Generator generator, Enum<?> instance, boolean writeNulls) {
+        public void serialize(JsonGenerator generator, Enum<?> instance, boolean writeNulls) {
             generator.write(instance.name());
         }
 

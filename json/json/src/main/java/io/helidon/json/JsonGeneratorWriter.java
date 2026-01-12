@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 
-class GeneratorWriter extends AbstractGenerator {
+class JsonGeneratorWriter extends AbstractJsonGenerator {
 
     private static final char[] TRUE = "true".toCharArray();
     private static final char[] FALSE = "false".toCharArray();
@@ -28,7 +28,7 @@ class GeneratorWriter extends AbstractGenerator {
 
     private final Writer writer;
 
-    GeneratorWriter(Writer writer) {
+    JsonGeneratorWriter(Writer writer) {
         this.writer = writer;
     }
 

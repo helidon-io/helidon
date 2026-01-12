@@ -19,7 +19,7 @@ package io.helidon.json.binding.converters;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
@@ -37,7 +37,7 @@ class JsonBooleanConverter implements JsonConverter<JsonBoolean> {
     }
 
     @Override
-    public void serialize(Generator generator, JsonBoolean instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, JsonBoolean instance, boolean writeNulls) {
         generator.write(instance);
     }
 

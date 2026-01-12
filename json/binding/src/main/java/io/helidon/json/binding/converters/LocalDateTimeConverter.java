@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -33,7 +33,7 @@ class LocalDateTimeConverter implements JsonConverter<LocalDateTime> {
     private static final GenericType<LocalDateTime> TYPE = GenericType.create(LocalDateTime.class);
 
     @Override
-    public void serialize(Generator generator, LocalDateTime instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, LocalDateTime instance, boolean writeNulls) {
         generator.write(instance.toString());
     }
 

@@ -18,7 +18,7 @@ package io.helidon.json;
 
 import io.helidon.common.buffers.Bytes;
 
-abstract class AbstractGenerator implements Generator {
+abstract class AbstractJsonGenerator implements JsonGenerator {
 
     static final int STACK_SIZE = 64;
 
@@ -70,70 +70,70 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeKey(String key) {
+    public JsonGenerator writeKey(String key) {
         checkAndWriteKey(key);
         keyWritten = true;
         return this;
     }
 
     @Override
-    public Generator write(String key, String value) {
+    public JsonGenerator write(String key, String value) {
         checkAndWriteKey(key);
         writeString(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, int value) {
+    public JsonGenerator write(String key, int value) {
         checkAndWriteKey(key);
         writeLong(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, long value) {
+    public JsonGenerator write(String key, long value) {
         checkAndWriteKey(key);
         writeLong(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, float value) {
+    public JsonGenerator write(String key, float value) {
         checkAndWriteKey(key);
         writeFloat(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, double value) {
+    public JsonGenerator write(String key, double value) {
         checkAndWriteKey(key);
         writeDouble(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, boolean value) {
+    public JsonGenerator write(String key, boolean value) {
         checkAndWriteKey(key);
         writeBoolean(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, char value) {
+    public JsonGenerator write(String key, char value) {
         checkAndWriteKey(key);
         writeChar(value);
         return this;
     }
 
     @Override
-    public Generator write(String key, JsonValue value) {
+    public JsonGenerator write(String key, JsonValue value) {
         checkAndWriteKey(key);
         writeJsonValue(value);
         return this;
     }
 
     @Override
-    public Generator write(String value) {
+    public JsonGenerator write(String value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -143,7 +143,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(byte value) {
+    public JsonGenerator write(byte value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -153,7 +153,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(short value) {
+    public JsonGenerator write(short value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -163,7 +163,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(int value) {
+    public JsonGenerator write(int value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -173,7 +173,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(long value) {
+    public JsonGenerator write(long value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -183,7 +183,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(float value) {
+    public JsonGenerator write(float value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -193,7 +193,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(double value) {
+    public JsonGenerator write(double value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -203,7 +203,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(boolean value) {
+    public JsonGenerator write(boolean value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -213,7 +213,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(char value) {
+    public JsonGenerator write(char value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -223,7 +223,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator write(JsonValue value) {
+    public JsonGenerator write(JsonValue value) {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -233,7 +233,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeNull() {
+    public JsonGenerator writeNull() {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
@@ -243,7 +243,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeArrayStart() {
+    public JsonGenerator writeArrayStart() {
         if (!keyWritten) {
             beforeWrite();
         } else {
@@ -255,7 +255,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeArrayEnd() {
+    public JsonGenerator writeArrayEnd() {
         popStackType();
         writeByte(Bytes.SQUARE_BRACKET_CLOSE_BYTE);
         first = false;
@@ -263,7 +263,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeObjectStart() {
+    public JsonGenerator writeObjectStart() {
         if (!keyWritten) {
             beforeWrite();
         } else {
@@ -275,7 +275,7 @@ abstract class AbstractGenerator implements Generator {
     }
 
     @Override
-    public Generator writeObjectEnd() {
+    public JsonGenerator writeObjectEnd() {
         popStackType();
         writeByte(Bytes.BRACE_CLOSE_BYTE);
         first = false;

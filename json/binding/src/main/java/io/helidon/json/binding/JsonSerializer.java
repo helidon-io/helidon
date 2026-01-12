@@ -16,14 +16,14 @@
 
 package io.helidon.json.binding;
 
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonException;
 
 /**
  * Interface for serializing Java objects to JSON.
  * <p>
  * Implementations of this interface handle the conversion of Java objects
- * of type T into their JSON representation using a {@link Generator}.
+ * of type T into their JSON representation using a {@link io.helidon.json.JsonGenerator}.
  * Custom serializers can be registered to provide specialized serialization
  * logic for specific types.
  * </p>
@@ -39,7 +39,7 @@ public interface JsonSerializer<T> extends JsonComponent<T> {
      * @param instance    the object instance to serialize
      * @param writeNulls  whether to write null values or skip them
      */
-    void serialize(Generator generator, T instance, boolean writeNulls);
+    void serialize(JsonGenerator generator, T instance, boolean writeNulls);
 
     /**
      * Serializes a null value.
@@ -50,7 +50,7 @@ public interface JsonSerializer<T> extends JsonComponent<T> {
      *
      * @param generator the JSON generator to write to
      */
-    default void serializeNull(Generator generator) {
+    default void serializeNull(JsonGenerator generator) {
         generator.writeNull();
     }
 

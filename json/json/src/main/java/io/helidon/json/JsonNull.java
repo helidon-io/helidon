@@ -41,7 +41,7 @@ public final class JsonNull extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         generator.writeNull();
     }
 

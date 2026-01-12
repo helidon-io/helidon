@@ -24,7 +24,7 @@ import io.helidon.codegen.Option;
  * This interface defines configuration options that control how JSON code generation behaves.
  * </p>
  */
-public final class CodegenOptions {
+final class JsonCodegenOptions {
 
     /**
      * Option to control whether generated serializers should write null values.
@@ -64,7 +64,7 @@ public final class CodegenOptions {
                                                                                   + "REVERSE_ALPHABETICAL, ANY",
                                                                           "ALL");
 
-    private CodegenOptions() {
+    private JsonCodegenOptions() {
     }
 
 }

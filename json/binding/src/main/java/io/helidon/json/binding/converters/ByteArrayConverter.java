@@ -19,7 +19,7 @@ package io.helidon.json.binding.converters;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Deserializers;
 import io.helidon.json.binding.JsonBindingConfigurator;
@@ -39,7 +39,7 @@ class ByteArrayConverter implements JsonConverter<byte[]> {
     private JsonSerializer<Byte> serializer;
 
     @Override
-    public void serialize(Generator generator, byte[] instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, byte[] instance, boolean writeNulls) {
         generator.writeArrayStart();
         for (byte value : instance) {
             serializer.serialize(generator, value, writeNulls);

@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.common.GenericType;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
@@ -501,7 +501,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     }
 
     private <T> void serialize(Writer writer, T obj, JsonSerializer<T> serializer) {
-        try (Generator generator = Generator.create(writer)) {
+        try (JsonGenerator generator = JsonGenerator.create(writer)) {
             serializer.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;
@@ -511,7 +511,7 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
     }
 
     private <T> void serialize(OutputStream stream, T obj, JsonSerializer<T> serializer) {
-        try (Generator generator = Generator.create(stream)) {
+        try (JsonGenerator generator = JsonGenerator.create(stream)) {
             serializer.serialize(generator, obj, false);
         } catch (RuntimeException e) {
             throw e;

@@ -118,7 +118,7 @@ public final class JsonNumber extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         BigDecimal bigDecimal = bigDecimalValue();
         if (bigDecimal.stripTrailingZeros().scale() <= 0) {
             generator.write(bigDecimal.longValue());

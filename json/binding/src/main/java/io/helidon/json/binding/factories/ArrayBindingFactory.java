@@ -23,7 +23,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.Deserializers;
 import io.helidon.json.binding.JsonBindingConfigurator;
@@ -78,7 +78,7 @@ class ArrayBindingFactory implements JsonBindingFactory<Object[]> {
         }
 
         @Override
-        public void serialize(Generator generator, Object[] instance, boolean writeNulls) {
+        public void serialize(JsonGenerator generator, Object[] instance, boolean writeNulls) {
             if (instance == null) {
                 generator.writeNull();
                 return;

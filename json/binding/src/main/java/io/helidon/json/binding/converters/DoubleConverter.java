@@ -19,7 +19,7 @@ package io.helidon.json.binding.converters;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -36,7 +36,7 @@ class DoubleConverter implements JsonConverter<Double> {
     }
 
     @Override
-    public void serialize(Generator generator, Double instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, Double instance, boolean writeNulls) {
         generator.write(instance);
     }
 

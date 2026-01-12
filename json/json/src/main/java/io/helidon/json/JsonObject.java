@@ -361,7 +361,7 @@ public final class JsonObject extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         ensureResolvedKeys();
         generator.writeObjectStart();
         for (var entry : content.entrySet()) {

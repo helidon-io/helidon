@@ -25,7 +25,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonBindingFactory;
@@ -80,7 +80,7 @@ class ListBindingFactory implements JsonBindingFactory<List<?>> {
         }
 
         @Override
-        public void serialize(Generator generator, List<?> instance, boolean writeNulls) {
+        public void serialize(JsonGenerator generator, List<?> instance, boolean writeNulls) {
             if (instance == null) {
                 generator.writeNull();
                 return;

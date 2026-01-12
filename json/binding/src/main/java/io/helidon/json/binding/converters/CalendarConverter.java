@@ -30,7 +30,7 @@ import java.util.GregorianCalendar;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -44,7 +44,7 @@ class CalendarConverter implements JsonConverter<Calendar> {
     private static final LocalTime ZERO_LOCAL_TIME = LocalTime.parse("00:00:00");
 
     @Override
-    public void serialize(Generator generator, Calendar instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, Calendar instance, boolean writeNulls) {
         generator.write(serializeAsMapKey(instance));
     }
 

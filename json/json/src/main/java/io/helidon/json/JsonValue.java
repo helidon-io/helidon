@@ -51,7 +51,7 @@ public abstract sealed class JsonValue
      *
      * @param generator the generator to write to
      */
-    public abstract void toJson(Generator generator);
+    public abstract void toJson(JsonGenerator generator);
 
     /**
      * Return the byte character that starts this JSON value type.

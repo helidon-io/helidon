@@ -24,7 +24,7 @@ import java.util.Date;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.json.Generator;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
@@ -36,7 +36,7 @@ class DateConverter implements JsonConverter<Date> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
 
     @Override
-    public void serialize(Generator generator, Date instance, boolean writeNulls) {
+    public void serialize(JsonGenerator generator, Date instance, boolean writeNulls) {
         generator.write(FORMATTER.format(instance.toInstant()));
     }
 

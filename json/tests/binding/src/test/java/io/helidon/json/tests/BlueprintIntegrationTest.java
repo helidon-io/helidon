@@ -16,6 +16,9 @@
 
 package io.helidon.json.tests;
 
+import java.util.List;
+import java.util.Optional;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
@@ -54,7 +57,7 @@ public class BlueprintIntegrationTest {
 
         String firstName();
 
-        String lastName();
+        Optional<String> lastName();
 
     }
 

@@ -132,7 +132,7 @@ public final class JsonArray extends JsonValue {
     }
 
     @Override
-    public void toJson(Generator generator) {
+    public void toJson(JsonGenerator generator) {
         generator.writeArrayStart();
         for (JsonValue jsonValue : jsonValues) {
             jsonValue.toJson(generator);

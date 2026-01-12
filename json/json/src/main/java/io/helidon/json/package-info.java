@@ -19,7 +19,7 @@
  * Provides fundamental JSON parsing and generation capabilities.
  *
  * @see io.helidon.json.JsonParser
- * @see io.helidon.json.Generator
+ * @see io.helidon.json.JsonGenerator
  * @see io.helidon.json.JsonValue
  */
 package io.helidon.json;
