@@ -44,6 +44,11 @@ class BigIntegerConverter implements JsonConverter<BigInteger> {
     }
 
     @Override
+    public String serializeAsMapKey(BigInteger instance) {
+        return instance.toString();
+    }
+
+    @Override
     public void serialize(JsonGenerator generator, BigInteger instance, boolean writeNulls) {
         generator.write(instance.toString());
     }

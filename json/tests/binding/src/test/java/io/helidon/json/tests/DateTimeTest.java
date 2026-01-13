@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.Period;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -120,7 +121,7 @@ public class DateTimeTest {
     public void testDate() {
         Date original = Date.from(Instant.parse("2023-10-15T12:30:45Z"));
         String json = jsonBinding.serialize(original);
-        assertThat(json, is("\"2023-10-15T12:30:45Z[UTC]\""));
+        assertThat(json, is("\"2023-10-15T12:30:45Z\""));
         Date deserialized = jsonBinding.deserialize(json, Date.class);
         assertThat(deserialized, is(original));
     }
@@ -129,7 +130,10 @@ public class DateTimeTest {
     public void testCalendar() {
         Calendar original = Calendar.getInstance();
         original.setTime(Date.from(Instant.parse("2023-10-15T12:30:45Z")));
+        original.setTimeZone(TimeZone.getTimeZone("UTC"));
         String json = jsonBinding.serialize(original);
+        assertThat(json, is("\"2023-10-15T12:30:45Z[UTC]\""));
+        // Calendar serialization depends on the default timezone, so we'll just verify it deserializes correctly
         Calendar deserialized = jsonBinding.deserialize(json, Calendar.class);
         assertThat(deserialized.getTime(), is(original.getTime()));
     }
@@ -206,6 +210,9 @@ public class DateTimeTest {
         );
 
         String json = jsonBinding.serialize(model);
+        assertThat(json, is("{\"optionalLocalDate\":\"2023-10-15\","
+                                    + "\"optionalInstant\":\"2023-10-15T12:30:45Z\","
+                                    + "\"optionalPeriod\":null}"));
         OptionalDateTimeModel deserialized = jsonBinding.deserialize(json, OptionalDateTimeModel.class);
 
         assertThat(deserialized.optionalLocalDate, is(model.optionalLocalDate));

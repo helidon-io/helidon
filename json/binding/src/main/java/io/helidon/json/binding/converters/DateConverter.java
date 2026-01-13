@@ -16,7 +16,8 @@
 
 package io.helidon.json.binding.converters;
 
-import java.time.ZoneId;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -35,11 +36,13 @@ class DateConverter implements JsonConverter<Date> {
 
     private static final GenericType<Date> TYPE = GenericType.create(Date.class);
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     @Override
     public void serialize(JsonGenerator generator, Date instance, boolean writeNulls) {
-        generator.write(FORMATTER.format(instance.toInstant()));
+        Instant instant = instance.toInstant();
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneOffset.UTC);
+        generator.write(FORMATTER.format(zonedDateTime));
     }
 
     @Override
@@ -49,13 +52,15 @@ class DateConverter implements JsonConverter<Date> {
 
     @Override
     public String serializeAsMapKey(Date instance) {
-        return FORMATTER.format(instance.toInstant());
+        Instant instant = instance.toInstant();
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneOffset.UTC);
+        return FORMATTER.format(zonedDateTime);
     }
 
     @Override
     public Date deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return Date.from(ZonedDateTime.parse(parser.readString()).toInstant());
+            return Date.from(Instant.from(FORMATTER.parse(parser.readString())));
         }
         throw parser.createException("Only the string format of the Date is supported");
     }

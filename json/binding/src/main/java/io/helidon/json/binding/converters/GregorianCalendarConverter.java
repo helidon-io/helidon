@@ -16,14 +16,10 @@
 
 package io.helidon.json.binding.converters;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQueries;
 import java.util.GregorianCalendar;
 
 import io.helidon.common.GenericType;
@@ -34,15 +30,13 @@ import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.service.registry.Service;
 
-import static java.time.ZoneOffset.UTC;
-
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class GregorianCalendarConverter implements JsonConverter<GregorianCalendar> {
 
     private static final GenericType<GregorianCalendar> TYPE = GenericType.create(GregorianCalendar.class);
 
-    private static final LocalTime ZERO_LOCAL_TIME = LocalTime.parse("00:00:00");
+    private static final ZoneId UTC = ZoneId.of("UTC");
 
     @Override
     public void serialize(JsonGenerator generator, GregorianCalendar instance, boolean writeNulls) {
@@ -56,32 +50,23 @@ class GregorianCalendarConverter implements JsonConverter<GregorianCalendar> {
 
     @Override
     public String serializeAsMapKey(GregorianCalendar instance) {
-        DateTimeFormatter formatter = instance.isSet(GregorianCalendar.HOUR) || instance.isSet(GregorianCalendar.HOUR_OF_DAY)
-                ? DateTimeFormatter.ISO_DATE_TIME
-                : DateTimeFormatter.ISO_DATE;
-        return formatter.withZone(instance.getTimeZone().toZoneId())
-                .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(instance.getTimeInMillis()),
-                                                instance.getTimeZone().toZoneId()));
+        ZonedDateTime zonedDateTime = instance.toInstant()
+                .atZone(instance.getTimeZone().toZoneId());
+        return DateTimeFormatter.ISO_DATE_TIME.format(zonedDateTime);
     }
 
     @Override
     public GregorianCalendar deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
             String value = parser.readString();
-            DateTimeFormatter formatter = value.contains("T")
-                    ? DateTimeFormatter.ISO_DATE_TIME
-                    : DateTimeFormatter.ISO_DATE;
-            final TemporalAccessor parsed = formatter.parse(value);
-            LocalTime time = parsed.query(TemporalQueries.localTime());
-            ZoneId zone = parsed.query(TemporalQueries.zone());
-            if (zone == null) {
-                zone = UTC;
+            ZonedDateTime zonedDateTime;
+            if (value.contains("T")) {
+                zonedDateTime = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
+            } else {
+                zonedDateTime = LocalDate.parse(value, DateTimeFormatter.ISO_DATE)
+                        .atStartOfDay(UTC);
             }
-            if (time == null) {
-                time = ZERO_LOCAL_TIME;
-            }
-            ZonedDateTime result = LocalDate.from(parsed).atTime(time).atZone(zone);
-            return GregorianCalendar.from(result);
+            return GregorianCalendar.from(zonedDateTime);
         }
         throw parser.createException("Only the string format of the GregorianCalendar is supported");
     }

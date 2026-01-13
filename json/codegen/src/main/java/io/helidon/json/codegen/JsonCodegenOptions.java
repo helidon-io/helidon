@@ -33,10 +33,10 @@ final class JsonCodegenOptions {
      * When set to false (default), null values will be omitted.
      * </p>
      */
-    public static final Option<Boolean> CODEGEN_JSON_NULL = Option.create("helidon.codegen.json.nulls",
-                                                                          "Sets the default for whether generated type "
-                                                                                  + "serializers should write nulls or not.",
-                                                                          false);
+    static final Option<Boolean> CODEGEN_JSON_NULL = Option.create("helidon.codegen.json.nulls",
+                                                                   "Sets the default for whether generated type "
+                                                                           + "serializers should write nulls or not.",
+                                                                   false);
     /**
      * Option to control whether generated deserializers should fail on unknown properties.
      * <p>
@@ -44,12 +44,12 @@ final class JsonCodegenOptions {
      * When set to false (default), unknown properties will be ignored.
      * </p>
      */
-    public static final Option<Boolean> CODEGEN_JSON_UNKNOWN = Option.create("helidon.codegen.json.unknown",
-                                                                             "Sets the default for whether generated type "
-                                                                                     + "deserializers should fail when unknow "
-                                                                                     + "property is "
-                                                                                     + "encountered.",
-                                                                             false);
+    static final Option<Boolean> CODEGEN_JSON_UNKNOWN = Option.create("helidon.codegen.json.unknown",
+                                                                      "Sets the default for whether generated type "
+                                                                              + "deserializers should fail when unknow "
+                                                                              + "property is "
+                                                                              + "encountered.",
+                                                                      false);
     /**
      * Option to control the default ordering of properties in JSON documents.
      * <p>
@@ -57,12 +57,12 @@ final class JsonCodegenOptions {
      * Default value is "ALL".
      * </p>
      */
-    public static final Option<String> CODEGEN_JSON_ORDER = Option.create("helidon.codegen.json.order",
-                                                                          "Sets the default for default ordering of the "
-                                                                                  + "properties in the JSON document. "
-                                                                                  + "Available values are: ALPHABETICAL, "
-                                                                                  + "REVERSE_ALPHABETICAL, ANY",
-                                                                          "ALL");
+    static final Option<String> CODEGEN_JSON_ORDER = Option.create("helidon.codegen.json.order",
+                                                                   "Sets the default for default ordering of the "
+                                                                           + "properties in the JSON document. "
+                                                                           + "Available values are: ALPHABETICAL, "
+                                                                           + "REVERSE_ALPHABETICAL, ANY",
+                                                                   "ALL");
 
     private JsonCodegenOptions() {
     }

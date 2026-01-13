@@ -16,9 +16,25 @@
 
 package io.helidon.json.tests;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.UUID;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
@@ -28,6 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -239,6 +256,262 @@ public class MapTest {
         assertThat(deserialized, hasEntry('A', "alpha"));
         assertThat(deserialized, hasEntry('B', "beta"));
         assertThat(deserialized, hasEntry('1', "one"));
+    }
+
+    @Test
+    public void testMapWithBigIntegerKeys() {
+        Map<BigInteger, String> map = new LinkedHashMap<>();
+        map.put(BigInteger.valueOf(123456789), "big-number");
+        map.put(BigInteger.valueOf(-999999999), "negative-big");
+
+        String expected = "{\"123456789\":\"big-number\",\"-999999999\":\"negative-big\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<BigInteger, String>> type = new GenericType<>() { };
+        Map<BigInteger, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(BigInteger.valueOf(123456789), "big-number"));
+        assertThat(deserialized, hasEntry(BigInteger.valueOf(-999999999), "negative-big"));
+    }
+
+    @Test
+    public void testMapWithBigDecimalKeys() {
+        Map<BigDecimal, String> map = new LinkedHashMap<>();
+        map.put(BigDecimal.valueOf(123.456), "decimal");
+        map.put(BigDecimal.valueOf(-999.999), "negative-decimal");
+
+        String expected = "{\"123.456\":\"decimal\",\"-999.999\":\"negative-decimal\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<BigDecimal, String>> type = new GenericType<>() { };
+        Map<BigDecimal, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(BigDecimal.valueOf(123.456), "decimal"));
+        assertThat(deserialized, hasEntry(BigDecimal.valueOf(-999.999), "negative-decimal"));
+    }
+
+    @Test
+    public void testMapWithDateKeys() {
+        Map<Date, String> map = new LinkedHashMap<>();
+        Date date1 = new Date(1640995200000L); // 2022-01-01
+        Date date2 = new Date(1672531200000L); // 2023-01-01
+        map.put(date1, "new-year-2022");
+        map.put(date2, "new-year-2023");
+
+        String expected = "{\"2022-01-01T00:00:00Z\":\"new-year-2022\",\"2023-01-01T00:00:00Z\":\"new-year-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<Date, String>> type = new GenericType<>() { };
+        Map<Date, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(date1, "new-year-2022"));
+        assertThat(deserialized, hasEntry(date2, "new-year-2023"));
+    }
+
+    @Test
+    public void testMapWithInstantKeys() {
+        Map<Instant, String> map = new LinkedHashMap<>();
+        Instant instant1 = Instant.parse("2022-01-01T00:00:00Z");
+        Instant instant2 = Instant.parse("2023-01-01T00:00:00Z");
+        map.put(instant1, "instant-2022");
+        map.put(instant2, "instant-2023");
+
+        String expected = "{\"2022-01-01T00:00:00Z\":\"instant-2022\",\"2023-01-01T00:00:00Z\":\"instant-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<Instant, String>> type = new GenericType<>() { };
+        Map<Instant, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(instant1, "instant-2022"));
+        assertThat(deserialized, hasEntry(instant2, "instant-2023"));
+    }
+
+    @Test
+    public void testMapWithUuidKeys() {
+        Map<UUID, String> map = new LinkedHashMap<>();
+        UUID uuid1 = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        UUID uuid2 = UUID.fromString("550e8400-e29b-41d4-a716-446655440001");
+        map.put(uuid1, "uuid-one");
+        map.put(uuid2, "uuid-two");
+
+        String expected = "{\"550e8400-e29b-41d4-a716-446655440000\":\"uuid-one\",\"550e8400-e29b-41d4-a716-446655440001\":\"uuid-two\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<UUID, String>> type = new GenericType<>() { };
+        Map<UUID, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(uuid1, "uuid-one"));
+        assertThat(deserialized, hasEntry(uuid2, "uuid-two"));
+    }
+
+    @Test
+    public void testMapWithLocalDateKeys() {
+        Map<LocalDate, String> map = new LinkedHashMap<>();
+        LocalDate date1 = LocalDate.of(2022, 1, 1);
+        LocalDate date2 = LocalDate.of(2023, 1, 1);
+        map.put(date1, "local-date-2022");
+        map.put(date2, "local-date-2023");
+
+        String expected = "{\"2022-01-01\":\"local-date-2022\",\"2023-01-01\":\"local-date-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<LocalDate, String>> type = new GenericType<>() { };
+        Map<LocalDate, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(date1, "local-date-2022"));
+        assertThat(deserialized, hasEntry(date2, "local-date-2023"));
+    }
+
+    @Test
+    public void testMapWithPeriodKeys() {
+        Map<Period, String> map = new LinkedHashMap<>();
+        Period period1 = Period.ofDays(7);
+        Period period2 = Period.ofMonths(1);
+        map.put(period1, "week");
+        map.put(period2, "month");
+
+        String expected = "{\"P7D\":\"week\",\"P1M\":\"month\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<Period, String>> type = new GenericType<>() { };
+        Map<Period, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(period1, "week"));
+        assertThat(deserialized, hasEntry(period2, "month"));
+    }
+
+    @Test
+    public void testMapWithLocalDateTimeKeys() {
+        Map<LocalDateTime, String> map = new LinkedHashMap<>();
+        LocalDateTime dt1 = LocalDateTime.of(2022, 1, 1, 12, 0, 0);
+        LocalDateTime dt2 = LocalDateTime.of(2023, 1, 1, 12, 0, 0);
+        map.put(dt1, "datetime-2022");
+        map.put(dt2, "datetime-2023");
+
+        String expected = "{\"2022-01-01T12:00\":\"datetime-2022\",\"2023-01-01T12:00\":\"datetime-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<LocalDateTime, String>> type = new GenericType<>() { };
+        Map<LocalDateTime, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(dt1, "datetime-2022"));
+        assertThat(deserialized, hasEntry(dt2, "datetime-2023"));
+    }
+
+    @Test
+    public void testMapWithZonedDateTimeKeys() {
+        Map<ZonedDateTime, String> map = new LinkedHashMap<>();
+        ZonedDateTime zdt1 = ZonedDateTime.of(2022, 1, 1, 12, 0, 0, 0, ZoneId.of("UTC"));
+        ZonedDateTime zdt2 = ZonedDateTime.of(2023, 1, 1, 12, 0, 0, 0, ZoneId.of("UTC"));
+        map.put(zdt1, "zoned-2022");
+        map.put(zdt2, "zoned-2023");
+
+        String expected = "{\"2022-01-01T12:00Z[UTC]\":\"zoned-2022\",\"2023-01-01T12:00Z[UTC]\":\"zoned-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<ZonedDateTime, String>> type = new GenericType<>() { };
+        Map<ZonedDateTime, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(zdt1, "zoned-2022"));
+        assertThat(deserialized, hasEntry(zdt2, "zoned-2023"));
+    }
+
+    @Test
+    public void testMapWithOffsetDateTimeKeys() {
+        Map<OffsetDateTime, String> map = new LinkedHashMap<>();
+        OffsetDateTime odt1 = OffsetDateTime.of(2022, 1, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime odt2 = OffsetDateTime.of(2023, 1, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+        map.put(odt1, "offset-2022");
+        map.put(odt2, "offset-2023");
+
+        String expected = "{\"2022-01-01T12:00Z\":\"offset-2022\",\"2023-01-01T12:00Z\":\"offset-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<OffsetDateTime, String>> type = new GenericType<>() { };
+        Map<OffsetDateTime, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(odt1, "offset-2022"));
+        assertThat(deserialized, hasEntry(odt2, "offset-2023"));
+    }
+
+    @Test
+    public void testMapWithLocalTimeKeys() {
+        Map<LocalTime, String> map = new LinkedHashMap<>();
+        LocalTime time1 = LocalTime.of(9, 30, 0);
+        LocalTime time2 = LocalTime.of(15, 45, 0);
+        map.put(time1, "morning");
+        map.put(time2, "afternoon");
+
+        String expected = "{\"09:30\":\"morning\",\"15:45\":\"afternoon\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<LocalTime, String>> type = new GenericType<>() { };
+        Map<LocalTime, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized, hasEntry(time1, "morning"));
+        assertThat(deserialized, hasEntry(time2, "afternoon"));
+    }
+
+    @Test
+    public void testMapWithCalendarKeys() {
+        Map<Calendar, String> map = new LinkedHashMap<>();
+        GregorianCalendar cal1 = new GregorianCalendar(2022, Calendar.JANUARY, 1);
+        GregorianCalendar cal2 = new GregorianCalendar(2023, Calendar.JANUARY, 1);
+        cal1.setTimeZone(TimeZone.getTimeZone("UTC"));
+        cal2.setTimeZone(TimeZone.getTimeZone("UTC"));
+        map.put(cal1, "calendar-2022");
+        map.put(cal2, "calendar-2023");
+
+        String expected = "{\"2022-01-01T00:00:00Z[UTC]\":\"calendar-2022\",\"2023-01-01T00:00:00Z[UTC]\":\"calendar-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<Calendar, String>> type = new GenericType<>() { };
+        Map<Calendar, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
+    }
+
+    @Test
+    public void testMapWithGregorianCalendarKeys() {
+        Map<GregorianCalendar, String> map = new LinkedHashMap<>();
+        GregorianCalendar gcal1 = new GregorianCalendar(2022, Calendar.JANUARY, 1);
+        GregorianCalendar gcal2 = new GregorianCalendar(2023, Calendar.JANUARY, 1);
+        gcal1.setTimeZone(TimeZone.getTimeZone("UTC"));
+        gcal2.setTimeZone(TimeZone.getTimeZone("UTC"));
+        map.put(gcal1, "gregorian-2022");
+        map.put(gcal2, "gregorian-2023");
+
+        String expected = "{\"2022-01-01T00:00:00Z[UTC]\":\"gregorian-2022\",\"2023-01-01T00:00:00Z[UTC]\":\"gregorian-2023\"}";
+        assertThat(jsonBinding.serialize(map), is(expected));
+
+        GenericType<Map<GregorianCalendar, String>> type = new GenericType<>() { };
+        Map<GregorianCalendar, String> deserialized = jsonBinding.deserialize(expected, type);
+
+        assertThat(deserialized, notNullValue());
+        assertThat(deserialized.size(), is(2));
     }
 
 }
