@@ -135,7 +135,7 @@
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
-        <version.lib.narayana>7.0.0.Final</version.lib.narayana>
+        <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.oci>3.77.2</version.lib.oci>
