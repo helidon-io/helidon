@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,10 @@ public enum SchemaType {
     /**
      * Json schema null type.
      */
-    NULL("null"),;
+    NULL("null");
 
     private static final Map<String, SchemaType> TYPE_TO_ENUM;
+
     static {
         Map<String, SchemaType> map = new HashMap<>();
         for (SchemaType type : SchemaType.values()) {
@@ -68,6 +69,7 @@ public enum SchemaType {
         }
         TYPE_TO_ENUM = Map.copyOf(map);
     }
+
     private final String type;
 
     SchemaType(String type) {

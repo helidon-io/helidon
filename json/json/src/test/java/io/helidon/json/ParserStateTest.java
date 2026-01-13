@@ -16,9 +16,6 @@
 
 package io.helidon.json;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -127,7 +124,9 @@ abstract class ParserStateTest {
         json.append("[");
         int size = 1000;
         for (int i = 0; i < size; i++) {
-            if (i > 0) json.append(",");
+            if (i > 0) {
+                json.append(",");
+            }
             json.append(i);
         }
         json.append("]");

@@ -30,6 +30,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class InstantConverter implements JsonConverter<Instant> {
 
+    private static final GenericType<Instant> TYPE = GenericType.create(Instant.class);
+
     @Override
     public void serialize(JsonGenerator generator, Instant instance, boolean writeNulls) {
         generator.write(instance.toString());
@@ -56,7 +58,7 @@ class InstantConverter implements JsonConverter<Instant> {
 
     @Override
     public GenericType<Instant> type() {
-        return GenericType.create(Instant.class);
+        return TYPE;
     }
 
 }

@@ -344,9 +344,9 @@ record ConvertedTypeInfo(TypeName converterType,
     }
 
     private static AccessorStyle discoverGetAndSetMethods(Map<String, JsonProperty.Builder> properties,
-                                                   TypeInfo typeInfo,
-                                                   AccessorStyle accessorStyle,
-                                                   Map<String, Map<String, TypeName>> resolvedGenerics) {
+                                                          TypeInfo typeInfo,
+                                                          AccessorStyle accessorStyle,
+                                                          Map<String, Map<String, TypeName>> resolvedGenerics) {
         AccessorStyle detectedAccessorStyle = typeInfo.superTypeInfo()
                 .map(superType -> discoverGetAndSetMethods(properties, superType, accessorStyle, resolvedGenerics))
                 .orElse(accessorStyle);
@@ -413,7 +413,7 @@ record ConvertedTypeInfo(TypeName converterType,
                 .toList();
     }
 
-    private static CreatorInfo  discoverCreator(Map<String, JsonProperty.Builder> properties,
+    private static CreatorInfo discoverCreator(Map<String, JsonProperty.Builder> properties,
                                                TypeInfo typeInfo,
                                                Map<String, Map<String, TypeName>> resolvedGenerics) {
         List<TypedElementInfo> creators = typeInfo.elementInfo()

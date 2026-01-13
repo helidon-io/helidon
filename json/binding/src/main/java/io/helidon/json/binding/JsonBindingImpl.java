@@ -520,7 +520,6 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
         }
     }
 
-
     private void writeNull(OutputStream outputStream) {
         try {
             outputStream.write(NULL_BYTES);

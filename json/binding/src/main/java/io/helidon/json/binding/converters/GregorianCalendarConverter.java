@@ -40,6 +40,8 @@ import static java.time.ZoneOffset.UTC;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class GregorianCalendarConverter implements JsonConverter<GregorianCalendar> {
 
+    private static final GenericType<GregorianCalendar> TYPE = GenericType.create(GregorianCalendar.class);
+
     private static final LocalTime ZERO_LOCAL_TIME = LocalTime.parse("00:00:00");
 
     @Override
@@ -86,7 +88,7 @@ class GregorianCalendarConverter implements JsonConverter<GregorianCalendar> {
 
     @Override
     public GenericType<GregorianCalendar> type() {
-        return GenericType.create(GregorianCalendar.class);
+        return TYPE;
     }
 
 }

@@ -28,6 +28,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class LongConverter implements JsonConverter<Long> {
 
+    private static final GenericType<Long> TYPE = GenericType.create(Long.class);
+
     @Override
     public void serialize(JsonGenerator generator, Long instance, boolean writeNulls) {
         generator.write(instance);
@@ -60,7 +62,7 @@ class LongConverter implements JsonConverter<Long> {
 
     @Override
     public GenericType<Long> type() {
-        return GenericType.create(Long.class);
+        return TYPE;
     }
 
 }

@@ -16,9 +16,6 @@
 
 package io.helidon.json;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -293,7 +290,7 @@ abstract class StringValueTest {
     @Test
     public void testInvalidUtf8Sequence() {
         // Invalid UTF-8: isolated continuation byte - create directly with bytes
-        byte[] invalidUtf8 = new byte[]{'"', (byte) 0x80, '"'};
+        byte[] invalidUtf8 = new byte[] {'"', (byte) 0x80, '"'};
         ArrayJsonParser parser = new ArrayJsonParser(invalidUtf8);
 
         assertThrows(JsonException.class, parser::readString);
@@ -302,7 +299,7 @@ abstract class StringValueTest {
     @Test
     public void testIncompleteUtf8Sequence() {
         // Incomplete 3-byte sequence: E2 82 (missing AC) - create directly with bytes
-        byte[] incompleteUtf8 = new byte[]{'"', (byte) 0xE2, (byte) 0x82, '"'};
+        byte[] incompleteUtf8 = new byte[] {'"', (byte) 0xE2, (byte) 0x82, '"'};
         ArrayJsonParser parser = new ArrayJsonParser(incompleteUtf8);
 
         assertThrows(JsonException.class, parser::readString);

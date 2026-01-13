@@ -16,7 +16,6 @@
 
 package io.helidon.json.tests;
 
-import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;

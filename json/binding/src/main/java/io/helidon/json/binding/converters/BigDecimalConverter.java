@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;

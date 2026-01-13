@@ -28,6 +28,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class BooleanConverter implements JsonConverter<Boolean> {
 
+    private static final GenericType<Boolean> TYPE = GenericType.create(Boolean.class);
+
     @Override
     public void serialize(JsonGenerator generator, Boolean instance, boolean writeNulls) {
         generator.write(instance);
@@ -66,6 +68,6 @@ class BooleanConverter implements JsonConverter<Boolean> {
 
     @Override
     public GenericType<Boolean> type() {
-        return GenericType.create(Boolean.class);
+        return TYPE;
     }
 }

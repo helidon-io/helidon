@@ -16,9 +16,7 @@
 
 package io.helidon.json;
 
-import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 

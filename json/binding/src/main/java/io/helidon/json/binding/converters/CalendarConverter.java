@@ -41,6 +41,8 @@ import static java.time.ZoneOffset.UTC;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class CalendarConverter implements JsonConverter<Calendar> {
 
+    private static final GenericType<Calendar> TYPE = GenericType.create(Calendar.class);
+
     private static final LocalTime ZERO_LOCAL_TIME = LocalTime.parse("00:00:00");
 
     @Override
@@ -87,7 +89,7 @@ class CalendarConverter implements JsonConverter<Calendar> {
 
     @Override
     public GenericType<Calendar> type() {
-        return GenericType.create(Calendar.class);
+        return TYPE;
     }
 
 }

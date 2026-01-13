@@ -28,6 +28,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class ByteConverter implements JsonConverter<Byte> {
 
+    private static final GenericType<Byte> TYPE = GenericType.create(Byte.class);
+
     @Override
     public void serialize(JsonGenerator generator, Byte instance, boolean writeNulls) {
         generator.write(instance);
@@ -60,6 +62,6 @@ class ByteConverter implements JsonConverter<Byte> {
 
     @Override
     public GenericType<Byte> type() {
-        return GenericType.create(Byte.class);
+        return TYPE;
     }
 }

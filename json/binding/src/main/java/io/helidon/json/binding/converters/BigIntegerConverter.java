@@ -34,12 +34,13 @@ class BigIntegerConverter implements JsonConverter<BigInteger> {
 
     @Override
     public BigInteger deserialize(JsonParser parser) {
-        if (parser.currentByte() == '\"') {
-            return new BigInteger(parser.readString());
-        } else {
-            char[] numberAsArray = parser.readCharArray();
-            return new BigInteger(new String(numberAsArray));
-        }
+        char[] numberAsArray = parser.readCharArray();
+        return new BigInteger(new String(numberAsArray));
+    }
+
+    @Override
+    public boolean isMapKeySerializer() {
+        return true;
     }
 
     @Override

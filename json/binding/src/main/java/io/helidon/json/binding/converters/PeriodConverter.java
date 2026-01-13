@@ -30,6 +30,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class PeriodConverter implements JsonConverter<Period> {
 
+    private static final GenericType<Period> TYPE = GenericType.create(Period.class);
+
     @Override
     public void serialize(JsonGenerator generator, Period instance, boolean writeNulls) {
         generator.write(instance.toString());
@@ -55,7 +57,7 @@ class PeriodConverter implements JsonConverter<Period> {
 
     @Override
     public GenericType<Period> type() {
-        return GenericType.create(Period.class);
+        return TYPE;
     }
 
 }

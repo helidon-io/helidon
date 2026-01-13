@@ -91,12 +91,12 @@ final class SchemaTypes {
     static final TypeName LAZY_VALUE_SCHEMA = TypeName.builder(SchemaTypes.LAZY_VALUE)
             .addTypeArgument(SchemaTypes.SCHEMA)
             .build();
-    static final TypeName BIG_DECIMAL =  TypeName.create(BigDecimal.class);
-    static final TypeName BIG_INTEGER =  TypeName.create(BigInteger.class);
-    static final TypeName NUMBER =  TypeName.create(Number.class);
-    static final TypeName JSONB_TRANSIENT =  TypeName.create("jakarta.json.bind.annotation.JsonbTransient");
-    static final TypeName JSONB_PROPERTY =  TypeName.create("jakarta.json.bind.annotation.JsonbProperty");
-    static final TypeName JSONB_CREATOR =  TypeName.create("jakarta.json.bind.annotation.JsonbCreator");
+    static final TypeName BIG_DECIMAL = TypeName.create(BigDecimal.class);
+    static final TypeName BIG_INTEGER = TypeName.create(BigInteger.class);
+    static final TypeName NUMBER = TypeName.create(Number.class);
+    static final TypeName JSONB_TRANSIENT = TypeName.create("jakarta.json.bind.annotation.JsonbTransient");
+    static final TypeName JSONB_PROPERTY = TypeName.create("jakarta.json.bind.annotation.JsonbProperty");
+    static final TypeName JSONB_CREATOR = TypeName.create("jakarta.json.bind.annotation.JsonbCreator");
 
     //Service registry related annotations
     static final TypeName SERVICE_NAMED_BY_TYPE = TypeName.create("io.helidon.service.registry.Service.NamedByType");

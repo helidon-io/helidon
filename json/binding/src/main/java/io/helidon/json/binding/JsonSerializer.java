@@ -16,8 +16,8 @@
 
 package io.helidon.json.binding;
 
-import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonException;
+import io.helidon.json.JsonGenerator;
 
 /**
  * Interface for serializing Java objects to JSON.
@@ -60,6 +60,8 @@ public interface JsonSerializer<T> extends JsonComponent<T> {
      * Some types may be suitable for use as map keys in JSON objects.
      * The default implementation returns false.
      * </p>
+     * Method {@link #serializeAsMapKey(Object)} should be implemented if this method should ever
+     * return true.
      *
      * @return true if this serializer can handle map key serialization, false otherwise
      */

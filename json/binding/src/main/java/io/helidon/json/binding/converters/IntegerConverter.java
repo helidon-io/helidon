@@ -28,6 +28,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class IntegerConverter implements JsonConverter<Integer> {
 
+    private static final GenericType<Integer> TYPE = GenericType.create(Integer.class);
+
     @Override
     public void serialize(JsonGenerator generator, Integer instance, boolean writeNulls) {
         generator.write(instance);
@@ -60,6 +62,6 @@ class IntegerConverter implements JsonConverter<Integer> {
 
     @Override
     public GenericType<Integer> type() {
-        return GenericType.create(Integer.class);
+        return TYPE;
     }
 }

@@ -33,6 +33,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class DateConverter implements JsonConverter<Date> {
 
+    private static final GenericType<Date> TYPE = GenericType.create(Date.class);
+
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
 
     @Override
@@ -60,7 +62,7 @@ class DateConverter implements JsonConverter<Date> {
 
     @Override
     public GenericType<Date> type() {
-        return GenericType.create(Date.class);
+        return TYPE;
     }
 
 }

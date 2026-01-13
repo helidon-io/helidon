@@ -28,6 +28,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class ShortConverter implements JsonConverter<Short> {
 
+    private static final GenericType<Short> TYPE = GenericType.create(Short.class);
+
     @Override
     public void serialize(JsonGenerator generator, Short instance, boolean writeNulls) {
         generator.write(instance);
@@ -60,6 +62,6 @@ class ShortConverter implements JsonConverter<Short> {
 
     @Override
     public GenericType<Short> type() {
-        return GenericType.create(Short.class);
+        return TYPE;
     }
 }

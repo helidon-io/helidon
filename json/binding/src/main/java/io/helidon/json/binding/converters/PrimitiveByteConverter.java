@@ -56,6 +56,16 @@ class PrimitiveByteConverter implements JsonConverter<Byte> {
     }
 
     @Override
+    public boolean isMapKeySerializer() {
+        return true;
+    }
+
+    @Override
+    public String serializeAsMapKey(Byte instance) {
+        return instance.toString();
+    }
+
+    @Override
     public Byte deserializeNull() {
         return 0;
     }

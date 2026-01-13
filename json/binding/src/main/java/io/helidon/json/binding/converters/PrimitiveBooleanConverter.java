@@ -72,6 +72,16 @@ class PrimitiveBooleanConverter implements JsonConverter<Boolean> {
     }
 
     @Override
+    public boolean isMapKeySerializer() {
+        return true;
+    }
+
+    @Override
+    public String serializeAsMapKey(Boolean instance) {
+        return instance.toString();
+    }
+
+    @Override
     public Boolean deserializeNull() {
         return false;
     }

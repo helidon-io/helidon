@@ -27,7 +27,7 @@ public abstract sealed class JsonValue
     /**
      * The JsonValue constructor.
      */
-    JsonValue()  {
+    JsonValue() {
     }
 
     /**
