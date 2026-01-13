@@ -67,6 +67,19 @@ class BooleanConverter implements JsonConverter<Boolean> {
     }
 
     @Override
+    public boolean isMapKeySerializer() {
+        return true;
+    }
+
+    @Override
+    public String serializeAsMapKey(Boolean instance) {
+        if (instance == null) {
+            return "null";
+        }
+        return instance ? "true" : "false";
+    }
+
+    @Override
     public GenericType<Boolean> type() {
         return TYPE;
     }
