@@ -43,4 +43,6 @@ module io.helidon.integrations.langchain4j {
 
     provides dev.langchain4j.spi.services.TokenStreamAdapter
             with io.helidon.integrations.langchain4j.TokenStreamToStreamAdapter;
+    provides dev.langchain4j.spi.classloading.ClassInstanceFactory
+            with io.helidon.integrations.langchain4j.ServiceRegistryClassInstanceFactory;
 }
