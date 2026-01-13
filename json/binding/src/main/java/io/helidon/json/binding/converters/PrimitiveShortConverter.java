@@ -56,16 +56,6 @@ class PrimitiveShortConverter implements JsonConverter<Short> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Short instance) {
-        return instance.toString();
-    }
-
-    @Override
     public Short deserializeNull() {
         return 0;
     }

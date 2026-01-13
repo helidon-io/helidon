@@ -56,16 +56,6 @@ class PrimitiveLongConverter implements JsonConverter<Long> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Long instance) {
-        return instance.toString();
-    }
-
-    @Override
     public Long deserializeNull() {
         return 0L;
     }

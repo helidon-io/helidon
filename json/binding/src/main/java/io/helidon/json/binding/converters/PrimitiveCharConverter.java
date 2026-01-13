@@ -46,16 +46,6 @@ class PrimitiveCharConverter implements JsonConverter<Character> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Character instance) {
-        return String.valueOf(instance);
-    }
-
-    @Override
     public Character deserializeNull() {
         return 0;
     }

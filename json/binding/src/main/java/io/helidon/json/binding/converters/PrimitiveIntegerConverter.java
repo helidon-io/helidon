@@ -56,16 +56,6 @@ class PrimitiveIntegerConverter implements JsonConverter<Integer> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Integer instance) {
-        return instance.toString();
-    }
-
-    @Override
     public Integer deserializeNull() {
         return 0;
     }

@@ -56,16 +56,6 @@ class PrimitiveDoubleConverter implements JsonConverter<Double> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Double instance) {
-        return instance.toString();
-    }
-
-    @Override
     public Double deserializeNull() {
         return 0.0;
     }

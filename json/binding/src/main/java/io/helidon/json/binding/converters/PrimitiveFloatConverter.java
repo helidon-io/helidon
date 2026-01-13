@@ -56,16 +56,6 @@ class PrimitiveFloatConverter implements JsonConverter<Float> {
     }
 
     @Override
-    public boolean isMapKeySerializer() {
-        return true;
-    }
-
-    @Override
-    public String serializeAsMapKey(Float instance) {
-        return instance.toString();
-    }
-
-    @Override
     public Float deserializeNull() {
         return 0.0F;
     }
