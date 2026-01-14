@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,12 @@ record here.
     -->
     <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
     <suppress files="http/http2/src/main/java/io/helidon/http/http2/Http2HuffmanConstants\.java"
+            checks="FileLength"/>
+
+    <!-- Once the proper abstraction structure is found for the parsers, this can be removed-->
+    <suppress files="json/json/src/main/java/io/helidon/json/JsonStreamParser\.java"
+            checks="FileLength"/>
+    <suppress files="json/json/src/main/java/io/helidon/json/ArrayJsonParser\.java"
             checks="FileLength"/>
 
     <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"

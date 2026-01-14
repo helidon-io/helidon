@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,11 +149,9 @@ interface TypeNameBlueprint extends Annotated {
      * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
      *
      * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
-     * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
      */
     @Option.Singular
     @Option.Redundant
-    @Deprecated(forRemoval = true, since = "4.2.0")
     List<String> typeParameters();
 
     /**

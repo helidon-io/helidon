@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class SchemaCodegen implements CodegenExtension {
 
     @Override
     public void process(RoundContext roundContext) {
-        Collection<TypeInfo> schemas = roundContext.annotatedTypes(Types.JSON_SCHEMA_SCHEMA);
+        Collection<TypeInfo> schemas = roundContext.annotatedTypes(SchemaTypes.JSON_SCHEMA_SCHEMA);
         for (TypeInfo schema : schemas) {
             try {
                 generateSchema(roundContext, schema);
@@ -68,10 +68,10 @@ class SchemaCodegen implements CodegenExtension {
         ClassModel.Builder builder = ClassModel.builder()
                 .type(typeName)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addInterface(Types.JSON_SCHEMA_PROVIDER)
-                .addAnnotation(Annotation.create(Types.SERVICE_SINGLETON))
+                .addInterface(SchemaTypes.JSON_SCHEMA_PROVIDER)
+                .addAnnotation(Annotation.create(SchemaTypes.SERVICE_SINGLETON))
                 .addAnnotation(Annotation.builder()
-                                       .typeName(Types.SERVICE_NAMED_BY_TYPE)
+                                       .typeName(SchemaTypes.SERVICE_NAMED_BY_TYPE)
                                        .putValue("value", annotatedTypeName)
                                        .build())
                 .sortStaticFields(false)
@@ -84,7 +84,7 @@ class SchemaCodegen implements CodegenExtension {
                 .addField(fieldBuilder -> fieldBuilder.isStatic(true)
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
-                        .type(Types.LAZY_VALUE_SCHEMA)
+                        .type(SchemaTypes.LAZY_VALUE_SCHEMA)
                         .name("LAZY_SCHEMA")
                         .defaultValueContent("@io.helidon.common.LazyValue@.create(() -> "
                                                      + "@io.helidon.json.schema.Schema@.parse(STRING_SCHEMA))"))
@@ -99,7 +99,7 @@ class SchemaCodegen implements CodegenExtension {
                         .addAnnotation(Annotations.OVERRIDE)
                         .addContentLine("return STRING_SCHEMA;"))
                 .addMethod(it -> it.name("schema")
-                        .returnType(Types.SCHEMA)
+                        .returnType(SchemaTypes.SCHEMA)
                         .addAnnotation(Annotations.OVERRIDE)
                         .addContent("return LAZY_SCHEMA.get();"));
 
