@@ -367,10 +367,9 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
     private void addServiceRegistrySources(List<OrdinalSource> targetConfigSources) {
         Services.all(io.helidon.config.spi.ConfigSource.class)
-                .forEach(it -> {
-                    System.out.println("addServiceRegistrySources configsource: " + it.description());
-                    targetConfigSources.add(new OrdinalSource(MpConfigSources.create(it)));
-                });
+                .forEach(it ->
+                    targetConfigSources.add(new OrdinalSource(MpConfigSources.create(it)))
+                );
     }
 
     private void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
