@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@
         <module>gh-2171</module>
         <module>gh-2171-yml</module>
         <module>gh-4375</module>
+        <module>gh-10845</module>
         <module>hocon-mp</module>
     </modules>
 </project>
