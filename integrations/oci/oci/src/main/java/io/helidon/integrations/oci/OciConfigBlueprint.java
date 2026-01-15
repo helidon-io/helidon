@@ -77,7 +77,7 @@ interface OciConfigBlueprint {
      *     {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}, and is available in a
      *     separate module {@code helidon-integrations-oci-authentication-resource}</li>
      *     <li>{@code oke-workload-identity} - use identity of the OCI Kubernetes workload, uses
-     *     {@link com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider}, and is available in a
+     *     {@code com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider}, and is available in a
      *     separate module {@code helidon-integrations-oci-authentication-oke-workload}</li>
      * </ul>
      *
