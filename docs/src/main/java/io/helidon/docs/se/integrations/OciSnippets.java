@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorage;
@@ -37,9 +38,7 @@ class OciSnippets {
 
     void snippet_2() throws IOException {
         // tag::snippet_2[]
-        ServiceRegistryManager registryManager = ServiceRegistryManager.create();
-        ServiceRegistry registry = registryManager.registry();
-        BasicAuthenticationDetailsProvider authProvider = registry.get(BasicAuthenticationDetailsProvider.class);
+        BasicAuthenticationDetailsProvider authProvider = Services.get(BasicAuthenticationDetailsProvider.class);
         ObjectStorage objectStorageClient = ObjectStorageClient.builder().build(authProvider);
         // end::snippet_2[]
     }

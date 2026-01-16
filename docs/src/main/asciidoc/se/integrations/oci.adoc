@@ -40,14 +40,14 @@ include::{rootdir}/includes/se.adoc[]
 
 You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Integration.
 
-link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK Integration provides support for integrating link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK Clients] into your Helidon applications.
+link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK Integration provides support for integrating link:{oci-javasdk-url}[Oracle Cloud Infrastructure SDK clients] into your Helidon applications.
 
-NOTE: This Helidon module requires xref:../injection/injection.adoc#Programmatic Lookup[Service Registry]. ServiceRegistry requires setup of annotation processors, see xref:../injection/injection.adoc#Build time[Why are annotation processors needed?]
+NOTE: This Helidon module requires xref:../injection/injection.adoc#Programmatic Lookup[ServiceRegistry]. ServiceRegistry requires the use of annotation processors, see xref:../injection/injection.adoc#Build time[Why are annotation processors needed?]
 
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
-.Adding the Helidon OCI SDK Integrations dependency for Config, Config File and Session Token
+.Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token
 ----
 <dependency>
      <groupId>io.helidon.integrations.oci</groupId>
@@ -56,7 +56,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 [source,xml]
-.Adding the Helidon OCI SDK Integrations dependency for Resource Principal
+.Adding the Helidon OCI SDK Integration dependency for Resource Principal
 ----
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
@@ -65,7 +65,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 [source,xml]
-.Adding the Helidon OCI SDK Integrations dependency for Instance Principal
+.Adding the Helidon OCI SDK Integration dependency for Instance Principal
 ----
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
@@ -74,7 +74,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 [source,xml]
-.Adding the Helidon OCI SDK Integrations dependency for OKE Workload
+.Adding the Helidon OCI SDK Integration dependency for OKE Workload
 ----
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
@@ -84,12 +84,12 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-All you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authenticate with OCI. It is recommended that you configure authentication first and then verify your configuration by using the link:{oci-javasdk-url}[OCI CLI] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
+All you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authentication with OCI. It is recommended that you configure authentication first and then verify your configuration by using the link:{oci-javasdk-url}[OCI CLI] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
 
 [#_configuring_authentication]
 === Configuring Authentication
 
-OCI provides a few authentication methods that can be used when connecting to services. Available methods depend on where your application runs. The Helidon OCI SDK integration provides following authentication integrations out-of-the-box:
+OCI provides a few authentication methods that can be used when connecting to services. Available methods depend on where your application runs. The Helidon OCI SDK Integration provides following authentication integrations out-of-the-box:
 
 [cols="1,1,5",options="header"]
 |===
@@ -102,7 +102,7 @@ OCI provides a few authentication methods that can be used when connecting to se
 | OKE Workload Identity | 50     | Identity of the OKE Workload
 |===
 
-These providers configure authentication with OCI by picking up OCI credentials from your environment variables, system properties, and a configuration file `oci-config.yaml` on file system, or on classpath.
+These providers configure authentication with OCI by picking up OCI credentials from your environment variables, system properties, and a configuration file named `oci-config.yaml` on the file system, or on the runtime classpath.
 
 To configure authentication, add the `helidon.oci.authentication-method` property to `/server/src/main/resources/META-INF/oci-config.yaml`. This property specifies the OCI client authentication method that should be used.
 
@@ -114,18 +114,18 @@ helidon.oci:
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
 ----
 
-* `auto`(default value): cycles through the list of authentication types from `helidon.oci.allowed-authentication-methods` and choose the first one capable of providing data. In case the `helidon.oci.allowed-authentication-methods` list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}.
-* If the configured method is not available, an exception would be thrown for OCI related services.
+* `auto`(default value): cycles through the list of authentication types from `helidon.oci.allowed-authentication-methods` and chooses the first one capable of providing data. In case the `helidon.oci.allowed-authentication-methods` list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}.
+* If the configured method is not available, an exception is thrown for OCI related services.
 
 If your environment is already set up to work with the OCI SDK or
-the OCI CLI, then it is likely you do not need to perform any additional configuration of the integration. When the provider is added as a dependency, it will self-configure.
+the OCI CLI, then it is likely you do not need to perform any additional configuration for this integration. When the provider is added as a dependency, it will self-configure.
 
 [source,java]
 ----
 include::{sourcedir}/se/integrations/OciSnippets.java[tag=snippet_1, indent=0]
 ----
 
-Authentication with OCI is abstracted through `AuthenticationDetailsProvider`. The Helidon OCI SDK integration configures and constructs the object for you. The configuration primarily consists of initializing an OCI `AuthenticationDetailsProvider`. By default, the extension examines your environment and selects the best `AuthenticationDetailsProvider` and configures it for you.
+Authentication with OCI is abstracted through `AuthenticationDetailsProvider`. The Helidon OCI SDK Integration configures and constructs the object for you. The configuration primarily consists of initializing an OCI `AuthenticationDetailsProvider`. By default, the extension examines your environment and selects the best `AuthenticationDetailsProvider` and configures it for you.
 
 If you require greater control over the OCI configuration, the `helidon.oci.authentication-method` property lets you control which `AuthenticationDetailsProvider` will be used.
 
@@ -138,7 +138,7 @@ Once you have authentication with OCI configured, you can use it to access any l
 
 The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See link:{oci-objstore-url}[OCI Object Storage Overview] in OCI documentation.
 
-To enable OCI Object Storage integration, add the following dependency to your project's `pom.xml`:
+To enable the OCI Object Storage integration, add the following dependency to your project's `pom.xml`:
 
 [source,xml]
 .Adding the dependency for OCI Object Storage
@@ -151,7 +151,7 @@ To enable OCI Object Storage integration, add the following dependency to your p
 
 ===== Creating an Object Storage Client
 
-Now you can create OCI SDK Clients for Object Storage.
+Now you can create OCI SDK clients for Object Storage.
 
 [source,java]
 ----
@@ -168,7 +168,7 @@ Once you have created an ObjectStorage client you can use it as described in:
 [#_region]
 == Region Information
 
-Services can have a dependency on `com.oracle.bmc.Region`, and it can be looked up using Service Registry lookup methods. This can be used to determine the current region where the service is running.
+Services can have a dependency on `com.oracle.bmc.Region`, and it can be looked up using ServiceRegistry lookup methods. This can be used to determine the current region where the service is running.
 
 NOTE: Authentication details providers MUST NOT have a dependency on `Region`, as it may be provided by authentication details provider (this would create a cyclic dependency).
 
@@ -182,7 +182,7 @@ authentication details provider that implements a region provider. Weight: defau
 [#_imds]
 == Instance Metadata Service Instance Information
 
-Services may need some information about its running environment. The Instance Metadata Service (IMDS) provides such information. Services can look up `io.helidon.integrations.oci.ImdsInstanceInfo` using Service Registry lookup methods.
+Services may need some information about its running environment. The Instance Metadata Service (IMDS) provides such information. Services can look up `io.helidon.integrations.oci.ImdsInstanceInfo` using ServiceRegistry lookup methods.
 
 The following information is made available from IMDS in `io.helidon.integrations.oci.ImdsInstanceInfo`:
 
