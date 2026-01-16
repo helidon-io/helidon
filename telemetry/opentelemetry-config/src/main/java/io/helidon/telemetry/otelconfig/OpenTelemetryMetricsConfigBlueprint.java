@@ -61,6 +61,15 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
     Map<String, MetricExporter> exporters();
 
     /**
+     * Metric view information, configurable using {@link io.helidon.telemetry.otelconfig.ViewRegistrationConfig}.
+     *
+     * @return metric view information
+     */
+    @Option.Access("")
+    @Option.Configured("views")
+    List<OpenTelemetryMetricsConfigSupport.ViewRegistration> viewRegistrations();
+
+    /**
      * Information shared with the parent prototype.
      *
      * @hidden internal use only
@@ -68,14 +77,5 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
      */
     @Option.Access("")
     MetricsBuilderInfo metricsBuilderInfo();
-
-    /**
-     * Metric view information for programmatically-added views.
-     *
-     * @hidden internal use only
-     * @return metric view information
-     */
-    @Option.Access("")
-    List<OpenTelemetryMetricsConfigSupport.ViewInfo> views();
 
 }

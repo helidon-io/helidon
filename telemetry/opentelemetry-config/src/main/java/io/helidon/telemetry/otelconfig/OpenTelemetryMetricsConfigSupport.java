@@ -39,6 +39,15 @@ class OpenTelemetryMetricsConfigSupport {
     private OpenTelemetryMetricsConfigSupport() {
     }
 
+    /**
+     * Creates a {@link io.opentelemetry.sdk.metrics.export.MetricReader} based on the reader config and
+     * the named exporter referenced from the config.
+     *
+     * @param metricReaderConfig config for the {@code MetricReader}
+     * @param exporters the named exporters in the configuration
+     * @param errorCollector error collector to report problems detected in the configuration
+     * @return {@code MetricReader}
+     */
     static MetricReader createMetricReader(MetricReaderConfig metricReaderConfig,
                                            Map<String, MetricExporter> exporters,
                                            Errors.Collector errorCollector) {
@@ -47,6 +56,9 @@ class OpenTelemetryMetricsConfigSupport {
             return null;
         }
         return switch (metricReaderConfig.type()) {
+            /*
+            New reader types appear in later releases of OpenTelemetry.
+             */
             case PERIODIC -> {
                 var periodicReaderConfig = (PeriodicMetricReaderConfig) metricReaderConfig;
                 var builder = PeriodicMetricReader.builder(exporterToUse);
@@ -57,6 +69,16 @@ class OpenTelemetryMetricsConfigSupport {
         };
     }
 
+    /**
+     * Returns the exporter to use for the provided metric reader config, looking up an explicitly-referenced
+     * exporter if the config has one, otherwise using the single exporter configured, otherwise (no exporters
+     * configured) letting OpenTelemetry use its default.
+     *
+     * @param metricReaderConfig metric reader config settings
+     * @param exporters named exporters from the config
+     * @param errorCollector error collector for reporting any new config errors detected
+     * @return {@code MetricExporter}
+     */
     static MetricExporter chooseExporter(MetricReaderConfig metricReaderConfig,
                                          Map<String, MetricExporter> exporters,
                                          Errors.Collector errorCollector) {
@@ -154,16 +176,19 @@ class OpenTelemetryMetricsConfigSupport {
             exporters to be fully populated first, before preparing the readers, and we cannot be sure that would be
             the case in a config factory method for metric readers.
              */
-            target.readers().addAll(target.readerConfigs().stream()
-                                            .map(readerConfig -> createMetricReader(readerConfig,
-                                                                                    target.exporters(),
-                                                                                    errorsCollector))
-                                            .toList());
-
+            target.readerConfigs().stream()
+                    .map(readerConfig -> createMetricReader(readerConfig,
+                                                            target.exporters(),
+                                                            errorsCollector))
+                            .forEach(reader -> target.readers().add(reader));
+            /*
+            Register configured and programmatically-added readers.
+             */
             target.readers().forEach(sdkMetricsProviderBuilder::registerMetricReader);
 
-            target.views()
-                    .forEach(viewInfo -> sdkMetricsProviderBuilder.registerView(viewInfo.instrumentSelector, viewInfo.view));
+            target.viewRegistrations()
+                    .forEach(viewRegistration -> sdkMetricsProviderBuilder.registerView(viewRegistration.instrumentSelector,
+                                                                                        viewRegistration.view));
 
             target.metricsBuilderInfo(new MetricsBuilderInfo(sdkMetricsProviderBuilder, attributesBuilder));
         }
@@ -175,7 +200,7 @@ class OpenTelemetryMetricsConfigSupport {
         }
 
         /**
-         * Convenience method so developers can add OpenTelemetry metric views to the builder --using the "register" method
+         * Convenience method so developers can add OpenTelemetry metric views to the builder--using the "registerView" method
          * familiar from the OpenTelemetry API--which Helidon then adds to OpenTelemetry.
          *
          * @param builder            builder
@@ -187,7 +212,7 @@ class OpenTelemetryMetricsConfigSupport {
                                  InstrumentSelector instrumentSelector,
                                  View view) {
 
-            builder.views().add(new ViewInfo(instrumentSelector, view));
+            builder.viewRegistrations().add(new ViewRegistration(instrumentSelector, view));
         }
 
         /**
@@ -221,13 +246,27 @@ class OpenTelemetryMetricsConfigSupport {
                 case PERIODIC -> PeriodicMetricReaderConfig.create(config);
             };
         }
+
+
+        @Prototype.ConfigFactoryMethod
+        static ViewRegistration createViewRegistration(Config config) {
+            var viewRegistrationConfig = ViewRegistrationConfig.create(config);
+            var viewBuilder = View.builder();
+
+            viewRegistrationConfig.name().ifPresent(viewBuilder::setName);
+            viewRegistrationConfig.description().ifPresent(viewBuilder::setDescription);
+            viewRegistrationConfig.attributeFilter().ifPresent(viewBuilder::setAttributeFilter);
+            viewBuilder.setAggregation(viewRegistrationConfig.aggregation());
+
+            return new ViewRegistration(viewRegistrationConfig.instrumentSelector(), viewBuilder.build());
+        }
     }
 
     /**
-     * Combines the instrument selector and the view together so they can be handled together.
+     * Combines the instrument selector and the view of a view registration.
      *
      * @param instrumentSelector instrument selector
      * @param view               view
      */
-    record ViewInfo(InstrumentSelector instrumentSelector, View view) { }
+    record ViewRegistration(InstrumentSelector instrumentSelector, View view) { }
 }

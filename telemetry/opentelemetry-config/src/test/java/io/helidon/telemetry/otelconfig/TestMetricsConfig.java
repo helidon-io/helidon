@@ -21,7 +21,6 @@ import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.sdk.metrics.InstrumentType;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +58,15 @@ class TestMetricsConfig {
                                 - type: periodic
                                   exporter: exp-1
                                   interval: PT6S
+                              views:
+                                - name: sum-view
+                                  aggregation:
+                                    type: sum
+                                  description: "Sum view"
+                                  instrument-selector:
+                                    name: counter-selector
+                                    type: counter
+                                    meter-name: my-counter
                         """,
                 MediaTypes.APPLICATION_YAML));
 
@@ -85,6 +93,16 @@ class TestMetricsConfig {
         assertThat("Other exporter", metricsConfig.exporters().get("exp-2").toString(),
                    allOf(containsString("OtlpGrpcMetricExporter{"),
                          containsString("endpoint=http://localhost:4317")));
+
+        assertThat("Views", metricsConfig.viewRegistrations(), hasSize(1));
+        assertThat("View", metricsConfig.viewRegistrations().getFirst().view().toString(),
+                   allOf(containsString("name=sum-view"),
+                         containsString("description=Sum view"),
+                         containsString("aggregation=SumAggregation")));
+        assertThat("Instrument selector", metricsConfig.viewRegistrations().getFirst().instrumentSelector().toString(),
+                   allOf(containsString("instrumentType=COUNTER"),
+                         containsString("instrumentName=counter-selector"),
+                         containsString("meterName=my-counter")));
 
     }
 }
