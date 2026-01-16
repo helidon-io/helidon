@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,12 @@ class OpenTelemetryTracingConfigSupport {
             var sdkTracerProviderBuilder = SdkTracerProvider.builder();
 
             var attributesBuilder = Attributes.builder();
-            target.stringAttributes().forEach(attributesBuilder::put);
-            target.longAttributes().forEach(attributesBuilder::put);
-            target.doubleAttributes().forEach(attributesBuilder::put);
-            target.booleanAttributes().forEach(attributesBuilder::put);
-            target.stringAttributes().forEach(attributesBuilder::put);
+            TypedAttributes.apply(attributesBuilder,
+                                  target.stringAttributes(),
+                                  target.longAttributes(),
+                                  target.doubleAttributes(),
+                                  target.booleanAttributes());
+
 
             target.sampler().ifPresent(sdkTracerProviderBuilder::setSampler);
             target.spanLimits().ifPresent(sdkTracerProviderBuilder::setSpanLimits);
