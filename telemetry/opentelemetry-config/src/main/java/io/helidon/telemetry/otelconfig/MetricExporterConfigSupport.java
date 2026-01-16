@@ -57,8 +57,14 @@ class MetricExporterConfigSupport {
                 }
                 case BASE2_EXPONENTIAL_BUCKET_HISTOGRAM -> {
                     var base2Config = Base2ExponentialHistogramAggregationConfig.create(config);
-                    yield instrumentType -> Aggregation.base2ExponentialBucketHistogram(base2Config.maxBuckets(),
-                                                                                        base2Config.maxScale());
+                    /*
+                    The base2 config makes sure that maxBuckets and maxScale are either both present or both absent
+                    so here we can check only one.
+                     */
+                    yield instrumentType -> base2Config.maxBuckets().isPresent()
+                            ? Aggregation.base2ExponentialBucketHistogram(base2Config.maxBuckets().get(),
+                                                                          base2Config.maxScale().get())
+                            : Aggregation.base2ExponentialBucketHistogram();
                 }
             };
         }

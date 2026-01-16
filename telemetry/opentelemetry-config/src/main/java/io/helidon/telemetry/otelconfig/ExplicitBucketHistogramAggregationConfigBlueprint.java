@@ -26,7 +26,8 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface ExplicitBucketHistogramAggregationConfigBlueprint {
+@Prototype.CustomMethods(ExplicitBucketHistogramAggregationSupport.CustomMethods.class)
+interface ExplicitBucketHistogramAggregationConfigBlueprint extends AggregationConfigBlueprint {
 
     /**
      * Explicit bucket boundaries.

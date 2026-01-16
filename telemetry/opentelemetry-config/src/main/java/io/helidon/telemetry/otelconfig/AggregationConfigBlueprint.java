@@ -16,33 +16,14 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import java.util.Optional;
-
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-/**
- * Settings for a metric reader.
- */
 @Prototype.Configured
 @Prototype.Blueprint
-interface MetricReaderConfigBlueprint {
+interface AggregationConfigBlueprint {
 
-    /**
-     * Metric reader type.
-     *
-     * @return metric reader type
-     */
     @Option.Configured
-    @Option.Default("PERIODIC")
-    MetricReaderType type();
-
-    /**
-     * Name of the configured metric exporter to use for this metric reader.
-     *
-     * @return metric exporter name
-     */
-    @Option.Configured
-    Optional<String> exporter();
+    AggregationType type();
 
 }
