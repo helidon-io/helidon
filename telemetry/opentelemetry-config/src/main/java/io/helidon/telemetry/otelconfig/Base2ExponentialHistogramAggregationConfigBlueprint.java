@@ -16,6 +16,8 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
@@ -23,8 +25,9 @@ import io.helidon.builder.api.Prototype;
  * Settings for the base 2 exponential histogram aggregation.
  */
 @Prototype.Configured
-@Prototype.Blueprint
-interface Base2ExponentialHistogramAggregationConfigBlueprint {
+@Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
+@Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)
+interface Base2ExponentialHistogramAggregationConfigBlueprint extends AggregationConfigBlueprint {
 
     /**
      * Maximum number of buckets.
@@ -32,8 +35,7 @@ interface Base2ExponentialHistogramAggregationConfigBlueprint {
      * @return maximum number of buckets
      */
     @Option.Configured
-    @Option.DefaultInt(160)
-    int maxBuckets();
+    Optional<Integer> maxBuckets();
 
     /**
      * Maximum scale.
@@ -41,7 +43,6 @@ interface Base2ExponentialHistogramAggregationConfigBlueprint {
      * @return maximum scale
      */
     @Option.Configured
-    @Option.DefaultInt(20)
-    int maxScale();
+    Optional<Integer> maxScale();
 
 }
