@@ -78,4 +78,13 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
     @Option.Access("")
     MetricsBuilderInfo metricsBuilderInfo();
 
+    /**
+     * Metric view information for programmatically-added views.
+     *
+     * @hidden internal use only
+     * @return metric view information
+     */
+    @Option.Access("")
+    List<OpenTelemetryMetricsConfigSupport.ViewInfo> views();
+
 }
