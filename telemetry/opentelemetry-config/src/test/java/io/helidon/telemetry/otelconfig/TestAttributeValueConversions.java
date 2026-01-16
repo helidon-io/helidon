@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,13 @@ import java.util.stream.Stream;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.testing.junit5.Testing;
 
 import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.sdk.metrics.export.MetricExporter;
+import io.opentelemetry.sdk.metrics.export.MetricReader;
+import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -67,17 +72,41 @@ class TestAttributeValueConversions {
                             - max-queue-size: 22
                               type: simple
                               exporters: ["my-oltp"]
+                        metrics:
+                          attributes:
+                            strings:
+                              attr1: 12
+                              attr5: "any old thing"
+                              attr7: something
+                            longs:
+                              attr2: 12
+                            doubles:
+                              attr3: 24.5
+                              attr6: 12
+                            booleans:
+                              attr4: true
                     """,
             MediaTypes.APPLICATION_YAML));
 
-    static final OpenTelemetryTracingConfig tracingConfig = OpenTelemetryConfig.builder()
+    static final OpenTelemetryConfig openTelemetryConfig = OpenTelemetryConfig.builder()
             .config(config.get("telemetry"))
             .build()
-            .prototype()
+            .prototype();
+
+    static final OpenTelemetryTracingConfig tracingConfig = openTelemetryConfig
             .tracingConfig()
             .get();
 
-    static final Map<AttributeKey<?>, Object> attrs = tracingConfig.tracingBuilderInfo()
+    static final OpenTelemetryMetricsConfig metricsConfig = openTelemetryConfig
+            .metricsConfig()
+            .get();
+
+    static final Map<AttributeKey<?>, Object> tracingAttrs = tracingConfig.tracingBuilderInfo()
+            .attributesBuilder()
+            .build()
+            .asMap();
+
+    static final Map<AttributeKey<?>, Object> metricsAttrs = metricsConfig.metricsBuilderInfo()
             .attributesBuilder()
             .build()
             .asMap();
@@ -105,9 +134,13 @@ class TestAttributeValueConversions {
     @ParameterizedTest
     @MethodSource
     void testConversions(String key, Class<?> expectedType, Object expectedValue) {
-        var result = attrs.get(getKey(key, expectedValue));
-        assertThat("Value type", result, instanceOf(expectedType));
-        assertThat("Value ", result, is(equalTo(expectedValue)));
+        var tracingResult = tracingAttrs.get(getKey(key, expectedValue));
+        assertThat("Tracing value type", tracingResult, instanceOf(expectedType));
+        assertThat("Tracing value ", tracingResult, is(equalTo(expectedValue)));
+
+        var metricsResult = metricsAttrs.get(getKey(key, expectedValue));
+        assertThat("Tracing value type", metricsResult, instanceOf(expectedType));
+        assertThat("Tracing value ", metricsResult, is(equalTo(expectedValue)));
 
     }
 

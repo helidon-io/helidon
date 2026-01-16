@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracingConfigSupport.CustomMethods.class)
-interface OpenTelemetryTracingConfigBlueprint {
+interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
 
     /**
      * Tracing sampler.
@@ -86,43 +86,7 @@ interface OpenTelemetryTracingConfigBlueprint {
     Map<String, SpanExporter> exporterConfigs();
 
     /**
-     * String attributes.
-     *
-     * @return string attributes
-     */
-    @Option.Configured("attributes.strings")
-    @Option.Singular
-    Map<String, String> stringAttributes();
-
-    /**
-     * Boolean attributes.
-     *
-     * @return boolean attributes
-     */
-    @Option.Configured("attributes.booleans")
-    @Option.Singular
-    Map<String, Boolean> booleanAttributes();
-
-    /**
-     * Long attributes.
-     *
-     * @return long attributes
-     */
-    @Option.Configured("attributes.longs")
-    @Option.Singular
-    Map<String, Long> longAttributes();
-
-    /**
-     * Double attributes.
-     *
-     * @return double attributes
-     */
-    @Option.Configured("attributes.doubles")
-    @Option.Singular
-    Map<String, Double> doubleAttributes();
-
-    /**
-     * Share information with the parent prototype.
+     * Information shared with the parent prototype.
      *
      * @hidden internal use only
      * @return shared tracer builder information

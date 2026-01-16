@@ -30,5 +30,6 @@
 
     <modules>
         <module>tracing</module>
+        <module>metrics</module>
     </modules>
 </project>

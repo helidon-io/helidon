@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.metrics.MeterProvider;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -84,11 +85,29 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     Optional<OpenTelemetryTracingConfig> tracingConfig();
 
     /**
-     * Sets the tracer provider that OpenTelemetry should use.
+     * OpenTelemetry metrics settings.
+     *
+     * @return metrics settings
+     */
+    @Option.Access("")
+    @Option.Configured("signals.metrics")
+    Optional<OpenTelemetryMetricsConfig> metricsConfig();
+
+    /**
+     * Sets the tracer provider that OpenTelemetry should use. Applications can invoke this method to set the OpenTelemetry
+     * tracer provider rather than having Helidon prepare one from the tracing-related config settings.
      *
      * @return OpenTelemetry tracer provider
      */
     Optional<TracerProvider> tracerProvider();
+
+    /**
+     * Sets the meter provider that OpenTelemetry should use. Applications can invoke this method to set the OpenTelemetry
+     * meter provider rather than having Helidon prepare one from the metrics-releated config settings.
+     *
+     * @return OpenTelemetry meter provider
+     */
+    Optional<MeterProvider> meterProvider();
 
     /**
      * The {@link io.opentelemetry.api.OpenTelemetry} instance to use for telemetry.
