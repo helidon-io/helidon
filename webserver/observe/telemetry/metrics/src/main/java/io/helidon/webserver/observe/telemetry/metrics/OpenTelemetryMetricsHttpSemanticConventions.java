@@ -38,10 +38,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements MetricsHttpSemantic
 
     @Override
     public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        if (!measureRequest(req)) {
-            chain.proceed();
-            return;
-        }
+//        if (!measureRequest(req)) {
+//            chain.proceed();
+//            return;
+//        }
         var startTime = System.nanoTime();
         Exception exception;
         try {
