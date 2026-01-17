@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.integrations.langchain4j.ConfigUtils;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.Testing;
@@ -33,6 +34,7 @@ import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.generativeaiinference.model.ChatDetails;
 import com.oracle.bmc.generativeaiinference.model.DedicatedServingMode;
 import com.oracle.bmc.generativeaiinference.model.GenericChatRequest;
+import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiChatModel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +49,7 @@ import static org.hamcrest.Matchers.notNullValue;
 class ChatModelConfigTest {
 
     @Test
-    void testDefaultRoot(ServiceRegistry registry) {
+    void testDefaultRoot(ServiceRegistry registry, Config c) {
         BasicAuthenticationDetailsProvider authProv2 = registry.get(Lookup.builder().named("mockNamed2").build());
         assertThat(authProv2.getKeyId(), is("mockNamed2"));
         assertThat(registry.first(BasicAuthenticationDetailsProvider.class).map(BasicAuthenticationDetailsProvider::getKeyId),
@@ -55,8 +57,7 @@ class ChatModelConfigTest {
 
         var config = OciGenAiChatModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(ConfigSources.classpath("application.yaml"))
-                                .get(OciGenAiChatModelConfig.CONFIG_ROOT))
+                .config(ConfigUtils.create(c, OciGenAiChatModel.class, "test-chat-model"))
                 .build();
 
         assertThat(config, is(notNullValue()));
@@ -76,20 +77,23 @@ class ChatModelConfigTest {
     @Test
     void testNamedAuthProvider(ServiceRegistry registry) {
 
+        // language=YAML
         var yaml = """
-                langchain4j.oci-gen-ai:
-                  chat-model:
-                    auth-provider.service-registry.named: "mockNamed2"
-                    api-key: api-key
-                    region: eu-frankfurt-2
-                    compartment-id: ""
-                    model-name: ""
+                langchain4j:
+                  models:
+                    test-chat-model:
+                      auth-provider.service-registry.named: "mockNamed2"
+                      api-key: api-key
+                      region: eu-frankfurt-2
+                      compartment-id: ""
+                      model-name: ""
                 """;
+
+        Config c = Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML));
 
         var config = OciGenAiChatModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
-                                .get(OciGenAiChatModelConfig.CONFIG_ROOT))
+                .config(ConfigUtils.create(c, OciGenAiChatModelConfig.class, "test-chat-model"))
                 .build();
 
         assertThat(config.authProvider().map(BasicAuthenticationDetailsProvider::getKeyId), is(Optional.of("mockNamed2")));
@@ -98,20 +102,24 @@ class ChatModelConfigTest {
 
     @Test
     void testNamedRegion(ServiceRegistry registry) {
+
+        // language=YAML
         var yaml = """
-                langchain4j.oci-gen-ai:
-                  chat-model:
-                    auth-provider.service-registry.named: "mockNamed2"
-                    api-key: api-key
-                    region.service-registry.named: "region2"
-                    compartment-id: ""
-                    model-name: ""
+                langchain4j:
+                  models:
+                    test-chat-model:
+                      auth-provider.service-registry.named: "mockNamed2"
+                      api-key: api-key
+                      region.service-registry.named: "region2"
+                      compartment-id: ""
+                      model-name: ""
                 """;
+
+        Config c = Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML));
 
         var config = OciGenAiChatModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
-                                .get(OciGenAiChatModelConfig.CONFIG_ROOT))
+                .config(ConfigUtils.create(c, OciGenAiChatModelConfig.class, "test-chat-model"))
                 .build();
 
         assertThat(config.authProvider().map(BasicAuthenticationDetailsProvider::getKeyId), is(Optional.of("mockNamed2")));
@@ -120,13 +128,15 @@ class ChatModelConfigTest {
 
     @Test
     void testMissingChatModelName(ServiceRegistry registry) {
+        // language=YAML
         var yaml = """
-                langchain4j.oci-gen-ai:
-                  chat-model:
-                    auth-provider.service-registry.named: "mockNamed2"
-                    api-key: api-key
-                    region.service-registry.named: "region2"
-                    compartment-id: ""
+                langchain4j:
+                  models:
+                    test-chat-model:
+                      auth-provider.service-registry.named: "mockNamed2"
+                      api-key: api-key
+                      region.service-registry.named: "region2"
+                      compartment-id: ""
                 """;
 
         var exception = Assertions.assertThrows(Errors.ErrorMessagesException.class, () ->
@@ -140,13 +150,15 @@ class ChatModelConfigTest {
 
     @Test
     void testMissingCompartmentId(ServiceRegistry registry) {
+        // language=YAML
         var yaml = """
-                langchain4j.oci-gen-ai:
-                  chat-model:
-                    auth-provider.service-registry.named: "mockNamed2"
-                    api-key: api-key
-                    region.service-registry.named: "region2"
-                    model-name: ""
+                langchain4j:
+                  models:
+                    test-chat-model:
+                      auth-provider.service-registry.named: "mockNamed2"
+                      api-key: api-key
+                      region.service-registry.named: "region2"
+                      compartment-id: ""
                 """;
 
         var exception = Assertions.assertThrows(Errors.ErrorMessagesException.class, () ->

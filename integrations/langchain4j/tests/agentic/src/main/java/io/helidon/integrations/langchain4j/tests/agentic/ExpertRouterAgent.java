@@ -30,7 +30,6 @@ import dev.langchain4j.service.V;
  * defined by the {@code @SequenceAgent} annotation on the {@code ask} method.
  */
 @Ai.Agent("expert-router")
-@Ai.ChatModel("open-ai")
 public interface ExpertRouterAgent {
 
     /**

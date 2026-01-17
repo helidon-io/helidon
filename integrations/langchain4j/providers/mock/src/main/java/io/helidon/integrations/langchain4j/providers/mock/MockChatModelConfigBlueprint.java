@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,15 @@ import io.helidon.builder.api.Prototype;
 interface MockChatModelConfigBlueprint extends Prototype.Factory<MockChatModel> {
 
     /**
+     * Provider key used to identify the mock provider.
+     */
+
+    String PROVIDER_KEY = "mock";
+
+    /**
      * The root configuration key for this builder.
      */
-    String CONFIG_ROOT = "langchain4j.mock.chat-model";
+    String CONFIG_ROOT = "langchain4j.providers.mock";
 
     /**
      * If set to {@code false} (default), MockChatModel will not be available even if configured.
