@@ -16,10 +16,11 @@
 
 package io.helidon.integrations.langchain4j.providers.gemini;
 
+import io.helidon.integrations.langchain4j.Ai;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
-import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.service.SystemMessage;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,13 +33,20 @@ public class ListenerTest {
     private static final String TEST_PROMPT = "Test prompt";
 
     @Test
-    void requestInterception(GoogleAiGeminiChatModel model) {
-        assertThat(model.chat(TEST_PROMPT), is(MockHttpClientProvider.MOCK_RESPONSE));
+    void requestInterception(TestAiService aiService) {
+        assertThat(aiService.chat(TEST_PROMPT), is(MockHttpClientProvider.MOCK_RESPONSE));
         var modelListeners = Services.all(MockChatModelListener.class);
-
         assertThat(modelListeners.size(), is(2));
         assertThat(modelListeners.get(0).messages(), contains(TEST_PROMPT));
         assertThat(modelListeners.get(1).messages(), contains(TEST_PROMPT));
+    }
+
+    @Ai.Service
+    @Ai.ChatModel("test-model")
+    public interface TestAiService {
+
+        @SystemMessage("You are a Helidon expert!")
+        String chat(String message);
     }
 
 }

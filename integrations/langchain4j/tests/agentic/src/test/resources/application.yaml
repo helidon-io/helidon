@@ -14,29 +14,13 @@
 # limitations under the License.
 #
 langchain4j:
-  agents:
-    expert-router:
-      chat-model: mock
-    legal-expert:
-      chat-model: mock
-    pizza-expert:
-      chat-model: mock
-    category-router:
-      chat-model: mock
-      input-guardrails: [no-ananas-guardrail]
-    technical-expert:
-      chat-model: mock
-      input-guardrails: [no-ananas-guardrail]
-    medical-expert:
-      chat-model: mock
-      async: false
-      description: test
-      output-key: response
-      execute-tools-concurrently: false
-
-  mock:
-    chat-model:
+  providers:
+    mock:
       enabled: true
+
+  models:
+    mock-chat-model:
+      provider: mock
       rules:
         - pattern: (.|\n)*You are a pizza expert.(.|\n)*looks kind of like an ananas on pizza(.|\n)*
           response: true
@@ -52,3 +36,25 @@ langchain4j:
           response: You should find a medical attention!
         - pattern: (.|\n)*You are a technical expert(.|\n)*How do I construct an oven(.|\n)*
           response: Get some tools and lets build!
+
+  agents:
+    expert-router:
+      chat-model: mock-chat-model
+    experts-agent:
+      chat-model: mock-chat-model
+    legal-expert:
+      chat-model: mock-chat-model
+    pizza-expert:
+      chat-model: mock-chat-model
+    category-router:
+      chat-model: mock-chat-model
+      input-guardrails: [no-ananas-guardrail]
+    technical-expert:
+      chat-model: mock-chat-model
+      input-guardrails: [no-ananas-guardrail]
+    medical-expert:
+      chat-model: mock-chat-model
+      async: false
+      description: test
+      output-key: response
+      execute-tools-concurrently: false

@@ -37,7 +37,6 @@ import dev.langchain4j.service.V;
  * @see UserMessage
  */
 @Ai.Agent("experts-agent")
-@Ai.ChatModel("google-gemini")
 public interface ExpertsAgent {
 
     /**

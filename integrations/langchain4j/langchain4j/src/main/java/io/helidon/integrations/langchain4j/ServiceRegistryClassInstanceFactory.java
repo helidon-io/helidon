@@ -29,6 +29,13 @@ import dev.langchain4j.spi.classloading.ClassInstanceFactory;
  * @see Services
  */
 public class ServiceRegistryClassInstanceFactory implements ClassInstanceFactory {
+
+    /**
+     * Constructs a new instance of {@code ServiceRegistryClassInstanceFactory}.
+     */
+    public ServiceRegistryClassInstanceFactory() {
+    }
+
     @Override
     public <T> T getInstanceOfClass(Class<T> clazz) {
         return Services.get(clazz);
