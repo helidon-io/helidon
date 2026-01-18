@@ -1,0 +1,60 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+langchain4j:
+  providers:
+    mock:
+      enabled: true
+
+  models:
+    mock-chat-model:
+      provider: mock
+      rules:
+        - pattern: (.|\n)*You are a pizza expert.(.|\n)*looks kind of like an ananas on pizza(.|\n)*
+          response: true
+        - pattern: (.|\n)*You are a pizza expert.(.|\n)*pizza with ananas(.|\n)*
+          response: true
+        - pattern: (.|\n)*You are a pizza expert.(.|\n)*
+          response: false
+        - pattern: (.|\n)*categorize it as 'legal', 'medical' or 'technical'(.|\n)*weird rash on my skin(.|\n)*
+          response: medical
+        - pattern: (.|\n)*categorize it as 'legal', 'medical' or 'technical'(.|\n)*construct an oven(.|\n)*
+          response: technical
+        - pattern: (.|\n)*You are a medical expert(.|\n)*I have a weird rash on my skin(.|\n)*
+          response: You should find a medical attention!
+        - pattern: (.|\n)*You are a technical expert(.|\n)*How do I construct an oven(.|\n)*
+          response: Get some tools and lets build!
+
+  agents:
+    expert-router:
+      chat-model: mock-chat-model
+    experts-agent:
+      chat-model: mock-chat-model
+    legal-expert:
+      chat-model: mock-chat-model
+    pizza-expert:
+      chat-model: mock-chat-model
+    category-router:
+      chat-model: mock-chat-model
+      input-guardrails: [no-ananas-guardrail]
+    technical-expert:
+      chat-model: mock-chat-model
+      input-guardrails: [no-ananas-guardrail]
+    medical-expert:
+      chat-model: mock-chat-model
+      async: false
+      description: test
+      output-key: response
+      execute-tools-concurrently: false

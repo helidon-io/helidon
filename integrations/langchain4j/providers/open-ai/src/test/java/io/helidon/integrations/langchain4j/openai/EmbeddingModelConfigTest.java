@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,24 @@ import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.integrations.langchain4j.ConfigUtils;
 import io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.ConfigUtils.Kind.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 class EmbeddingModelConfigTest {
+    public static final String MODEL_NAME = "test-chat-model";
 
     @Test
     void testDefaultRoot() {
-        var config = OpenAiEmbeddingModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                          .get(OpenAiEmbeddingModelConfig.CONFIG_ROOT));
+        var config = OpenAiEmbeddingModelConfig.create(
+                ConfigUtils.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), equalTo(true));

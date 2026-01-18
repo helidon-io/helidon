@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package io.helidon.integrations.langchain4j.providers.mock;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
+import io.helidon.integrations.langchain4j.ConfigUtils;
+import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
 /**
@@ -32,7 +33,8 @@ import io.helidon.service.registry.Service;
 @Weight(98.0D)
 class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
 
-    private final Supplier<Optional<MockChatModel>> model;
+    private final Config config;
+    private final List<String> modelNames;
 
     /**
      * Creates a new MockChatModelFactory.
@@ -40,18 +42,21 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
      * @param config Configuration for the new model.
      */
     MockChatModelFactory(Config config) {
-        var configBuilder = MockChatModelConfig.builder()
-                .config(config.get(MockChatModelConfigBlueprint.CONFIG_ROOT));
-        model = () -> buildModel(configBuilder);
+        this.config = config;
+        this.modelNames = ConfigUtils.modelNames(config, MockChatModel.class, MockChatModelConfigBlueprint.PROVIDER_KEY);
     }
 
     /**
      * Builds a new model configured with the given configuration builder.
      *
-     * @param configBuilder Configuration builder for the new model.
+     * @param modelName Model name.
+     * @param config    Configuration for the new model.
      * @return New model configured with the given configuration builder.
      */
-    protected static Optional<MockChatModel> buildModel(MockChatModelConfig.Builder configBuilder) {
+    protected static Optional<MockChatModel> buildModel(String modelName, Config config) {
+        MockChatModelConfig.Builder configBuilder = MockChatModelConfig.builder()
+                .config(ConfigUtils.create(config, MockChatModel.class, modelName));
+
         if (!configBuilder.enabled()) {
             return Optional.empty();
         }
@@ -73,17 +78,11 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
 
     @Override
     public List<Service.QualifiedInstance<MockChatModel>> services() {
-        var modelOptional = model().get();
-        if (modelOptional.isEmpty()) {
-            return List.of();
-        }
-        var theModel = modelOptional.get();
-        return List.of(Service.QualifiedInstance.create(theModel),
-                       Service.QualifiedInstance.create(theModel, MockConstants.QUALIFIER));
+        return modelNames.stream()
+                .map(name -> buildModel(name, config)
+                        .map(model -> Service.QualifiedInstance
+                                .create(model, Qualifier.createNamed(name))))
+                .flatMap(Optional::stream)
+                .toList();
     }
-
-    private Supplier<Optional<MockChatModel>> model() {
-        return model;
-    }
-
 }
