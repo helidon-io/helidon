@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigValue;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.spi.AuditProvider;
@@ -80,8 +80,23 @@ public interface Security {
      *
      * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static Security create(io.helidon.common.config.Config config) {
+        Objects.requireNonNull(config, "Configuration must not be null");
+        return builder()
+                .config(config)
+                .build();
+    }
+
+    /**
+     * Creates new instance based on configuration values.
+     *
+     * @param config Config instance located on security configuration ("providers" is an expected child)
+     * @return new instance.
+     */
+    static Security create(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
                 .config(config)
@@ -187,7 +202,7 @@ public interface Security {
      * @return a child node of security configuration
      * @throws IllegalArgumentException in case you request child in one of the forbidden trees
      */
-    Config configFor(String child);
+    io.helidon.common.config.Config configFor(String child);
 
     /**
      * Encrypt bytes.
@@ -356,7 +371,7 @@ public interface Security {
         private NamedProvider<AuthenticationProvider> authnProvider;
         private NamedProvider<AuthorizationProvider> authzProvider;
         private SubjectMappingProvider subjectMappingProvider;
-        private Config config = Config.empty();
+        private io.helidon.config.Config config = io.helidon.config.Config.empty();
         private Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> providerSelectionPolicy =
                 FirstProviderSelectionPolicy::new;
         private Tracer tracer;
@@ -832,8 +847,21 @@ public interface Security {
          *
          * @param config Config instance
          * @return this instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
          */
+        @Deprecated(forRemoval = true, since = "4.4.0")
         public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Add config instance to this builder. This may be later use by components initialized as a side-effect
+         * of creating an instance of security (such as security providers).
+         *
+         * @param config Config instance
+         * @return this instance
+         */
+        public Builder config(Config config) {
             this.config = config;
             fromConfig(config);
             return this;
@@ -955,7 +983,7 @@ public interface Security {
             return this;
         }
 
-        private void fromConfig(io.helidon.common.config.Config config) {
+        private void fromConfig(Config config) {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
 
             if (!enabled) {
@@ -963,7 +991,7 @@ public interface Security {
                 return;
             }
 
-            config.get("environment.server-time").map(SecurityTime::create).ifPresent(this::serverTime);
+            config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -1006,7 +1034,7 @@ public interface Security {
             }
 
             // now policy
-            io.helidon.common.config.Config providerPolicyConfig = config.get("provider-policy");
+            Config providerPolicyConfig = config.get("provider-policy");
             ProviderSelectionPolicyType pType = providerPolicyConfig.get("type")
                     .asString()
                     .map(ProviderSelectionPolicyType::valueOf)
@@ -1156,7 +1184,11 @@ public interface Security {
             if (null == providerService) {
                 provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
             } else {
-                provider = providerService.providerInstance(providerSpecificConfig);
+                try {
+                    provider = providerService.create(providerSpecificConfig);
+                } catch (UnsupportedOperationException e) {
+                    provider = providerService.providerInstance(providerSpecificConfig);
+                }
             }
 
             if (isAuthn && (provider instanceof AuthenticationProvider)) {
