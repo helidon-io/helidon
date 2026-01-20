@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ class ProviderImpl implements Config.Context {
     private final Executor changesExecutor;
     private final boolean keyResolving;
     private final boolean keyResolvingFailOnMissing;
-    private final Function<String, List<String>> aliasGenerator;
 
     private ConfigDiff lastConfigsDiff;
     private Config lastConfig;
@@ -70,8 +69,7 @@ class ProviderImpl implements Config.Context {
                  boolean cachingEnabled,
                  Executor changesExecutor,
                  boolean keyResolving,
-                 boolean keyResolvingFailOnMissing,
-                 Function<String, List<String>> aliasGenerator) {
+                 boolean keyResolvingFailOnMissing) {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
         this.overrideSource = overrideSource;
@@ -85,7 +83,6 @@ class ProviderImpl implements Config.Context {
 
         this.keyResolving = keyResolving;
         this.keyResolvingFailOnMissing = keyResolvingFailOnMissing;
-        this.aliasGenerator = aliasGenerator;
     }
 
     public synchronized AbstractConfigImpl newConfig() {
@@ -144,8 +141,7 @@ class ProviderImpl implements Config.Context {
         ConfigFactory factory = new ConfigFactory(configMapperManager,
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
-                                                  this,
-                                                  aliasGenerator);
+                                                  this);
         AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);

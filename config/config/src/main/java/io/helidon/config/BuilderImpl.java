@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,10 +337,6 @@ class BuilderImpl implements Config.Builder {
         ConfigContextImpl context = new ConfigContextImpl(changesExecutor, buildParsers(parserServicesEnabled, parsers));
         ConfigSourcesRuntime configSources = buildConfigSources(context);
 
-        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
-                ? EnvironmentVariableAliases::aliasesOf
-                : null;
-
         //config provider
         return createProvider(configMapperManager,
                               configSources,
@@ -349,8 +345,7 @@ class BuilderImpl implements Config.Builder {
                               cachingEnabled,
                               changesExecutor,
                               keyResolving,
-                              keyResolvingFailOnMissing,
-                              aliasGenerator)
+                              keyResolvingFailOnMissing)
                 .newConfig();
     }
 
@@ -466,8 +461,7 @@ class BuilderImpl implements Config.Builder {
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 boolean keyResolving,
-                                boolean keyResolvingFailOnMissing,
-                                Function<String, List<String>> aliasGenerator) {
+                                boolean keyResolvingFailOnMissing) {
         return new ProviderImpl(configMapperManager,
                                 targetConfigSource,
                                 overrideSource,
@@ -475,8 +469,7 @@ class BuilderImpl implements Config.Builder {
                                 cachingEnabled,
                                 changesExecutor,
                                 keyResolving,
-                                keyResolvingFailOnMissing,
-                                aliasGenerator);
+                                keyResolvingFailOnMissing);
     }
 
     //

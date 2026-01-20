@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ public class ConfigSourcesTest {
         //       SE and MP to be as symmetrical as possible. There are two differences:
         //
         //       1. This is now resolved - SE and MP have the same behavior related
-        //          to System proprerties and Environment variables
+        //          to System properties and Environment variables
         //
         //       2. An upper-to-lower case mapping is performed in SE but is not in MP (correctly, per spec). This is a
         //          consequence of the static mapping (see EnvironmentVariables.expand()) required in SE to preserve
@@ -267,7 +267,8 @@ public class ConfigSourcesTest {
         assertValue("com.ACME.size", "mapped-env-value", appAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appAndEnv);
 
-        assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist
+        // there is an exact match for all lower case
+        assertValue("com.acme.size","mapped-env-lower-value", appAndEnv);  // DIFFERENCE 2: should not exist
         assertValue("com/ACME/size", "mapped-env-value", appAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appAndEnv);
 
@@ -284,7 +285,7 @@ public class ConfigSourcesTest {
         assertValue("com.ACME.size", "sys-prop-value", appSysAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appSysAndEnv);
 
-        assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist
+        assertValue("com.acme.size","mapped-env-lower-value", appAndEnv);  // DIFFERENCE 2: should not exist
         assertValue("com/ACME/size", "mapped-env-value", appSysAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appSysAndEnv);
     }

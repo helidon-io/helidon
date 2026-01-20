@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ public class ConfigSourceTest {
         ConfigContextImpl context = mock(ConfigContextImpl.class);
         ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
 
-        assertThat(runtime.load().get().get(TEST_ENV_VAR_NAME),
+        assertThat(runtime.node(TEST_ENV_VAR_NAME).get(),
                    ValueNodeMatcher.valueNode(TEST_ENV_VAR_VALUE));
     }
 }

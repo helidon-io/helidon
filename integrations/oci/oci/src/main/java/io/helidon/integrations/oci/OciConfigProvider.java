@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.service.registry.Service;
 
 // the supplier MUST use fully qualified name, as the type is generated as part of annotation processing
 // and the generated contract would be wrong if not
-@Service.Provider
+@Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class OciConfigProvider implements Supplier<io.helidon.integrations.oci.OciConfig> {
     private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
@@ -68,7 +68,7 @@ class OciConfigProvider implements Supplier<io.helidon.integrations.oci.OciConfi
     }
 
     private static void create() {
-        Config config = io.helidon.config.Config.create(
+        Config config = Config.create(
                 ConfigSources.environmentVariables(),
                 ConfigSources.systemProperties(),
                 ConfigSources.file("oci-config.yaml").optional(true),

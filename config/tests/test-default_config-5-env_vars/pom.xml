@@ -70,7 +70,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
-                        <value>sys-prop</value>
+                        <CAMEL_CASES>env-camel_cases</CAMEL_CASES>
+                        <value>env-value</value>
                     </environmentVariables>
                 </configuration>
             </plugin>
