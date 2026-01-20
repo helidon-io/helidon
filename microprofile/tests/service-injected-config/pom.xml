@@ -17,16 +17,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.tests.integration</groupId>
-        <artifactId>helidon-tests-integration-config</artifactId>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>helidon-microprofile-tests-project</artifactId>
         <version>4.4.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
+    <artifactId>helidon-microprofile-tests-service-injected-config</artifactId>
+    <name>Helidon Microprofile Service Injected Config Test</name>
 
-    <artifactId>helidon-tests-integration-gh-10845</artifactId>
-    <name>Helidon Tests Integration GH 10845</name>
-    <description>Validation for Github issue #10845 - Helidon SE Config Bridge to Helidon MP</description>
+    <description>
+        Microprofile service injected config implementation.
+    </description>
 
     <dependencies>
         <dependency>

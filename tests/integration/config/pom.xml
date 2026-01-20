@@ -38,7 +38,6 @@
         <module>gh-2171</module>
         <module>gh-2171-yml</module>
         <module>gh-4375</module>
-        <module>gh-10845</module>
         <module>hocon-mp</module>
     </modules>
 </project>
