@@ -69,6 +69,7 @@ public class MpConfigTest {
 
         config = ConfigProviderResolver.instance()
                 .getBuilder()
+                .addDiscoveredSources()
                 .withSources(MpConfigSources.create(Map.of("mp-1", "mp-value-1",
                                                            "mp-2", "mp-value-2",
                                                            "app.storageEnabled", "false",

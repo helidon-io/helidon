@@ -288,8 +288,8 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
         }
         if (useDiscoveredSources) {
             addDiscoveredSources(ordinalSources);
+            addServiceRegistrySources(ordinalSources);
         }
-        addServiceRegistrySources(ordinalSources);
 
         // now it is from lowest to highest
         ordinalSources.sort(Comparator.comparingInt(o -> o.ordinal));
