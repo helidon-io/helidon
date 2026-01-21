@@ -166,7 +166,7 @@ public final class Bytes {
     }
 
     /**
-     * Converts the first 8 bytes from {@code offset} to a long, using appropriate byte order for this machine.
+     * Converts the first 8 bytes from {@code offset} to a long, using little endian byte order.
      * <ul>
      *     <li>This method DOES NOT do a bound check</li>
      *     <li>This method DOES NOT validate there are 8 bytes available</li>
@@ -177,7 +177,7 @@ public final class Bytes {
      * @return long word from the first 8 bytes from offset
      */
     public static long toWord(byte[] buffer, int offset) {
-        return BYTE_ORDER_LE ? toWordLe(buffer, offset) : toWordBe(buffer, offset);
+        return toWordLe(buffer, offset);
     }
 
     // create a pattern for a byte, so we can search for it in a whole word
