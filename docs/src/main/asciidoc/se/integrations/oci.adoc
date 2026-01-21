@@ -114,7 +114,7 @@ helidon.oci:
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
 ----
 
-* `auto`(default value): cycles through the list of authentication types from `helidon.oci.allowed-authentication-methods` and chooses the first one capable of providing data. In case the `helidon.oci.allowed-authentication-methods` list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}.
+* `auto`(default value): cycles through the list of authentication types from `helidon.oci.allowed-authentication-methods` and chooses the first one capable of providing data. In case the `helidon.oci.allowed-authentication-methods` list is empty, Helidon tries all available strategies, ordered by decreasing Weight.
 * If the configured method is not available, an exception is thrown for OCI related services.
 
 If your environment is already set up to work with the OCI SDK or
@@ -132,7 +132,7 @@ If you require greater control over the OCI configuration, the `helidon.oci.auth
 [#_accessing_oci_services]
 === Accessing OCI Services
 
-Once you have authentication with OCI configured, you can use it to access any link:{oci-javasdk-url}#Services_Supported[OCI service supported by the OCI SDK]. You will need to add dependencies for the specific ODI SDK clients you will use.
+Once you have authentication with OCI configured, you can use it to access any link:{oci-javasdk-url}#Services_Supported[OCI service supported by the OCI SDK]. You need to add dependencies for the specific ODI SDK clients you will use.
 
 ==== Object Storage
 
@@ -168,7 +168,7 @@ Once you have created an ObjectStorage client you can use it as described in:
 [#_region]
 == Region Information
 
-Services can have a dependency on `com.oracle.bmc.Region`, and it can be looked up using ServiceRegistry lookup methods. This can be used to determine the current region where the service is running.
+Services can have a dependency on `com.oracle.bmc.Region`, and your service can look up the region where it is running using ServiceRegistry lookup methods. This can be used to determine the current region where the service is running.
 
 NOTE: Authentication details providers MUST NOT have a dependency on `Region`, as it may be provided by authentication details provider (this would create a cyclic dependency).
 
