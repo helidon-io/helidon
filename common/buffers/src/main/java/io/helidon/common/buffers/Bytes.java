@@ -166,7 +166,7 @@ public final class Bytes {
     }
 
     /**
-     * Converts the first 8 bytes from {@code offset} to a long, using appropriate byte order for this machine.
+     * Converts the first 8 bytes from {@code offset} to a long, using little endian byte order.
      * <ul>
      *     <li>This method DOES NOT do a bound check</li>
      *     <li>This method DOES NOT validate there are 8 bytes available</li>
@@ -177,7 +177,7 @@ public final class Bytes {
      * @return long word from the first 8 bytes from offset
      */
     public static long toWord(byte[] buffer, int offset) {
-        return BYTE_ORDER_LE ? toWordLe(buffer, offset) : toWordBe(buffer, offset);
+        return toWordLe(buffer, offset);
     }
 
     // create a pattern for a byte, so we can search for it in a whole word
@@ -204,17 +204,6 @@ public final class Bytes {
                 | ((long) buffer[index + 5] & 0xff) << 40
                 | ((long) buffer[index + 6] & 0xff) << 48
                 | ((long) buffer[index + 7] & 0xff) << 56;
-    }
-
-    private static long toWordBe(byte[] buffer, int index) {
-        return ((long) buffer[index] & 0xff) << 56
-                | ((long) buffer[index + 1] & 0xff) << 48
-                | ((long) buffer[index + 2] & 0xff) << 40
-                | ((long) buffer[index + 3] & 0xff) << 32
-                | ((long) buffer[index + 4] & 0xff) << 24
-                | ((long) buffer[index + 5] & 0xff) << 16
-                | ((long) buffer[index + 6] & 0xff) << 8
-                | (long) buffer[index + 7] & 0xff;
     }
 
     // this method is copied from Netty, and validated by them that it is the optimal
