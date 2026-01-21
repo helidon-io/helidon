@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.integration.gh10845;
+package io.helidon.microprofile.tests.service.injected.config;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
