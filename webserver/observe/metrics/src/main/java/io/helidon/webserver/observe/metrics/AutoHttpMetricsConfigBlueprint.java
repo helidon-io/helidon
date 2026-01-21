@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.webserver.observe.metrics;
+
+import java.util.List;
+import java.util.Set;
+
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+
+/**
+ * Automatic metrics collection settings.
+ */
+@Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
+@Prototype.Configured
+@Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
+interface AutoHttpMetricsConfigBlueprint {
+
+    /**
+     * Whether automatic metrics collection as a whole is enabled.
+     *
+     * @return automatic metrics collection enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enabled();
+
+    /**
+     * Whether automatic metrics updates occur synchronously.
+     *
+     * @return true if synchronous, false otherwise
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean synchronous();
+
+    /**
+     * Socket names for sockets to be instrumented with automatic metrics. Defaults to all sockets.
+     *
+     * @return socket names
+     */
+    @Option.Configured
+    Set<String> sockets();
+
+    /**
+     * Automatic metrics collection settings. Default excludes built-in Helidon paths (e.g., metrics, health).
+     *
+     * @return automatic metrics collection settings
+     */
+    @Option.Configured("paths")
+    @Option.Singular
+    List<AutoHttpMetricsPathConfig> autoHttpMetricsPathConfigs();
+
+    /**
+     * Default suppressions for Helidon-provided paths plus explicitly-configured settings.
+     *
+     * @hidden internal use only
+     * @return effective auto metrics settings
+     */
+    @Option.Access("")
+    List<AutoHttpMetricsPathConfig> effectivePathConfigs();
+
+}
