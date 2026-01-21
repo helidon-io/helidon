@@ -206,17 +206,6 @@ public final class Bytes {
                 | ((long) buffer[index + 7] & 0xff) << 56;
     }
 
-    private static long toWordBe(byte[] buffer, int index) {
-        return ((long) buffer[index] & 0xff) << 56
-                | ((long) buffer[index + 1] & 0xff) << 48
-                | ((long) buffer[index + 2] & 0xff) << 40
-                | ((long) buffer[index + 3] & 0xff) << 32
-                | ((long) buffer[index + 4] & 0xff) << 24
-                | ((long) buffer[index + 5] & 0xff) << 16
-                | ((long) buffer[index + 6] & 0xff) << 8
-                | (long) buffer[index + 7] & 0xff;
-    }
-
     // this method is copied from Netty, and validated by them that it is the optimal
     // way to figure out the index, see https://github.com/netty/netty/issues/10731
     private static int unrolledFirstIndexOf(byte[] buffer, int fromIndex, int byteCount, byte value) {
