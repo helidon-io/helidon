@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,29 @@ package io.helidon.docs.se.integrations;
 
 import java.io.IOException;
 
-import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.ConfigFileReader.ConfigFile;
-import com.oracle.bmc.auth.AuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.objectstorage.ObjectStorageAsync;
-import com.oracle.bmc.objectstorage.ObjectStorageAsyncClient;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.objectstorage.ObjectStorage;
+import com.oracle.bmc.objectstorage.ObjectStorageClient;
 
 @SuppressWarnings("ALL")
 class OciSnippets {
 
     void snippet_1() throws IOException {
         // tag::snippet_1[]
-        ConfigFile config = ConfigFileReader.parse("~/.oci/config", "DEFAULT");
-        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
+        ServiceRegistryManager registryManager = ServiceRegistryManager.create();
+        ServiceRegistry registry = registryManager.registry();
+        BasicAuthenticationDetailsProvider authProvider = registry.get(BasicAuthenticationDetailsProvider.class);
         // end::snippet_1[]
     }
 
     void snippet_2() throws IOException {
         // tag::snippet_2[]
-        ConfigFile config = ConfigFileReader.parse("~/.oci/config", "DEFAULT");
-        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(config);
-        ObjectStorageAsync objectStorageAsyncClient = new ObjectStorageAsyncClient(authProvider);
+        BasicAuthenticationDetailsProvider authProvider = Services.get(BasicAuthenticationDetailsProvider.class);
+        ObjectStorage objectStorageClient = ObjectStorageClient.builder().build(authProvider);
         // end::snippet_2[]
     }
 }
