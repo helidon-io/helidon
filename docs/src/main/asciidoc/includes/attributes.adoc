@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -199,6 +199,7 @@ endif::[]
 // Helidon component javadoc base URLs
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :uri-javadoc-base-url: {javadoc-base-url}/io.helidon.common.uri
+:buffers-javadoc-base-url: {javadoc-base-url}/io.helidon.common.buffers
 :common-javadoc-base-url: {javadoc-base-url}/io.helidon.common
 :config-javadoc-base-url: {javadoc-base-url}/io.helidon.config
 :config-etcd-javadoc-base-url: {javadoc-base-url}/io.helidon.config.etcd
@@ -264,6 +265,8 @@ endif::[]
 :security-provider-google-login-base-url: {javadoc-base-url}/io.helidon.security.providers.google.login
 :security-provider-jwt-base-url: {javadoc-base-url}/io.helidon.security.providers.jwt
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
+:websocket-javadoc-base-url: {javadoc-base-url}/io.helidon.websocket
+:websocket-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.websocket
 
 // 3rd party versioned URLs
 :eureka-client-javadoc-base-url: {javadoc-io-base-url}/com.netflix.eureka/eureka-client/{version-lib-eureka-client}

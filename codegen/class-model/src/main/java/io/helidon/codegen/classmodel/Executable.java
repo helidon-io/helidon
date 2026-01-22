@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,6 +204,18 @@ public abstract class Executable extends AnnotatedComponent {
         }
 
         /**
+         * Add a new method parameter.
+         *
+         * @param type type of the parameter
+         * @param name name of the parameter
+         * @return updated builder instance
+         */
+        public B addParameter(TypeName type, String name) {
+            return addParameter(it -> it.type(type)
+                    .name(name));
+        }
+
+        /**
          * Add new method parameter.
          *
          * @param parameter method parameter
@@ -252,6 +264,18 @@ public abstract class Executable extends AnnotatedComponent {
             consumer.accept(builder);
             return addThrows(builder);
         }
+
+        /**
+         * Add a declared throws definition.
+         *
+         * @param thrownType type of the exception thrown
+         * @return updated builder instance
+         */
+        public B addThrows(TypeName thrownType) {
+            Objects.requireNonNull(thrownType);
+            return addThrows(it -> it.type(thrownType));
+        }
+
 
         /**
          * Add a declared throws definition.

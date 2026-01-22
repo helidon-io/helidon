@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,29 @@ import io.helidon.common.types.TypeNames;
 import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
 import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
 
-abstract class AbstractParametersProvider {
-    void codegenFromParameters(ContentBuilder<?> contentBuilder, TypeName parameterType, String paramName, boolean optional) {
+/**
+ * A provider of parameters when code generating call of methods with annotated parameter, such
+ * as HTTP headers, path parameters etc.
+ */
+public abstract class AbstractParametersProvider {
+    /**
+     * Constructor with no side effects.
+     */
+    protected AbstractParametersProvider() {
+    }
+
+    /**
+     * Code generate getting a value from parameters.
+     *
+     * @param contentBuilder content builder to update
+     * @param parameterType type of the parameter we need to get
+     * @param paramName name of the parameter we need to get
+     * @param optional whether the parameter is optional
+     */
+    protected void codegenFromParameters(ContentBuilder<?> contentBuilder,
+                                         TypeName parameterType,
+                                         String paramName,
+                                         boolean optional) {
         if (optional) {
             TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
             // optional
@@ -75,7 +96,12 @@ abstract class AbstractParametersProvider {
         }
     }
 
-    abstract String providerType();
+    /**
+     * Type of this provider, such as "header", used when code generating error messages.
+     *
+     * @return provider type
+     */
+    protected abstract String providerType();
 
     void asMethod(ContentBuilder<?> content, TypeName type) {
         TypeName boxed = type.boxed();
