@@ -16,9 +16,12 @@
 
 package io.helidon.webserver.observe.telemetry.metrics;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import io.helidon.http.Status;
 import io.helidon.metrics.api.MeterRegistry;
@@ -38,6 +41,16 @@ import io.helidon.webserver.observe.metrics.spi.HttpMetricsFilter;
  */
 @Service.PerLookup
 class OpenTelemetryAutoHttpMetricsFilter implements HttpMetricsFilter {
+
+    // Bucket boundaries as recommended by the OTel spec.
+    // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
+    private static final Duration[] BUCKET_BOUNDARIES =
+            Stream.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
+                    .map(d -> d * 1000.0) // seconds to milliseconds
+                    .map(Double::longValue)
+                    .map(Duration::ofMillis)
+                    .toList()
+                    .toArray(new Duration[0]);
 
     static final String HTTP_METHOD = "http.method";
     static final String HTTP_SCHEME = "http.scheme";
@@ -103,7 +116,9 @@ class OpenTelemetryAutoHttpMetricsFilter implements HttpMetricsFilter {
 
 
         meterRegistry.timer(TIMER_NAME, tags)
-                .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME).tags(tags)))
+                .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME)
+                                                          .tags(tags)
+                                                          .buckets(BUCKET_BOUNDARIES)))
                 .record(now - start, TimeUnit.NANOSECONDS);
     }
 
