@@ -32,15 +32,13 @@ module io.helidon.webserver.observe.metrics {
     requires io.helidon.webserver;
     requires java.management;
 
-    requires io.opentelemetry.api;
-    requires io.opentelemetry.semconv;
-
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.metrics;
+    exports io.helidon.webserver.observe.metrics.spi;
 
     provides io.helidon.webserver.observe.spi.ObserveProvider
             with io.helidon.webserver.observe.metrics.MetricsObserveProvider;

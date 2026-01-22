@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.observe.metrics;
+package io.helidon.webserver.observe.telemetry.metrics;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.LazyValue;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
+import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
+import io.helidon.webserver.observe.metrics.spi.HttpMetricsFilter;
 
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+/**
+ * Filter for registering and updating meters to measure HTTP traffic according to OpenTelemetry semantic conventions.
+ */
+@Service.PerLookup
+class OpenTelemetryAutoHttpMetricsFilter implements HttpMetricsFilter {
 
-class AutoMetricsFilter implements Filter {
-
-    /*
-    Some OpenTelemetry attribute names are declared as constants, but not all.
-     */
-    static final String HTTP_METHOD = SemanticAttributes.HTTP_METHOD.getKey();
-    static final String HTTP_SCHEME = SemanticAttributes.HTTP_SCHEME.getKey();
+    static final String HTTP_METHOD = "http.method";
+    static final String HTTP_SCHEME = "http.scheme";
     static final String ERROR_TYPE = "error.type";
     static final String STATUS_CODE = "http.response.status_code";
     static final String HTTP_ROUTE = "http.route";
@@ -48,21 +48,22 @@ class AutoMetricsFilter implements Filter {
     static final String NETWORK_PROTOCOL_VERSION = "network.protocol.version";
     static final String SERVER_ADDRESS = "server.address";
     static final String SERVER_PORT = "server.port";
-
-
+    static final String SOCKET_NAME = "socket.name";
 
     static final String TIMER_NAME = "http.server.request.duration";
 
-    private final AutoHttpMetricsConfig config;
+    private final MeterRegistry meterRegistry;
 
-    private final LazyValue<MeterRegistry> meterRegistry = LazyValue.create(() -> Services.get(MeterRegistry.class));
+    private AutoHttpMetricsConfig autoHttpMetricsConfig;
 
-    private AutoMetricsFilter(AutoHttpMetricsConfig config) {
-        this.config = config;
+    OpenTelemetryAutoHttpMetricsFilter(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
-    static AutoMetricsFilter create(AutoHttpMetricsConfig autoHttpMetricsConfig) {
-        return new AutoMetricsFilter(autoHttpMetricsConfig);
+    @Override
+    public Filter prepare(MetricsConfig metricsConfig, AutoHttpMetricsConfig autoHttpMetricsConfig) {
+        this.autoHttpMetricsConfig = autoHttpMetricsConfig;
+        return this;
     }
 
     @Override
@@ -78,7 +79,7 @@ class AutoMetricsFilter implements Filter {
             /*
             By default, update the meter asynchronously to minimize the performance impact on request handling.
              */
-            if (config.synchronous()) {
+            if (autoHttpMetricsConfig.synchronous()) {
                 updateTimer(req, res, start, exception);
             } else {
                 Thread.ofVirtual().name("AutoMetricsUpdate", start)
@@ -89,19 +90,20 @@ class AutoMetricsFilter implements Filter {
 
     private void updateTimer(RoutingRequest req, RoutingResponse res, long start, AtomicReference<Exception> exception) {
         var now = System.nanoTime();
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.create(HTTP_METHOD, req.prologue().method().text()));
-        tags.add(Tag.create(HTTP_SCHEME, req.prologue().protocol()));
-        tags.add(Tag.create(ERROR_TYPE, errorType(res.status(), exception)));
-        tags.add(Tag.create(STATUS_CODE, Integer.toString(res.status().code())));
-        tags.add(Tag.create(HTTP_ROUTE, req.matchingPattern().orElse("")));
-        tags.add(Tag.create(NETWORK_PROTOCOL_NAME, req.prologue().protocol()));
-        tags.add(Tag.create(NETWORK_PROTOCOL_VERSION, req.prologue().protocolVersion()));
-        tags.add(Tag.create(SERVER_ADDRESS, req.requestedUri().host()));
-        tags.add(Tag.create(SERVER_PORT, Integer.toString(req.requestedUri().port())));
+        var tags = List.of(Tag.create(HTTP_METHOD, req.prologue().method().text()),
+                Tag.create(HTTP_SCHEME, req.prologue().protocol()),
+                Tag.create(ERROR_TYPE, errorType(res.status(), exception)),
+                Tag.create(STATUS_CODE, Integer.toString(res.status().code())),
+                Tag.create(HTTP_ROUTE, req.matchingPattern().orElse("")),
+                Tag.create(NETWORK_PROTOCOL_NAME, req.prologue().protocol()),
+                Tag.create(NETWORK_PROTOCOL_VERSION, req.prologue().protocolVersion()),
+                Tag.create(SERVER_ADDRESS, req.requestedUri().host()),
+                Tag.create(SERVER_PORT, Integer.toString(req.requestedUri().port())),
+                Tag.create(SOCKET_NAME, req.listenerContext().config().name()));
 
-        meterRegistry.get().timer(TIMER_NAME, tags)
-                .orElse(meterRegistry.get().getOrCreate(Timer.builder(TIMER_NAME).tags(tags)))
+
+        meterRegistry.timer(TIMER_NAME, tags)
+                .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME).tags(tags)))
                 .record(now - start, TimeUnit.NANOSECONDS);
     }
 

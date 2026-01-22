@@ -22,4 +22,6 @@ module io.helidon.webserver.observe.telemetry.metrics {
     requires io.helidon.webserver;
     requires io.helidon.metrics.api;
 
+    requires io.opentelemetry.api;
+
 }
