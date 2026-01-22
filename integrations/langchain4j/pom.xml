@@ -41,7 +41,6 @@
         <module>codegen</module>
         <module>langchain4j</module>
         <module>providers</module>
-        <module>tests</module>
     </modules>
 
     <description>
@@ -66,13 +65,13 @@
         </plugins>
     </build>
 
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>tests</id>-->
-<!--            <modules>-->
-<!--                <module>tests</module>-->
-<!--            </modules>-->
-<!--        </profile>-->
-<!--    </profiles>-->
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

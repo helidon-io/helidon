@@ -13,48 +13,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 langchain4j:
-  providers:
-    mock:
-      enabled: true
+  agents:
+    flavor-classifier:
+      chat-model: test-mock-model
+    helidon-se-expert:
+      chat-model: test-mock-model
+      output-guardrails:
+        - io.helidon.integrations.langchain4j.tests.agentic.NonMPOutputGuardrail
+    helidon-mp-expert:
+      chat-model: test-mock-model
+      input-guardrails:
+        - io.helidon.integrations.langchain4j.tests.agentic.ForbiddenWordsInputGuardrail
 
   models:
-    mock-chat-model:
+    test-mock-model:
       provider: mock
+      enabled: true
       rules:
-        - pattern: (.|\n)*You are a pizza expert.(.|\n)*looks kind of like an ananas on pizza(.|\n)*
-          response: true
-        - pattern: (.|\n)*You are a pizza expert.(.|\n)*pizza with ananas(.|\n)*
-          response: true
-        - pattern: (.|\n)*You are a pizza expert.(.|\n)*
-          response: false
-        - pattern: (.|\n)*categorize it as 'legal', 'medical' or 'technical'(.|\n)*weird rash on my skin(.|\n)*
-          response: medical
-        - pattern: (.|\n)*categorize it as 'legal', 'medical' or 'technical'(.|\n)*construct an oven(.|\n)*
-          response: technical
-        - pattern: (.|\n)*You are a medical expert(.|\n)*I have a weird rash on my skin(.|\n)*
-          response: You should find a medical attention!
-        - pattern: (.|\n)*You are a technical expert(.|\n)*How do I construct an oven(.|\n)*
-          response: Get some tools and lets build!
-
-  agents:
-    expert-router:
-      chat-model: mock-chat-model
-    experts-agent:
-      chat-model: mock-chat-model
-    legal-expert:
-      chat-model: mock-chat-model
-    pizza-expert:
-      chat-model: mock-chat-model
-    category-router:
-      chat-model: mock-chat-model
-      input-guardrails: [no-ananas-guardrail]
-    technical-expert:
-      chat-model: mock-chat-model
-      input-guardrails: [no-ananas-guardrail]
-    medical-expert:
-      chat-model: mock-chat-model
-      async: false
-      description: test
-      output-key: response
-      execute-tools-concurrently: false
+        - pattern: (.|\n)*categorize it(.|\n)*JAX-RS(.|\n)*
+          response: MP
+        - pattern: (.|\n)*JAX-RS(.|\n)*
+          response: I am MP expert!
+        - pattern: (.|\n)*categorize it(.|\n)*imperative(.|\n)*
+          response: SE
+        - pattern: (.|\n)*RETRY!(.|\n)*
+          response: I am SE expert after retry!
+        - pattern: (.|\n)*please retry me req(.|\n)*
+          response: please retry me res
+        - pattern: (.|\n)*imperative(.|\n)*
+          response: I am SE expert!

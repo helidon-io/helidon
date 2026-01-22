@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package io.helidon.integrations.langchain4j.tests.agentic;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Objects;
+import java.util.stream.Stream;
 
+import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
 import dev.langchain4j.agentic.agent.AgentInvocationException;
@@ -26,46 +27,54 @@ import dev.langchain4j.guardrail.GuardrailException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testing.Test
 public class AgentTest {
 
     @Test
-    void medicalTest(ExpertRouterAgent expertRouterAgent) {
-        String response = expertRouterAgent.ask("I have a weird rash on my skin, what should I do?");
-        assertThat(response, is("You should find a medical attention!"));
+    void seTest() {
+        var helidonExpertAgent = Services.get(HelidonExpertAgent.class);
+        var response =
+                helidonExpertAgent
+                        .ask("How do create imperative Helidon HTTP GET resource returning 'Hello World' to every request?");
+        assertThat(response, is("I am SE expert!"));
     }
 
     @Test
-    void medicalTestGuardrail(ExpertRouterAgent expertRouterAgent) {
-        assertGuardrailException(() -> expertRouterAgent.ask(
-                "I have a weird rash on my skin, it looks kind of like an ananas on pizza, what should I do?"));
+    void mpTest() {
+        var helidonExpertAgent = Services.get(HelidonExpertAgent.class);
+        var response =
+                helidonExpertAgent
+                        .ask("How do create JAX-RS Helidon HTTP GET resource returning 'Hello World' to every request?");
+        assertThat(response, is("I am MP expert!"));
     }
 
     @Test
-    void technicalTest(ExpertRouterAgent expertRouterAgent) {
-        String response = expertRouterAgent.ask("How do I construct an oven to make pizza?");
-        assertThat(response, is("Get some tools and lets build!"));
+    void mpTestInputGuardRail() {
+        var helidonExpertAgent = Services.get(HelidonExpertAgent.class);
+        assertGuardrailException(() -> helidonExpertAgent
+                .ask("How do create JAX-RS Helidon HTTP GET reactive resource returning 'Hello World' to every request?"));
     }
 
     @Test
-    void technicalTestGuardrail(ExpertRouterAgent expertRouterAgent) {
-        assertGuardrailException(() -> expertRouterAgent.ask("How do I construct an oven to make pizza with ananas?"));
+    void mpTestOutputGuardRail() {
+        var helidonExpertAgent = Services.get(HelidonExpertAgent.class);
+        assertThat(helidonExpertAgent.ask("please retry me req imperative"), is("I am SE expert after retry!"));
     }
 
     void assertGuardrailException(Executable executable) {
         Throwable ex = assertThrows(AgentInvocationException.class, executable);
-        ex = ex.getCause();
-        assertThat(ex, instanceOf(InvocationTargetException.class));
-        ex = ex.getCause();
-        assertThat(ex, instanceOf(UndeclaredThrowableException.class));
-        ex = ex.getCause();
-        assertThat(ex, instanceOf(InvocationTargetException.class));
-        ex = ex.getCause();
-        assertThat(ex, instanceOf(GuardrailException.class));
+        var guardrailRootCause = Stream.iterate(ex, Objects::nonNull, Throwable::getCause)
+                .filter(e -> e instanceof GuardrailException)
+                .findFirst()
+                .map(GuardrailException.class::cast);
+        assertTrue(guardrailRootCause.isPresent());
+        assertThat(guardrailRootCause.get().getMessage(),
+                   containsString("Inappropriate Helidon question! Prompt containing: reactive"));
     }
 }

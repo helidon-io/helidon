@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,17 @@
 
 package io.helidon.integrations.langchain4j.tests.agentic;
 
-/**
- * Represents the classification of a user request used to select the appropriate
- * expert agent. The values correspond to the activation conditions in
- * {@code ExpertsAgent}. If a request does not fit any known domain, {@link #UNKNOWN}
- * is used.
- */
-public enum RequestCategory {
-    /**
-     * Legal request category.
-     */
-    LEGAL,
-    /**
-     * Medical request category.
-     */
-    MEDICAL,
-    /**
-     * Technical request category.
-     */
-    TECHNICAL,
-    /**
-     * Unknown request category.
-     */
-    UNKNOWN
+import io.helidon.integrations.langchain4j.Ai;
+
+import dev.langchain4j.agentic.declarative.SequenceAgent;
+import dev.langchain4j.service.V;
+
+@Ai.Agent("helidon-expert")
+public interface HelidonExpertAgent {
+
+    @SequenceAgent(outputKey = "response", subAgents = {
+            FlavorClassifierAgent.class,
+            FlavorRouterAgent.class
+    })
+    String ask(@V("request") String request);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,31 @@
 
 package io.helidon.integrations.langchain4j.tests.agentic;
 
+import java.util.List;
+
+import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.guardrail.InputGuardrail;
 import dev.langchain4j.guardrail.InputGuardrailResult;
 
-/**
- * Input guardrail that prevents user requests containing references to pineapple (ananas) on pizza.
- * It uses {@link PizzaExpert} to detect such content and fails the request when detected.
- */
 @Service.Singleton
-@Service.Named("no-ananas-guardrail")
-public class NoPizzaOnAnanasInputGuardrail implements InputGuardrail {
+public class ForbiddenWordsInputGuardrail implements InputGuardrail {
 
-    private final PizzaExpert expert;
+    private final List<String> forbidden;
 
-    /**
-     * Constructs a {@code NoPizzaOnAnanasInputGuardrail} with the required {@link PizzaExpert}.
-     *
-     * @param pizzaExpert the expert used to determine if a request mentions pineapple on pizza
-     */
     @Service.Inject
-    NoPizzaOnAnanasInputGuardrail(PizzaExpert pizzaExpert) {
-        expert = pizzaExpert;
+    ForbiddenWordsInputGuardrail(Config config) {
+        this.forbidden = config.get("app.guardrails.forbidden").asList(String.class).orElse(List.of());
     }
 
     @Override
     public InputGuardrailResult validate(UserMessage userMessage) {
-        if (this.expert.ananasOnPizza(userMessage.singleText())) {
-            return this.fatal("Ananas on pizza detected!");
+        for (String forbiddenWord : forbidden) {
+            if (userMessage.singleText().contains(forbiddenWord)) {
+                return this.fatal("Inappropriate Helidon question! Prompt containing: " + forbiddenWord);
+            }
         }
         return this.success();
     }

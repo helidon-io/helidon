@@ -16,9 +16,9 @@
 
 package io.helidon.integrations.langchain4j;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -27,11 +27,14 @@ import io.helidon.service.registry.ServiceRegistry;
 import dev.langchain4j.agentic.agent.AgentBuilder;
 import dev.langchain4j.guardrail.InputGuardrail;
 import dev.langchain4j.guardrail.OutputGuardrail;
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.service.tool.ToolProvider;
 
 @Prototype.Blueprint
 @Prototype.Configured(AgentsConfigBlueprint.CONFIG_ROOT)
@@ -65,7 +68,7 @@ interface AgentsConfigBlueprint {
     Optional<Boolean> executeToolsConcurrently();
 
     @Option.Configured
-    String chatModel();
+    Optional<String> chatModel();
 
     @Option.Configured
     Optional<String> chatMemory();
@@ -80,17 +83,28 @@ interface AgentsConfigBlueprint {
     Optional<String> retrievalAugmentor();
 
     @Option.Configured
-    List<String> inputGuardrails();
+    Optional<String> toolProvider();
 
     @Option.Configured
-    List<String> outputGuardrails();
+    Set<Class<?>> tools();
+
+    @Option.Configured
+    Set<String> mcpClients();
+
+    @Option.Configured
+    @Option.Singular
+    Set<Class<? extends InputGuardrail>> inputGuardrails();
+
+    @Option.Configured
+    @Option.Singular
+    Set<Class<? extends OutputGuardrail>> outputGuardrails();
 
     default void configure(AgentBuilder<?> agentBuilder, ServiceRegistry serviceRegistry) {
         Objects.requireNonNull(agentBuilder, "agentBuilder must not be null");
-        // required configuration
-        agentBuilder.chatModel(serviceRegistry.getNamed(ChatModel.class, chatModel()));
 
-        // optional simple values
+        this.chatModel().map(s -> serviceRegistry.getNamed(ChatModel.class, s))
+                .ifPresent(agentBuilder::chatModel);
+
         this.name().ifPresent(agentBuilder::name);
         this.description().ifPresent(agentBuilder::description);
         this.outputKey().ifPresent(agentBuilder::outputKey);
@@ -99,7 +113,6 @@ interface AgentsConfigBlueprint {
                 .filter(b -> b)
                 .ifPresent(b -> agentBuilder.executeToolsConcurrently());
 
-        // optional components
         this.chatMemory().map(s -> serviceRegistry.getNamed(ChatMemory.class, s))
                 .ifPresent(agentBuilder::chatMemory);
         this.chatMemoryProvider().map(s -> serviceRegistry.getNamed(ChatMemoryProvider.class, s))
@@ -108,23 +121,49 @@ interface AgentsConfigBlueprint {
                 .ifPresent(agentBuilder::contentRetriever);
         this.retrievalAugmentor().map(s -> serviceRegistry.getNamed(RetrievalAugmentor.class, s))
                 .ifPresent(agentBuilder::retrievalAugmentor);
+        this.toolProvider().map(s -> serviceRegistry.getNamed(ToolProvider.class, s))
+                .ifPresent(agentBuilder::toolProvider);
+
+        // tools – only set when the list is non‑empty
+        if (!tools().isEmpty()) {
+            Object[] classes = tools()
+                    .stream()
+                    // First look for unnamed types
+                    .map(c -> serviceRegistry.first(c)
+                            .map(Object.class::cast)
+                            // Then try named ones of the same type
+                            //KEC: check if wildcards are working
+                            .or(() -> serviceRegistry.firstNamed(c, "*"))
+                            .orElseThrow(() -> new IllegalStateException("No service bean found for tool " + c)))
+                    .toArray(Object[]::new);
+            agentBuilder.tools(classes);
+        }
+
+        // mcp clients – only set when the list is non‑empty
+        if (!mcpClients().isEmpty()) {
+            McpToolProvider.Builder mcpToolProviderBuilder = McpToolProvider.builder();
+            McpClient[] classes = mcpClients()
+                    .stream()
+                    .map(n -> serviceRegistry.firstNamed(McpClient.class, n)
+                            .orElseThrow(() -> new IllegalStateException("No service bean found for mcp client " + n)))
+                    .toArray(McpClient[]::new);
+            mcpToolProviderBuilder.mcpClients(classes);
+            agentBuilder.toolProvider(mcpToolProviderBuilder.build());
+        }
 
         // guardrails – only set when the lists are non‑empty
         if (!inputGuardrails().isEmpty()) {
-            agentBuilder.inputGuardrails(inputGuardrails()
-                                                 .stream()
-                                                 .map(s -> serviceRegistry.getNamed(InputGuardrail.class, s))
-                                                 .toList()
-                                                 .toArray(new InputGuardrail[0])
-            );
+            @SuppressWarnings("unchecked")
+            Class<? extends InputGuardrail>[] classes =
+                    inputGuardrails().toArray(Class[]::new);
+            agentBuilder.inputGuardrailClasses(classes);
         }
+
         if (!outputGuardrails().isEmpty()) {
-            agentBuilder.outputGuardrails(inputGuardrails()
-                                                  .stream()
-                                                  .map(s -> serviceRegistry.getNamed(OutputGuardrail.class, s))
-                                                  .toList()
-                                                  .toArray(new OutputGuardrail[0])
-            );
+            @SuppressWarnings("unchecked")
+            Class<? extends OutputGuardrail>[] classes =
+                    outputGuardrails().toArray(Class[]::new);
+            agentBuilder.outputGuardrailClasses(classes);
         }
     }
 }

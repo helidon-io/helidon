@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Test package for agentic integrations in Helidon LangChain4j.
- *
- * <p>This package contains test interfaces and classes that demonstrate
- * the usage of AI agents and services within the Helidon integration
- * with LangChain4j.</p>
- */
 package io.helidon.integrations.langchain4j.tests.agentic;
+
+import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.Services;
+
+public class Main {
+
+    public static void main(String[] args) {
+        LogConfig.configureRuntime();
+        var helidonExpertAgent = Services.get(HelidonExpertAgent.class);
+        var response =
+                helidonExpertAgent
+//                        .ask("How do create imperative Helidon HTTP GET resource returning 'Hello World' to every request? And Spring?");
+                .ask("How do create JAX-RS Helidon HTTP GET resource returning 'Hello World' to every request?");
+        System.out.println(response);
+    }
+}
