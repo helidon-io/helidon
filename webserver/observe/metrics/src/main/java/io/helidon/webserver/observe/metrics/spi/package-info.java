@@ -13,26 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package main.java.io.helidon.webserver.observe.telemetry.metrics;
-
-import io.helidon.webserver.http.HttpFeature;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.spi.ServerFeature;
-
-public class OpenTelemetrySemanticConventionsHttpFeature implements ServerFeature {
-    @Override
-    public void setup(ServerFeatureContext featureContext) {
-
-    }
-
-    @Override
-    public String name() {
-        return "";
-    }
-
-    @Override
-    public String type() {
-        return "";
-    }
-}
+/**
+ * SPIs for the metrics observer component.
+ */
+package io.helidon.webserver.observe.metrics.spi;
