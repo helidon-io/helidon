@@ -372,7 +372,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                 );
     }
 
-    private void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
+    private static void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
         ServiceLoader.load(Converter.class)
                 .forEach(it -> targetConverters.add(new OrdinalConverter(it)));
     }
