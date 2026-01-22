@@ -54,7 +54,7 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 * Automatic conversion between Java objects and JSON
 * Custom serializers and deserializers for complex types
 * Type-safe binding with generic support
-* Extensive configuration and customization: property naming and ordering, null handling, required fields, unknown property handling, constructor/factory/builder creation, and custom (de)serializers/converters
+* Extensive configuration and customizations
 
 === Code Generation
 
