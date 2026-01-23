@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -905,6 +906,25 @@ class TypeHandlerBasic implements TypeHandler {
             }
         }
 
+        boolean callSuper = false;
+        TypeName declaringType;
+        if (override) {
+            TypeName tmpDeclaringType = null;
+            if (option().interfaceMethod().isPresent()) {
+                var interfaceMethod = option().interfaceMethod().get();
+                if (interfaceMethod.elementModifiers().contains(Modifier.DEFAULT)) {
+                    // in case we do not have a declaring type, we cannot call the super method
+                    // as default methods on interfaces may inherit from more than one super interface, and the
+                    // invocation is SuperType.super.methodName()
+                    tmpDeclaringType = interfaceMethod.enclosingType().orElse(null);
+                    callSuper = tmpDeclaringType != null;
+                }
+            }
+            declaringType = tmpDeclaringType;
+        } else {
+            declaringType = null;
+        }
+
         var method = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .accessModifier(AccessModifier.PUBLIC)
@@ -917,11 +937,23 @@ class TypeHandlerBasic implements TypeHandler {
             method.addAnnotation(Annotations.OVERRIDE);
         }
 
+        Consumer<ContentBuilder<?>> contentConsumer;
+        if (callSuper) {
+            method.addElementModifier(Modifier.DEFAULT);
+            contentConsumer = it -> it.addContent("return ")
+                    .addContent(declaringType)
+                    .addContent(".super.")
+                    .addContent(option().getterName())
+                    .addContentLine("();");
+        } else {
+            // interface method
+            contentConsumer = it -> {};
+        }
+
         return Optional.of(GeneratedMethod.builder()
                                    .method(method.build())
                                    .javadoc(javadoc)
-                                   .contentBuilder(it -> {
-                                   }) // always an interface method
+                                   .contentBuilder(contentConsumer)
                                    .build());
     }
 
