@@ -514,7 +514,7 @@ telemetry:
 <2> Introduces the first metric exporter (with name `exp-1`).
 <3> Indicates to accumulate measurement values since the previous transmission.
 <4> Prescribes to aggregate histograms for transmission using the OpenTelemetry `BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` technique with the specified maximum number of buckets and maximum scale.
-<5> Introduces the second metric exporter (with nane `exp-2`).
+<5> Introduces the second metric exporter (with name `exp-2`).
 <6> Indicates to transmit deltas since the last transmission.
 <7> Prescribes to aggregate histograms using a histogram with the given explicit bucket boundary values.
 <8> Declares a single metric reader of the OpenTelemetry `PERIODIC` types gathering data each 6 seconds.
