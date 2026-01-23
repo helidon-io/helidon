@@ -44,6 +44,10 @@ public final class ConfigUtils {
      */
     public static final String EMB_STORES_KEY = LC4J_KEY + ".embedding-stores";
     /**
+     * Configuration key for content retrievers definitions.
+     */
+    public static final String CONTENT_RETRIEVERS_KEY = LC4J_KEY + ".content-retrievers";
+    /**
      * Configuration key for provider definitions.
      */
     public static final String PROVIDERS_KEY = LC4J_KEY + ".providers";
@@ -149,7 +153,13 @@ public final class ConfigUtils {
         /**
          * Configuration category for embedding store definitions.
          */
-        EMBEDDING_STORE(EMB_STORES_KEY);
+        EMBEDDING_STORE(EMB_STORES_KEY),
+
+        /**
+         * Configuration category for content retriever definitions.
+         */
+        CONTENT_RETRIEVER(CONTENT_RETRIEVERS_KEY);
+
         private final String key;
 
         Kind(String key) {
