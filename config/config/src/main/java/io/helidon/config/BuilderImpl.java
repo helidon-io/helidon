@@ -99,7 +99,6 @@ class BuilderImpl implements Config.Builder {
     private boolean valueResolvingFailOnMissing;
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
-    private boolean envVarAliasGeneratorEnabled;
 
     BuilderImpl() {
         overrideSource = OverrideSources.empty();
@@ -114,7 +113,6 @@ class BuilderImpl implements Config.Builder {
         valueResolving = true;
         systemPropertiesSourceEnabled = true;
         environmentVariablesSourceEnabled = true;
-        envVarAliasGeneratorEnabled = false;
     }
 
     @Override
@@ -135,7 +133,6 @@ class BuilderImpl implements Config.Builder {
     public Config.Builder addSource(ConfigSource source) {
         sources.add(source);
         if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
-            envVarAliasGeneratorEnabled = true;
             hasEnvVarSource = true;
         } else if (source instanceof ConfigSources.SystemPropertiesConfigSource) {
             hasSystemPropertiesSource = true;
@@ -426,10 +423,6 @@ class BuilderImpl implements Config.Builder {
         if (environmentVariablesSourceEnabled && !hasEnvVarSource) {
             hasEnvVarSource = true;
             targetSources.add(context.sourceRuntimeBase(ConfigSources.environmentVariables()));
-        }
-
-        if (hasEnvVarSource) {
-            envVarAliasGeneratorEnabled = true;
         }
 
         boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
