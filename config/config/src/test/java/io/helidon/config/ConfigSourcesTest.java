@@ -29,6 +29,9 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.ConfigSources.DEFAULT_MAP_NAME;
@@ -268,7 +271,6 @@ public class ConfigSourcesTest {
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appAndEnv);
 
         // there is an exact match for all lower case
-        assertValue("com.acme.size","mapped-env-lower-value", appAndEnv);  // DIFFERENCE 2: should not exist
         assertValue("com/ACME/size", "mapped-env-value", appAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appAndEnv);
 
@@ -284,10 +286,40 @@ public class ConfigSourcesTest {
         assertValue("app.key", "app-value", appSysAndEnv);
         assertValue("com.ACME.size", "sys-prop-value", appSysAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appSysAndEnv);
-
-        assertValue("com.acme.size","mapped-env-lower-value", appAndEnv);  // DIFFERENCE 2: should not exist
         assertValue("com/ACME/size", "mapped-env-value", appSysAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appSysAndEnv);
+    }
+
+    // linux environment variables are case-sensitive, so linux uses the com_acme_size
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void testPrecedenceCaseSensitive() {
+        System.setProperty("com.ACME.size", "sys-prop-value");
+        Map<String, String> appValues = Map.of("app.key", "app-value",
+                                               "com.ACME.size", "app-value",
+                                               "server.executor-service.max-pool-size", "app-value");
+
+        ConfigSource appSource = ConfigSources.create(appValues).build();
+        Config appAndEnv = Config.builder(appSource)
+                .disableSystemPropertiesSource()
+                .build();
+        assertValue("com.acme.size","mapped-env-lower-value", appAndEnv);  // DIFFERENCE 2: should not exist
+    }
+
+    // windows environment variables are case-insensitive, so windows uses the com_ACME_size
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    public void testPrecedenceCaseInsensitive() {
+        System.setProperty("com.ACME.size", "sys-prop-value");
+        Map<String, String> appValues = Map.of("app.key", "app-value",
+                                               "com.ACME.size", "app-value",
+                                               "server.executor-service.max-pool-size", "app-value");
+
+        ConfigSource appSource = ConfigSources.create(appValues).build();
+        Config appAndEnv = Config.builder(appSource)
+                .disableSystemPropertiesSource()
+                .build();
+        assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist
     }
 
     static void assertValue(final String key, final String expectedValue, final Config config) {
