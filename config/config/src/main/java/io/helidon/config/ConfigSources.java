@@ -209,7 +209,7 @@ public final class ConfigSources {
      *
      * @return {@code ConfigSource} for config derived from environment variables
      */
-    public static ConfigSource environmentVariables() {
+    public static MapConfigSource environmentVariables() {
         return new EnvironmentVariablesConfigSource();
     }
 
@@ -335,20 +335,22 @@ public final class ConfigSources {
     /**
      * Environment variables config source.
      */
-    static final class EnvironmentVariablesConfigSource implements LazyConfigSource, ConfigSource {
+    static final class EnvironmentVariablesConfigSource extends MapConfigSource implements LazyConfigSource {
+        /*
+        This config source combines a map config source and lazy - the initial value will be the
+        existing environment variables as they are (i.e. USER_HOME), and mapping will be done as part of the
+        LazyConfigSource implementation (i.e. when user.home is requested, we will return value of USER_HOME)
+         */
         EnvironmentVariablesConfigSource() {
+            super(MapConfigSource.builder()
+                          .map(EnvVars.initial())
+                          .name(""));
         }
 
         @Override
         public Optional<ConfigNode> node(String key) {
             // actual check against environment variables
             return EnvVars.node(key);
-        }
-
-        @Override
-        public String description() {
-            // for backward compatibility
-            return "EnvironmentVariablesConfig[]";
         }
     }
 

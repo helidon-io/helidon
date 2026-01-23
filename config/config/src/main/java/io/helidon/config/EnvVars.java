@@ -16,8 +16,11 @@
 
 package io.helidon.config;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.config.spi.ConfigNode;
@@ -26,24 +29,45 @@ class EnvVars {
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]");
     private static final Pattern DISALLOWED_CHARS_ALLOW_DASH = Pattern.compile("[^a-zA-Z0-9_\\-]");
     private static final String UNDERSCORE = "_";
+    // set of key we always want to see in the config tree
+    private static final Set<String> INITIAL_VALUES = Set.of(
+            "USER",
+            "HOME"
+    );
 
-    public static Optional<ConfigNode> node(String key) {
+    private EnvVars() {
+    }
+
+    static Map<String, String> initial() {
+        var result = new HashMap<String, String>();
+        for (String initialValue : INITIAL_VALUES) {
+            var value = System.getenv(initialValue);
+            if (value != null) {
+                result.put(initialValue, value);
+            }
+        }
+        return result;
+    }
+
+    static Optional<ConfigNode> node(String key) {
         /*
-            The rules:
+            The rules (from most exact to the least exact match):
             1. as is (com.ACME.size)
-            2. all special characters replaced with _ (com_ACME_size)
-            3. and uppercased (COM_ACME_SIZE)
-            4. and possible dashes converted to `_DASH_` (com.ACME.t-shirt.size -> COM_ACME_T_DASH_SHIRT_SIZE)
+            2. all special characters (including dashes) replaced with _ (com_ACME_size)
+            3. all special characters (except for dashes) replaced with _ and uppercased and dashes converted to `_dash_`
+                    (com.ACME.t-shirt.size -> COM_ACME_T_dash_SHIRT_SIZE)
+            4. same as above, but uppercased COM_ACME_T_DASH_SHIRT_SIZE
+            5. all special characters replaced with _ and uppercased (COM_ACME_SIZE)
         */
-        String result;
 
-        result = System.getenv(key);
+        // 1. as is
+        String result = System.getenv(key);
         if (result != null) {
             return Optional.of(ConfigNode.ValueNode.create(result));
         }
 
         /*
-        Replace special chars (., _-)
+        2. Replace special chars (., _-)
         com.ACME.t-shirt.size -> com_ACME_t_shirt_size
          */
         String noSpecials = DISALLOWED_CHARS.matcher(key)
@@ -54,17 +78,7 @@ class EnvVars {
         }
 
         /*
-        Uppercase
-        com.ACME.t-shirt.size -> COM_ACME_T_SHIRT_SIZE
-         */
-        String noSpecialsUppercase = noSpecials.toUpperCase(Locale.ROOT);
-        result = System.getenv(noSpecialsUppercase);
-        if (result != null) {
-            return Optional.of(ConfigNode.ValueNode.create(result));
-        }
-
-        /*
-         Replace special chars except for - (dash), upper case, replace - (dash) with `_dash_`
+        3. Replace special chars except for - (dash), upper case, replace - (dash) with `_dash_`
          */
         String dashReplacement = DISALLOWED_CHARS_ALLOW_DASH.matcher(key)
                 .replaceAll(UNDERSCORE)
@@ -75,8 +89,8 @@ class EnvVars {
             return Optional.of(ConfigNode.ValueNode.create(result));
         }
 
-                /*
-         Replace special chars except for - (dash), replace - (dash) with `_dash_`, upper case
+        /*
+        4. Replace special chars except for - (dash), replace - (dash) with `_dash_`, upper case
          */
         String dashReplacementUpper = dashReplacement.toUpperCase(Locale.ROOT);
         result = System.getenv(dashReplacementUpper);
@@ -84,6 +98,15 @@ class EnvVars {
             return Optional.of(ConfigNode.ValueNode.create(result));
         }
 
+        /*
+        Replace all special chars and uppercase
+        5. com.ACME.t-shirt.size -> COM_ACME_T_SHIRT_SIZE
+         */
+        String noSpecialsUppercase = noSpecials.toUpperCase(Locale.ROOT);
+        result = System.getenv(noSpecialsUppercase);
+        if (result != null) {
+            return Optional.of(ConfigNode.ValueNode.create(result));
+        }
 
         return Optional.empty();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,9 +77,11 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         this.configContext = configContext;
         this.configSource = source;
 
-        Supplier<Optional<ObjectNode>> reloader;
-        Function<String, Optional<ConfigNode>> singleNodeFunction;
-        boolean lazy = false;
+        Supplier<Optional<ObjectNode>> reloader = null;
+        Function<String, Optional<ConfigNode>> singleNodeFunction = null;
+
+        // a config source may implement a combination of a lazy config source and one other type
+        boolean lazy = configSource instanceof LazyConfigSource;
 
         // content source
         AtomicReference<Object> lastStamp = new AtomicReference<>();
@@ -91,16 +93,19 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
             // eager node config source
             reloader = new NodeConfigSourceReloader(nodeConfigSource, lastStamp);
             singleNodeFunction = objectNodeToSingleNode();
-        } else if (configSource instanceof LazyConfigSource lazySource) {
-            // lazy config source
-            reloader = Optional::empty;
-            singleNodeFunction = lazySource::node;
-            lazy = true;
-        } else {
+        } else if (!lazy) {
             throw new ConfigException("Config source " + source + ", class: " + source.getClass().getName() + " does not "
                                               + "implement any of required interfaces. A config source must at least "
                                               + "implement one of the following: ParsableSource, or NodeConfigSource, or "
                                               + "LazyConfigSource");
+        }
+
+        if (lazy) {
+            LazyConfigSource lazySource = (LazyConfigSource) source;
+            // lazy config source - only have empty reloader if not some other type as well
+            reloader = reloader == null ? Optional::empty : reloader;
+            // always invoke the lazy method for one value
+            singleNodeFunction = lazySource::node;
         }
 
         this.isLazy = lazy;
@@ -215,7 +220,9 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                 .map(policy -> policy.execute(reloader))
                 .orElseGet(reloader);
 
-        if (loadedData.isEmpty() && !configSource.optional()) {
+        if (loadedData.isEmpty() && !configSource.optional() && !isLazy) {
+            // only fail if the data is empty and the config source is not optional
+            // never fail for lazy config sources, as these may provide values through single properties
             throw new ConfigException("Cannot load data from mandatory source: " + configSource);
         }
 
