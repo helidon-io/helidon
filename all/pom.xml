@@ -1247,6 +1247,18 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-jsonrpc</artifactId>
         </dependency>
         <dependency>
