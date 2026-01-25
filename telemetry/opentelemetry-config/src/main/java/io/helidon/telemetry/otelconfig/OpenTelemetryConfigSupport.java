@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 final class OpenTelemetryConfigSupport {
 
@@ -49,7 +49,7 @@ final class OpenTelemetryConfigSupport {
             var sdkTracerProviderBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
 
             var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
 
             var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
             sdkTracerProviderBuilder.setResource(resource);

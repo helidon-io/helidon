@@ -41,8 +41,8 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -54,7 +54,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 /**
  * The JaegerTracerBuilder is a convenience builder for {@link io.helidon.tracing.Tracer} to use with Jaeger.
@@ -157,7 +157,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_SCHEDULE_DELAY = 5_000;
-    static final int DEFAULT_HTTP_PORT = 14250;
+    static final int DEFAULT_HTTP_PORT = 4317;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
 
@@ -495,7 +495,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
             }
 
-            JaegerGrpcSpanExporterBuilder spanExporterBuilder = JaegerGrpcSpanExporter.builder()
+            OtlpGrpcSpanExporterBuilder spanExporterBuilder = OtlpGrpcSpanExporter.builder()
                     .setEndpoint(protocol + "://" + host + ":" + port + (path == null ? "" : path))
                     .setTimeout(exporterTimeout);
 
@@ -517,7 +517,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             };
 
             AttributesBuilder attributesBuilder = Attributes.builder()
-                    .put(ResourceAttributes.SERVICE_NAME, serviceName);
+                    .put(ServiceAttributes.SERVICE_NAME, serviceName);
             tags.forEach(attributesBuilder::put);
             Resource otelResource = Resource.create(attributesBuilder.build());
 

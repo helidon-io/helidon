@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
@@ -50,6 +50,8 @@ import org.glassfish.jersey.server.model.Resource;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_NAME;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_PORT;
 
 /**
  * Filter to process Server request and Server response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -147,8 +149,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 .tag(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
                 .tag(HTTP_TARGET, resolveTarget(requestContext))
                 .tag(HTTP_ROUTE, route)
-                .tag(SemanticAttributes.NET_HOST_NAME.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
-                .tag(SemanticAttributes.NET_HOST_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
+                .tag(ServerAttributes.SERVER_ADDRESS.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(ServerAttributes.SERVER_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
+                .tag(NET_HOST_NAME, requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(NET_HOST_PORT, requestContext.getUriInfo().getBaseUri().getPort())
+
                 .update(builder -> parentSpanContext.ifPresent(builder::parent))
                 .start();
 
