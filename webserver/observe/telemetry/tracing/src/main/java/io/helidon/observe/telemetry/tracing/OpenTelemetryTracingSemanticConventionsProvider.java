@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,12 @@ import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.tracing.TracingSemanticConventions;
 import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.UserAgentAttributes;
+
 @Service.Singleton
 class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemanticConventionsProvider {
 
@@ -40,21 +46,31 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
     /**
      * Supplies span information conforming to the OpenTelemetry semantic conventions for requests.
      * <p>
-     * See <a href="https://github.com/open-telemetry/semantic-conventions/blob/v1.29.0/docs/http/http-spans.md">the
+     * See <a href="https://github.com/open-telemetry/semantic-conventions/blob/v1.37.0/docs/http/http-spans.md">the
      * OpenTelemetry tracing semantic conventions.</a>
      */
     static class SemanticConventions implements TracingSemanticConventions {
 
-        private static final String HTTP_REQUEST_METHOD = "http.request.method";
-        private static final String URL_PATH = "url.path";
-        private static final String URL_SCHEME = "url.scheme";
-        private static final String ERROR_TYPE = "error.type";
-        private static final String HTTP_RESPONSE_STATUS_CODE = "http.response.status_code";
-        private static final String HTTP_ROUTE = "http.route";
-        private static final String SERVER_PORT = "server.port";
-        private static final String URL_QUERY = "url.query";
-        private static final String SERVER_ADDRESS = "server.address";
-        private static final String USER_AGENT_ORIGINAL = "user_agent.original";
+        private static final String HTTP_REQUEST_METHOD = HttpAttributes.HTTP_REQUEST_METHOD.getKey();
+        private static final String URL_PATH = UrlAttributes.URL_PATH.getKey();
+        private static final String URL_SCHEME = UrlAttributes.URL_SCHEME.getKey();
+        private static final String ERROR_TYPE = ErrorAttributes.ERROR_TYPE.getKey();
+        private static final String HTTP_RESPONSE_STATUS_CODE = HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey();
+        private static final String HTTP_ROUTE = HttpAttributes.HTTP_ROUTE.getKey();
+        private static final String SERVER_PORT = ServerAttributes.SERVER_PORT.getKey();
+        private static final String URL_QUERY = UrlAttributes.URL_QUERY.getKey();
+        private static final String SERVER_ADDRESS = ServerAttributes.SERVER_ADDRESS.getKey();
+        private static final String USER_AGENT_ORIGINAL = UserAgentAttributes.USER_AGENT_ORIGINAL.getKey();
+
+        // The following are for maintaining compatibility with MicroProfile Telemetry 1.x.
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        private static final String NET_HOST_NAME = "net.host.name";
+
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        private static final String NET_HOST_PORT = "net.host.port";
+        // end of compatibility
+
+
 
         private static final String HELIDON_SOCKET = "helidon.socket";
 
@@ -94,6 +110,8 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                         }
                     })
                     .tag(SERVER_ADDRESS, request.requestedUri().host())
+                    .tag(NET_HOST_NAME, request.requestedUri().host())
+                    .tag(NET_HOST_PORT, request.localPeer().port())
                     .update(b -> request.headers().first(HeaderNames.USER_AGENT)
                             .ifPresent(agent -> b.tag(USER_AGENT_ORIGINAL, agent)));
 
