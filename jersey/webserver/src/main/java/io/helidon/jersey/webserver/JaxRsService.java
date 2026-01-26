@@ -599,10 +599,9 @@ public class JaxRsService implements HttpService {
             }
             ensureDelegate();
             if (position == 0 && !written) {
-                // no op if nothing was written
+                delegate.close();
                 return;
             }
-            ensureDelegate();
             delegate.write(buffer, 0, position);
             written = true;
             position = 0;
