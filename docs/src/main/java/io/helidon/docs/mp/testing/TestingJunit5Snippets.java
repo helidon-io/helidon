@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,22 @@
  */
 package io.helidon.docs.mp.testing;
 
+import io.helidon.microprofile.testing.Socket;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.DisableDiscovery;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URI;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -165,5 +168,49 @@ class TestingJunit5Snippets {
             }
         }
         // end::snippet_5[]
+    }
+
+    class Snippet6 {
+
+        // tag::snippet_6[]
+        @HelidonTest
+        class MyTest {
+
+            @Test
+            void testOne(@Socket("@default") URI uri) {
+            }
+        }
+        // end::snippet_6[]
+    }
+
+    class Snippet7 {
+
+        // tag::snippet_7[]
+        @HelidonTest
+        class MyTest {
+
+            @Test
+            void testOne(SeContainer container) {
+            }
+        }
+        // end::snippet_7[]
+    }
+
+
+
+    class Snippet8 {
+
+        // tag::snippet_8[]
+        @HelidonTest
+        class MyTest {
+
+            @Test
+            void testOne(@Default MyBean myBean) {
+            }
+        }
+        // end::snippet_8[]
+
+        class MyBean {
+        }
     }
 }

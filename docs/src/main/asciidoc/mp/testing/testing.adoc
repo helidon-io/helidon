@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,9 +69,31 @@ include::{rootdir}/mp/testing/testing-common.adoc[tag=usage]
 NOTE: All the injectable types are also available as method parameters.
 
 [source,java]
-.Using a method parameter
+.Get a JAX-RS client for the default socket
 ----
 include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_1, indent=0]
+----
+
+[source,java]
+.Get a URI for the default socket
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_6, indent=0]
+----
+
+The current CDI link:{jakarta-cdi-javadoc-url}/inject/se/SeContainer.html[`container`] is also available as a method parameter.
+
+[source,java]
+.Get the current CDI container
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_7, indent=0]
+----
+
+NOTE: You can also use CDI qualifier annotations to resolve a method parameter using CDI.
+
+[source,java]
+.Resolve a CDI bean
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_8, indent=0]
 ----
 
 === Test Instance Lifecyle
