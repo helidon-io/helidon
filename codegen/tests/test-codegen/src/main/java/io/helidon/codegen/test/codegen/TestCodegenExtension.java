@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,91 @@ class TestCodegenExtension implements CodegenExtension {
 
     private void process(TypeInfo typeInfo) {
         TypeName typeName = typeInfo.typeName();
+
+        generateClass(typeInfo, typeName);
+        generateEnum(typeName);
+        generateRecord(typeName);
+
+    }
+
+    private void generateRecord(TypeName typeName) {
+        TypeName generatedType = TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.className() + "__Record")
+                .build();
+
+        var classModel = ClassModel.builder()
+                .classType(ElementKind.RECORD)
+                .description("This is a record.")
+                .type(generatedType);
+
+        classModel.addField(it -> it.type(TypeNames.STRING)
+                .name("first")
+                .description("First record component"));
+        classModel.addField(it -> it.type(TypeNames.STRING)
+                .name("second")
+                .description("Second record component"));
+        classModel.addField(it -> it.type(TypeNames.STRING)
+                .name("CONSTANT")
+                .isFinal(true)
+                .isStatic(true)
+                .description("Constant.")
+                .addContentLiteral("Hello World!"));
+        classModel.addConstructor(ctr -> ctr
+                .addParameter(param -> param.type(TypeNames.STRING)
+                        .name("first"))
+                .addContentLine("this(first, \"value\");"));
+        classModel.addMethod(it -> it.name("constant")
+                .returnType(TypeNames.STRING)
+                .addContentLine("return CONSTANT;"));
+
+        ctx.filer().writeSourceFile(classModel.build());
+    }
+
+    private void generateEnum(TypeName typeName) {
+        TypeName generatedType = TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.className() + "__Enum")
+                .build();
+
+        var classModel = ClassModel.builder()
+                .classType(ElementKind.ENUM)
+                .description("This is an enum.")
+                .type(generatedType);
+
+        classModel.addEnumConstant(it -> it.name("FIRST")
+                .description("Enum value.")
+                .addContent("true"));
+        classModel.addEnumConstant(it -> it.name("second")
+                .description("Enum value.")
+                .addContent("false"));
+        classModel.addField(it -> it.type(TypeNames.STRING)
+                .name("CONSTANT")
+                .isFinal(true)
+                .isStatic(true)
+                .description("Constant.")
+                .addContentLiteral("Hello World!"));
+        classModel.addMethod(it -> it.name("constant")
+                .returnType(TypeNames.STRING)
+                .addContentLine("return CONSTANT;"));
+
+        classModel.addConstructor(ctr -> ctr
+                        .addParameter(it -> it.type(TypeNames.PRIMITIVE_BOOLEAN)
+                                .name("someBoolean"))
+                        .addContentLine("this.someBoolean = someBoolean;")
+                )
+                .addField(it -> it.type(TypeNames.PRIMITIVE_BOOLEAN)
+                        .name("someBoolean")
+                        .isFinal(true)
+                )
+                .addMethod(it -> it.name("someBoolean")
+                        .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                        .addContentLine("return someBoolean;"));
+
+        ctx.filer().writeSourceFile(classModel.build());
+    }
+
+    private void generateClass(TypeInfo typeInfo, TypeName typeName) {
         TypeName generatedType = TypeName.builder()
                 .packageName(typeName.packageName())
                 .className(typeName.className() + "__Generated")

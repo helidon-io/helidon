@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +24,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
@@ -60,8 +60,7 @@ public final class AnnotationParameter extends CommonComponent {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         writer.write(name() + " = ");
         writeValue(writer, imports);
     }
@@ -71,7 +70,7 @@ public final class AnnotationParameter extends CommonComponent {
         importedTypes.forEach(imports::addImport);
     }
 
-    void writeValue(ModelWriter writer, ImportOrganizer imports) throws IOException {
+    void writeValue(ModelWriter writer, ImportOrganizer imports) {
         writer.write(resolveValueToString(imports, type(), objectValue));
     }
 

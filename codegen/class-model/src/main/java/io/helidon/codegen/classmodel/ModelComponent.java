@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.Set;
+
+import io.helidon.common.types.ElementKind;
 
 abstract class ModelComponent {
 
@@ -29,7 +30,7 @@ abstract class ModelComponent {
     abstract void writeComponent(ModelWriter writer,
                                  Set<String> declaredTokens,
                                  ImportOrganizer imports,
-                                 ClassType classType) throws IOException;
+                                 ElementKind classType);
 
     void addImports(ImportOrganizer.Builder imports) {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
@@ -376,14 +377,10 @@ class ParseAnnotationTest {
                 .build();
         StringWriter writer = new StringWriter();
         ModelWriter modelWriter = new ModelWriter(writer, "");
-        try {
-            component.writeComponent(modelWriter,
-                                     Set.of(),
-                                     io,
-                                     ClassType.CLASS);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        component.writeComponent(modelWriter,
+                                 Set.of(),
+                                 io,
+                                 ElementKind.CLASS);
         return writer.toString();
     }
 

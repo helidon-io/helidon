@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -53,8 +53,53 @@ public final class Field extends AnnotatedComponent {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
+        boolean isRecord = classType == ElementKind.RECORD;
+
+        if (!isRecord) {
+            if (javadoc().generate()) {
+                javadoc().writeComponent(writer, declaredTokens, imports, classType);
+                writer.write("\n");
+            }
+        }
+        for (Annotation annotation : annotations()) {
+            annotation.writeComponent(writer, declaredTokens, imports, classType);
+            if (!isRecord) {
+                writer.write("\n");
+            }
+        }
+        if (classType != ElementKind.INTERFACE) {
+            if (!(isRecord && !isStatic())) {
+                if (AccessModifier.PACKAGE_PRIVATE != accessModifier()) {
+                    writer.write(accessModifier().modifierName());
+                    writer.write(" ");
+                }
+                if (isStatic) {
+                    writer.write("static ");
+                }
+                if (isFinal) {
+                    writer.write("final ");
+                }
+                if (isVolatile) {
+                    writer.write("volatile ");
+                }
+            }
+        }
+        type().writeComponent(writer, declaredTokens, imports, classType);
+        writer.write(" ");
+        writer.write(name());
+        if (!(isRecord && !isStatic())) {
+            if (defaultValue.hasBody()) {
+                writer.write(" = ");
+                defaultValue.writeBody(writer, imports);
+                writer.write(";");
+            } else {
+                writer.write(";");
+            }
+        }
+    }
+
+    void writeEnumConstant(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         if (javadoc().generate()) {
             javadoc().writeComponent(writer, declaredTokens, imports, classType);
             writer.write("\n");
@@ -62,32 +107,10 @@ public final class Field extends AnnotatedComponent {
         for (Annotation annotation : annotations()) {
             annotation.writeComponent(writer, declaredTokens, imports, classType);
             writer.write("\n");
+            writer.write(name());
+            writer.write(";");
         }
-        if (classType != ClassType.INTERFACE) {
-            if (AccessModifier.PACKAGE_PRIVATE != accessModifier()) {
-                writer.write(accessModifier().modifierName());
-                writer.write(" ");
-            }
-            if (isStatic) {
-                writer.write("static ");
-            }
-            if (isFinal) {
-                writer.write("final ");
-            }
-            if (isVolatile) {
-                writer.write("volatile ");
-            }
-        }
-        type().writeComponent(writer, declaredTokens, imports, classType);
-        writer.write(" ");
         writer.write(name());
-        if (defaultValue.hasBody()) {
-            writer.write(" = ");
-            defaultValue.writeBody(writer, imports);
-            writer.write(";");
-        } else {
-            writer.write(";");
-        }
     }
 
     @Override

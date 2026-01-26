@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -27,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -62,8 +62,7 @@ public final class Method extends Executable {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         if (javadoc().generate()) {
             javadoc().writeComponent(writer, declaredTokens, imports, classType);
             writer.write("\n");
@@ -72,7 +71,7 @@ public final class Method extends Executable {
             annotation.writeComponent(writer, declaredTokens, imports, classType);
             writer.write("\n");
         }
-        if (classType == ClassType.INTERFACE) {
+        if (classType == ElementKind.INTERFACE) {
             if (isDefault) {
                 writer.write("default ");
             } else if (isStatic) {
@@ -106,7 +105,7 @@ public final class Method extends Executable {
         }
         writer.write(")");
         writeThrows(writer, declaredTokens, imports, classType);
-        if (classType == ClassType.INTERFACE) {
+        if (classType == ElementKind.INTERFACE) {
             if (!isDefault && !isStatic) {
                 writer.write(";");
                 return;
@@ -129,8 +128,7 @@ public final class Method extends Executable {
     private void appendTokenDeclaration(ModelWriter writer,
                                         Set<String> declaredTokens,
                                         ImportOrganizer imports,
-                                        ClassType classType)
-            throws IOException {
+                                        ElementKind classType) {
         Set<String> tokensToDeclare = new LinkedHashSet<>();
         if (isStatic) {
             for (Parameter parameter : parameters()) {

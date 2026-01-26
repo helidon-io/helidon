@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.codegen.classmodel;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 
 import static io.helidon.codegen.classmodel.ClassModel.PADDING_TOKEN;
@@ -43,7 +44,7 @@ class ModelWriter extends Writer {
         currentPadding = padding.repeat(paddingLevel);
     }
 
-    void writeLine(String str) throws IOException {
+    void writeLine(String str) {
         write(str);
         write("\n");
     }
@@ -53,33 +54,63 @@ class ModelWriter extends Writer {
      *
      * @throws IOException If an I/O error occurs
      */
-    void writeSeparatorLine() throws IOException {
-        delegate.write("\n");
-    }
-
-    @Override
-    public void write(String str) throws IOException {
-        if (firstWrite) {
-            delegate.write(currentPadding);
-            firstWrite = false;
+    void writeSeparatorLine() {
+        try {
+            delegate.write("\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        String padded = str.replaceAll("\n", "\n" + currentPadding);
-        padded = padded.replaceAll(PADDING_TOKEN, padding);
-        delegate.write(padded);
     }
 
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
-        delegate.write(cbuf, off, len);
+    public void write(String str)  {
+        try {
+            if (firstWrite) {
+                delegate.write(currentPadding);
+                firstWrite = false;
+            }
+            String padded = str.replaceAll("\n", "\n" + currentPadding);
+            padded = padded.replaceAll(PADDING_TOKEN, padding);
+            delegate.write(padded);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    public void flush() throws IOException {
-        delegate.flush();
+    public void write(char[] cbuf, int off, int len) {
+        try {
+            delegate.write(cbuf, off, len);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    public void close() throws IOException {
-        delegate.close();
+    public void flush() {
+        try {
+            delegate.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            delegate.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public ModelWriter append(CharSequence csq) {
+        try {
+            delegate.append(csq);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return this;
     }
 }
