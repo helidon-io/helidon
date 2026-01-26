@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
@@ -53,6 +54,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.Response;
@@ -61,6 +63,7 @@ import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.util.collection.Ref;
+import org.glassfish.jersey.io.spi.FlushedCloseable;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -261,8 +264,12 @@ public class JaxRsService implements HttpService {
             requestContext.headers(header.name(),
                                    header.allValues());
         }
-
-        JaxRsResponseWriter writer = new JaxRsResponseWriter(res);
+        int bufferSize = CommonProperties.getValue(resourceConfig.getProperties(),
+                                                   RuntimeType.SERVER,
+                                                   CommonProperties.OUTBOUND_CONTENT_LENGTH_BUFFER,
+                                                   4096,
+                                                   Integer.class);
+        JaxRsResponseWriter writer = new JaxRsResponseWriter(res, bufferSize);
         requestContext.setWriter(writer);
         requestContext.setEntityStream(new LazyInputStream(req));
         requestContext.setProperty("io.helidon.jaxrs.remote-host", req.remotePeer().host());
@@ -366,10 +373,13 @@ public class JaxRsService implements HttpService {
     private static class JaxRsResponseWriter implements ContainerResponseWriter {
         private final CountDownLatch cdl = new CountDownLatch(1);
         private final ServerResponse res;
+        private final int bufferSize;
+
         private OutputStream outputStream;
 
-        private JaxRsResponseWriter(ServerResponse res) {
+        private JaxRsResponseWriter(ServerResponse res, int bufferSize) {
             this.res = res;
+            this.bufferSize = bufferSize;
         }
 
         @Override
@@ -394,11 +404,21 @@ public class JaxRsService implements HttpService {
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
             res.status(Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
-            if (contentLength > 0) {
-                res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
-            }
             // in case there is an exception during close operation, we would lose the information and wait indefinitely
-            this.outputStream = new ReleaseLatchStream(cdl, res.outputStream());
+            // sp we ise ReleaseLatchStream
+            if (contentLength > 0 || bufferSize <= 1) {
+                if (contentLength > 0) {
+                    res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
+                }
+                this.outputStream = new ReleaseLatchStream(cdl, res.outputStream());
+            } else {
+                // support for our own buffering of output (that is configurable), while keeping support for flush operations
+                this.outputStream = new ReleaseLatchStream(cdl,
+                                                           new BufferingOutputStream(res::outputStream,
+                                                              res::contentLength,
+                                                              bufferSize));
+            }
+
             return outputStream;
         }
 
@@ -446,7 +466,12 @@ public class JaxRsService implements HttpService {
 
         @Override
         public boolean enableResponseBuffering() {
-            return true;        // enable buffering in Jersey
+           /*
+            When we enable buffering, Jersey nicely buffers the data until commit is called.
+            Unfortunately it ignores calls to `flush()` on output stream handler, preventing user
+            intended network calls (as the call is only done on buffer overflow).
+            */
+            return false;
         }
 
         void await() {
@@ -493,6 +518,100 @@ public class JaxRsService implements HttpService {
                 delegate.close();
             } finally {
                 cdl.countDown();
+            }
+        }
+    }
+
+    static class BufferingOutputStream extends OutputStream implements FlushedCloseable {
+        private final Supplier<OutputStream> delegateSupplier;
+        private final Consumer<Integer> contentLengthConsumer;
+        private final byte[] buffer;
+
+        private OutputStream delegate;
+        private int position;
+        private boolean written;
+
+        BufferingOutputStream(Supplier<OutputStream> delegateSupplier,
+                              Consumer<Integer> contentLengthConsumer,
+                              int bufferSize) {
+            this.delegateSupplier = delegateSupplier;
+            this.contentLengthConsumer = contentLengthConsumer;
+            this.buffer = new byte[bufferSize];
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if (buffer.length - position >= 1) {
+                buffer[position++] = (byte) b;
+            } else {
+                ensureDelegate();
+                delegate.write(buffer, 0, position);
+                written = true;
+                position = 1;
+                buffer[0] = (byte) b;
+            }
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            write(b, 0, b.length);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (buffer.length - position >= len) {
+                // add to buffer
+                System.arraycopy(b, off, buffer, position, len);
+                position += len;
+            } else {
+                ensureDelegate();
+                delegate.write(buffer, 0, position);
+                written = true;
+                if (len < buffer.length) {
+                    // add to buffer
+                    System.arraycopy(b, off, buffer, position, len);
+                    position = len;
+                } else {
+                    // bigger than buffer, write-through
+                    delegate.write(b, off, len);
+                    position = 0;
+                }
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (position == 0 && !written) {
+                // no op if nothing was written
+                return;
+            }
+            ensureDelegate();
+            delegate.write(buffer, 0, position);
+            written = true;
+            delegate.flush();
+            position = 0;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!written) {
+                contentLengthConsumer.accept(position);
+            }
+            ensureDelegate();
+            if (position == 0 && !written) {
+                // no op if nothing was written
+                return;
+            }
+            ensureDelegate();
+            delegate.write(buffer, 0, position);
+            written = true;
+            position = 0;
+            delegate.close();
+        }
+
+        private void ensureDelegate() {
+            if (delegate == null) {
+                delegate = delegateSupplier.get();
             }
         }
     }
