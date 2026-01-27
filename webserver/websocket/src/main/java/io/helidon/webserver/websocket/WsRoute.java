@@ -50,7 +50,7 @@ public class WsRoute implements Route {
     }
 
     /**
-     * Create a new WebSocket rout for a specific path.
+     * Create a new WebSocket route for a specific path.
      *
      * @param path     path of the websocket endpoint
      * @param listener supplier of listener instances, a new instance will be used for each connection
