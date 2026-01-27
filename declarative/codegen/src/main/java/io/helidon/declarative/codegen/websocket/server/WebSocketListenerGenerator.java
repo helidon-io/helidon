@@ -917,13 +917,18 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
     }
 
     private List<TypedElementInfo> methods(TypeInfo serverEndpoint, TypeName annotationType) {
-        return serverEndpoint.elementInfo()
+        var result = serverEndpoint.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates.hasAnnotation(annotationType))
-                .peek(it -> checkNotPrivate(annotationType, it))
-                .peek(it -> checkNotStatic(annotationType, it))
-                .peek(it -> checkNotAbstract(annotationType, it))
                 .collect(Collectors.toUnmodifiableList());
+
+        for (TypedElementInfo element : result) {
+            checkNotPrivate(annotationType, element);
+            checkNotStatic(annotationType, element);
+            checkNotAbstract(annotationType, element);
+        }
+
+        return result;
     }
 
     private void checkNotAbstract(TypeName annotationType, TypedElementInfo it) {
