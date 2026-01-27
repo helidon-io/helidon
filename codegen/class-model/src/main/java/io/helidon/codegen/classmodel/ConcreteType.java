@@ -15,13 +15,13 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -72,8 +72,7 @@ class ConcreteType extends Type {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType) throws
-            IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         String typeName = imports.typeName(this, includeImport());
         writer.write(typeName);
         if (!typeParams.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
@@ -192,14 +192,11 @@ class AnnotationTest {
                 .build();
         StringWriter writer = new StringWriter();
         ModelWriter modelWriter = new ModelWriter(writer, "");
-        try {
-            component.writeComponent(modelWriter,
-                                     Set.of(),
-                                     io,
-                                     ClassType.CLASS);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        component.writeComponent(modelWriter,
+                                 Set.of(),
+                                 io,
+                                 ElementKind.CLASS);
+
         return writer.toString();
     }
 

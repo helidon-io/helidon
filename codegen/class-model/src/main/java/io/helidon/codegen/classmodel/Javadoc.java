@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import io.helidon.common.types.ElementKind;
 
 /**
  * Javadoc model representation.
@@ -108,7 +109,7 @@ public final class Javadoc extends ModelComponent {
         ModelWriter mw = new ModelWriter(sw, "    ");
         try {
             writeComponent(mw, false);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             return "";
         }
         return sw.toString();
@@ -177,8 +178,8 @@ public final class Javadoc extends ModelComponent {
         return otherTags;
     }
 
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    @Override
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         writeComponent(writer, true);
     }
 
@@ -194,7 +195,7 @@ public final class Javadoc extends ModelComponent {
         return Map.copyOf(newTags);
     }
 
-    private void writeComponent(ModelWriter writer, boolean addComments) throws IOException {
+    private void writeComponent(ModelWriter writer, boolean addComments) {
 
         if (addComments) {
             writer.write("/**\n");
@@ -252,8 +253,7 @@ public final class Javadoc extends ModelComponent {
                                      String paramName,
                                      String name,
                                      List<String> description,
-                                     boolean addComments)
-            throws IOException {
+                                     boolean addComments) {
         if (description.isEmpty()) {
             if (addComments) {
                 writer.write(" *");

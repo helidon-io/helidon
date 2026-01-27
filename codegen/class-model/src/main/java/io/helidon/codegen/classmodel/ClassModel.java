@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,24 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
  * Entry point to create class model.
  * This model contain all needed information for each generated type and handles resulting generation.
+ * <p>
+ * The following types are supported
+ * (through {@link Builder#classType(io.helidon.common.types.ElementKind)}):
+ * <ul>
+ *     <li>{@link io.helidon.common.types.ElementKind#CLASS}: class</li>
+ *     <li>{@link io.helidon.common.types.ElementKind#INTERFACE}: interface, all fields are constants, cannot have constructor
+ *     </li>
+ *     <li>{@link io.helidon.common.types.ElementKind#ENUM}: enum, use
+ *     {@link Builder#addEnumConstant(java.util.function.Consumer)} to add enum constants</li>
+ *     <li>{@link io.helidon.common.types.ElementKind#RECORD}: record, use
+ *     {@link Builder#addField(Field)} to add record components, as non-static fields are not supported in records</li>
+ * </ul>
  */
 public final class ClassModel extends ClassBase {
 
@@ -97,7 +110,7 @@ public final class ClassModel extends ClassBase {
     void writeComponent(ModelWriter writer,
                         Set<String> declaredTokens,
                         ImportOrganizer imports,
-                        ClassType classType) throws IOException {
+                        ElementKind classType) {
         if (copyright != null) {
             String[] lines = copyright.split("\n");
             if (lines.length > 1) {
@@ -133,8 +146,10 @@ public final class ClassModel extends ClassBase {
     }
 
     @Override
-    void writePostConstantDeclaration(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writePostConstantDeclaration(ModelWriter writer,
+                                      Set<String> declaredTokens,
+                                      ImportOrganizer imports,
+                                      ElementKind classType) {
         if (staticInitializer == null) {
             return;
         }
@@ -190,6 +205,7 @@ public final class ClassModel extends ClassBase {
             if (name() == null) {
                 throw new ClassModelException("Class need to have name specified");
             }
+            preBuild();
             ClassModel classModel = new ClassModel(this);
             ImportOrganizer.Builder importOrganizer = importOrganizer();
             classModel.addImports(importOrganizer);

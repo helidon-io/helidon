@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Set;
 
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -68,7 +69,7 @@ class TypeTest {
         classModelType.writeComponent(modelWriter, Set.of(), ImportOrganizer.builder()
                 .packageName("io.helidon.tests")
                 .typeName("MyType")
-                .build(), ClassType.CLASS);
+                .build(), ElementKind.CLASS);
 
         return stringWriter.toString();
     }

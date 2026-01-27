@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,7 +73,7 @@ class ImportOrganizer {
         return identifiedInnerClasses.getOrDefault(type.fqTypeName(), type.fqTypeName());
     }
 
-    void writeImports(ModelWriter writer) throws IOException {
+    void writeImports(ModelWriter writer) {
         if (!importsToWrite.isEmpty()) {
             for (List<String> importGroup : importsToWrite) {
                 for (String importName : importGroup) {
@@ -87,7 +86,7 @@ class ImportOrganizer {
         }
     }
 
-    void writeStaticImports(ModelWriter writer) throws IOException {
+    void writeStaticImports(ModelWriter writer) {
         if (!staticImportsToWrite.isEmpty()) {
             for (List<String> importGroup : staticImportsToWrite) {
                 for (String importName : importGroup) {

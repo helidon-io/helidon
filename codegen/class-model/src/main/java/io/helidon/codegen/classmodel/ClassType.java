@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,14 @@
  */
 package io.helidon.codegen.classmodel;
 
+import io.helidon.common.types.ElementKind;
+
 /**
  * Class type.
+ *
+ * @deprecated use {@link io.helidon.common.types.ElementKind} instead
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public enum ClassType {
 
     /**
@@ -33,6 +38,18 @@ public enum ClassType {
 
     ClassType(String typeName) {
         this.typeName = typeName;
+    }
+
+    static String toTypeName(ElementKind kind) {
+        return switch (kind) {
+            case CLASS -> "class";
+            case INTERFACE -> "interface";
+            case ENUM -> "enum";
+            case ANNOTATION_TYPE -> "@interface";
+            case RECORD -> "record";
+            case CONSTRUCTOR, FIELD, METHOD, PARAMETER, PACKAGE, RECORD_COMPONENT, STATIC_INIT, INSTANCE_INIT, ENUM_CONSTANT,
+                 LOCAL_VARIABLE, MODULE, OTHER -> throw new IllegalStateException("Invalid kind for a Java class: " + kind);
+        };
     }
 
     String typeName() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 
 /**
  * Constructor model.
@@ -39,8 +39,7 @@ public final class Constructor extends Executable {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         if (javadoc().generate()) {
             javadoc().writeComponent(writer, declaredTokens, imports, classType);
             writer.write("\n");
@@ -50,7 +49,12 @@ public final class Constructor extends Executable {
             writer.write("\n");
         }
         if (AccessModifier.PACKAGE_PRIVATE != accessModifier()) {
-            writer.write(accessModifier().modifierName() + " ");
+            if (classType != ElementKind.ENUM) {
+                writer.write(accessModifier().modifierName() + " ");
+            }
+        }
+        if (classType == ElementKind.ENUM) {
+            writer.write(AccessModifier.PRIVATE.modifierName() + " ");
         }
         String typeName = type().simpleTypeName();
         writer.write(typeName + "(");
