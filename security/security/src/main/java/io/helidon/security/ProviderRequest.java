@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,9 @@
 
 package io.helidon.security;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.security.util.AbacSupport;
 
@@ -38,42 +33,27 @@ import io.helidon.security.util.AbacSupport;
  * <li>Security context: {@link #securityContext()} - current subjects and information about security context of this
  * request</li>
  * <li>Endpoint configuration: {@link #endpointConfig()} - annotations, endpoint specific configuration, custom objects,
- * custom atttributes</li>
+ * custom attributes</li>
  * </ul>
  */
-public class ProviderRequest implements AbacSupport {
-    private static final System.Logger LOGGER = System.getLogger(ProviderRequest.class.getName());
-
-    private final Map<String, AbacSupport> contextRoot = new HashMap<>();
-    private final Optional<Subject> subject;
-    private final Optional<Subject> service;
-    private final SecurityEnvironment env;
-    private final Optional<ObjectWrapper> resource;
-    private final SecurityContext context;
-    private final EndpointConfig epConfig;
-
-    ProviderRequest(SecurityContext context,
-                    Map<String, Supplier<Object>> resources) {
-        ObjectWrapper object = null;
-
-        for (Map.Entry<String, Supplier<Object>> entry : resources.entrySet()) {
-            ObjectWrapper wrapper = new ObjectWrapper(entry.getValue());
-            contextRoot.put(entry.getKey(), wrapper);
-            if ("object".equals(entry.getKey())) {
-                object = wrapper;
-            }
-        }
-
-        this.env = context.env();
-        this.epConfig = context.endpointConfig();
-        this.context = context;
-        this.resource = Optional.ofNullable(object);
-        this.subject = context.user();
-        this.service = context.service();
-
-        contextRoot.put("env", env);
-        subject.ifPresent(user -> contextRoot.put("subject", user));
-        service.ifPresent(svc -> contextRoot.put("service", svc));
+public interface ProviderRequest extends AbacSupport {
+    /**
+     * Create a new provider request.
+     *
+     * The following attributes will be bound by this method (even if already specified):
+     * <ul>
+     *     <li>{@code env}</li>
+     *     <li>{code subject}</li>
+     *     <li>{code service}</li>
+     * </ul>
+     *
+     * @param context current security context
+     * @param boundAttributes suppliers of bound attributes
+     * @return a new provider request
+     */
+    static ProviderRequest create(SecurityContext context,
+                                  Map<String, Supplier<Object>> boundAttributes) {
+        return new ProviderRequestImpl(context, boundAttributes);
     }
 
     /**
@@ -93,108 +73,39 @@ public class ProviderRequest implements AbacSupport {
      * @param key    key of the attribute
      * @return value of the attribute if found
      */
-    public static Optional<Object> getValue(Object object, String key) {
-        // use getter, public field
-        // first check if a public field with the name exists
-        Class<?> aClass = object.getClass();
-        try {
-            Field field = aClass.getField(key);
-            // java9
-            //if (field.canAccess(null)) {
-            // java8
-            if (ReflectionUtil.canAccess(ProviderRequest.class, field)) {
-                return Optional.ofNullable(field.get(object));
-            }
-        } catch (NoSuchFieldException e) {
-            // ignore, field is not present, we try accessor methods
-            LOGGER.log(System.Logger.Level.TRACE, () ->
-                "Field \"" + key + "\" + is not present in class: " + aClass.getName(), e);
-        } catch (IllegalAccessException e) {
-            // ignore, we check access first
-            LOGGER.log(System.Logger.Level.TRACE, () ->
-                "Failed to access field: \"" + key + "\" in class: " + aClass.getName(), e);
-        }
-
-        //now check accessor methods
-        String capName = capitalize(key);
-        return getMethod(aClass, "get" + capName)
-                .or(() -> getMethod(aClass, key))
-                .or(() -> getMethod(aClass, "is" + capName))
-                .or(() -> getMethod(aClass, "has" + capName))
-                .or(() -> getMethod(aClass, "should" + capName))
-                .map(method -> {
-                    try {
-                        return method.invoke(object);
-                    } catch (Exception e) {
-                        throw new SecurityException("Failed to invoke method \"" + method + "\" on class \"" + aClass
-                                .getName() + "\"", e);
-                    }
-                });
-    }
-
-    static String capitalize(String string) {
-        char c = string.charAt(0);
-        char upperCase = Character.toUpperCase(c);
-        return upperCase + string.substring(1);
-    }
-
-    static Optional<Method> getMethod(Class<?> aClass, String methodName) {
-        try {
-            Method method = aClass.getMethod(methodName);
-            // java9
-            //if (method.canAccess(null)) {
-            // java8 not good approach (don't have any other)
-            if (ReflectionUtil.canAccess(ProviderRequest.class, method)) {
-                return Optional.of(method);
-            }
-            return Optional.empty();
-        } catch (NoSuchMethodException e) {
-            // method is not present
-            LOGGER.log(System.Logger.Level.TRACE,
-                    () -> "Method: \"" + methodName + "\" is not in class: " + aClass.getName(), e);
-            return Optional.empty();
-        }
+    static Optional<Object> getValue(Object object, String key) {
+        return ProviderRequestImpl.getValue(object, key);
     }
 
     /**
      * Configuration of the invoked endpoint, such as annotations declared.
      * @return endpoint config
      */
-    public EndpointConfig endpointConfig() {
-        return epConfig;
-    }
+    EndpointConfig endpointConfig();
 
     /**
      * Security context associated with current request.
      * @return security context
      */
-    public SecurityContext securityContext() {
-        return context;
-    }
+    SecurityContext securityContext();
 
     /**
      * Current user subject, if already authenticated.
      * @return user subject or empty
      */
-    public Optional<Subject> subject() {
-        return subject;
-    }
+    Optional<Subject> subject();
 
     /**
      * Current service subject, if already authenticated.
      * @return service subject or empty.
      */
-    public Optional<Subject> service() {
-        return service;
-    }
+    Optional<Subject> service();
 
     /**
      * Environment of current request, such as the URI invoked, time to use for security decisions etc.
      * @return security environment
      */
-    public SecurityEnvironment env() {
-        return env;
-    }
+    SecurityEnvironment env();
 
     /**
      * The object of this request. Security request may be configured for a specific entity (e.g. if this is an entity
@@ -202,84 +113,5 @@ public class ProviderRequest implements AbacSupport {
      *
      * @return the object or empty if not known
      */
-    public Optional<Object> getObject() {
-        return resource.map(ObjectWrapper::getValue);
-    }
-
-    @Override
-    public Object abacAttributeRaw(String key) {
-        return contextRoot.get(key);
-    }
-
-    @Override
-    public Collection<String> abacAttributeNames() {
-        return contextRoot.keySet();
-    }
-
-    private static final class ObjectWrapper implements AbacSupport {
-        private final Supplier<Object> valueSupplier;
-        private volatile Object value;
-        private volatile AbacSupport container;
-
-        private ObjectWrapper(Supplier<Object> value) {
-            this.valueSupplier = value;
-        }
-
-        @Override
-        public Object abacAttributeRaw(String key) {
-            checkValue();
-
-            if (null != container) {
-                return container.abacAttributeRaw(key);
-            }
-            return ProviderRequest.getValue(value, key);
-        }
-
-        @Override
-        public Collection<String> abacAttributeNames() {
-            checkValue();
-
-            if (null != container) {
-                return container.abacAttributeNames();
-            }
-
-            throw new UnsupportedOperationException("Property names are not available for general Object types, such as: "
-                                                            + value.getClass());
-        }
-
-        Object getValue() {
-            checkValue();
-            return value;
-        }
-
-        private void checkValue() {
-            if (null == value) {
-                synchronized (valueSupplier) {
-                    if (null == value) {
-                        value = valueSupplier.get();
-                        if (value instanceof AbacSupport) {
-                            container = (AbacSupport) value;
-                        } else if (value instanceof Map) {
-                            final Map<?, ?> map = (Map<?, ?>) value;
-                            container = new AbacSupport() {
-                                @Override
-                                public Object abacAttributeRaw(String key) {
-                                    return map.get(key);
-                                }
-
-                                @Override
-                                public Collection<String> abacAttributeNames() {
-                                    return map.keySet()
-                                            .stream()
-                                            .map(String::valueOf)
-                                            .collect(Collectors.toSet());
-                                }
-                            };
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    Optional<Object> getObject();
 }

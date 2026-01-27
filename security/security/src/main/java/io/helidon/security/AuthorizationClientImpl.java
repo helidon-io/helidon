@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
         this.context = context;
         this.request = request;
         this.providerName = providerName;
-        this.providerRequest = new ProviderRequest(context,
-                                                   request.resources());
+        this.providerRequest = ProviderRequest.create(context,
+                                                      request.resources());
     }
 
     @Override
