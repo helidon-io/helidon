@@ -72,7 +72,6 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
     @Override
     public JsonGenerator writeKey(String key) {
         checkAndWriteKey(key);
-        keyWritten = true;
         return this;
     }
 
@@ -227,7 +226,6 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
         if (depth > 0 && structureType[depth - 1] && !keyWritten) {
             throw new JsonException("Value without key is supported only as a root or in the array");
         }
-        beforeWrite();
         writeJsonValue(value);
         return this;
     }
@@ -295,6 +293,7 @@ abstract class AbstractJsonGenerator implements JsonGenerator {
         beforeWrite();
         writeString(key);
         writeByte(Bytes.COLON_BYTE);
+        keyWritten = true;
     }
 
     private void pushStructureType(boolean isObject) {
