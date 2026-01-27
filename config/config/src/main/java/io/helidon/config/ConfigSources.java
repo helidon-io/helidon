@@ -342,8 +342,12 @@ public final class ConfigSources {
         LazyConfigSource implementation (i.e. when user.home is requested, we will return value of USER_HOME)
          */
         EnvironmentVariablesConfigSource() {
+            /*
+            This is only for backward compatibility, as the method ConfigSources.environmentVariables() returns
+            a MapConfigSource
+             */
             super(MapConfigSource.builder()
-                          .map(EnvVars.initial())
+                          .map(Map.of())
                           .name(""));
         }
 

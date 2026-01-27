@@ -16,11 +16,8 @@
 
 package io.helidon.config;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.config.spi.ConfigNode;
@@ -29,24 +26,8 @@ class EnvVars {
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]");
     private static final Pattern DISALLOWED_CHARS_ALLOW_DASH = Pattern.compile("[^a-zA-Z0-9_\\-]");
     private static final String UNDERSCORE = "_";
-    // set of key we always want to see in the config tree
-    private static final Set<String> INITIAL_VALUES = Set.of(
-            "USER",
-            "HOME"
-    );
 
     private EnvVars() {
-    }
-
-    static Map<String, String> initial() {
-        var result = new HashMap<String, String>();
-        for (String initialValue : INITIAL_VALUES) {
-            var value = System.getenv(initialValue);
-            if (value != null) {
-                result.put(initialValue, value);
-            }
-        }
-        return result;
     }
 
     static Optional<ConfigNode> node(String key) {
