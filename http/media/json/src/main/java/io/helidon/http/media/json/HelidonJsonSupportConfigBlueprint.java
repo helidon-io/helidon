@@ -20,7 +20,6 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.media.spi.MediaSupportProvider;
 import io.helidon.json.binding.JsonBinding;
-import io.helidon.json.binding.JsonBindingConfig;
 
 /**
  * Configuration blueprint for Helidon JSON media support.
@@ -42,15 +41,6 @@ interface HelidonJsonSupportConfigBlueprint extends Prototype.Factory<HelidonJso
     @Option.Default(HelidonJsonSupport.HELIDON_JSON_TYPE)
     @Option.Configured
     String name();
-
-    /**
-     * Configuration of the Helidon JSON Binding component.
-     *
-     * @return json binding configuration
-     */
-    @Option.DefaultMethod("create")
-    @Option.Configured(merge = true)
-    JsonBindingConfig jsonBindingConfig();
 
     /**
      * JSON binding instance to use for serialization and deserialization.
