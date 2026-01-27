@@ -75,11 +75,21 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
             for (int i = 0; i < value.length(); i++) {
                 char c = value.charAt(i);
                 switch (c) {
-                case '\n': writer.write("\\n"); break;
-                case '\r': writer.write("\\r"); break;
-                case '\t': writer.write("\\t"); break;
-                case '\\': writer.write("\\\\"); break;
-                case '\"': writer.write("\\\""); break;
+                case '\n':
+                    writer.write("\\n");
+                    break;
+                case '\r':
+                    writer.write("\\r");
+                    break;
+                case '\t':
+                    writer.write("\\t");
+                    break;
+                case '\\':
+                    writer.write("\\\\");
+                    break;
+                case '\"':
+                    writer.write("\\\"");
+                    break;
                 default:
                     // Check if the character is printable.
                     // If not, print its unicode value (e.g., \u0000)
