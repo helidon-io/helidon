@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.List;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.config.MergedConfig;
 
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
@@ -116,13 +116,7 @@ public final class ConfigUtils {
                 .map(providerName -> root.get(PROVIDERS_KEY).get(providerName))
                 .orElse(Config.empty());
 
-        return Config.builder()
-                // Model config overrides anything from provider
-                .addSource(ConfigSources.create(modelConfig))
-                .addSource(ConfigSources.create(providerConfig))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .build();
+        return MergedConfig.create(modelConfig, providerConfig);
     }
 
     /**
