@@ -49,16 +49,26 @@ class JsonConverterGenerator {
     private static final String PROPERTY_NAME_SUFFIX = "_";
     private static final String MISSING_SUFFIX = "_missing";
     private static final Supplier<?> DEFAULT_TYPE_VALUE = () -> null;
-    private static final Map<TypeName, Supplier<?>> DEFAULT_TYPE_VALUES = Map.of(
-            TypeNames.PRIMITIVE_BOOLEAN, () -> false,
-            TypeNames.PRIMITIVE_BYTE, () -> 0,
-            TypeNames.PRIMITIVE_SHORT, () -> 0,
-            TypeNames.PRIMITIVE_INT, () -> 0,
-            TypeNames.PRIMITIVE_LONG, () -> 0,
-            TypeNames.PRIMITIVE_FLOAT, () -> "0.0F",
-            TypeNames.PRIMITIVE_DOUBLE, () -> "0.0"
-    );
+    private static final Map<TypeName, Supplier<?>> DEFAULT_TYPE_VALUES;
     private static final String WRITE_NULLS = "writeNulls";
+
+    static {
+        Map<TypeName, Supplier<?>> tmp = new HashMap<>();
+
+        tmp.put(TypeNames.PRIMITIVE_BOOLEAN, () -> false);
+        tmp.put(TypeNames.PRIMITIVE_BYTE, () -> 0);
+        tmp.put(TypeNames.PRIMITIVE_SHORT, () -> 0);
+        tmp.put(TypeNames.PRIMITIVE_INT, () -> 0);
+        tmp.put(TypeNames.PRIMITIVE_LONG, () -> 0);
+        tmp.put(TypeNames.PRIMITIVE_FLOAT, () -> "0.0F");
+        tmp.put(TypeNames.PRIMITIVE_DOUBLE, () -> "0.0");
+        tmp.put(TypeNames.OPTIONAL, () -> "@java.util.Optional@.empty()");
+        tmp.put(TypeNames.OPTIONAL_INT, () -> "@java.util.OptionalInt@.empty()");
+        tmp.put(TypeNames.OPTIONAL_DOUBLE, () -> "@java.util.OptionalDouble@.empty()");
+        tmp.put(TypeNames.OPTIONAL_LONG, () -> "@java.util.OptionalLong@.empty()");
+
+        DEFAULT_TYPE_VALUES = Map.copyOf(tmp);
+    }
 
     private JsonConverterGenerator() {
     }
@@ -629,7 +639,7 @@ class JsonConverterGenerator {
                 TypeName type = jsonProperty.deserializationType().orElseThrow();
                 method.addContent(type)
                         .addContent(" " + jsonProperty.deserializationName().orElseThrow() + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type, DEFAULT_TYPE_VALUE).get() + ";");
+                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
             }
         } else if (creatorKind == ElementKind.METHOD) {
             TypeName originalType = converterInfo.objectsGenerics();
@@ -654,7 +664,7 @@ class JsonConverterGenerator {
                 TypeName type = jsonProperty.deserializationType().orElseThrow();
                 method.addContent(type)
                         .addContent(" " + deserializationName + PROPERTY_NAME_SUFFIX + " = ")
-                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type, DEFAULT_TYPE_VALUE).get() + ";");
+                        .addContentLine(DEFAULT_TYPE_VALUES.getOrDefault(type.genericTypeName(), DEFAULT_TYPE_VALUE).get() + ";");
             }
         } else {
             TypeName originalType = converterInfo.objectsGenerics();
