@@ -149,7 +149,10 @@ import io.opentelemetry.semconv.ServiceAttributes;
  *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  * </table>
+ *
+ * @deprecated Use another tracing provider, such as OpenTelemetry.
  */
+@Deprecated(since = "4.4.0", forRemoval = true)
 @Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final System.Logger LOGGER = System.getLogger(JaegerTracerBuilder.class.getName());
