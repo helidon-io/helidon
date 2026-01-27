@@ -24,18 +24,15 @@ import java.io.StringWriter;
 class JsonGeneratorWriterTest extends JsonGeneratorTest {
 
     private StringWriter stringWriter;
-    private JsonGenerator generator;
 
     @Override
     JsonGenerator createGenerator() {
         stringWriter = new StringWriter();
-        generator = JsonGenerator.create(stringWriter);
-        return generator;
+        return JsonGenerator.create(stringWriter);
     }
 
     @Override
-    String getGeneratedJson() throws Exception {
-        generator.close();
+    String getGeneratedJson() {
         return stringWriter.toString();
     }
 
