@@ -55,15 +55,10 @@ public final class RestClient {
      *      <th>Description</th>
      *    </tr>
      *    <tr>
-     *      <th>{@code uri}</th>
-     *      <th>&nbsp;</th>
-     *      <th>URI of this service</th>
-     *    </tr>
-     *    <tr>
      *      <th>{@code client}</th>
      *      <th>&nbsp;</th>
      *      <th>Client configuration, see
-     *      <a href="https://helidon.io/docs/v4/config/io_helidon_webclient_api_WebClient">Proxy</a>
+     *      <a href="https://helidon.io/docs/v4/config/io_helidon_webclient_api_WebClient">WebClient</a>
      *      (Base URI will always be overridden by the uri defined on this level)</th>
      *    </tr>
      * </table>
