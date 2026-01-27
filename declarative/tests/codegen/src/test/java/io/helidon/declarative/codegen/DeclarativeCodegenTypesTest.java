@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.declarative.codegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,10 +26,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.Weight;
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigBuilderSupport;
+import io.helidon.http.PathMatchers;
 
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.Test;
@@ -70,6 +73,9 @@ class DeclarativeCodegenTypesTest {
         checkField(toCheck, checked, fields, "EXECUTOR_SERVICE", ExecutorService.class);
         checkField(toCheck, checked, fields, "SET_OF_THROWABLES", Set.class);
         checkField(toCheck, checked, fields, "CONFIG_BUILDER_SUPPORT", ConfigBuilderSupport.class);
+        checkField(toCheck, checked, fields, "BUFFER_DATA", BufferData.class);
+        checkField(toCheck, checked, fields, "BYTE_BUFFER", ByteBuffer.class);
+        checkField(toCheck, checked, fields, "PATH_MATCHERS", PathMatchers.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

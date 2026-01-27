@@ -18,6 +18,7 @@ package io.helidon.docs.se.inject;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Default;
 import io.helidon.common.media.type.MediaTypes;
@@ -27,6 +28,7 @@ import io.helidon.config.Configuration;
 import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
+import io.helidon.http.HttpPrologue;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.scheduling.Scheduling;
@@ -42,6 +44,9 @@ import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.webclient.api.RestClient;
 import io.helidon.webserver.http.RestServer;
+import io.helidon.webserver.websocket.WebSocketServer;
+import io.helidon.websocket.WebSocket;
+import io.helidon.websocket.WsSession;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -232,6 +237,19 @@ public class DeclarativeExample {
         }
         // end::snippet_14[]
     }
+
+    @SuppressWarnings("deprecation")
+    // tag::snippet_15[]
+    @WebSocketServer.Endpoint
+    @Http.Path("/websocket/echo")
+    @Service.Singleton
+    static class EchoEndpoint {
+        @WebSocket.OnMessage
+        void onMessage(WsSession session, String message) {
+            session.send(message, true);
+        }
+    }
+    // end::snippet_15[]
 
 
 

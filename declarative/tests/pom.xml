@@ -49,6 +49,7 @@
         <module>scheduling</module>
         <module>metrics</module>
         <module>tracing</module>
+        <module>websocket</module>
     </modules>
 
 </project>

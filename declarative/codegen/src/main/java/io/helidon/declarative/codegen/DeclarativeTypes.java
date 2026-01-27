@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen;
 
+import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -70,6 +71,21 @@ public final class DeclarativeTypes {
      * Type name for {@code io.helidon.config.ConfigBuilderSupport}.
      */
     public static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.config.ConfigBuilderSupport");
+
+    /**
+     * Buffer data from common buffers.
+     */
+    public static final TypeName BUFFER_DATA = TypeName.create("io.helidon.common.buffers.BufferData");
+
+    /**
+     * Java {@link java.nio.ByteBuffer}.
+     */
+    public static final TypeName BYTE_BUFFER = TypeName.create(ByteBuffer.class);
+
+    /**
+     * {@code PathMatchers} from HTTP, used for matching request path.
+     */
+    public static final TypeName PATH_MATCHERS = TypeName.create("io.helidon.http.PathMatchers");
 
     private DeclarativeTypes() {
     }

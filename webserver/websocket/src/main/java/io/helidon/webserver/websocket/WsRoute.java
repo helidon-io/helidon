@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,19 +30,33 @@ import io.helidon.websocket.WsListener;
  */
 public class WsRoute implements Route {
     private final PathMatcher pathMatcher;
-    private final Supplier<WsListener> listenerSupplier;
+    private final Supplier<? extends WsListener> listenerSupplier;
 
-    private WsRoute(PathMatcher pathMatcher, Supplier<WsListener> listenerSupplier) {
+    private WsRoute(PathMatcher pathMatcher, Supplier<? extends WsListener> listenerSupplier) {
         this.pathMatcher = pathMatcher;
         this.listenerSupplier = listenerSupplier;
     }
 
-    static WsRoute create(String path, WsListener listener) {
+    /**
+     * Create a new WebSocket route for a specific path.
+     *
+     * @param path     path of the websocket endpoint
+     * @param listener listener instance to use for all connections
+     * @return a new route
+     */
+    public static WsRoute create(String path, WsListener listener) {
         PathMatcher pathMatcher = PathMatchers.create(path);
         return new WsRoute(pathMatcher, () -> listener);
     }
 
-    static WsRoute create(String path, Supplier<WsListener> listener) {
+    /**
+     * Create a new WebSocket route for a specific path.
+     *
+     * @param path     path of the websocket endpoint
+     * @param listener supplier of listener instances, a new instance will be used for each connection
+     * @return a new route
+     */
+    public static WsRoute create(String path, Supplier<? extends WsListener> listener) {
         PathMatcher pathMatcher = PathMatchers.create(path);
         return new WsRoute(pathMatcher, listener);
     }

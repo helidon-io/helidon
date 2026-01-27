@@ -24,6 +24,7 @@ module io.helidon.declarative.codegen {
     requires io.helidon.declarative.codegen.model;
     requires io.helidon.common;
     requires io.helidon.common.types;
+    requires io.helidon.common.buffers;
 
     exports io.helidon.declarative.codegen;
 
@@ -51,7 +52,8 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,
                     io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
-                    io.helidon.declarative.codegen.tracing.TracingExtensionProvider;
+                    io.helidon.declarative.codegen.tracing.TracingExtensionProvider,
+                    io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;

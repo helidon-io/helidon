@@ -86,6 +86,7 @@ The following features are currently implemented:
 - <<Dec-Security, Security>>
 - <<Dec-Metrics, Metrics>>
 - <<Dec-Tracing, Tracing>>
+- <<Dec-WebSocket, WebSocket>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -455,4 +456,53 @@ A traced method with an explicit span name, adding a tag with a constant value, 
 .Annotated traced method
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_14, indent=0]
+----
+
+=== WebSocket [[Dec-WebSocket]]
+
+To create a WebSocket endpoint, simply annotate a class with `@WebSocketServer.Endpoint`, and
+add at least one method annotated with one of the WebSocket method annotations, such as `@WebSocket.OnMessage`.
+
+Services available for injection:
+
+N/A
+
+Supported method parameters (no annotation required):
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WsSession.html[`io.helidon.websocket.WsSession`]
+- `boolean` in a method annotated with `@WebSocket.OnMessage` - indicator of "last" message (if not present, the message will be combined before delivery)
+- `java.lang.String` (`@WebSocket.OnMessage`) - the message delivered (text)
+- `java.io.Reader` (`@WebSocket.OnMessage`) - the message delivered (text)
+- link:{buffers-javadoc-base-url}/io/helidon/common/buffers/BufferData.html[`io.helidon.common.buffers.BufferData`] (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.nio.ByteBuffer` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.io.InputStream` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `io.helidon.http.HttpPrologue` (`@WebSocket.OnHttpUpgrade) - the HTTP prologue (method, path, protocol version)
+- `io.helidon.http.Headers` (`@WebSocket.OnHttpUpgrade) - the request headers
+- `int` (`@WebSocket.OnClose`) - the close code
+- `java.lang.String` (`@WebSocket.OnClose`) - the close reason
+- `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown
+
+
+Annotations on endpoint type:
+
+- link:{websocket-server-javadoc-base-url}/io/helidon/webserver/websocket/WebSocketServer.Endpoint.html[`io.helidon.webserver.websocket.WebSocketServer.Endpoint`] - required annotation
+- link:{websocket-server-javadoc-base-url}/io/helidon/webserver/websocket/WebSocketServer.Listener.html[`io.helidon.webserver.websocket.WebSocketServer.Listener`] - to define the named listener this should be served on (named port/socket)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnMessage.html[`io.helidon.websocket.WebSocket.OnMessage`] - receives either a binary or a text message
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnHttpUpgrade.html[`io.helidon.websocket.WebSocket.OnHttpUpgrade`] - invoked during HTTP upgrade, the method may return `Headers` to be sent during the upgrade response
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnOpen.html[`io.helidon.websocket.WebSocket.OnOpen`] - invoked when the WebSocket connection is established (after upgrade)
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnClose.html[`io.helidon.websocket.WebSocket.OnClose`] - invoked when the WebSocket connection is closed
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnError.html[`io.helidon.websocket.WebSocket.OnError`] - invoked when an error occurs when invoking other methods
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template
+
+[source,java]
+.Example of a WebSocket Server Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_15, indent=0]
 ----
