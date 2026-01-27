@@ -37,10 +37,6 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-buffers</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.json</groupId>
             <artifactId>helidon-json-binding</artifactId>
         </dependency>
@@ -63,18 +59,6 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-media-type</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.json</groupId>
-            <artifactId>helidon-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -186,24 +170,24 @@
                 </dependencies>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>check-dependencies</id>
                         <phase>verify</phase>
                         <configuration>
-                            <ignoredNonTestScopedDependencies>
+                            <ignoredDependencies combine.children="append">
                                 <!-- Used from generated code, the plugin does not see this -->
                                 <dependency>io.helidon.common:helidon-common-types::</dependency>
                                 <dependency>io.helidon.service:helidon-service-registry::</dependency>
                                 <dependency>io.helidon.json:helidon-json::</dependency>
                                 <dependency>io.helidon.common:helidon-common-buffers::</dependency>
-                            </ignoredNonTestScopedDependencies>
+                            </ignoredDependencies>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
 </project>
