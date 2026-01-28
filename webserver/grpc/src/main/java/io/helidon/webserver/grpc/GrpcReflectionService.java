@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package io.helidon.webserver.grpc;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.protobuf.ByteString;
@@ -126,13 +128,32 @@ class GrpcReflectionService implements GrpcService {
         List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
-                Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
-                if (fileDesc.getFile().getFullName().equals(fileName)) {
-                    return symbolFound(fileDesc, cachedFileNameKey);
+                ServerReflectionResponse res = findFile(grpcRoute.proto(), fileName, new HashSet<>());
+                if (res != null) {
+                    return res;
                 }
             }
         }
+
         return notFound("Unable to find file name " + fileName);
+    }
+
+    private ServerReflectionResponse findFile(Descriptors.FileDescriptor fileDesc, String fileName, Set<String> visited) {
+        String descFileName = fileDesc.getFile().getFullName();
+        if (visited.add(descFileName)) {
+            if (descFileName.equals(fileName)) {
+                String cachedFileNameKey = "/" + fileName;      // not a legal identifier
+                return symbolFound(fileDesc, cachedFileNameKey);
+            }
+            List<Descriptors.FileDescriptor> dependencies = fileDesc.getDependencies();
+            for (Descriptors.FileDescriptor dependency : dependencies) {
+                ServerReflectionResponse res = findFile(dependency, fileName, visited);
+                if (res != null) {
+                    return res;
+                }
+            }
+        }
+        return null;
     }
 
     private ServerReflectionResponse findSymbol(ServerReflectionRequest req) {

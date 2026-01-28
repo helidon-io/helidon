@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,9 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
 
     @SetUpRoute
     static void routing(Router.RouterBuilder<?> router) {
-        router.addRouting(GrpcRouting.builder().service(new StringService()));
+        router.addRouting(GrpcRouting.builder()
+                                  .service(new StringService())
+                                  .service(new CourseService()));
     }
 
     @BeforeEach
@@ -92,7 +94,7 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
                            .setListServices("*")
                            .build());
         req.onCompleted();
-        res.await(5, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
@@ -101,6 +103,7 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
                 .map(ServiceResponse::getName)
                 .collect(Collectors.toSet());
         assertThat(names, hasItems("StringService",
+                                   "CourseService",
                                    "grpc.reflection.v1.ServerReflection",
                                    "grpc.reflection.v1alpha.ServerReflection"));
     }
@@ -112,7 +115,12 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
      * @throws InterruptedException if the waiting time expires
      */
     @ParameterizedTest
-    @CsvSource({"StringService", "StringService.Upper", "StringMessage"})
+    @CsvSource({
+            "StringService",
+            "StringService.Upper",
+            "StringMessage",
+            "CourseService",
+            "CourseService.GetCourses"})
     void testFindSymbol(String symbol) throws InterruptedException {
         TestObserver<ServerReflectionResponse> res = new TestObserver<>(1);
         StreamObserver<ServerReflectionRequest> req = stub.serverReflectionInfo(res);
@@ -120,7 +128,7 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
                            .setFileContainingSymbol(symbol)
                            .build());
         req.onCompleted();
-        res.await(5, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
@@ -129,15 +137,19 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
         assertThat(fileResponse.getFileDescriptorProto(0).size(), greaterThan(1));
     }
 
-    @Test
-    void testFile() throws InterruptedException {
+    @ParameterizedTest
+    @CsvSource({
+            "strings.proto",
+            "courses.proto",
+            "google/protobuf/empty.proto"})         // imported by courses.proto
+    void testFile(String protoFile) throws InterruptedException {
         TestObserver<ServerReflectionResponse> res = new TestObserver<>(1);
         StreamObserver<ServerReflectionRequest> req = stub.serverReflectionInfo(res);
         req.onNext(ServerReflectionRequest.newBuilder()
-                           .setFileByFilename("strings.proto")
+                           .setFileByFilename(protoFile)
                            .build());
         req.onCompleted();
-        res.await(500, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
@@ -158,7 +170,7 @@ class ReflectionServiceV1AlphaTest extends BaseServiceTest {
                                            .build())
                            .build());
         req.onCompleted();
-        res.await(500, TimeUnit.SECONDS);
+        res.await(10, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();
