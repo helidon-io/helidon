@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -835,10 +835,12 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
          * Audience expected in inbound JWTs.
          *
          * @param audience audience string
+         * @return updated builder instance
          */
         @ConfiguredOption(key = "atn-token.jwt-audience")
-        public void expectedAudience(String audience) {
+        public Builder expectedAudience(String audience) {
             this.expectedAudience = audience;
+            return this;
         }
 
         /**
