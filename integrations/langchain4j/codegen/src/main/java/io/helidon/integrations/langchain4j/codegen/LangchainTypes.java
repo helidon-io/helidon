@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.helidon.common.types.TypeName;
 
 final class LangchainTypes {
     static final TypeName AI_SERVICE = TypeName.create("io.helidon.integrations.langchain4j.Ai.Service");
+    static final TypeName AI_AGENT = TypeName.create("io.helidon.integrations.langchain4j.Ai.Agent");
     static final TypeName AI_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatModel");
     static final TypeName AI_STREAMING_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.StreamingChatModel");
     static final TypeName AI_CHAT_MEMORY = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatMemory");
@@ -64,12 +65,16 @@ final class LangchainTypes {
     static final TypeName LC_TOOL_PROVIDER = TypeName.create("dev.langchain4j.service.tool.ToolProvider");
     static final TypeName LC_MCP_TOOL_PROVIDER = TypeName.create("dev.langchain4j.mcp.McpToolProvider");
     static final TypeName LC_MCP_CLIENT = TypeName.create("dev.langchain4j.mcp.client.McpClient");
+    static final TypeName LC_AGENT = TypeName.create("dev.langchain4j.agentic.Agent");
+    static final TypeName LC_AGENTIC_SERVICES = TypeName.create("dev.langchain4j.agentic.AgenticServices");
+    static final TypeName LC_INPUT_GUARDRAIL = TypeName.create("dev.langchain4j.guardrail.InputGuardrail");
+    static final TypeName LC_OUTPUT_GUARDRAIL = TypeName.create("dev.langchain4j.guardrail.OutputGuardrail");
 
     static final TypeName SVC_QUALIFIED_INSTANCE = TypeName.create("io.helidon.service.registry.Service.QualifiedInstance");
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");
     static final TypeName SVC_QUALIFIER = TypeName.create("io.helidon.service.registry.Qualifier");
     static final TypeName COMMON_WEIGHT = TypeName.create("io.helidon.common.Weight");
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
     static final Annotation BLDR_REGISTRY_SUPPORT_ANNOTATION = Annotation.create(BLDR_PROTOTYPE_REGISTRY_SUPPORT);
     static final TypeName OPT_SINGULAR = TypeName.create("io.helidon.builder.api.Option.Singular");

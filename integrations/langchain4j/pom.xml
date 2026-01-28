@@ -56,10 +56,22 @@
                     <execution>
                         <id>check-dependencies</id>
                         <phase>verify</phase>
+                        <configuration>
+                            <failOnWarning>false</failOnWarning>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

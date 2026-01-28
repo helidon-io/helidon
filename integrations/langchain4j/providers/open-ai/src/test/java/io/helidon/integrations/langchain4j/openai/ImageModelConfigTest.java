@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,28 @@
 
 package io.helidon.integrations.langchain4j.openai;
 
-import java.nio.file.Paths;
 import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.integrations.langchain4j.ConfigUtils;
 import io.helidon.integrations.langchain4j.providers.openai.OpenAiImageModelConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.ConfigUtils.Kind.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 class ImageModelConfigTest {
+    public static final String MODEL_NAME = "test-image-model";
 
     @Test
     void testDefaultRoot() {
-        var config = OpenAiImageModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                           .get(OpenAiImageModelConfig.CONFIG_ROOT));
+        var config = OpenAiImageModelConfig.create(
+                ConfigUtils.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), is(true));
