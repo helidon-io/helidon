@@ -119,6 +119,11 @@ public class TelemetryCdiExtension implements Extension {
                 public Class<? extends Annotation> annotationType() {
                     return WithSpan.class;
                 }
+
+                @Override
+                public boolean inheritContext() {
+                    return true;
+                }
             });
 
             for (AnnotatedParameterConfigurator<?> param : method.params()) {
