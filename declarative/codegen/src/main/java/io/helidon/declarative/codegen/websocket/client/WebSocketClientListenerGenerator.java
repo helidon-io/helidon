@@ -43,7 +43,6 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.http.webserver.AbstractParametersProvider;
-import io.helidon.service.codegen.FieldHandler;
 import io.helidon.service.codegen.RegistryRoundContext;
 
 import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
@@ -127,8 +126,6 @@ class WebSocketClientListenerGenerator extends AbstractParametersProvider {
                     )
                     .addContentLine("this.user__" + pathParam.getKey() + " = user__" + pathParam.getKey() + ";");
         }
-
-        FieldHandler fieldHandler = FieldHandler.create(classModel, ctr);
 
         // let's go through all the relevant methods, we just need to process `onHttpUpgrade` last, as there we will
         // read path params
