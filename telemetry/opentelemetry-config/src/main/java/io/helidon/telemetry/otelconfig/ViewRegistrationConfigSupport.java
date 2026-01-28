@@ -25,7 +25,6 @@ import io.helidon.config.Config;
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
 import io.opentelemetry.sdk.metrics.View;
-import io.opentelemetry.sdk.metrics.internal.SdkMeterProviderUtil;
 import io.opentelemetry.sdk.metrics.internal.view.DefaultAggregation;
 import io.opentelemetry.sdk.metrics.internal.view.DropAggregation;
 import io.opentelemetry.sdk.metrics.internal.view.LastValueAggregation;
