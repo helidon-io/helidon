@@ -42,7 +42,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 class OpenTelemetryTracerBlueprintSupport {
 
@@ -107,7 +107,7 @@ class OpenTelemetryTracerBlueprintSupport {
             openTelemetrySdkBuilder.setPropagators(ContextPropagators.create(propagator));
 
             var attributesBuilder = Attributes.builder();
-            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, builder.serviceName().get());
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, builder.serviceName().get());
 
             var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
 

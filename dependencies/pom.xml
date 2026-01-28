@@ -255,16 +255,6 @@
                 <version>${version.lib.opentelemetry.semconv}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-opentracing-shim</artifactId>
-                <version>${version.lib.opentelemetry.opentracing.shim}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-otlp</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-util</artifactId>
                 <version>${version.lib.opentracing}</version>
@@ -284,11 +274,6 @@
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-api</artifactId>
                 <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-                <version>${version.lib.opentelemetry-sdk-extension-autoconfigure}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
@@ -1243,6 +1228,12 @@
                 <!-- For dependency convergence -->
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio</artifactId>
+                <version>${version.lib.okio}</version>
+            </dependency>
+            <dependency>
+                <!-- For dependency convergence -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-jvm</artifactId>
                 <version>${version.lib.okio}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
