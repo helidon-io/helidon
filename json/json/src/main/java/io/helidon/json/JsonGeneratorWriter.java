@@ -33,7 +33,7 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeByte(byte value) {
+    void writeByteExact(byte value) {
         try {
             writer.write(value);
         } catch (IOException e) {
@@ -72,7 +72,34 @@ class JsonGeneratorWriter extends AbstractJsonGenerator {
     void writeString(String value) {
         try {
             writer.write('\"');
-            writer.write(value);
+            for (int i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                switch (c) {
+                case '\n':
+                    writer.write("\\n");
+                    break;
+                case '\r':
+                    writer.write("\\r");
+                    break;
+                case '\t':
+                    writer.write("\\t");
+                    break;
+                case '\\':
+                    writer.write("\\\\");
+                    break;
+                case '\"':
+                    writer.write("\\\"");
+                    break;
+                default:
+                    // Check if the character is printable.
+                    // If not, print its unicode value (e.g., \u0000)
+                    if (c < 32 || c > 126) {
+                        writer.write(String.format("\\u%04x", (int) c));
+                    } else {
+                        writer.write(c);
+                    }
+                }
+            }
             writer.write('\"');
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write String value.", e);

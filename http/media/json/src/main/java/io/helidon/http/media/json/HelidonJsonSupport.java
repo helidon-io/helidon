@@ -44,7 +44,6 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * framework.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@RuntimeType.PrototypedBy(HelidonJsonSupportConfig.class)
 public class HelidonJsonSupport implements MediaSupport, RuntimeType.Api<HelidonJsonSupportConfig> {
 
     static final String HELIDON_JSON_TYPE = "json";

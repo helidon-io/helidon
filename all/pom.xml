@@ -1063,6 +1063,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonb</artifactId>
         </dependency>
         <dependency>

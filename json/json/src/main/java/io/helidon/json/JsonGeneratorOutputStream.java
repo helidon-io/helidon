@@ -65,7 +65,7 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    void writeByte(byte value) {
+    void writeByteExact(byte value) {
         ensureCapacity(1);
         buffer[index++] = value;
     }
@@ -73,7 +73,7 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     @Override
     void writeLong(long value) {
         if (value == 0) {
-            writeByte(Bytes.ZERO_DIGIT_BYTE);
+            writeByteExact(Bytes.ZERO_DIGIT_BYTE);
         }
         long toProcess = value;
         int digits = 0;
@@ -96,10 +96,39 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     @Override
     void writeFloat(float value) {
         //Performance improvement needed
-        if (Float.isNaN(value) || Float.isInfinite(value)) {
-            writeNull();
+        if (Float.isNaN(value)) {
+            ensureCapacity(3);
+            buffer[index++] = (byte) 'N';
+            buffer[index++] = (byte) 'a';
+            buffer[index++] = (byte) 'N';
+            return;
+        } else if (Float.NEGATIVE_INFINITY == value) {
+            ensureCapacity(9);
+            buffer[index++] = (byte) '-';
+            buffer[index++] = (byte) 'I';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'f';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 't';
+            buffer[index++] = (byte) 'y';
+            return;
+        } else if (Float.POSITIVE_INFINITY == value) {
+            ensureCapacity(8);
+            buffer[index++] = (byte) 'I';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'f';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 't';
+            buffer[index++] = (byte) 'y';
             return;
         } else if (value == 0.0) {
+            ensureCapacity(3);
+            buffer[index++] = (byte) '0';
+            buffer[index++] = (byte) '.';
             buffer[index++] = (byte) '0';
             return;
         }
@@ -118,11 +147,39 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     @Override
     void writeDouble(double value) {
         //Performance improvement needed
-        if (Double.isNaN(value) || Double.isInfinite(value)) {
-            writeNull();
+        if (Double.isNaN(value)) {
+            ensureCapacity(3);
+            buffer[index++] = (byte) 'N';
+            buffer[index++] = (byte) 'a';
+            buffer[index++] = (byte) 'N';
+            return;
+        } else if (Double.NEGATIVE_INFINITY == value) {
+            ensureCapacity(9);
+            buffer[index++] = (byte) '-';
+            buffer[index++] = (byte) 'I';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'f';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 't';
+            buffer[index++] = (byte) 'y';
+            return;
+        } else if (Double.POSITIVE_INFINITY == value) {
+            ensureCapacity(8);
+            buffer[index++] = (byte) 'I';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'f';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 'n';
+            buffer[index++] = (byte) 'i';
+            buffer[index++] = (byte) 't';
+            buffer[index++] = (byte) 'y';
             return;
         } else if (value == 0.0) {
-            ensureCapacity(1);
+            ensureCapacity(3);
+            buffer[index++] = (byte) '0';
+            buffer[index++] = (byte) '.';
             buffer[index++] = (byte) '0';
             return;
         }
@@ -193,15 +250,21 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     private void encodeChar(char c) {
         if (c < 0x20) {
             // Control characters (0x00-0x1F) must be escaped
-            if (c == '\n' || c == '\r' || c == '\t' || c == '\b' || c == '\f') {
-                // Common control chars use short escapes
-                ensureCapacity(2);
-                buffer[index++] = Bytes.BACKSLASH_BYTE;
-                buffer[index++] = (byte) c;
+            ensureCapacity(2); //There will be at least one more byte
+            buffer[index++] = Bytes.BACKSLASH_BYTE;
+            if (c == '\n') {
+                buffer[index++] = (byte) 'n';
+            } else if (c == '\r') {
+                buffer[index++] = (byte) 'r';
+            } else if (c == '\t') {
+                buffer[index++] = (byte) 't';
+            } else if (c == '\b') {
+                buffer[index++] = (byte) 'b';
+            } else if (c == '\f') {
+                buffer[index++] = (byte) 'f';
             } else {
                 // Other control chars use \\uXXXX format
-                ensureCapacity(6);
-                buffer[index++] = Bytes.BACKSLASH_BYTE;
+                ensureCapacity(5);
                 buffer[index++] = 'u';
                 buffer[index++] = '0';
                 buffer[index++] = '0';
