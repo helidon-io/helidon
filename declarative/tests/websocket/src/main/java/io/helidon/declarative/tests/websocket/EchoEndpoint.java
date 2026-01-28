@@ -29,7 +29,7 @@ import io.helidon.websocket.WsSession;
 
 @SuppressWarnings("deprecation")
 @WebSocketServer.Endpoint
-@Http.Path("/websocket/echo/{user}")
+@Http.Path("/websocket/echo/{user}/{shard}")
 @Service.Singleton
 class EchoEndpoint {
     private final AtomicReference<String> lastUser = new AtomicReference<>();

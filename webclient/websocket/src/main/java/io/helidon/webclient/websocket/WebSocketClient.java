@@ -31,7 +31,7 @@ import io.helidon.service.registry.Service;
  * The type safe WebSocket client is backed by Helidon {@link io.helidon.webclient.websocket.WsClient}.
  *
  * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
+ *         and full removal. We welcome feedback for incubating features.
  */
 @Deprecated
 public final class WebSocketClient {
@@ -39,8 +39,9 @@ public final class WebSocketClient {
     }
 
     /**
-     * Definition of the websocket client API. An implementation of this interface (MUST be an interface) can
-     * be injected when using Helidon Injection.
+     * Definition of the websocket client API. A class can be annotated with this annotation and use
+     * WebSocket operations through annotations in {@link io.helidon.websocket.WebSocket}.
+     * The class should also have a {@link io.helidon.http.Http.Path} annotation to specify the path on the server.
      * <p>
      * In case key {@code client} node exists under the configuration node of this API, a new client will be created for this
      * instance (this always wins).
@@ -48,17 +49,25 @@ public final class WebSocketClient {
      * for this instance.
      * Then we use an unnamed client instance from the registry (if any).
      * The last resort is to create a new client that would be used for this API.
+     * <p>
+     * <strong>Important: </strong> for each endpoint a class is generated that is named as {@code ClassNameFactory}.
+     * If such a class already exists, there will be a name conflict, use {@link #factoryClassName()} to specify a custom
+     * class name in such a case. The factory will always be in the same package as the annotated type.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Inherited
+    @Service.Qualifier
     @Service.Singleton
     public @interface Endpoint {
         /**
-         * The URI of this API.
+         * The base URI of this API.
          * <p>
-         * Note that {@link io.helidon.http.Http.Path} annotation on the API (or its super interface) is added to this value.
+         * Note that {@link io.helidon.http.Http.Path} annotation on the API is added to this value.
+         * <p>
+         * Note that if the provided client (either from service registry, or provided to the factory) has a base URI specified,
+         * this value will be ignored, and only the configured path will be used.
          *
          * @return endpoint URI of the generated client
          */
@@ -77,17 +86,13 @@ public final class WebSocketClient {
          * @return client name
          */
         String clientName() default "";
-    }
 
-    /**
-     * Qualifier for injection points of generated typed REST clients.
-     * This qualifier makes sure that if there are multiple implementations of the interface, this
-     * injection point is satisfied by a rest client implementation.
-     */
-    @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE})
-    @Documented
-    @Service.Qualifier
-    public @interface Client {
+        /**
+         * Class name of the generated factory, default to {@code ClassNameOfAnnotatedTypeFactory}, i.e. for a type named
+         * {@code EchoClientEndpoint}, we would generate an `{@code EchoClientEndpointFactory}.
+         *
+         * @return custom class name for the generated endpoint factory
+         */
+        String factoryClassName() default "";
     }
-
 }

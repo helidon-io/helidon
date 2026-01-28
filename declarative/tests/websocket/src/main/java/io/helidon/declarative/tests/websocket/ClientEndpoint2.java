@@ -28,11 +28,20 @@ import io.helidon.websocket.WebSocket;
 import io.helidon.websocket.WsCloseCodes;
 import io.helidon.websocket.WsSession;
 
+/*
+- name conflict with "client" parameter in factory, to ensure it works
+- configuration key
+- named client
+- custom factory name
+ */
 @SuppressWarnings("deprecation")
-@WebSocketClient.Endpoint("${echo-endpoint.client.host:http://localhost:8080}")
+@WebSocketClient.Endpoint(value = "${echo-endpoint.client.host:http://localhost:8080}",
+                          configKey = "test.config.key",
+                          clientName = "clientName",
+                          factoryClassName = "ClientEndpoint2Handler")
 @Service.Singleton
-@Http.Path("/websocket/echo/{user}/{shard}")
-class ClientEchoEndpoint {
+@Http.Path("/websocket/echo/{client}/{shard}")
+class ClientEndpoint2 {
     private final AtomicReference<String> lastUser = new AtomicReference<>();
     private final AtomicReference<Integer> lastShard = new AtomicReference<>();
     private final AtomicReference<EchoEndpoint.Close> lastClose = new AtomicReference<>();
@@ -43,7 +52,7 @@ class ClientEchoEndpoint {
     private volatile CountDownLatch latch = new CountDownLatch(1);
 
     @WebSocket.OnOpen
-    void onOpen(WsSession session, @Http.PathParam("user") String user, @Http.PathParam("shard") int shard) {
+    void onOpen(WsSession session, @Http.PathParam("client") String user, @Http.PathParam("shard") int shard) {
         lastUser.set(user);
         lastShard.set(shard);
         session.send("Hello", false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.config.Config;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.Protocol;
@@ -45,6 +46,15 @@ public interface WsClient extends RuntimeType.Api<WsClientConfig> {
     }
 
     /**
+     * Create a new instance with default configuration.
+     *
+     * @return a new WebSocket client
+     */
+    static WsClient create() {
+        return create(WsClientConfig.create());
+    }
+
+    /**
      * Create a new WebSocket client with custom configuration.
      *
      * @param clientConfig websocket client configuration
@@ -67,6 +77,16 @@ public interface WsClient extends RuntimeType.Api<WsClientConfig> {
         return WsClientConfig.builder()
                 .update(consumer)
                 .build();
+    }
+
+    /**
+     * Create a new WebSocket client from config.
+     *
+     * @param config configuration node of the WebSocket client
+     * @return a new WebSocket client
+     */
+    static WsClient create(Config config) {
+        return create(WsClientConfig.create(config));
     }
 
     /**
