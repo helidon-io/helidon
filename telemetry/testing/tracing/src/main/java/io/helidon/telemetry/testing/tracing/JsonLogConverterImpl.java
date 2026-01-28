@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,11 @@ class JsonLogConverterImpl implements JsonLogConverter {
     /**
      * The format emits all attribute values as strings, but each attribute value has a key indicating its datatype.
      */
-    private static final Map<String, Function<String, ?>> DATA_TYPE_MAPPERS = Map.of("intValue", Integer::parseInt,
+    private static final Map<String, Function<String, Object>> DATA_TYPE_MAPPERS = Map.of("intValue", Integer::parseInt,
                                                                                      "longValue", Long::parseLong,
                                                                                      "floatValue", Float::parseFloat,
                                                                                      "doubleValue", Double::parseDouble,
-                                                                                     "stringValue", Function.identity());
+                                                                                     "stringValue", String::toString);
 
     private final Logger logger;
     private final TestLogHandler testLogHandler;
@@ -57,7 +57,11 @@ class JsonLogConverterImpl implements JsonLogConverter {
         // The OTLP JSON span exporter places JSON blocks for each span in the logger.
         // Attach our handler to that logger so we can check the exported data easily.
 
-        logger = Logger.getLogger(OtlpJsonLoggingSpanExporter.class.getName());
+        this(Logger.getLogger(OtlpJsonLoggingSpanExporter.class.getName()));
+    }
+
+    JsonLogConverterImpl(Logger testLogger) {
+        logger = testLogger;
         testLogHandler = new TestLogHandler();
         logger.addHandler(testLogHandler);
     }
@@ -228,9 +232,12 @@ class JsonLogConverterImpl implements JsonLogConverter {
         JsonObject value = jsonAttributeElement.get("value").asJsonObject();
 
         /*
-        Every attribute value, regardless of type, is represented in the JSON as a string in double quotes.
+        Normally, every attribute value, regardless of type, is represented in the JSON as a string in double quotes.
         Below, we use {@code value.getString(k)} to strip off the double quotes so the various datatype parsers can work on
         the enclosed string.
+
+        An attribute with an empty value (an empty string) will not have any value keyset in the JSON which OpenTelemetry
+        generates, so for those return a map entry with an empty string value.
          */
         return value.keySet()
                 .stream()
@@ -238,13 +245,7 @@ class JsonLogConverterImpl implements JsonLogConverter {
                                                         DATA_TYPE_MAPPERS.get(k)
                                                                 .apply(value.getString(k))))
                 .findFirst()
-                .orElseThrow(() ->
-                                     new IllegalArgumentException(String.format(
-                                             """
-                                                     Cannot convert attribute with key '%s' because the inner
-                                                     key datatype is not recognized: %s""",
-                                             key,
-                                             value.keySet())));
+                .orElseGet(() -> new AbstractMap.SimpleEntry<>(key, ""));
 
     }
 
