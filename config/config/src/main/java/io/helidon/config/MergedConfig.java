@@ -29,7 +29,7 @@ import io.helidon.config.spi.ConfigMapper;
 
 /**
  * Configuration that merges two {@code Config} instances, primary and fallback.
- * When property is not present in the primary configuration, fallback is used.
+ * When a property is not present in the primary configuration, fallback is used.
  * <p>
  * When a key is present in both the {@code primary} and {@code fallback} configurations,
  * the value from the {@code primary} configuration takes precedence.
@@ -40,6 +40,11 @@ public class MergedConfig implements Config {
     private final Config primaryDelegate;
     private final Config fallbackDelegate;
 
+    private MergedConfig(Config primary, Config fallback) {
+        this.primaryDelegate = primary;
+        this.fallbackDelegate = fallback;
+    }
+
     /**
      * Creates a new {@code MergedConfig} that merges the specified configurations.
      *
@@ -49,11 +54,6 @@ public class MergedConfig implements Config {
      */
     public static Config create(Config primary, Config fallback) {
         return new MergedConfig(primary, fallback);
-    }
-
-    private MergedConfig(Config primary, Config fallback) {
-        this.primaryDelegate = primary;
-        this.fallbackDelegate = fallback;
     }
 
     @Override
@@ -128,15 +128,7 @@ public class MergedConfig implements Config {
 
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
-        try {
-            return primaryDelegate.convert(type, value);
-        } catch (ConfigMappingException primaryException) {
-            try {
-                return fallbackDelegate.convert(type, value);
-            } catch (ConfigMappingException secondaryException) {
-                throw primaryException;
-            }
-        }
+        return primaryDelegate.convert(type, value);
     }
 
     /**
