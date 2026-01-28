@@ -807,6 +807,11 @@
                 <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>
