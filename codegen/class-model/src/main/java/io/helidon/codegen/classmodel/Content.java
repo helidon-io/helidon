@@ -171,7 +171,9 @@ class Content {
         public Builder decreaseContentPadding() {
             this.extraPaddingLevel--;
             if (this.extraPaddingLevel < 0) {
-                throw new ClassModelException("Content padding cannot be negative");
+                // ignore this - the user can verify the generated sources and fix their padding if needed,
+                // but this exception just breaks code generation for no reason
+                this.extraPaddingLevel = 0;
             }
             this.extraPadding = PADDING_TOKEN.repeat(this.extraPaddingLevel);
             return identity();

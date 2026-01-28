@@ -24,9 +24,13 @@ module io.helidon.declarative.tests.websocket {
 
     requires io.helidon.metrics.api;
     requires io.helidon.common.buffers;
-    requires io.helidon.websocket;
     requires io.helidon.common;
     requires io.helidon.http;
+
+    requires io.helidon.websocket;
+    requires io.helidon.webclient.websocket;
+    requires io.helidon.config;
+    requires io.helidon.webclient.api;
 
     exports io.helidon.declarative.tests.websocket;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,15 +55,10 @@ public final class RestClient {
      *      <th>Description</th>
      *    </tr>
      *    <tr>
-     *      <th>{@code uri}</th>
-     *      <th>&nbsp;</th>
-     *      <th>URI of this service</th>
-     *    </tr>
-     *    <tr>
      *      <th>{@code client}</th>
      *      <th>&nbsp;</th>
      *      <th>Client configuration, see
-     *      <a href="https://helidon.io/docs/v4/config/io_helidon_webclient_api_WebClient">Proxy</a>
+     *      <a href="https://helidon.io/docs/v4/config/io_helidon_webclient_api_WebClient">WebClient</a>
      *      (Base URI will always be overridden by the uri defined on this level)</th>
      *    </tr>
      * </table>
