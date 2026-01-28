@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,6 @@ class BuilderImpl implements Config.Builder {
     private boolean valueResolvingFailOnMissing;
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
-    private boolean envVarAliasGeneratorEnabled;
 
     BuilderImpl() {
         overrideSource = OverrideSources.empty();
@@ -114,7 +113,6 @@ class BuilderImpl implements Config.Builder {
         valueResolving = true;
         systemPropertiesSourceEnabled = true;
         environmentVariablesSourceEnabled = true;
-        envVarAliasGeneratorEnabled = false;
     }
 
     @Override
@@ -135,7 +133,6 @@ class BuilderImpl implements Config.Builder {
     public Config.Builder addSource(ConfigSource source) {
         sources.add(source);
         if (source instanceof ConfigSources.EnvironmentVariablesConfigSource) {
-            envVarAliasGeneratorEnabled = true;
             hasEnvVarSource = true;
         } else if (source instanceof ConfigSources.SystemPropertiesConfigSource) {
             hasSystemPropertiesSource = true;
@@ -337,10 +334,6 @@ class BuilderImpl implements Config.Builder {
         ConfigContextImpl context = new ConfigContextImpl(changesExecutor, buildParsers(parserServicesEnabled, parsers));
         ConfigSourcesRuntime configSources = buildConfigSources(context);
 
-        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
-                ? EnvironmentVariableAliases::aliasesOf
-                : null;
-
         //config provider
         return createProvider(configMapperManager,
                               configSources,
@@ -349,8 +342,7 @@ class BuilderImpl implements Config.Builder {
                               cachingEnabled,
                               changesExecutor,
                               keyResolving,
-                              keyResolvingFailOnMissing,
-                              aliasGenerator)
+                              keyResolvingFailOnMissing)
                 .newConfig();
     }
 
@@ -433,10 +425,6 @@ class BuilderImpl implements Config.Builder {
             targetSources.add(context.sourceRuntimeBase(ConfigSources.environmentVariables()));
         }
 
-        if (hasEnvVarSource) {
-            envVarAliasGeneratorEnabled = true;
-        }
-
         boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
 
         if (nothingConfigured) {
@@ -466,8 +454,7 @@ class BuilderImpl implements Config.Builder {
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 boolean keyResolving,
-                                boolean keyResolvingFailOnMissing,
-                                Function<String, List<String>> aliasGenerator) {
+                                boolean keyResolvingFailOnMissing) {
         return new ProviderImpl(configMapperManager,
                                 targetConfigSource,
                                 overrideSource,
@@ -475,8 +462,7 @@ class BuilderImpl implements Config.Builder {
                                 cachingEnabled,
                                 changesExecutor,
                                 keyResolving,
-                                keyResolvingFailOnMissing,
-                                aliasGenerator);
+                                keyResolvingFailOnMissing);
     }
 
     //

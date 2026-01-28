@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import static io.helidon.config.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -67,8 +66,7 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           notNull(), //changesExecutor
                                           eq(true), //keyResolving
-                                          eq(false), // fail when key resolving cannot find ref
-                                          isNull() //aliasGenerator
+                                          eq(false) // fail when key resolving cannot find ref
         );
     }
 
@@ -92,8 +90,7 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(true), //keyResolving
-                                          eq(false), // fail when key resolving cannot find ref
-                                          isNull() //aliasGenerator
+                                          eq(false) // fail when key resolving cannot find ref
         );
     }
 
@@ -118,8 +115,7 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(false), //keyResolving
-                                          eq(false), // fail when key resolving cannot find ref
-                                          isNull() //aliasGenerator
+                                          eq(false) // fail when key resolving cannot find ref
         );
     }
 

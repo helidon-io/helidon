@@ -172,6 +172,7 @@
                         <FOO_BAR>mapped-env-value</FOO_BAR>
                         <_underscore>mapped-env-value</_underscore>
                         <com_ACME_size>mapped-env-value</com_ACME_size>
+                        <com_acme_size>mapped-env-lower-value</com_acme_size>
                         <SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>mapped-env-value
                         </SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>
                         <CONFIG_SOURCE_TEST_PROPERTY>This Is My ENV VARS Value.</CONFIG_SOURCE_TEST_PROPERTY>

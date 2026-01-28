@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,10 @@ import static java.util.Collections.singletonList;
  * Since Helidon supports many hyphenated configuration keys (e.g. {@code "server.executor-service.max-pool-size"}),
  * an additional mapping is required to produce aliases that can be expressed as environment variable names (e.g.
  * "SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"); see {@link #aliasesOf(String)} for details.
+ *
+ * @deprecated this class is not used anymore and will be removed
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public class EnvironmentVariableAliases {
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]");
     private static final Pattern DISALLOWED_CHARS_ALLOW_DASH = Pattern.compile("[^a-zA-Z0-9_\\-]");

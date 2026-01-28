@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests {@link Config#create()} and ENV VAR is used first, has top priority.
+ * Tests {@link Config#create()} with environment variables overriding values.
  */
 public class ConfigCreateDefaultFromEnvVarsTest {
 
     private static final String KEY = "value";
     private static final String PROP_VALUE = "sys-prop";
-    private static final String ENV_VALUE = "sys-prop"; //set in pom.xml, maven-surefire-plugin, environmentVariables
+    private static final String ENV_VALUE = "env-value"; //set in pom.xml, maven-surefire-plugin, environmentVariables
 
     @Test
     @ExtendWith(RestoreSystemPropertiesExt.class)
@@ -44,12 +44,20 @@ public class ConfigCreateDefaultFromEnvVarsTest {
     }
 
     @Test
+    @ExtendWith(RestoreSystemPropertiesExt.class)
     public void testCreateWithSysPropSet() {
         System.setProperty(KEY, PROP_VALUE);
 
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(simpleValue(ENV_VALUE)));
+        // system properties are first
+        assertThat(config.get(KEY).asString(), is(simpleValue(PROP_VALUE)));
     }
 
+    @Test
+    public void testCamelCases() {
+        Config config = Config.create();
+
+        assertThat(config.get("camel.CaseS").asString(), is(simpleValue("env-camel_cases")));
+    }
 }

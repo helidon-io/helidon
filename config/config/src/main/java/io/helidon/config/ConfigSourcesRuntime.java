@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,13 +186,9 @@ final class ConfigSourcesRuntime {
     synchronized Optional<ObjectNode> load() {
 
         for (ConfigSourceRuntimeImpl source : allSources) {
-            if (source.isLazy()) {
-                loadedData.add(new RuntimeWithData(source, Optional.empty()));
-            } else {
-                loadedData.add(new RuntimeWithData(source, source.load()
-                        .map(ObjectNodeImpl::wrap)
-                        .map(objectNode -> objectNode.initDescription(source.description()))));
-            }
+            loadedData.add(new RuntimeWithData(source, source.load()
+                    .map(ObjectNodeImpl::wrap)
+                    .map(objectNode -> objectNode.initDescription(source.description()))));
         }
 
         Set<String> allKeys = loadedData.stream()
