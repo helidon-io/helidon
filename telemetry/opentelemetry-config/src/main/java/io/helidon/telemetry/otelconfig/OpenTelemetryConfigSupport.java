@@ -63,7 +63,7 @@ final class OpenTelemetryConfigSupport {
             var sdkMeterProviderBuilder = metricsBuilderInfo.sdkMeterProviderBuilder();
 
             var attributesBuilder = metricsConfig.metricsBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
 
             var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
             sdkMeterProviderBuilder.setResource(resource);

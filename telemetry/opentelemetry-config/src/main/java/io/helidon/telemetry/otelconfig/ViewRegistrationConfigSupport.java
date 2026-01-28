@@ -53,11 +53,8 @@ class ViewRegistrationConfigSupport {
 
             builder.setAggregation(viewRegistrationConfig.aggregation());
 
-            /*
-            cardinalityLimit is not yet stable in OpenTelemetry but there is a way to set it so we expose it.
-             */
             viewRegistrationConfig.cardinalityLimit()
-                    .ifPresent(limit -> SdkMeterProviderUtil.setCardinalityLimit(builder, limit));
+                    .ifPresent(builder::setCardinalityLimit);
 
             return builder.build();
         }
