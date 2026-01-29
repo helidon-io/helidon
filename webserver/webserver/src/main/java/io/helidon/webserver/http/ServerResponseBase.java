@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * Stream result trailer name.
      */
     protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    /**
+     * Stream result OK.
+     */
+    protected static final Header STREAM_RESULT_OK = HeaderValues.create(STREAM_RESULT_NAME, "OK");
+
     /**
      * Stream status trailers.
      */

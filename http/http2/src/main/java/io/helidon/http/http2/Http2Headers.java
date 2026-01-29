@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -445,7 +445,8 @@ public class Http2Headers {
         }
 
         for (Header header : headers) {
-            String value = header.get();
+            // send all values of the header
+            String value = header.values();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();
 
