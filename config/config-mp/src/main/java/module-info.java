@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,12 @@ module io.helidon.config.mp {
     requires io.helidon.config;
     requires jakarta.annotation;
     requires io.helidon.common.configurable;
+    requires io.helidon.config.encryption;
 
     requires static io.helidon.config.metadata;
 
     requires transitive microprofile.config.api;
+    requires io.helidon.common.pki;
 
     exports io.helidon.config.mp;
     exports io.helidon.config.mp.spi;
@@ -42,5 +44,7 @@ module io.helidon.config.mp {
 
     provides org.eclipse.microprofile.config.spi.ConfigProviderResolver
             with io.helidon.config.mp.MpConfigProviderResolver;
+
+    provides io.helidon.config.mp.spi.MpConfigFilter with io.helidon.config.mp.MpEncryptionFilter;
 
 }
