@@ -180,7 +180,7 @@ public class ServiceRegistryExtension implements Extension {
                 continue;
             }
             if (service.contracts().contains(SECURITY)) {
-                // workaround - we must use `SecurityCdiExtension` , as it has public methods with security builder...
+                // workaround - we must use `SecurityCdiExtension`, as it has public methods with security builder...
                 continue;
             }
             if (service.contracts().contains(TRACER)) {
