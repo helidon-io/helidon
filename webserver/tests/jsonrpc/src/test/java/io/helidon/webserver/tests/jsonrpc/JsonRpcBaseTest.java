@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,12 @@ class JsonRpcBaseTest {
                 "method": "stop",
                 "params": { "when" : "NOW" },
                 "id": 2}
+            """;
+
+    static final String MACHINE_STATUS = """
+            {"jsonrpc": "2.0",
+                "id": 3,
+                "result": "RUNNING"}
             """;
 
     private final Http1Client client;
@@ -122,6 +128,7 @@ class JsonRpcBaseTest {
             rules.register("/machine",
                            JsonRpcHandlers.builder()
                                    .method("start", this::start)
+                                   .method("status", this::status)
                                    .method("stop", this::stop)
                                    .errorHandler(this::error)
                                    .build());
@@ -137,6 +144,18 @@ class JsonRpcBaseTest {
                 res.error(JsonRpcError.INVALID_PARAMS, "Bad param")
                         .status(Status.OK_200)
                         .send();
+            }
+        }
+
+        void status(JsonRpcRequest req, JsonRpcResponse res) {
+            res.header(HeaderValues.CONTENT_TYPE_EVENT_STREAM);
+            try (SseSink sink = res.sink(SseSink.TYPE)) {
+                sink.emit(SseEvent.builder()
+                                  .data(MACHINE_STATUS)
+                                  .build());
+                sink.emit(SseEvent.builder()
+                                  .data(MACHINE_STATUS)
+                                  .build());
             }
         }
 

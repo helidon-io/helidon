@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.jsonrpc;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
@@ -28,6 +29,7 @@ import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.jsonrpc.core.JsonRpcResult;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.spi.Source;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -120,5 +122,10 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     @Override
     public ClientUri lastEndpointUri() {
         return delegate.lastEndpointUri();
+    }
+
+    @Override
+    public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
+        delegate.source(sourceType, source);
     }
 }
