@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,6 +277,19 @@ interface MetricsConfigBlueprint {
      */
     @Option.Configured("timers.json-units-default")
     Optional<TimeUnit> jsonUnitsDefault();
+
+    /**
+     * Whether to log warnings when multiple registries are created.
+     * <p>
+     * By far most applications use a single meter registry, but certain app or library programming errors can cause Helidon to
+     * create more than one. By default, Helidon logs warning messages for each additional meter registry created. This
+     * setting allows users with apps that <em>need</em> multiple meter registries to suppress those warnings.
+     *
+     * @return whether to log warnings upon creation of multiple meter registries
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean warnOnMultipleRegistries();
 
     /**
      * Reports whether the specified scope is enabled, according to any scope configuration that
