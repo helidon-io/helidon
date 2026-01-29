@@ -1,0 +1,99 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+// tag::setup[]
+ifndef::rootdir[:rootdir: {docdir}/../..]
+:feature-name: OpenTelemetry Tracing
+// end::setup[]
+
+// tag::intro[]
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry.
+ifdef::se-flavor[]
+This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and link:{javadoc-base-url}/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html[`OpenTelemetryConfig` builder]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
+
+That said, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
+
+The xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over  OpenTelemetry and OpenTelemetry tracing behavior.
+
+endif::se-flavor[]
+ifdef::mp-flavor[]
+The xref:{rootdir}/mp/telemetry.adoc[Helidon MP Telemetry doc page] describes how to use Helidon's support for MicroProfile Telemetry to control OpenTelemetry.
+
+Avoid using both the OpenTelemetry tracing support described here and support for MicroProfile Telemetry as the results are unpredictable.
+
+endif::mp-flavor[]
+
+[NOTE]
+.Avoid specifying both `telemetry` and `tracing`
+If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
+
+
+// end::intro[]
+// tag::otel-dependency[]
+
+
+[source,xml]
+.Dependency for OpenTelemetry support using tracing
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+</dependency>
+----
+
+// end::otel-dependency[]
+
+// tag::otel-configuration[]
+
+== Configuring OpenTelemetry Tracing
+
+include::{rootdir}/config/io_helidon_tracing_providers_opentelemetry_OpenTelemetryTracer.adoc[tag=config,levelOffset=1]
+ifdef::se-flavor[]
+[source,yaml]
+.Example Helidon configuration for OpenTelemetry tracing
+----
+tracing:
+  service: helidon-otel-tracing-example # <1>
+  global: false      # <2>
+  int-tags:
+    example: 1       # <3>
+  tags:
+    direction: north # <4>
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source.properties]
+.Example Helidon configuration for OpenTelemetry tracing
+----
+tracing.service=helidon-otel-tracing-example # <1>
+tracing.global=false                         # <2>
+tracing.int-tags.0.example=1                 # <3>
+tracing.tags.0.direction=north               # <4>
+----
+endif::mp-flavor[]
+<1> Specifies the OpenTelemetry service name.
+<2> Indicates the configured tracer _should not_ be made the global tracer (defaults to `true`).
+<3> Assigns an integer-valued tag `example` the value `1`.
+<4> Assigns a string-valued tag `direction` the value `north`.
+
+
+// end::otel-configuration[]
+
+// tag::exporters[]
+By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry's OTLP gRPC exporter. Alternatively, you can choose to use OpenTelemetry's HTTP exporter using protobuf by setting `exporter-type` to `http/proto`. To use other exporters OpenTelemetry offers, use the Helidon `telemetry` configuration instead of `tracing`.
+// end::exporters[]

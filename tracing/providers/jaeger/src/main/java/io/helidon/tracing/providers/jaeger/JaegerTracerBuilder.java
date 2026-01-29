@@ -34,7 +34,6 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
@@ -538,10 +537,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                     .build();
 
             result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), Map.of());
-
-            if (global) {
-                GlobalOpenTelemetry.set(ot);
-            }
 
             LOGGER.log(Level.INFO, () -> "Creating Jaeger tracer for '" + this.serviceName + "' configured with " + protocol
                     + "://" + host + ":" + port);

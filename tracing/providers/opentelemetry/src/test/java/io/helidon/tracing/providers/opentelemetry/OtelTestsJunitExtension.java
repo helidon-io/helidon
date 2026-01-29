@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class OtelTestsJunitExtension implements Extension, BeforeAllCallback, AfterAllCallback {
+public class OtelTestsJunitExtension implements Extension, BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
     private static final String OTEL_AUTO_CONFIGURE_PROP = "otel.java.global-autoconfigure.enabled";
     private static final String OTEL_SDK_DISABLED_PROP = "otel.sdk.disabled";
@@ -41,5 +43,10 @@ public class OtelTestsJunitExtension implements Extension, BeforeAllCallback, Af
     public void beforeAll(ExtensionContext extensionContext) throws Exception {
         originalOtelSdkAutoConfiguredSetting = System.setProperty(OTEL_AUTO_CONFIGURE_PROP, "true");
         originalOtelSdkDisabledSetting = System.setProperty(OTEL_SDK_DISABLED_PROP, "false");
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        GlobalOpenTelemetry.resetForTest();
     }
 }

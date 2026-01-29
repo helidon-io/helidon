@@ -48,6 +48,14 @@
             <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry.semconv</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.telemetry</groupId>
+            <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
