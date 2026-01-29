@@ -9,6 +9,7 @@ Helidon supports the following Authentication Methods:
 - API key based authentication
   - `config`: based on Configuration
   - `config-file`: based on OCI config file
+- `session-token`: based on session token in OCI config file
 - `instance-principal`: instance principal (Such as an OCI VM)
 - `resource-prinicpal`: resource principal (Such as server-less functions)
 - `oke-workload-identity`: identity of workload running on a k8s cluster
