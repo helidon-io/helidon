@@ -241,4 +241,17 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-43714</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against Nu Html Checker, not hibernate validator.
+     https://github.com/dependency-check/DependencyCheck/issues/8249
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: hibernate-validator-cdi-8.0.2.Final.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.hibernate\.validator/hibernate-validator-cdi@.*$</packageUrl>
+   <cve>CVE-2025-15104</cve>
+</suppress>
+
+
 </suppressions>
