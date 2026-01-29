@@ -211,6 +211,6 @@ interface ExtendedTracerConfigBlueprint {
      */
     @Option.Configured
     @Option.DefaultDouble(1.0d)
-    Double samplerParam();
+    double samplerParam();
 
 }

@@ -29,7 +29,7 @@ import io.opentelemetry.api.OpenTelemetry;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.STARTUP)
-@Weight(Weighted.DEFAULT_WEIGHT - 100)
+@Weight(Weighted.DEFAULT_WEIGHT - 80)
 class HelidonTracingBasedOpenTelemetryServiceFactory implements Supplier<OpenTelemetry> {
 
     private final Config config;
