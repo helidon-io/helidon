@@ -115,7 +115,7 @@ public class CutConnectionTest {
             assertThat(exec.awaitTermination(TIME_OUT_SEC, TimeUnit.SECONDS), is(true));
             server.stop();
             SocketClosedLog log = ASSERTING_HANDLER.socketClosedLog.get(TIME_OUT_SEC, TimeUnit.SECONDS);
-            assertThat(log.record.getLevel(), is(Level.FINE));
+            assertThat(log.record.getLevel(), is(Level.FINER));
         } finally {
             WEBSERVER_LOGGER.removeHandler(ASSERTING_HANDLER);
             WEBSERVER_LOGGER.setLevel(originalLevel);
