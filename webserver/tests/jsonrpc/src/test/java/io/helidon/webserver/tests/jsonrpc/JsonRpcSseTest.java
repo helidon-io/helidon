@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,39 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
             assertThat(methods.size(), is(2));
             assertThat(methods.getFirst(), is("start"));
             assertThat(methods.getLast(), is("stop"));
+        }
+    }
+
+    @Test
+    void testJsonRpcSse() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+
+        try (var res = jsonRpcClient().rpcMethod("status")
+                .rpcId(3)
+                .accept(MediaTypes.TEXT_EVENT_STREAM)
+                .path("/rpc/machine")
+                .submit()) {
+
+            res.source(SseSource.TYPE, new SseSource() {
+                private final List<String> results = new ArrayList<>();
+
+                @Override
+                public void onEvent(SseEvent value) {
+                    String jsonRpc = value.data(String.class);
+                    JsonObject json = Json.createReader(new StringReader(jsonRpc)).readObject();
+                    results.add(json.getString("result"));
+                }
+
+                @Override
+                public void onClose() {
+                    future.complete(results);
+                }
+            });
+
+            List<String> results = future.get(500, TimeUnit.SECONDS);
+            assertThat(results.size(), is(2));
+            assertThat(results.getFirst(), is("RUNNING"));
+            assertThat(results.getLast(), is("RUNNING"));
         }
     }
 }
