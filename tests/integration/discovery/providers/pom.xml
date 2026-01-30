@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.discovery</groupId>
         <artifactId>helidon-tests-integration-discovery-project</artifactId>
-        <version>4.4.0-M1-SNAPSHOT</version>
+        <version>4.4.0-M1</version>
     </parent>
     <groupId>io.helidon.tests.integration.discovery.providers</groupId>
     <artifactId>helidon-tests-integration-discovery-providers-project</artifactId>
