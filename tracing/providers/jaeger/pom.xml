@@ -28,6 +28,10 @@
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
     <name>Helidon Tracing Providers Jaeger</name>
 
+    <properties>
+        <version.lib.opentelemetry.legacy>1.34.1</version.lib.opentelemetry.legacy>
+    </properties>
+
     <description>
         Integration with Jaeger tracing
     </description>
@@ -51,14 +55,37 @@
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <artifactId>opentelemetry-exporter-jaeger</artifactId>
+            <version>${version.lib.opentelemetry.legacy}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-sdk</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-exporter-common</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>io.opentelemetry</groupId>
                     <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-sdk-extension-autoconfigure-spi</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.opentelemetry</groupId>-->
+<!--            <artifactId>opentelemetry-exporter-otlp</artifactId>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>io.opentelemetry</groupId>-->
+<!--                    <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>
             <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
