@@ -43,6 +43,7 @@ import io.helidon.validation.ValidatorResponse;
 import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.webclient.api.RestClient;
+import io.helidon.webclient.websocket.WebSocketClient;
 import io.helidon.webserver.http.RestServer;
 import io.helidon.webserver.websocket.WebSocketServer;
 import io.helidon.websocket.WebSocket;
@@ -251,7 +252,42 @@ public class DeclarativeExample {
     }
     // end::snippet_15[]
 
+    // tag::snippet_16[]
+    // will use `ws.connection` configuration key, and if not present, default to http://localhost:8080
+    @WebSocketClient.Endpoint("${ws.connection:http://localhost:8080}")
+    @Http.Path("/echo/{count}")
+    @Service.Singleton
+    static class EchoClient {
+        @WebSocket.OnMessage
+        void onMessage(WsSession session, String message, @Http.PathParam("count") int count) {
+            // do something with the message
+        }
+    }
+    // end::snippet_16[]
 
+    // tag::snippet_17[]
+    @Service.Singleton
+    static class EchoClientUser {
+        private final EchoClientFactory clientFactory;
+
+        @Service.Inject
+        EchoClientUser(EchoClientFactory clientFactory) {
+            this.clientFactory = clientFactory;
+        }
+
+        void handle(int count) {
+            // the clientFactory and the method we are invoking are code generated
+            // this will start the websocket session (the method returns once the session is initiated)
+            clientFactory.connect(count);
+        }
+    }
+    // end::snippet_17[]
+
+
+    private static class EchoClientFactory {
+        void connect(int count) {
+        }
+    }
 
     private static class ApplicationBinding {
         static Binding create() {

@@ -86,7 +86,8 @@ The following features are currently implemented:
 - <<Dec-Security, Security>>
 - <<Dec-Metrics, Metrics>>
 - <<Dec-Tracing, Tracing>>
-- <<Dec-WebSocket, WebSocket>>
+- <<Dec-WebSocket-Server, WebSocket Server>>
+- <<Dec-WebSocket-Client, WebSocket Client>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -458,7 +459,7 @@ A traced method with an explicit span name, adding a tag with a constant value, 
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_14, indent=0]
 ----
 
-=== WebSocket [[Dec-WebSocket]]
+=== WebSocket Server [[Dec-WebSocket-Server]]
 
 To create a WebSocket endpoint, simply annotate a class with `@WebSocketServer.Endpoint`, and
 add at least one method annotated with one of the WebSocket method annotations, such as `@WebSocket.OnMessage`.
@@ -505,4 +506,56 @@ Annotations on method parameters:
 .Example of a WebSocket Server Endpoint
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_15, indent=0]
+----
+
+=== WebSocket Client [[Dec-WebSocket-Client]]
+
+To create a WebSocket client endpoint, simply annotate a class with `@WebSocketClient.Endpoint`, and
+add at least one method annotated with one of the WebSocket method annotations, such as `@WebSocket.OnMessage`.
+
+Services available for injection:
+
+- a factory for the endpoint (generated), if endpoint is named `EchoEndpoint`, an `EchoEndpointFactory` will be generated with methods to connect to remote server
+
+Supported method parameters (no annotation required):
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WsSession.html[`io.helidon.websocket.WsSession`]
+- `boolean` in a method annotated with `@WebSocket.OnMessage` - indicator of "last" message (if not present, the message will be combined before delivery)
+- `java.lang.String` (`@WebSocket.OnMessage`) - the message delivered (text)
+- `java.io.Reader` (`@WebSocket.OnMessage`) - the message delivered (text)
+- link:{buffers-javadoc-base-url}/io/helidon/common/buffers/BufferData.html[`io.helidon.common.buffers.BufferData`] (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.nio.ByteBuffer` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.io.InputStream` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `int` (`@WebSocket.OnClose`) - the close code
+- `java.lang.String` (`@WebSocket.OnClose`) - the close reason
+- `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown
+
+
+Annotations on endpoint type:
+
+- link:{websocket-client-javadoc-base-url}/io/helidon/webclient/websocket/WebSocketClient.Endpoint.html[`io.helidon.webclient.websocket.WebSocketClient`] - required annotation
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnMessage.html[`io.helidon.websocket.WebSocket.OnMessage`] - receives either a binary or a text message
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnHttpUpgrade.html[`io.helidon.websocket.WebSocket.OnHttpUpgrade`] - invoked during HTTP upgrade, the method may return `Headers` to be sent during the upgrade response
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnOpen.html[`io.helidon.websocket.WebSocket.OnOpen`] - invoked when the WebSocket connection is established (after upgrade)
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnClose.html[`io.helidon.websocket.WebSocket.OnClose`] - invoked when the WebSocket connection is closed
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnError.html[`io.helidon.websocket.WebSocket.OnError`] - invoked when an error occurs when invoking other methods
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template defined by `@Http.Path` on the class
+
+[source,java]
+.Example of a WebSocket Client Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_16, indent=0]
+----
+
+[source,java]
+.Example of a component connecting the websocket
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_17, indent=0]
 ----

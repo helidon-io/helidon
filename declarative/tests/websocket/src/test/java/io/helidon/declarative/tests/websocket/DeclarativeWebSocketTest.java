@@ -61,7 +61,7 @@ public class DeclarativeWebSocketTest {
         TestListener listener = new TestListener();
 
         java.net.http.WebSocket ws = client.newWebSocketBuilder()
-                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test"), listener)
+                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test/1"), listener)
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
@@ -85,7 +85,7 @@ public class DeclarativeWebSocketTest {
         TestListener listener = new TestListener();
 
         java.net.http.WebSocket ws = client.newWebSocketBuilder()
-                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test"), listener)
+                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test/1"), listener)
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
@@ -108,7 +108,7 @@ public class DeclarativeWebSocketTest {
         TestListener listener = new TestListener();
 
         java.net.http.WebSocket ws = client.newWebSocketBuilder()
-                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test"), listener)
+                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test/1"), listener)
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 

@@ -53,7 +53,8 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,
                     io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
                     io.helidon.declarative.codegen.tracing.TracingExtensionProvider,
-                    io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider;
+                    io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider,
+                    io.helidon.declarative.codegen.websocket.client.WebSocketClientExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;
