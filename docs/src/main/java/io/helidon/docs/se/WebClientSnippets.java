@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1ClientProtocolConfig;
 import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webclient.telemetry.metrics.WebClientTelemetryMetrics;
 
 @SuppressWarnings("ALL")
 class WebClientSnippets {
@@ -174,6 +175,14 @@ class WebClientSnippets {
                 .fragment("someFragment") // <4>
                 .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON)); // <5>
         // end::snippet_12[]
+    }
+
+    void snippet_13() {
+        // tag::snippet_13[]
+        WebClient.builder()
+                .addService(WebClientTelemetryMetrics.create())
+                .build();
+        // end::snippet_13[]
     }
 
 }
