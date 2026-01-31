@@ -44,6 +44,8 @@ link:{oci-javasdk-url}[The Oracle Cloud Infrastructure SDK for Java] enables you
 
 NOTE: This Helidon module requires xref:../injection/injection.adoc#Programmatic Lookup[ServiceRegistry]. ServiceRegistry requires the use of annotation processors, see xref:../injection/injection.adoc#Build time[Why are annotation processors needed?]
 
+NOTE: If you are interested in our MP based support of OCI than this xref:{rootdir}/mp/guides/oci-guide.adoc[Guide for Helidon MP application on OCI], describes the basics of developing and deploying a Helidon MP application based on our link:https://helidon.io/starter/{helidon-version}[Project Starter].
+
 include::{rootdir}/includes/dependencies.adoc[]
 
 [source,xml]
