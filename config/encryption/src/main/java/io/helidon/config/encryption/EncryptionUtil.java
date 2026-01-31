@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.config.mp.MpConfig;
 
 /**
  * Encryption utilities for secrets protection.
@@ -198,32 +197,6 @@ public final class EncryptionUtil {
         }
     }
 
-    static Optional<char[]> resolveMasterPassword(boolean requireEncryption, org.eclipse.microprofile.config.Config config) {
-        Optional<char[]> result = getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE)
-                .or(() -> {
-                    Optional<String> value = config.getOptionalValue(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY, String.class);
-                    if (value.isPresent()) {
-                        if (requireEncryption) {
-                            LOGGER.log(Level.WARNING,
-                                       "Master password is configured as clear text in configuration when encryption is "
-                                               + "required. "
-                                               + "This value will be ignored. System property or environment variable "
-                                               + "expected!!!");
-                            return Optional.empty();
-                        }
-                    }
-                    return value;
-                })
-                .map(String::toCharArray);
-
-        if (result.isEmpty()) {
-            LOGGER.log(Level.DEBUG, "Securing properties using master password is not available, as master password is not "
-                    + "configured");
-        }
-
-        return result;
-    }
-
     static Optional<char[]> resolveMasterPassword(boolean requireEncryption, Config config) {
         Optional<char[]> result = getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE)
                 .or(() -> {
@@ -242,7 +215,7 @@ public final class EncryptionUtil {
                 })
                 .map(String::toCharArray);
 
-        if (!result.isPresent()) {
+        if (result.isEmpty()) {
             LOGGER.log(Level.DEBUG, "Securing properties using master password is not available, as master password is not "
                     + "configured");
         }
@@ -250,9 +223,6 @@ public final class EncryptionUtil {
         return result;
     }
 
-    static Optional<PrivateKey> resolvePrivateKey(org.eclipse.microprofile.config.Config config) {
-        return resolvePrivateKey(MpConfig.toHelidonConfig(config).get("security.config.rsa"));
-    }
 
     static Optional<PrivateKey> resolvePrivateKey(Config config) {
         // load configuration values

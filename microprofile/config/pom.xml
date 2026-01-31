@@ -50,11 +50,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-encryption</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-object-mapping</artifactId>
             <scope>runtime</scope>
         </dependency>

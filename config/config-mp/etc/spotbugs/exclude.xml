@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,6 +32,11 @@
         <Class name="io.helidon.config.mp.MpConfigBuilder" />
         <Method name="toPath" />
         <Bug pattern="PATH_TRAVERSAL_IN" />
+    </Match>
+    <Match>
+        <!-- Path from config or code -->
+        <Class name="io.helidon.config.mp.MpEncryptionFilter" />
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
     <Match>
         <!-- We need to re-throw NPEs and IllegalArgumentExceptions, rest is handled -->
