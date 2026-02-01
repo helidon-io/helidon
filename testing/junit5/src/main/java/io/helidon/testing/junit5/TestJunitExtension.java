@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,17 @@ import io.helidon.common.Functions;
 import io.helidon.common.GenericType;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.testing.TestException;
 import io.helidon.testing.TestRegistry;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -132,8 +136,7 @@ public class TestJunitExtension implements Extension,
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
         // before all had to execute, context must exist
         var testContext = ourTestContext(extensionContext).orElseThrow();
-        String methodName = extensionContext.getRequiredTestMethod().getName();
-        testContext.beforeMethod(methodName);
+        testContext.beforeMethod(extensionContext);
     }
 
     @Override
@@ -163,9 +166,14 @@ public class TestJunitExtension implements Extension,
 
         return supplyChecked(ctx, () -> {
             var paramType = pc.getParameter().getType();
+            var namedAnnotation = pc.getParameter().getAnnotation(Service.Named.class);
             var registry = GlobalServiceRegistry.registry();
             if (supportedType(registry, paramType)) {
-                return registry.get(paramType);
+                if (namedAnnotation != null) {
+                    return registry.getNamed(paramType, namedAnnotation.value());
+                } else {
+                    return registry.get(paramType);
+                }
             }
             throw new ParameterResolutionException("Failed to resolve parameter of type "
                                                            + paramType.getName());
@@ -257,9 +265,18 @@ public class TestJunitExtension implements Extension,
             var testClass = ctx.getRequiredTestClass();
             var annotation = testClass.getAnnotation(Testing.Test.class);
             boolean perMethod = annotation != null && annotation.perMethod();
+            perMethod = perMethod || hasTestMethodWithPerMethodTriggeringAnnotation(testClass);
             return perMethod ? PerMethodTestContext.create(testClass) : PerClassTestContext.create(testClass);
 
         });
+    }
+
+    private boolean hasTestMethodWithPerMethodTriggeringAnnotation(Class<?> testClass) {
+        return Arrays.stream(testClass.getDeclaredMethods())
+                .filter(m -> m.isAnnotationPresent(Test.class))
+                .anyMatch(m -> m.isAnnotationPresent(Testing.Configuration.class)
+                        || m.isAnnotationPresent(Testing.AddConfigBlocks.class)
+                        || m.isAnnotationPresent(Testing.AddConfigBlock.class));
     }
 
     /**
@@ -432,7 +449,7 @@ public class TestJunitExtension implements Extension,
 
         Context context();
 
-        default void beforeMethod(String methodName) {
+        default void beforeMethod(ExtensionContext extensionContext) {
         }
 
         default void afterMethod() {
@@ -459,7 +476,10 @@ public class TestJunitExtension implements Extension,
         }
 
         private static TestContext create(Class<?> testClass) {
-            var manager = ServiceRegistryManager.create();
+            var config = TestConfigFactory.create(testClass, null);
+            var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                .putContractInstance(Config.class, config)
+                                                                .build());
             var registry = manager.registry();
 
             var context = Context.builder()
@@ -518,8 +538,12 @@ public class TestJunitExtension implements Extension,
         }
 
         @Override
-        public void beforeMethod(String methodName) {
-            var manager = ServiceRegistryManager.create();
+        public void beforeMethod(ExtensionContext extensionContext) {
+            String methodName = extensionContext.getRequiredTestMethod().getName();
+            var config = TestConfigFactory.create(testClass, extensionContext.getRequiredTestMethod());
+            var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                .putContractInstance(Config.class, config)
+                                                                .build());
             var registry = manager.registry();
 
             var context = Context.builder()
