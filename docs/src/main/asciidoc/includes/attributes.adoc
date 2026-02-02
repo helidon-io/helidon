@@ -267,6 +267,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :websocket-javadoc-base-url: {javadoc-base-url}/io.helidon.websocket
 :websocket-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.websocket
+:websocket-client-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient.websocket
 
 // 3rd party versioned URLs
 :eureka-client-javadoc-base-url: {javadoc-io-base-url}/com.netflix.eureka/eureka-client/{version-lib-eureka-client}
