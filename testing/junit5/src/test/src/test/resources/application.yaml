@@ -16,4 +16,4 @@
 test-a:
   test-b: value-b-in-file
   test-d: value-d-in-file
-  test-e: value-b-in-file
+  test-e: value-e-in-file

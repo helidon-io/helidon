@@ -15,4 +15,3 @@
 #
 test-a:
   test-e: value-e-in-file-a
-  test-f: value-d-in-file-a

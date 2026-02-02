@@ -76,7 +76,7 @@ public final class Testing {
     @Repeatable(AddConfigBlocks.class)
     public @interface AddConfigBlock {
         /**
-         * Specifies the configuration format. Possible values are: 'yaml' and `properties`.
+         * Specifies the configuration format. Possible values are: 'yaml' and 'properties'.
          * <p>
          * The default format is 'properties'
          *
@@ -111,7 +111,7 @@ public final class Testing {
      * }
      * </pre>
      *
-     * @see AddConfigBlocks
+     * @see AddConfigBlock
      */
     @Inherited
     @Retention(RetentionPolicy.RUNTIME)
@@ -145,10 +145,10 @@ public final class Testing {
          *     <li>{@link AddConfigBlock}</li>
          * </ul>
          * <p>
-         * If set to {@code true}, only the existing (or default)configuration is used as-is
+         * If set to {@code true}, only the existing (or default) configuration is used as-is
          * and the annotations listed previously are ignored.
          *
-         * @return whether to use existing (or default) configuration
+         * @return whether to use an existing (or default) configuration
          */
         boolean useExisting() default false;
 
