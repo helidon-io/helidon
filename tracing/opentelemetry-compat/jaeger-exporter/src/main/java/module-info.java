@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 module io.helidon.tracing.opentelemetry.compat.jaeger.exporter {
+
     requires io.opentelemetry.exporter.internal;
     requires io.opentelemetry.sdk.common;
     requires io.opentelemetry.sdk.trace;
@@ -26,5 +27,8 @@ module io.helidon.tracing.opentelemetry.compat.jaeger.exporter {
     requires com.google.protobuf;
     requires java.annotation;
     requires io.grpc.protobuf;
+
+    exports io.helidon.tracing.opentelemetrycompat.jaegerexporter;
+
 
 }
