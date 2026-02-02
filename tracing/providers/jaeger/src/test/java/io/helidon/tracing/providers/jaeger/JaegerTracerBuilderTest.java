@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,12 @@ import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
-import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -75,7 +73,7 @@ class JaegerTracerBuilderTest {
         assertThat("Tags", jBuilder.tags(), is(Map.of()));
         assertThat("Protocol", jBuilder.protocol(), is("http"));
         assertThat("Host", jBuilder.host(), is("localhost"));
-        assertThat("Port", jBuilder.port(), is(4317));
+        assertThat("Port", jBuilder.port(), is(14250));
         assertThat("Path", jBuilder.path(), nullValue());
         assertThat("Enabled", jBuilder.isEnabled(), is(true));
         assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.CONSTANT));

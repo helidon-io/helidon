@@ -154,7 +154,7 @@
         <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
         <version.plugin.replacer>1.4.1</version.plugin.replacer>
-        <version.plugin.squareup.wire>5.3.1</version.plugin.squareup.wire>
+<!--        <version.plugin.squareup.wire>5.3.1</version.plugin.squareup.wire>-->
 
         <version.helidon-cli>3.0.0</version.helidon-cli>
 
@@ -1025,11 +1025,11 @@
                     <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>com.squareup.wire</groupId>
-                <artifactId>wire-gradle-plugin</artifactId>
-                <version>${version.plugin.squareup.wire}</version>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>com.squareup.wire</groupId>-->
+<!--                <artifactId>wire-gradle-plugin</artifactId>-->
+<!--                <version>${version.plugin.squareup.wire}</version>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
