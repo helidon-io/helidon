@@ -140,6 +140,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_DECORATOR", Option.Decorator.class);
         checkField(toCheck, checked, fields, "OPTION_REGISTRY_SERVICE", Option.RegistryService.class);
         checkField(toCheck, checked, fields, "OPTION_TRAVERSE_CONFIG", Option.TraverseConfig.class);
+        checkField(toCheck, checked, fields, "OPTION_PROTOTYPED_BY", Option.PrototypedBy.class);
         checkField(toCheck, checked, fields, "BUILDER_SUPPORT", BuilderSupport.class);
 
         checkField(toCheck, checked, fields, "SERVICE_NAMED", Service.Named.class);
