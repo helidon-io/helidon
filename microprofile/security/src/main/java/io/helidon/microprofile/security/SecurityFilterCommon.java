@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -153,7 +153,7 @@ abstract class SecurityFilterCommon {
         }
 
         SecurityEnvironment env = envBuilder.build();
-        Map<String, Config> configMap = new HashMap<>();
+        Map<String, io.helidon.common.config.Config> configMap = new HashMap<>();
         findMethodConfig(UriPath.create(requestUri.getPath()), request.getMethod())
                 .asNode()
                 .ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
@@ -486,8 +486,9 @@ abstract class SecurityFilterCommon {
 
     protected abstract SecurityFilterContext initRequestFiltering(ContainerRequestContext requestContext);
 
+    @SuppressWarnings("removal")
     Config config(String child) {
-        return security.configFor(child);
+        return Config.config(security.configFor(child));
     }
 
     private record PathConfig(PathMatcher pathMatcher, Set<String> method, Config config) {

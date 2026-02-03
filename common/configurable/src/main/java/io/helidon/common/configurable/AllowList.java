@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * {@code AllowList} defines a list of allowed and/or denied matches and tests if a particular value conforms to
@@ -81,6 +81,19 @@ public class AllowList implements Predicate<String>, RuntimeType.Api<AllowListCo
      */
     public static AllowListConfig.Builder builder() {
         return AllowListConfig.builder();
+    }
+
+    /**
+     * Create {@code AllowList} from configurtion.
+     *
+     * @param config configuration
+     * @return a new configured {@code AllowList}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static AllowList create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**

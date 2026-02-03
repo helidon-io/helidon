@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Configuration settings for metrics.
@@ -199,7 +199,7 @@ interface MetricsConfigBlueprint {
      * @return metrics configuration
      */
     @Option.Redundant
-    Config config();
+    io.helidon.common.config.Config config();
 
     /**
      * Whether the {@code gc.time} meter should be registered as a gauge (vs. a counter).

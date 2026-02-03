@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package io.helidon.tracing.config;
 
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Configuration of a single log event in a traced span.
@@ -68,7 +68,21 @@ public abstract class SpanLogTracingConfig extends Traceable {
     }
 
     /**
-     * Create a new traced span log configuration from {@link io.helidon.common.config.Config}.
+     * Create a new traced span log configuration from configuration.
+     *
+     * @param name name of the span log
+     * @param config config for a traced span log
+     * @return a new traced span log configuration
+     * @deprecated use {@link #create(String, io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SpanLogTracingConfig create(String name, io.helidon.common.config.Config config) {
+        return builder(name).config(config).build();
+    }
+
+    /**
+     * Create a new traced span log configuration from configuration.
      *
      * @param name name of the span log
      * @param config config for a traced span log
@@ -112,7 +126,20 @@ public abstract class SpanLogTracingConfig extends Traceable {
         }
 
         /**
-         * Update this builder from {@link io.helidon.common.config.Config}.
+         * Update this builder from configuration.
+         *
+         * @param config config of a traced span log
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)}
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update this builder from configuration.
          *
          * @param config config of a traced span log
          * @return updated builder instance

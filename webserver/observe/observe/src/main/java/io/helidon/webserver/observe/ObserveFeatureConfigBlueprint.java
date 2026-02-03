@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
@@ -98,7 +97,7 @@ interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature
      *
      * @return config node of the feature
      */
-    Optional<Config> config();
+    Optional<io.helidon.common.config.Config> config();
 
     /**
      * Sockets the observability endpoint should be exposed on. If not defined, defaults to the default socket

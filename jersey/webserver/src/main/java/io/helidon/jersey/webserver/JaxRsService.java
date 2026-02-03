@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
+import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -105,6 +105,20 @@ public class JaxRsService implements HttpService {
      * @param config         configuration, used to configure Jersey
      * @param resourceConfig containing application resources
      * @return a new service to register with the WebServer
+     * @deprecated use {@link #create(io.helidon.config.Config, org.glassfish.jersey.server.ResourceConfig)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static JaxRsService create(io.helidon.common.config.Config config, ResourceConfig resourceConfig) {
+        return create(Config.config(config), resourceConfig);
+    }
+
+    /**
+     * Create a new JAX-RS integration service with the default injection manager.
+     *
+     * @param config         configuration, used to configure Jersey
+     * @param resourceConfig containing application resources
+     * @return a new service to register with the WebServer
      */
     public static JaxRsService create(Config config,
                                       ResourceConfig resourceConfig) {
@@ -121,7 +135,25 @@ public class JaxRsService implements HttpService {
      * @param resourceConfig   containing application resources
      * @param injectionManager injection manager to use
      * @return a new service to register with the WebServer
-     * @see #create(io.helidon.common.config.Config, org.glassfish.jersey.server.ResourceConfig)
+     * @deprecated use {@link #create(io.helidon.config.Config, org.glassfish.jersey.server.ResourceConfig,
+     * org.glassfish.jersey.internal.inject.InjectionManager)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static JaxRsService create(io.helidon.common.config.Config config,
+                                      ResourceConfig resourceConfig,
+                                      InjectionManager injectionManager) {
+        return create(Config.config(config), resourceConfig, injectionManager);
+    }
+
+    /**
+     * Create a new JAX-RS integration service with a custom injection manager.
+     *
+     * @param config           configuration, used to configure Jersey
+     * @param resourceConfig   containing application resources
+     * @param injectionManager injection manager to use
+     * @return a new service to register with the WebServer
+     * @see #create(io.helidon.config.Config, org.glassfish.jersey.server.ResourceConfig)
      */
     public static JaxRsService create(Config config,
                                       ResourceConfig resourceConfig,

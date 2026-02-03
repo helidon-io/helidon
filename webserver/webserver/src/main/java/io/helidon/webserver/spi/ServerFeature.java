@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
-import io.helidon.common.config.NamedService;
+import io.helidon.config.NamedService;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;

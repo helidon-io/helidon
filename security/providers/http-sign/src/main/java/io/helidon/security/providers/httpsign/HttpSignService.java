@@ -39,7 +39,7 @@ public class HttpSignService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider create(Config config) {
+    public SecurityProvider providerInstance(Config config) {
         return HttpSignProvider.create(config);
     }
 }

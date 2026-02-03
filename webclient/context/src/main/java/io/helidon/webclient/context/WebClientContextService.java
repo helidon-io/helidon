@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -54,11 +54,23 @@ public class WebClientContextService implements WebClientService, RuntimeType.Ap
      *
      * @param config configuration
      * @return a new service
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static WebClientContextService create(io.helidon.common.config.Config config) {
+        return create(WebClientContextConfig.create(config));
+    }
+
+    /**
+     * Create a new instance from configuration.
+     *
+     * @param config configuration
+     * @return a new service
      */
     public static WebClientContextService create(Config config) {
         return create(WebClientContextConfig.create(config));
     }
-
 
     /**
      * Create a new instance from its configuration.

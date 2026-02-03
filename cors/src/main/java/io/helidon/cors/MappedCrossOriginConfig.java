@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Cross-origin {@link CrossOriginConfig} instances linked to paths, plus an {@code enabled} setting. Most developers will not
@@ -90,6 +90,19 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
 
     /**
      * Creates a new {@code Mapped.Builder} instance using the provided configuration.
+     *
+     * @param config node containing {@code Mapped} cross-origin information
+     * @return new {@code Mapped.Builder} based on the config
+     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Builder builder(io.helidon.common.config.Config config) {
+        return builder().config(config);
+    }
+
+    /**
+     * Creates a new {@code Mapped.Builder} instance using the provided configuration.
      * <p>
      *     Although this method is equivalent to {@code builder().config(config)} it conveniently combines those two steps for
      *     use as a method reference.
@@ -100,6 +113,19 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
      */
     public static Builder builder(Config config) {
         return builder().config(config);
+    }
+
+    /**
+     * Creates a new {@code Mapped} instance using the provided configuration.
+     *
+     * @param config node containing {@code Mapped} cross-origin information
+     * @return new {@code Mapped} instance based on the config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static MappedCrossOriginConfig create(io.helidon.common.config.Config config) {
+        return builder(config).build();
     }
 
     /**
@@ -220,6 +246,19 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         public Builder put(String path, CrossOriginConfig.Builder builder) {
             builders.put(path, new Buildable(builder));
             return this;
+        }
+
+        /**
+         * Applies data in the provided config node.
+         *
+         * @param config {@code Config} node containing CORS information
+         * @return updated builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
@@ -61,6 +61,19 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create an instance based on configuration.
+     *
+     * @param config configuration located on the key provided by {@link JavaxElPolicyExecutorService#configKey()}
+     * @return a new configured instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static JavaxElPolicyExecutor create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -206,6 +219,19 @@ public final class JavaxElPolicyExecutor implements PolicyExecutor {
         public Builder addMethod(String prefix, String localName, Method method) {
             customMethods.add(new CustomFunction(prefix, localName, method));
             return this;
+        }
+
+        /**
+         * Updated builder from configuration.
+         *
+         * @param config configuration to update from
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

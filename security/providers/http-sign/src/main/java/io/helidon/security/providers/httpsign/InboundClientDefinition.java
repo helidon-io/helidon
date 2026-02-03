@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.pki.Keys;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.SubjectType;
@@ -69,6 +69,19 @@ public class InboundClientDefinition {
      */
     public static Builder builder(String keyId) {
         return new Builder().keyId(keyId);
+    }
+
+    /**
+     * Create a new builder from configuration.
+     *
+     * @param config configuration instance located at a single client definition (expect key-id as a child)
+     * @return builder configured based on config
+     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Builder builder(io.helidon.common.config.Config config) {
+        return new Builder().config(config);
     }
 
     /**
@@ -265,6 +278,19 @@ public class InboundClientDefinition {
         @Override
         public InboundClientDefinition build() {
             return new InboundClientDefinition(this);
+        }
+
+        /**
+         * Create a builder instance from configuration.
+         *
+         * @param config config instance
+         * @return builder instance initialized from config
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

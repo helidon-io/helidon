@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ import java.net.URI;
 import java.util.Objects;
 
 import io.helidon.common.Builder;
-import io.helidon.common.config.Config;
+import io.helidon.common.DeprecationSupport;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -111,6 +112,20 @@ public interface OpenTracingTracerBuilder<T extends OpenTracingTracerBuilder<T>>
     static OpenTracingTracerBuilder<?> create(String serviceName) {
         return OpenTracingProviderHelper.findTracerBuilder()
                 .serviceName(serviceName);
+    }
+
+    /**
+     * Create a new builder from configuration.
+     *
+     * @param config configuration node to load tracer configuration from
+     * @return a new builder instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static OpenTracingTracerBuilder<?> create(io.helidon.common.config.Config config) {
+        return OpenTracingProviderHelper.findTracerBuilder()
+                .config(config);
     }
 
     /**
@@ -245,8 +260,35 @@ public interface OpenTracingTracerBuilder<T extends OpenTracingTracerBuilder<T>>
      *
      * @param config configuration node of the tracer configuration
      * @return updated builder instance
+     * @deprecated use {@link #config(io.helidon.config.Config)} instead
      */
-    T config(Config config);
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    default T config(io.helidon.common.config.Config config) {
+        // default to avoid forcing deprecated symbols references
+        return config(Config.config(config));
+    }
+
+    /**
+     * Load configuration of tracer from configuration of the application.
+     * The configuration keys are specific for each tracer integration and documented
+     * in these integration projects.
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
+     *
+     * @param config configuration node of the tracer configuration
+     * @return updated builder instance
+     * @since 4.4.0
+     */
+    @SuppressWarnings("removal")
+    default T config(Config config) {
+        // default to preserve backward compatibility
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this, OpenTracingTracerBuilder.class, "config",
+                io.helidon.common.config.Config.class);
+        return config((io.helidon.common.config.Config) config);
+    }
 
     /**
      * When enabled, tracing will be sent. If enabled is false, tracing should

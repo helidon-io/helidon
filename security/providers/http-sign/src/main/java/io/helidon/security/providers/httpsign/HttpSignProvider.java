@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.AuthenticationResponse;
@@ -98,6 +98,19 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));
+    }
+
+    /**
+     * Create a new instance of this provider from configuration.
+     *
+     * @param config config located at this provider, expects "http-signature" to be a child
+     * @return provider configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static HttpSignProvider create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -336,6 +349,19 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          *
          * @param config Config located at http-signatures key
          * @return builder instance configured from config
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Create a builder from configuration.
+         *
+         * @param config Config located at http-signatures key
+         * @return builder instance configured from config
          */
         public Builder config(Config config) {
             config.get("headers").asList(HttpSignHeader.class).ifPresent(list -> list.forEach(this::addAcceptHeader));
@@ -345,7 +371,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
             outboundConfig = OutboundConfig.create(config);
 
             config.get("inbound.keys")
-                    .mapList(InboundClientDefinition::create)
+                    .asList(InboundClientDefinition::create)
                     .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.keyId(), inbound)));
 
             config.get("backward-compatible-eol").asBoolean().ifPresent(this::backwardCompatibleEol);

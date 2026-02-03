@@ -43,7 +43,7 @@ public class CubbyholeSecurityService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider create(Config config) {
+    public SecurityProvider providerInstance(Config config) {
         return new CubbyholeSecurityProvider(Vault.create(config));
     }
 }

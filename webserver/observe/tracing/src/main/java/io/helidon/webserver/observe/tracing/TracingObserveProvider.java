@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.observe.tracing;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;

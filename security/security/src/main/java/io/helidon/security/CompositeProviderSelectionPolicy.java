@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -70,7 +70,6 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
     private final String name;
     private final FirstProviderSelectionPolicy fallback;
 
-    @SuppressWarnings("unchecked")
     private CompositeProviderSelectionPolicy(Providers providers, Builder builder) {
         this.fallback = new FirstProviderSelectionPolicy(providers);
         this.isDefault = builder.isDefault;
@@ -149,6 +148,19 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Load this policy from config. See {@link CompositeProviderSelectionPolicy} for example.
+     *
+     * @param config configuration instance
+     * @return function as expected by {@link Security.Builder#providerSelectionPolicy(Function)}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Function<Providers, ProviderSelectionPolicy> create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -311,13 +323,26 @@ public final class CompositeProviderSelectionPolicy implements ProviderSelection
          *
          * @param config Configuration
          * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update fields from configuration.
+         *
+         * @param config Configuration
+         * @return updated builder instance
          */
         public Builder config(Config config) {
             config.get("name").asString().ifPresent(this::name);
             config.get("default").asBoolean().ifPresent(this::isDefault);
-            config.get("authentication").mapList(FlaggedProvider::create)
+            config.get("authentication").asList(FlaggedProvider::create)
                     .ifPresent(this.authenticators::addAll);
-            config.get("authorization").mapList(FlaggedProvider::create)
+            config.get("authorization").asList(FlaggedProvider::create)
                     .ifPresent(this.authorizers::addAll);
             config.get("outbound").asNodeList()
                     .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name")

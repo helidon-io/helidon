@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.security;
 
 import java.util.Map;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.util.TokenHandler;
 
 /**
@@ -56,6 +56,20 @@ public final class QueryParamMapping {
      */
     public static QueryParamMapping create(String queryParamName, String headerName) {
         return new QueryParamMapping(queryParamName, TokenHandler.forHeader(headerName));
+    }
+
+    /**
+     * Read a new instance from configuration.
+     * The current node should contain a {@code "name"} and configuration for {@link TokenHandler}
+     *
+     * @param config configuration instance
+     * @return new query parameter handler instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static QueryParamMapping create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
     }
 
     /**

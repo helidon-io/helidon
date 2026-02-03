@@ -41,7 +41,7 @@ public class OidcProviderService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider create(Config config) {
+    public SecurityProvider providerInstance(Config config) {
         return OidcProvider.create(config);
     }
 }

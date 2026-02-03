@@ -18,7 +18,7 @@ package io.helidon.cors;
 
 import java.util.Arrays;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -129,6 +129,19 @@ public class CrossOriginConfig {
 
     /**
      * Creates a new {@code CrossOriginConfig.Builder} using the provided config node.
+     *
+     * @param config node containing cross-origin information
+     * @return new {@code CrossOriginConfig.Builder} instance based on the configuration
+     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Builder builder(io.helidon.common.config.Config config) {
+        return builder(Config.config(config));
+    }
+
+    /**
+     * Creates a new {@code CrossOriginConfig.Builder} using the provided config node.
      * <p>
      *     Although this method is equivalent to {@code builder().config(config)} it conveniently combines those two steps for
      *     use as a method reference.
@@ -166,6 +179,18 @@ public class CrossOriginConfig {
      */
     public static CrossOriginConfig create() {
         return builder().build();
+    }
+
+    /**
+     * Creates a new {@code CrossOriginConfig} instance based on the provided configuration node.
+     * @param config node containing CORS information
+     * @return new {@code CrossOriginConfig} based on the configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static CrossOriginConfig create(io.helidon.common.config.Config config) {
+        return builder(config).build();
     }
 
     /**

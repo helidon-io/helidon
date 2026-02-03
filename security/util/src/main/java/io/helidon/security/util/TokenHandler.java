@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -100,6 +100,19 @@ public final class TokenHandler {
      */
     public static TokenHandler forHeader(String header) {
         return builder().tokenHeader(header).build();
+    }
+
+    /**
+     * Create a {@link TokenHandler} from configuration.
+     *
+     * @param config config to parse into an instance of this object
+     * @return a new instance configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static TokenHandler create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -279,6 +292,19 @@ public final class TokenHandler {
         public TokenHandler build() {
             Objects.requireNonNull(tokenHeader, "Token header must be configured");
             return new TokenHandler(this);
+        }
+
+        /**
+         * Update builder from config.
+         *
+         * @param config Configuration to update from
+         * @return update builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

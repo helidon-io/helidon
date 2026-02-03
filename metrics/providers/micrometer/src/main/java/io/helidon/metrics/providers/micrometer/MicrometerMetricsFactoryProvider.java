@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.spi.MetersProvider;
@@ -46,7 +46,7 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
 
     @Override
     public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return save(MicrometerMetricsFactory.create(rootConfig, metricsConfig, metersProviders));
+        return save(MicrometerMetricsFactory.create(metricsConfig, metersProviders));
     }
 
     @Override

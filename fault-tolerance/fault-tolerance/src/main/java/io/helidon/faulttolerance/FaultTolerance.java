@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -80,8 +80,9 @@ public final class FaultTolerance {
      * @param config config to read fault tolerance configuration
      */
     @Deprecated(forRemoval = true, since = "4.3.0")
-    public static void config(Config config) {
-        CONFIG.set(config);
+    @SuppressWarnings("removal")
+    public static void config(io.helidon.common.config.Config config) {
+        CONFIG.set(Config.config(config));
     }
 
     /**

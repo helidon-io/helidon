@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.telemetry.otelconfig;
 
 import java.util.Arrays;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Legal values for OTLP exporters.
@@ -56,6 +56,19 @@ public enum OtlpExporterProtocolType {
         }
         throw new IllegalArgumentException("Unknown protocol: " + protocol + "; expected one of "
                                                    + Arrays.toString(OtlpExporterProtocolType.values()));
+    }
+
+    /**
+     * Maps a config node's string value to the corresponding type.
+     *
+     * @param config config node
+     * @return matching type
+     * @deprecated use {@link #from(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static OtlpExporterProtocolType from(io.helidon.common.config.Config config) {
+        return from(config.asString().get());
     }
 
     /**

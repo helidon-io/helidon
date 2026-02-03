@@ -23,7 +23,6 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
@@ -107,5 +106,5 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
      */
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.4.0")
-    Optional<Config> config();
+    Optional<io.helidon.common.config.Config> config();
 }

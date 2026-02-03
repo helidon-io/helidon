@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import io.helidon.webclient.spi.WebClientService;
  * @see WebClientDiscoveryConfig#builder()
  * @see io.helidon.discovery.Discovery
  * @see WebClientDiscoveryProvider
- * @see WebClientDiscoveryProvider#create(io.helidon.common.config.Config, String)
+ * @see WebClientDiscoveryProvider#create(io.helidon.config.Config, String)
  */
 @RuntimeType.PrototypedBy(WebClientDiscoveryConfig.class)
 public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryConfig>, WebClientService {
@@ -265,7 +265,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      * @return this {@link WebClientDiscovery}'s determinate name
      * @see WebClientDiscoveryConfig#name()
      * @see WebClientService#name()
-     * @see io.helidon.common.config.NamedService#name()
+     * @see io.helidon.config.NamedService#name()
      */
     @Override // WebClientService (NamedService)
     default String name() {
@@ -280,7 +280,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      *
      * @return {@code discovery} when invoked
      * @see WebClientService#type()
-     * @see io.helidon.common.config.NamedService#type()
+     * @see io.helidon.config.NamedService#type()
      */
     @Override // WebClientService (NamedService)
     default String type() {

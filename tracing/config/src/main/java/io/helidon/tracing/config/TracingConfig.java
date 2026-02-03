@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Tracing configuration that contains traced components (such as WebServer, Security) and their traced spans and span logs.
  * Spans can be renamed through configuration, components, spans and span logs may be disabled through this configuration.
  *
- * @see #create(io.helidon.common.config.Config)
+ * @see #create(io.helidon.config.Config)
  * @see #builder()
  */
 public abstract class TracingConfig extends Traceable {
@@ -86,6 +86,19 @@ public abstract class TracingConfig extends Traceable {
     @Override
     public String toString() {
         return "TracingConfig(" + name() + ")";
+    }
+
+    /**
+     * Create new tracing configuration based on the provided config.
+     *
+     * @param config configuration of tracing
+     * @return tracing configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static TracingConfig create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -178,6 +191,18 @@ public abstract class TracingConfig extends Traceable {
          * @param config Config with tracing configuration
          * @return updated builder instance
          */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config Config with tracing configuration
+         * @return updated builder instance
+         */
         public Builder config(Config config) {
             config.get("enabled").asBoolean().ifPresent(this::enabled);
             Config compConfig = config.get("components");
@@ -186,7 +211,6 @@ public abstract class TracingConfig extends Traceable {
                         compList.forEach(componentConfig -> addComponent(ComponentTracingConfig.create(componentConfig.name(),
                                                                                                        componentConfig)));
                     });
-
             return this;
         }
 

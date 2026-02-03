@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Configuration of statements to be used by database provider.
@@ -42,6 +42,22 @@ public interface DbStatements {
      */
     static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create statements from configuration.
+     * Statement configuration is expected to be a map of name to statement pairs.
+     *
+     * @param config configuration of the statements
+     * @return statements as read from the configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static DbStatements create(io.helidon.common.config.Config config) {
+        return DbStatements.builder()
+                .config(config)
+                .build();
     }
 
     /**
@@ -78,6 +94,20 @@ public interface DbStatements {
             Objects.requireNonNull(statement, "Statement body must be provided");
             configuredStatements.put(name, statement);
             return this;
+        }
+
+        /**
+         * Set statements from configuration. Each key in the current node is treated as a name of the statement,
+         * each value as the statement content.
+         *
+         * @param config config node located on correct node
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

@@ -18,7 +18,7 @@ package io.helidon.telemetry.otelconfig;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;

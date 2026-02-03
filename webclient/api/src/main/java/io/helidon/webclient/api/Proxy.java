@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,11 +38,11 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Header;
@@ -137,6 +137,21 @@ public class Proxy {
      */
     public static Proxy noProxy() {
         return NO_PROXY;
+    }
+
+    /**
+     * Create a new proxy instance from configuration.
+     *
+     * @param config configuration, should be located on a key that has proxy as a subkey
+     * @return proxy instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static Proxy create(io.helidon.common.config.Config config) {
+        return builder()
+                .config(config)
+                .build();
     }
 
     /**
@@ -594,6 +609,19 @@ public class Proxy {
         @Override
         public Proxy build() {
             return new Proxy(this);
+        }
+
+        /**
+         * Configure a metric from configuration.
+         *
+         * @param config configuration to configure this proxy
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

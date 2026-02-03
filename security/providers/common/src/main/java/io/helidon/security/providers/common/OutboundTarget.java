@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.security.ClassToInstanceStore;
@@ -107,6 +107,19 @@ public final class OutboundTarget {
      * Create a target from configuration.
      *
      * @param config configuration on the node of a single outbound target
+     * @return a new target from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static OutboundTarget create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
+    }
+
+    /**
+     * Create a target from configuration.
+     *
+     * @param config configuration on the node of a single outbound target
      * @return a new target from config, requires at least {@value CONFIG_NAME}
      */
     public static OutboundTarget create(Config config) {
@@ -175,7 +188,7 @@ public final class OutboundTarget {
      * Configuration of this target.
      * @return target configuration or empty if none provided
      */
-    public Optional<Config> getConfig() {
+    public Optional<io.helidon.common.config.Config> getConfig() {
         return Optional.ofNullable(config);
     }
 
@@ -304,6 +317,19 @@ public final class OutboundTarget {
             // this method must be public, so we can read the configured option
             this.name = name;
             return this;
+        }
+
+        /**
+         * Set config for this target.
+         *
+         * @param config configuration
+         * @return update builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**
