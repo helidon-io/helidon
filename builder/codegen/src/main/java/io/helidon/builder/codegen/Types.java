@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,6 +91,7 @@ final class Types {
     static final TypeName OPTION_TYPE = TypeName.create("io.helidon.builder.api.Option.Type");
     static final TypeName OPTION_DECORATOR = TypeName.create("io.helidon.builder.api.Option.Decorator");
     static final TypeName OPTION_TRAVERSE_CONFIG = TypeName.create("io.helidon.builder.api.Option.TraverseConfig");
+    static final TypeName OPTION_PROTOTYPED_BY = TypeName.create("io.helidon.builder.api.Option.PrototypedBy");
 
     static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
             "io.helidon.config.ConfigBuilderSupport.ConfiguredBuilder");

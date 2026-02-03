@@ -283,6 +283,8 @@ final class FactoryOption {
                 .stream()
                 .filter(a -> a.hasMetaAnnotation(Types.SERVICE_QUALIFIER))
                 .toList();
+        Optional<TypeName> prototypedBy = candidate.findAnnotation(Types.OPTION_PROTOTYPED_BY)
+                        .flatMap(Annotation::typeValue);
 
         option.interfaceMethod(candidate)
                 .name(name)
@@ -295,7 +297,8 @@ final class FactoryOption {
                 .sameGeneric(sameGeneric)
                 .qualifiers(qualifiers)
                 .getterName(getterName)
-                .setterName(setterName);
+                .setterName(setterName)
+                .update(it -> prototypedBy.ifPresent(it::prototypedBy));
 
         optionBuilder(roundContext, type)
                 .ifPresent(option::builderInfo);

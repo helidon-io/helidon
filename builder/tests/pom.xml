@@ -52,6 +52,7 @@
         <module>jackson</module>
         <module>builder-codegen</module>
         <module>custom-void-method</module>
+        <module>third-party-factory</module>
     </modules>
 
 </project>

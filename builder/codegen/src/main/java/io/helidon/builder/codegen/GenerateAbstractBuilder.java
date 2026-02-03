@@ -158,11 +158,34 @@ final class GenerateAbstractBuilder {
                 .returnType(runtimeType)
                 .addContent("return ");
         if (hasRuntimeObject) {
-            builder.addContent(runtimeType.genericTypeName());
-            if (isBuilder) {
-                builder.addContentLine(".create(this.buildPrototype());");
+            var foundFactoryMethod = prototypeInfo
+                    .runtimeTypeFactories()
+                    .stream()
+                    .flatMap(it -> it.factoryMethod().stream())
+                    .filter(it -> it.returnType().equals(runtimeType))
+                    .filter(it -> it.parameterType().isPresent())
+                    .filter(it -> it.parameterType().get().className().equals(prototypeInfo.prototypeType().className()))
+                    .findFirst();
+
+            if (foundFactoryMethod.isPresent()) {
+                var factoryMethod = foundFactoryMethod.get();
+                builder.addContent(factoryMethod.declaringType())
+                        .addContent(".")
+                        .addContent(factoryMethod.methodName())
+                        .addContent("(");
+                if (isBuilder) {
+                    builder.addContent("this.buildPrototype()");
+                } else {
+                    builder.addContent("this");
+                }
+                builder.addContentLine(");");
             } else {
-                builder.addContentLine(".create(this);");
+                builder.addContent(runtimeType.genericTypeName());
+                if (isBuilder) {
+                    builder.addContentLine(".create(this.buildPrototype());");
+                } else {
+                    builder.addContentLine(".create(this);");
+                }
             }
         } else {
             if (isBuilder) {

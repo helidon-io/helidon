@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,4 +237,11 @@ interface OptionInfoBlueprint extends Annotated {
      * @return parameter description, if present
      */
     Optional<String> paramDescription();
+
+    /**
+     * A prototype that can build this option type.
+     *
+     * @return prototyped by type, or empty if not annotated
+     */
+    Optional<TypeName> prototypedBy();
 }
