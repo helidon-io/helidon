@@ -28,4 +28,7 @@ final class ValueType {
     public static final ProtoEnumInfo FLOAT64 = ProtoEnumInfo.create(3, "FLOAT64");
 
     public static final ProtoEnumInfo BINARY = ProtoEnumInfo.create(4, "BINARY");
+
+    private ValueType() {
+    }
 }

@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Helidon Jaeger exporter inspired by the one from OpenTelemetry.
+ */
 module io.helidon.tracing.opentelemetry.compat.jaeger.exporter {
 
     requires io.opentelemetry.exporter.internal;

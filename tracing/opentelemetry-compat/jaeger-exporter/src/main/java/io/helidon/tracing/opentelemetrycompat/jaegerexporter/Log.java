@@ -22,4 +22,7 @@ final class Log {
     public static final ProtoFieldInfo TIMESTAMP = ProtoFieldInfo.create(1, 10, "timestamp");
 
     public static final ProtoFieldInfo FIELDS = ProtoFieldInfo.create(2, 18, "fields");
+
+    private Log() {
+    }
 }

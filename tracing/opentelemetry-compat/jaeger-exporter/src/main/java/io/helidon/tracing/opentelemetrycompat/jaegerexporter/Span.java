@@ -42,4 +42,7 @@ final class Span {
     public static final ProtoFieldInfo PROCESS_ID = ProtoFieldInfo.create(11, 90, "processId");
 
     public static final ProtoFieldInfo WARNINGS = ProtoFieldInfo.create(12, 98, "warnings");
+
+    private Span() {
+    }
 }
