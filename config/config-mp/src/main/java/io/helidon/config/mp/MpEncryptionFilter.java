@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.config.encryption;
+package io.helidon.config.mp;
 
 import java.lang.System.Logger.Level;
+import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.config.encryption.ConfigEncryptionException;
+import io.helidon.config.encryption.ConfigProperties;
+import io.helidon.config.encryption.EncryptionUtil;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
@@ -49,10 +56,10 @@ import org.eclipse.microprofile.config.Config;
  * cleartext_password=${CLEAR=known_password}
  * </pre>
  *
- * @see ConfigProperties#PRIVATE_KEYSTORE_PATH_ENV_VARIABLE
- * @see ConfigProperties#MASTER_PASSWORD_ENV_VARIABLE
- * @see ConfigProperties#MASTER_PASSWORD_CONFIG_KEY
- * @see ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
+ * @see io.helidon.config.encryption.ConfigProperties#PRIVATE_KEYSTORE_PATH_ENV_VARIABLE
+ * @see io.helidon.config.encryption.ConfigProperties#MASTER_PASSWORD_ENV_VARIABLE
+ * @see io.helidon.config.encryption.ConfigProperties#MASTER_PASSWORD_CONFIG_KEY
+ * @see io.helidon.config.encryption.ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
  */
 public final class MpEncryptionFilter implements MpConfigFilter {
     static final String PREFIX_GCM = "${GCM=";
@@ -80,14 +87,14 @@ public final class MpEncryptionFilter implements MpConfigFilter {
 
     @Override
     public void init(org.eclipse.microprofile.config.Config config) {
-        this.requireEncryption = EncryptionUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
+        this.requireEncryption = getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
                 .map(Boolean::parseBoolean)
                 .or(() -> config.getOptionalValue(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, Boolean.class))
                 .orElse(true);
 
-        this.masterPassword = EncryptionUtil.resolveMasterPassword(requireEncryption, config)
+        this.masterPassword = resolveMasterPassword(requireEncryption, config)
                 .orElse(null);
-        this.privateKey = EncryptionUtil.resolvePrivateKey(config)
+        this.privateKey = resolvePrivateKey(config)
                 .orElse(null);
 
         if (null != privateKey && !(privateKey instanceof RSAPrivateKey)) {
@@ -187,4 +194,84 @@ public final class MpEncryptionFilter implements MpConfigFilter {
 
         return value;
     }
+
+    static Optional<String> getEnv(String envVariable) {
+        return Optional.ofNullable(System.getenv(envVariable));
+    }
+
+    static Optional<PrivateKey> resolvePrivateKey(org.eclipse.microprofile.config.Config config) {
+        return resolvePrivateKey(MpConfig.toHelidonConfig(config).get("security.config.rsa"));
+    }
+
+    static Optional<PrivateKey> resolvePrivateKey(io.helidon.config.Config config) {
+        // load configuration values
+        Keys.Builder builder = Keys.builder();
+        builder.config(config);
+
+        builder.pem(pemBuilder -> {
+            getEnv(ConfigProperties.PRIVATE_KEY_PEM_PATH_ENV_VARIABLE)
+                    .map(Paths::get)
+                    .ifPresent(path -> pemBuilder.key(Resource.create(path)));
+
+            getEnv(ConfigProperties.PRIVATE_KEY_PASS_ENV_VARIABLE)
+                    .map(String::toCharArray)
+                    .ifPresent(pemBuilder::keyPassphrase);
+        });
+
+        // override the ones defined in environment variables
+        getEnv(ConfigProperties.PRIVATE_KEYSTORE_PATH_ENV_VARIABLE)
+                .map(Paths::get)
+                .ifPresent(path -> builder.keystore(keystoreBuilder -> {
+                    keystoreBuilder.keystore(Resource.create(path));
+                    getEnv(ConfigProperties.PRIVATE_KEYSTORE_TYPE_ENV_VARIABLE)
+                            .ifPresent(keystoreBuilder::type);
+
+                    getEnv(ConfigProperties.PRIVATE_KEYSTORE_PASS_ENV_VARIABLE)
+                            .map(String::toCharArray)
+                            .ifPresent(keystoreBuilder::passphrase);
+
+                    getEnv(ConfigProperties.PRIVATE_KEY_PASS_ENV_VARIABLE)
+                            .map(String::toCharArray)
+                            .ifPresent(keystoreBuilder::keyPassphrase);
+
+                    getEnv(ConfigProperties.PRIVATE_KEY_ALIAS_ENV_VARIABLE)
+                            .ifPresent(keystoreBuilder::keyAlias);
+                }));
+
+        Optional<PrivateKey> result = builder.build().privateKey();
+
+        if (result.isEmpty()) {
+            LOGGER.log(Level.DEBUG, "Securing properties using asymmetric cipher is not available, as private key is not "
+                    + "configured");
+        }
+
+        return result;
+    }
+
+    static Optional<char[]> resolveMasterPassword(boolean requireEncryption, org.eclipse.microprofile.config.Config config) {
+        Optional<char[]> result = getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE)
+                .or(() -> {
+                    Optional<String> value = config.getOptionalValue(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY, String.class);
+                    if (value.isPresent()) {
+                        if (requireEncryption) {
+                            LOGGER.log(Level.WARNING,
+                                       "Master password is configured as clear text in configuration when encryption is "
+                                               + "required. "
+                                               + "This value will be ignored. System property or environment variable "
+                                               + "expected!!!");
+                            return Optional.empty();
+                        }
+                    }
+                    return value;
+                })
+                .map(String::toCharArray);
+
+        if (result.isEmpty()) {
+            LOGGER.log(Level.DEBUG, "Securing properties using master password is not available, as master password is not "
+                    + "configured");
+        }
+
+        return result;
+    }
+
 }
