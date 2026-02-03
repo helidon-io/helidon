@@ -20,6 +20,7 @@ import io.helidon.tracing.opentelemetrycompat.jaegerexporter.proto.api_v2.TimeOr
 
 import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
+@SuppressWarnings("all")
 final class Time extends
                  com.google.protobuf.GeneratedMessageV3 implements
                                                         // @@protoc_insertion_point(message_implements:io.opentelemetry.internal.Time)
@@ -46,13 +47,13 @@ final class Time extends
 
     public static final com.google.protobuf.Descriptors.Descriptor
     getDescriptor() {
-        return TimeProto.internal_static_io_opentelemetry_internal_Time_descriptor;
+        return TimeProto.TIME_DESCRIPTOR;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
     internalGetFieldAccessorTable() {
-        return TimeProto.internal_static_io_opentelemetry_internal_Time_fieldAccessorTable
+        return TimeProto.FIELD_ACCESSOR_TABLE
                 .ensureFieldAccessorsInitialized(
                         Time.class, Time.Builder.class);
     }
@@ -274,13 +275,13 @@ final class Time extends
                                                                                                       TimeOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-            return TimeProto.internal_static_io_opentelemetry_internal_Time_descriptor;
+            return TimeProto.TIME_DESCRIPTOR;
         }
 
         @java.lang.Override
         protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-            return TimeProto.internal_static_io_opentelemetry_internal_Time_fieldAccessorTable
+            return TimeProto.FIELD_ACCESSOR_TABLE
                     .ensureFieldAccessorsInitialized(
                             Time.class, Time.Builder.class);
         }
@@ -300,14 +301,14 @@ final class Time extends
             super.clear();
             bitField0_ = 0;
             seconds_ = 0L;
-            nanos_ = 0;
+            _nanos = 0;
             return this;
         }
 
         @java.lang.Override
         public com.google.protobuf.Descriptors.Descriptor
         getDescriptorForType() {
-            return TimeProto.internal_static_io_opentelemetry_internal_Time_descriptor;
+            return TimeProto.TIME_DESCRIPTOR;
         }
 
         @java.lang.Override
@@ -338,7 +339,7 @@ final class Time extends
                 result.seconds_ = seconds_;
             }
             if (((from_bitField0_ & 0x00000002) != 0)) {
-                result.nanos_ = nanos_;
+                result.nanos_ = _nanos;
             }
         }
 
@@ -424,7 +425,7 @@ final class Time extends
                         break;
                     } // case 8
                     case 16: {
-                        nanos_ = input.readInt32();
+                        _nanos = input.readInt32();
                         bitField0_ |= 0x00000002;
                         break;
                     } // case 16
@@ -495,7 +496,7 @@ final class Time extends
             return this;
         }
 
-        private int nanos_ ;
+        private int _nanos;
         /**
          * <pre>
          * Non-negative fractions of a second at nanosecond resolution. Negative
@@ -509,7 +510,7 @@ final class Time extends
          */
         @java.lang.Override
         public int getNanos() {
-            return nanos_;
+            return _nanos;
         }
         /**
          * <pre>
@@ -525,7 +526,7 @@ final class Time extends
          */
         public Builder setNanos(int value) {
 
-            nanos_ = value;
+            _nanos = value;
             bitField0_ |= 0x00000002;
             onChanged();
             return this;
@@ -543,10 +544,11 @@ final class Time extends
          */
         public Builder clearNanos() {
             bitField0_ = (bitField0_ & ~0x00000002);
-            nanos_ = 0;
+            _nanos = 0;
             onChanged();
             return this;
         }
+
         @java.lang.Override
         public final Builder setUnknownFields(
                 final com.google.protobuf.UnknownFieldSet unknownFields) {

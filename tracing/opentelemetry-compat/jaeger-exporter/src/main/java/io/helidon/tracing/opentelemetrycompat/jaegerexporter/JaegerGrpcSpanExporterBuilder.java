@@ -1,8 +1,22 @@
 /*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/*
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-
 package io.helidon.tracing.opentelemetrycompat.jaegerexporter;
 
 import java.net.URI;
@@ -69,6 +83,9 @@ public final class JaegerGrpcSpanExporterBuilder {
   /**
    * Sets the Jaeger endpoint to connect to. If unset, defaults to {@value DEFAULT_ENDPOINT_URL}.
    * The endpoint must start with either http:// or https://.
+   *
+   * @param endpoint endpoint
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setEndpoint(String endpoint) {
     requireNonNull(endpoint, "endpoint");
@@ -80,7 +97,8 @@ public final class JaegerGrpcSpanExporterBuilder {
    * Sets the method used to compress payloads. If unset, compression is disabled. Currently
    * supported compression methods include "gzip" and "none".
    *
-   * @since 1.20.0
+   * @param compressionMethod compression method
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setCompression(String compressionMethod) {
     requireNonNull(compressionMethod, "compressionMethod");
@@ -94,6 +112,10 @@ public final class JaegerGrpcSpanExporterBuilder {
   /**
    * Sets the maximum time to wait for the collector to process an exported batch of spans. If
    * unset, defaults to {@value DEFAULT_TIMEOUT_SECS}s.
+   *
+   * @param timeout timeout
+   * @param unit unit
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setTimeout(long timeout, TimeUnit unit) {
     requireNonNull(unit, "unit");
@@ -105,6 +127,9 @@ public final class JaegerGrpcSpanExporterBuilder {
   /**
    * Sets the maximum time to wait for the collector to process an exported batch of spans. If
    * unset, defaults to {@value DEFAULT_TIMEOUT_SECS}s.
+   *
+   * @param timeout timeout
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setTimeout(Duration timeout) {
     requireNonNull(timeout, "timeout");
@@ -116,13 +141,21 @@ public final class JaegerGrpcSpanExporterBuilder {
    * Sets the certificate chain to use for verifying servers when TLS is enabled. The {@code byte[]}
    * should contain an X.509 certificate collection in PEM format. If not set, TLS connections will
    * use the system default trusted certificates.
+   *
+   * @param trustedCertificatesPem trust certificate
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setTrustedCertificates(byte[] trustedCertificatesPem) {
     delegate.setTrustManagerFromCerts(trustedCertificatesPem);
     return this;
   }
 
-  /** Sets the client key and chain to use for verifying servers when mTLS is enabled. */
+  /** Sets the client key and chain to use for verifying servers when mTLS is enabled.
+   *
+   * @param privateKeyPem private key
+   * @param certificatePem certificate
+   * @return updated builder
+   */
   public JaegerGrpcSpanExporterBuilder setClientTls(byte[] privateKeyPem, byte[] certificatePem) {
     delegate.setKeyManagerFromCerts(privateKeyPem, certificatePem);
     return this;
@@ -131,6 +164,10 @@ public final class JaegerGrpcSpanExporterBuilder {
   /**
    * Sets the "bring-your-own" SSLContext for use with TLS. Users should call this _or_ set raw
    * certificate bytes, but not both.
+   *
+   * @param sslContext SSL context
+   * @param trustManager trust manager
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setSslContext(
       SSLContext sslContext, X509TrustManager trustManager) {
@@ -142,7 +179,8 @@ public final class JaegerGrpcSpanExporterBuilder {
    * Sets the {@link io.opentelemetry.api.metrics.MeterProvider} to use to collect metrics related to export. If not set, uses
    * {@link io.opentelemetry.api.GlobalOpenTelemetry#getMeterProvider()}.
    *
-   * @since 1.15.0
+   * @param meterProvider meter provider
+   * @return updated builder
    */
   public JaegerGrpcSpanExporterBuilder setMeterProvider(MeterProvider meterProvider) {
     requireNonNull(meterProvider, "meterProvider");

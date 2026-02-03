@@ -22,4 +22,7 @@ final class Batch {
     public static final ProtoFieldInfo SPANS = ProtoFieldInfo.create(1, 10, "spans");
 
     public static final ProtoFieldInfo PROCESS = ProtoFieldInfo.create(2, 18, "process");
+
+    private Batch() {
+    }
 }

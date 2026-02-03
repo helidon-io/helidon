@@ -33,4 +33,7 @@ final class KeyValue {
 
     public static final ProtoFieldInfo V_BINARY = ProtoFieldInfo.create(7, 58, "vBinary");
 
+    private KeyValue() {
+    }
+
 }
