@@ -134,7 +134,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <!--
-                    The generated sources trigger excessive Javadoc warnings. The sourcePathExcludes settings in the inherited
+                    The generated sources trigger excessive Javadoc warnings. The sourceFileExcludes settings in the inherited
                      configuration do not work (the plugin is described as interpreting them relative to the source paths)
                      but for this module we can limit Javadoc to the ungenerated sources.
                     -->
