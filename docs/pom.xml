@@ -222,6 +222,7 @@
                         <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
                     </dependencyExcludes>
                     <sourceExcludes>
+                        <exclude>**/src/it</exclude>
                         <exclude>**/src/main/templates</exclude>
                         <exclude>**/src/test/java</exclude>
                         <exclude>**/generated-test-sources</exclude>
