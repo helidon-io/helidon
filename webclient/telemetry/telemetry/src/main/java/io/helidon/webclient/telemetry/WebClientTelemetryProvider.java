@@ -55,33 +55,31 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
      * Creates a new client telemetry service.
      *
      * @param config client telemetry config
-     * @param name component name
+     * @param name   component name
      * @return new webclient service instance for client telemetry
      */
     public WebClientService create(Config config, String name) {
-        if (config.isLeaf()) {
-            subservices.add(WebClientTelemetryMetrics.create());
-            subservices.add(WebClientTelemetryTracing.create());
-        } else {
-            if (config.get("metrics").exists()) {
-                subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
-            }
-            if (config.get("tracing").exists()) {
-                subservices.add(WebClientTelemetryTracing.create(config.get("tracing")));
-            }
+
+        if (config.get("metrics").exists()) {
+            subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
+        }
+        if (config.get("tracing").exists()) {
+            subservices.add(WebClientTelemetryTracing.create(config.get("tracing")));
         }
 
-        return (chain, clientRequest) -> {
+        return subservices.isEmpty()
+                ? WebClientService.Chain::proceed
+                : (chain, clientRequest) -> {
 
-            var subserviceIterator = subservices.listIterator(subservices.size());
-            WebClientService.Chain last = chain;
+                    var subserviceIterator = subservices.listIterator(subservices.size());
+                    WebClientService.Chain last = chain;
 
-            while (subserviceIterator.hasPrevious()) {
-                last = new Subchain(last, subserviceIterator.previous());
-            }
+                    while (subserviceIterator.hasPrevious()) {
+                        last = new Subchain(last, subserviceIterator.previous());
+                    }
 
-            return last.proceed(clientRequest);
-        };
+                    return last.proceed(clientRequest);
+                };
     }
 
     /**
@@ -89,7 +87,7 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
      */
     private record Subchain(WebClientService.Chain next, WebClientService service) implements WebClientService.Chain {
 
-    @Override
+        @Override
         public WebClientServiceResponse proceed(WebClientServiceRequest clientRequest) {
             return service.handle(next, clientRequest);
         }

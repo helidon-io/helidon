@@ -566,14 +566,14 @@ include::{sourcedir}/se/WebClientSnippets.java[tag=snippet_8,indent=0]
 <2> Passing the client configuration node
 
 === Configuring Telemetry
-The telemetry webclient services provide metrics and spans which follow the OpenTelemetry semantic conventions for clients. These are separate from the `services.metrics` and `services.tracing` services described elsewhere on this page.
+The telemetry webclient services provide metrics and tracing spans which follow the OpenTelemetry semantic conventions for clients. These are separate from the `services.metrics` and `services.tracing` services described elsewhere on this page.
 
 To enable the telemetry webclient services, take the following two steps:
 
 * Add the appropriate dependency.
 * Add configuration or code to activate the telemetry services.
 
-To allow metrics and tracing, add the following single dependency to your project:
+To set up metrics and tracing, add the following single dependency to your project:
 
 .Dependency for webclient telemetry metrics and tracing
 [source,xml]
@@ -585,29 +585,20 @@ To allow metrics and tracing, add the following single dependency to your projec
 </dependency>
 ----
 
-To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` which enables `metrics` and `tracing`.
+To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` and, below it, add `metrics`, `tracing`, or both.
 
-.Enabling telemetry using configuration
-[source,yaml]
-----
-client:
-  services:
-    telemetry:
-----
-
-To enable some but not all telemetry services, add `metrics` or `tracing` to the `telemetry` section. The following example activates only telemetry metrics.
-
-.Enabling metrics telemetry using configuration
+.Enabling metrics and tracing telemetry using configuration
 [source,yaml]
 ----
 client:
   services:
     telemetry:
       metrics:
+      tracing:
 ----
 The `metrics` and `tracing` subsections have no explicit settings.
 
-To trigger webclient telemetry collection from your client code, add one or more webclient telemetry services to the webclient builder. This example shows adding only telemetry metrics.
+Alternatively, trigger webclient telemetry collection by modifying your client code to add one or more webclient telemetry services to the webclient builder. This example shows adding only telemetry metrics.
 
 .Enabling telemetry using code
 [source,java]
