@@ -11,6 +11,28 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.3.4]
+
+This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- JSON-RPC: Add support for SSE event sources to JsonRpcResponse [11092](https://github.com/helidon-io/helidon/pull/11092)
+- Metrics: Log warnings (if not configured to suppress) upon multiple instantiations of `MMeterRegistry` [11090](https://github.com/helidon-io/helidon/pull/11090)
+- Tracing: Tolerate test log tracing output that has attributes with no value [11102](https://github.com/helidon-io/helidon/pull/11102)
+- WebServer: Fix issues with trailers in HTTP/2 [11088](https://github.com/helidon-io/helidon/pull/11088)
+- WebServer: Fixed parsing of HTTP prologue for big endian machines [11089](https://github.com/helidon-io/helidon/pull/11089)
+- Dependencies: Upgrade commons-logging to 1.3.5 [11103](https://github.com/helidon-io/helidon/pull/11103)
+- Dependencies: Upgrade GSON to 2.13.2  [11101](https://github.com/helidon-io/helidon/pull/11101)
+- Dependencies: Upgrade slf4j to 2.0.17 [11100](https://github.com/helidon-io/helidon/pull/11100)
+- Dependencies: Upgrade Jackson to 2.21.0 [11099](https://github.com/helidon-io/helidon/pull/11099)
+- Dependencies: Upgrade OCI SDK to 3.78.1 [11095](https://github.com/helidon-io/helidon/pull/11095)
+- Dependencies: Upgrade log4j to 2.25.3 [11094](https://github.com/helidon-io/helidon/pull/11094)
+- Docs: Remove MCP page and its reference in MP docs [11091](https://github.com/helidon-io/helidon/pull/11091)
+- Docs: Update OCI Integration documentation for SE [11093](https://github.com/helidon-io/helidon/pull/11093)
+
 ## [4.3.3]
 
 This release contains bugfixes and dependency upgrades and is recommended for all users of Helidon 4.
@@ -2240,6 +2262,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.3.4]: https://github.com/oracle/helidon/compare/4.3.3...4.3.4
 [4.3.3]: https://github.com/oracle/helidon/compare/4.3.2...4.3.3
 [4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
 [4.3.1]: https://github.com/oracle/helidon/compare/4.3.0...4.3.1
