@@ -18,7 +18,7 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Helidon WebClient Tracing Support.
+ * Helidon WebClient Metrics Support.
  */
 @Features.Name("Metrics")
 @Features.Description("WebClient telemetry metrics support")
