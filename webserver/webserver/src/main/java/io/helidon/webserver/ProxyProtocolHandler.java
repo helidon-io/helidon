@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.zip.CRC32C;
 import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
 
 import io.helidon.http.DirectHandler;
 import io.helidon.http.RequestException;
@@ -110,21 +111,24 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         LOGGER.log(Level.DEBUG, "Reading proxy protocol data for channel %s", channelId);
 
         try {
-            byte[] prefix = new byte[V1_PREFIX.length];
-            var inputStream = socket.getInputStream();
-            int n = inputStream.read(prefix);
-            if (n < V1_PREFIX.length) {
-                throw BAD_PROTOCOL_EXCEPTION;
-            }
-            if (arrayEquals(prefix, V1_PREFIX, V1_PREFIX.length)) {
-                return handleV1Protocol(inputStream);
-            } else if (arrayEquals(prefix, V2_PREFIX_1, V2_PREFIX_1.length)) {
-                return handleV2Protocol(inputStream);
-            } else {
-                throw BAD_PROTOCOL_EXCEPTION;
-            }
+            return handleAnyProtocol(socket.getInputStream());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {
+        byte[] prefix = new byte[V1_PREFIX.length];
+        int n = socketInputStream.read(prefix);
+        if (n < V1_PREFIX.length) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+        if (arrayEquals(prefix, V1_PREFIX, V1_PREFIX.length)) {
+            return handleV1Protocol(socketInputStream);
+        } else if (arrayEquals(prefix, V2_PREFIX_1, V2_PREFIX_1.length)) {
+            return handleV2Protocol(socketInputStream);
+        } else {
+            throw BAD_PROTOCOL_EXCEPTION;
         }
     }
 
@@ -180,7 +184,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     }
 
     static ProxyProtocolData handleV2Protocol(InputStream socketInputStream) throws IOException {
-        final CRC32C checksum = new CRC32C();
+        final Checksum checksum = new DebuggingChecksum("computed", new CRC32C());
+        checksum.update(V2_PREFIX_1);
         final CheckedInputStream inputStream = new CheckedInputStream(socketInputStream, checksum);
 
         // match rest of prefix
@@ -235,37 +240,51 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         final SocketAddress destinationSocketAddress;
         int _exhaustive = switch (family) {
             case UNKNOWN -> {
-                sourceSocketAddress = UNSPECIFIED_ADDRESS;
-                destinationSocketAddress = UNSPECIFIED_ADDRESS;
+                sourceSocketAddress = null;
+                destinationSocketAddress = null;
                 yield 0;
             }
             case IPv4 -> {
                 sourceSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 0, 4)),
-                    (addressBytes[8] << 8) & addressBytes[9]
+                    ((addressBytes[8] & 0xFF) << 8) | (addressBytes[9] & 0xFF)
                 );
                 destinationSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 4, 8)),
-                    (addressBytes[10] << 8) & addressBytes[11]
+                    ((addressBytes[10] & 0xFF) << 8) | (addressBytes[11] & 0xFF)
                 );
                 yield 0;
             }
             case IPv6 -> {
                 sourceSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 0, 16)),
-                    (addressBytes[32] << 8) & addressBytes[33]
+                    ((addressBytes[32] & 0xFF) << 8) | (addressBytes[33] & 0xFF)
                 );
                 destinationSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 16, 32)),
-                    (addressBytes[34] << 8) & addressBytes[35]
+                    ((addressBytes[34] & 0xFF) << 8) | (addressBytes[35] & 0xFF)
                 );
                 yield 0;
             }
             case UNIX -> {
+                int sourceAddressLength = 0;
+                for (int i = 0; i < 108; i++) {
+                    sourceAddressLength = i;
+                    if (addressBytes[i] == 0) {
+                        break;
+                    }
+                }
+                int destinationAddressLength = 0;
+                for (int i = 0; i < 108; i++) {
+                    destinationAddressLength = i;
+                    if (addressBytes[108 + i] == 0) {
+                        break;
+                    }
+                }
                 sourceSocketAddress = UnixDomainSocketAddress.of(
-                    new String(addressBytes, 0, 108, StandardCharsets.US_ASCII));
+                    new String(addressBytes, 0, sourceAddressLength, StandardCharsets.US_ASCII));
                 destinationSocketAddress = UnixDomainSocketAddress.of(
-                    new String(addressBytes, 108, 108, StandardCharsets.US_ASCII));
+                    new String(addressBytes, 108, destinationAddressLength, StandardCharsets.US_ASCII));
                 yield 0;
             }
         };
@@ -281,7 +300,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             } catch (EOFException e) {
                 throw badProtocolException("end of data stream reached before proxy protocol header was complete");
             }
-            return new ProxyProtocolV2DataImpl(family, protocol, command, UNSPECIFIED_ADDRESS, UNSPECIFIED_ADDRESS, List.of());
+            return new ProxyProtocolV2DataImpl(family, protocol, command, null, null, List.of());
         }
 
         // Read the TLV records.
@@ -294,7 +313,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             while (headerLength > 0) {
                 final var parsedTlv = readTlv(socketInputStream, inputStream, checksum);
 
-                if (parsedTlv.tlv instanceof  ProxyProtocolV2Data.TLV.Crc32c crc) {
+                if (parsedTlv.tlv instanceof ProxyProtocolV2Data.TLV.Crc32c crc) {
                     if (checksumTlv == null) {
                         checksumTlv = crc;
                     } else if (checksumTlv.checksum() != crc.checksum()) {
@@ -310,7 +329,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
         // Validate checksum if requested.
         if (checksumTlv != null) {
-            if (checksumTlv.checksum() != checksum.getValue()) {
+            if (checksumTlv.checksum() != (int) checksum.getValue()) {
                 throw badProtocolException("proxy header checksum mismatch");
             }
         }
@@ -320,7 +339,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     record ParsedTLV(int length, ProxyProtocolV2Data.TLV tlv) {}
 
-    private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, CRC32C checksum) throws IOException {
+    private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum) throws IOException {
         int type = checksumStream.read();
         if (type == -1) {
             throw badProtocolException("end of data stream reached before TLV type could be read");
@@ -336,7 +355,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             throw badProtocolException("end of data stream reached before TLV length could be read");
         }
 
-        int length = (lengthHi << 8) | lengthLo;
+        int length = ((lengthHi & 0xFF) << 8) | (lengthLo & 0xFF);
 
         // Enforce length expectations for some types.
         switch (type) {
@@ -368,12 +387,12 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         return new ParsedTLV(3 + length, switch (type) {
             case ProxyProtocolV2Data.TLV.PP2_TYPE_ALPN -> new ProxyProtocolV2Data.TLV.Alpn(value);
             case ProxyProtocolV2Data.TLV.PP2_TYPE_AUTHORITY -> new ProxyProtocolV2Data.TLV.Authority(new String(value, StandardCharsets.UTF_8));
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.TLV.Crc32c(value[0] << 24 | value[1] << 16 | value[2] << 8 | value[3]);
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_NOOP -> new ProxyProtocolV2Data.TLV.Noop();
+            case ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.TLV.Crc32c(bitsToInt32BigEndian(value, 0));
+            case ProxyProtocolV2Data.TLV.PP2_TYPE_NOOP -> new ProxyProtocolV2Data.TLV.Noop(value);
             case ProxyProtocolV2Data.TLV.PP2_TYPE_UNIQUE_ID -> new ProxyProtocolV2Data.TLV.UniqueId(value);
             case ProxyProtocolV2Data.TLV.PP2_TYPE_SSL -> {
                 int client = value[0];
-                int verify = value[1] << 24 | value[2] << 16 | value[3] << 8 | value[4];
+                int verify = bitsToInt32BigEndian(value, 1);
 
                 int remainingBytes = length - 5;
                 var remainingStream = new ByteArrayInputStream(value, 5, remainingBytes);
@@ -394,6 +413,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case ProxyProtocolV2Data.TLV.PP2_TYPE_NETNS -> new ProxyProtocolV2Data.TLV.Netns(new String(value, StandardCharsets.US_ASCII));
             default -> new ProxyProtocolV2Data.TLV.Unregistered(type, value);
         });
+    }
+
+    static int bitsToInt32BigEndian(byte[] bits, int offset) {
+        return (bits[offset] & 0xFF) << 24 | (bits[offset + 1] & 0xFF) << 16 | (bits[offset + 2] & 0xFF) << 8 | (bits[offset + 3] & 0xFF);
     }
 
     private static byte readNext(InputStream inputStream) throws IOException {
@@ -465,14 +488,25 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                                    Protocol protocol,
                                    Command command,
                                    SocketAddress sourceSocketAddress,
-                                   SocketAddress destinationSocketAddress,
+                                   SocketAddress destSocketAddress,
                                    List<TLV> tlvs) implements ProxyProtocolV2Data {
+
+        @Override
+        public SocketAddress sourceSocketAddress() {
+            return sourceSocketAddress == null ? UNSPECIFIED_ADDRESS : sourceSocketAddress;
+        }
+
+        @Override
+        public SocketAddress destSocketAddress() {
+            return destSocketAddress == null ? UNSPECIFIED_ADDRESS : destSocketAddress;
+        }
 
         @Override
         public String sourceAddress() {
             return switch (sourceSocketAddress) {
                 case InetSocketAddress socket -> socket.getHostString();
                 case UnixDomainSocketAddress unix -> unix.toString();
+                case null -> "";
                 // This should never happen because only the ProxyProtocolHandler code ever
                 // constructs a ProxyProtocolV2DataImpl instance.
                 default -> throw new IllegalStateException("Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
@@ -481,9 +515,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
         @Override
         public String destAddress() {
-            return switch (destinationSocketAddress) {
+            return switch (destSocketAddress) {
                 case InetSocketAddress socket -> socket.getHostString();
                 case UnixDomainSocketAddress unix -> unix.toString();
+                case null -> "";
                 // This should never happen because only the ProxyProtocolHandler code ever
                 // constructs a ProxyProtocolV2DataImpl instance.
                 default -> throw new IllegalStateException("Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
@@ -500,7 +535,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
         @Override
         public int destPort() {
-            if (destinationSocketAddress instanceof InetSocketAddress inet) {
+            if (destSocketAddress instanceof InetSocketAddress inet) {
                 return inet.getPort();
             }
             return -1;

@@ -1,7 +1,9 @@
 package io.helidon.webserver;
 
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Binary (V2) Proxy protocol data parsed by {@link ProxyProtocolHandler}. This is a specialization of
@@ -61,6 +63,19 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             public int type() {
                 return PP2_TYPE_ALPN;
             }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (!(o instanceof final Alpn alpn)) {
+                    return false;
+                }
+                return Objects.deepEquals(protocol, alpn.protocol);
+            }
+
+            @Override
+            public int hashCode() {
+                return Arrays.hashCode(protocol);
+            }
         }
 
         /**
@@ -89,6 +104,11 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             public int type() {
                 return  PP2_TYPE_CRC32C;
             }
+
+            @Override
+            public String toString() {
+                return String.format("Crc32c(0x%08X)", checksum);
+            }
         }
 
         /**
@@ -96,10 +116,23 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * bytes. Can be used for data padding or alignment. Note that it can be used
          * to align only by 3 or more bytes because a TLV can not be smaller than that.
          */
-        record Noop() implements TLV {
+        record Noop(byte[] bytes) implements TLV {
             @Override
             public int type() {
                 return PP2_TYPE_NOOP;
+            }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (!(o instanceof final Noop noop)) {
+                    return false;
+                }
+                return Objects.deepEquals(bytes, noop.bytes);
+            }
+
+            @Override
+            public int hashCode() {
+                return Arrays.hashCode(bytes);
             }
         }
 
@@ -114,6 +147,19 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             @Override
             public int type() {
                 return PP2_TYPE_UNIQUE_ID;
+            }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (!(o instanceof final UniqueId uniqueId)) {
+                    return false;
+                }
+                return Objects.deepEquals(id, uniqueId.id);
+            }
+
+            @Override
+            public int hashCode() {
+                return Arrays.hashCode(id);
             }
         }
 
@@ -234,6 +280,19 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             public int type() {
                 return  type;
             }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (!(o instanceof final Unregistered that)) {
+                    return false;
+                }
+                return type == that.type && Objects.deepEquals(value, that.value);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(type, Arrays.hashCode(value));
+            }
         }
     }
 
@@ -255,7 +314,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
      * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
      * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
      */
-    SocketAddress destinationSocketAddress();
+    SocketAddress destSocketAddress();
 
     /**
      * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
