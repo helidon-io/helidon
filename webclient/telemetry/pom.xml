@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,41 +20,19 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-project</artifactId>
         <version>4.4.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-project</artifactId>
-    <name>Helidon WebClient Project</name>
+    <artifactId>helidon-webclient-telemetry-project</artifactId>
+    <name>Helidon WebClient Telemetry Project</name>
 
     <packaging>pom</packaging>
 
     <modules>
-        <module>api</module>
-        <module>discovery</module>
-        <module>dns-resolver</module>
-        <module>http1</module>
-        <module>http2</module>
-        <module>metrics</module>
-        <module>security</module>
-        <module>sse</module>
-        <module>tracing</module>
-        <module>webclient</module>
-        <module>websocket</module>
-        <module>grpc</module>
-        <module>grpc-tracing</module>
-        <module>context</module>
-        <module>jsonrpc</module>
         <module>telemetry</module>
+        <module>metrics</module>
+        <module>tracing</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
