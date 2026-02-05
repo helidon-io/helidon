@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,9 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final Consumer<Boolean> entityRequestedCallback;
     private InputStream inputStream;
 
+    private final AtomicBoolean buffered = new AtomicBoolean();
+    private byte[] bufferedEntity;
+
     /**
      * Create a new base.
      *
@@ -85,15 +88,20 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
     @Override
     public InputStream inputStream() {
-        if (consumed.compareAndSet(false, true)) {
-            if (!entityRequested.getAndSet(true)) {
-                entityRequestedCallback.accept(false);
-            }
+        if (buffered.get()) {
+            return new ByteArrayInputStream(bufferedEntity);
+        }
+        return createInputStream();
+    }
 
-            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
-            return inputStream;
-        } else {
-            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
+    @Override
+    public void buffer() {
+        if (buffered.compareAndSet(false, true)) {
+            try (InputStream is = createInputStream()) {
+                bufferedEntity = is.readAllBytes();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
@@ -215,6 +223,19 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         public void run() {
             finishedReading.set(true);
             original.run();
+        }
+    }
+
+    private InputStream createInputStream() {
+        if (consumed.compareAndSet(false, true)) {
+            if (!entityRequested.getAndSet(true)) {
+                entityRequestedCallback.accept(false);
+            }
+
+            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
+            return inputStream;
+        } else {
+            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
         }
     }
 
