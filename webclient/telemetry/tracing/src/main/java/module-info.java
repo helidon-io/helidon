@@ -25,12 +25,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"WebClient", "Telemetry", "Tracing"})
 @Features.Preview
-
 module io.helidon.webclient.telemetry.tracing {
     requires io.helidon.webclient.api;
     requires io.helidon.tracing;
-    requires io.helidon.common.features.api;
     requires io.helidon.config;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.webclient.telemetry.tracing;
 }
