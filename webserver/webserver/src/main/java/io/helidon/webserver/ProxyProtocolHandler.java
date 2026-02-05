@@ -184,7 +184,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     }
 
     static ProxyProtocolData handleV2Protocol(InputStream socketInputStream) throws IOException {
-        final Checksum checksum = new DebuggingChecksum("computed", new CRC32C());
+        final Checksum checksum = new CRC32C();
         checksum.update(V2_PREFIX_1);
         final CheckedInputStream inputStream = new CheckedInputStream(socketInputStream, checksum);
 
@@ -192,45 +192,44 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         matchV2RemainingPrefix(inputStream, V2_PREFIX_2);
 
         // only accept version 2
-        int b = readNext(inputStream);
-        if (b >>> 4 != 0x02) {
-            throw badProtocolException(String.format("invalid proxy version bits %#04x", (b >> 4)));
+        final int versionAndCommand = readNext(inputStream);
+        if (versionAndCommand >>> 4 != 0x02) {
+            throw badProtocolException(String.format("invalid proxy version bits %#04x", (versionAndCommand >> 4)));
         }
-        var command = switch (b & 0x0F) {
+        final var command = switch (versionAndCommand & 0x0F) {
             case 0x00 -> ProxyProtocolV2Data.Command.LOCAL;
             case 0x01 -> ProxyProtocolV2Data.Command.PROXY;
-            default -> throw badProtocolException(String.format("unexpected V2 command bits %#04x", (b & 0x0F)));
+            default -> throw badProtocolException(String.format("unexpected V2 command bits %#04x", (versionAndCommand & 0x0F)));
         };
 
         // protocol and family
-        b = readNext(inputStream);
-        var family = switch (b >>> 4) {
+        final int protoAndFamily = readNext(inputStream);
+        final var family = switch (protoAndFamily >>> 4) {
             case 0x0 -> Family.UNKNOWN;
             case 0x1 -> Family.IPv4;
             case 0x2 -> Family.IPv6;
             case 0x3 -> Family.UNIX;
-            default -> throw badProtocolException(String.format("invalid V2 family bits %#04x", (b >>> 4)));
+            default -> throw badProtocolException(String.format("invalid V2 family bits %#04x", (protoAndFamily >>> 4)));
         };
-        var protocol = switch (b & 0x0F) {
+        final var protocol = switch (protoAndFamily & 0x0F) {
             case 0x0 -> Protocol.UNKNOWN;
             case 0x1 -> Protocol.TCP;
             case 0x2 -> Protocol.UDP;
-            default -> throw badProtocolException(String.format("invalid V2 transport protocol bits %#04x", (b >>> 4)));
+            default -> throw badProtocolException(String.format("invalid V2 transport protocol bits %#04x", protoAndFamily & 0x0F));
         };
 
         // length
-        b = readNext(inputStream);
-        int headerLength = ((b << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
+        final int headerLength = ((readNext(inputStream) << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
 
         // Read address bytes.
-        int addressBytesLength = switch (family) {
+        final int addressBytesLength = switch (family) {
             case UNKNOWN -> 0;
             case IPv4 -> 12;
             case IPv6 -> 36;
             case UNIX -> 216;
         };
         final byte[] addressBytes = new byte[addressBytesLength];
-        int addressBytesRead = inputStream.readNBytes(addressBytes, 0, addressBytesLength);
+        final int addressBytesRead = inputStream.readNBytes(addressBytes, 0, addressBytesLength);
         if (addressBytesRead != addressBytesLength) {
             throw badProtocolException("insufficient proxy address bytes present in data stream");
         }
@@ -238,7 +237,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         // decode addresses and ports
         final SocketAddress sourceSocketAddress;
         final SocketAddress destinationSocketAddress;
-        int _exhaustive = switch (family) {
+        final int _exhaustive = switch (family) {
             case UNKNOWN -> {
                 sourceSocketAddress = null;
                 destinationSocketAddress = null;
@@ -247,22 +246,22 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case IPv4 -> {
                 sourceSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 0, 4)),
-                    ((addressBytes[8] & 0xFF) << 8) | (addressBytes[9] & 0xFF)
+                    bitsToInt16BigEndian(addressBytes, 8)
                 );
                 destinationSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 4, 8)),
-                    ((addressBytes[10] & 0xFF) << 8) | (addressBytes[11] & 0xFF)
+                    bitsToInt16BigEndian(addressBytes, 10)
                 );
                 yield 0;
             }
             case IPv6 -> {
                 sourceSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 0, 16)),
-                    ((addressBytes[32] & 0xFF) << 8) | (addressBytes[33] & 0xFF)
+                    bitsToInt16BigEndian(addressBytes, 32)
                 );
                 destinationSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 16, 32)),
-                    ((addressBytes[34] & 0xFF) << 8) | (addressBytes[35] & 0xFF)
+                    bitsToInt16BigEndian(addressBytes, 34)
                 );
                 yield 0;
             }
@@ -290,13 +289,13 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         };
 
         // Account for the consumed address bytes.
-        headerLength -= addressBytesLength;
+        int remainingHeaderLength = headerLength - addressBytesLength;
 
         // If the family was unspecified, then we have no way of distinguishing address bytes from TLV bytes,
         // so we cannot parse any TLVs that may be present. All we can do is skip over the rest of the proxy header.
         if (family == Family.UNKNOWN) {
             try {
-                inputStream.skipNBytes(headerLength);
+                inputStream.skipNBytes(remainingHeaderLength);
             } catch (EOFException e) {
                 throw badProtocolException("end of data stream reached before proxy protocol header was complete");
             }
@@ -310,8 +309,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             tlvs = List.of();
         } else {
             final var tlvsBuilder = new ArrayList<ProxyProtocolV2Data.TLV>();
-            while (headerLength > 0) {
-                final var parsedTlv = readTlv(socketInputStream, inputStream, checksum);
+            while (remainingHeaderLength > 0) {
+                final var parsedTlv = readTlv(socketInputStream, inputStream, checksum, remainingHeaderLength);
 
                 if (parsedTlv.tlv instanceof ProxyProtocolV2Data.TLV.Crc32c crc) {
                     if (checksumTlv == null) {
@@ -321,7 +320,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                     }
                 }
 
-                headerLength -= parsedTlv.length;
+                remainingHeaderLength -= parsedTlv.length;
                 tlvsBuilder.add(parsedTlv.tlv);
             }
             tlvs = Collections.unmodifiableList(tlvsBuilder);
@@ -339,7 +338,11 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     record ParsedTLV(int length, ProxyProtocolV2Data.TLV tlv) {}
 
-    private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum) throws IOException {
+    private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum, int allowedBytesToRead) throws IOException {
+        if (allowedBytesToRead < 3) {
+            throw badProtocolException("insufficient remaining bytes to read TLV type and length");
+        }
+
         int type = checksumStream.read();
         if (type == -1) {
             throw badProtocolException("end of data stream reached before TLV type could be read");
@@ -356,6 +359,9 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         }
 
         int length = ((lengthHi & 0xFF) << 8) | (lengthLo & 0xFF);
+        if (length > allowedBytesToRead - 3) {
+            throw badProtocolException("TLV length exceeds remaining available header bytes");
+        }
 
         // Enforce length expectations for some types.
         switch (type) {
@@ -398,7 +404,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 var remainingStream = new ByteArrayInputStream(value, 5, remainingBytes);
                 var subTlvs = new ArrayList<ProxyProtocolV2Data.TLV>();
                 while (remainingBytes > 0) {
-                    var parsedTlv = readTlv(remainingStream, remainingStream, checksum);
+                    var parsedTlv = readTlv(remainingStream, remainingStream, checksum, remainingBytes);
                     remainingBytes -= parsedTlv.length;
                     subTlvs.add(parsedTlv.tlv);
                 }
@@ -417,6 +423,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     static int bitsToInt32BigEndian(byte[] bits, int offset) {
         return (bits[offset] & 0xFF) << 24 | (bits[offset + 1] & 0xFF) << 16 | (bits[offset + 2] & 0xFF) << 8 | (bits[offset + 3] & 0xFF);
+    }
+
+    static int bitsToInt16BigEndian(byte[] bits, int offset) {
+        return (bits[offset] & 0xFF) << 8 | (bits[offset + 1] & 0xFF);
     }
 
     private static byte readNext(InputStream inputStream) throws IOException {
