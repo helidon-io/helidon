@@ -298,31 +298,6 @@ class ProxyProtocolHandlerTest {
         }
     }
 
-    byte[] makeHeader(ProxyProtocolHandler.ProxyProtocolDataImpl data) {
-        final var sb = new StringBuilder();
-        sb.append("PROXY ");
-        sb.append(switch (data.protocol()) {
-            case UNKNOWN -> "UNKNOWN";
-            case TCP -> switch (data.family()) {
-                case UNKNOWN -> "UNKNOWN";
-                case IPv4 -> "TCP4";
-                case IPv6 -> "TCP6";
-                case UNIX -> throw new IllegalArgumentException("V1 proxy protocol does not allow Unix address family");
-            };
-            case UDP -> throw new IllegalArgumentException("V1 proxy protocol does not allow UDP");
-        });
-        sb.append(' ');
-        sb.append(data.sourceAddress());
-        sb.append(' ');
-        sb.append(data.destAddress());
-        sb.append(' ');
-        sb.append(data.sourcePort());
-        sb.append(' ');
-        sb.append(data.destPort());
-        sb.append("\r\n");
-        return sb.toString().getBytes(StandardCharsets.US_ASCII);
-    }
-
     record V2Header(byte[] bytes, int checksum) {}
 
     V2Header makeHeader(ProxyProtocolHandler.ProxyProtocolV2DataImpl data) {
@@ -389,7 +364,7 @@ class ProxyProtocolHandlerTest {
             header[15] = (byte) (addressLength & 0xFF);
 
             // Calculate and write the checksum if necessary
-            Checksum crc = new DebuggingChecksum("construct", new CRC32C());
+            Checksum crc = new CRC32C();
             crc.update(header);
             int checksum = (int) crc.getValue();
             byte[] checksumBytes = new byte[4];
