@@ -166,20 +166,18 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testMapToArrayWithParser() {
-        final String PROPS = ""
-                + "uri-array.0=http://localhost\n"
-                + "uri-array.1=http://localhost\n"
-                + "uri-array.2=http://localhost\n"
-                + "uri-localhost=http://localhost\n"
-                + "uri.array.0=http://localhost\n"
-                + "uri.array.1=http://localhost\n"
-                + "uri.array.2=http://localhost\n"
-                + "uri.localhost=http://localhost\n";
-
-        Config config = Config.builder()
-                .sources(ConfigSources.create(PROPS, MediaTypes.TEXT_PROPERTIES))
-                .addParser(ConfigParsers.properties())
-                .build();
+        Config config = Config.create(
+                """
+                        uri-array.0=http://localhost
+                        uri-array.1=http://localhost
+                        uri-array.2=http://localhost
+                        uri-localhost=http://localhost
+                        uri.array.0=http://localhost
+                        uri.array.1=http://localhost
+                        uri.array.2=http://localhost
+                        uri.localhost=http://localhost
+                        """,
+                MediaTypes.TEXT_PROPERTIES);
 
         assertThat(config.get("uri").asNodeList().get().size(), CoreMatchers.is(2));
         assertThat(config.get("uri.array").asNodeList().get().size(), CoreMatchers.is(3));
