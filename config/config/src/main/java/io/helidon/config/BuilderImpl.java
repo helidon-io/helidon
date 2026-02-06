@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -52,6 +53,8 @@ import io.helidon.service.registry.ServiceRegistry;
  * {@link Config} Builder implementation.
  */
 class BuilderImpl implements Config.Builder {
+    private static final System.Logger LOGGER = System.getLogger(Config.Builder.class.getName());
+
     /*
      * Config sources
      */
@@ -334,6 +337,19 @@ class BuilderImpl implements Config.Builder {
         ConfigContextImpl context = new ConfigContextImpl(changesExecutor, buildParsers(parserServicesEnabled, parsers));
         ConfigSourcesRuntime configSources = buildConfigSources(context);
 
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            for (var filterProvider : filterProviders) {
+                LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                        + "] Adding filter provider: " + filterProvider);
+            }
+            LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                    + "] Key resolving enabled: " + keyResolving);
+            LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                    + "] Key resolving fail on missing: " + keyResolvingFailOnMissing);
+            LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                    + "] Cache filter results: " + cachingEnabled);
+        }
+
         //config provider
         return createProvider(configMapperManager,
                               configSources,
@@ -442,6 +458,13 @@ class BuilderImpl implements Config.Builder {
                     .forEach(targetSources::add);
         }
 
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            for (ConfigSourceRuntimeImpl targetSource : targetSources) {
+                LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                        + "] Adding config source: " + targetSource.configSource());
+            }
+        }
+
         // targetSources now contain runtimes correctly ordered for each config source
         return new ConfigSourcesRuntime(targetSources, mergingStrategy);
     }
@@ -468,10 +491,16 @@ class BuilderImpl implements Config.Builder {
     //
     // utils
     //
-    static List<ConfigParser> buildParsers(boolean servicesEnabled, List<ConfigParser> userDefinedParsers) {
+    List<ConfigParser> buildParsers(boolean servicesEnabled, List<ConfigParser> userDefinedParsers) {
         List<ConfigParser> parsers = new LinkedList<>(userDefinedParsers);
         if (servicesEnabled) {
             parsers.addAll(loadParserServices());
+        }
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            for (var parser : parsers) {
+                LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
+                        + "] Adding parser: " + parser);
+            }
         }
         return parsers;
     }

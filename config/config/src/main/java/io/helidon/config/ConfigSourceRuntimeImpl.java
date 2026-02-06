@@ -209,6 +209,10 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         return configSource.equals(that.configSource);
     }
 
+    ConfigSource configSource() {
+        return configSource;
+    }
+
     private synchronized void initialLoad() {
         if (dataLoaded) {
             return;
