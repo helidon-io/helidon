@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,10 +109,16 @@ public class ConfigDocs {
             title = title.substring("io_helidon_".length());
             int i = title.lastIndexOf('_');
             if (i != -1) {
-                String simpleName = title.substring(i + 1);
-                String thePackage = title.substring(0, i);
-                title = simpleName + " (" + thePackage.replace('_', '.') + ")";
+                String fqName = title.replace('_', '.');
+                // we want to keep top level type for nested classes
+                String simpleName = guessName(fqName);
+                int indexOfSimple = fqName.lastIndexOf(simpleName);
+                // package (without trailing dot)
+                String thePackage = fqName.substring(0, indexOfSimple - 1);
+                title = simpleName + " (" + thePackage + ")";
             }
+        } else {
+            title = title.replace('_', '.');
         }
         return title;
     }
@@ -554,6 +560,8 @@ public class ConfigDocs {
             if (exists.apply(type)) {
                 return "xref:" + ConfigDocs.RELATIVE_PATH_ADOC + type.replace('.', '_') + ".adoc[" + displayType + "]";
             }
+        } else if (exists.apply(type)) {
+            return "xref:" + ConfigDocs.RELATIVE_PATH_ADOC + type.replace('.', '_') + ".adoc[" + displayType + "]";
         }
         return displayType;
     }
@@ -571,8 +579,8 @@ public class ConfigDocs {
         if (lastIndex == -1) {
             return byKind(kind, type);
         }
-        String name = type.substring(lastIndex + 1);
-        if ("Builder".equals(name)) {
+        String className = type.substring(lastIndex + 1);
+        if ("Builder".equals(className)) {
             String base = type.substring(0, lastIndex);
             lastIndex = base.lastIndexOf('.');
             if (lastIndex == -1) {
@@ -582,8 +590,27 @@ public class ConfigDocs {
                 return byKind(kind, base.substring(lastIndex + 1) + ".Builder");
             }
         } else {
-            return byKind(kind, name);
+            // we may have a nested type (such as java.lang.System.Logger)
+            return byKind(kind, guessName(type));
         }
+    }
+
+    private static String guessName(String type) {
+        // find all elements from the end that start with upper case letter
+        String[] elements = type.split("\\.");
+        List<String> names = new ArrayList<>();
+        for (int i = elements.length - 1; i >= 0; i--) {
+            String element = elements[i];
+            if (Character.isUpperCase(element.charAt(0))) {
+                names.addFirst(element);
+            } else {
+                break;
+            }
+        }
+        if (names.isEmpty()) {
+            return elements[elements.length - 1];
+        }
+        return String.join(".", names);
     }
 
     private static String byKind(CmOption.Kind kind, String type) {

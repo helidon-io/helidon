@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ Helidon Builder is an API designed for generating immutable objects using the bu
 === Terminology
 
 * *Blueprint*: A package-private interface that serves as the source for code generation.
-* *Prototype*: The generated code extending the blueprint.
+* *Prototyped*: The generated code extending the blueprint.
 It is part of the public API and includes the fluent builder implementation and static factory methods.
 * *Runtime Type*: An optional, user-defined type created using the prototype.
 It is useful for constructing custom objects beyond the generated prototype.
@@ -144,7 +144,7 @@ The blueprint serves as the input for code generation, and the resulting prototy
 - Must be a package-private interface.
 - Its name must end with `Blueprint`.
 The prototype's name will be the blueprint's name without this suffix.
-- Fields are defined as getter methods.
+- Options are defined as getter methods.
 
 2. Generated Output:
 +
@@ -225,7 +225,7 @@ This scenario extends the basic builder functionality by enabling the generated 
 3. Default values can be set using `@Option.Default`.
 If a configuration value is missing, the default is used.
 4. `null` values are not supported; use `Optional` for optional fields.
-5. Lists and Maps are supported and initialized from configuration.
+5. Lists, Sets, and Maps are supported and initialized from configuration.
 6. You can customize and validate fields using the @Option API.
 Advanced programmatic customization is possible by implementing a custom `BuilderDecorator` via `@Prototype.Blueprint(decorator = MyDecorator.class)`.
 
@@ -308,6 +308,14 @@ Creates a runtime type from a prototype instance.
 Creates a runtime type from a consumer to configure the prototype builder.
 5. *Prototype Integration:* +
 The blueprint must include the `@Prototype.Blueprint` annotation and extend `Prototype.Factory<RuntimeType>`.
+
+
+Note that requirements 3 - 5 can be omitted when using a third party runtime type (i.e. `PrivateKey`), in such a case the setup should be:
+
+1. Create a blueprint that extends `Prototype.Factory<RuntimeType>` (same as above)
+2. Add a custom method annotated with `@Prototype.RuntimeTypeFactoryMethod` (custom methods can be configured on blueprint using `@Prototype.CustomMethods`, the custom method is a static method with signature `RuntimeType create(Prototype)`), method name is arbitrary
+
+This will generate a prototype that has a method `build()` that builds the `RuntimeType`.
 
 === Example
 
@@ -437,6 +445,7 @@ Interfaces:
 | `Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java's deprecation for other cases, they will be honored in the generated code
 | `Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment
 | `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)
+| `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype
 |===
 
 To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!).

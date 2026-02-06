@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ class BuilderCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(BuilderCodegen.class);
 
     // all blueprint types (for validation)
-    private final Set<TypeName> blueprintTypes = new HashSet<>();
+    private final Set<PrototypeInfo> blueprintTypes = new HashSet<>();
     // all types from service loader that should be supported by ServiceRegistry
     private final Set<String> serviceLoaderContracts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
@@ -126,9 +126,6 @@ class BuilderCodegen implements CodegenExtension {
     @Override
     public void process(RoundContext roundContext) {
         Collection<TypeInfo> blueprints = roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT);
-        blueprintTypes.addAll(blueprints.stream()
-                                      .map(TypeInfo::typeName)
-                                      .toList());
 
         List<TypeInfo> blueprintInterfaces = blueprints.stream()
                 .filter(it -> it.kind() == ElementKind.INTERFACE)
@@ -391,6 +388,8 @@ class BuilderCodegen implements CodegenExtension {
 
         // now we have final prototype info - processed by all extensions, next we start collecting options
         PrototypeInfo prototypeInfo = fixFactoryMethods(tmpPrototypeInfo, newOptions);
+        // add for validation, but only once we have all the information
+        blueprintTypes.add(prototypeInfo);
 
         // now for each provider, add discoverServices builder option (this is required for our code to work)
         List<OptionInfo> discoverServicesOptions = newOptions.stream()
@@ -861,22 +860,17 @@ class BuilderCodegen implements CodegenExtension {
         }
     }
 
-    private Collection<? extends ValidationTask> addBlueprintsForValidation(RoundContext roundContext, Set<TypeName> blueprints) {
+    private Collection<? extends ValidationTask> addBlueprintsForValidation(RoundContext roundContext,
+                                                                            Set<PrototypeInfo> blueprints) {
         List<ValidationTask> result = new ArrayList<>();
 
-        for (TypeName blueprintType : blueprints) {
-            TypeInfo blueprint = ctx.typeInfo(blueprintType)
-                    .orElseThrow(() -> new CodegenException("Could not get TypeInfo for " + blueprintType.fqName(),
-                                                            blueprintType));
+        for (PrototypeInfo prototypeInfo : blueprints) {
+            result.add(new ValidationTask.ValidateBlueprint(prototypeInfo));
 
-            result.add(new ValidationTask.ValidateBlueprint(blueprint));
-            var typeContext = FactoryPrototypeInfo.create(roundContext, blueprint);
-
-            if (typeContext.runtimeType().isPresent()) {
-                result.add(new ValidationTask.ValidateBlueprintExtendsFactory(typeContext.prototypeType(),
-                                                                              blueprint,
-                                                                              toTypeInfo(blueprint,
-                                                                                         typeContext.runtimeType().get())));
+            if (prototypeInfo.runtimeType().isPresent()) {
+                result.add(new ValidationTask.ValidateBlueprintExtendsFactory(prototypeInfo,
+                                                                              toTypeInfo(prototypeInfo.blueprint(),
+                                                                                         prototypeInfo.runtimeType().get())));
             }
         }
 

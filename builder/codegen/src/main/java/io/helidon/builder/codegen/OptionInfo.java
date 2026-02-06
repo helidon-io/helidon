@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,6 +256,15 @@ public interface OptionInfo extends Prototype.Api, Annotated {
     Optional<String> paramDescription();
 
     /**
+     * A prototype that can build this option type.
+     *
+     * @return prototyped by type, or empty if not annotated
+     */
+    default Optional<TypeName> prototypedBy() {
+        return Optional.empty();
+    }
+
+    /**
      * Fluent API builder base for {@link io.helidon.builder.codegen.OptionInfo}.
      *
      * @param <BUILDER>   type of the builder extending this abstract builder
@@ -296,6 +305,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         private TypeInfo declaringType;
         private TypeName declaredType;
         private TypeName decorator;
+        private TypeName prototypedBy;
 
         /**
          * Protected to support extensibility.
@@ -342,6 +352,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             runtimeType(prototype.runtimeType());
             description(prototype.description());
             paramDescription(prototype.paramDescription());
+            prototypedBy(prototype.prototypedBy());
             if (!this.isAnnotationsMutated) {
                 this.annotations.clear();
             }
@@ -398,6 +409,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             builder.runtimeType().ifPresent(this::runtimeType);
             builder.description().ifPresent(this::description);
             builder.paramDescription().ifPresent(this::paramDescription);
+            builder.prototypedBy().ifPresent(this::prototypedBy);
             if (this.isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
                     addAnnotations(builder.annotations());
@@ -1296,6 +1308,58 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * Clear existing value of prototypedBy.
+         *
+         * @return updated builder instance
+         * @see #prototypedBy()
+         */
+        public BUILDER clearPrototypedBy() {
+            this.prototypedBy = null;
+            return self();
+        }
+
+        /**
+         * A prototype that can build this option type.
+         *
+         * @param prototypedBy prototyped by type, or empty if not annotated
+         * @return updated builder instance
+         * @see #prototypedBy()
+         */
+        public BUILDER prototypedBy(TypeName prototypedBy) {
+            Objects.requireNonNull(prototypedBy);
+            this.prototypedBy = prototypedBy;
+            return self();
+        }
+
+        /**
+         * A prototype that can build this option type.
+         *
+         * @param consumer consumer of builder of prototyped by type, or empty if not annotated
+         * @return updated builder instance
+         * @see #prototypedBy()
+         */
+        public BUILDER prototypedBy(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.prototypedBy(builder.build());
+            return self();
+        }
+
+        /**
+         * A prototype that can build this option type.
+         *
+         * @param supplier supplier of prototyped by type, or empty if not annotated
+         * @return updated builder instance
+         * @see #prototypedBy()
+         */
+        public BUILDER prototypedBy(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.prototypedBy(supplier.get());
+            return self();
+        }
+
+        /**
          * Clear all annotations.
          *
          * @return updated builder instance
@@ -1683,6 +1747,15 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * A prototype that can build this option type.
+         *
+         * @return prototyped by type, or empty if not annotated
+         */
+        public Optional<TypeName> prototypedBy() {
+            return Optional.ofNullable(prototypedBy);
+        }
+
+        /**
          * Annotations option. Defined in {@link io.helidon.common.types.Annotated#annotations()}
          *
          * @return the annotations option
@@ -1729,6 +1802,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                     + "runtimeType=" + runtimeType + ","
                     + "description=" + description + ","
                     + "paramDescription=" + paramDescription + ","
+                    + "prototypedBy=" + prototypedBy
                     + "annotations=" + annotations + ","
                     + "inheritedAnnotations=" + inheritedAnnotations
                     + "}";
@@ -1930,6 +2004,20 @@ public interface OptionInfo extends Prototype.Api, Annotated {
         }
 
         /**
+         * A prototype that can build this option type.
+         *
+         * @param prototypedBy prototyped by type, or empty if not annotated
+         * @return updated builder instance
+         * @see #prototypedBy()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER prototypedBy(Optional<? extends TypeName> prototypedBy) {
+            Objects.requireNonNull(prototypedBy);
+            this.prototypedBy = prototypedBy.map(TypeName.class::cast).orElse(this.prototypedBy);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class OptionInfoImpl implements OptionInfo {
@@ -1954,6 +2042,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             private final Optional<RuntimeTypeInfo> runtimeType;
             private final Optional<TypeInfo> declaringType;
             private final Optional<TypeName> decorator;
+            private final Optional<TypeName> prototypedBy;
             private final Optional<TypedElementInfo> interfaceMethod;
             private final Optional<String> description;
             private final Optional<String> paramDescription;
@@ -1995,6 +2084,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                 this.runtimeType = builder.runtimeType().map(Function.identity());
                 this.description = builder.description().map(Function.identity());
                 this.paramDescription = builder.paramDescription().map(Function.identity());
+                this.prototypedBy = builder.prototypedBy().map(Function.identity());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
@@ -2130,6 +2220,11 @@ public interface OptionInfo extends Prototype.Api, Annotated {
             }
 
             @Override
+            public Optional<TypeName> prototypedBy() {
+                return prototypedBy;
+            }
+
+            @Override
             public List<Annotation> annotations() {
                 return annotations;
             }
@@ -2168,6 +2263,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                         + "runtimeType=" + runtimeType + ","
                         + "description=" + description + ","
                         + "paramDescription=" + paramDescription + ","
+                        + "prototypedBy=" + prototypedBy
                         + "annotations=" + annotations + ","
                         + "inheritedAnnotations=" + inheritedAnnotations
                         + "}";
@@ -2208,7 +2304,8 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                         && Objects.equals(description, other.description())
                         && Objects.equals(paramDescription, other.paramDescription())
                         && Objects.equals(annotations, other.annotations())
-                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations())
+                        && Objects.equals(prototypedBy, other.prototypedBy());
             }
 
             @Override
@@ -2239,6 +2336,7 @@ public interface OptionInfo extends Prototype.Api, Annotated {
                                     runtimeType,
                                     description,
                                     paramDescription,
+                                    prototypedBy,
                                     annotations,
                                     inheritedAnnotations);
             }

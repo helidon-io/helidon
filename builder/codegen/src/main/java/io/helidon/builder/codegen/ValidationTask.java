@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,8 +166,8 @@ abstract class ValidationTask {
     static class ValidateBlueprint extends ValidationTask {
         private final TypeInfo blueprint;
 
-        ValidateBlueprint(TypeInfo blueprint) {
-            this.blueprint = blueprint;
+        ValidateBlueprint(PrototypeInfo blueprint) {
+            this.blueprint = blueprint.blueprint();
         }
 
         @Override
@@ -224,10 +224,12 @@ abstract class ValidationTask {
         private final TypeName configObjectType;
         private final TypeInfo blueprintInfo;
         private final TypeInfo runtimeTypeInfo;
+        private final PrototypeInfo prototypeInfo;
 
-        ValidateBlueprintExtendsFactory(TypeName configObjectType, TypeInfo blueprintInfo, TypeInfo runtimeTypeInfo) {
-            this.configObjectType = configObjectType;
-            this.blueprintInfo = blueprintInfo;
+        ValidateBlueprintExtendsFactory(PrototypeInfo prototypeInfo, TypeInfo runtimeTypeInfo) {
+            this.prototypeInfo = prototypeInfo;
+            this.configObjectType = prototypeInfo.prototypeType();
+            this.blueprintInfo = prototypeInfo.blueprint();
             this.runtimeTypeInfo = runtimeTypeInfo;
 
             TypeName configObjectBuilder = TypeName.builder()
@@ -244,6 +246,21 @@ abstract class ValidationTask {
 
         @Override
         public void validate(Errors.Collector errors) {
+            // we may have a third-party runtime type, in which case we just need a custom factory method
+            var foundFactoryMethod = prototypeInfo
+                    .runtimeTypeFactories()
+                    .stream()
+                    .flatMap(it -> it.factoryMethod().stream())
+                    .filter(it -> it.returnType().equals(runtimeTypeInfo.typeName()))
+                    .filter(it -> it.parameterType().isPresent())
+                    .filter(it -> it.parameterType().get().className().equals(prototypeInfo.prototypeType().className()))
+                    .findFirst();
+
+            if (foundFactoryMethod.isPresent()) {
+                // we have a custom method, such as PrivateKeyFactory.create(PrivateKeyConfig), do not validate target type
+                // as it is out of our control
+                return;
+            }
             validateImplements(errors,
                                runtimeTypeInfo,
                                TypeName.builder(RUNTIME_API)
@@ -253,7 +270,8 @@ abstract class ValidationTask {
                                        + PROTOTYPE_FACTORY.classNameWithEnclosingNames()
                                        + "<"
                                        + runtimeTypeInfo.typeName().fqName() + ">, the runtime type must implement(or extend) "
-                                       + "interface " + RUNTIME_API.fqName() + "<" + configObjectType.className() + ">"
+                                       + "interface " + RUNTIME_API.fqName() + "<" + configObjectType.className() + ">, or "
+                                       + "provide a custom method to create the instance from this prototype"
             );
             for (ValidationTask nestedValidator : nestedValidators) {
                 nestedValidator.validate(errors);
