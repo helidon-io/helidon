@@ -109,7 +109,7 @@ class ChatModelConfigTest {
 
         var config = OpenAiChatModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.create(yaml, MediaTypes.APPLICATION_X_YAML)
+                .config(Config.just(yaml, MediaTypes.APPLICATION_X_YAML)
                                 .get(OpenAiChatModelConfig.CONFIG_ROOT))
                 .build();
 

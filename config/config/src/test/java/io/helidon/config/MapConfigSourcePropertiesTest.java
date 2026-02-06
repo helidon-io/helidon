@@ -166,7 +166,7 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testMapToArrayWithParser() {
-        Config config = Config.create(
+        Config config = Config.just(
                 """
                         uri-array.0=http://localhost
                         uri-array.1=http://localhost

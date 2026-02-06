@@ -83,7 +83,7 @@ public class ConfigTest {
 
     @Test
     public void testCreateWithMediaType() {
-        Config config = Config.create("""
+        Config config = Config.just("""
                 key=value
                 key2=value2
                 """, MediaTypes.TEXT_PROPERTIES);
