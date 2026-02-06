@@ -50,12 +50,25 @@
     </dependencyManagement>
 
     <modules>
-        <module>sql</module>
         <module>model</module>
         <module>repository</module>
         <module>common</module>
-        <module>eclipselink</module>
-        <module>hibernate</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>long-tests</id>
+            <activation>
+                <property>
+                    <name>!long-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>sql</module>
+                <module>eclipselink</module>
+                <module>hibernate</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

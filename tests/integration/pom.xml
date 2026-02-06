@@ -44,7 +44,6 @@
         <module>jep290</module>
         <module>jms</module>
         <module>jpa</module>
-        <module>kafka</module>
         <module>mp-bean-validation</module>
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
@@ -61,20 +60,16 @@
         <module>mp-security-client</module>
         <module>mp-ws-services</module>
         <module>packaging</module>
-        <module>oidc</module>
         <module>restclient</module>
         <module>restclient-connector</module>
         <module>security</module>
-        <module>vault</module>
         <module>zipkin-mp-2.2</module>
         <module>tls-revocation-config</module>
         <module>h2spec</module>
         <module>mp-telemetry</module>
         <module>mp-jaxrs-preserve-headers</module>
-        <module>crac</module>
         <module>mp-metrics-gh-9995</module>
         <module>context-http-propagation</module>
-        <module>transaction</module>
     </modules>
 
     <dependencyManagement>
@@ -94,4 +89,23 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <profiles>
+        <profile>
+            <id>long-tests</id>
+            <activation>
+                <property>
+                    <name>!long-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>kafka</module>
+                <module>oidc</module>
+                <module>vault</module>
+                <module>crac</module>
+                <module>transaction</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>
