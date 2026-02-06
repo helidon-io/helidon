@@ -37,6 +37,7 @@
         <module>tracer-resolver</module>
         <module>providers</module>
         <module>provider-tests</module>
+        <module>exporter-jaeger</module>
     </modules>
 
     <profiles>

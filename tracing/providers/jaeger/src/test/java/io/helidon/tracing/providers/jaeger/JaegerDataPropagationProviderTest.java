@@ -22,9 +22,6 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -33,11 +30,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JaegerDataPropagationProviderTest {
 
     private final JaegerDataPropagationProvider provider = new JaegerDataPropagationProvider();
-
-    @BeforeEach
-    void setup() {
-        GlobalOpenTelemetry.resetForTest();
-    }
 
     @Test
     void dataPropagationTest() {

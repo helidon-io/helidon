@@ -31,6 +31,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporter;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
@@ -40,8 +42,6 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -159,7 +159,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_SCHEDULE_DELAY = 5_000;
-    static final int DEFAULT_HTTP_PORT = 4317;
+    static final int DEFAULT_HTTP_PORT = 14250;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
 
@@ -497,7 +497,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         "Configuration must at least contain the 'service' key ('tracing.service` in MP) with service name");
             }
 
-            OtlpGrpcSpanExporterBuilder spanExporterBuilder = OtlpGrpcSpanExporter.builder()
+            JaegerGrpcSpanExporterBuilder spanExporterBuilder = JaegerGrpcSpanExporter.builder()
                     .setEndpoint(protocol + "://" + host + ":" + port + (path == null ? "" : path))
                     .setTimeout(exporterTimeout);
 
