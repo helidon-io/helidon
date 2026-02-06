@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -101,7 +100,6 @@ class MetricsFeature {
 
     void register(HttpRouting.Builder routing, String endpoint) {
         configureVendorMetrics(routing);
-        Services.all(MetricsHttpSemanticConventions.class).forEach(routing::addFilter);
         routing.register(endpoint, new MetricsService());
     }
 
