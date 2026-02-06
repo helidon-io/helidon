@@ -622,7 +622,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-opentelemetry-compat-jaeger-exporter</artifactId>
+            <artifactId>helidon-tracing-oexporter-jaeger</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
