@@ -20,10 +20,7 @@
 /**
  * Jaeger exporter inspired by the retired one from OpenTelemetry.
  *
- * @deprecated SE applications should migrate to another Helidon tracing provider, such as
- * {@code helidon-tracing-providers-opentelemetry}; MP apps should migrate to use a different OpenTelemetry exporter such as
- * one of the OTLP exporters ({@code http/proto} or {@code grpc}).
- */
+  */
 @Deprecated(since = "4.4.0", forRemoval = true)
 package io.helidon.tracing.exporter.jaeger;
 
