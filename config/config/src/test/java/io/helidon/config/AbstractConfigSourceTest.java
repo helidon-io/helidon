@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -129,7 +128,7 @@ public class AbstractConfigSourceTest {
     @Test
     public void testMediaTypeMapping() {
         BuilderImpl.ConfigContextImpl context = mock(BuilderImpl.ConfigContextImpl.class);
-        when(context.findParser(MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
+        when(context.findParser(MediaTypes.TEXT_PROPERTIES))
                 .thenReturn(Optional.of(ConfigParsers.properties()));
 
         TestingConfigSource configSource = TestingConfigSource.builder()
@@ -138,7 +137,7 @@ public class AbstractConfigSourceTest {
                                     .addValue("key2", "ooo=ppp")
                                     .build())
                 .mediaTypeMapping(key -> key.name().equals("key1")
-                        ? Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES)
+                        ? Optional.of(MediaTypes.TEXT_PROPERTIES)
                         : Optional.empty())
                 .build();
 
@@ -155,7 +154,7 @@ public class AbstractConfigSourceTest {
     @Test
     public void testParserMapping() {
         BuilderImpl.ConfigContextImpl context = mock(BuilderImpl.ConfigContextImpl.class);
-        when(context.findParser(MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
+        when(context.findParser(MediaTypes.TEXT_PROPERTIES))
                 .thenReturn(Optional.of(ConfigParsers.properties()));
 
         TestingConfigSource configSource = TestingConfigSource.builder()
@@ -176,11 +175,11 @@ public class AbstractConfigSourceTest {
     public void testMediaTypeAndParserMapping() {
         //parser has priority
         BuilderImpl.ConfigContextImpl context = mock(BuilderImpl.ConfigContextImpl.class);
-        when(context.findParser(MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
+        when(context.findParser(MediaTypes.TEXT_PROPERTIES))
                 .thenReturn(Optional.of(new ConfigParser() { //NOT used parser
                     @Override
                     public Set<MediaType> supportedMediaTypes() {
-                        return Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                        return Set.of(MediaTypes.TEXT_PROPERTIES);
                     }
 
                     @Override
@@ -195,7 +194,7 @@ public class AbstractConfigSourceTest {
                                     .addValue("key2", "ooo=ppp")
                                     .build())
                 .mediaTypeMapping(key -> key.name().equals("key1")
-                        ? Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES)
+                        ? Optional.of(MediaTypes.TEXT_PROPERTIES)
                         : Optional.empty())
                 .parserMapping(key -> key.name().equals("key1") ? Optional.of(ConfigParsers.properties()) : Optional.empty())
                 .build();

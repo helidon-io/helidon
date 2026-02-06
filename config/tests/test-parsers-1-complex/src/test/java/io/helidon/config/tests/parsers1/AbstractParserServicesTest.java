@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public abstract class AbstractParserServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.create(KEY + "=" + VALUE, MediaTypes.create("text/x-java-properties")));
+                .sources(ConfigSources.create(KEY + "=" + VALUE, MediaTypes.TEXT_PROPERTIES));
     }
 
 }

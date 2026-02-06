@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.get;
 import static com.xebialabs.restito.semantics.Condition.method;
 import static com.xebialabs.restito.semantics.Condition.uri;
-import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static org.glassfish.grizzly.http.Method.GET;
 import static org.glassfish.grizzly.http.Method.HEAD;
 import static org.glassfish.grizzly.http.util.HttpStatus.OK_200;
@@ -72,7 +71,7 @@ public class UrlConfigSourceServerMockTest {
                 .match(method(GET), uri("/application.properties"))
                 .then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:02 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -98,7 +97,7 @@ public class UrlConfigSourceServerMockTest {
                 match(method(HEAD), uri("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:02 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -107,7 +106,7 @@ public class UrlConfigSourceServerMockTest {
                 match(get("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:02 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -139,7 +138,7 @@ public class UrlConfigSourceServerMockTest {
                 match(method(HEAD), uri("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:02 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -148,7 +147,7 @@ public class UrlConfigSourceServerMockTest {
                 match(get("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:02 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -166,7 +165,7 @@ public class UrlConfigSourceServerMockTest {
                 match(method(HEAD), uri("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         header("Last-Modified", "Sat, 10 Jun 2017 10:14:03 GMT"),
                         stringContent(TEST_CONFIG)
                 );
@@ -192,7 +191,7 @@ public class UrlConfigSourceServerMockTest {
                 match(get("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         stringContent(TEST_CONFIG)
                 );
 
@@ -218,7 +217,7 @@ public class UrlConfigSourceServerMockTest {
                 match(get("/application.properties")).
                 then(
                         status(OK_200),
-                        contentType(MEDIA_TYPE_TEXT_JAVA_PROPERTIES.text()),
+                        contentType(MediaTypes.TEXT_PROPERTIES.text()),
                         stringContent(TEST_CONFIG)
                 );
 
@@ -228,7 +227,7 @@ public class UrlConfigSourceServerMockTest {
 
         Content content = configSource.load().get();
 
-        assertThat(content.mediaType(), is(Optional.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES)));
+        assertThat(content.mediaType(), is(Optional.of(MediaTypes.TEXT_PROPERTIES)));
         assertThat(TestHelper.inputStreamToString(content.data()), is(TEST_CONFIG));
 
         verifyHttp(server).once(

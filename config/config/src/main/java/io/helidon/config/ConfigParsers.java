@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public final class ConfigParsers {
 
     /**
      * Returns a {@link io.helidon.config.spi.ConfigParser} implementation that parses Java Properties content
-     * (the media type {@link io.helidon.config.PropertiesConfigParser#MEDIA_TYPE_TEXT_JAVA_PROPERTIES}).
+     * (the media type {@link io.helidon.common.media.type.MediaTypes#TEXT_PROPERTIES}).
      *
      * @return {@code ConfigParser} that parses Java Properties content
      */

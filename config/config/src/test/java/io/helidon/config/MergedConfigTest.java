@@ -18,7 +18,6 @@ package io.helidon.config;
 
 import java.util.stream.Collectors;
 
-import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 
 import org.junit.jupiter.api.Test;
@@ -29,8 +28,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MergedConfigTest {
-
-    private static final MediaType JAVA_PROPERTIES_MEDIA_TYPE = MediaTypes.create("text/x-java-properties");
 
     @Test
     void string() {
@@ -90,13 +87,13 @@ class MergedConfigTest {
 
     private Config create(String props1, String props2) {
         var c1 = Config.builder()
-                .addSource(ConfigSources.create(props1, JAVA_PROPERTIES_MEDIA_TYPE))
+                .addSource(ConfigSources.create(props1, MediaTypes.TEXT_PROPERTIES))
                 .addMapper(TestClass1.class, config -> new TestClass1().init(config.asBoolean().orElse(null)))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
         var c2 = Config.builder()
-                .addSource(ConfigSources.create(props2, JAVA_PROPERTIES_MEDIA_TYPE))
+                .addSource(ConfigSources.create(props2, MediaTypes.TEXT_PROPERTIES))
                 .addMapper(TestClass2.class, config -> new TestClass2().init(config.asBoolean().orElse(null)))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()

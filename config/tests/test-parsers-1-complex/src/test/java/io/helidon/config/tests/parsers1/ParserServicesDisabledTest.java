@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config.tests.parsers1;
 
 import java.util.List;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -45,6 +46,7 @@ public class ParserServicesDisabledTest extends AbstractParserServicesTest {
         });
 
         assertThat(ce.getMessage(), stringContainsInOrder(List.of(
-                "Cannot find suitable parser for 'text/x-java-properties' media type for config source ParsableInMemory[String]")));
+                "Cannot find suitable parser for '" + MediaTypes.TEXT_PROPERTIES_VALUE
+                        + "' media type for config source ParsableInMemory[String]")));
     }
 }
