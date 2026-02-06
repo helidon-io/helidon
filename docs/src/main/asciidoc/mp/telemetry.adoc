@@ -264,7 +264,7 @@ Please consult with the links above for all configurations' properties usage.
 
 For your application to report trace information be sure you add a dependency on an OpenTelemetry exporter as  <<otel-exporter-dependencies,described earlier>> and, as needed, configure its use.
 By default OpenTelemetry attempts to use the OTLP exporter so you do not need to add configuration to specify that choice.
-To use a different exporter set `otel.traces.exporter` in your configuration to the appropriate value: `jaeger`, `zipkin`, `prometheus`, etc.
+To use a different exporter set `otel.traces.exporter` in your configuration to the appropriate value: `zipkin`, `prometheus`, etc.
 See the <<examples,examples>> section below.
 
 === OpenTelemetry Java Agent
@@ -278,13 +278,13 @@ This way, Helidon will explicitly get all the configuration and objects from the
 [[examples]]
 == Examples
 
-This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. Jaeger is employed in all the examples, and the Jaeger UI is used to view the traces.
+This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. The Jaeger backend is employed in all the examples, and the Jaeger UI is used to view the traces.
 
 === Set Up Jaeger
 
-For example, Jaeger will be used for gathering of the tracing information.
+For example, the Jaeger backend gathers the tracing information.
 
-.Run Jaeger in a docker container.
+.Run the Jaeger backend in a docker container
 [source, bash]
 ----
 docker run -d --name jaeger \

@@ -31,8 +31,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.opentelemetrycompat.jaegerexporter.JaegerGrpcSpanExporter;
-import io.helidon.tracing.opentelemetrycompat.jaegerexporter.JaegerGrpcSpanExporterBuilder;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporter;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
