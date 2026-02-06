@@ -16,8 +16,9 @@
 
 package io.helidon.tracing.exporter.jaeger;
 
-import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 import io.helidon.tracing.exporter.jaeger.proto.api_v2.TimeOrBuilder;
+
+import io.opentelemetry.exporter.internal.marshal.ProtoFieldInfo;
 
 @SuppressWarnings("all")
 final class Time extends
