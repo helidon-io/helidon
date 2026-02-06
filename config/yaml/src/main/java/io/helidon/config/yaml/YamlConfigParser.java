@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,11 @@ public class YamlConfigParser implements ConfigParser {
         } catch (Exception e) {
             throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "YAML(" + MediaTypes.APPLICATION_YAML.text() + ")";
     }
 
     static Map toMap(Reader reader) {

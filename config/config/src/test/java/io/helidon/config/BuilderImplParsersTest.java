@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,14 +51,14 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testServicesDisabled() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(false, List.of());
+        List<ConfigParser> parsers = new BuilderImpl().buildParsers(false, List.of());
 
         assertThat(parsers, hasSize(0));
     }
 
     @Test
     public void testBuiltInParserLoaded() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, List.of());
+        List<ConfigParser> parsers = new BuilderImpl().buildParsers(true, List.of());
 
         assertThat(parsers, hasSize(1));
         assertThat(parsers.get(0), instanceOf(PropertiesConfigParser.class));
@@ -66,7 +66,7 @@ public class BuilderImplParsersTest {
 
     @Test
     public void testUserDefinedHasPrecedence() {
-        List<ConfigParser> parsers = BuilderImpl.buildParsers(true, List.of(new MyConfigParser()));
+        List<ConfigParser> parsers = new BuilderImpl().buildParsers(true, List.of(new MyConfigParser()));
 
         assertThat(parsers, hasSize(2));
         assertThat(parsers.get(0), instanceOf(MyConfigParser.class));
