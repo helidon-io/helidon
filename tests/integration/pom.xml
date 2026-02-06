@@ -95,7 +95,7 @@
             <id>long-tests</id>
             <activation>
                 <property>
-                    <name>!helidon.long-tests</name>
+                    <name>!long-tests</name>
                 </property>
             </activation>
             <modules>
