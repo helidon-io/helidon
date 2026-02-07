@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.integrations.langchain4j.providers.coherence;
 
-import io.helidon.common.config.Config;
-import io.helidon.service.registry.Services;
+import io.helidon.config.Config;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.providers.coherence.CoherenceConstants.ConfigCategory.EMBEDDING_STORE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -30,9 +30,8 @@ import static org.hamcrest.Matchers.notNullValue;
 class CoherenceEmbeddingStorePropertiesTest {
 
     @Test
-    void testDefaultRoot() {
-        var config = CoherenceEmbeddingStoreConfig.create(Services.get(Config.class)
-                                                               .get(CoherenceEmbeddingStoreConfig.CONFIG_ROOT));
+    void testDefaultRoot(Config c) {
+        var config = CoherenceEmbeddingStoreConfig.create(CoherenceConstants.create(c, EMBEDDING_STORE, "test-embedding-store"));
         assertThat(config, is(notNullValue()));
         assertThat(config.enabled(), is(true));
         assertThat(config.session().isPresent(), is(true));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ public final class AiProvider {
 
         /**
          * Default config key used under langchain4j context for all model configs in the same class.
+         *
          * @return string key
          */
         String value() default "";
@@ -168,5 +169,14 @@ public final class AiProvider {
      */
     @Target({ElementType.METHOD})
     public @interface CustomBuilderMapping {
+    }
+
+    /**
+     * Marking annotation for utility classes generation only.
+     * Utilities are generated automatically when {@link ModelConfig} is used.
+     * Mutually exclusive with {@link ModelConfig}.
+     */
+    @Target({ElementType.TYPE})
+    public @interface CustomModelFactories {
     }
 }

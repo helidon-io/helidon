@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.testing.TestException;
@@ -163,9 +164,14 @@ public class TestJunitExtension implements Extension,
 
         return supplyChecked(ctx, () -> {
             var paramType = pc.getParameter().getType();
+            var namedAnnotation = pc.getParameter().getAnnotation(Service.Named.class);
             var registry = GlobalServiceRegistry.registry();
             if (supportedType(registry, paramType)) {
-                return registry.get(paramType);
+                if (namedAnnotation != null) {
+                    return registry.getNamed(paramType, namedAnnotation.value());
+                } else {
+                    return registry.get(paramType);
+                }
             }
             throw new ParameterResolutionException("Failed to resolve parameter of type "
                                                            + paramType.getName());

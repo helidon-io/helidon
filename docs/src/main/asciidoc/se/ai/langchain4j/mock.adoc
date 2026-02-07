@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -55,21 +55,81 @@ In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration w
 
 To automatically create and add `MockChatModel` to the service registry add the following lines to `application.yaml`:
 
+[source,java]
+----
+@Ai.Service("food-service") //<1>
+@Ai.ChatModel("production-chatgpt-model") //<2>
+public interface FoodExpertAiService {
+
+    @SystemMessage("You are a food expert!")
+    String chat(String prompt);
+}
+----
+<1> Naming your AI service makes its configuration easily overridable from Helidon config.
+<2> Chat model name annotation configuration is overridable by Helidon config
+
+To configure `MockChatModel` to be used, for example, in a test scenario you define your model in `application.yaml`
+and override a chat model name configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
+
 [source,yaml]
 ----
 langchain4j:
-  mock:
-    chat-model:
-      enabled: true
+  services:
+    food-service:
+      chat-model: test-mock-model #<1>
+
+  models:
+    test-mock-model:
+      provider: helidon-mock
       rules:
-        - pattern: .*create.*new Helidon project.*
-        - pattern: .*Helidon is cool.*
-          response: Cool Hello!
+        - pattern: .*pizza.*ananas.*
+          response: Don't!
         - pattern: .*Return this message:\s+'([^']+)'.*
           template: "The message is: $1"
 ----
+<1> Override `production-chatgpt-model` chat model in `food-service` named AI service with `test-mock-model`.
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+The final unit test would look like the following snippet.
+
+[source,java]
+----
+@Testing.Test
+class FoodExpertTest {
+    @Test
+    void customMockResponse(FoodExpertAiService aiService) {
+        assertThat(aiService.chat("I can prepare pizza with ananas!"), is("Don't!"));
+        assertThat(aiService.chat("Return this message: 'test-message'"), is("The message is: test-message"));
+    }
+}
+----
+
+It is possible to inject a mock model and amend the rule programmatically.
+
+[source,java]
+----
+@Testing.Test
+class FoodExpertTest {
+    @Test
+    void customMockResponse(FoodExpertAiService aiService, @Service.Named("test-mock-model") MockChatModel mockModel) {
+        try {
+            mockModel.activeRules().add(new MockChatRule() {
+                @Override
+                public boolean matches(ChatRequest req) {
+                    return true;
+                }
+
+                @Override
+                public String mock(String concatenatedReq) {
+                    return "Custom manually added response!";
+                }
+            });
+            assertThat(aiService.chat("I can prepare pizza with ananas!"), is("Custom manually added response!"));
+        } finally {
+            mockModel.resetRules();
+        }
+    }
+}
+----
 
 include::{rootdir}/config/io_helidon_integrations_langchain4j_providers_mock_MockChatModel.adoc[tag=config,leveloffset=+1]
 

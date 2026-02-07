@@ -105,8 +105,8 @@
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>1.10.0</version.lib.langchain4j>
-        <version.lib.langchain4j-community>1.10.0-beta18</version.lib.langchain4j-community>
+        <version.lib.langchain4j>1.11.0</version.lib.langchain4j>
+        <version.lib.langchain4j-community>1.11.0-beta19</version.lib.langchain4j-community>
         <version.lib.log4j>2.25.3</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>

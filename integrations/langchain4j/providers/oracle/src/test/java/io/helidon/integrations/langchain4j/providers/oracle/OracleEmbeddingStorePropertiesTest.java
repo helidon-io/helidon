@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ package io.helidon.integrations.langchain4j.providers.oracle;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
-import io.helidon.service.registry.Services;
+import io.helidon.config.Config;
 import io.helidon.testing.junit5.Testing;
 
 import dev.langchain4j.data.embedding.Embedding;
@@ -28,6 +27,7 @@ import dev.langchain4j.store.embedding.oracle.CreateOption;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.providers.oracle.OracleConstants.ConfigCategory.EMBEDDING_STORE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -37,9 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OracleEmbeddingStorePropertiesTest {
 
     @Test
-    void testDefaultRoot() {
-        var config = OracleEmbeddingStoreConfig.create(Services.get(Config.class)
-                                                               .get(OracleEmbeddingStoreConfig.CONFIG_ROOT));
+    void testDefaultRoot(Config c) {
+        var config = OracleEmbeddingStoreConfig.create(OracleConstants.create(c, EMBEDDING_STORE, "foo-bar-embedding-store"));
         assertThat(config, is(notNullValue()));
         assertThat(config.enabled(), is(true));
         assertThat(config.dataSource().toString(), is("customDs"));

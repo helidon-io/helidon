@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,36 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.langchain4j.openai;
+package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.time.Duration;
+import java.util.Optional;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
+import static dev.langchain4j.model.chat.Capability.RESPONSE_FORMAT_JSON_SCHEMA;
+import static io.helidon.integrations.langchain4j.providers.openai.OpenAiConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-class StreamingChatModelConfigTest {
+@Testing.Test
+class ChatModelConfigTest {
+
+    public static final String MODEL_NAME = "test-chat-model";
 
     @Test
     void testDefaultRoot() {
-        var config = OpenAiStreamingChatModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                                   .get(OpenAiStreamingChatModelConfig.CONFIG_ROOT));
+        var config = OpenAiChatModelConfig.create(
+                OpenAiConstants.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), is(true));
@@ -48,6 +57,7 @@ class StreamingChatModelConfigTest {
         assertThat(config.temperature().isPresent(), is(true));
         assertThat(config.temperature().get(), is(36.6));
         assertThat(config.topP().isPresent(), is(true));
+        assertThat(config.topP().get(), is(10.0));
         assertThat(config.stop(), is(notNullValue()));
         assertThat(config.stop().size(), is(3));
         assertThat(config.stop().get(0), is("stop1"));
@@ -65,7 +75,10 @@ class StreamingChatModelConfigTest {
         assertThat(config.logitBias().get("key1"), is(1));
         assertThat(config.logitBias().get("key2"), is(2));
         assertThat(config.responseFormat().isPresent(), is(true));
-        assertThat(config.responseFormat().get(), is("response-format"));
+        assertThat(config.responseFormat().get(), is("json-object"));
+        assertThat(config.supportedCapabilities(), contains(RESPONSE_FORMAT_JSON_SCHEMA));
+        assertThat(config.strictJsonSchema().isPresent(), is(true));
+        assertThat(config.strictJsonSchema().get(), is(false));
         assertThat(config.seed().isPresent(), is(true));
         assertThat(config.seed().get(), is(100));
         assertThat(config.user().isPresent(), is(true));
@@ -76,6 +89,8 @@ class StreamingChatModelConfigTest {
         assertThat(config.parallelToolCalls().get(), is(false));
         assertThat(config.timeout().isPresent(), is(true));
         assertThat(config.timeout().get(), equalTo(Duration.parse("PT10M")));
+        assertThat(config.maxRetries().isPresent(), is(true));
+        assertThat(config.maxRetries().get(), is(3));
         assertThat(config.logRequests().isPresent(), is(true));
         assertThat(config.logRequests().get(), is(true));
         assertThat(config.logResponses().isPresent(), is(true));
@@ -83,5 +98,37 @@ class StreamingChatModelConfigTest {
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
+    }
+
+    @Test
+    void testNamedClient(ServiceRegistry registry) {
+
+        var yaml = """
+                langchain4j.models:
+                  test-chat-model:
+                    http-client-builder.service-registry.named: "namedHttpClient"
+                """;
+
+        var config = OpenAiChatModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(OpenAiConstants.create(
+                        Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML)), MODEL, MODEL_NAME)
+                )
+                .build();
+
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()),
+                   is(Optional.of("namedHttpClient")));
+    }
+
+    @Test
+    void testDefaultClient(ServiceRegistry registry) {
+
+        var config = OpenAiChatModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(Config.empty())
+                .build();
+
+        assertThat(config.httpClientBuilder().map(builder -> builder.build().execute(null).body()),
+                   is(Optional.of("defaultHttpClient")));
     }
 }
