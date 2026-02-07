@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,13 @@ public class TestClassB {
     public void testRegistry2() {
         TestService testService = Services.get(TestService.class);
 
+        assertThat(testService.message(), is("testB"));
+
+        INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));
+    }
+
+    @Test
+    public void testRegistry3(TestService testService) {
         assertThat(testService.message(), is("testB"));
 
         INSTANCES.add(System.identityHashCode(GlobalServiceRegistry.registry()));

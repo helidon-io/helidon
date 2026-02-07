@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ open module io.helidon.testing.junit5 {
     requires io.helidon.logging.common;
     requires transitive io.helidon.testing;
     requires transitive io.helidon.common.context;
+    requires transitive io.helidon.config;
 
     exports io.helidon.testing.junit5;
 }
