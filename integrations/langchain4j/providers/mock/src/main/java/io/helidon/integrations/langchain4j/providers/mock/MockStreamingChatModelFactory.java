@@ -45,7 +45,7 @@ class MockStreamingChatModelFactory implements Service.ServicesFactory<MockStrea
         this.config = config;
         this.modelNames = MockConstants.modelNames(config,
                                                  MockStreamingChatModel.class,
-                                                 MockStreamingChatModelConfigBlueprint.PROVIDER_KEY);
+                                                 MockLc4jProvider.PROVIDER_KEY);
         this.rules = rules;
     }
 

@@ -20,16 +20,10 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 
+/**
+ * Common configuration options for the mock LangChain4j provider.
+ */
 interface MockCommonConfigBlueprint {
-    /**
-     * Provider key used to identify the mock provider.
-     */
-    String PROVIDER_KEY = "helidon-mock";
-
-    /**
-     * The root configuration key for this builder.
-     */
-    String CONFIG_ROOT = "langchain4j.providers.mock";
 
     /**
      * If set to {@code false} , MockChatModel will not be available even if configured.

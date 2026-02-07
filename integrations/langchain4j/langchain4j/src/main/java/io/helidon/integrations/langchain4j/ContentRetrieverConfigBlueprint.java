@@ -21,13 +21,15 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Configured(ContentRetrieverConfigBlueprint.CONFIG_ROOT)
+/**
+ * Configuration for LangChain4j {@code ContentRetriever} components.
+ * <p>
+ * Instances of this configuration are created from the config and define
+ * how a content retriever is selected and initialized (for example, embedding-store backed retrievers).
+ */
+@Prototype.Configured
 @Prototype.Blueprint
 interface ContentRetrieverConfigBlueprint {
-    /**
-     * The default configuration prefix.
-     */
-    String CONFIG_ROOT = "langchain4j.content-retrievers";
 
     /**
      * If set to {@code false}, component will be disabled even if configured.
@@ -38,64 +40,80 @@ interface ContentRetrieverConfigBlueprint {
     @Option.DefaultBoolean(true)
     boolean enabled();
 
+    /**
+     * Type of content retriever to create.
+     *
+     * @return the content retriever type
+     */
     @Option.Configured
     @Option.Default("EMBEDDING_STORE_CONTENT_RETRIEVER")
-    @Option.AllowedValues({
-            @Option.AllowedValue(value = "embedding-store-content-retriever",
-                                 description = "Embedding store backed content retriever"),
-            @Option.AllowedValue(value = "web-search-content-retriever",
-                                 description = "Web search backed content retriever"),
-    })
-    Type type();
+    ContentRetrieverType type();
 
     /**
      * Embedding store to use in the content retriever.
+     * <p>
+     * The value typically identifies a service-registry bean (for example, by name) that provides the embedding store
+     * implementation used to retrieve relevant content.
      *
-     * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
-     *         can be used to select a named bean
+     * @return the embedding store reference (for example, a bean name)
      */
     @Option.Configured
     String embeddingStore();
 
     /**
      * Explicit embedding model to use in the content retriever.
+     * <p>
+     * If empty, the default embedding model is used (as resolved by the service registry). If set, the value typically
+     * identifies a named embedding model bean.
      *
-     * @return an {@link java.util.Optional} default service bean is injected or {@code embedding-model.service-registry.named}
-     *         can be used to select a named bean
+     * @return embedding model reference if configured
      */
     @Option.Configured
     Optional<String> embeddingModel();
 
     /**
-     * The display name.
+     * Display name for this content retriever configuration.
      *
-     * @return an {@link java.util.Optional} containing the display name if set, otherwise an empty {@link java.util.Optional}
+     * @return the display name if configured
      */
     @Option.Configured
     Optional<String> displayName();
 
     /**
-     * The maximum number of results.
+     * Maximum number of results to return from the retriever.
+     * <p>
+     * If empty, the retriever implementation default is used.
      *
-     * @return an {@link java.util.Optional} containing the maximum results if set, otherwise an empty {@link java.util.Optional}
+     * @return maximum results if configured
      */
     @Option.Configured
     Optional<Integer> maxResults();
 
     /**
-     * The minimum score threshold.
+     * Minimum score threshold for retrieved results.
+     * <p>
+     * If empty, the retriever implementation default is used.
      *
-     * @return an {@link java.util.Optional} containing the minimum score if set, otherwise an empty {@link java.util.Optional}
+     * @return minimum score if configured
      */
     @Option.Configured
     Optional<Double> minScore();
 
-    enum Type {
+    /**
+     * Supported content retriever implementations.
+     */
+    enum ContentRetrieverType {
+        /**
+         * Embedding store-backed content retriever.
+         */
         EMBEDDING_STORE_CONTENT_RETRIEVER("embedding-store-content-retriever"),
+        /**
+         * Web search-backed content retriever.
+         */
         WEB_SEARCH_CONTENT_RETRIEVER("web-search-content-retriever");
         private final String name;
 
-        Type(String name) {
+        ContentRetrieverType(String name) {
             this.name = name;
         }
 

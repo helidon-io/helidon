@@ -44,6 +44,9 @@ final class LangchainTypes {
             TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomModelFactories");
     static final TypeName MODEL_CUSTOM_BUILDER_MAPPING =
             TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomBuilderMapping");
+    static final TypeName AGENTS_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AgentsConfig");
+    static final TypeName AGENT_METADATA = TypeName.create("io.helidon.integrations.langchain4j.AgentMetadata");
+
 
     static final TypeName LC_AI_SERVICES = TypeName.create("dev.langchain4j.service.AiServices");
     static final TypeName LC_TOOL = TypeName.create("dev.langchain4j.agent.tool.Tool");
@@ -67,15 +70,11 @@ final class LangchainTypes {
     static final TypeName LC_TOOL_PROVIDER = TypeName.create("dev.langchain4j.service.tool.ToolProvider");
     static final TypeName LC_MCP_TOOL_PROVIDER = TypeName.create("dev.langchain4j.mcp.McpToolProvider");
     static final TypeName LC_MCP_CLIENT = TypeName.create("dev.langchain4j.mcp.client.McpClient");
-    static final TypeName LC_AGENT = TypeName.create("dev.langchain4j.agentic.Agent");
     static final TypeName LC_AGENTIC_SERVICES = TypeName.create("dev.langchain4j.agentic.AgenticServices");
-    static final TypeName LC_INPUT_GUARDRAIL = TypeName.create("dev.langchain4j.guardrail.InputGuardrail");
-    static final TypeName LC_OUTPUT_GUARDRAIL = TypeName.create("dev.langchain4j.guardrail.OutputGuardrail");
+    static final TypeName LC_DECLARATIVE_AGENT_CREATION_CONTEXT = TypeName.create(
+            "dev.langchain4j.agentic.AgenticServices.DeclarativeAgentCreationContext");
 
-    static final TypeName SVC_QUALIFIED_INSTANCE = TypeName.create("io.helidon.service.registry.Service.QualifiedInstance");
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");
-    static final TypeName SVC_QUALIFIER = TypeName.create("io.helidon.service.registry.Qualifier");
-    static final TypeName COMMON_WEIGHT = TypeName.create("io.helidon.common.Weight");
     static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
     static final TypeName MERGED_CONFIG = TypeName.create("io.helidon.config.MergedConfig");
     static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");

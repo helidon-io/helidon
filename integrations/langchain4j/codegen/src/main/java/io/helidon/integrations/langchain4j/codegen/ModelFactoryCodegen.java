@@ -47,14 +47,14 @@ import static io.helidon.common.types.AccessModifier.PUBLIC;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
 import static io.helidon.common.types.TypeNames.STRING;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.COMMON_WEIGHT;
+import static io.helidon.common.types.TypeNames.WEIGHT;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIGS_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_TYPE;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIED_INSTANCE;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_SERVICES_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_INSTANCE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
@@ -89,7 +89,7 @@ class ModelFactoryCodegen implements CodegenExtension {
         var modelFactoryWeightAnnotation = modelAnnotation.doubleValue("weight")
                 .filter(w -> w != Weighted.DEFAULT_WEIGHT)
                 .map(w -> Annotation.builder()
-                        .typeName(COMMON_WEIGHT)
+                        .typeName(WEIGHT)
                         .addProperties(Map.of("value", AnnotationProperty.create(w)))
                         .build())
                 .or(() -> configType.elementInfo().stream()
@@ -98,13 +98,13 @@ class ModelFactoryCodegen implements CodegenExtension {
                         .filter(e -> e.hasAnnotation(LangchainTypes.MODEL_DEFAULT_WEIGHT))
                         .findFirst()
                         .map(e -> Annotation.builder()
-                                .typeName(COMMON_WEIGHT)
+                                .typeName(WEIGHT)
                                 .putProperty("value", AnnotationProperty.create("weight",
                                                                                 configType.typeName(),
                                                                                 e.elementName()))
                                 .build())
                 ).orElseGet(() -> Annotation.builder()
-                        .typeName(COMMON_WEIGHT)
+                        .typeName(WEIGHT)
                         .addProperties(Map.of("value", AnnotationProperty.create(DEFAULT_FACTORY_WEIGHT)))
                         .build());
 
@@ -206,18 +206,20 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .accessModifier(PUBLIC)
                 .name("services")
                 .returnType(TypeName.builder(LIST)
-                                    .addTypeArgument(TypeName.builder(SVC_QUALIFIED_INSTANCE).addTypeArgument(modelType).build())
+                                    .addTypeArgument(TypeName.builder(SERVICE_QUALIFIED_INSTANCE)
+                                                             .addTypeArgument(modelType)
+                                                             .build())
                                     .build())
                 .addContentLine("return modelNames.stream()")
                 .increaseContentPadding()
                 .addContentLine(".map(name -> buildModel(name, config)")
                 .increaseContentPadding()
                 .addContent(".map(model -> ")
-                .addContent(SVC_QUALIFIED_INSTANCE)
+                .addContent(SERVICE_QUALIFIED_INSTANCE)
                 .addContentLine()
                 .increaseContentPadding()
                 .addContent(".create(model, ")
-                .addContent(SVC_QUALIFIER)
+                .addContent(SERVICE_QUALIFIER)
                 .addContentLine(".createNamed(name))))")
                 .decreaseContentPadding()
                 .decreaseContentPadding()

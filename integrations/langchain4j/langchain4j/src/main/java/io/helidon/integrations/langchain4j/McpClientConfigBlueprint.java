@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,31 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+/**
+ * Configuration for LangChain4j MCP (Model Context Protocol) clients.
+ */
 @Prototype.Configured
 @Prototype.Blueprint
 interface McpClientConfigBlueprint {
 
     /**
-     * The default configuration prefix.
-     */
-    String CONFIG_ROOT = "langchain4j.mcp-clients";
-
-    /**
-     * The initial URI where to connect to the server and request a SSE
+     * The initial URI where to connect to the server and request an SSE
      * channel.
      *
      * @return sse uri
      */
     @Option.Configured
+    @Option.Deprecated("uri")
+    @Deprecated(forRemoval = true, since = "4.4.0")
     URI sseUri();
+
+    /**
+     * The URL of the MCP server.
+     *
+     * @return mcp server uri
+     */
+    @Option.Configured
+    URI uri();
 
     /**
      * Sets the name that the client will use to identify itself to the
@@ -84,7 +92,7 @@ interface McpClientConfigBlueprint {
      * Sets the timeout for initializing the client.
      * Overwrites the default timeout for initializing from langchain4j.
      *
-     * @return initialization timout
+     * @return initialization timeout
      */
     @Option.Configured
     Optional<Duration> initializationTimeout();
@@ -95,7 +103,7 @@ interface McpClientConfigBlueprint {
      * A value of zero means no timeout.
      * Overwrites the default timeout for tool execution from langchain4j.
      *
-     * @return tool execution timout
+     * @return tool execution timeout
      */
     @Option.Configured
     Optional<Duration> toolExecutionTimeout();

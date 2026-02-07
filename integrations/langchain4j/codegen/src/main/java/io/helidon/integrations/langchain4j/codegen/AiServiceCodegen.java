@@ -71,6 +71,7 @@ import static java.util.function.Predicate.not;
 
 class AiServiceCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(AiServiceCodegen.class);
+    static final String SERVICES_CONFIG_KEY = "langchain4j.services";
 
     private final CodegenContext ctx;
 
@@ -260,9 +261,10 @@ class AiServiceCodegen implements CodegenExtension {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .addContent("var serviceConfig = config.get(")
-                .addContentLiteral("langchain4j.services")
+                .addContentLiteral(SERVICES_CONFIG_KEY)
                 .addContent(").get(")
-                .addContentLiteral(aiInterface.findAnnotation(AI_SERVICE).flatMap(Annotation::stringValue)
+                .addContentLiteral(aiInterface.findAnnotation(AI_SERVICE)
+                                           .flatMap(Annotation::stringValue)
                                            .filter(not(String::isBlank))
                                            .orElse(aiInterfaceType.fqName()))
                 .addContentLine(");")

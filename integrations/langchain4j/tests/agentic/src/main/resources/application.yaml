@@ -24,12 +24,10 @@ langchain4j:
   models:
     openai-cheap-model:
       provider: open-ai
-      enabled: true
       api-key: "${OPEN_AI_TOKEN}"
       model-name: "gpt-4o-mini"
 
     gemini-flash-model:
       provider: google-gemini
-      enabled: true
       api-key: "${GEMINI_TOKEN}"
       model-name: "gemini-3-flash-preview"

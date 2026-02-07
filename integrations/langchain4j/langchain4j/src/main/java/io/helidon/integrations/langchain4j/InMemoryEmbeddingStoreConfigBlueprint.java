@@ -19,18 +19,19 @@ package io.helidon.integrations.langchain4j;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Configured(InMemoryEmbeddingStoreConfigBlueprint.CONFIG_ROOT)
+/**
+ * Configuration for LangChain4j in-memory embedding store components.
+ */
+@Prototype.Configured
 @Prototype.Blueprint
 interface InMemoryEmbeddingStoreConfigBlueprint {
-    /**
-     * The default configuration prefix.
-     */
-    String CONFIG_ROOT = "langchain4j.embedding-stores";
 
     /**
-     * If set to {@code false}, component will be disabled even if configured.
+     * Whether this embedding store component is enabled.
+     * <p>
+     * If set to {@code false}, the component will be disabled even if configured.
      *
-     * @return whether the component should be enabled
+     * @return {@code true} if the component should be enabled; {@code false} otherwise
      */
     @Option.Configured
     @Option.DefaultBoolean(true)

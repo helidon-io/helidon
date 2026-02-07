@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.codegen.classmodel.ClassType;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Returns;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -102,7 +102,7 @@ abstract class IntrospectionBlueprintBuilder {
         superTypeName.ifPresent(classModelBuilder()::superType);
 
         classModelBuilder()
-                .classType(ClassType.INTERFACE)
+                .classType(ElementKind.INTERFACE)
                 .type(typeName)
                 .copyright(CodegenUtil.copyright(ModelConfigCodegen.GENERATOR,
                                                  parentTypeName,

@@ -23,6 +23,7 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
+import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.types.AccessModifier;
@@ -34,25 +35,31 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
+import static io.helidon.common.types.AccessModifier.PACKAGE_PRIVATE;
 import static io.helidon.common.types.AccessModifier.PRIVATE;
+import static io.helidon.common.types.TypeNames.CLASS_WILDCARD;
+import static io.helidon.common.types.TypeNames.STRING;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AGENTS_CONFIG;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AGENT_METADATA;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_AGENT;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MODEL;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AGENTIC_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MODEL;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_DECLARATIVE_AGENT_CREATION_CONTEXT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_REGISTRY;
 
 class AgentCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(AgentCodegen.class);
-    private static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.ServiceRegistry");
-    private static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
-    static final TypeName AGENTS_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AgentsConfig");
+    static final String AGENTS_CONFIG_KEY = "langchain4j.agents";
 
     @Override
     public void process(RoundContext roundCtx) {
         Collection<TypeInfo> types = roundCtx.annotatedTypes(AI_AGENT);
 
-        var subAgentConfiguratorBuilder = new SubAgentConfiguratorBuilder();
         // First round to get annotation metadata of all known agents
         for (TypeInfo type : types) {
             // for each annotated interface, generate Iface__AiServices and Iface__Service
@@ -62,11 +69,7 @@ class AgentCodegen implements CodegenExtension {
                                            type.originatingElementValue());
             }
 
-            subAgentConfiguratorBuilder.add(type);
         }
-
-        subAgentConfiguratorBuilder.build(roundCtx);
-
         // Second round to generate agent producers
         for (TypeInfo type : types) {
             process(roundCtx, type);
@@ -76,10 +79,7 @@ class AgentCodegen implements CodegenExtension {
     private void process(RoundContext roundCtx, TypeInfo agentInterface) {
         TypeName agentInterfaceType = agentInterface.typeName();
         TypeName generatedType = generatedTypeName(agentInterfaceType, "AiAgent");
-        TypeName subAgentConfigurator = TypeName.builder()
-                .packageName(generatedType.genericTypeName().packageName())
-                .className("SubAgentConfigurator__AiMetadata")
-                .build();
+        AgentMetadataSupplierBuilder.build(agentInterface, roundCtx);
 
         var classModel = ClassModel.builder()
                 .type(generatedType)
@@ -116,13 +116,6 @@ class AgentCodegen implements CodegenExtension {
                 .accessModifier(PRIVATE)
         );
 
-        classModel.addField(aiServices -> aiServices
-                .name("subAgentConfigurator")
-                .type(subAgentConfigurator)
-                .isFinal(true)
-                .accessModifier(PRIVATE)
-        );
-
         // constructor (parameters depend on annotations on interface)
         classModel.addConstructor(ctr -> ctr
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
@@ -133,7 +126,7 @@ class AgentCodegen implements CodegenExtension {
                                       agentInterface,
                                       AI_CHAT_MODEL,
                                       LC_CHAT_MODEL,
-                                      "chatModel", subAgentConfigurator);
+                                      "chatModel");
                 })
         );
 
@@ -161,10 +154,12 @@ class AgentCodegen implements CodegenExtension {
                 .addContent(agentInterfaceType)
                 .addContent(".class, ")
                 .addContent("configuredModel, ")
-                .addContent("subAgentConfigurator")
+                .addContent("this")
                 .addContentLine("::configureSubAgents);")
                 .addContentLine("")
         );
+
+        classModel.addMethod(this::addConfigureSubAgentsMethod);
 
         roundCtx.addGeneratedType(generatedType, classModel, agentInterfaceType, agentInterface.originatingElementValue());
     }
@@ -174,8 +169,7 @@ class AgentCodegen implements CodegenExtension {
                                    TypeInfo aiInterface,
                                    TypeName aiModelAnnotation,
                                    TypeName lcModelType,
-                                   String aiServicesMethodName,
-                                   TypeName subAgentConfigurator) {
+                                   String aiServicesMethodName) {
 
         ctr.addParameter(Parameter.builder()
                                  .type(CONFIG)
@@ -187,16 +181,10 @@ class AgentCodegen implements CodegenExtension {
                                  .name("registry")
                                  .build());
 
-        ctr.addParameter(Parameter.builder()
-                                 .type(subAgentConfigurator)
-                                 .name("subAgentConfigurator")
-                                 .build());
-
         ctr.addContent("this.agenticConfig = config.get(")
-                .addContent(AGENTS_CONFIG)
-                .addContentLine(".CONFIG_ROOT);");
+                .addContentLiteral(AGENTS_CONFIG_KEY)
+                .addContentLine(");");
         ctr.addContentLine("this.registry = registry;");
-        ctr.addContentLine("this.subAgentConfigurator = subAgentConfigurator;");
 
         // if annotated, we have a named value (and that is mandatory)
         String modelName = aiInterface.findAnnotation(aiModelAnnotation)
@@ -215,7 +203,7 @@ class AgentCodegen implements CodegenExtension {
             ctr
                     .addContent("this.chatModel = chatModel.orElse(null);");
         } else {
-            // there is no annotation, use only autodiscovered model (if present)
+            // there is no annotation, use only auto-discovered model (if present)
             if (!autoDiscovery) {
                 // no autodiscovery, this model will not be configured
                 return;
@@ -227,6 +215,47 @@ class AgentCodegen implements CodegenExtension {
             ctr
                     .addContent("this.chatModel = chatModel.orElse(null);");
         }
+    }
+
+    private void addConfigureSubAgentsMethod(Method.Builder mb) {
+        mb
+                .accessModifier(PACKAGE_PRIVATE)
+                .addParameter(Parameter.builder()
+                                      .name("ctx")
+                                      .type(LC_DECLARATIVE_AGENT_CREATION_CONTEXT)
+                                      .build())
+                .name("configureSubAgents")
+                .addContent(CLASS_WILDCARD)
+                .addContentLine(" cls = ctx.agentServiceClass();")
+                .addContentLine()
+                .addContentLine("// Get Agent metadata created from it's annotations in build-time")
+                .addContent("var metadata = registry.first(")
+                .addContent(AGENT_METADATA)
+                .addContent(".class, ")
+                .addContent(SERVICE_QUALIFIER)
+                .addContentLine(".createNamed(cls))")
+                .increaseContentPadding()
+                .addContent(".orElseThrow(() -> new ")
+                .addContent(IllegalStateException.class)
+                .addContent("(")
+                .addContentLiteral("Agent ")
+                .addContent("+ cls +")
+                .addContentLiteral(" has no build time metadata available!")
+                .addContentLine("));")
+
+                .decreaseContentPadding()
+                .addContent(STRING)
+                .addContentLine(" agentName = metadata.agentName();")
+                .addContent("var agentsConfigBuilder = ")
+                .addContent(AGENTS_CONFIG)
+                .addContent(".builder(metadata.buildTimeConfig());")
+                .decreaseContentPadding()
+                .addContentLine()
+                .addContentLine()
+                .addContentLine("// Override annotation setup with config")
+                .addContentLine("agentsConfigBuilder.config(agenticConfig.get(agentName));")
+                .addContentLine("var agentsConfig = agentsConfigBuilder.build();")
+                .addContentLine("agentsConfig.configure(ctx, registry);");
     }
 
     private TypeName generatedTypeName(TypeName aiInterfaceType, String suffix) {

@@ -112,7 +112,7 @@ public final class Ai {
 
     /**
      * Annotation that marks a type (typically a LangChain4j declarative service interface)
-     * as an **agent** and assigns it a logical name.
+     * as an {@code agent} and assigns it a logical name.
      *
      * @see dev.langchain4j.agentic.Agent
      */

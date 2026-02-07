@@ -69,8 +69,3 @@ langchain4j:
       log-responses: true
       custom-headers.header1: value1
       custom-headers.header2: value2
-
-
-
-
-

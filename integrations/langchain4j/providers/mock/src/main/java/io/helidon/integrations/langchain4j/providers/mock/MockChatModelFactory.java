@@ -45,7 +45,7 @@ class MockChatModelFactory implements Service.ServicesFactory<MockChatModel> {
         this.config = config;
         this.modelNames = MockConstants.modelNames(config,
                                                  MockChatModel.class,
-                                                 MockChatModelConfigBlueprint.PROVIDER_KEY);
+                                                 MockLc4jProvider.PROVIDER_KEY);
         this.rules = rules;
     }
 

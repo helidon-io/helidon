@@ -69,6 +69,7 @@ public class CoherenceEmbeddingStoreIT {
 
         @Service.Inject
         StoreWrapper(
+                // name of the configured embedding store(used to be type)
                 @Service.Named("test-embedding-store") EmbeddingStore<TextSegment> namedStore,
                 EmbeddingStore<?> defaultStore
         ) {

@@ -100,8 +100,23 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.bundles</groupId>
-                            <artifactId>helidon-bundles-apt</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.integrations.langchain4j</groupId>
+                            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -114,8 +129,23 @@
                 <dependencies>
                     <!-- This is not needed for applications that are not part of Helidon Maven reactor -->
                     <dependency>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.integrations.langchain4j</groupId>
+                        <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

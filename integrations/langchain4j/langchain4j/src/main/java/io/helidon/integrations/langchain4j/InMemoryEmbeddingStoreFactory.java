@@ -54,7 +54,7 @@ class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<Embedding
      * @return content retriever instance
      * @throws java.lang.IllegalStateException in case the configuration is not enabled
      */
-    public static Optional<EmbeddingStore<TextSegment>> create(String name, Config c) {
+    static Optional<EmbeddingStore<TextSegment>> create(String name, Config c) {
         var mergedConfig = HelidonConstants.create(c, HelidonConstants.ConfigCategory.EMBEDDING_STORE, name);
         var config = InMemoryEmbeddingStoreConfig.create(mergedConfig);
 

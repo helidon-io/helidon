@@ -33,13 +33,13 @@ import io.helidon.common.types.TypeNames;
 import static io.helidon.common.types.AccessModifier.PACKAGE_PRIVATE;
 import static io.helidon.common.types.AccessModifier.PRIVATE;
 import static io.helidon.common.types.AccessModifier.PUBLIC;
+import static io.helidon.common.types.TypeNames.CLASS_WILDCARD;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.STRING;
-import static io.helidon.common.types.TypeNames.WILDCARD;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_EMBEDDING_STORE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MERGED_CONFIG;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 
 /**
  * Code generator for provider-specific constants used by Helidon's LangChain4j integration.
@@ -97,8 +97,8 @@ class ConstantsBuilder {
                                     .isStatic(true)
                                     .isFinal(true)
                                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                                    .type(SVC_QUALIFIER)
-                                    .addContent(SVC_QUALIFIER)
+                                    .type(SERVICE_QUALIFIER)
+                                    .addContent(SERVICE_QUALIFIER)
                                     .addContent(".createNamed(\"")
                                     .addContent(providerKey)
                                     .addContent("\")")
@@ -144,6 +144,16 @@ class ConstantsBuilder {
                 .description("Configuration key for service definitions.")
         );
         classModel.addField(f -> f
+                .name("AGENTS_KEY")
+                .type(STRING)
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(PACKAGE_PRIVATE)
+                .addContent("LC4J_KEY + ")
+                .addContentLiteral(".agents")
+                .description("Configuration key for agents definitions.")
+        );
+        classModel.addField(f -> f
                 .name("EMB_STORES_KEY")
                 .type(STRING)
                 .isStatic(true)
@@ -174,7 +184,8 @@ class ConstantsBuilder {
                                     .description("merged configuration"))
                 .addParameter(Parameter.builder().type(CONFIG).name("root")
                                       .description("the root configuration"))
-                .addParameter(Parameter.builder().type(TypeName.builder().type(Class.class).addTypeArgument(WILDCARD).build())
+                .addParameter(Parameter.builder()
+                                      .type(CLASS_WILDCARD)
                                       .name("categoryType")
                                       .description("the model class to resolve the {@link CategoryType}"))
                 .addParameter(Parameter.builder().type(STRING)
@@ -193,7 +204,7 @@ class ConstantsBuilder {
                                             .description("list of model names"))
                         .addParameter(Parameter.builder().type(CONFIG).name("config").description("the root configuration"))
                         .addParameter(Parameter.builder()
-                                              .type(TypeName.builder().type(Class.class).addTypeArgument(WILDCARD).build())
+                                              .type(CLASS_WILDCARD)
                                               .name("categoryType")
                                               .description("model class (e.g., "
                                                                    + "{@code dev.langchain4j.model.chat.ChatLanguageModel})"))
@@ -274,7 +285,8 @@ class ConstantsBuilder {
                 .accessModifier(PACKAGE_PRIVATE)
                 .returnType(Returns.builder().type(INNER_CONFIG_CATEGORY_ENUM)
                                     .description("corresponding {@link ConfigCategory}"))
-                .addParameter(Parameter.builder().type(TypeName.builder().type(Class.class).addTypeArgument(WILDCARD).build())
+                .addParameter(Parameter.builder()
+                                      .type(CLASS_WILDCARD)
                                       .name("clazz")
                                       .description("class to resolve"))
                 .addContent("if (")
