@@ -458,6 +458,7 @@ backend:
                   type: "icon"
                   value: "data_object"
                 sources:
+                  - "json.adoc"
                   - "schema.adoc"
               - type: "MENU"
                 title: "JSON-RPC"

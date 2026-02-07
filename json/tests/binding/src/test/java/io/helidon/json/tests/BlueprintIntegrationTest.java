@@ -50,6 +50,19 @@ public class BlueprintIntegrationTest {
         assertThat(actualPerson, is(expectedPerson));
     }
 
+    @Test
+    public void testBlueprintIntegrationWithOptionalEmpty() {
+        String expectedJson = "{\"firstName\":\"Test\"}";
+        MyTestPerson expectedPerson = MyTestPerson.builder().firstName("Test").build();
+
+        String json = jsonBinding.serialize(expectedPerson);
+        assertThat(json, is(expectedJson));
+
+        MyTestPerson actualPerson = jsonBinding.deserialize(json, MyTestPerson.class);
+        assertThat(actualPerson, notNullValue());
+        assertThat(actualPerson, is(expectedPerson));
+    }
+
     @Prototype.Blueprint
     @Prototype.Annotated("io.helidon.json.binding.Json.Entity")
     interface MyTestPersonBlueprint {
