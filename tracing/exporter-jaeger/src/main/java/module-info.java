@@ -37,5 +37,7 @@ module io.helidon.tracing.exporter.jaeger {
 
     exports io.helidon.tracing.exporter.jaeger;
 
+    provides io.opentelemetry.sdk.autoconfigure.spi.traces.ConfigurableSpanExporterProvider
+            with io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporterProvider;
 
 }
