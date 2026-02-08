@@ -258,20 +258,6 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
                 <version>${version.lib.opentelemetry}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.squareup.okhttp3</groupId>
-                        <artifactId>okhttp-jvm</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.squareup.okhttp3</groupId>
-                        <artifactId>okhttp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.squareup.okio</groupId>
-                        <artifactId>okio</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
