@@ -87,18 +87,19 @@
             <artifactId>jackson-jr-objects</artifactId>
         </dependency>
         <!--
-        The following dependencies force OpenTelemetry to use the JDK HTTP client instead of the okio one.
+        The following has OpenTelemetry use the JDK HTTP client; the okhttp one is excluded in the Helidon-wide dependencies.
         -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-sender-grpc-managed-channel</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-okhttp</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+
         <!-- -->
         <dependency>
             <groupId>io.helidon.config</groupId>
