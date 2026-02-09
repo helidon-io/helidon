@@ -146,6 +146,7 @@
         <version.lib.okio>3.16.4</version.lib.okio>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
+        <version.lib.okhttp-jvm>5.3.2</version.lib.okhttp-jvm>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry.opentracing.shim>1.58.0</version.lib.opentelemetry.opentracing.shim>
@@ -1240,6 +1241,11 @@
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio-jvm</artifactId>
                 <version>${version.lib.okio}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-jvm</artifactId>
+                <version>${version.lib.okhttp-jvm}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
