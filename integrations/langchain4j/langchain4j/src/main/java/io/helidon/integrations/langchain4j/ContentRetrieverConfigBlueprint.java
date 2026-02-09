@@ -52,10 +52,10 @@ interface ContentRetrieverConfigBlueprint {
     /**
      * Embedding store to use in the content retriever.
      * <p>
-     * The value typically identifies a service-registry bean (for example, by name) that provides the embedding store
+     * The value identifies a named service that provides embedding store
      * implementation used to retrieve relevant content.
      *
-     * @return the embedding store reference (for example, a bean name)
+     * @return the embedding store service name
      */
     @Option.Configured
     String embeddingStore();
@@ -63,8 +63,8 @@ interface ContentRetrieverConfigBlueprint {
     /**
      * Explicit embedding model to use in the content retriever.
      * <p>
-     * If empty, the default embedding model is used (as resolved by the service registry). If set, the value typically
-     * identifies a named embedding model bean.
+     * If empty, the default embedding model is used (as resolved by the service registry).
+     * If set, the value identifies a named service that provides embedding model bean.
      *
      * @return embedding model reference if configured
      */
@@ -98,28 +98,4 @@ interface ContentRetrieverConfigBlueprint {
      */
     @Option.Configured
     Optional<Double> minScore();
-
-    /**
-     * Supported content retriever implementations.
-     */
-    enum ContentRetrieverType {
-        /**
-         * Embedding store-backed content retriever.
-         */
-        EMBEDDING_STORE_CONTENT_RETRIEVER("embedding-store-content-retriever"),
-        /**
-         * Web search-backed content retriever.
-         */
-        WEB_SEARCH_CONTENT_RETRIEVER("web-search-content-retriever");
-        private final String name;
-
-        ContentRetrieverType(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
 }

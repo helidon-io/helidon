@@ -172,7 +172,7 @@ public final class AiProvider {
     }
 
     /**
-     * Marking annotation for utility classes generation only.
+     * Utility classes generation only for custom non-generated providers.
      * Utilities are generated automatically when {@link ModelConfig} is used.
      * Mutually exclusive with {@link ModelConfig}.
      */

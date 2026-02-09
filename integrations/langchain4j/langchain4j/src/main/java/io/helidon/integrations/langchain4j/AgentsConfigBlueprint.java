@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.langchain4j;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,17 +23,8 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.service.registry.ServiceRegistry;
 
-import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.guardrail.InputGuardrail;
 import dev.langchain4j.guardrail.OutputGuardrail;
-import dev.langchain4j.mcp.McpToolProvider;
-import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.memory.chat.ChatMemoryProvider;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.rag.RetrievalAugmentor;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
-import dev.langchain4j.service.tool.ToolProvider;
 
 /**
  * Configuration for a single LangChain4j agent.
@@ -43,12 +33,13 @@ import dev.langchain4j.service.tool.ToolProvider;
  * <ul>
  *     <li>Basic agent metadata (name, description, output key)</li>
  *     <li>Execution settings (async invocation and concurrent tool execution)</li>
- *     <li>References to services resolved from the {@code ServiceRegistry} (model, memory, retriever, tools, etc.)</li>
- *     <li>Guardrail class lists resolved from the {@code ServiceRegistry}</li>
+ *     <li>References to services resolved from the {@link ServiceRegistry} (model, memory, retriever, tools, etc.)</li>
+ *     <li>Guardrail class lists resolved from the {@link ServiceRegistry}</li>
  * </ul>
  */
 @Prototype.Blueprint
 @Prototype.Configured(HelidonConstants.AGENTS_KEY)
+@Prototype.CustomMethods(AgentsConfigSupport.class)
 interface AgentsConfigBlueprint {
 
     /**
@@ -98,17 +89,17 @@ interface AgentsConfigBlueprint {
     Optional<Boolean> async();
 
     /**
-     * If true, the agent's tools can be invoked in an asynchronous manner.
+     * If true, the agent's tools can be invoked in a concurrent manner.
      *
-     * @return true if agent's tools should be invoked asynchronously.
+     * @return true if agent's tools can be invoked concurrently.
      */
     @Option.Configured
     Optional<Boolean> executeToolsConcurrently();
 
     /**
-     * Name of the {@code ChatModel} service to use for this agent.
+     * Name of the {@link dev.langchain4j.model.chat.ChatModel} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the chat model service, or empty if not configured
      */
@@ -116,9 +107,9 @@ interface AgentsConfigBlueprint {
     Optional<String> chatModel();
 
     /**
-     * Name of the {@code ChatMemory} service to use for this agent.
+     * Name of the {@link dev.langchain4j.memory.ChatMemory} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the chat memory service, or empty if not configured
      */
@@ -126,9 +117,9 @@ interface AgentsConfigBlueprint {
     Optional<String> chatMemory();
 
     /**
-     * Name of the {@code ChatMemoryProvider} service to use for this agent.
+     * Name of the {@link dev.langchain4j.memory.chat.ChatMemoryProvider} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the chat memory provider service, or empty if not configured
      */
@@ -136,9 +127,9 @@ interface AgentsConfigBlueprint {
     Optional<String> chatMemoryProvider();
 
     /**
-     * Name of the {@code ContentRetriever} service to use for this agent.
+     * Name of the {@link dev.langchain4j.rag.content.retriever.ContentRetriever} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the content retriever service, or empty if not configured
      */
@@ -146,9 +137,9 @@ interface AgentsConfigBlueprint {
     Optional<String> contentRetriever();
 
     /**
-     * Name of the {@code RetrievalAugmentor} service to use for this agent.
+     * Name of the {@link dev.langchain4j.rag.RetrievalAugmentor} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the retrieval augmentor service, or empty if not configured
      */
@@ -156,9 +147,9 @@ interface AgentsConfigBlueprint {
     Optional<String> retrievalAugmentor();
 
     /**
-     * Name of the {@code ToolProvider} service to use for this agent.
+     * Name of the {@link dev.langchain4j.service.tool.ToolProvider} service to use for this agent.
      * <p>
-     * The value is resolved from the {@code ServiceRegistry}.
+     * The value is resolved from the {@link ServiceRegistry}.
      *
      * @return configured name of the tool provider service, or empty if not configured
      */
@@ -168,7 +159,7 @@ interface AgentsConfigBlueprint {
     /**
      * Tool service classes to register with the agent.
      * <p>
-     * Each class is resolved from the {@code ServiceRegistry},
+     * Each class is resolved from the {@link ServiceRegistry},
      * and the resulting service instances are registered using {@code agentBuilder.tools(...)}.
      *
      * @return configured set of tool classes, or an empty set if not configured
@@ -177,10 +168,11 @@ interface AgentsConfigBlueprint {
     Set<Class<?>> tools();
 
     /**
-     * Names of {@code McpClient} services to use for MCP-backed tools.
+     * Names of {@link dev.langchain4j.mcp.client.McpClient} services to use for MCP-backed tools.
      * <p>
-     * Each name is resolved from the {@code ServiceRegistry},
-     * the clients are then used to build an {@code McpToolProvider} which is registered as the agent's tool provider.
+     * Each name is resolved from the {@link ServiceRegistry},
+     * the clients are then used to build an {@link dev.langchain4j.mcp.McpToolProvider} which is registered as the agent's tool
+     * provider.
      *
      * @return configured set of MCP client service names, or an empty set if not configured
      */
@@ -190,7 +182,7 @@ interface AgentsConfigBlueprint {
     /**
      * Input guardrail classes to apply to the agent.
      * <p>
-     * Each class is resolved from the {@code ServiceRegistry}.
+     * Each class is resolved from the {@link ServiceRegistry}.
      *
      * @return configured set of input guardrail classes, or an empty set if not configured
      */
@@ -201,92 +193,11 @@ interface AgentsConfigBlueprint {
     /**
      * Output guardrail classes to apply to the agent.
      * <p>
-     * Each class is resolved from the {@code ServiceRegistry},
+     * Each class is resolved from the {@link ServiceRegistry},
      *
      * @return configured set of output guardrail classes, or an empty set if not configured
      */
     @Option.Configured
     @Option.Singular
     Set<Class<? extends OutputGuardrail>> outputGuardrails();
-
-    /**
-     * Configures the agent builder from this configuration.
-     * <p>
-     * This method resolves any configured service references (such as {@code ChatModel}, {@code ChatMemory},
-     * {@code ChatMemoryProvider}, {@code ContentRetriever}, {@code RetrievalAugmentor}, {@code ToolProvider},
-     * and {@code McpClient}) from the provided {@code ServiceRegistry} and applies them to the
-     * {@code dev.langchain4j.agentic.AgenticServices.DeclarativeAgentBuilder} obtained from the supplied context.
-     *
-     * @param ctx             context providing the agent builder to configure
-     * @param serviceRegistry registry used to resolve configured service references
-     * @throws NullPointerException  if {@code ctx} is null, or if {@code ctx.agentBuilder()} returns null
-     * @throws IllegalStateException if any configured tool class or MCP client cannot be resolved from the registry
-     */
-    default void configure(AgenticServices.DeclarativeAgentCreationContext<?> ctx, ServiceRegistry serviceRegistry) {
-        var agentBuilder = ctx.agentBuilder();
-        Objects.requireNonNull(agentBuilder, "agentBuilder must not be null");
-
-        this.chatModel().map(s -> serviceRegistry.getNamed(ChatModel.class, s))
-                .ifPresent(agentBuilder::chatModel);
-
-        this.name().ifPresent(agentBuilder::name);
-        this.description().ifPresent(agentBuilder::description);
-        this.outputKey().ifPresent(agentBuilder::outputKey);
-        this.async().ifPresent(agentBuilder::async);
-        this.executeToolsConcurrently()
-                .filter(b -> b)
-                .ifPresent(b -> agentBuilder.executeToolsConcurrently());
-
-        this.chatMemory().map(s -> serviceRegistry.getNamed(ChatMemory.class, s))
-                .ifPresent(agentBuilder::chatMemory);
-        this.chatMemoryProvider().map(s -> serviceRegistry.getNamed(ChatMemoryProvider.class, s))
-                .ifPresent(agentBuilder::chatMemoryProvider);
-        this.contentRetriever().map(s -> serviceRegistry.getNamed(ContentRetriever.class, s))
-                .ifPresent(agentBuilder::contentRetriever);
-        this.retrievalAugmentor().map(s -> serviceRegistry.getNamed(RetrievalAugmentor.class, s))
-                .ifPresent(agentBuilder::retrievalAugmentor);
-        this.toolProvider().map(s -> serviceRegistry.getNamed(ToolProvider.class, s))
-                .ifPresent(agentBuilder::toolProvider);
-
-        // tools – only set when the list is non‑empty
-        if (!tools().isEmpty()) {
-            Object[] classes = tools()
-                    .stream()
-                    // First look for unnamed types
-                    .map(c -> serviceRegistry.first(c)
-                            .map(Object.class::cast)
-                            // Then try named ones of the same type
-                            .or(() -> serviceRegistry.firstNamed(c, "*"))
-                            .orElseThrow(() -> new IllegalStateException("No service bean found for tool " + c)))
-                    .toArray(Object[]::new);
-            agentBuilder.tools(classes);
-        }
-
-        // mcp clients – only set when the list is non‑empty
-        if (!mcpClients().isEmpty()) {
-            McpToolProvider.Builder mcpToolProviderBuilder = McpToolProvider.builder();
-            McpClient[] classes = mcpClients()
-                    .stream()
-                    .map(n -> serviceRegistry.firstNamed(McpClient.class, n)
-                            .orElseThrow(() -> new IllegalStateException("No service bean found for mcp client " + n)))
-                    .toArray(McpClient[]::new);
-            mcpToolProviderBuilder.mcpClients(classes);
-            agentBuilder.toolProvider(mcpToolProviderBuilder.build());
-        }
-
-        // guardrails – only set when the lists are non‑empty
-        if (!inputGuardrails().isEmpty()) {
-            @SuppressWarnings("unchecked")
-            Class<? extends InputGuardrail>[] classes =
-                    inputGuardrails().toArray(Class[]::new);
-            agentBuilder.inputGuardrailClasses(classes);
-        }
-
-        if (!outputGuardrails().isEmpty()) {
-            @SuppressWarnings("unchecked")
-            Class<? extends OutputGuardrail>[] classes =
-                    outputGuardrails().toArray(Class[]::new);
-            agentBuilder.outputGuardrailClasses(classes);
-        }
-    }
 }

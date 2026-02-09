@@ -100,7 +100,7 @@ interface McpClientConfigBlueprint {
     /**
      * Sets the timeout for tool execution.
      * This value applies to each tool execution individually.
-     * A value of zero means no timeout.
+     * A value of zero seconds means no timeout.
      * Overwrites the default timeout for tool execution from langchain4j.
      *
      * @return tool execution timeout
@@ -110,7 +110,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * Sets the timeout for resource-related operations (listing resources as well as reading the contents of a resource).
-     * A value of zero means no timeout.
+     * A value of zero seconds means no timeout.
      * Overwrites the default timeout for resource-related operations from langchain4j.
      *
      * @return resources timeout
@@ -120,7 +120,7 @@ interface McpClientConfigBlueprint {
 
     /**
      * The timeout for prompt-related operations (listing prompts as well as rendering the contents of a prompt).
-     * A value of zero means no timeout.
+     * A value of zero seconds means no timeout.
      * Overwrites the default timeout for prompt-related operations from langchain4j.
      *
      * @return prompts timeout
