@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,6 @@ import static io.helidon.declarative.codegen.validation.ValidationHelper.addType
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfConstraint;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfTypeArguments;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.addValidationOfValid;
-import static io.helidon.declarative.codegen.validation.ValidationHelper.findMetaAnnotations;
 import static io.helidon.declarative.codegen.validation.ValidationHelper.metaAnnotated;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.CONSTRAINT_VIOLATION_LOCATION;
 import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATION_CONTEXT;
@@ -299,7 +298,7 @@ class InterceptorGenerator {
                 .addContent(".")
                 .addContent(location)
                 .addContent(", ")
-                .addContentLiteral("RETURN_VALUE" .equals(location)
+                .addContentLiteral("RETURN_VALUE".equals(location)
                                            ? element.typeName().classNameWithEnclosingNames()
                                            : localVariableName)
                 .addContentLine(")) {");
@@ -310,24 +309,15 @@ class InterceptorGenerator {
             addValidationOfValid(proceedMethod, fieldName, localVariableName);
         }
 
-        for (TypeName constraintAnnotation : constraintAnnotations) {
-            element.findAnnotation(constraintAnnotation)
-                    .ifPresent(it -> addValidationOfConstraint(generatedType,
-                                                               fieldHandler,
-                                                               proceedMethod,
-                                                               it,
-                                                               location,
-                                                               element,
-                                                               localVariableName));
-            for (var annotation : findMetaAnnotations(element.annotations(), constraintAnnotation)) {
-                addValidationOfConstraint(generatedType,
-                                          fieldHandler,
-                                          proceedMethod,
-                                          annotation,
-                                          location,
-                                          element,
-                                          localVariableName);
-            }
+        // we must honor order of declaration on the element
+        for (Annotation annotation : ValidationHelper.findConstraintAnnotations(constraintAnnotations, element)) {
+            addValidationOfConstraint(generatedType,
+                                      fieldHandler,
+                                      proceedMethod,
+                                      annotation,
+                                      location,
+                                      element,
+                                      localVariableName);
         }
 
         addValidationOfTypeArguments(generatedType,

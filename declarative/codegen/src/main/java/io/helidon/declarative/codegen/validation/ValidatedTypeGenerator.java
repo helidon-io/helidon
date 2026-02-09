@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,33 @@ class ValidatedTypeGenerator {
         classModel.addMethod(checkMethod);
 
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
+    }
+
+    private static boolean isPropertyGetter(String propertyName) {
+        // getSomething -> OK
+        // getHTTPS -> OK
+        // getting -> not OK
+        return propertyName.startsWith("get")
+                && propertyName.length() > 3
+                && Character.isUpperCase(propertyName.charAt(3));
+    }
+
+    private static String nameFromPropertyGetter(String propertyName) {
+        // getSomething -> Something
+        // getHTTPS -> HTTPS
+        // getX -> X
+        propertyName = propertyName.substring(3);
+        var firstChar = propertyName.charAt(0);
+
+        if (propertyName.length() == 1) {
+            // i.e. X -> x
+            return String.valueOf(Character.toLowerCase(firstChar));
+        } else if (!Character.isUpperCase(propertyName.charAt(1))) {
+            // i.e. Something -> something
+            return Character.toLowerCase(firstChar) + propertyName.substring(1);
+        }
+        // i.e. HTTPS -> HTTPS
+        return propertyName;
     }
 
     private void processValidatedRecord(TypeName generatedType,
@@ -292,33 +319,6 @@ class ValidatedTypeGenerator {
         addCheckWithPropertyNameMethods(classModel, type.typeName(), properties);
     }
 
-    private static boolean isPropertyGetter(String propertyName) {
-        // getSomething -> OK
-        // getHTTPS -> OK
-        // getting -> not OK
-        return propertyName.startsWith("get")
-                && propertyName.length() > 3
-                && Character.isUpperCase(propertyName.charAt(3));
-    }
-
-    private static String nameFromPropertyGetter(String propertyName) {
-        // getSomething -> Something
-        // getHTTPS -> HTTPS
-        // getX -> X
-        propertyName = propertyName.substring(3);
-        var firstChar = propertyName.charAt(0);
-
-        if (propertyName.length() == 1) {
-            // i.e. X -> x
-            return String.valueOf(Character.toLowerCase(firstChar));
-        } else if (!Character.isUpperCase(propertyName.charAt(1))) {
-            // i.e. Something -> something
-            return Character.toLowerCase(firstChar) + propertyName.substring(1);
-        }
-        // i.e. HTTPS -> HTTPS
-        return propertyName;
-    }
-
     private void addCheckWithPropertyNameMethods(ClassModel.Builder classModel,
                                                  TypeName triggerType,
                                                  List<Property> properties) {
@@ -448,19 +448,18 @@ class ValidatedTypeGenerator {
             addValidationOfValid(checkMethod, validatorField, "value");
         }
 
-        for (TypeName constraintAnnotation : constraintAnnotations) {
-            element.findAnnotation(constraintAnnotation)
-                    .ifPresent(annotation -> addValidationOfConstraint(generatedType,
-                                                                       fieldHandler,
-                                                                       checkMethod,
-                                                                       annotation,
-                                                                       location,
-                                                                       element,
-                                                                       "value"));
+        // we must honor order of declaration on the element
+        for (Annotation annotation : ValidationHelper.findConstraintAnnotations(constraintAnnotations, element)) {
+            addValidationOfConstraint(generatedType,
+                                      fieldHandler,
+                                      checkMethod,
+                                      annotation,
+                                      location,
+                                      element,
+                                      "value");
         }
 
         checkMethod.addContentLine("}");
-
     }
 
     private record Property(String name,

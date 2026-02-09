@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.declarative.codegen.validation;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.AccessModifier;
@@ -168,6 +170,17 @@ final class ValidationHelper {
                 .addContentLine(");");
     }
 
+    static List<Annotation> findConstraintAnnotations(Collection<TypeName> constraintAnnotations, TypedElementInfo element) {
+        // go through all annotations, and find if they are constraint; also go through all meta-annotations
+        // the result must be in order of declaration (both on the element, and in meta-annotations)
+        List<Annotation> result = new ArrayList<>();
+        Set<Annotation> processed = new HashSet<>();
+
+        findConstraintAnnotations(constraintAnnotations, element.annotations(), result, processed);
+
+        return result;
+    }
+
     static boolean needsWork(Collection<TypeName> constraintAnnotations, TypedElementInfo element) {
         // the element itself is annotated either with valid or one of the constraints
         // a type parameter is annotated in the same way (only first level)
@@ -258,6 +271,24 @@ final class ValidationHelper {
         return false;
     }
 
+    private static void findConstraintAnnotations(Collection<TypeName> constraintAnnotations,
+                                                  List<Annotation> annotations,
+                                                  List<Annotation> result,
+                                                  Set<Annotation> processed) {
+
+        for (Annotation annotation : annotations) {
+            if (processed.add(annotation)) {
+                // a constraint itself
+                if (constraintAnnotations.contains(annotation.typeName())) {
+
+                    result.add(annotation);
+                }
+                // maybe meta-annotated with a constraint
+                findConstraintAnnotations(constraintAnnotations, annotation.metaAnnotations(), result, processed);
+            }
+        }
+    }
+
     private static void addValidationOfMap(TypeName generatedType,
                                            Collection<TypeName> constraintAnnotations,
                                            ContentBuilder<?> contentBuilder,
@@ -276,11 +307,17 @@ final class ValidationHelper {
             List<Annotation> valueConstraints = new ArrayList<>();
 
             // now for each constraint annotation...
-            for (TypeName constraintAnnotation : constraintAnnotations) {
-                keyType.findAnnotation(constraintAnnotation).ifPresent(keyConstraints::add);
+            // we must honor order of declaration on the element
+            for (Annotation annotation : keyType.annotations()) {
+                if (constraintAnnotations.contains(annotation.typeName())) {
+                    keyConstraints.add(annotation);
+                }
             }
-            for (TypeName constraintAnnotation : constraintAnnotations) {
-                valueType.findAnnotation(constraintAnnotation).ifPresent(valueConstraints::add);
+            // we must honor order of declaration on the element
+            for (Annotation annotation : valueType.annotations()) {
+                if (constraintAnnotations.contains(annotation.typeName())) {
+                    valueConstraints.add(annotation);
+                }
             }
 
             if (keyHasValid || valueHasValid || !keyConstraints.isEmpty() || !valueConstraints.isEmpty()) {
@@ -368,9 +405,11 @@ final class ValidationHelper {
             List<Annotation> constraints = new ArrayList<>();
 
             // now for each constraint annotation...
-            for (TypeName constraintAnnotation : constraintAnnotations) {
-                maybeAnnotated.findAnnotation(constraintAnnotation).ifPresent(constraints::add);
-                constraints.addAll(findMetaAnnotations(maybeAnnotated.annotations(), constraintAnnotation));
+            // we must honor order of declaration on the element
+            for (Annotation annotation : maybeAnnotated.annotations()) {
+                if (constraintAnnotations.contains(annotation.typeName())) {
+                    constraints.add(annotation);
+                }
             }
 
             if (hasValid || !constraints.isEmpty()) {
