@@ -34,6 +34,7 @@
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
     </properties>
 
     <dependencies>
@@ -56,11 +57,6 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -90,11 +86,36 @@
             <groupId>com.fasterxml.jackson.jr</groupId>
             <artifactId>jackson-jr-objects</artifactId>
         </dependency>
+        <!--
+        The following dependencies force OpenTelemetry to use the JDK HTTP client instead of the okio one.
+        -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-sender-grpc-managed-channel</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-okhttp</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- -->
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-mp</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <!--
+        The following has scope "provided" so it is available for the plugin in this pom but not included in transitive
+        dependencies of the component. This prevents downstream collisions of types provided by the jsr305 component and
+        javax.annotations-api.
+        -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>${version.lib.google-findbugs-jsr305}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -167,6 +188,7 @@
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
                     </pluginArtifact>
+                    <pluginParameter>@generated=omit</pluginParameter>
                 </configuration>
             </plugin>
             <plugin>

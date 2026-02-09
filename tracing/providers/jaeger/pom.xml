@@ -70,17 +70,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
         </dependency>
-        <!-- Needed for dependency convergence -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.errorprone</groupId>
-                    <artifactId>error_prone_annotations</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <!-- Needed for module-info -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
