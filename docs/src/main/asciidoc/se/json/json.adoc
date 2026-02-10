@@ -59,19 +59,48 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 === Code Generation
 
 ==== What Code Generation Does and When to Use It
-Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor:
+Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with link:{json-binding-base-url}/io/helidon/json/binding/Json.Entity.html[`@Json.Entity`].
 
-- Generates efficient serializers/deserializers for classes annotated with link:{json-binding-base-url}/io/helidon/json/binding/Json.Entity.html[`@Json.Entity`]
-- Produces supporting metadata so the generated components are discovered and used by link:{json-binding-base-url}/io/helidon/json/binding/JsonBinding.html[`JsonBinding`]
-
-When to use it:
-- Use code generation if you want an automatic, annotation-driven mapping for your POJOs
-- If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement link:{json-binding-base-url}/io/helidon/json/binding/JsonSerializer.html[`JsonSerializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonDeserializer.html[`JsonDeserializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonConverter.html[`JsonConverter`], or a link:{json-binding-base-url}/io/helidon/json/binding/JsonBindingFactory.html[`JsonBindingFactory`])
+Use code generation if you want an automatic, annotation-driven mapping for your POJOs.
+If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement link:{json-binding-base-url}/io/helidon/json/binding/JsonSerializer.html[`JsonSerializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonDeserializer.html[`JsonDeserializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonConverter.html[`JsonConverter`], or a link:{json-binding-base-url}/io/helidon/json/binding/JsonBindingFactory.html[`JsonBindingFactory`]).
 
 ==== Enabling Code Generation
 For automatic code generation, you can either add individual annotation processors or use the Helidon bundles APT dependency that includes all necessary processors.
 
-==== Option 1: Individual Annotation Processors
+==== Option 1: Using Helidon Bundles APT
+
+Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
+
+[source,xml]
+.Annotation processor configuration with bundles
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.bundles</groupId>
+                        <artifactId>helidon-bundles-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.bundles</groupId>
+                    <artifactId>helidon-bundles-apt</artifactId>
+                    <version>${helidon.version}</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+----
+
+==== Option 2: Individual Annotation Processors
 
 Configure the annotation processors in your Maven build:
 
@@ -126,45 +155,13 @@ Configure the annotation processors in your Maven build:
 </build>
 ----
 
-==== Option 2: Using Helidon Bundles APT
-
-Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
-
-[source,xml]
-.Annotation processor configuration with bundles
-----
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.bundles</groupId>
-                    <artifactId>helidon-bundles-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </dependency>
-            </dependencies>
-        </plugin>
-    </plugins>
-</build>
-----
-
-=== JSON Binding API
+=== JSON Binding
 
 The main entry point for JSON binding is the
 link:{json-binding-base-url}/io/helidon/json/binding/JsonBinding.html[`JsonBinding`] class.
 
-The binding API provides high-level object mapping:
+The link:{json-binding-base-url}/io/helidon/json/binding/JsonBinding.html[`JsonBinding`]
+API provides common serialization and deserialization methods:
 
 [source,java]
 .JsonBinding usage
@@ -474,86 +471,13 @@ During the deserialization process, null values are always converted into the em
 - `OptionalLong` - For primitive long values
 - `OptionalDouble` - For primitive double values
 
-=== Automatic Service Registration
+=== Automatic Custom Converter Registration
 
-In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be automatically registered with the JSON binding system through Helidon's Service Registry. This approach allows for better separation of concerns and enables the use of dependency injection in your serialization logic.
+In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be
+automatically registered with the JSON binding system through Helidon's Service Registry. So they get automatically discovered
+and one does not need to register them manually at runtime.
 
 See xref:../injection/declarative.adoc#Overview[Helidon Declarative]
-
-==== Service Registry Annotations
-
-To enable automatic registration, annotate your custom converter classes with service registry annotations:
-
-[source,java]
-.Custom converter with Singleton scope
-----
-import io.helidon.service.registry.Service;
-
-@Service.Singleton  // <1>
-public class CustomMoneyConverter implements JsonConverter<Money> {
-    // Implementation
-}
-----
-<1> link:{service-registry-base-url}/Service.Singleton.html[Singleton] scope for stateless converters that can be safely shared
-
-[source,java]
-.Custom converter with PerLookup scope
-----
-import io.helidon.service.registry.Service;
-
-@Service.PerLookup  // <1>
-public class CustomUserConverter implements JsonConverter<User> {
-
-    private JsonConverter<String> stringConverter;
-
-    // Implementation
-
-     @Override
-    public void configure(JsonBindingConfigurator jsonBindingConfigurator) {
-        stringConverter = jsonBindingConfigurator.serializer(String.class);
-    }
-
-}
-----
-<1> link:{service-registry-base-url}/Service.PerLookup.html[PerLookup] scope for converters that have state
-
-==== Annotation Processor Configuration
-
-To enable automatic service registration, add the service codegen annotation processor to your build:
-
-[source,xml]
-.Annotation processor configuration
-----
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
-----
-
-==== Automatic Discovery
-
-Once configured, your custom converters are automatically discovered and registered with the JSON binding system. The generated service descriptors handle the registration process, eliminating the need for manual registration code.
-
-[source,java]
-.Usage with automatic registration
-----
-JsonBinding binding = JsonBinding.create();
-// Custom converters are automatically available
-Money amount = binding.deserialize("{\"amount\":100,\"currency\":\"USD\"}", Money.class);
-----
 
 === Binding Factories
 
@@ -577,13 +501,13 @@ Binding factories implement the `JsonBindingFactory<T>` interface, which require
 - `createSerializer(GenericType<? extends T> type)` - Creates a serializer for a generic type
 - `supportedTypes()` - Returns the set of types this factory can handle
 
-==== When to Use Binding Factories
+Typical example for the binding factory would be a handling of the Collection. We would have a converter, which has some
+common logic for this Collection, but we cant hardcode any specific type this common logic should handle, because Collection
+has a generic parameter and it could be more or less anything. Because of that, this common logic serves as a template
+and waits till runtime to have some specific type converter assigned based on the runtime type it received.
 
-Binding factories are ideal for:
-
-- **Parameterized types**: `List<String>`, `Map<String, Integer>`, `CustomType<User>`
-- **Type hierarchies**: All implementations of an interface
-- **Collection types**: Arrays, Sets, Queues with custom element handling
+New instance of the converter must be created for each runtime type. JSON Binding implementation handles the caching of these
+converters, so they are also getting reused.
 
 == JSON Processor
 
