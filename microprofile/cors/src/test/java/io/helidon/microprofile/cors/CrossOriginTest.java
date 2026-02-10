@@ -46,6 +46,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.isEmptyString;
 
@@ -58,10 +59,10 @@ import static org.hamcrest.Matchers.isEmptyString;
 @AddBean(CrossOriginTest.CorsResource3.class)
 @AddBean(CrossOriginTest.CorsResource4.class)
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
-@AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
-@AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
+@AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar,http://bar.foo")
+@AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE,PUT")
 @AddConfig(key = "cors.paths.1.path-pattern", value = "/cors4")
-@AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar, http://bar.foo")
+@AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar,http://bar.foo")
 @AddConfig(key = "cors.paths.1.allow-methods", value = "GET")
 class CrossOriginTest extends BaseCrossOriginTest {
     @Inject
@@ -170,7 +171,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));
@@ -185,7 +186,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is("X-foo"));
@@ -200,13 +201,11 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
+        assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()),
+                contains("X-foo", "X-bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
     }
 
@@ -228,7 +227,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
@@ -267,7 +266,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
@@ -284,14 +283,12 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
+        assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()),
+                   contains("X-foo", "X-bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
     }
 
@@ -302,16 +299,13 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
+        assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()),
+                   contains("X-foo", "X-bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
     }
 
@@ -380,7 +374,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
                 .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));

@@ -112,7 +112,7 @@ class CorsPathValidator {
 
         List<String> headers = req.headers()
                 .find(HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS)
-                .map(Header::allValues)
+                .map(it -> it.allValues(true))
                 .orElse(List.of());
         if (invalidHeaders(req, res, headers)) {
             return Result.FORBIDDEN;
@@ -163,7 +163,9 @@ class CorsPathValidator {
         if (exposeAllHeaders) {
             res.header(HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, ALLOW_ALL);
         } else {
-            res.headers().set(HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
+            if (!exposeHeaders.isEmpty()) {
+                res.headers().set(HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
+            }
         }
         return Result.ALLOWED;
     }

@@ -135,7 +135,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
-    public @interface AllowedCredentials {
+    public @interface AllowCredentials {
         /**
          * Whether the client can send cookies or credentials. Corresponds to {@code
          * Access-Control-Allow-Credentials}.

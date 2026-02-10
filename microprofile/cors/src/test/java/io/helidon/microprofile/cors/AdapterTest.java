@@ -15,9 +15,6 @@
  */
 package io.helidon.microprofile.cors;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import io.helidon.http.Status;
@@ -30,8 +27,6 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -92,19 +87,6 @@ public class AdapterTest extends BaseCrossOriginTest {
                 .header(TEST_ID_HEADER, testId)
                 .get();
         assertThat("Response status", response.getStatus(), is(Status.OK_200.code()));
-        assertThat("Adapter path", TestFilter.adapters.get(testId).path(), is(requestPath));
     }
 
-    public static class TestFilter implements ContainerRequestFilter {
-
-        private static final Map<String, CorsSupportMp.RequestAdapterMp> adapters = new HashMap<>();
-
-        @Override
-        public void filter(ContainerRequestContext requestContext) throws IOException {
-            String testId = requestContext.getHeaderString(TEST_ID_HEADER);
-            if (testId != null && !testId.isBlank()) {
-                adapters.put(testId, new CorsSupportMp.RequestAdapterMp(requestContext));
-            }
-        }
-    }
 }

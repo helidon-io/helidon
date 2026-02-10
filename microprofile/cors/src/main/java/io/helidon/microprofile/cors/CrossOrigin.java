@@ -26,10 +26,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * CrossOrigin annotation.
+ *
+ * @deprecated use annotations from {@link io.helidon.webserver.cors.Cors} to configure CORS; each method in this annotation
+ * is equivalent to an annotation class in the referenced class. I.e. {@link #value()} is replaced with
+ * {@link io.helidon.webserver.cors.Cors.AllowedOrigins}; this class will be removed from a future version of Helidon
  */
 @Target(METHOD)
 @Retention(RUNTIME)
 @Documented
+@Deprecated(forRemoval = true, since = "4.4.0")
 public @interface CrossOrigin {
 
     /**

@@ -45,7 +45,7 @@ class TestAnnotation {
                     seContainer = initializer.initialize());
             assertThat("Exception error message",
                        e.getMessage(),
-                       allOf(containsString("annotation is valid only on @OPTIONS methods"),
+                       allOf(containsString("CORS annotations are valid only on @OPTIONS methods"),
                              containsString(CorsResourceWithBadAnnotation.class.getName())));
 
         } finally {
