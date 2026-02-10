@@ -17,8 +17,8 @@
 package io.helidon.microprofile.cors;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;

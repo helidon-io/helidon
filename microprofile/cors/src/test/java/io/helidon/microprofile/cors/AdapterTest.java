@@ -18,7 +18,7 @@ package io.helidon.microprofile.cors;
 import java.util.Set;
 
 import io.helidon.http.Status;
-import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.AddBean;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
