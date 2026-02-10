@@ -119,7 +119,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {
         byte[] prefix = new byte[V1_PREFIX.length];
-        int n = socketInputStream.read(prefix);
+        int n = socketInputStream.readNBytes(prefix, 0, prefix.length);
         if (n < V1_PREFIX.length) {
             throw BAD_PROTOCOL_EXCEPTION;
         }

@@ -49,9 +49,9 @@ class ProxyProtocolHandlerTest {
 
     @Test
     void basicV1Test() throws IOException {
-        String header = " TCP4 192.168.0.1 192.168.0.11 56324 443\r\n";     // excludes PROXY prefix
-        ProxyProtocolData data = ProxyProtocolHandler.handleV1Protocol(new PushbackInputStream(
-                new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII))));
+        String header = "PROXY TCP4 192.168.0.1 192.168.0.11 56324 443\r\n";
+        ProxyProtocolData data = ProxyProtocolHandler.handleAnyProtocol(
+                new ByteArrayInputStream(header.getBytes(StandardCharsets.US_ASCII)));
         assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
         assertThat(data.sourceAddress(), is("192.168.0.1"));
@@ -192,7 +192,51 @@ class ProxyProtocolHandlerTest {
     }
 
     @Test
-    public void validV2Permutations() throws IOException {
+    void prefixTooShort() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex("0D:0A:0D:0A"))));
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex("0D:0A"))));
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex("00"))));
+    }
+
+    @Test
+    void wrongPrefix() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex("00:00:00:00:00"))));
+    }
+
+    @Test
+    void invalidV2Version() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+            "31" // version 3
+        ))));
+    }
+
+    @Test
+    void invalidV2Command() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+            "22" // command 0x2
+        ))));
+    }
+
+    @Test
+    void invalidV2Family() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+            "21:41" // family 0x4
+        ))));
+    }
+
+    @Test
+    void invalidV2Protocol() {
+        assertThrows(RequestException.class, () -> ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+            "21:23" // protocol 0x3
+        ))));
+    }
+
+    @Test
+    void validV2Permutations() throws IOException {
         final var tlvs = new ArrayList<ProxyProtocolV2Data.TLV>();
         tlvs.add(new ProxyProtocolV2Data.TLV.Alpn("alpn".getBytes(StandardCharsets.UTF_8)));
         tlvs.add(new ProxyProtocolV2Data.TLV.Alpn("".getBytes(StandardCharsets.UTF_8)));
@@ -206,6 +250,8 @@ class ProxyProtocolHandlerTest {
         tlvs.add(new ProxyProtocolV2Data.TLV.UniqueId("".getBytes(StandardCharsets.UTF_8)));
         tlvs.add(new ProxyProtocolV2Data.TLV.Netns("namespace"));
         tlvs.add(new ProxyProtocolV2Data.TLV.Netns(""));
+        tlvs.add(new ProxyProtocolV2Data.TLV.Unregistered(0xE0, new byte[0]));
+        tlvs.add(new ProxyProtocolV2Data.TLV.Unregistered(0xE1, new byte[] { 0, 1, 2, 3, 4 }));
         final var rand = new Random(149813745327L);
         byte[] randomBytes;
 
