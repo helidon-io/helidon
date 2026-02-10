@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,16 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultInt(256)
     int maxStatusLineLength();
+
+    /**
+     * Configure the maximum length allowed for an entity that can be explicitly
+     * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
+     *
+     * @return maximum length for a buffered entity
+     */
+    @Option.Configured
+    @Option.DefaultInt(64 * 1024)
+    int maxBufferedEntityLength();
 
     /**
      * Sets whether the request header format is validated or not.

@@ -17,6 +17,7 @@
 package io.helidon.http.media;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -32,6 +33,7 @@ import io.helidon.common.buffers.BufferData;
  * Base for readable entities.
  */
 public abstract class ReadableEntityBase implements ReadableEntity {
+    private static final int BUFFER_SIZE = 8 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
@@ -43,8 +45,8 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final Consumer<Boolean> entityRequestedCallback;
     private InputStream inputStream;
 
-    private final AtomicBoolean buffered = new AtomicBoolean();
     private byte[] bufferedEntity;
+    private final int maxBufferedEntityLength;
 
     /**
      * Create a new base.
@@ -52,13 +54,16 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
+     * @param maxBufferedEntityLength maximum length of a buffered entity
      */
     protected ReadableEntityBase(Function<Integer, BufferData> readEntityFunction,
-                                 Runnable entityProcessedRunnable) {
+                                 Runnable entityProcessedRunnable,
+                                 int maxBufferedEntityLength) {
         this.entityRequestedCallback = d -> {
         };
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
+        this.maxBufferedEntityLength = maxBufferedEntityLength;
     }
 
     /**
@@ -68,13 +73,16 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
+     * @param maxBufferedEntityLength maximum length of a buffered entity
      */
     protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
                                  Function<Integer, BufferData> readEntityFunction,
-                                 Runnable entityProcessedRunnable) {
+                                 Runnable entityProcessedRunnable,
+                                 int maxBufferedEntityLength) {
         this.entityRequestedCallback = entityRequestedCallback;
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
+        this.maxBufferedEntityLength = maxBufferedEntityLength;
     }
 
     /**
@@ -88,7 +96,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
     @Override
     public InputStream inputStream() {
-        if (buffered.get()) {
+        if (bufferedEntity != null) {
             return new ByteArrayInputStream(bufferedEntity);
         }
         return createInputStream();
@@ -96,9 +104,21 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
     @Override
     public void buffer() {
-        if (buffered.compareAndSet(false, true)) {
+        if (bufferedEntity == null) {
             try (InputStream is = createInputStream()) {
-                bufferedEntity = is.readAllBytes();
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    int read;
+                    int entityLength = 0;
+                    while ((read = is.read(buffer)) != -1) {
+                        entityLength += read;
+                        if (entityLength > maxBufferedEntityLength) {
+                            throw new IllegalStateException("Maximum buffered entity length exceeded");
+                        }
+                        bos.write(buffer, 0, read);
+                    }
+                    bufferedEntity = bos.toByteArray();
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -208,6 +228,15 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      */
     protected Runnable entityProcessedRunnable() {
         return entityProcessedRunnable;
+    }
+
+    /**
+     * Max entity length of a bufferable entity.
+     *
+     * @return max entity length for buffering
+     */
+    protected int maxBufferedEntityLength() {
+        return maxBufferedEntityLength;
     }
 
     private static class EntityProcessedRunnable implements Runnable {

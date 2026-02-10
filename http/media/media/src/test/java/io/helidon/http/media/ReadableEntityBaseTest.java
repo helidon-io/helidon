@@ -15,8 +15,10 @@
  */
 package io.helidon.http.media;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -31,17 +33,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ReadableEntityBaseTest {
 
+    private static final byte[] BYTES = new byte[1024];
+
+    static {
+        Arrays.fill(BYTES, (byte) 'A');
+    }
+
     @Test
     void testInputStream() throws IOException {
-        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), () -> {});
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         try (InputStream is = entityBase.inputStream()) {
             assertThat(is, is(notNullValue()));
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                is.transferTo(bos);
+                byte[] bytes = bos.toByteArray();
+                assertThat(bytes.length, is(1024));
+                for (int i = 0; i < bytes.length; i++) {
+                    assertThat(bytes[i], is(BYTES[i]));
+                }
+            }
         }
     }
 
     @Test
     void testMultipleInputStream() throws IOException {
-        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), () -> {});
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         try (InputStream is = entityBase.inputStream()) {
             assertThat(is, is(notNullValue()));
             assertThrows(IllegalStateException.class, entityBase::inputStream);
@@ -50,7 +66,7 @@ class ReadableEntityBaseTest {
 
     @Test
     void testBuffer() throws IOException {
-        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), () -> {});
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         entityBase.buffer();
         for (int i = 0; i < 3; i++) {
             try (InputStream is = entityBase.inputStream()) {
@@ -61,11 +77,20 @@ class ReadableEntityBaseTest {
 
     @Test
     void testBufferAfterInputStream() throws IOException {
-        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), () -> {});
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         try (InputStream is = entityBase.inputStream()) {
             assertThat(is, is(notNullValue()));
         }
         assertThrows(IllegalStateException.class, entityBase::buffer);
+    }
+
+    @Test
+    void testMaxBufferedEntityLength() {
+        ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024 - 1);
+        IllegalStateException e1 = assertThrows(IllegalStateException.class, entityBase::buffer);
+        assertThat(e1.getMessage(), is("Maximum buffered entity length exceeded"));
+        IllegalStateException e2 = assertThrows(IllegalStateException.class, entityBase::inputStream);
+        assertThat(e2.getMessage(), is("Entity has already been requested. Entity cannot be requested multiple times"));
     }
 
     static class Readable implements Function<Integer, BufferData> {
@@ -75,7 +100,7 @@ class ReadableEntityBaseTest {
         public BufferData apply(Integer estimate) {
             if (!done) {
                 done = true;
-                return BufferData.create("some data");
+                return BufferData.create(BYTES);
             }
             return BufferData.empty();
         }
@@ -84,8 +109,8 @@ class ReadableEntityBaseTest {
     static class ReadableEntityImpl extends ReadableEntityBase {
 
         protected ReadableEntityImpl(Function<Integer, BufferData> readEntityFunction,
-                                     Runnable entityProcessedRunnable) {
-            super(readEntityFunction, entityProcessedRunnable);
+                                     int maxBufferedEntityLength) {
+            super(readEntityFunction, () -> { }, maxBufferedEntityLength);
         }
 
         @Override

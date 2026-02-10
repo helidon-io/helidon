@@ -41,7 +41,8 @@ public interface ReadableEntity {
      * If called before {@link #inputStream()}, it will buffer the entity and support
      * multiple calls to {@link #inputStream()} after that. Normally, {@link #inputStream()}
      * can only be called at most once.
-     * @throws java.lang.IllegalStateException if called after {@link #inputStream()}
+     * @throws java.lang.IllegalStateException if called after {@link #inputStream()} or
+     *          if max entity buffered length limit was exceeded
      * @throws java.lang.UnsupportedOperationException if not supported
      */
     default void buffer() {
