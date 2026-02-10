@@ -1247,6 +1247,11 @@
                 <artifactId>okio</artifactId>
                 <version>${version.lib.okio}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${version.lib.google-findbugs-jsr305}</version>
+            </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->

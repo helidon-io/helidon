@@ -112,17 +112,6 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-        <!--
-        The following has scope "provided" so it is available for the plugin in this pom but not included in transitive
-        dependencies of the component. This prevents downstream collisions of types provided by the jsr305 component and
-        javax.annotations-api.
-        -->
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>${version.lib.google-findbugs-jsr305}</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
@@ -196,61 +185,6 @@
                     </pluginArtifact>
                     <pluginParameter>@generated=omit</pluginParameter>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.common.features</groupId>
-                            <artifactId>helidon-common-features-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.config.metadata</groupId>
-                            <artifactId>helidon-config-metadata-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.config.metadata</groupId>
-                        <artifactId>helidon-config-metadata-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

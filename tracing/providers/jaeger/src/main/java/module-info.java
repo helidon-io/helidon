@@ -28,6 +28,7 @@ module io.helidon.tracing.providers.jaeger {
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
     requires io.helidon.tracing.providers.opentelemetry;
+    requires io.helidon.tracing.exporter.jaeger;
     requires io.opentelemetry.sdk.common;
     requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.sdk;
@@ -44,7 +45,6 @@ module io.helidon.tracing.providers.jaeger {
     requires io.opentelemetry.context;
     requires io.opentelemetry.extension.trace.propagation;
     requires io.opentelemetry.semconv;
-    requires io.helidon.tracing.exporter.jaeger;
 
     exports io.helidon.tracing.providers.jaeger;
 

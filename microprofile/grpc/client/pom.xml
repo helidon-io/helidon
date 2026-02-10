@@ -64,7 +64,6 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-            <version>${version.lib.google-findbugs-jsr305}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
