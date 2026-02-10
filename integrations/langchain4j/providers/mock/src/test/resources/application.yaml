@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,30 @@
 # limitations under the License.
 #
 
-langchain4j.mock:
-  chat-model:
-    enabled: true
-    rules:
-      - pattern: .*create.*new Helidon project.*
-      - pattern: .*Helidon is cool.*
-        response: Cool Hello!
-      - pattern: .*Return this message:\s+'([^']+)'.*
-        template: "The message is: $1"
+langchain4j:
+#  services:
+#    support-streaming-service:
+#      streaming-chat-model: streaming-mock-model
+  models:
+    first-mock-model:
+      provider: helidon-mock
+      rules:
+        - pattern: .*create.*new Helidon project.*
+        - pattern: .*Helidon is cool.*
+          response: Cool Hello!
+        - pattern: (?s).*Return this message:\s+'([^']+)'.*
+          template: "The message is: $1"
+
+    second-mock-model:
+      provider: helidon-mock
+      rules:
+        - pattern: (?s).*What is your name?.*
+          response: second-mock-model
+
+    streaming-mock-model:
+      provider: helidon-mock
+      rules:
+        - pattern: (?s).*What is your name?.*
+          response: streaming-mock-model
+
+

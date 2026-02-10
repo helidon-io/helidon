@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.langchain4j.providers.mock;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -34,9 +36,11 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 public class MockChatModel implements RuntimeType.Api<MockChatModelConfig>, ChatModel {
 
     private final MockChatModelConfig config;
+    private final List<MockChatRule> rules = new CopyOnWriteArrayList<>();
 
     MockChatModel(MockChatModelConfig config) {
         this.config = config;
+        this.rules.addAll(config.rules());
     }
 
     /**
@@ -72,12 +76,36 @@ public class MockChatModel implements RuntimeType.Api<MockChatModelConfig>, Chat
 
     @Override
     public ChatResponse doChat(ChatRequest chatRequest) {
-        for (var rule : config.rules()) {
+        for (var rule : rules) {
             if (rule.matches(chatRequest)) {
                 return rule.doMock(chatRequest);
             }
         }
         return MockChatRule.DEFAULT_RULE.doMock(chatRequest);
+    }
+
+    /**
+     * Returns the list of {@link MockChatRule}s currently used by this model.
+     * <p>
+     * The returned list is the live internal list; modifications to it will affect
+     * the model's behavior. Use {@link #resetRules()} to restore the original
+     * configuration.
+     *
+     * @return mutable list of mock chat rules
+     */
+    public List<MockChatRule> activeRules() {
+        return this.rules;
+    }
+
+    /**
+     * Resets the mock chat rules to the original set defined in the configuration.
+     *
+     * <p>This method clears any modifications made to the {@link #activeRules()} list and restores
+     * the rules from the initial {@link MockChatModelConfig}.</p>
+     */
+    public void resetRules() {
+        this.rules.clear();
+        this.rules.addAll(this.config.rules());
     }
 
     /**

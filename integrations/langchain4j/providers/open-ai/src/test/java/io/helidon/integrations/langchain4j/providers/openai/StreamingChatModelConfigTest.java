@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.langchain4j.openai;
+package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.providers.openai.OpenAiConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 class StreamingChatModelConfigTest {
+    public static final String MODEL_NAME = "test-streaming-chat-model";
 
     @Test
     void testDefaultRoot() {
-        var config = OpenAiStreamingChatModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                                   .get(OpenAiStreamingChatModelConfig.CONFIG_ROOT));
+        var config = OpenAiStreamingChatModelConfig.create(
+                OpenAiConstants.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), is(true));

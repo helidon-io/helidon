@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.langchain4j.providers.mock;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -30,6 +31,7 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.output.TokenUsage;
 
@@ -82,7 +84,7 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
      * @return a new {@code MockChatRule}
      */
     static MockChatRule create(MockChatRuleConfig config) {
-        return new MyMockChatRuleImpl(config);
+        return new MockChatRuleImpl(config);
     }
 
     /**
@@ -123,6 +125,24 @@ public interface MockChatRule extends RuntimeType.Api<MockChatRuleConfig> {
                                    .text(mockedResponse)
                                    .build())
                 .build();
+    }
+
+    /**
+     * Creates a mock streaming chat response for the given request.
+     *
+     * <p>This default implementation generates a full mock {@link ChatResponse} using
+     * {@link #doMock(ChatRequest)} and delivers it to the provided
+     * {@link StreamingChatResponseHandler} via
+     * {@link StreamingChatResponseHandler#onCompleteResponse(ChatResponse)}.</p>
+     *
+     * @param chatRequest the chat request to mock
+     * @param handler     the streaming response handler that receives the completed mock response
+     */
+    default void doMock(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
+        var response = doMock(chatRequest);
+        Arrays.stream(response.aiMessage().text().splitWithDelimiters("\\s", 0))
+                .forEach(handler::onPartialResponse);
+        handler.onCompleteResponse(response);
     }
 
     /**

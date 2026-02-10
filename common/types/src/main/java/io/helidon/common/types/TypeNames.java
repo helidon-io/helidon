@@ -47,6 +47,23 @@ public final class TypeNames {
      */
     public static final TypeName OBJECT = TypeName.create(Object.class);
     /**
+     * Type name for {@link java.lang.Class}.
+     */
+    public static final TypeName CLASS = TypeName.create(Class.class);
+    /**
+     * Wildcard type name, represented in code by {@code ?}.
+     */
+    public static final TypeName WILDCARD = TypeName.builder()
+            .className("?")
+            .wildcard(true)
+            .build();
+    /**
+     * Type name for {@link java.lang.Class} with wildcard {@code Class<?>}.
+     */
+    public static final TypeName CLASS_WILDCARD = TypeName.builder(CLASS)
+            .addTypeArgument(WILDCARD)
+            .build();
+    /**
      * Type name for {@link java.util.List}.
      */
     public static final TypeName LIST = TypeName.create(List.class);
@@ -94,13 +111,6 @@ public final class TypeNames {
      * Type name for {@link java.lang.annotation.Target}.
      */
     public static final TypeName TARGET = TypeName.create(Target.class);
-    /**
-     * Wildcard type name, represented in code by {@code ?}.
-     */
-    public static final TypeName WILDCARD = TypeName.builder()
-            .className("?")
-            .wildcard(true)
-            .build();
 
     /*
     Primitive types and their boxed counterparts

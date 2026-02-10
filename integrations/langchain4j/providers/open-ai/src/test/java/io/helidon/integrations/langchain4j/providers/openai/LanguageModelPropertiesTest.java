@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,40 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.langchain4j.openai;
+package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.langchain4j.providers.openai.OpenAiConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-class EmbeddingModelConfigTest {
+class LanguageModelPropertiesTest {
+    public static final String MODEL_NAME = "test-chat-model";
 
     @Test
     void testDefaultRoot() {
-        var config = OpenAiEmbeddingModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                          .get(OpenAiEmbeddingModelConfig.CONFIG_ROOT));
+        var config = OpenAiLanguageModelConfig.create(
+                OpenAiConstants.create(Config.just(ConfigSources.classpath("application.yaml")), MODEL, MODEL_NAME));
 
         assertThat(config, is(notNullValue()));
-        assertThat(config.apiKey().isPresent(), equalTo(true));
-        assertThat(config.apiKey().get(), equalTo("api-key"));
-        assertThat(config.modelName().isPresent(), equalTo(true));
-        assertThat(config.modelName().get(), equalTo("model-name"));
-        assertThat(config.baseUrl().isPresent(), equalTo(true));
-        assertThat(config.baseUrl().get(), equalTo("base-url"));
-        assertThat(config.organizationId().isPresent(), equalTo(true));
-        assertThat(config.organizationId().get(), equalTo("organization-id"));
-        assertThat(config.user().isPresent(), is(true));
-        assertThat(config.user().get(), is("user"));
+        assertThat(config.apiKey().isPresent(), is(true));
+        assertThat(config.apiKey().get(), is("api-key"));
+        assertThat(config.modelName().isPresent(), is(true));
+        assertThat(config.modelName().get(), is("model-name"));
+        assertThat(config.baseUrl().isPresent(), is(true));
+        assertThat(config.baseUrl().get(), is("base-url"));
+        assertThat(config.organizationId().isPresent(), is(true));
+        assertThat(config.organizationId().get(), is("organization-id"));
+        assertThat(config.temperature().isPresent(), is(true));
+        assertThat(config.temperature().get(), is(36.6));
         assertThat(config.timeout().isPresent(), is(true));
         assertThat(config.timeout().get(), equalTo(Duration.parse("PT10M")));
         assertThat(config.maxRetries().isPresent(), is(true));

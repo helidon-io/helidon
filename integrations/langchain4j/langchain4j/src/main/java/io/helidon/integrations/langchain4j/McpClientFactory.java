@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,21 @@ package io.helidon.integrations.langchain4j;
 import java.util.List;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 
 @Service.Singleton
 class McpClientFactory implements Service.ServicesFactory<McpClient> {
-
+    private static final String CONFIG_ROOT = "langchain4j.mcp-clients";
     private final LazyValue<List<Service.QualifiedInstance<McpClient>>> clients;
 
     McpClientFactory(Config config) {
-        this.clients = LazyValue.create(() -> config.get(McpClientConfigBlueprint.CONFIG_ROOT)
+        this.clients = LazyValue.create(() -> config.get(CONFIG_ROOT)
                 .asNodeList()
                 .orElse(List.of())
                 .stream()
@@ -43,8 +43,8 @@ class McpClientFactory implements Service.ServicesFactory<McpClient> {
 
     private static Service.QualifiedInstance<McpClient> create(Config config) {
         McpClientConfig mcpClientConfig = McpClientConfig.create(config);
-        HttpMcpTransport.Builder transport = new HttpMcpTransport.Builder()
-                .sseUrl(mcpClientConfig.sseUri().toString());
+        StreamableHttpMcpTransport.Builder transport = new StreamableHttpMcpTransport.Builder()
+                .url(mcpClientConfig.uri().toString());
 
         mcpClientConfig.logRequests().ifPresent(transport::logRequests);
         mcpClientConfig.logResponses().ifPresent(transport::logResponses);

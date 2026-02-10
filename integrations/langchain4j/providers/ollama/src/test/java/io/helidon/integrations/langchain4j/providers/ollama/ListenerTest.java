@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.langchain4j.providers.ollama;
 
+import io.helidon.integrations.langchain4j.Ai;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
@@ -32,13 +33,19 @@ public class ListenerTest {
     private static final String TEST_PROMPT = "Test prompt";
 
     @Test
-    void requestInterception(OllamaChatModel model) {
+    void requestInterception(TestAiService model) {
         assertThat(model.chat(TEST_PROMPT), is(MockHttpClientProvider.MOCK_RESPONSE));
         var modelListeners = Services.all(MockChatModelListener.class);
 
         assertThat(modelListeners.size(), is(2));
         assertThat(modelListeners.get(0).messages(), contains(TEST_PROMPT));
         assertThat(modelListeners.get(1).messages(), contains(TEST_PROMPT));
+    }
+
+    @Ai.Service
+    @Ai.ChatModel("test-model")
+    public interface TestAiService {
+        String chat(String prompt);
     }
 
 }

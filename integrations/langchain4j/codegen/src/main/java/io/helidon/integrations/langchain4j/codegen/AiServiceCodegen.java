@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
+import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
@@ -49,6 +50,7 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_SERV
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_STREAMING_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOLS;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOL_PROVIDER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AI_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_PROVIDER;
@@ -64,9 +66,12 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_STRE
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_TOOL_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_REGISTRY;
+import static java.util.function.Predicate.not;
 
 class AiServiceCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(AiServiceCodegen.class);
+    static final String SERVICES_CONFIG_KEY = "langchain4j.services";
 
     private final CodegenContext ctx;
 
@@ -133,38 +138,47 @@ class AiServiceCodegen implements CodegenExtension {
                                      TypeInfo aiInterface,
                                      TypeName aiModelAnnotation,
                                      TypeName lcModelType,
+                                     String configPropertyName,
                                      String aiServicesMethodName) {
         // if annotated, we have a named value (and that is mandatory)
         String modelName = aiInterface.findAnnotation(aiModelAnnotation)
                 .flatMap(Annotation::stringValue)
                 .orElse(null);
-
         if (modelName == null) {
-            // there is no annotation, use only autodiscovered model (if present)
-            if (!autoDiscovery) {
-                // no autodiscovery, this model will not be configured
-                return;
+            if (autoDiscovery) {
+                // there is no annotation, use only auto-discovered model (if present)
+                ctr.addParameter(parameter -> parameter
+                        .name(aiServicesMethodName)
+                        .type(optionalType(lcModelType)));
+                ctr.addContent(aiServicesMethodName)
+                        .addContent(".ifPresent(builder::")
+                        .addContent(aiServicesMethodName)
+                        .addContentLine(");");
             }
+        } else {
+            // model name is specified, use injection point if present
             ctr.addParameter(parameter -> parameter
                     .name(aiServicesMethodName)
-                    .type(optionalType(lcModelType)));
+                    .type(optionalType(lcModelType))
+                    .addAnnotation(namedAnnotation(modelName)));
             ctr.addContent(aiServicesMethodName)
                     .addContent(".ifPresent(builder::")
                     .addContent(aiServicesMethodName)
                     .addContentLine(");");
-            return;
         }
 
-        // model name is specified, expect injection point
-        ctr.addParameter(parameter -> parameter
-                .name(aiServicesMethodName)
-                .type(lcModelType)
-                .addAnnotation(namedAnnotation(modelName)));
-        ctr.addContent("builder.")
+        // Try to override by model name from config
+        ctr.addContent("serviceConfig.get(")
+                .addContentLiteral(configPropertyName)
+                .addContentLine(").asString()")
+                .increaseContentPadding()
+                .addContent(".flatMap(n -> registry.firstNamed(")
+                .addContent(lcModelType)
+                .addContentLine(".class, n))")
+                .addContent(".ifPresent(builder::")
                 .addContent(aiServicesMethodName)
-                .addContent("(")
-                .addContent(aiServicesMethodName)
-                .addContentLine(");");
+                .addContentLine(");")
+                .decreaseContentPadding();
     }
 
     private void aiMcpClientParameter(Constructor.Builder builder, TypeInfo aiInterface, CodegenContext ctx) {
@@ -246,6 +260,15 @@ class AiServiceCodegen implements CodegenExtension {
         classModel.addConstructor(ctr -> ctr
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
+                .addContent("var serviceConfig = config.get(")
+                .addContentLiteral(SERVICES_CONFIG_KEY)
+                .addContent(").get(")
+                .addContentLiteral(aiInterface.findAnnotation(AI_SERVICE)
+                                           .flatMap(Annotation::stringValue)
+                                           .filter(not(String::isBlank))
+                                           .orElse(aiInterfaceType.fqName()))
+                .addContentLine(");")
+
                 .addContent(aiServicesType)
                 .addContent(" builder = ")
                 .addContent(LC_AI_SERVICES)
@@ -254,6 +277,8 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(".class);")
                 .addContentLine("")
                 .update(it -> {
+                    it.addParameter(Parameter.builder().type(CONFIG).name("config").build());
+                    it.addParameter(Parameter.builder().type(SERVICE_REGISTRY).name("registry").build());
                     aiServicesChatMemoryConstructor(it,
                                                     autoDiscovery,
                                                     aiInterface);
@@ -263,30 +288,35 @@ class AiServiceCodegen implements CodegenExtension {
                                         aiInterface,
                                         AI_CHAT_MODEL,
                                         LC_CHAT_MODEL,
+                                        "chat-model",
                                         "chatModel");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
                                         AI_STREAMING_CHAT_MODEL,
                                         LC_STREAMING_CHAT_MODEL,
+                                        "streaming-chat-model",
                                         "streamingChatModel");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
                                         AI_MODERATION_MODEL,
                                         LC_MODERATION_MODEL,
+                                        "moderation-model",
                                         "moderationModel");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
                                         AI_RETRIEVER_AUGMENTOR,
                                         LC_RETRIEVAL_AUGMENTOR,
+                                        "retrieval-augmentor",
                                         "retrievalAugmentor");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
                                         AI_CONTENT_RETRIEVER,
                                         LC_CONTENT_RETRIEVER,
+                                        "content-retriever",
                                         "contentRetriever");
                     aiMcpClientAndToolProvider(it, aiInterface, autoDiscovery, ctx);
                     aiServicesToolParameters(it,
@@ -323,6 +353,7 @@ class AiServiceCodegen implements CodegenExtension {
                                 aiInterface,
                                 AI_TOOL_PROVIDER,
                                 LC_TOOL_PROVIDER,
+                                "tool-provider",
                                 "toolProvider");
         }
     }
@@ -342,6 +373,7 @@ class AiServiceCodegen implements CodegenExtension {
                             aiInterface,
                             AI_CHAT_MEMORY,
                             LC_CHAT_MEMORY,
+                            "chat-memory",
                             "chatMemory");
 
         aiServicesParameter(ctr,
@@ -349,6 +381,7 @@ class AiServiceCodegen implements CodegenExtension {
                             aiInterface,
                             AI_CHAT_MEMORY_PROVIDER,
                             LC_CHAT_MEMORY_PROVIDER,
+                            "chat-memory-provider",
                             "chatMemoryProvider");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.helidon.common.types.TypeName;
 
 final class LangchainTypes {
     static final TypeName AI_SERVICE = TypeName.create("io.helidon.integrations.langchain4j.Ai.Service");
+    static final TypeName AI_AGENT = TypeName.create("io.helidon.integrations.langchain4j.Ai.Agent");
     static final TypeName AI_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatModel");
     static final TypeName AI_STREAMING_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.StreamingChatModel");
     static final TypeName AI_CHAT_MEMORY = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatMemory");
@@ -39,8 +40,13 @@ final class LangchainTypes {
     static final TypeName MODEL_CONFIG_KEY_TYPE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ConfigKey");
     static final TypeName MODEL_DEFAULT_WEIGHT = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.DefaultWeight");
     static final TypeName MODEL_NESTED_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.NestedConfig");
+    static final TypeName MODEL_CUSTOM_FACTORIES =
+            TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomModelFactories");
     static final TypeName MODEL_CUSTOM_BUILDER_MAPPING =
             TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomBuilderMapping");
+    static final TypeName AGENTS_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AgentsConfig");
+    static final TypeName AGENT_METADATA = TypeName.create("io.helidon.integrations.langchain4j.AgentMetadata");
+
 
     static final TypeName LC_AI_SERVICES = TypeName.create("dev.langchain4j.service.AiServices");
     static final TypeName LC_TOOL = TypeName.create("dev.langchain4j.agent.tool.Tool");
@@ -64,16 +70,18 @@ final class LangchainTypes {
     static final TypeName LC_TOOL_PROVIDER = TypeName.create("dev.langchain4j.service.tool.ToolProvider");
     static final TypeName LC_MCP_TOOL_PROVIDER = TypeName.create("dev.langchain4j.mcp.McpToolProvider");
     static final TypeName LC_MCP_CLIENT = TypeName.create("dev.langchain4j.mcp.client.McpClient");
+    static final TypeName LC_AGENTIC_SERVICES = TypeName.create("dev.langchain4j.agentic.AgenticServices");
+    static final TypeName LC_DECLARATIVE_AGENT_CREATION_CONTEXT = TypeName.create(
+            "dev.langchain4j.agentic.AgenticServices.DeclarativeAgentCreationContext");
 
-    static final TypeName SVC_QUALIFIED_INSTANCE = TypeName.create("io.helidon.service.registry.Service.QualifiedInstance");
     static final TypeName SVC_SERVICES_FACTORY = TypeName.create("io.helidon.service.registry.Service.ServicesFactory");
-    static final TypeName SVC_QUALIFIER = TypeName.create("io.helidon.service.registry.Qualifier");
-    static final TypeName COMMON_WEIGHT = TypeName.create("io.helidon.common.Weight");
-    static final TypeName COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
+    static final TypeName MERGED_CONFIG = TypeName.create("io.helidon.config.MergedConfig");
     static final TypeName BLDR_PROTOTYPE_REGISTRY_SUPPORT = TypeName.create("io.helidon.builder.api.Prototype.RegistrySupport");
     static final Annotation BLDR_REGISTRY_SUPPORT_ANNOTATION = Annotation.create(BLDR_PROTOTYPE_REGISTRY_SUPPORT);
     static final TypeName OPT_SINGULAR = TypeName.create("io.helidon.builder.api.Option.Singular");
     static final TypeName OPT_CONFIGURED = TypeName.create("io.helidon.builder.api.Option.Configured");
+    static final TypeName OPT_DEFAULT_BOOLEAN = TypeName.create("io.helidon.builder.api.Option.DefaultBoolean");
     static final TypeName OPT_REGISTRY_SERVICE = TypeName.create("io.helidon.builder.api.Option.RegistryService");
     static final Annotation BLDR_SINGULAR_ANNOTATION = Annotation.create(OPT_SINGULAR);
     static final TypeName BLDR_PROTOTYPE_CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");

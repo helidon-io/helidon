@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package io.helidon.integrations.langchain4j.codegen;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.codegen.classmodel.ClassType;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Method;
@@ -46,15 +46,15 @@ import static io.helidon.common.types.AccessModifier.PROTECTED;
 import static io.helidon.common.types.AccessModifier.PUBLIC;
 import static io.helidon.common.types.TypeNames.LIST;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
-import static io.helidon.common.types.TypeNames.SUPPLIER;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.COMMON_CONFIG;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.COMMON_WEIGHT;
+import static io.helidon.common.types.TypeNames.STRING;
+import static io.helidon.common.types.TypeNames.WEIGHT;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.CONFIG;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIGS_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_TYPE;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIED_INSTANCE;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_QUALIFIER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_SERVICES_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_INSTANCE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
@@ -62,56 +62,20 @@ class ModelFactoryCodegen implements CodegenExtension {
 
     @Override
     public void process(RoundContext roundContext) {
-
         var types = roundContext.types();
         for (TypeInfo type : types) {
             var providerClassPrefix = ModelCodegenHelper.providerFromClassName(type);
             var providerKey = ModelCodegenHelper.camelToKebabCase(providerClassPrefix);
-            var constantClassTypeName = createConstantsClass(roundContext, providerClassPrefix + "Constants", type, providerKey);
+            var constantClassTypeName =
+                    ConstantsBuilder.create(roundContext, providerClassPrefix + "Constants", type, providerKey);
             type.findAnnotation(MODEL_CONFIGS_TYPE)
-                    .flatMap(a -> a.annotationValues())
+                    .flatMap(Annotation::annotationValues)
                     .or(() -> type.findAnnotation(MODEL_CONFIG_TYPE).map(List::of))
                     .stream()
                     .flatMap(Collection::stream)
-                    .forEach(modelAnnotation -> process(roundContext, type, providerKey, modelAnnotation, constantClassTypeName));
+                    .forEach(modelAnnotation ->
+                                     process(roundContext, type, providerKey, modelAnnotation, constantClassTypeName));
         }
-    }
-
-    private TypeName createConstantsClass(RoundContext context, String className, TypeInfo type, String providerKey) {
-
-        var classTypeName = TypeName.builder()
-                .packageName(type.typeName().packageName())
-                .className(className)
-                .build();
-
-        var classModel = ClassModel.builder()
-                .classType(ClassType.CLASS)
-                .type(classTypeName)
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .copyright(CodegenUtil.copyright(GENERATOR,
-                                                 type.typeName(),
-                                                 classTypeName))
-                .addDescriptionLine("Constants for '" + providerKey + "' Lc4j provider.")
-                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
-                                                               type.typeName(),
-                                                               classTypeName,
-                                                               "1",
-                                                               ""));
-
-        classModel.addField(Field.builder()
-                                    .name("QUALIFIER")
-                                    .isStatic(true)
-                                    .isFinal(true)
-                                    .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                                    .type(SVC_QUALIFIER)
-                                    .addContent(SVC_QUALIFIER)
-                                    .addContent(".createNamed(\"")
-                                    .addContent(providerKey)
-                                    .addContent("\")")
-                                    .build());
-
-        context.addGeneratedType(classTypeName, classModel, type.typeName());
-        return classTypeName;
     }
 
     private void process(RoundContext roundContext,
@@ -125,8 +89,8 @@ class ModelFactoryCodegen implements CodegenExtension {
         var modelFactoryWeightAnnotation = modelAnnotation.doubleValue("weight")
                 .filter(w -> w != Weighted.DEFAULT_WEIGHT)
                 .map(w -> Annotation.builder()
-                        .typeName(COMMON_WEIGHT)
-                        .putValue("value", w)
+                        .typeName(WEIGHT)
+                        .addProperties(Map.of("value", AnnotationProperty.create(w)))
                         .build())
                 .or(() -> configType.elementInfo().stream()
                         .filter(e -> e.kind().equals(ElementKind.FIELD))
@@ -134,14 +98,14 @@ class ModelFactoryCodegen implements CodegenExtension {
                         .filter(e -> e.hasAnnotation(LangchainTypes.MODEL_DEFAULT_WEIGHT))
                         .findFirst()
                         .map(e -> Annotation.builder()
-                                .typeName(COMMON_WEIGHT)
+                                .typeName(WEIGHT)
                                 .putProperty("value", AnnotationProperty.create("weight",
                                                                                 configType.typeName(),
                                                                                 e.elementName()))
                                 .build())
                 ).orElseGet(() -> Annotation.builder()
-                        .typeName(COMMON_WEIGHT)
-                        .putValue("value", DEFAULT_FACTORY_WEIGHT)
+                        .typeName(WEIGHT)
+                        .addProperties(Map.of("value", AnnotationProperty.create(DEFAULT_FACTORY_WEIGHT)))
                         .build());
 
         var modelClassNamePrefix = modelAnnotation.typeValue().map(TypeName::className)
@@ -154,14 +118,8 @@ class ModelFactoryCodegen implements CodegenExtension {
 
         var superTypeName = TypeName.builder(SVC_SERVICES_FACTORY).addTypeArgument(modelType);
 
-        var modelSupplierType = TypeName.builder(SUPPLIER)
-                .addTypeArgument(TypeName.builder(OPTIONAL)
-                                         .addTypeArgument(modelType)
-                                         .build())
-                .build();
-
         var classModel = ClassModel.builder()
-                .classType(ClassType.CLASS)
+                .classType(ElementKind.CLASS)
                 .type(factoryTypeName)
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  configType.typeName(),
@@ -183,35 +141,36 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addAnnotation(modelFactoryWeightAnnotation)
                 .addInterface(superTypeName.build());
 
-        classModel.addMethod(Method.builder()
-                                     .name("model")
-                                     .accessModifier(AccessModifier.PRIVATE)
-                                     .addContentLine("return model;")
-                                     .returnType(modelSupplierType)
-                                     .build());
-
         classModel.addField(Field.builder()
-                                    .name("model")
+                                    .name("config")
                                     .accessModifier(AccessModifier.PRIVATE)
                                     .isFinal(true)
-                                    .type(modelSupplierType)
+                                    .type(CONFIG)
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("modelNames")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(TypeName.builder(LIST)
+                                                  .addTypeArgument(STRING)
+                                                  .build())
                                     .build());
 
         classModel.addConstructor(Constructor.builder()
                                           .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                                           .description("Creates a new " + modelClassNamePrefix + "Factory.")
-                                          .addContent("var configBuilder = ")
-                                          .addTypeToContent(modelClassNamePrefix + "Config")
-                                          .addContentLine(".builder()")
-                                          .increaseContentPadding()
-                                          .addContentLine(".config(config.get(" + modelClassNamePrefix + "ConfigBlueprint")
-                                          .addContentLine(".CONFIG_ROOT));")
-                                          .decreaseContentPadding()
-                                          .addContentLine("model = () -> buildModel(configBuilder);")
+                                          .addContentLine("this.config = config;")
+                                          .addContent("this.modelNames = ")
+                                          .addContent(constantClassTypeName)
+                                          .addContent(".modelNames(config, ")
+                                          .addContent(modelType)
+                                          .addContent(".class, ")
+                                          .addContent(modelClassNamePrefix + "Config.PROVIDER_KEY);")
                                           .addParameter(Parameter.builder()
                                                                 .description("Configuration for the new model.")
                                                                 .name("config")
-                                                                .type(COMMON_CONFIG)
+                                                                .type(CONFIG)
                                                                 .build()));
 
         classModel.addMethod(servicesMethod(modelType, constantClassTypeName));
@@ -224,12 +183,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .className(modelNamePrefix + "Config")
                 .build();
 
-        var modelConfigBuilderTypeName = TypeName.builder()
-                .from(modelConfigTypeName)
-                .className(modelNamePrefix + "Config.Builder")
-                .build();
-
-        classModel.addMethod(buildModelMethod(modelType, modelConfigBuilderTypeName));
+        classModel.addMethod(buildModelMethod(modelClassNamePrefix, modelType, constantClassTypeName));
         classModel.addMethod(createMethod(modelType, modelConfigTypeName));
         roundContext.addGeneratedType(factoryTypeName, classModel, configType.typeName());
     }
@@ -252,19 +206,26 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .accessModifier(PUBLIC)
                 .name("services")
                 .returnType(TypeName.builder(LIST)
-                                    .addTypeArgument(TypeName.builder(SVC_QUALIFIED_INSTANCE).addTypeArgument(modelType).build())
+                                    .addTypeArgument(TypeName.builder(SERVICE_QUALIFIED_INSTANCE)
+                                                             .addTypeArgument(modelType)
+                                                             .build())
                                     .build())
-                .addContentLine("var modelOptional = model().get();")
-                .addContentLine("if (modelOptional.isEmpty()) {")
+                .addContentLine("return modelNames.stream()")
                 .increaseContentPadding()
-                .addContent("return ").addContent(LIST).addContentLine(".of();")
+                .addContentLine(".map(name -> buildModel(name, config)")
+                .increaseContentPadding()
+                .addContent(".map(model -> ")
+                .addContent(SERVICE_QUALIFIED_INSTANCE)
+                .addContentLine()
+                .increaseContentPadding()
+                .addContent(".create(model, ")
+                .addContent(SERVICE_QUALIFIER)
+                .addContentLine(".createNamed(name))))")
                 .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine("var theModel = modelOptional.get();")
-                .addContent("return List.of(").addContent(SVC_QUALIFIED_INSTANCE).addContentLine(".create(theModel),")
-                .increaseContentPadding()
-                .addContent(SVC_QUALIFIED_INSTANCE).addContent(".create(theModel, ")
-                .addContent(constantClassTypeName).addContentLine(".QUALIFIER));")
+                .decreaseContentPadding()
+                .addContentLine(".flatMap(Optional::stream)")
+                .decreaseContentPadding()
+                .addContentLine(".toList();")
                 .build();
     }
 
@@ -276,21 +237,35 @@ class ModelFactoryCodegen implements CodegenExtension {
         return Optional.of(create(configBuilder.build()));
     }
      */
-    private static Method buildModelMethod(TypeName modelType, TypeName modelConfigBuilderTypeName) {
+    private static Method buildModelMethod(String modelClassNamePrefix, TypeName modelType, TypeName constantsClassTypeName) {
         return Method.builder()
                 .accessModifier(PROTECTED)
                 .name("buildModel")
                 .isStatic(true)
                 .description("Builds a new model configured with the given configuration builder.")
                 .addParameter(Parameter.builder()
-                                      .type(modelConfigBuilderTypeName)
-                                      .description("Configuration builder for the new model.")
-                                      .name("configBuilder")
+                                      .type(STRING)
+                                      .description("Model name.")
+                                      .name("modelName")
+                                      .build())
+                .addParameter(Parameter.builder()
+                                      .type(CONFIG)
+                                      .description("Configuration for the new model.")
+                                      .name("config")
                                       .build())
                 .returnType(Returns.builder()
                                     .description("New model configured with the given configuration builder.")
                                     .type(TypeName.builder(OPTIONAL).addTypeArgument(modelType).build())
                                     .build())
+                .addContent("var mergedConfig = ")
+                .addContent(constantsClassTypeName)
+                .addContent(".create(config, ")
+                .addContent(modelType)
+                .addContentLine(".class, modelName);")
+                .addContent("var configBuilder = ")
+                .addContentLine(modelClassNamePrefix + "Config.builder()")
+                .addContentLine(".config(mergedConfig);")
+                .addContentLine()
                 .addContentLine("if (!configBuilder.enabled()) {")
                 .increaseContentPadding()
                 .addContent("return ").addContent(OPTIONAL).addContentLine(".empty();")
