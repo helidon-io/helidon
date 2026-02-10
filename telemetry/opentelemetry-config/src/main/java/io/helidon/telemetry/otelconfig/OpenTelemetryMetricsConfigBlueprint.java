@@ -52,7 +52,7 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
     List<MetricReaderConfig> readerConfigs();
 
     /**
-     * Metric exporter configurations.
+     * Metric exporter configurations, configurable using {@link io.helidon.telemetry.otelconfig.MetricExporterConfig}.
      *
      * @return metric exporters
      */
