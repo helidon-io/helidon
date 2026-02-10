@@ -172,8 +172,8 @@ public final class AiProvider {
     }
 
     /**
-     * Utility classes generation only for custom non-generated providers.
-     * Utilities are generated automatically when {@link ModelConfig} is used.
+     * Use this annotation to specify LangChain4J Model Provider with custom (non-generated model providers).
+     * Only utility classes will be generated.
      * Mutually exclusive with {@link ModelConfig}.
      */
     @Target(ElementType.TYPE)
