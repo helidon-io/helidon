@@ -331,7 +331,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum, int allowedBytesToRead) throws IOException {
         if (allowedBytesToRead < 3) {
-                throw badProtocolException("insufficient remaining TLV bytes to read TLV type and length");
+            throw badProtocolException("insufficient remaining TLV bytes to read TLV type and length");
         }
 
         int type = checksumStream.read();
