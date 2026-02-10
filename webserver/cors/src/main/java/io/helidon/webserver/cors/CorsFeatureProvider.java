@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,13 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for CORS feature for {@link io.helidon.webserver.WebServer}.
+ *
+ * @deprecated this class should never be used directly, and will be removed, you can get an instance of
+ *         {@link io.helidon.webserver.cors.CorsFeature} either from {@link io.helidon.service.registry.ServiceRegistry}, or
+ *         through one of the feature's static factory or builder methods; paths configured in config are registered first,
+ *         before paths configured through service registry
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 @Weight(CorsFeature.WEIGHT)
 public class CorsFeatureProvider implements ServerFeatureProvider<CorsFeature> {
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,8 @@ module io.helidon.webserver.cors {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.cors;
-
-    provides io.helidon.webserver.spi.ServerFeatureProvider
-            with io.helidon.webserver.cors.CorsFeatureProvider;
+    requires io.helidon.http;
+    requires io.helidon.config;
 
     exports io.helidon.webserver.cors;
-
 }

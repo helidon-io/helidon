@@ -580,7 +580,7 @@ final class FactoryOption {
                                              TypedElementInfo element) {
         if (element.elementModifiers().contains(Modifier.DEFAULT)) {
             // default methods are OK only if allowed by the blueprint
-            if (element.typeName().equals(TypeNames.PRIMITIVE_BOOLEAN)) {
+            if (element.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
                 // void default methods can never be options
                 return false;
             }

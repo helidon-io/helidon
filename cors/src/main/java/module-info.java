@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 /**
  * CORS configuration and types.
+ *
+ * @deprecated this module will be removed, use APIs available on {@code helidon-webserver-cors}
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.4.9")
 module io.helidon.cors {
 	
     requires io.helidon.http;

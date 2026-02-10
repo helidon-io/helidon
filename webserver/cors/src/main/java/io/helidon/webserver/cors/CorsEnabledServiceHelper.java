@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,15 @@ import io.helidon.webserver.http.Handler;
  *     max-age: 3600
  *     </pre>
  * All of those settings except for {@code allow-methods} are the defaults for {@code CrossOriginConfig}.
+ *
+ * @deprecated Helidon is centralizing CORS handling into a single feature, you can configure this feature using
+ * config, or set it up through builder and register it with a web server - see {@link io.helidon.webserver.cors.CorsFeature};
+ * additional protected paths can be specified using
+ * {@link io.helidon.webserver.cors.CorsConfig.Builder#addPath(CorsPathConfig)}, or by creating a
+ * {@link io.helidon.service.registry.ServiceRegistry} that provides an instance of
+ * {@link io.helidon.webserver.cors.CorsPathConfig}.
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public class CorsEnabledServiceHelper {
 
     /**
