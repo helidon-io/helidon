@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
@@ -275,7 +276,7 @@ public class MpConfigSourcesTest {
             return ConfigParser.Content.builder()
                     .charset(StandardCharsets.UTF_8)
                     .data(new ByteArrayInputStream(CONTENT.getBytes(StandardCharsets.UTF_8)))
-                    .mediaType(PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES)
+                    .mediaType(MediaTypes.TEXT_PROPERTIES)
                     .build();
         }
 

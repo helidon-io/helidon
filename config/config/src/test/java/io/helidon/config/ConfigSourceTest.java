@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 import io.helidon.config.BuilderImpl.ConfigContextImpl;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -66,7 +67,7 @@ public class ConfigSourceTest {
     public void testFromReadableDescription() {
         ConfigSource configSource = ConfigSources
                 .create(toInputStream("aaa=bbb"),
-                        PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                        MediaTypes.TEXT_PROPERTIES);
 
         assertThat(configSource.description(), is("ParsableInMemory[Readable]"));
     }
@@ -75,7 +76,7 @@ public class ConfigSourceTest {
     public void testFromReadableLoad() {
         ConfigSource configSource = ConfigSources
                 .create(toInputStream("aaa=bbb"),
-                        PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                        MediaTypes.TEXT_PROPERTIES);
 
         ConfigContextImpl context = mock(ConfigContextImpl.class);
         when(context.findParser(any())).thenReturn(Optional.of(ConfigParsers.properties()));
@@ -87,7 +88,7 @@ public class ConfigSourceTest {
     @ExtendWith(RestoreSystemPropertiesExt.class)
     @Test
     public void testFromTextDescription() {
-        ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+        ConfigSource configSource = ConfigSources.create("aaa=bbb", MediaTypes.TEXT_PROPERTIES);
 
         assertThat(configSource.description(), is("ParsableInMemory[String]"));
     }
@@ -96,10 +97,10 @@ public class ConfigSourceTest {
     public void testFromTextLoad() {
         ConfigContextImpl context = mock(ConfigContextImpl.class);
         when(context.findParser(
-                argThat(PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES::equals)))
+                argThat(MediaTypes.TEXT_PROPERTIES::equals)))
                 .thenReturn(Optional.of(ConfigParsers.properties()));
 
-        ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+        ConfigSource configSource = ConfigSources.create("aaa=bbb", MediaTypes.TEXT_PROPERTIES);
 
         ConfigSourceRuntimeImpl runtime = new ConfigSourceRuntimeImpl(context, configSource);
         assertThat(runtime.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));

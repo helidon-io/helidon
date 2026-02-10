@@ -22,10 +22,11 @@ import java.util.Set;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
+
+import static io.helidon.common.media.type.MediaTypes.TEXT_PROPERTIES;
 
 /**
  * {@link ConfigParser} implementation that parses Java Properties content.
@@ -46,15 +47,18 @@ public class PropertiesConfigParser implements ConfigParser {
 
     /**
      * Java properties media type.
+     *
+     * @deprecated use {@link io.helidon.common.media.type.MediaTypes#TEXT_PROPERTIES}
      */
-    public static final MediaType MEDIA_TYPE_TEXT_JAVA_PROPERTIES = MediaTypes.create("text/x-java-properties");
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    public static final MediaType MEDIA_TYPE_TEXT_JAVA_PROPERTIES = TEXT_PROPERTIES;
 
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
 
-    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = Set.of(TEXT_PROPERTIES);
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
