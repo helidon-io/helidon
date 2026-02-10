@@ -119,10 +119,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {
         byte[] prefix = new byte[V1_PREFIX.length];
-        int n = socketInputStream.readNBytes(prefix, 0, prefix.length);
-        if (n < V1_PREFIX.length) {
-            throw BAD_PROTOCOL_EXCEPTION;
-        }
+        readExactlyNBytes(socketInputStream, prefix, 0, V1_PREFIX.length);
         if (arrayEquals(prefix, V1_PREFIX, V1_PREFIX.length)) {
             return handleV1Protocol(socketInputStream);
         } else if (arrayEquals(prefix, V2_PREFIX_1, V2_PREFIX_1.length)) {
@@ -229,10 +226,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case UNIX -> 216;
         };
         final byte[] addressBytes = new byte[addressBytesLength];
-        final int addressBytesRead = inputStream.readNBytes(addressBytes, 0, addressBytesLength);
-        if (addressBytesRead != addressBytesLength) {
-            throw badProtocolException("insufficient proxy address bytes present in data stream");
-        }
+        readExactlyNBytes(inputStream, addressBytes, 0, addressBytesLength);
 
         // decode addresses and ports
         final SocketAddress sourceSocketAddress;
@@ -266,20 +260,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 yield 0;
             }
             case UNIX -> {
-                int sourceAddressLength = 0;
-                for (int i = 0; i < 108; i++) {
-                    sourceAddressLength = i;
-                    if (addressBytes[i] == 0) {
-                        break;
-                    }
-                }
-                int destinationAddressLength = 0;
-                for (int i = 0; i < 108; i++) {
-                    destinationAddressLength = i;
-                    if (addressBytes[108 + i] == 0) {
-                        break;
-                    }
-                }
+                int sourceAddressLength = boundedStrLen(addressBytes, 0, 108);
+                int destinationAddressLength = boundedStrLen(addressBytes, 108, 108);
                 sourceSocketAddress = UnixDomainSocketAddress.of(
                     new String(addressBytes, 0, sourceAddressLength, StandardCharsets.US_ASCII));
                 destinationSocketAddress = UnixDomainSocketAddress.of(
@@ -305,7 +287,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         // Read the TLV records.
         final List<ProxyProtocolV2Data.TLV> tlvs;
         ProxyProtocolV2Data.TLV.Crc32c checksumTlv = null;
-        if (headerLength == 0) {
+        if (remainingHeaderLength == 0) {
             tlvs = List.of();
         } else {
             final var tlvsBuilder = new ArrayList<ProxyProtocolV2Data.TLV>();
@@ -336,11 +318,20 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         return new ProxyProtocolV2DataImpl(family, protocol, command, sourceSocketAddress, destinationSocketAddress, tlvs);
     }
 
+    private static int boundedStrLen(byte[] array, int startOffset, int maxLength) {
+        for (int i = 0; i < maxLength; i++) {
+            if (array[startOffset + i] == 0) {
+                return i;
+            }
+        }
+        return maxLength;
+    }
+
     record ParsedTLV(int length, ProxyProtocolV2Data.TLV tlv) {}
 
     private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum, int allowedBytesToRead) throws IOException {
         if (allowedBytesToRead < 3) {
-            throw badProtocolException("insufficient remaining bytes to read TLV type and length");
+                throw badProtocolException("insufficient remaining TLV bytes to read TLV type and length");
         }
 
         int type = checksumStream.read();
@@ -348,46 +339,20 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             throw badProtocolException("end of data stream reached before TLV type could be read");
         }
 
-        int lengthHi = checksumStream.read();
-        if (lengthHi == -1) {
-            throw badProtocolException("end of data stream reached before TLV length could be read");
-        }
-
-        int lengthLo = checksumStream.read();
-        if (lengthLo == -1) {
-            throw badProtocolException("end of data stream reached before TLV length could be read");
-        }
-
-        int length = ((lengthHi & 0xFF) << 8) | (lengthLo & 0xFF);
+        int length = ((readNext(checksumStream) & 0xFF) << 8) | (readNext(checksumStream) & 0xFF);
         if (length > allowedBytesToRead - 3) {
             throw badProtocolException("TLV length exceeds remaining available header bytes");
-        }
-
-        // Enforce length expectations for some types.
-        switch (type) {
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C -> {
-                if (length != 4) {
-                    throw badProtocolException("PP2_TYPE_CRC32C checksum TLV length is incorrect");
-                }
-            }
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_UNIQUE_ID -> {
-                if (length > 128) {
-                    throw badProtocolException("PP2_TYPE_UNIQUE_ID value is too large");
-                }
-            }
         }
 
         byte[] value = new byte[length];
         // If the type is CRC32C, then we need to read directly from the underlying socket input stream
         // because the CRC32C value needs to not be included in the checksum.
         if (type == ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C) {
-            if (length != socketInputStream.readNBytes(value, 0, length)) {
-                throw badProtocolException("end of data stream reached before TLV value could be read");
-            }
+            readExactlyNBytes(socketInputStream, value, 0, length);
             // Substitute 0s for the checksum bytes.
             checksum.update(CHECKSUM_REPLACEMENT_BYTES);
-        } else if (length != checksumStream.readNBytes(value, 0, length)) {
-            throw badProtocolException("end of data stream reached before TLV value could be read");
+        } else {
+            readExactlyNBytes(checksumStream, value, 0, length);
         }
 
         return new ParsedTLV(3 + length, switch (type) {
@@ -432,9 +397,16 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
     private static byte readNext(InputStream inputStream) throws IOException {
         int b = inputStream.read();
         if (b < 0) {
-            throw BAD_PROTOCOL_EXCEPTION;
+            throw badProtocolException("end of data reached unexpectedly");
         }
         return (byte) b;
+    }
+
+    private static void readExactlyNBytes(InputStream inputStream, byte[] destination, int offset, int length) throws IOException {
+        final int actuallyRead = inputStream.readNBytes(destination, offset, length);
+        if (actuallyRead < length) {
+            throw badProtocolException("end of data reached unexpectedly");
+        }
     }
 
     private static void match(byte a, byte b) {

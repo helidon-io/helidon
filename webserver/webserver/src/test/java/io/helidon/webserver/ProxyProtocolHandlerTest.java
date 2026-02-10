@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -236,6 +237,396 @@ class ProxyProtocolHandlerTest {
     }
 
     @Test
+    void v2MaxLengthAddresses() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+            "21:" + // version 2, command 1 = PROXY
+            "31:" + // family 3 = UNIX, protocol 1 = TCP
+            "00:D8:" + // length (108 * 2 == 216, in hex 216 = 0xD8)
+            // source address. A sequence of the 4 bytes of "/foo" repeated 27 times = 108 bytes
+            "2F:66:6F:6F:".repeat(27) +
+            // destination address. A sequence of the 4 bytes of "/bar" repeated 27 times == 108 bytes
+            "2F:62:61:72:".repeat(27).substring(0, "2F:62:61:72:".length() * 27 - 1)
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.UNIX, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals("/foo".repeat(27), ((UnixDomainSocketAddress) data.sourceSocketAddress()).getPath().toString());
+        Assertions.assertEquals("/bar".repeat(27), ((UnixDomainSocketAddress) data.destSocketAddress()).getPath().toString());
+    }
+
+    @Test
+    void v2UnknownFamilySkipAddressWithoutTlv() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "01:" + // family 0 = UNKNOWN, protocol 1 = TCP
+                "00:0C:" + // IPv4 family address base size = 12 = 0x0C
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.UNKNOWN, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.sourceSocketAddress());
+        Assertions.assertEquals("", data.sourceAddress());
+        Assertions.assertEquals(-1, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.destSocketAddress());
+        Assertions.assertEquals("", data.destAddress());
+        Assertions.assertEquals(-1, data.destPort());
+    }
+
+    @Test
+    void v2UnknownFamilySkipAddressWithTlv() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "02:" + // family 0 = UNKNOWN, protocol 2 = UDP
+                "00:10:" + // IPv4 family address base size = 12 = 0x0C, plus 4 extra bytes gives 16 = 0x10
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA:" +
+                // 4 extra TLV bytes. Not a valid TLV, but UNKNOWN handling logic shouldn't care
+                "DE:AD:C0:DE"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.UNKNOWN, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.UDP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.sourceSocketAddress());
+        Assertions.assertEquals("", data.sourceAddress());
+        Assertions.assertEquals(-1, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.destSocketAddress());
+        Assertions.assertEquals("", data.destAddress());
+        Assertions.assertEquals(-1, data.destPort());
+    }
+
+    @Test
+    void v2Ipv4UdpWithoutTlv() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "11:" + // family 1 = IPv4, protocol 1 = TCP
+                "00:0C:" + // IPv4 family address base size = 12 = 0x0C
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
+        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
+        Assertions.assertEquals(43707, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
+        Assertions.assertEquals("0.255.0.255", data.destAddress());
+        Assertions.assertEquals(48042, data.destPort());
+    }
+
+    @Test
+    void v2Ipv4UdpWithUnregisteredTlv() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "11:" + // family 1 = IPv4, protocol 1 = TCP
+                "00:13:" + // IPv4 family address base size = 12 = 0x0C, plus 7 TLV bytes = 19 = 0x13
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA:" +
+                // 0xE0 is defined as the minimum allowed custom TLV type value in the HAProxy spec
+                "E0:" +
+                // TLV length, 4 bytes
+                "00:04:" +
+                // TLV payload
+                "00:01:02:03"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
+        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
+        Assertions.assertEquals(43707, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
+        Assertions.assertEquals("0.255.0.255", data.destAddress());
+        Assertions.assertEquals(48042, data.destPort());
+        Assertions.assertEquals(1, data.tlvs().size());
+        final var tlv = (ProxyProtocolV2Data.TLV.Unregistered) data.tlvs().getFirst();
+        Assertions.assertEquals(0xE0, tlv.type());
+        Assertions.assertArrayEquals(new byte[] {0, 1, 2, 3}, tlv.value());
+    }
+
+    @Test
+    void v2UnknownFamilySkipAddressInsufficientTlvBytes() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "02:" + // family 0 = UNKNOWN, protocol 2 = UDP
+                    "00:10:" + // IPv4 family address base size = 12 = 0x0C, plus 4 extra bytes gives 16 = 0x10
+                    // source address. IPv4 255.0.255.0:43707
+                    "FF:00:FF:00:AA:BB:" +
+                    // destination address. IPv4 0.255.0.255:48042
+                    "FF:00:FF:00:BB:AA:" +
+                    // Length indicates there should be 4 TLV bytes, but we only provide 2 here.
+                    "DE:AD"
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            Assertions.assertTrue(e.getMessage().contains("end of data stream reached before proxy protocol header was complete"));
+        }
+    }
+
+    @Test
+    void v2InsufficientTlvBytesInStream() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "11:" + // family 1 = IPv4, protocol 1 = TCP
+                    "00:13:" + // IPv4 family address base size = 12 = 0x0C, plus 7 TLV bytes = 19 = 0x13
+                    // source address. IPv4 255.0.255.0
+                    "FF:00:FF:00:" +
+                    // destination address. IPv4 255.0.255.0
+                    "00:FF:00:FF:" +
+                    // source port 43707
+                    "AA:BB:" +
+                    // destination port 48042
+                    "BB:AA:" +
+                    // 0xE0 is defined as the minimum allowed custom TLV type value in the HAProxy spec
+                    "E0"
+                // Length and payload should be here, but are not.
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            System.out.println(e.getMessage());
+            Assertions.assertTrue(e.getMessage().contains("end of data reached unexpectedly"));
+        }
+    }
+
+    @Test
+    void v2InsufficientTlvBytesInLength() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "11:" + // family 1 = IPv4, protocol 1 = TCP
+                    "00:0E:" + // IPv4 family address base size = 12 = 0x0C, plus 2 TLV bytes = 14 = 0x0E
+                    // source address. IPv4 255.0.255.0
+                    "FF:00:FF:00:" +
+                    // destination address. IPv4 255.0.255.0
+                    "00:FF:00:FF:" +
+                    // source port 43707
+                    "AA:BB:" +
+                    // destination port 48042
+                    "BB:AA:" +
+                    // 0xE0 is defined as the minimum allowed custom TLV type value in the HAProxy spec
+                    "E0:" +
+                    // TLV length, 4 bytes
+                    "00:04:" +
+                    // TLV payload
+                    "00:01:02:03"
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            Assertions.assertTrue(e.getMessage().contains("insufficient remaining TLV bytes to read TLV type and length"));
+        }
+    }
+
+    @Test
+    void v2TlvClaimsLengthTooLong() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "11:" + // family 1 = IPv4, protocol 1 = TCP
+                    "00:13:" + // IPv4 family address base size = 12 = 0x0C, plus 7 TLV bytes = 19 = 0x13
+                    // source address. IPv4 255.0.255.0
+                    "FF:00:FF:00:" +
+                    // destination address. IPv4 255.0.255.0
+                    "00:FF:00:FF:" +
+                    // source port 43707
+                    "AA:BB:" +
+                    // destination port 48042
+                    "BB:AA:" +
+                    // 0xE0 is defined as the minimum allowed custom TLV type value in the HAProxy spec
+                    "E0:" +
+                    // TLV length, claims 5 bytes even though there are only 4
+                    "00:05:" +
+                    // TLV payload
+                    "00:01:02:03"
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            Assertions.assertTrue(e.getMessage().contains("TLV length exceeds remaining available header bytes"));
+        }
+    }
+
+    @Test
+    void v2SingleCrcTlv() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "11:" + // family 1 = IPv4, protocol 1 = TCP
+                "00:13:" + // IPv4 family address base size = 12 = 0x0C, plus 7 TLV bytes = 19 = 0x13
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA:" +
+                // 0x03 = PP2_TYPE_CRC32C
+                "03:" +
+                // TLV length, 4 bytes
+                "00:04:" +
+                // TLV payload
+                "B5:2E:83:7B"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
+        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
+        Assertions.assertEquals(43707, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
+        Assertions.assertEquals("0.255.0.255", data.destAddress());
+        Assertions.assertEquals(48042, data.destPort());
+        Assertions.assertEquals(1, data.tlvs().size());
+        final var tlv = (ProxyProtocolV2Data.TLV.Crc32c) data.tlvs().getFirst();
+        Assertions.assertEquals(ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C, tlv.type());
+        Assertions.assertEquals(0xB52E837B, tlv.checksum());
+    }
+
+    @Test
+    void v2IncorrectCrc() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "11:" + // family 1 = IPv4, protocol 1 = TCP
+                    "00:13:" + // IPv4 family address base size = 12 = 0x0C, plus 7 TLV bytes = 19 = 0x13
+                    // source address. IPv4 255.0.255.0
+                    "FF:00:FF:00:" +
+                    // destination address. IPv4 255.0.255.0
+                    "00:FF:00:FF:" +
+                    // source port 43707
+                    "AA:BB:" +
+                    // destination port 48042
+                    "BB:AA:" +
+                    // 0x03 = PP2_TYPE_CRC32C
+                    "03:" +
+                    // TLV length, 4 bytes
+                    "00:04:" +
+                    // TLV payload. This is obviously the wrong CRC32 value.
+                    "00:00:00:00"
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            Assertions.assertTrue(e.getMessage().contains("proxy header checksum mismatch"));
+        }
+    }
+
+    @Test
+    void v2DoubleMatchingCrcTlvs() throws IOException {
+        final var data = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+            "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                "21:" + // version 2, command 1 = PROXY
+                "11:" + // family 1 = IPv4, protocol 1 = TCP
+                "00:1A:" + // IPv4 family address base size = 12 = 0x0C, plus 7*2 TLV bytes = 26 = 0x1A
+                // source address. IPv4 255.0.255.0
+                "FF:00:FF:00:" +
+                // destination address. IPv4 255.0.255.0
+                "00:FF:00:FF:" +
+                // source port 43707
+                "AA:BB:" +
+                // destination port 48042
+                "BB:AA:" +
+                // 0x03 = PP2_TYPE_CRC32C
+                "03:" +
+                // TLV length, 4 bytes
+                "00:04:" +
+                // TLV payload
+                "C6:69:E9:4D:" +
+                // 0x03 = PP2_TYPE_CRC32C
+                "03:" +
+                // TLV length, 4 bytes
+                "00:04:" +
+                // TLV payload
+                "C6:69:E9:4D"
+        )));
+        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
+        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
+        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
+        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
+        Assertions.assertEquals(43707, data.sourcePort());
+        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
+        Assertions.assertEquals("0.255.0.255", data.destAddress());
+        Assertions.assertEquals(48042, data.destPort());
+        Assertions.assertEquals(2, data.tlvs().size());
+        for (var tlv : data.tlvs()) {
+            Assertions.assertEquals(ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C, tlv.type());
+            Assertions.assertEquals(0xC669E94D, ((ProxyProtocolV2Data.TLV.Crc32c) tlv).checksum());
+        }
+    }
+
+    @Test
+    void v2DoubleMismatchingChecksums() throws IOException {
+        try {
+            ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(hexFormat.parseHex(
+                "0D:0A:0D:0A:00:0D:0A:51:55:49:54:0A:" + // V2 prefix
+                    "21:" + // version 2, command 1 = PROXY
+                    "11:" + // family 1 = IPv4, protocol 1 = TCP
+                    "00:1A:" + // IPv4 family address base size = 12 = 0x0C, plus 7*2 TLV bytes = 26 = 0x1A
+                    // source address. IPv4 255.0.255.0
+                    "FF:00:FF:00:" +
+                    // destination address. IPv4 255.0.255.0
+                    "00:FF:00:FF:" +
+                    // source port 43707
+                    "AA:BB:" +
+                    // destination port 48042
+                    "BB:AA:" +
+                    // 0x03 = PP2_TYPE_CRC32C
+                    "03:" +
+                    // TLV length, 4 bytes
+                    "00:04:" +
+                    // TLV payload
+                    "C6:69:E9:4D:" +
+                    // 0x03 = PP2_TYPE_CRC32C
+                    "03:" +
+                    // TLV length, 4 bytes
+                    "00:04:" +
+                    // Different checksum
+                    "AA:BB:CC:DD"
+            )));
+            Assertions.fail("Should have thrown");
+        } catch (RequestException e) {
+            Assertions.assertTrue(e.getMessage().contains("duplicate CRC32c checksum TLVs present with non-matching checksums"));
+        }
+    }
+
+    @Test
     void validV2Permutations() throws IOException {
         final var tlvs = new ArrayList<ProxyProtocolV2Data.TLV>();
         tlvs.add(new ProxyProtocolV2Data.TLV.Alpn("alpn".getBytes(StandardCharsets.UTF_8)));
@@ -308,37 +699,47 @@ class ProxyProtocolHandlerTest {
             for (var protocol : ProxyProtocolData.Protocol.values()) {
                 for (var command : ProxyProtocolV2Data.Command.values()) {
                     Collections.shuffle(tlvs, rand);
+                    assertTlvPermutation(family, protocol, command, src, dst, tlvs);
+                    assertTlvPermutation(family, protocol, command, src, dst, List.of());
+                }
+            }
+        }
+    }
 
-                    final var data = new ProxyProtocolHandler.ProxyProtocolV2DataImpl(family, protocol, command, src, dst, tlvs);
-                    V2Header header = makeHeader(data);
-                    var output = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(header.bytes));
+    private void assertTlvPermutation(
+            final ProxyProtocolData.Family family,
+            final ProxyProtocolData.Protocol protocol,
+            final ProxyProtocolV2Data.Command command,
+            final SocketAddress src,
+            final SocketAddress dst,
+            final List<ProxyProtocolV2Data.TLV> tlvs) throws IOException {
+        final var data = new ProxyProtocolHandler.ProxyProtocolV2DataImpl(family, protocol, command, src, dst, tlvs);
+        V2Header header = makeHeader(data);
+        var output = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(header.bytes));
 
-                    Assertions.assertEquals(data.protocol(), output.protocol());
-                    Assertions.assertEquals(data.family(), output.family());
-                    Assertions.assertEquals(data.command(), output.command());
-                    Assertions.assertEquals(data.sourceSocketAddress(), output.sourceSocketAddress());
-                    Assertions.assertEquals(data.destSocketAddress(), output.destSocketAddress());
-                    Assertions.assertEquals(data.sourceAddress(), output.sourceAddress());
-                    Assertions.assertEquals(data.sourcePort(), output.sourcePort());
-                    Assertions.assertEquals(data.destAddress(), output.destAddress());
-                    Assertions.assertEquals(data.destPort(), output.destPort());
+        Assertions.assertEquals(data.protocol(), output.protocol());
+        Assertions.assertEquals(data.family(), output.family());
+        Assertions.assertEquals(data.command(), output.command());
+        Assertions.assertEquals(data.sourceSocketAddress(), output.sourceSocketAddress());
+        Assertions.assertEquals(data.destSocketAddress(), output.destSocketAddress());
+        Assertions.assertEquals(data.sourceAddress(), output.sourceAddress());
+        Assertions.assertEquals(data.sourcePort(), output.sourcePort());
+        Assertions.assertEquals(data.destAddress(), output.destAddress());
+        Assertions.assertEquals(data.destPort(), output.destPort());
 
-                    if (ProxyProtocolData.Family.UNKNOWN.equals(family)) {
-                        Assertions.assertEquals(0, output.tlvs().size());
-                    } else {
-                        Assertions.assertEquals(data.tlvs().size(), output.tlvs().size());
+        if (ProxyProtocolData.Family.UNKNOWN.equals(family)) {
+            Assertions.assertEquals(0, output.tlvs().size());
+        } else {
+            Assertions.assertEquals(data.tlvs().size(), output.tlvs().size());
 
-                        for (int i = 0; i < data.tlvs().size(); i++) {
-                            final var inputTlv = data.tlvs().get(i);
-                            final var outputTlv = output.tlvs().get(i);
+            for (int i = 0; i < data.tlvs().size(); i++) {
+                final var inputTlv = data.tlvs().get(i);
+                final var outputTlv = output.tlvs().get(i);
 
-                            if (inputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c && outputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c outputCrc) {
-                                Assertions.assertEquals(header.checksum, outputCrc.checksum());
-                            } else {
-                                Assertions.assertEquals(inputTlv, outputTlv);
-                            }
-                        }
-                    }
+                if (inputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c && outputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c outputCrc) {
+                    Assertions.assertEquals(header.checksum, outputCrc.checksum());
+                } else {
+                    Assertions.assertEquals(inputTlv, outputTlv);
                 }
             }
         }

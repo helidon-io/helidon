@@ -1,5 +1,7 @@
 package io.helidon.webserver;
 
+import io.helidon.webserver.http.ServerRequest;
+
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -7,7 +9,8 @@ import java.util.Objects;
 
 /**
  * Binary (V2) Proxy protocol data parsed by {@link ProxyProtocolHandler}. This is a specialization of
- * the {@link ProxyProtocolData} interface, which is available when the upstream proxy used the V2 Proxy protocol.
+ * the {@link ProxyProtocolData} interface. The object returned from {@link ServerRequest#proxyProtocolData()} will
+ * additionally implement this interface when the proxy version used is the V2 (binary) version.
  */
 public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
