@@ -49,7 +49,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 [[otel-exporter-dependencies]]
-Also, add a dependency on an OpenTelemetry exporter.
+Microprofile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
 [source,xml]
 .Example dependency for the OpenTelemetry OTLP exporter
 ----
@@ -58,23 +58,14 @@ Also, add a dependency on an OpenTelemetry exporter.
     <artifactId>opentelemetry-exporter-otlp</artifactId>
 </dependency>
 ----
-[source,xml]
-.Example dependency for the OpenTelemetry Jaeger exporter
-----
-<dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-jaeger</artifactId>
-</dependency>
-----
-
-Typical applications use a single exporter but you can add dependencies on multiple exporters and then use configuration to choose which to use in any given execution.
-See the <<Configuration,configuration>> section for more details.
 
 == Usage
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
+MicroProfile Telemetry {mp-telemetry-version} allows for the export of the data it collects to  other systems using a variety of exporters such as OTLP mentioned earlier. Typical applications use a single exporter but you can add dependencies on multiple exporters and then use configuration to choose which to use in any given execution.
+See the <<Configuration,configuration>> section for more details.
+
 
 // @Deprecated(forRemoval = true) In 5.x remove the following note.
 [NOTE]
@@ -280,7 +271,7 @@ This way, Helidon will explicitly get all the configuration and objects from the
 
 This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. The Jaeger backend is employed in all the examples, and the Jaeger UI is used to view the traces.
 
-=== Set Up Jaeger
+=== Set Up Jaeger Backend
 
 For example, the Jaeger backend gathers the tracing information.
 

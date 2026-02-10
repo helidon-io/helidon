@@ -261,22 +261,12 @@
             -->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-sender-grpc-managed-channel</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
-                <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-exporter-otlp</artifactId>
                 <version>${version.lib.opentelemetry}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>io.opentelemetry</groupId>
-                        <artifactId>opentelemetry-exporter-http-sender-okhttp</artifactId>
+                        <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1255,12 +1245,6 @@
                 <!-- For dependency convergence -->
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio</artifactId>
-                <version>${version.lib.okio}</version>
-            </dependency>
-            <dependency>
-                <!-- For dependency convergence -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio-jvm</artifactId>
                 <version>${version.lib.okio}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->

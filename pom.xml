@@ -1025,11 +1025,6 @@
                     <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>com.squareup.wire</groupId>-->
-<!--                <artifactId>wire-gradle-plugin</artifactId>-->
-<!--                <version>${version.plugin.squareup.wire}</version>-->
-<!--            </plugin>-->
         </plugins>
     </build>
 
