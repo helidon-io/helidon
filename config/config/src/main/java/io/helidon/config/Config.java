@@ -403,7 +403,7 @@ public interface Config extends io.helidon.common.config.Config {
     }
 
     /**
-     * Create configuration from a string. The string format must match the provided media type, and a parse must be
+     * Create configuration from a string. The string format must match the provided media type, and a parser must be
      * present for that media type. {@link io.helidon.common.media.type.MediaTypes#TEXT_PROPERTIES} is always supported
      * (Java properties media type).
      * <p>
