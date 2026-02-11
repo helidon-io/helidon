@@ -36,7 +36,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
      * A Tag-Length-Value vector.
      */
-    sealed interface TLV {
+    sealed interface Tlv {
         int PP2_TYPE_ALPN = 0x01;
         int PP2_TYPE_AUTHORITY = 0x02;
         int PP2_TYPE_CRC32C = 0x03;
@@ -61,7 +61,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * Security (TLS) protocol as defined by RFC7301.
          * @param protocol A byte sequence defining the upper layer protocol in use over the connection.
          */
-        record Alpn(byte[] protocol) implements TLV {
+        record Alpn(byte[] protocol) implements Tlv {
             @Override
             public int type() {
                 return PP2_TYPE_ALPN;
@@ -89,7 +89,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * can be mentioned on a connection without TLS being involved at all.
          * @param hostName The host name value passed by the client.
          */
-        record Authority(String hostName) implements TLV {
+        record Authority(String hostName) implements Tlv {
             @Override
             public int type() {
                 return PP2_TYPE_AUTHORITY;
@@ -102,7 +102,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * validate the checksum and reject connections which fail the check.
          * @param checksum The CRC32c checksum, validated by Helidon.
          */
-        record Crc32c(int checksum) implements TLV {
+        record Crc32c(int checksum) implements Tlv {
             @Override
             public int type() {
                 return  PP2_TYPE_CRC32C;
@@ -119,7 +119,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * bytes. Can be used for data padding or alignment. Note that it can be used
          * to align only by 3 or more bytes because a TLV can not be smaller than that.
          */
-        record Noop(byte[] bytes) implements TLV {
+        record Noop(byte[] bytes) implements Tlv {
             @Override
             public int type() {
                 return PP2_TYPE_NOOP;
@@ -146,7 +146,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * layers of proxies, without needing to look up IP addresses and port numbers.
          * @param id The opaque id.
          */
-        record UniqueId(byte[] id) implements TLV {
+        record UniqueId(byte[] id) implements Tlv {
             @Override
             public int type() {
                 return PP2_TYPE_UNIQUE_ID;
@@ -172,7 +172,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * @param verify Verification status.
          * @param subTlvs The SSL subtype TLVs.
          */
-        record Ssl(int client, int verify, List<TLV> subTlvs) implements TLV {
+        record Ssl(int client, int verify, List<Tlv> subTlvs) implements Tlv {
             public static final int PP2_CLIENT_SSL = 0x01;
             public static final int PP2_CLIENT_CERT_CONN = 0x02;
             public static final int PP2_CLIENT_CERT_SESS = 0x04;
@@ -211,7 +211,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             }
         }
 
-        record SslVersion(String version) implements TLV {
+        record SslVersion(String version) implements Tlv {
             @Override
             public int type() {
                 return PP2_SUBTYPE_SSL_VERSION;
@@ -222,7 +222,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * Contains the representation of the Common Name field (OID: 2.5.4.3)
          * of the client certificate's Distinguished Name. For example, "example.com".
          */
-        record SslCn(String commonName) implements TLV {
+        record SslCn(String commonName) implements Tlv {
             @Override
             public int type() {
                 return PP2_SUBTYPE_SSL_CN;
@@ -232,7 +232,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
         /**
          * The name of the used cipher, for example "ECDHE-RSA-AES128-GCM-SHA256".
          */
-        record SslCipher(String cipher) implements TLV {
+        record SslCipher(String cipher) implements Tlv {
             @Override
             public int type() {
                 return PP2_SUBTYPE_SSL_CIPHER;
@@ -243,7 +243,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * The name of the algorithm used to sign the certificate presented by the frontend when
          * the incoming connection was made over an SSL/TLS transport layer, for example "SHA256".
          */
-        record SslSigAlg(String signatureAlgorithm) implements TLV {
+        record SslSigAlg(String signatureAlgorithm) implements Tlv {
             @Override
             public int type() {
                 return PP2_SUBTYPE_SSL_SIG_ALG;
@@ -255,7 +255,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * frontend when the incoming connection was made over an SSL/TLS transport layer,
          * for example "RSA2048".
          */
-        record SslKeyAlg(String keyAlgorithm) implements TLV {
+        record SslKeyAlg(String keyAlgorithm) implements Tlv {
             @Override
             public int type() {
                 return PP2_SUBTYPE_SSL_KEY_ALG;
@@ -266,7 +266,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * Defines the value as the US-ASCII string representation of the namespace's name.
          * @param namespaceName The namespace's name.
          */
-        record Netns(String namespaceName) implements TLV {
+        record Netns(String namespaceName) implements Tlv {
             @Override
             public int type() {
                 return  PP2_TYPE_NETNS;
@@ -278,7 +278,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * @param type The type byte value.
          * @param value The byte string containing the TLV value.
          */
-        record Unregistered(int type, byte[] value) implements TLV {
+        record Unregistered(int type, byte[] value) implements Tlv {
             @Override
             public int type() {
                 return  type;
@@ -322,5 +322,5 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
      * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
      */
-    List<TLV> tlvs();
+    List<Tlv> tlvs();
 }

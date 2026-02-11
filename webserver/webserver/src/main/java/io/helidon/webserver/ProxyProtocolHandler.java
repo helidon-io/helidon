@@ -285,16 +285,16 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         }
 
         // Read the TLV records.
-        final List<ProxyProtocolV2Data.TLV> tlvs;
-        ProxyProtocolV2Data.TLV.Crc32c checksumTlv = null;
+        final List<ProxyProtocolV2Data.Tlv> tlvs;
+        ProxyProtocolV2Data.Tlv.Crc32c checksumTlv = null;
         if (remainingHeaderLength == 0) {
             tlvs = List.of();
         } else {
-            final var tlvsBuilder = new ArrayList<ProxyProtocolV2Data.TLV>();
+            final var tlvsBuilder = new ArrayList<ProxyProtocolV2Data.Tlv>();
             while (remainingHeaderLength > 0) {
                 final var parsedTlv = readTlv(socketInputStream, inputStream, checksum, remainingHeaderLength);
 
-                if (parsedTlv.tlv instanceof ProxyProtocolV2Data.TLV.Crc32c crc) {
+                if (parsedTlv.tlv instanceof ProxyProtocolV2Data.Tlv.Crc32c crc) {
                     if (checksumTlv == null) {
                         checksumTlv = crc;
                     } else if (checksumTlv.checksum() != crc.checksum()) {
@@ -327,7 +327,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         return maxLength;
     }
 
-    record ParsedTLV(int length, ProxyProtocolV2Data.TLV tlv) {}
+    record ParsedTLV(int length, ProxyProtocolV2Data.Tlv tlv) {}
 
     private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum, int allowedBytesToRead) throws IOException {
         if (allowedBytesToRead < 3) {
@@ -347,7 +347,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         byte[] value = new byte[length];
         // If the type is CRC32C, then we need to read directly from the underlying socket input stream
         // because the CRC32C value needs to not be included in the checksum.
-        if (type == ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C) {
+        if (type == ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C) {
             readExactlyNBytes(socketInputStream, value, 0, length);
             // Substitute 0s for the checksum bytes.
             checksum.update(CHECKSUM_REPLACEMENT_BYTES);
@@ -356,33 +356,33 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         }
 
         return new ParsedTLV(3 + length, switch (type) {
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_ALPN -> new ProxyProtocolV2Data.TLV.Alpn(value);
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_AUTHORITY -> new ProxyProtocolV2Data.TLV.Authority(new String(value, StandardCharsets.UTF_8));
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.TLV.Crc32c(bitsToInt32BigEndian(value, 0));
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_NOOP -> new ProxyProtocolV2Data.TLV.Noop(value);
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_UNIQUE_ID -> new ProxyProtocolV2Data.TLV.UniqueId(value);
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_SSL -> {
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_ALPN -> new ProxyProtocolV2Data.Tlv.Alpn(value);
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_AUTHORITY -> new ProxyProtocolV2Data.Tlv.Authority(new String(value, StandardCharsets.UTF_8));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.Tlv.Crc32c(bitsToInt32BigEndian(value, 0));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_NOOP -> new ProxyProtocolV2Data.Tlv.Noop(value);
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_UNIQUE_ID -> new ProxyProtocolV2Data.Tlv.UniqueId(value);
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_SSL -> {
                 int client = value[0];
                 int verify = bitsToInt32BigEndian(value, 1);
 
                 int remainingBytes = length - 5;
                 var remainingStream = new ByteArrayInputStream(value, 5, remainingBytes);
-                var subTlvs = new ArrayList<ProxyProtocolV2Data.TLV>();
+                var subTlvs = new ArrayList<ProxyProtocolV2Data.Tlv>();
                 while (remainingBytes > 0) {
                     var parsedTlv = readTlv(remainingStream, remainingStream, checksum, remainingBytes);
                     remainingBytes -= parsedTlv.length;
                     subTlvs.add(parsedTlv.tlv);
                 }
 
-                yield new ProxyProtocolV2Data.TLV.Ssl(client, verify, subTlvs);
+                yield new ProxyProtocolV2Data.Tlv.Ssl(client, verify, subTlvs);
             }
-            case ProxyProtocolV2Data.TLV.PP2_SUBTYPE_SSL_VERSION -> new ProxyProtocolV2Data.TLV.SslVersion(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.TLV.PP2_SUBTYPE_SSL_CN -> new ProxyProtocolV2Data.TLV.SslCn(new String(value, StandardCharsets.UTF_8));
-            case ProxyProtocolV2Data.TLV.PP2_SUBTYPE_SSL_CIPHER -> new ProxyProtocolV2Data.TLV.SslCipher(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.TLV.PP2_SUBTYPE_SSL_SIG_ALG -> new ProxyProtocolV2Data.TLV.SslSigAlg(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.TLV.PP2_SUBTYPE_SSL_KEY_ALG -> new ProxyProtocolV2Data.TLV.SslKeyAlg(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.TLV.PP2_TYPE_NETNS -> new ProxyProtocolV2Data.TLV.Netns(new String(value, StandardCharsets.US_ASCII));
-            default -> new ProxyProtocolV2Data.TLV.Unregistered(type, value);
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_VERSION -> new ProxyProtocolV2Data.Tlv.SslVersion(new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CN -> new ProxyProtocolV2Data.Tlv.SslCn(new String(value, StandardCharsets.UTF_8));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CIPHER -> new ProxyProtocolV2Data.Tlv.SslCipher(new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_SIG_ALG -> new ProxyProtocolV2Data.Tlv.SslSigAlg(new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_KEY_ALG -> new ProxyProtocolV2Data.Tlv.SslKeyAlg(new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_NETNS -> new ProxyProtocolV2Data.Tlv.Netns(new String(value, StandardCharsets.US_ASCII));
+            default -> new ProxyProtocolV2Data.Tlv.Unregistered(type, value);
         });
     }
 
@@ -471,7 +471,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                                    Command command,
                                    SocketAddress sourceSocketAddress,
                                    SocketAddress destSocketAddress,
-                                   List<TLV> tlvs) implements ProxyProtocolV2Data {
+                                   List<Tlv> tlvs) implements ProxyProtocolV2Data {
 
         @Override
         public SocketAddress sourceSocketAddress() {
