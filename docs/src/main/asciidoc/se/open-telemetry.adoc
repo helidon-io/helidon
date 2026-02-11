@@ -483,6 +483,7 @@ telemetry:
     metrics:                                          # <1>
       exporters:
         - name: exp-1                                 # <2>
+          type: otlp
           endpoint: "http://host:1234"
           temporality-preference: cumulative          # <3>
           default-histogram-aggregation:              # <4>
@@ -490,6 +491,7 @@ telemetry:
             max-buckets: 152
             max-scale: 19
         - name: exp-2                                 # <5>
+          type: otlp
           protocol: grpc
           temporality-preference: delta               # <6>
           default-histogram-aggregation:              # <7>
