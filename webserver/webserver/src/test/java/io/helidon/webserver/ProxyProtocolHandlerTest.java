@@ -369,7 +369,7 @@ class ProxyProtocolHandlerTest {
         Assertions.assertEquals("0.255.0.255", data.destAddress());
         Assertions.assertEquals(48042, data.destPort());
         Assertions.assertEquals(1, data.tlvs().size());
-        final var tlv = (ProxyProtocolV2Data.TLV.Unregistered) data.tlvs().getFirst();
+        final var tlv = (ProxyProtocolV2Data.Tlv.Unregistered) data.tlvs().getFirst();
         Assertions.assertEquals(0xE0, tlv.type());
         Assertions.assertArrayEquals(new byte[] {0, 1, 2, 3}, tlv.value());
     }
@@ -512,8 +512,8 @@ class ProxyProtocolHandlerTest {
         Assertions.assertEquals("0.255.0.255", data.destAddress());
         Assertions.assertEquals(48042, data.destPort());
         Assertions.assertEquals(1, data.tlvs().size());
-        final var tlv = (ProxyProtocolV2Data.TLV.Crc32c) data.tlvs().getFirst();
-        Assertions.assertEquals(ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C, tlv.type());
+        final var tlv = (ProxyProtocolV2Data.Tlv.Crc32c) data.tlvs().getFirst();
+        Assertions.assertEquals(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C, tlv.type());
         Assertions.assertEquals(0xB52E837B, tlv.checksum());
     }
 
@@ -585,8 +585,8 @@ class ProxyProtocolHandlerTest {
         Assertions.assertEquals(48042, data.destPort());
         Assertions.assertEquals(2, data.tlvs().size());
         for (var tlv : data.tlvs()) {
-            Assertions.assertEquals(ProxyProtocolV2Data.TLV.PP2_TYPE_CRC32C, tlv.type());
-            Assertions.assertEquals(0xC669E94D, ((ProxyProtocolV2Data.TLV.Crc32c) tlv).checksum());
+            Assertions.assertEquals(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C, tlv.type());
+            Assertions.assertEquals(0xC669E94D, ((ProxyProtocolV2Data.Tlv.Crc32c) tlv).checksum());
         }
     }
 
@@ -627,21 +627,21 @@ class ProxyProtocolHandlerTest {
 
     @Test
     void validV2Permutations() throws IOException {
-        final var tlvs = new ArrayList<ProxyProtocolV2Data.TLV>();
-        tlvs.add(new ProxyProtocolV2Data.TLV.Alpn("alpn".getBytes(StandardCharsets.UTF_8)));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Alpn("".getBytes(StandardCharsets.UTF_8)));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Authority("authority"));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Authority(""));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Crc32c(0));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Noop(new byte[] {}));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Noop(new byte[] {0, 0, 0}));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Noop(new byte[] {1, 2}));
-        tlvs.add(new ProxyProtocolV2Data.TLV.UniqueId("uniqueId".getBytes(StandardCharsets.UTF_8)));
-        tlvs.add(new ProxyProtocolV2Data.TLV.UniqueId("".getBytes(StandardCharsets.UTF_8)));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Netns("namespace"));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Netns(""));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Unregistered(0xE0, new byte[0]));
-        tlvs.add(new ProxyProtocolV2Data.TLV.Unregistered(0xE1, new byte[] { 0, 1, 2, 3, 4 }));
+        final var tlvs = new ArrayList<ProxyProtocolV2Data.Tlv>();
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Alpn("alpn".getBytes(StandardCharsets.UTF_8)));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Alpn("".getBytes(StandardCharsets.UTF_8)));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Authority("authority"));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Authority(""));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Crc32c(0));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Noop(new byte[] {}));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Noop(new byte[] {0, 0, 0}));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Noop(new byte[] {1, 2}));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.UniqueId("uniqueId".getBytes(StandardCharsets.UTF_8)));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.UniqueId("".getBytes(StandardCharsets.UTF_8)));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Netns("namespace"));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Netns(""));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Unregistered(0xE0, new byte[0]));
+        tlvs.add(new ProxyProtocolV2Data.Tlv.Unregistered(0xE1, new byte[] { 0, 1, 2, 3, 4 }));
         final var rand = new Random(149813745327L);
         byte[] randomBytes;
 
@@ -711,7 +711,7 @@ class ProxyProtocolHandlerTest {
             final ProxyProtocolV2Data.Command command,
             final SocketAddress src,
             final SocketAddress dst,
-            final List<ProxyProtocolV2Data.TLV> tlvs) throws IOException {
+            final List<ProxyProtocolV2Data.Tlv> tlvs) throws IOException {
         final var data = new ProxyProtocolHandler.ProxyProtocolV2DataImpl(family, protocol, command, src, dst, tlvs);
         V2Header header = makeHeader(data);
         var output = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(header.bytes));
@@ -735,7 +735,7 @@ class ProxyProtocolHandlerTest {
                 final var inputTlv = data.tlvs().get(i);
                 final var outputTlv = output.tlvs().get(i);
 
-                if (inputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c && outputTlv instanceof ProxyProtocolV2Data.TLV.Crc32c outputCrc) {
+                if (inputTlv instanceof ProxyProtocolV2Data.Tlv.Crc32c && outputTlv instanceof ProxyProtocolV2Data.Tlv.Crc32c outputCrc) {
                     Assertions.assertEquals(header.checksum, outputCrc.checksum());
                 } else {
                     Assertions.assertEquals(inputTlv, outputTlv);
@@ -828,17 +828,17 @@ class ProxyProtocolHandlerTest {
         }
     }
 
-    byte[] writeTlvValue(ProxyProtocolV2Data.TLV tlv, List<Integer> checksumOffsets, int currentOffset) throws IOException {
+    byte[] writeTlvValue(ProxyProtocolV2Data.Tlv tlv, List<Integer> checksumOffsets, int currentOffset) throws IOException {
         return switch (tlv) {
-            case ProxyProtocolV2Data.TLV.Alpn alpn -> alpn.protocol();
-            case ProxyProtocolV2Data.TLV.Authority authority -> authority.hostName().getBytes(StandardCharsets.UTF_8);
-            case ProxyProtocolV2Data.TLV.Crc32c crc32c -> {
+            case ProxyProtocolV2Data.Tlv.Alpn alpn -> alpn.protocol();
+            case ProxyProtocolV2Data.Tlv.Authority authority -> authority.hostName().getBytes(StandardCharsets.UTF_8);
+            case ProxyProtocolV2Data.Tlv.Crc32c crc32c -> {
                 checksumOffsets.add(currentOffset);
                 yield new byte[] {0, 0, 0, 0};
             }
-            case ProxyProtocolV2Data.TLV.Netns netns -> netns.namespaceName().getBytes(StandardCharsets.US_ASCII);
-            case ProxyProtocolV2Data.TLV.Noop noop -> noop.bytes();
-            case ProxyProtocolV2Data.TLV.Ssl ssl -> {
+            case ProxyProtocolV2Data.Tlv.Netns netns -> netns.namespaceName().getBytes(StandardCharsets.US_ASCII);
+            case ProxyProtocolV2Data.Tlv.Noop noop -> noop.bytes();
+            case ProxyProtocolV2Data.Tlv.Ssl ssl -> {
                 var baos = new ByteArrayOutputStream();
                 var dataStream = new DataOutputStream(baos);
                 baos.write(ssl.client());
@@ -853,13 +853,13 @@ class ProxyProtocolHandlerTest {
                 }
                 yield baos.toByteArray();
             }
-            case ProxyProtocolV2Data.TLV.SslCipher sslCipher -> sslCipher.cipher().getBytes(StandardCharsets.US_ASCII);
-            case ProxyProtocolV2Data.TLV.SslCn sslCn -> sslCn.commonName().getBytes(StandardCharsets.UTF_8);
-            case ProxyProtocolV2Data.TLV.SslKeyAlg sslKeyAlg -> sslKeyAlg.keyAlgorithm().getBytes(StandardCharsets.US_ASCII);
-            case ProxyProtocolV2Data.TLV.SslSigAlg sslSigAlg -> sslSigAlg.signatureAlgorithm().getBytes(StandardCharsets.US_ASCII);
-            case ProxyProtocolV2Data.TLV.SslVersion sslVersion -> sslVersion.version().getBytes(StandardCharsets.US_ASCII);
-            case ProxyProtocolV2Data.TLV.UniqueId uniqueId -> uniqueId.id();
-            case ProxyProtocolV2Data.TLV.Unregistered unregistered -> unregistered.value();
+            case ProxyProtocolV2Data.Tlv.SslCipher sslCipher -> sslCipher.cipher().getBytes(StandardCharsets.US_ASCII);
+            case ProxyProtocolV2Data.Tlv.SslCn sslCn -> sslCn.commonName().getBytes(StandardCharsets.UTF_8);
+            case ProxyProtocolV2Data.Tlv.SslKeyAlg sslKeyAlg -> sslKeyAlg.keyAlgorithm().getBytes(StandardCharsets.US_ASCII);
+            case ProxyProtocolV2Data.Tlv.SslSigAlg sslSigAlg -> sslSigAlg.signatureAlgorithm().getBytes(StandardCharsets.US_ASCII);
+            case ProxyProtocolV2Data.Tlv.SslVersion sslVersion -> sslVersion.version().getBytes(StandardCharsets.US_ASCII);
+            case ProxyProtocolV2Data.Tlv.UniqueId uniqueId -> uniqueId.id();
+            case ProxyProtocolV2Data.Tlv.Unregistered unregistered -> unregistered.value();
         };
     }
 }
