@@ -19,14 +19,12 @@ package io.helidon.telemetry.otelconfig;
 import java.util.Map;
 
 import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
 
 import io.opentelemetry.api.common.AttributesBuilder;
 
 /**
  * Abstraction of typed attributes settable on OpenTelemetry elements.
  */
-@Prototype.Configured
 interface TypedAttributes {
 
     static void apply(AttributesBuilder attributesBuilder,
