@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ The following annotations are available:
 - link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowedMethods.html[`@Cors.AllowedMethods] - value is the allowed HTTP method names, defaults to all methods
 - link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.ExposeHeaders.html[`@Cors.ExposeHeaders] - value is the exposed HTTP header names, defaults to none
 - link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowCredentials.html[`@Cors.AllowCredentials] - value is a boolean, defaults to false
-- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.MaxAge.html[`@Cors.MaxAge] - value is the max age as a Duration pattern, defaults to `PT1H` (1 hour)
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html[`@Cors.MaxAgeSeconds] - value is the max age as a number of seconds
 
 
 == Configuration

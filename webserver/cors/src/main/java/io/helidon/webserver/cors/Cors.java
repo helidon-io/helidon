@@ -45,10 +45,7 @@ public final class Cors {
      * String used to allow all origins, headers, and methods.
      */
     public static final String ALLOW_ALL = "*";
-    /**
-     * Duration string for default max age ({@value}).
-     */
-    public static final String DEFAULT_MAX_AGE = "PT1H";
+    static final long DEFAULT_MAX_AGE = 3600;
 
     private Cors() {
     }
@@ -56,7 +53,7 @@ public final class Cors {
     /**
      * Enable support for CORS for an endpoint method (such as an OPTIONS handler) and
      * allow default CORS behavior (any origin, any header, any method, no expose headers,
-     * do not allow credentials, and max age is set to 1 hour [duration of {@value #DEFAULT_MAX_AGE}]).
+     * do not allow credentials, and max age is set to 1 hour.
      * <p>
      * The method can be annotated with additional annotations from this type to restrict some aspects.
      * <p>
@@ -151,14 +148,14 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
-    public @interface MaxAge {
+    public @interface MaxAgeSeconds {
         /**
          * Pre-flight response duration. After time expires, a new pre-flight
          * request is required. Corresponds to {@code Access-Control-Max-Age}.
-         * If not annotated, max age defaults to {@value #DEFAULT_MAX_AGE}.
+         * If not annotated, max age defaults to 1 hour.
          *
-         * @return max age as a {@link java.time.Duration} string, such as {@code PT1H} for one hour
+         * @return max age as a number of seconds
          */
-        String value();
+        long value();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.microprofile.cors;
 
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -146,7 +145,7 @@ public class CorsCdiExtension implements Extension {
                 .exposeHeaders(Set.of(crossOrigin.exposeHeaders()))
                 .allowMethods(Set.of(crossOrigin.allowMethods()))
                 .allowCredentials(crossOrigin.allowCredentials())
-                .maxAge(Duration.ofSeconds(crossOrigin.maxAge()))
+                .maxAge(crossOrigin.maxAge())
                 .build();
     }
 
@@ -202,9 +201,9 @@ public class CorsCdiExtension implements Extension {
             found = true;
             builder.exposeHeaders(Set.of(am.getAnnotation(Cors.ExposeHeaders.class).value()));
         }
-        if (am.isAnnotationPresent(Cors.MaxAge.class)) {
+        if (am.isAnnotationPresent(Cors.MaxAgeSeconds.class)) {
             found = true;
-            builder.maxAge(Duration.parse(am.getAnnotation(Cors.MaxAge.class).value()));
+            builder.maxAge(am.getAnnotation(Cors.MaxAgeSeconds.class).value());
         }
         if (am.isAnnotationPresent(Cors.AllowCredentials.class)) {
             found = true;

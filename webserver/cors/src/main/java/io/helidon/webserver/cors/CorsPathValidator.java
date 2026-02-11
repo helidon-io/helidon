@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -53,7 +52,7 @@ class CorsPathValidator {
         this.config = config;
         this.matcher = PathMatchers.create(config.pathPattern());
         this.allowCredentials = config.allowCredentials();
-        long maxAge = config.maxAge().getSeconds();
+        long maxAge = config.maxAge();
         this.maxAgeSeconds = String.valueOf(maxAge);
         this.setMaxAge = maxAge > 0;
 

@@ -100,14 +100,4 @@ class CorsConfigSupport {
             builder.addAllowMethod(method.text());
         }
     }
-
-    static class MaxAgeSecondsDecorator implements Prototype.OptionDecorator<CorsPathConfig.BuilderBase<?, ?>, Long> {
-        MaxAgeSecondsDecorator() {
-        }
-
-        @Override
-        public void decorate(CorsPathConfig.BuilderBase<?, ?> builder, Long optionValue) {
-            builder.maxAge(Duration.ofSeconds(optionValue));
-        }
-    }
 }

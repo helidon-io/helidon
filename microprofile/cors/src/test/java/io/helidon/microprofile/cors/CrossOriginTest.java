@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -355,7 +355,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
         @Cors.AllowedHeaders({"X-foo", "X-bar"})
         @Cors.AllowedMethods({HttpMethod.DELETE, HttpMethod.PUT})
         @Cors.AllowCredentials(true)
-        @Cors.MaxAge("PT0S")
+        @Cors.MaxAgeSeconds(0)
         public void options() {
         }
 

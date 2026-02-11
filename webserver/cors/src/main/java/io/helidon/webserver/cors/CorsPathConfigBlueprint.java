@@ -16,14 +16,12 @@
 
 package io.helidon.webserver.cors;
 
-import java.time.Duration;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 import static io.helidon.webserver.cors.Cors.ALLOW_ALL;
-import static io.helidon.webserver.cors.Cors.DEFAULT_MAX_AGE;
 
 /**
  * Configuration of CORS for a specific path.
@@ -59,6 +57,8 @@ interface CorsPathConfigBlueprint {
 
     /**
      * Set of allowed origins, defaults to all.
+     * <p>
+     * If not empty, this will be used with {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_ALLOW_ORIGIN_NAME} header.
      *
      * @return allowed origins
      */
@@ -69,6 +69,8 @@ interface CorsPathConfigBlueprint {
 
     /**
      * Set of allowed headers, defaults to all.
+     * <p>
+     * If not empty, this will be used in {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_ALLOW_HEADERS_NAME} header.
      *
      * @return allowed headers
      */
@@ -89,6 +91,8 @@ interface CorsPathConfigBlueprint {
 
     /**
      * Set of exposed headers, defaults to none.
+     * <p>
+     * If not empty, this will be used in {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_EXPOSE_HEADERS_NAME} header.
      *
      * @return exposed headers
      */
@@ -98,6 +102,8 @@ interface CorsPathConfigBlueprint {
 
     /**
      * Whether to allow credentials.
+     * <p>
+     * If enabled, this will be used in {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME} header.
      *
      * @return whether to allow credentials, defaults to {@code false}
      */
@@ -107,22 +113,12 @@ interface CorsPathConfigBlueprint {
 
     /**
      * Max age in seconds.
+     * <p>
+     * This value will be used in {@value io.helidon.http.HeaderNames#ACCESS_CONTROL_MAX_AGE_NAME} header.
      *
      * @return max age in seconds
-     * @deprecated only present for backward compatibility and will be removed in a future release of Helidon, use
-     * {@link #maxAge()} instead
-     */
-    @Option.Deprecated("maxAge")
-    @Option.Configured
-    @Option.Decorator(CorsConfigSupport.MaxAgeSecondsDecorator.class)
-    long maxAgeSeconds();
-
-    /**
-     * Maximum age of a preflight check.
-     *
-     * @return preflight check max age
      */
     @Option.Configured
-    @Option.Default(DEFAULT_MAX_AGE)
-    Duration maxAge();
+    @Option.DefaultLong(Cors.DEFAULT_MAX_AGE)
+    long maxAge();
 }
