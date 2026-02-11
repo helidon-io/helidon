@@ -16,6 +16,16 @@
 /**
  * Support for OpenTelemetry metrics semantic conventions.
  */
+
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
+@Features.Preview
+@Features.Name("OpenTelemetry Server HTTP Semantic Conventions")
+@Features.Description("Automatic metrics for compliance with OpenTelemetry server HTTP semantic conventions")
+@Features.Path({"Metrics", "Automatic Metrics", "Server", "HTTP", "OpenTelemetry"})
+@Features.Flavor(HelidonFlavor.SE)
+
 module io.helidon.webserver.observe.telemetry.metrics {
     requires io.helidon.webserver.observe.metrics;
     requires io.helidon.service.registry;
@@ -23,5 +33,8 @@ module io.helidon.webserver.observe.telemetry.metrics {
     requires io.helidon.metrics.api;
 
     requires io.opentelemetry.api;
+    requires io.opentelemetry.semconv;
+    requires io.helidon.common.features.api;
+    requires micrometer.core;
 
 }

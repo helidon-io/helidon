@@ -47,12 +47,15 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @ServerTest
 class TestOpenTelemetrySemanticConventions {
+
+    private static boolean checkPort;
 
     private final Http1Client defaultClient;
     private final Http1Client adminClient;
@@ -86,7 +89,9 @@ class TestOpenTelemetrySemanticConventions {
                         metrics:
                           auto:
                             sockets: ["@default","private"]
+                            opt-in: ["http.server.request.duration:server.address"]
                 """;
+        checkPort = false; // because we did not opt in for the server.port.
         Config config = Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_YAML));
         serverBuilder
                 .config(config.get("server"))
@@ -125,7 +130,7 @@ class TestOpenTelemetrySemanticConventions {
             /*
             Helidon registers and updates the timer asynchronously, so tolerate some delay.
              */
-            AtomicReference<List<Timer>> timersRef = requestTimers(meterRegistry, 3);
+            AtomicReference<List<Timer>> timersRef = requestTimers(meterRegistry, 2);
 
             /*
             There should be two timers, one for each of the greet endpoints and none for the
@@ -141,11 +146,11 @@ class TestOpenTelemetrySemanticConventions {
                 /*
                 Perform the checks below only on timers for successful requests. We'll verify the unsuccessful one later.
                  */
-                if (!tags.get(OpenTelemetryAutoHttpMetricsFilter.STATUS_CODE).equals("200")) {
+                if (!tags.get(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE).equals("200")) {
                     continue;
                 }
 
-                var socketName = tags.get(OpenTelemetryAutoHttpMetricsFilter.SOCKET_NAME);
+                var socketName = tags.get(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME);
 
                 var expectedHttpRoute = switch (socketName) {
                     case "private" -> "/greet";
@@ -173,19 +178,21 @@ class TestOpenTelemetrySemanticConventions {
                 assertThat("Socket " + socketName + " timer total time", timer.totalTime(TimeUnit.NANOSECONDS),
                            greaterThan(0D));
                 assertThat("Socket " + socketName + " timer name", timer.id().name(),
-                           is(OpenTelemetryAutoHttpMetricsFilter.TIMER_NAME));
+                           is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME));
 
+                var portMatcher = hasKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT);
+                if (!checkPort) {
+                    portMatcher = not(portMatcher);
+                }
                 assertThat("Tags", tags, allOf(
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_METHOD, "GET"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_SCHEME, "HTTP"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.STATUS_CODE, "200"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.ERROR_TYPE, ""),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_ROUTE, expectedHttpRoute),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.NETWORK_PROTOCOL_NAME, "HTTP"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.NETWORK_PROTOCOL_VERSION, "1.1"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.SERVER_ADDRESS, "localhost"),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.SERVER_PORT, Integer.toString(expectedPort)),
-                        hasEntry(OpenTelemetryAutoHttpMetricsFilter.SOCKET_NAME, socketName)));
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD, "GET"),
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.URL_SCHEME, "HTTP"),
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE, "200"),
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE, ""),
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE, expectedHttpRoute),
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS, "localhost"),
+                        portMatcher,
+                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME, socketName)));
 
             }
             assertThat("Expected sockets", socketNamesInTimers, allOf(
@@ -193,23 +200,6 @@ class TestOpenTelemetrySemanticConventions {
                     hasItem("private"),
                     not(hasItem("admin"))
             ));
-
-            Timer timerForFailedMetricsAccess = timersRef.get().stream()
-                            .filter(t -> t.id().tagsMap().get(OpenTelemetryAutoHttpMetricsFilter.STATUS_CODE).equals("404"))
-                                    .findFirst().orElseThrow();
-
-            assertThat("Timer for failed access", timerForFailedMetricsAccess.count(), is(1L));
-            assertThat("Tags for timer for failed access", timerForFailedMetricsAccess.id().tagsMap(), allOf(
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_METHOD, "GET"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_SCHEME, "HTTP"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.STATUS_CODE, "404"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.ERROR_TYPE, "404"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.HTTP_ROUTE, ""), // on failure, the route in the filter is empty
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.NETWORK_PROTOCOL_NAME, "HTTP"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.NETWORK_PROTOCOL_VERSION, "1.1"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.SERVER_ADDRESS, "localhost"),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.SERVER_PORT, Integer.toString(server.port())),
-                    hasEntry(OpenTelemetryAutoHttpMetricsFilter.SOCKET_NAME, "@default")));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
@@ -226,7 +216,7 @@ class TestOpenTelemetrySemanticConventions {
         MatcherWithRetry.assertThatWithRetry("Automatic timers",
                                              () -> {
                                                  timersRef.set(meterRegistry.meters(meter -> meter.id().name()
-                                                                 .equals(OpenTelemetryAutoHttpMetricsFilter.TIMER_NAME))
+                                                                 .equals(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
                                                                        .stream()
                                                                        .filter(m -> m instanceof Timer)
                                                                        .map(m -> (Timer) m)

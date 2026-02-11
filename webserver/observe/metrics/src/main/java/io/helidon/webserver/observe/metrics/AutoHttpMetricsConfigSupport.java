@@ -69,16 +69,32 @@ class AutoHttpMetricsConfigSupport {
                 return true;
             }
 
-            boolean matched = false;
+            boolean matchedPath = false;
             boolean latestResult = true;
 
             for (AutoHttpMetricsPathConfig cfg : config.effectivePathConfigs()) {
                 if (cfg.matchesPath(uriPath)) {
-                    matched = true;
+                    matchedPath = true;
                     latestResult = cfg.matchesMethod(method) && cfg.enabled();
                 }
             }
-            return !matched || latestResult;
+            return !matchedPath || latestResult;
+        }
+
+        /**
+         * Returns whether the configuration indicates if the user has opted to have specified attribute (tag) added to
+         * meters for the specified meter name. Telemetry implementations can permit users to configure whether certain
+         * attributes--typically ones that might be expensive to obtain--are to set on automatic meters.
+         *
+         * @param config {@link io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig} to check for opt-in settings
+         * @param meterName name of the meter to check for
+         * @param attributeName name of the attribute to opt in
+         * @return true if the attribute should be added to the meter; false otherwise
+         */
+        @Prototype.PrototypeMethod
+        static boolean isOptedIn(AutoHttpMetricsConfig config, String meterName, String attributeName) {
+            return config.optIn().stream()
+                    .anyMatch(optIn -> optIn.equals(meterName) || optIn.equals(meterName + ":" + attributeName));
         }
     }
 
@@ -87,7 +103,7 @@ class AutoHttpMetricsConfigSupport {
         @Override
         public void decorate(AutoHttpMetricsConfig.BuilderBase<?, ?> target) {
 
-            var fullList = new ArrayList<AutoHttpMetricsPathConfig>(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
+            var fullList = new ArrayList<>(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
             fullList.addAll(target.autoHttpMetricsPathConfigs());
             target.effectivePathConfigs(fullList);
         }

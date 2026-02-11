@@ -20,31 +20,65 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
+import io.helidon.common.LazyValue;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
-import io.helidon.webserver.observe.metrics.MetricsHttpSemanticConventions;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
+import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+
+/**
+ * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
+ */
 @Service.Singleton
-class OpenTelemetryMetricsHttpSemanticConventions implements MetricsHttpSemanticConventions {
+class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProvider {
 
-    private static final String HTTP_SERVER_REQUEST_DURATION = "http.server.request.duration";
+    // OpenTelemetry
+    static final String HTTP_METHOD = HttpAttributes.HTTP_REQUEST_METHOD.getKey();
+    static final String URL_SCHEME = UrlAttributes.URL_SCHEME.getKey();
+    static final String ERROR_TYPE = ErrorAttributes.ERROR_TYPE.getKey();
+    static final String STATUS_CODE = HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey();
+    static final String HTTP_ROUTE = HttpAttributes.HTTP_ROUTE.getKey();
+    static final String SERVER_ADDRESS = ServerAttributes.SERVER_ADDRESS.getKey();
+    static final String SERVER_PORT = ServerAttributes.SERVER_PORT.getKey();
+    // Helidon
+    static final String SOCKET_NAME = "socket.name";
+    static final String TIMER_NAME = "http.server.request.duration";
+    /*
+    Bucket boundaries as recommended by the OpenTelemetry spec.
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
+     */
+    private static final Duration[] BUCKET_BOUNDARIES =
+            Stream.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
+                    .map(d -> d * 1000.0) // seconds to milliseconds
+                    .map(Double::longValue)
+                    .map(Duration::ofMillis)
+                    .toList()
+                    .toArray(new Duration[0]);
 
-    private final MeterRegistry meterRegistry;
-
-    @Service.Inject
-    OpenTelemetryMetricsHttpSemanticConventions(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
-    }
+    /*
+    The MetricsFeature might set up the meter registry--using the deprecated globalRegistry approach--from its configuration,
+    so use lazy instantiation here to give it a chance before the service registry triggers creation of one based on the top-level
+    metrics config.
+     */
+    private final LazyValue<MeterRegistry> meterRegistry = LazyValue.create(Metrics::globalRegistry);
 
     @Override
     public Optional<Filter> filter(MetricsObserverConfig config) {
@@ -57,18 +91,14 @@ class OpenTelemetryMetricsHttpSemanticConventions implements MetricsHttpSemantic
          */
         return (config.autoHttpMetrics().isPresent() && !config.autoHttpMetrics().get().enabled())
                 ? Optional.empty()
-                : Optional.of(MetricsRecordingFilter.create(meterRegistry, config.autoHttpMetrics().get()));
+                : Optional.of(MetricsRecordingFilter.create(meterRegistry.get(),
+                                                            config.autoHttpMetrics().orElse(AutoHttpMetricsConfig.create())));
     }
 
     static class MetricsRecordingFilter implements Filter {
 
-        private static MetricsRecordingFilter create(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
-            return new MetricsRecordingFilter(meterRegistry, config);
-        }
-
         private final AutoHttpMetricsConfig config;
         private final MeterRegistry meterRegistry;
-
         private MetricsRecordingFilter(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
             this.config = config;
             this.meterRegistry = meterRegistry;
@@ -78,7 +108,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements MetricsHttpSemantic
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
             /*
-            Duplicate the synch/async handling in the normal and exception case to avoid the overhead of using an Optional to hold
+            Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
             the exception (if any) for use in a lambda.
              */
             try {
@@ -97,37 +127,51 @@ class OpenTelemetryMetricsHttpSemanticConventions implements MetricsHttpSemantic
             }
         }
 
+        private static MetricsRecordingFilter create(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
+            return new MetricsRecordingFilter(meterRegistry, config);
+        }
+
         private void updateMetricsIfMeasured(RoutingRequest req, RoutingResponse resp, Long startTime, Exception exception) {
-            if (!config.isMeasured(req.prologue().method(), req.path())) {
+            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
                 return;
             }
-            Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-            List<Tag> tags = new ArrayList<>(List.of(Tag.create("http.request.method", req.prologue().method().text()),
-                                                     Tag.create("url.scheme", req.prologue().protocol()),
-                                                     Tag.create("error.type", errorType(resp, exception)),
-                                                     Tag.create("http.response.status.code", statusCode(resp, exception)),
-                                                     Tag.create("http.route", req.matchingPattern().orElse(""))));
+            var now = System.nanoTime();
+            List<Tag> tags = new ArrayList<>(List.of(Tag.create(HTTP_METHOD, req.prologue().method().text()),
+                                                     Tag.create(URL_SCHEME, req.prologue().protocol()),
+                                                     Tag.create(ERROR_TYPE, errorType(resp, exception)),
+                                                     Tag.create(STATUS_CODE, statusCode(resp, exception)),
+                                                     Tag.create(HTTP_ROUTE, req.matchingPattern().orElse("")),
+                                                     Tag.create(SOCKET_NAME, req.listenerContext().config().name())));
+
+            if (config.isOptedIn(TIMER_NAME, SERVER_ADDRESS)) {
+                tags.add(Tag.create(SERVER_ADDRESS, req.requestedUri().host()));
+            }
+            if (config.isOptedIn(TIMER_NAME, SERVER_PORT)) {
+                tags.add(Tag.create(SERVER_PORT, Integer.toString(req.requestedUri().port())));
+            }
 
             /*
-            Opt-in for these next two.
+            The OpenTelemetry semantic conventions describe network.protocol.name and version, but these are
+            required only if the protocol is not http, and it always is http in this particular class. Further, we
+            don't currently have a way to get the HTTP version at runtime from a request.
              */
-            tags.add(Tag.create("server.address", req.listenerContext().config().host()));
-            tags.add(Tag.create("server.port", Integer.toString(req.listenerContext().config().port())));
 
-            Timer.Builder builder = Timer.builder(HTTP_SERVER_REQUEST_DURATION)
-                    .description("HTTP server request duration")
-                    .tags(tags);
-
-            Timer timer = meterRegistry.getOrCreate(builder);
-            timer.record(duration);
+            /*
+            If we search for the meter and find it we avoid constructing the builder unnecessarily.
+             */
+            meterRegistry.timer(TIMER_NAME, tags)
+                    .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME)
+                                                              .tags(tags)
+                                                              .buckets(BUCKET_BOUNDARIES)))
+                    .record(now - startTime, TimeUnit.NANOSECONDS);
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {
             return (exception != null)
-                ? exception.getClass().getSimpleName()
-                : resp.status().equals(Status.OK_200)
-                    ? ""
-                    : resp.status().codeText();
+                    ? exception.getClass().getSimpleName()
+                    : resp.status().equals(Status.OK_200)
+                            ? ""
+                            : resp.status().codeText();
         }
 
         private String statusCode(RoutingResponse resp, Exception exception) {
