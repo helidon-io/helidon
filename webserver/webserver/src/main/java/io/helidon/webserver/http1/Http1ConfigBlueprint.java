@@ -31,6 +31,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
 @Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
+@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http1ConfigBlueprint extends ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.

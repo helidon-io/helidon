@@ -26,6 +26,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {

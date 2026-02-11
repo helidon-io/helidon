@@ -25,6 +25,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
 
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
+@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {

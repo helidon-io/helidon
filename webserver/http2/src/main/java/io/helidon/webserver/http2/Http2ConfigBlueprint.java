@@ -31,6 +31,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
 @Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
+@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
