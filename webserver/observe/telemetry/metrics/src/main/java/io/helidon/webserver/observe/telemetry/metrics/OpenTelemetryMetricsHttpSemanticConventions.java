@@ -30,7 +30,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
