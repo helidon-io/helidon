@@ -74,7 +74,12 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * CORS config.
      *
      * @return CORS config
+     * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+     *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+     *  server feature
      */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.4.0")
     @Option.Configured
     Optional<CrossOriginConfig> cors();
 

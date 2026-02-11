@@ -42,6 +42,7 @@ import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_DEFA
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_DEFAULT_INT;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_DEFAULT_LONG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_DEFAULT_METHOD;
+import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_DEPRECATED;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_PROVIDER;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_REQUIRED;
 import static io.helidon.config.metadata.codegen.TypeHandlerBase.UNCONFIGURED_OPTION;
@@ -114,6 +115,7 @@ final class ConfiguredOptionData {
             result.provider(true);
         });
         element.findAnnotation(DEPRECATED).ifPresent(it -> result.deprecated(true));
+        element.findAnnotation(OPTION_DEPRECATED).ifPresent(it -> result.deprecated(true));
         element.findAnnotation(OPTION_ALLOWED_VALUES)
                 .flatMap(Annotation::annotationValues)
                 .or(() -> element.findAnnotation(OPTION_ALLOWED_VALUE).map(List::of))

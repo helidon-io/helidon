@@ -120,7 +120,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 </map>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
-                                <value>io.helidon.microprofile.cors.CrossOrigin</value>
+                                <value>io.helidon.webserver.cors.Cors</value>
                                 <value>jakarta.ws.rs.OPTIONS</value>
                                 <value>jakarta.ws.rs.PUT</value>
                                 <value>jakarta.ws.rs.core.Response</value>

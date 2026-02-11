@@ -16,8 +16,10 @@
 
 package io.helidon.webserver.cors;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
@@ -35,12 +37,30 @@ class CorsValidator {
     }
 
     static CorsValidator create(CorsConfig config, String socketName) {
-        return new CorsValidator(socketName,
-                                 config.paths()
-                                         .stream()
-                                         .filter(CorsPathConfig::enabled)
-                                         .map(CorsPathValidator::create)
-                                         .collect(Collectors.toUnmodifiableList()));
+        List<CorsPathValidator> validators = new ArrayList<>();
+        Set<String> usedPatterns = new HashSet<>();
+
+        for (CorsPathConfig path : config.paths()) {
+            // eliminate duplicities (config overriding discovered path config)
+            // and at the same time eliminate disabled entries
+            // we could keep them in, as the config override is called first, and it never reaches the discovered one
+            // but this is cleaner and faster
+            if (usedPatterns.add(path.pathPattern()) && path.enabled()) {
+                validators.add(CorsPathValidator.create(path));
+            }
+        }
+
+        return new CorsValidator(socketName, validators);
+    }
+
+    static boolean isPreflight(ServerRequest req) {
+        if (req.prologue().method() != Method.OPTIONS) {
+            return false;
+        }
+        if (nonCorsRequest(req)) {
+            return false;
+        }
+        return req.headers().contains(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
     }
 
     @Override
@@ -66,16 +86,6 @@ class CorsValidator {
         return flightCheck(req, res);
     }
 
-    static boolean isPreflight(ServerRequest req) {
-        if (req.prologue().method() != Method.OPTIONS) {
-            return false;
-        }
-        if (nonCorsRequest(req)) {
-            return false;
-        }
-        return req.headers().contains(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
-    }
-
     /**
      * Check non-Option method request.
      *
@@ -89,30 +99,6 @@ class CorsValidator {
         }
         // this cannot be a pre-flight, as it is not an OPTIONS method
         return flightCheck(req, res);
-    }
-
-    private boolean flightCheck(RoutingRequest req, RoutingResponse res) {
-        for (CorsPathValidator validator : validators) {
-            var result = validator.flight(req, res);
-            if (result.matched()) {
-                return result.shouldContinue();
-            }
-        }
-        // this is unexpected - if we encounter a CORS request, there MUST be a validator that is registered on /*
-        // and forbids all - why was it not invoked?
-        throw new IllegalStateException("Failed to validated CORS in request.");
-    }
-
-    private boolean preFlightCheck(RoutingRequest req, RoutingResponse res) {
-        for (CorsPathValidator validator : validators) {
-            var result = validator.preFlight(req, res);
-            if (result.matched()) {
-                return result.shouldContinue();
-            }
-        }
-        // this is unexpected - if we encounter a CORS request, there MUST be a validator that is registered on /*
-        // and forbids all - why was it not invoked?
-        throw new IllegalStateException("Failed to validated CORS in request.");
     }
 
     private static boolean nonCorsRequest(ServerRequest req) {
@@ -145,5 +131,29 @@ class CorsValidator {
     private static String hostLocation(ServerRequest req) {
         var uri = req.requestedUri();
         return uri.scheme() + "://" + uri.host() + ":" + uri.port();
+    }
+
+    private boolean flightCheck(RoutingRequest req, RoutingResponse res) {
+        for (CorsPathValidator validator : validators) {
+            var result = validator.flight(req, res);
+            if (result.matched()) {
+                return result.shouldContinue();
+            }
+        }
+        // this is unexpected - if we encounter a CORS request, there MUST be a validator that is registered on /*
+        // and forbids all - why was it not invoked?
+        throw new IllegalStateException("Failed to validated CORS in request.");
+    }
+
+    private boolean preFlightCheck(RoutingRequest req, RoutingResponse res) {
+        for (CorsPathValidator validator : validators) {
+            var result = validator.preFlight(req, res);
+            if (result.matched()) {
+                return result.shouldContinue();
+            }
+        }
+        // this is unexpected - if we encounter a CORS request, there MUST be a validator that is registered on /*
+        // and forbids all - why was it not invoked?
+        throw new IllegalStateException("Failed to validated CORS in request.");
     }
 }

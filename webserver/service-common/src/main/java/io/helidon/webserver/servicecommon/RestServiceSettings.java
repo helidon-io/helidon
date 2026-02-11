@@ -23,7 +23,13 @@ import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 
 /**
  * Common settings across REST services.
+ * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+ *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+ *  server feature; as this class's reason for existence was mostly CORS, it will be removed in a future release of Helidon;
+ *  implement {@link io.helidon.webserver.http.HttpService} directly instead
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true, since = "4.4.0")
 public interface RestServiceSettings {
 
     /**
@@ -73,6 +79,7 @@ public interface RestServiceSettings {
      *
      * @return cross-origin settings
      */
+    @SuppressWarnings("removal")
     CrossOriginConfig crossOriginConfig();
 
     /**
@@ -123,7 +130,12 @@ public interface RestServiceSettings {
          *
          * @param crossOriginConfigBuilder builder for the CORS settings
          * @return updated builder
+         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+         *  server feature
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.4.0")
         @ConfiguredOption(key = CorsEnabledServiceHelper.CORS_CONFIG_KEY,
                           type = CrossOriginConfig.class,
                           kind = ConfiguredOption.Kind.MAP)
@@ -143,7 +155,12 @@ public interface RestServiceSettings {
          *
          * @param crossOriginConfig existing cross-origin settings
          * @return updated builder
+         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+         *  server feature
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.4.0")
         Builder crossOriginConfig(CrossOriginConfig crossOriginConfig);
 
         /**

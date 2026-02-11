@@ -27,7 +27,6 @@ The following configuration keys can be used to set up integration with WebServe
 
 |`graphql.web-context` |`/graphql` |Context that serves the GraphQL endpoint.
 |`graphql.schema-uri` |`/schema.graphql` |URI that serves the schema (under web context)
-|`graphql.cors` |{nbsp} |CORS configuration for this service
 |`graphql.executor-service` |{nbsp} |Configuration of `ServerThreadPoolSupplier` used to set up executor service
 
 |===

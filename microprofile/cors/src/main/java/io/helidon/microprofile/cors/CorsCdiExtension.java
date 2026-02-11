@@ -181,6 +181,11 @@ public class CorsCdiExtension implements Extension {
         var builder = CorsPathConfig.builder()
                 .pathPattern(path);
 
+        if (am.isAnnotationPresent(Cors.Defaults.class)) {
+            // use all defaults
+            return Optional.of(builder.build());
+        }
+
         if (am.isAnnotationPresent(Cors.AllowedOrigins.class)) {
             found = true;
             builder.allowOrigins(Set.of(am.getAnnotation(Cors.AllowedOrigins.class).value()));

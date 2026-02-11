@@ -15,7 +15,7 @@
  */
 package io.helidon.docs.mp.cors;
 
-import io.helidon.microprofile.cors.CrossOrigin;
+import io.helidon.webserver.cors.Cors;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -47,14 +47,14 @@ class CorsSnippets {
         }
 
         @OPTIONS
-        @CrossOrigin()
+        @Cors.Defaults
         public void optionsForRetrievingUnnamedGreeting() { // <4>
         }
 
         @OPTIONS
         @Path("/greeting")
-        @CrossOrigin(value = {"http://foo.com", "http://there.com"},
-                     allowMethods = {HttpMethod.PUT})
+        @Cors.AllowedOrigins({"http://foo.com", "http://there.com"})
+        @Cors.AllowedMethods(HttpMethod.PUT)
         public void optionsForUpdatingGreeting() { // <5>
         }
     }

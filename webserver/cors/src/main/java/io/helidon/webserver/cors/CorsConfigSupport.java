@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.cors;
 
+import java.time.Duration;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
@@ -97,6 +98,16 @@ class CorsConfigSupport {
         @Prototype.BuilderMethod
         static void addAllowMethod(CorsPathConfig.BuilderBase<?, ?> builder, Method method) {
             builder.addAllowMethod(method.text());
+        }
+    }
+
+    static class MaxAgeSecondsDecorator implements Prototype.OptionDecorator<CorsPathConfig.BuilderBase<?, ?>, Long> {
+        MaxAgeSecondsDecorator() {
+        }
+
+        @Override
+        public void decorate(CorsPathConfig.BuilderBase<?, ?> builder, Long optionValue) {
+            builder.maxAge(Duration.ofSeconds(optionValue));
         }
     }
 }

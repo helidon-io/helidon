@@ -39,7 +39,12 @@ interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature
      * Cors support inherited by each observe provider, unless explicitly configured.
      *
      * @return cors support to use
+     * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+     *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+     *  server feature
      */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.4.0")
     @Option.Configured
     @Option.DefaultCode("@io.helidon.cors.CrossOriginConfig@.create()")
     CrossOriginConfig cors();

@@ -106,6 +106,18 @@ interface CorsPathConfigBlueprint {
     boolean allowCredentials();
 
     /**
+     * Max age in seconds.
+     *
+     * @return max age in seconds
+     * @deprecated only present for backward compatibility and will be removed in a future release of Helidon, use
+     * {@link #maxAge()} instead
+     */
+    @Option.Deprecated("maxAge")
+    @Option.Configured
+    @Option.Decorator(CorsConfigSupport.MaxAgeSecondsDecorator.class)
+    long maxAgeSeconds();
+
+    /**
      * Maximum age of a preflight check.
      *
      * @return preflight check max age
