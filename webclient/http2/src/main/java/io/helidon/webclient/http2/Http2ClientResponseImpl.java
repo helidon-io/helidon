@@ -51,7 +51,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final int maxBufferedEntityLength;
+    private final long maxBufferedEntitySize;
     private boolean entityRequested;
 
     Http2ClientResponseImpl(HttpClientConfig httpClientConfig,
@@ -65,7 +65,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                             ReleasableResource stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable,
-                            int maxBufferedEntityLength) {
+                            long maxBufferedEntitySize) {
         this.httpClientConfig = httpClientConfig;
         this.responseStatus = status;
         this.requestHeaders = requestHeaders;
@@ -77,7 +77,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         this.stream = stream;
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
-        this.maxBufferedEntityLength = maxBufferedEntityLength;
+        this.maxBufferedEntitySize = maxBufferedEntitySize;
     }
 
     @Override
@@ -129,7 +129,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                 requestHeaders,
                 responseHeaders,
                 mediaContext,
-                maxBufferedEntityLength);
+                maxBufferedEntitySize);
     }
 
     Http2ClientStream stream() {

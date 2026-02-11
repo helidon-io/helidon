@@ -39,8 +39,8 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
                                  ClientRequestHeaders requestHeaders,
                                  ClientResponseHeaders responseHeaders,
                                  MediaContext mediaContext,
-                                 int maxBufferedEntityLength) {
-        super(readEntityFunction, entityProcessedRunnable, maxBufferedEntityLength);
+                                 long maxBufferedEntitySize) {
+        super(readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
 
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
@@ -55,7 +55,7 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
      * @param requestHeaders          request headers
      * @param responseHeaders         response headers
      * @param mediaContext            media context to read into specific types
-     * @param maxBufferedEntityLength maximum length of a buffered entity
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
      * @return client response entity
      */
     public static ClientResponseEntity create(Function<Integer, BufferData> readEntityFunction,
@@ -63,13 +63,13 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
                                               ClientRequestHeaders requestHeaders,
                                               ClientResponseHeaders responseHeaders,
                                               MediaContext mediaContext,
-                                              int maxBufferedEntityLength) {
+                                              long maxBufferedEntitySize) {
         return new ClientResponseEntity(readEntityFunction,
                                         entityProcessedRunnable,
                                         requestHeaders,
                                         responseHeaders,
                                         mediaContext,
-                                        maxBufferedEntityLength);
+                                        maxBufferedEntitySize);
     }
 
     @Override
@@ -82,7 +82,7 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
                                         requestHeaders,
                                         responseHeaders,
                                         mediaContext,
-                                        maxBufferedEntityLength());
+                                        maxBufferedEntitySize());
     }
 
     @Override

@@ -46,8 +46,8 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext,
-                                int maxBufferedEntityLength) {
-        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable, maxBufferedEntityLength);
+                                long maxBufferedEntitySize) {
+        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
         this.streamFilter = streamFilter;
         this.decoder = decoder;
         this.requestHeaders = requestHeaders;
@@ -65,7 +65,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
      * @param entityProcessedRunnable runnable to run once the entity is fully read
      * @param requestHeaders          request headers
      * @param mediaContext            media context to map to correct types
-     * @param maxBufferedEntityLength maximum length of a buffered entity
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
      * @return a new entity
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -76,7 +76,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                              Runnable entityProcessedRunnable,
                                              ServerRequestHeaders requestHeaders,
                                              MediaContext mediaContext,
-                                             int maxBufferedEntityLength) {
+                                             long maxBufferedEntitySize) {
         return new ServerRequestEntity(entityRequestedCallback,
                                        streamFilter,
                                        decoder,
@@ -84,7 +84,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                        entityProcessedRunnable,
                                        requestHeaders,
                                        mediaContext,
-                                       maxBufferedEntityLength);
+                                       maxBufferedEntitySize);
     }
 
     @Override
@@ -96,7 +96,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                        entityProcessedRunnable(),
                                        requestHeaders,
                                        mediaContext,
-                                       maxBufferedEntityLength());
+                                       maxBufferedEntitySize());
     }
 
     @Override

@@ -74,7 +74,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         entityReadLatch::countDown,
                                                                         headers,
                                                                         ctx.listenerContext().mediaContext(),
-                                                                        http1Config.maxBufferedEntityLength()));
+                                                                        http1Config.maxBufferedEntitySize().toBytes()));
     }
 
     @Override

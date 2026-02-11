@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Size;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
@@ -65,14 +66,14 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     int maxStatusLineLength();
 
     /**
-     * Configure the maximum length allowed for an entity that can be explicitly
+     * Configure the maximum size allowed for an entity that can be explicitly
      * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
      *
-     * @return maximum length for a buffered entity
+     * @return maximum size for a buffered entity
      */
     @Option.Configured
-    @Option.DefaultInt(64 * 1024)
-    int maxBufferedEntityLength();
+    @Option.Default("64 KB")
+    Size maxBufferedEntitySize();
 
     /**
      * Sets whether the request header format is validated or not.

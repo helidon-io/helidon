@@ -204,7 +204,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                            serviceResponse.connection(),
                                            complete,
                                            callChain::closeResponse,
-                                           http2Client.protocolConfig().maxBufferedEntityLength());
+                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes());
 
     }
 }

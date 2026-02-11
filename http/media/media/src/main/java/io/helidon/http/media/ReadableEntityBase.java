@@ -46,7 +46,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private InputStream inputStream;
 
     private byte[] bufferedEntity;
-    private final int maxBufferedEntityLength;
+    private final long maxBufferedEntitySize;
 
     /**
      * Create a new base.
@@ -54,16 +54,16 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
-     * @param maxBufferedEntityLength maximum length of a buffered entity
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
      */
     protected ReadableEntityBase(Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable,
-                                 int maxBufferedEntityLength) {
+                                 long maxBufferedEntitySize) {
         this.entityRequestedCallback = d -> {
         };
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
-        this.maxBufferedEntityLength = maxBufferedEntityLength;
+        this.maxBufferedEntitySize = maxBufferedEntitySize;
     }
 
     /**
@@ -73,16 +73,16 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
-     * @param maxBufferedEntityLength maximum length of a buffered entity
+     * @param maxBufferedEntitySize maximum length of a buffered entity
      */
     protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
                                  Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable,
-                                 int maxBufferedEntityLength) {
+                                 long maxBufferedEntitySize) {
         this.entityRequestedCallback = entityRequestedCallback;
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
-        this.maxBufferedEntityLength = maxBufferedEntityLength;
+        this.maxBufferedEntitySize = maxBufferedEntitySize;
     }
 
     /**
@@ -112,7 +112,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                     int entityLength = 0;
                     while ((read = is.read(buffer)) != -1) {
                         entityLength += read;
-                        if (entityLength > maxBufferedEntityLength) {
+                        if (entityLength > maxBufferedEntitySize) {
                             throw new IllegalStateException("Maximum buffered entity length exceeded");
                         }
                         bos.write(buffer, 0, read);
@@ -235,8 +235,8 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      *
      * @return max entity length for buffering
      */
-    protected int maxBufferedEntityLength() {
-        return maxBufferedEntityLength;
+    protected long maxBufferedEntitySize() {
+        return maxBufferedEntitySize;
     }
 
     private static class EntityProcessedRunnable implements Runnable {

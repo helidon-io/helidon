@@ -20,6 +20,7 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Size;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
@@ -67,14 +68,14 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     long maxConcurrentStreams();
 
     /**
-     * Configure the maximum length allowed for an entity that can be explicitly
+     * Configure the maximum size allowed for an entity that can be explicitly
      * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
      *
-     * @return maximum length for a buffered entity
+     * @return maximum size for a buffered entity
      */
     @Option.Configured
-    @Option.DefaultInt(64 * 1024)
-    int maxBufferedEntityLength();
+    @Option.Default("64 KB")
+    Size maxBufferedEntitySize();
 
     /**
      * This setting indicates the sender's maximum window size in bytes for stream-level flow control.

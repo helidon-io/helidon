@@ -591,7 +591,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    hasEntity,
                                                                    this::readEntityFromPipeline,
                                                                    outcome,
-                                                                   http2Config.maxBufferedEntityLength());
+                                                                   http2Config.maxBufferedEntitySize().toBytes());
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {

@@ -226,7 +226,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 requestHeaders,
                 responseHeaders,
                 mediaContext,
-                protocolConfig.maxBufferedEntityLength());
+                protocolConfig.maxBufferedEntitySize().toBytes());
     }
 
     private void entityFullyRead() {
