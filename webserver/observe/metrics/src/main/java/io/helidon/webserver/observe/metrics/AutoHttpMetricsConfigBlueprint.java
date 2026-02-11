@@ -74,4 +74,14 @@ interface AutoHttpMetricsConfigBlueprint {
     @Option.Access("")
     List<AutoHttpMetricsPathConfig> effectivePathConfigs();
 
+    /**
+     * Elective attribute for which to opt in. Each string in the list is of the form
+     * {@code meter-name:attribute-name} where {@code meter-name} is the name of the meter and {@code attribute-name} is the
+     * name of an attribute (tag) which is optional on that meter.
+     *
+     * @return opt-in attributes to be provided
+     */
+    @Option.Configured
+    List<String> optIn();
+
 }

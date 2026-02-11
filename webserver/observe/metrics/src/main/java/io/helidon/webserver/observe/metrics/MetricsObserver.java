@@ -29,7 +29,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.DisabledObserverFeature;
-import io.helidon.webserver.observe.metrics.spi.HttpMetricsFilter;
+import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -172,10 +172,11 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
         }
 
         for (String socketName : socketNamesForAutoMetrics) {
-            for (HttpMetricsFilter metricsFilter : Services.all(HttpMetricsFilter.class)) {
-                featureContext.socket(socketName)
-                        .httpRouting()
-                        .addFilter(metricsFilter.prepare(config.metricsConfig(), autoHttpMetricsConfig));
+            for (AutoHttpMetricsProvider metricsProvider : Services.all(AutoHttpMetricsProvider.class)) {
+                metricsProvider.filter(config)
+                        .ifPresent(filter -> featureContext.socket(socketName)
+                                .httpRouting()
+                                .addFilter(filter));
             }
         }
     }

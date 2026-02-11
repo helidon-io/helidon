@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.observe.metrics;
+package io.helidon.webserver.observe.metrics.spi;
 
 import java.util.Optional;
 
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.Filter;
+import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
 /**
- * Marker interface for filters which implement metrics semantic conventions (registering and updating meters for
- * measuring HTTP requests).
+ * A type which, given {@link io.helidon.webserver.observe.metrics.MetricsObserverConfig}, can provide a
+ * {@link io.helidon.webserver.http.Filter} which registers and updates meters for measuring
+ * HTTP requests (for example, implementing metrics semantic conventions).
  */
-public interface MetricsHttpSemanticConventions {
+@Service.Contract
+public interface AutoHttpMetricsProvider {
 
     /**
      * Provides a {@link io.helidon.webserver.http.Filter} which uses the supplied configuration to search for, register
