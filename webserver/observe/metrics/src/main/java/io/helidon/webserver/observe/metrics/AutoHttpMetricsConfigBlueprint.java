@@ -84,4 +84,14 @@ interface AutoHttpMetricsConfigBlueprint {
     @Option.Configured
     List<String> optIn();
 
+    /**
+     * Whether to apply the built-in default inclusions and exclusions of Helidon-provided service endpoints (e.g., metrics
+     * and health excluded).
+     *
+     * @return true to use the built-in inclusion/exclusion rules; false otherwise
+     */
+    @Option.DefaultBoolean(true)
+    @Option.Configured
+    boolean useDefaultRules();
+
 }

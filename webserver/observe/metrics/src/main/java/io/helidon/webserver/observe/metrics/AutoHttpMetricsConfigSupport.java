@@ -103,8 +103,10 @@ class AutoHttpMetricsConfigSupport {
         @Override
         public void decorate(AutoHttpMetricsConfig.BuilderBase<?, ?> target) {
 
-            var fullList = new ArrayList<>(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
-            fullList.addAll(target.autoHttpMetricsPathConfigs());
+            var fullList = new ArrayList<>(target.autoHttpMetricsPathConfigs());
+            if (target.useDefaultRules()) {
+                fullList.addAll(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
+            }
             target.effectivePathConfigs(fullList);
         }
     }
