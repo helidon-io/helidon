@@ -578,6 +578,25 @@ OpenTelemetry uses one or more metric exporters to transmit metrics data. If you
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricExporterConfig.adoc[tag=config,leveloffset=+2]
 
+===== Metric Aggregation
+OpenTelemetry allows control over how each exporter aggregates histogram data prior to transmission to a backend.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricDefaultHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+You can configure the explicit bucket boundaries for `EXPLICIT_BUCKET_HISTOGRAM` aggregation.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_ExplicitBucketHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+You can configure the exponential histogram aggregation behavior.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_Base2ExponentialHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+
+===== Retry Policy
+You can control how each exporter retries if a transmission to a backend fails.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_RetryPolicyConfig.adoc[tag=config, leveloffset=+2]
+
 [[metric-readers-config]]
 ==== Metric Readers
 An OpenTelemetry metric reader collects metric data in the server and then uses the associated metric exporter to send that data to the endpoint configured.
@@ -593,6 +612,10 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_PeriodicMetricReaderCo
 OpenTelemetry metric views allow you to influence how meters are aggregated for reporting to backend systems.
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_ViewRegistrationConfig.adoc[tag=config,leveloffset=+2]
+
+The instrument selector controls which meters this view reflects.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_InstrumentSelectorConfig.adoc[tag=config, leveloffset=+2]
 
 == Additional Information
 
