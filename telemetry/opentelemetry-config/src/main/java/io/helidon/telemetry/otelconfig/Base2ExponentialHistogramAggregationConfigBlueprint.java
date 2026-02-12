@@ -27,7 +27,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)
-interface Base2ExponentialHistogramAggregationConfigBlueprint extends AggregationConfigBlueprint {
+interface Base2ExponentialHistogramAggregationConfigBlueprint {
 
     /**
      * Maximum number of buckets.
