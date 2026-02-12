@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import io.helidon.common.Size;
 
 /**
  * Utility methods for converting configuration to Java types.
@@ -158,6 +160,8 @@ public final class ConfigMappers {
                              Map.entry(UUID.class, wrap(ConfigMappers::toUUID)),
                              Map.entry(Map.class, wrapMapper(ConfigMappers::toMap)),
                              Map.entry(Properties.class, wrapMapper(ConfigMappers::toProperties)),
+                             //io.helidon
+                             Map.entry(Size.class, wrap(ConfigMappers::toSize)),
 
                              // obsolete stuff
                              // noinspection UseOfObsoleteDateTimeApi
@@ -598,6 +602,17 @@ public final class ConfigMappers {
      */
     public static Period toPeriod(String stringValue) {
         return Period.parse(stringValue);
+    }
+
+    /**
+     * Maps {@code stringValue} to {@code Size}.
+     *
+     * @param stringValue source value as a {@code String}
+     * @return mapped {@code stringValue} to {@code Size}
+     * @see Size#parse(String)
+     */
+    public static Size toSize(String stringValue) {
+        return Size.parse(stringValue);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,8 @@ class Http2ServerRequest implements RoutingRequest {
                        int requestId,
                        boolean hasEntity,
                        Supplier<BufferData> entitySupplier,
-                       LimitAlgorithm.Outcome limitOutcome) {
+                       LimitAlgorithm.Outcome limitOutcome,
+                       long maxBufferedEntitySize) {
         this.ctx = ctx;
         this.security = security;
         this.originalPrologue = prologue;
@@ -100,7 +101,8 @@ class Http2ServerRequest implements RoutingRequest {
                                                                                  it -> entitySupplier.get(),
                                                                                  NO_OP_RUNNABLE,
                                                                                  this.headers,
-                                                                                 ctx.listenerContext().mediaContext()));
+                                                                                 ctx.listenerContext().mediaContext(),
+                                                                                 maxBufferedEntitySize));
         } else {
             this.entity = LazyValue.create(ReadableEntityBase.empty());
         }
@@ -116,7 +118,8 @@ class Http2ServerRequest implements RoutingRequest {
                                      int streamId,
                                      boolean hasEntity,
                                      Supplier<BufferData> entitySupplier,
-                                     LimitAlgorithm.Outcome limitOutcome) {
+                                     LimitAlgorithm.Outcome limitOutcome,
+                                     long maxBufferedEntitySize) {
         return new Http2ServerRequest(ctx,
                                       security,
                                       httpPrologue,
@@ -125,7 +128,8 @@ class Http2ServerRequest implements RoutingRequest {
                                       streamId,
                                       hasEntity,
                                       entitySupplier,
-                                      limitOutcome);
+                                      limitOutcome,
+                                      maxBufferedEntitySize);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.http.media;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -32,6 +33,7 @@ import io.helidon.common.buffers.BufferData;
  * Base for readable entities.
  */
 public abstract class ReadableEntityBase implements ReadableEntity {
+    private static final int BUFFER_SIZE = 8 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
@@ -43,19 +45,25 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final Consumer<Boolean> entityRequestedCallback;
     private InputStream inputStream;
 
+    private byte[] bufferedEntity;
+    private final long maxBufferedEntitySize;
+
     /**
      * Create a new base.
      *
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
      */
     protected ReadableEntityBase(Function<Integer, BufferData> readEntityFunction,
-                                 Runnable entityProcessedRunnable) {
+                                 Runnable entityProcessedRunnable,
+                                 long maxBufferedEntitySize) {
         this.entityRequestedCallback = d -> {
         };
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
+        this.maxBufferedEntitySize = maxBufferedEntitySize;
     }
 
     /**
@@ -65,13 +73,16 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
+     * @param maxBufferedEntitySize maximum length of a buffered entity
      */
     protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
                                  Function<Integer, BufferData> readEntityFunction,
-                                 Runnable entityProcessedRunnable) {
+                                 Runnable entityProcessedRunnable,
+                                 long maxBufferedEntitySize) {
         this.entityRequestedCallback = entityRequestedCallback;
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
+        this.maxBufferedEntitySize = maxBufferedEntitySize;
     }
 
     /**
@@ -85,15 +96,32 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
     @Override
     public InputStream inputStream() {
-        if (consumed.compareAndSet(false, true)) {
-            if (!entityRequested.getAndSet(true)) {
-                entityRequestedCallback.accept(false);
-            }
+        if (bufferedEntity != null) {
+            return new ByteArrayInputStream(bufferedEntity);
+        }
+        return createInputStream();
+    }
 
-            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
-            return inputStream;
-        } else {
-            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
+    @Override
+    public void buffer() {
+        if (bufferedEntity == null) {
+            try (InputStream is = createInputStream()) {
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    int read;
+                    int entityLength = 0;
+                    while ((read = is.read(buffer)) != -1) {
+                        entityLength += read;
+                        if (entityLength > maxBufferedEntitySize) {
+                            throw new IllegalStateException("Maximum buffered entity length exceeded");
+                        }
+                        bos.write(buffer, 0, read);
+                    }
+                    bufferedEntity = bos.toByteArray();
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
@@ -202,6 +230,15 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         return entityProcessedRunnable;
     }
 
+    /**
+     * Max entity length of a bufferable entity.
+     *
+     * @return max entity length for buffering
+     */
+    protected long maxBufferedEntitySize() {
+        return maxBufferedEntitySize;
+    }
+
     private static class EntityProcessedRunnable implements Runnable {
         private final Runnable original;
         private final AtomicBoolean finishedReading;
@@ -215,6 +252,19 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         public void run() {
             finishedReading.set(true);
             original.run();
+        }
+    }
+
+    private InputStream createInputStream() {
+        if (consumed.compareAndSet(false, true)) {
+            if (!entityRequested.getAndSet(true)) {
+                entityRequestedCallback.accept(false);
+            }
+
+            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
+            return inputStream;
+        } else {
+            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
         }
     }
 

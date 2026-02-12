@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,9 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                      Function<Integer, BufferData> readEntityFunction,
                                      Runnable entityProcessedRunnable,
                                      ServerRequestHeaders requestHeaders,
-                                     MediaContext mediaContext) {
-        super(readEntityFunction, entityProcessedRunnable);
+                                     MediaContext mediaContext,
+                                     long maxBufferedEntitySize) {
+        super(readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
 
         this.streamFilter = streamFilter;
         this.decoder = decoder;
@@ -60,6 +61,7 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
      * @param entityProcessedRunnable runnable to run once the entity is fully read
      * @param requestHeaders          request headers
      * @param mediaContext            media context to map to correct types
+     * @param maxBufferedEntitySize   max size of an entity that is buffered
      * @return a new entity
      */
     public static Http2ServerRequestEntity create(UnaryOperator<InputStream> streamFilter,
@@ -67,13 +69,15 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                                   Function<Integer, BufferData> readEntityFunction,
                                                   Runnable entityProcessedRunnable,
                                                   ServerRequestHeaders requestHeaders,
-                                                  MediaContext mediaContext) {
+                                                  MediaContext mediaContext,
+                                                  long maxBufferedEntitySize) {
         return new Http2ServerRequestEntity(streamFilter,
                                             decoder,
                                             readEntityFunction,
                                             entityProcessedRunnable,
                                             requestHeaders,
-                                            mediaContext);
+                                            mediaContext,
+                                            maxBufferedEntitySize);
     }
 
     @Override
@@ -81,11 +85,12 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
         return new Http2ServerRequestEntity(streamFilter,
                                             decoder,
                                             readEntityFunction(), () -> {
-            entityProcessedRunnable.run();
-            entityProcessedRunnable().run();
-        },
+                                                entityProcessedRunnable.run();
+                                                entityProcessedRunnable().run();
+                                            },
                                             requestHeaders,
-                                            mediaContext);
+                                            mediaContext,
+                                            maxBufferedEntitySize());
     }
 
     @Override

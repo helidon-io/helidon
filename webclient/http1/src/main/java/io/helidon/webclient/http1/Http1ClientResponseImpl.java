@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,8 +225,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 this::entityFullyRead,
                 requestHeaders,
                 responseHeaders,
-                mediaContext
-        );
+                mediaContext,
+                protocolConfig.maxBufferedEntitySize().toBytes());
     }
 
     private void entityFullyRead() {

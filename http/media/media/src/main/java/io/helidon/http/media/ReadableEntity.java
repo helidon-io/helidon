@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,18 @@ public interface ReadableEntity {
      * @return input stream to entity bytes
      */
     InputStream inputStream();
+
+    /**
+     * If called before {@link #inputStream()}, it will buffer the entity and support
+     * multiple calls to {@link #inputStream()} after that. Normally, {@link #inputStream()}
+     * can only be called at most once.
+     * @throws java.lang.IllegalStateException if called after {@link #inputStream()} or
+     *          if max entity buffered length limit was exceeded
+     * @throws java.lang.UnsupportedOperationException if not supported
+     */
+    default void buffer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     /**
      * Get the entity as a specific class.

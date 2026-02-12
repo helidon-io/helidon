@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ server:
     http_1_1:
       max-prologue-length: 4096
       max-headers-size: 8192
+      max-buffered-entity-size: "8 KB"
   sockets:
     - name: "other"
       write-buffer-size: 1024
