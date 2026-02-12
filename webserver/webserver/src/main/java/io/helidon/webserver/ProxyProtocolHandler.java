@@ -232,12 +232,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         // decode addresses and ports
         final SocketAddress sourceSocketAddress;
         final SocketAddress destinationSocketAddress;
-        final int exhaustive = switch (family) {
-            case UNKNOWN -> {
-                sourceSocketAddress = null;
-                destinationSocketAddress = null;
-                yield 0;
-            }
+        switch (family) {
             case IPv4 -> {
                 sourceSocketAddress = new InetSocketAddress(
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 0, 4)),
@@ -247,7 +242,6 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 4, 8)),
                     bitsToInt16BigEndian(addressBytes, 10)
                 );
-                yield 0;
             }
             case IPv6 -> {
                 sourceSocketAddress = new InetSocketAddress(
@@ -258,7 +252,6 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                     InetAddress.getByAddress(Arrays.copyOfRange(addressBytes, 16, 32)),
                     bitsToInt16BigEndian(addressBytes, 34)
                 );
-                yield 0;
             }
             case UNIX -> {
                 int sourceAddressLength = boundedStrLen(addressBytes, 0, 108);
@@ -267,7 +260,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                     new String(addressBytes, 0, sourceAddressLength, StandardCharsets.US_ASCII));
                 destinationSocketAddress = UnixDomainSocketAddress.of(
                     new String(addressBytes, 108, destinationAddressLength, StandardCharsets.US_ASCII));
-                yield 0;
+            }
+            default -> {
+                sourceSocketAddress = null;
+                destinationSocketAddress = null;
             }
         };
 
