@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,16 +55,18 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Size;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -206,6 +208,12 @@ public class ConfigMappersTest {
         assertMapper("Europe/Prague", TimeZone.class, TimeZone.getTimeZone(ZoneId.of("Europe/Prague")));
         assertMapper("Europe/Prague", SimpleTimeZone.class, new SimpleTimeZone(3_600_000, "Europe/Prague"));
         // java.util.regex.Pattern does not support equals -> individual test, see testBuiltinMappersPattern
+        //io.helidon
+        assertMapper("64 B", Size.class, Size.create(64, Size.Unit.BYTE));
+        assertMapper("64 KB", Size.class, Size.create(64, Size.Unit.KIB));
+        assertMapper("64 kB", Size.class, Size.create(64, Size.Unit.KB));
+        assertMapper("64 MB", Size.class, Size.create(64, Size.Unit.MIB));
+        assertMapper("64 mB", Size.class, Size.create(64, Size.Unit.MB));
     }
 
     @Test
