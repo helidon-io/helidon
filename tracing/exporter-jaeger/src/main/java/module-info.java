@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.common.features.api.Features;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Helidon Jaeger exporter inspired by the one from OpenTelemetry.
  *
@@ -20,6 +24,11 @@
  * should migrate to using one of OpenTelemetry's OTLP exporters ({@code http/proto} or {@code grpc}).
  */
 @Deprecated(since = "4.4.0", forRemoval = true)
+@Features.Name("Jaeger Exporter")
+@Features.Description("OpenTelemetry-compatible Jaeger Tracing Exporter")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Tracing", "Exporter", "Jaeger"})
+@Features.Incubating
 module io.helidon.tracing.exporter.jaeger {
 
     requires io.opentelemetry.exporter.internal;
@@ -34,6 +43,7 @@ module io.helidon.tracing.exporter.jaeger {
     requires com.google.protobuf;
     requires java.annotation;
     requires io.grpc.protobuf;
+    requires io.helidon.common.features.api;
 
     exports io.helidon.tracing.exporter.jaeger;
 
