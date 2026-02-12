@@ -31,7 +31,9 @@ ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
 Certain default configuration values depend on the fact that you are using Helidon {flavor-uc} as described in the <<flavor-specific-defaults,second table below>>.
 
-include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
+// include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_metrics_api_MetricsConfig.adoc[tag=config,leveloffset=+1]
+
 
 // It seems we need an explicit open block for the website rendering to create the anchor properly. I tried adding the anchor to the table (without the block) but that didn't work on the live site.
 [#flavor-specific-defaults]
@@ -75,6 +77,17 @@ But for others the differences between the programmatic APIs for `Counter` and `
 {metric}. Further, the difference in output--particularly in the OpenMetrics/Prometheus format--might affect their application or downstream monitoring tools.
 
 The ability to choose the {metric} type for `gc.time` is deprecated and is planned for removal in a future major release of Helidon at which time Helidon will always use a gauge.
+
+=== Controlling the Metrics Observer
+Helidon can make the registered {metrics} and their current values available externally at an endpoint ({metrics-endpoint} by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
+
+include::io_helidon_webserver_observe_metrics_MetricsObserver_extra.adoc[tag=config,leveloffset=+1]
+
+The `auto` subsection lets you control metrics Helidon gathers automatically. Currently these settings apply only to the {metrics} collected for the OpenTelemetry semantic conventions, not the other Helidon-provided key performance indicator {metrics}.
+ifdef::se-flavor[]
+See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
+
+endif::se-flavor[]
 
 // end::config-intro[]
 
