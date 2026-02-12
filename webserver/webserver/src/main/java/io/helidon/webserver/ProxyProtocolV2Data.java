@@ -1,11 +1,12 @@
 package io.helidon.webserver;
 
-import io.helidon.webserver.http.ServerRequest;
 
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import io.helidon.webserver.http.ServerRequest;
 
 /**
  * Binary (V2) Proxy protocol data parsed by {@link ProxyProtocolHandler}. This is a specialization of
@@ -37,21 +38,58 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
      * A Tag-Length-Value vector.
      */
     sealed interface Tlv {
+        /**
+         * The PP2_TYPE_ALPN TLV type identifier.
+         */
         int PP2_TYPE_ALPN = 0x01;
+        /**
+         * The PP2_TYPE_AUTHORITY TLV type identifier.
+         */
         int PP2_TYPE_AUTHORITY = 0x02;
+        /**
+         * The PP2_TYPE_CRC32C TLV type identifier.
+         */
         int PP2_TYPE_CRC32C = 0x03;
+        /**
+         * The PP2_TYPE_NOOP TLV type identifier.
+         */
         int PP2_TYPE_NOOP = 0x04;
+        /**
+         * The PP2_TYPE_UNIQUE_ID TLV type identifier.
+         */
         int PP2_TYPE_UNIQUE_ID = 0x05;
+        /**
+         * The PP2_TYPE_SSL TLV type identifier.
+         */
         int PP2_TYPE_SSL = 0x20;
+        /**
+         * The PP2_SUBTYPE_SSL_VERSION TLV type identifier.
+         */
         int PP2_SUBTYPE_SSL_VERSION = 0x21;
+        /**
+         * The PP2_SUBTYPE_SSL_CN TLV type identifier.
+         */
         int PP2_SUBTYPE_SSL_CN = 0x22;
+        /**
+         * The PP2_SUBTYPE_SSL_CIPHER TLV type identifier.
+         */
         int PP2_SUBTYPE_SSL_CIPHER = 0x23;
+        /**
+         * The PP2_SUBTYPE_SSL_SIG_ALG TLV type identifier.
+         */
         int PP2_SUBTYPE_SSL_SIG_ALG = 0x24;
+        /**
+         * The PP2_SUBTYPE_SSL_KEY_ALG TLV type identifier.
+         */
         int PP2_SUBTYPE_SSL_KEY_ALG = 0x25;
+        /**
+         * The PP2_TYPE_NETNS TLV type identifier.
+         */
         int PP2_TYPE_NETNS = 0x30;
 
         /**
          * Returns the TLV's type identifier.
+         * @return The type identifier.
          */
         int type();
 
@@ -118,6 +156,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * The TLV of this type should be ignored when parsed. The value is zero or more
          * bytes. Can be used for data padding or alignment. Note that it can be used
          * to align only by 3 or more bytes because a TLV can not be smaller than that.
+         * @param bytes Padding bytes.
          */
         record Noop(byte[] bytes) implements Tlv {
             @Override
@@ -173,8 +212,17 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * @param subTlvs The SSL subtype TLVs.
          */
         record Ssl(int client, int verify, List<Tlv> subTlvs) implements Tlv {
+            /**
+             * The PP2_CLIENT_SSL bitflag.
+             */
             public static final int PP2_CLIENT_SSL = 0x01;
+            /**
+             * The PP2_CLIENT_CERT_CONN bitflag.
+             */
             public static final int PP2_CLIENT_CERT_CONN = 0x02;
+            /**
+             * The PP2_CLIENT_CERT_SESS bitflag.
+             */
             public static final int PP2_CLIENT_CERT_SESS = 0x04;
 
             @Override
@@ -184,6 +232,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
 
             /**
              * Tests whether the client presented a certificate and it was successfully verified.
+             * @return True if the client cert was present and valid.
              */
             public boolean isSuccessfullyVerified() {
                 return verify == 0;
@@ -191,6 +240,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
 
             /**
              * Tests whether the PP2_CLIENT_SSL flag is set.
+             * @return True if the PP2_CLIENT_SSL is set.
              */
             public boolean hasClientSsl() {
                 return (client & PP2_CLIENT_SSL) == PP2_CLIENT_SSL;
@@ -198,6 +248,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
 
             /**
              * Tests whether the PP2_CLIENT_CERT_CONN flag is set.
+             * @return True if the PP2_CLIENT_CERT_CONN is set.
              */
             public boolean hasClientCertConn() {
                 return (client & PP2_CLIENT_CERT_CONN) == PP2_CLIENT_CERT_CONN;
@@ -205,12 +256,17 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
 
             /**
              * Tests whether the PP2_CLIENT_CERT_SESS flag is set.
+             * @return True if the PP2_CLIENT_CERT_SESS is set.
              */
             public boolean hasClientCertSess() {
                 return (client & PP2_CLIENT_CERT_SESS) == PP2_CLIENT_CERT_SESS;
             }
         }
 
+        /**
+         * Contains informatino about the version of the TLS protocol used.
+         * @param version TLS version.
+         */
         record SslVersion(String version) implements Tlv {
             @Override
             public int type() {
@@ -221,6 +277,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
         /**
          * Contains the representation of the Common Name field (OID: 2.5.4.3)
          * of the client certificate's Distinguished Name. For example, "example.com".
+         * @param commonName The client cert's Common Name.
          */
         record SslCn(String commonName) implements Tlv {
             @Override
@@ -231,6 +288,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
 
         /**
          * The name of the used cipher, for example "ECDHE-RSA-AES128-GCM-SHA256".
+         * @param cipher The cipher name.
          */
         record SslCipher(String cipher) implements Tlv {
             @Override
@@ -242,6 +300,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
         /**
          * The name of the algorithm used to sign the certificate presented by the frontend when
          * the incoming connection was made over an SSL/TLS transport layer, for example "SHA256".
+         * @param signatureAlgorithm The signature algorithm name.
          */
         record SslSigAlg(String signatureAlgorithm) implements Tlv {
             @Override
@@ -254,6 +313,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
          * The name of the algorithm used to generate the key of the certificate presented by the
          * frontend when the incoming connection was made over an SSL/TLS transport layer,
          * for example "RSA2048".
+         * @param keyAlgorithm The key algorithm name..
          */
         record SslKeyAlg(String keyAlgorithm) implements Tlv {
             @Override
@@ -302,6 +362,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
      * The command kind, indicating whether the connection was established on purpose by the
      * proxy without being relayed (LOCAL) or on behalf of another relayed node (PROXY).
+     * @return The command.
      */
     Command command();
 
@@ -309,6 +370,7 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
      * The source address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
      * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
      * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * @return The source socket address.
      */
     SocketAddress sourceSocketAddress();
 
@@ -316,11 +378,13 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
      * The destination address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
      * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
      * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * @return The destination socket address.
      */
     SocketAddress destSocketAddress();
 
     /**
      * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
+     * @return A never-null list of Tag-Length-Value data.
      */
     List<Tlv> tlvs();
 }

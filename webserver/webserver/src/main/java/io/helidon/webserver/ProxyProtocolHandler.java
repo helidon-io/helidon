@@ -212,7 +212,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case 0x0 -> Protocol.UNKNOWN;
             case 0x1 -> Protocol.TCP;
             case 0x2 -> Protocol.UDP;
-            default -> throw badProtocolException(String.format("invalid V2 transport protocol bits %#04x", protoAndFamily & 0x0F));
+            default -> throw badProtocolException(
+                String.format("invalid V2 transport protocol bits %#04x", protoAndFamily & 0x0F));
         };
 
         // length
@@ -231,7 +232,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         // decode addresses and ports
         final SocketAddress sourceSocketAddress;
         final SocketAddress destinationSocketAddress;
-        final int _exhaustive = switch (family) {
+        final int exhaustive = switch (family) {
             case UNKNOWN -> {
                 sourceSocketAddress = null;
                 destinationSocketAddress = null;
@@ -281,7 +282,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             } catch (EOFException e) {
                 throw badProtocolException("end of data stream reached before proxy protocol header was complete");
             }
-            return new ProxyProtocolV2DataImpl(family, protocol, command, null, null, List.of());
+            return new ProxyProtocolV2DataImpl(
+                family, protocol, command, null, null, List.of());
         }
 
         // Read the TLV records.
@@ -329,7 +331,12 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
     record ParsedTLV(int length, ProxyProtocolV2Data.Tlv tlv) {}
 
-    private static ParsedTLV readTlv(InputStream socketInputStream, InputStream checksumStream, Checksum checksum, int allowedBytesToRead) throws IOException {
+    private static ParsedTLV readTlv(
+        InputStream socketInputStream,
+        InputStream checksumStream,
+        Checksum checksum,
+        int allowedBytesToRead
+    ) throws IOException {
         if (allowedBytesToRead < 3) {
             throw badProtocolException("insufficient remaining TLV bytes to read TLV type and length");
         }
@@ -357,8 +364,10 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
         return new ParsedTLV(3 + length, switch (type) {
             case ProxyProtocolV2Data.Tlv.PP2_TYPE_ALPN -> new ProxyProtocolV2Data.Tlv.Alpn(value);
-            case ProxyProtocolV2Data.Tlv.PP2_TYPE_AUTHORITY -> new ProxyProtocolV2Data.Tlv.Authority(new String(value, StandardCharsets.UTF_8));
-            case ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.Tlv.Crc32c(bitsToInt32BigEndian(value, 0));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_AUTHORITY -> new ProxyProtocolV2Data.Tlv.Authority(
+                new String(value, StandardCharsets.UTF_8));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C -> new ProxyProtocolV2Data.Tlv.Crc32c(
+                bitsToInt32BigEndian(value, 0));
             case ProxyProtocolV2Data.Tlv.PP2_TYPE_NOOP -> new ProxyProtocolV2Data.Tlv.Noop(value);
             case ProxyProtocolV2Data.Tlv.PP2_TYPE_UNIQUE_ID -> new ProxyProtocolV2Data.Tlv.UniqueId(value);
             case ProxyProtocolV2Data.Tlv.PP2_TYPE_SSL -> {
@@ -376,18 +385,27 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
 
                 yield new ProxyProtocolV2Data.Tlv.Ssl(client, verify, subTlvs);
             }
-            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_VERSION -> new ProxyProtocolV2Data.Tlv.SslVersion(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CN -> new ProxyProtocolV2Data.Tlv.SslCn(new String(value, StandardCharsets.UTF_8));
-            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CIPHER -> new ProxyProtocolV2Data.Tlv.SslCipher(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_SIG_ALG -> new ProxyProtocolV2Data.Tlv.SslSigAlg(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_KEY_ALG -> new ProxyProtocolV2Data.Tlv.SslKeyAlg(new String(value, StandardCharsets.US_ASCII));
-            case ProxyProtocolV2Data.Tlv.PP2_TYPE_NETNS -> new ProxyProtocolV2Data.Tlv.Netns(new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_VERSION -> new ProxyProtocolV2Data.Tlv.SslVersion(
+                new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CN -> new ProxyProtocolV2Data.Tlv.SslCn(
+                new String(value, StandardCharsets.UTF_8));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_CIPHER -> new ProxyProtocolV2Data.Tlv.SslCipher(
+                new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_SIG_ALG -> new ProxyProtocolV2Data.Tlv.SslSigAlg(
+                new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_SUBTYPE_SSL_KEY_ALG -> new ProxyProtocolV2Data.Tlv.SslKeyAlg(
+                new String(value, StandardCharsets.US_ASCII));
+            case ProxyProtocolV2Data.Tlv.PP2_TYPE_NETNS -> new ProxyProtocolV2Data.Tlv.Netns(
+                new String(value, StandardCharsets.US_ASCII));
             default -> new ProxyProtocolV2Data.Tlv.Unregistered(type, value);
         });
     }
 
     static int bitsToInt32BigEndian(byte[] bits, int offset) {
-        return (bits[offset] & 0xFF) << 24 | (bits[offset + 1] & 0xFF) << 16 | (bits[offset + 2] & 0xFF) << 8 | (bits[offset + 3] & 0xFF);
+        return (bits[offset] & 0xFF) << 24
+            | (bits[offset + 1] & 0xFF) << 16
+            | (bits[offset + 2] & 0xFF) << 8
+            | (bits[offset + 3] & 0xFF);
     }
 
     static int bitsToInt16BigEndian(byte[] bits, int offset) {
@@ -402,7 +420,12 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         return (byte) b;
     }
 
-    private static void readExactlyNBytes(InputStream inputStream, byte[] destination, int offset, int length) throws IOException {
+    private static void readExactlyNBytes(
+        InputStream inputStream,
+        byte[] destination,
+        int offset,
+        int length
+    ) throws IOException {
         final int actuallyRead = inputStream.readNBytes(destination, offset, length);
         if (actuallyRead < length) {
             throw badProtocolException("end of data reached unexpectedly");
@@ -491,7 +514,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 case null -> "";
                 // This should never happen because only the ProxyProtocolHandler code ever
                 // constructs a ProxyProtocolV2DataImpl instance.
-                default -> throw new IllegalStateException("Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
+                default -> throw new IllegalStateException(
+                    "Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
             };
         }
 
@@ -503,7 +527,8 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 case null -> "";
                 // This should never happen because only the ProxyProtocolHandler code ever
                 // constructs a ProxyProtocolV2DataImpl instance.
-                default -> throw new IllegalStateException("Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
+                default -> throw new IllegalStateException(
+                    "Unexpected SocketAddress type: " + sourceSocketAddress.getClass().getName());
             };
         }
 
