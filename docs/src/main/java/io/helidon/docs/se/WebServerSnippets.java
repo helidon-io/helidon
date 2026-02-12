@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package io.helidon.docs.se;
 
+import java.net.SocketAddress;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -34,6 +36,7 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.ProxyProtocolV2Data;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
@@ -423,5 +426,26 @@ class WebServerSnippets {
             }
         }
         // end::snippet_36[]
+    }
+
+    void snippet_37(HttpRules rules) {
+        // tag::snippet_37[]
+        rules.get("/", (req, res) -> {
+            ProxyProtocolData data = req.proxyProtocolData().orElse(null);
+            // The data object will be an instance of ProxyProtocolV2Data if V2 of the Proxy Protocol
+            // was used by the upstream proxy.
+            if (data instanceof ProxyProtocolV2Data v2Data) {
+                // PROXY or LOCAL?
+                ProxyProtocolV2Data.Command command = v2Data.command();
+
+                // Will be either an InetSocketAddress (for IPv4 or IPv6) or a UnixDomainSocketAddress.
+                SocketAddress sourceSocketAddress = v2Data.sourceSocketAddress();
+                SocketAddress destSocketAddress = v2Data.destSocketAddress();
+
+                // Contains all of the Tag-Length-Value objects from the Proxy Protocol header.
+                List<ProxyProtocolV2Data.Tlv> tlvData = v2Data.tlvs();
+            }
+        });
+        // end::snippet_37[]
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,22 @@
 package io.helidon.webserver;
 
 /**
- * Proxy protocol data parsed by {@link ProxyProtocolHandler}.
+ * Proxy protocol data parsed by {@link ProxyProtocolHandler}. This interface exposes the fields which
+ * are common across the text (V1) and binary (V2) variants of the Proxy protocol. If the binary protocol
+ * was used, then the object which implements {@link ProxyProtocolData} will also implement {@link ProxyProtocolV2Data}.
+ * <p>
+ * This example shows how both shared (V1 and V2) and binary (V2-only) data can be accessed.
+ * <pre>
+ * {@code
+ * ProxyProtocolData data = ...;
+ * // Extract common data.
+ * Family protocolFamily = data.family();
+ * // Extract additional binary data if applicable
+ * if (data instanceof ProxyProtocolV2Data v2Data) {
+ *     Command command = v2Data.command();
+ * }
+ * }]
+ * </pre>
  */
 public interface ProxyProtocolData {
 
