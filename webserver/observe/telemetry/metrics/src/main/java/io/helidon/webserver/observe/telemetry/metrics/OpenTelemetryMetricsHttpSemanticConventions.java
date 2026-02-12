@@ -98,6 +98,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private final AutoHttpMetricsConfig config;
         private final MeterRegistry meterRegistry;
+
         private MetricsRecordingFilter(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
             this.config = config;
             this.meterRegistry = meterRegistry;
@@ -113,15 +114,15 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             try {
                 chain.proceed();
                 if (config.synchronous()) {
-                    updateMetricsIfMeasured(req, res, startTime, null);
+                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null);
                 } else {
-                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, null));
+                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
                 }
             } catch (Exception e) {
                 if (config.synchronous()) {
-                    updateMetricsIfMeasured(req, res, startTime, e);
+                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e);
                 } else {
-                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, e));
+                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
                 }
             }
         }
@@ -130,11 +131,14 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             return new MetricsRecordingFilter(meterRegistry, config);
         }
 
-        private void updateMetricsIfMeasured(RoutingRequest req, RoutingResponse resp, Long startTime, Exception exception) {
+        private void updateMetricsIfMeasured(RoutingRequest req,
+                                             RoutingResponse resp,
+                                             Long startTime,
+                                             long endTime,
+                                             Exception exception) {
             if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
                 return;
             }
-            var now = System.nanoTime();
             List<Tag> tags = new ArrayList<>(List.of(Tag.create(HTTP_METHOD, req.prologue().method().text()),
                                                      Tag.create(URL_SCHEME, req.prologue().protocol()),
                                                      Tag.create(ERROR_TYPE, errorType(resp, exception)),
@@ -162,7 +166,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME)
                                                               .tags(tags)
                                                               .buckets(BUCKET_BOUNDARIES)))
-                    .record(now - startTime, TimeUnit.NANOSECONDS);
+                    .record(endTime - startTime, TimeUnit.NANOSECONDS);
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {
