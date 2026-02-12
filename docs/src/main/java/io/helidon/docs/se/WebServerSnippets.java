@@ -15,7 +15,9 @@
  */
 package io.helidon.docs.se;
 
+import java.net.SocketAddress;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -441,7 +443,7 @@ class WebServerSnippets {
                 SocketAddress destSocketAddress = v2Data.destSocketAddress();
 
                 // Contains all of the Tag-Length-Value objects from the Proxy Protocol header.
-                List<ProxyProtocolV2Data.TLV> tlvData = v2Data.tlvs();
+                List<ProxyProtocolV2Data.Tlv> tlvData = v2Data.tlvs();
             }
         });
         // end::snippet_37[]
