@@ -162,11 +162,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             /*
             If we search for the meter and find it we avoid constructing the builder unnecessarily.
              */
-            meterRegistry.timer(TIMER_NAME, tags)
+            var timer = meterRegistry.timer(TIMER_NAME, tags)
                     .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME)
                                                               .tags(tags)
-                                                              .buckets(BUCKET_BOUNDARIES)))
-                    .record(endTime - startTime, TimeUnit.NANOSECONDS);
+                                                              .buckets(BUCKET_BOUNDARIES)));
+            timer.record(endTime - startTime, TimeUnit.NANOSECONDS);
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {

@@ -42,7 +42,10 @@ class TestAutoMetricsConfig {
                               - path: "/greet"
                                 methods: ["GET","HEAD"]
                               - path: "/greet/{name}"
-                                methods: ["GET","OPTION"]
+                                methods: ["GET","OPTIONS"]
+                              - path: "/stuff"
+                                methods: ["HEAD","OPTIONS"]
+                                enabled: false
                               - path: "/hi"
                                 enabled: false
                 """;
@@ -59,6 +62,8 @@ class TestAutoMetricsConfig {
 
         assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
 
+        assertThat("GET /stuff", config.isMeasured(Method.GET, UriPath.create("/stuff")), is(true));
+        assertThat("HEAD /stuff", config.isMeasured(Method.HEAD, UriPath.create("/stuff")), is(false));
 
     }
 

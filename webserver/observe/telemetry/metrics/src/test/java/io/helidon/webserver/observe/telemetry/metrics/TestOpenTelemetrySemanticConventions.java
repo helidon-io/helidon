@@ -28,9 +28,9 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Method;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
+import io.helidon.metrics.api.Metrics;import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -88,6 +88,10 @@ class TestOpenTelemetrySemanticConventions {
                       observers:
                         metrics:
                           auto:
+                            paths:
+                              - path: /greet
+                                methods: ["OPTIONS"]
+                                enabled: false
                             sockets: ["@default","private"]
                             opt-in: ["http.server.request.duration:server.address"]
                 """;
@@ -98,15 +102,20 @@ class TestOpenTelemetrySemanticConventions {
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
                                             resp.send("Hello, " + req.path().segments().get(1).value() + "!")))
-                .routing("private", r -> r.get("/greet",
-                                               (req, resp) ->
-                                                       resp.send("Hello, World!")));
+                .routing("private", r -> r.any("/greet",
+                                               (req, resp) -> {
+                                                   switch (req.prologue().method().text()) {
+                                                   case Method.GET_NAME -> resp.send("Hello, World!");
+                                                   case Method.OPTIONS_NAME -> resp.send("Options, World!");
+                                                   default -> resp.next();
+                                                   }
+                                               }));
 
     }
 
     @Test
     void checkAutoMetrics() {
-        var meterRegistry = Services.get(MeterRegistry.class);
+        var meterRegistry = Metrics.globalRegistry();
 
         // Use default socket.
         try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -120,15 +129,20 @@ class TestOpenTelemetrySemanticConventions {
                         .request();
                 Http1ClientResponse metricsOnDefaultResponse = defaultClient.get("/observe/metrics")
                         .accept(MediaTypes.APPLICATION_JSON)
+                        .request();
+                Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
+                        .accept(MediaTypes.TEXT_PLAIN)
                         .request()) {
 
             assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             assertThat("Private endpoint", privateResponse.status().code(), is(200));
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
+            assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
 
             /*
             Helidon registers and updates the timer asynchronously, so tolerate some delay.
+            Despite all the requests we sent, we expect only two timers to have been created (and updated).
              */
             AtomicReference<List<Timer>> timersRef = requestTimers(meterRegistry, 2);
 
@@ -204,7 +218,6 @@ class TestOpenTelemetrySemanticConventions {
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
             assertThat("Unexpectedly untimed sockets", unexpectedlyUntimedSockets, hasSize(0));
-
 
         }
 

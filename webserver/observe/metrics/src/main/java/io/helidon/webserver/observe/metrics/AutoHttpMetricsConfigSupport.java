@@ -69,16 +69,14 @@ class AutoHttpMetricsConfigSupport {
                 return true;
             }
 
-            boolean matchedPath = false;
             boolean latestResult = true;
 
             for (AutoHttpMetricsPathConfig cfg : config.effectivePathConfigs()) {
                 if (cfg.matchesPath(uriPath)) {
-                    matchedPath = true;
-                    latestResult = cfg.matchesMethod(method) && cfg.enabled();
+                    latestResult = cfg.matchesMethod(method) == cfg.enabled();
                 }
             }
-            return !matchedPath || latestResult;
+            return latestResult;
         }
 
         /**
