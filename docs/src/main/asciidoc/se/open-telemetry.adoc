@@ -37,7 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Additional Information, Additional Information>>
 
 == Overview
-NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently an link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature]. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
+NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature]. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
 
 Helidon SE supports OpenTelemetry in several important ways:
 
@@ -167,7 +167,7 @@ By default, when Helidon {flavor-uc} creates spans automatically for HTTP reques
 OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
 
 [source,xml]
-.Dependency for Helidon support of the OpenTelemetry semantic conventions
+.Dependency for Helidon support of the OpenTelemetry tracing semantic conventions
 ----
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
@@ -176,6 +176,7 @@ OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If y
 </dependency>
 ----
 
+[[enabling-automatic-metrics-for-inbound-http]]
 === Enabling Automatic Metrics for Incoming HTTP Requests
 Helidon's metrics observability support automatically registers and updates one or more meters (depending on configuration) and updates them accordingly as HTTP requests arrive.
 
