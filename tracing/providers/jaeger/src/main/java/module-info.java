@@ -19,11 +19,14 @@ import io.helidon.common.features.api.HelidonFlavor;
 
 /**
  * Jaeger tracing support.
+ *
+ * @deprecated Use a different tracing provider such as OpenTelemetry.
  */
 @Features.Name("Jaeger")
 @Features.Description("Jaeger tracer integration")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Tracing", "Jaeger"})
+@Deprecated(since = "4.4.0", forRemoval = true)
 module io.helidon.tracing.providers.jaeger {
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
