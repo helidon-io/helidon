@@ -40,15 +40,6 @@ interface AutoHttpMetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether automatic metrics updates occur synchronously.
-     *
-     * @return true if synchronous, false otherwise
-     */
-    @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean synchronous();
-
-    /**
      * Socket names for sockets to be instrumented with automatic metrics. Defaults to all sockets.
      *
      * @return socket names
@@ -83,15 +74,5 @@ interface AutoHttpMetricsConfigBlueprint {
      */
     @Option.Configured
     List<String> optIn();
-
-    /**
-     * Whether to apply the built-in default inclusions and exclusions of Helidon-provided service endpoints (e.g., metrics
-     * and health excluded).
-     *
-     * @return true to use the built-in inclusion/exclusion rules; false otherwise
-     */
-    @Option.DefaultBoolean(true)
-    @Option.Configured
-    boolean useDefaultRules();
 
 }

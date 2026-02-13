@@ -113,17 +113,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
              */
             try {
                 chain.proceed();
-                if (config.synchronous()) {
-                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null);
-                } else {
-                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
-                }
+                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
             } catch (Exception e) {
-                if (config.synchronous()) {
-                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e);
-                } else {
-                    Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
-                }
+                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                throw e;
             }
         }
 

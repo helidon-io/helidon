@@ -83,7 +83,8 @@ Helidon can make the registered {metrics} and their current values available ext
 
 include::io_helidon_webserver_observe_metrics_MetricsObserver_extra.adoc[tag=config,leveloffset=+1]
 
-The `auto` subsection lets you control metrics Helidon gathers automatically. Currently these settings apply only to the {metrics} collected for the OpenTelemetry semantic conventions, not the other Helidon-provided key performance indicator {metrics}.
+The `auto` subsection lets you control the metrics Helidon gathers automatically.
+These settings control the key performance indicator {metrics} gathered in past releases of Helidon as well as the {metrics} for OpenTelemetry semantic conventions.
 ifdef::se-flavor[]
 See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
 
