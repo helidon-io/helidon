@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,6 +149,27 @@ class OtlpExporterConfigSupport {
                           Consumer<byte[]> doTrustedCertificates,
                           BiConsumer<SSLContext, X509TrustManager> doSslContext,
                           Consumer<MeterProvider> doMeterProvider) {
+            apply(target,
+                  doEndpoint,
+                  doCompression,
+                  doTimeout,
+                  addHeader,
+                  doRetryPolicy,
+                  doClientTls,
+                  doTrustedCertificates,
+                  doSslContext);
+
+        }
+        @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them
+        static void apply(OtlpExporterConfig target,
+                          Consumer<String> doEndpoint,
+                          Consumer<String> doCompression,
+                          Consumer<Duration> doTimeout,
+                          BiConsumer<String, String> addHeader,
+                          Consumer<RetryPolicy> doRetryPolicy,
+                          BiConsumer<byte[], byte[]> doClientTls,
+                          Consumer<byte[]> doTrustedCertificates,
+                          BiConsumer<SSLContext, X509TrustManager> doSslContext) {
 
             target.compression()
                     .map(CompressionType::lowerCase)

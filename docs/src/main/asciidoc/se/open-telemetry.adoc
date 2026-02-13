@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,11 +56,17 @@ The Helidon OpenTelemetry configuration format, the Helidon OpenTelemetry API, a
 * <<top-level-config, Top-level telemetry>>
 ** Signals
 *** <<tracing-config, Tracing>>
-**** <<attributes-config, Attributes>>
+**** <<tracing-attributes-config, Attributes>>
 **** <<span-exporters-config, Span exporters>>
 **** <<span-processors-config, Span processors>>
 **** <<span-sampler-config, Span sampler>>
 **** <<span-limits-config, Span limits>>
+*** <<metrics-config, Metrics>>
+**** <<metric-attributes-config, Attributes>>
+**** <<metric-exporters-config, Metric exporters>>
+**** <<metric-readers-config, Metric readers>>
+**** <<metric-views-config, Metric views>>
+
 
 This document describes how to configure each level in the hierarchy and covers general topics related to Helidon's support of OpenTelemetry.
 
@@ -172,7 +178,7 @@ Most applications need to declare other runtime dependencies on OpenTelemetry ar
 
 
 == Configuration
-You can control almost all of OpenTelemetry's overall and tracing runtime behavior using Helidon configuration settings. Helidon constructs an `OpenTelemetry` object using the configuration. The resulting `OpenTelemetry` instance includes an OpenTelemetry `TracerProvider` if the config specifies settings for it under `signals.tracing`.
+You can control almost all of OpenTelemetry's overall, tracing, and metrics runtime behavior using Helidon configuration settings. Helidon constructs an `OpenTelemetry` object using the configuration. The resulting `OpenTelemetry` instance includes an OpenTelemetry `TracerProvider` if the config specifies settings for it under `signals.tracing` and an OpenTelemetry `MeterProvider` if the config contains a `signals.metrics` section.
 
 
 [[top-level-config]]
@@ -186,6 +192,13 @@ Notes:
 * OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in link:https://opentelemetry.io/docs/languages/java/configuration/#properties-general[this OpenTelemetry guide].)
 * Setting `global` to `true` has the effect described in the <<effects-of-setting-global, section>> about global instances.
 
+[[common-config]]
+=== Common Configuration Across Signals
+This section describes settings that apply to multiple signal types.
+
+[[attributes-config]]
+==== Assigning Attributes
+Configured attributes are key/value pairs that OpenTelemetry attaches to each transmission of a signal. OpenTelemetry supports attributes of type `String`, `long`, `double`, and `boolean`. The configuration structure groups attributes by type so Helidon knows precisely what type you intend for each attribute.
 
 [[tracing-config]]
 === Controlling OpenTelemetry Tracing Behavior
@@ -214,16 +227,16 @@ OpenTelemetry applies the defaults described in the next table.
 
 Sections below describe how to set up the tracing signal configuration:
 
-- <<attributes-config, Assigning attributes>>
+- <<tracing-attributes-config, Assigning Span Attributes>>
 - <<associating-exporters-and-processors, Associating Exporters and Processors>>
 - <<span-exporters-config, Configuring Span Exporters>>
 - <<span-processors-config, Configuring Span Processors>>
 - <<span-sampler-config, Configuring the Span Sampler>>
 - <<span-limits-config, Configuring the Span Limits>>
 
-[[attributes-config]]
-==== Assigning Attributes
-Configured attributes are key/value pairs that OpenTelemetry attaches to each tracing span. OpenTelemetry supports attributes of type `String`, `long`, `double`, and `boolean`. The configuration stricture groups attributes by type so Helidon knows precisely what type you intend for each attribute.
+[[tracing-attributes-config]]
+==== Assigning Span Attributes
+Helidon adds any configured attribute name and value pairs to every tracing span automatically. See <<attributes-config,the earlier section on attributes>> for more information.
 
 [[associating-exporters-and-processors]]
 ==== Associating Exporters and Processors
@@ -430,6 +443,122 @@ The link:https://opentelemetry.io/docs/languages/java/sdk/#sampler[OpenTelemetry
 | `max-events` | 128
 | `max-links` | 128
 |====
+
+
+[[metrics-config]]
+=== Controlling OpenTelemetry Metrics Behavior
+The settings under `settings.metrics` prepare an OpenTelemetry `MeterProvider`. If your code uses the OpenTelemetry API to obtain an OpenTelemetry meter, meter provider, or meter builder, OpenTelemetry uses the `MeterProvider` prepared from this configuration.
+
+The next table describes the OpenTelemetry metrics settings.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryMetricsConfig.adoc[tag=config,leveloffset=+2]
+
+OpenTelemetry applies the defaults described in the next table.
+
+.Default metric settings applied by OpenTelemetry
+[cols="1,4"]
+|===
+| Setting | OpenTelemetry default (and OpenTelemetry doc link)
+
+| `exporters` | link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[`otlp` with `grpc` protocol] - see "Properties: exporters, `otel.metrics.exporter` property"]
+| `readers` | link:https://opentelemetry.io/docs/languages/java/configuration/#properties-metrics[`PeriodicMetricReader`] with an interval of one minute
+|===
+
+Sections below describe how to set up the metric signal configuration:
+
+- <<metric-attributes-config, Assigning Metric Attributes>>
+- <<associating-exporters-and-readers, Associating Exporters and Metric Readers>>
+- <<metric-exporters-config, Configuring Metric Exporters>>
+- <<metric-readers-config, Configuring Metric Readers>>
+- <<metric-views-config, Configuring Metric Views>>
+
+The following example illustrates some of the ways you can configure OpenTelemetry metrics behavior. It is neither complete nor typical.
+
+.Example OpenTelemetry Metrics Configuration
+[source,yaml]
+----
+telemetry:
+  service: "test-telemetry"
+  signals:
+    metrics:                                          # <1>
+      exporters:
+        - name: exp-1                                 # <2>
+          type: otlp
+          endpoint: "http://host:1234"
+          temporality-preference: cumulative          # <3>
+          default-histogram-aggregation:              # <4>
+            type: base2-exponential-bucket-histogram
+            max-buckets: 152
+            max-scale: 19
+        - name: exp-2                                 # <5>
+          type: otlp
+          protocol: grpc
+          temporality-preference: delta               # <6>
+          default-histogram-aggregation:              # <7>
+            type: explicit-bucket-histogram
+            bucket-boundaries: [3,5,7]
+      readers:
+        - type: periodic                              # <8>
+          exporter: exp-1
+          interval: PT6S
+      views:
+        - name: sum-view                              # <9>
+          aggregation:
+            type: sum
+          description: "Sum view"
+          instrument-selector:
+            name: counter-selector
+            type: counter
+            meter-name: my-counter
+
+----
+<1> Introduces the metrics configuration.
+<2> Introduces the first metric exporter (with name `exp-1`).
+<3> Indicates to accumulate measurement values since the previous transmission.
+<4> Prescribes to aggregate histograms for transmission using the OpenTelemetry `BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` technique with the specified maximum number of buckets and maximum scale.
+<5> Introduces the second metric exporter (with name `exp-2`).
+<6> Indicates to transmit deltas since the last transmission.
+<7> Prescribes to aggregate histograms using a histogram with the given explicit bucket boundary values.
+<8> Declares a single metric reader of the OpenTelemetry `PERIODIC` types gathering data each 6 seconds.
+<9> Declares a single view to influence influence the transmission of the `my-counter` counter data.
+
+
+[[metric-attributes-config]]
+==== Metric Attributes
+Helidon adds any configured attribute name and value pairs to every OpenTelemetry metric signal automatically. See <<attributes-config,the earlier section on attributes>> for more information.
+
+[[associating-exporters-and-readers]]
+Ultimately, OpenTelemetry transmits the telemetry data it gathers to a backend system--such as Grafana, Prometheus,  Jaeger, or others--where you can view and query the data. OpenTelemetry metrics first _reads_ each data observation within the JVM and then _exports_ the processed data to one or more backends. Each metric reader uses a metric exporter to transmit telemetry data.
+
+You link readers and exporters in config selectively as follows:
+
+* Name each exporter if you have more than one.
+* Optionally specify, for each reader, the names of the exporter it should use. If you omit the exporter name for a reader, Helidon chooses the exporter as follows:
+** If you configure no exporters, Helidon lets OpenTelemetry use its default.
+** If you configure one exporter, Helidon associates that one with the reader.
+** If you configure more than one exporter, Helidon reports a configuration error because it cannot determine which exporter you want to use for the reader.
+
+[[metric-exporters-config]]
+==== Metric Exporters
+OpenTelemetry uses one or more metric exporters to transmit metrics data. If you omit any values, OpenTelemetry applies its defaults.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricExporterConfig.adoc[tag=config,leveloffset=+2]
+
+[[metric-readers-config]]
+==== Metric Readers
+An OpenTelemetry metric reader collects metric data in the server and then uses the associated metric exporter to send that data to the endpoint configured.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricReaderConfig.adoc[tag=config,leveloffset=+2]
+
+The periodic reader supports the following settings.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_PeriodicMetricReaderConfig.adoc[tag=config,leveloffset=+2]
+
+[[metric-views-config]]
+==== Metric Views
+OpenTelemetry metric views allow you to influence how meters are aggregated for reporting to backend systems.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_ViewRegistrationConfig.adoc[tag=config,leveloffset=+2]
 
 == Additional Information
 

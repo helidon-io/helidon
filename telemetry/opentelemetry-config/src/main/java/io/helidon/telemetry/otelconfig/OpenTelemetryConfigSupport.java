@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.propagation.ContextPropagators;
@@ -55,6 +55,20 @@ final class OpenTelemetryConfigSupport {
             sdkTracerProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setTracerProvider(sdkTracerProviderBuilder.build());
+        }
+
+        if (target.metricsConfig().isPresent()) {
+            var metricsConfig = target.metricsConfig().get();
+            var metricsBuilderInfo = metricsConfig.metricsBuilderInfo();
+            var sdkMeterProviderBuilder = metricsBuilderInfo.sdkMeterProviderBuilder();
+
+            var attributesBuilder = metricsConfig.metricsBuilderInfo().attributesBuilder();
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
+
+            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            sdkMeterProviderBuilder.setResource(resource);
+
+            openTelemetrySdkBuilder.setMeterProvider(sdkMeterProviderBuilder.build());
         }
 
         var sdk = openTelemetrySdkBuilder.build();
@@ -114,6 +128,10 @@ final class OpenTelemetryConfigSupport {
             return OpenTelemetryTracingConfig.create(config);
         }
 
+        @Prototype.ConfigFactoryMethod("metricsConfig")
+        static OpenTelemetryMetricsConfig createMetricsConfig(Config config) {
+            return OpenTelemetryMetricsConfig.create(config);
+        }
     }
 
 }
