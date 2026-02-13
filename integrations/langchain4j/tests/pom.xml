@@ -45,6 +45,7 @@
 
     <modules>
         <module>agentic</module>
+        <module>agentic-mcp</module>
     </modules>
 
 </project>

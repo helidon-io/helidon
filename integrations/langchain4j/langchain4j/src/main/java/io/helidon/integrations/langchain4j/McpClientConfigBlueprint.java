@@ -27,7 +27,7 @@ import io.helidon.builder.api.Prototype;
  * Configuration for LangChain4j MCP (Model Context Protocol) clients.
  */
 @Prototype.Configured
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = McpClientSupport.McpClientDecorator.class)
 interface McpClientConfigBlueprint {
 
     /**
@@ -38,6 +38,8 @@ interface McpClientConfigBlueprint {
      */
     @Option.Configured
     @Option.Deprecated("uri")
+    @Option.Redundant
+    @Option.Required
     @Deprecated(forRemoval = true, since = "4.4.0")
     URI sseUri();
 
@@ -46,6 +48,7 @@ interface McpClientConfigBlueprint {
      *
      * @return mcp server uri
      */
+    @Option.Required
     @Option.Configured
     URI uri();
 
