@@ -171,33 +171,35 @@ class CorsPathValidator {
 
     private boolean invalidHeaders(ServerRequest req, ServerResponse res, List<String> headers) {
         if (allowAllHeaders || allowedHeaders.containsAll(headers)) {
+            log(req, Level.TRACE, "CORS allowing headers; actual headers: %s, allowedHeaders: %s", headers, allowedHeaders);
             return false;
         }
-        log(req, Level.TRACE, "CORS denying request; actual headers: %s, allowedHeaders: %s", headers, allowedHeaders);
+        log(req, Level.DEBUG, "CORS denying request; actual headers: %s, allowedHeaders: %s", headers, allowedHeaders);
         forbid(res);
         return true;
     }
 
     private boolean invalidOrigin(ServerRequest req, ServerResponse res, String origin) {
         if (origin.isBlank()) {
-            log(req, Level.TRACE, "CORS denying request; missing required header 'Origin'");
+            log(req, Level.DEBUG, "CORS denying request; missing required header 'Origin'");
             forbid(res);
             return true;
         }
         if (allowAllOrigins || allowedOrigins.contains(origin)) {
+            log(req, Level.TRACE, "CORS allowing origin; actual origin: %s, allowedOrigins: %s", origin, allowedOrigins);
             return false;
         }
-        log(req, Level.TRACE, "CORS denying request; actual origin: %s, allowedOrigins: %s", origin, allowedOrigins);
+        log(req, Level.DEBUG, "CORS denying request; actual origin: %s, allowedOrigins: %s", origin, allowedOrigins);
         forbid(res);
         return true;
     }
 
     private boolean invalidMethod(ServerRequest req, ServerResponse res, String method) {
-
         if (allowAllMethods || allowedMethods.contains(method)) {
+            log(req, Level.TRACE, "CORS allowing method; actual method: %s, allowedMethods: %s", method, allowedMethods);
             return false;
         }
-        log(req, Level.TRACE, "CORS denying request; actual method: %s, allowedMethods: %s", method, allowedMethods);
+        log(req, Level.DEBUG, "CORS denying request; actual method: %s, allowedMethods: %s", method, allowedMethods);
         forbid(res);
         return true;
     }

@@ -15,7 +15,6 @@
  */
 package io.helidon.webserver.cors;
 
-import java.time.Duration;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;

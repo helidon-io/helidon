@@ -42,6 +42,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.validation;
     // tracing
     exports io.helidon.declarative.codegen.tracing;
+    // CORS (cross-origin-resource-sharing)
+    exports io.helidon.declarative.codegen.cors;
 
     uses io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 
@@ -54,7 +56,8 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
                     io.helidon.declarative.codegen.tracing.TracingExtensionProvider,
                     io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider,
-                    io.helidon.declarative.codegen.websocket.client.WebSocketClientExtensionProvider;
+                    io.helidon.declarative.codegen.websocket.client.WebSocketClientExtensionProvider,
+                    io.helidon.declarative.codegen.cors.CorsExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;

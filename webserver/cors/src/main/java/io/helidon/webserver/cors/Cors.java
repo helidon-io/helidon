@@ -79,6 +79,22 @@ public final class Cors {
     }
 
     /**
+     * Allowed methods.
+     */
+    @Target({METHOD, TYPE})
+    @Retention(RUNTIME)
+    @Documented
+    public @interface AllowedMethods {
+        /**
+         * A list of supported HTTP request methods. In response to pre-flight
+         * requests. Corresponds to {@code Access-Control-Allow-Methods}.
+         *
+         * @return allowed methods
+         */
+        String[] value();
+    }
+
+    /**
      * Allowed headers.
      */
     @Target({METHOD, TYPE})
@@ -110,24 +126,9 @@ public final class Cors {
         String[] value();
     }
 
-    /**
-     * Allowed methods.
-     */
-    @Target({METHOD, TYPE})
-    @Retention(RUNTIME)
-    @Documented
-    public @interface AllowedMethods {
-        /**
-         * A list of supported HTTP request methods. In response to pre-flight
-         * requests. Corresponds to {@code Access-Control-Allow-Methods}.
-         *
-         * @return allowed methods
-         */
-        String[] value();
-    }
 
     /**
-     * Allowed credentials.
+     * Whether to allow credentials.
      */
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
@@ -139,7 +140,7 @@ public final class Cors {
          *
          * @return allowed credentials
          */
-        boolean value();
+        boolean value() default true;
     }
 
     /**

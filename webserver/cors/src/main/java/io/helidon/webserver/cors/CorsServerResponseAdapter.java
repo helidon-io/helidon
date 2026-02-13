@@ -17,6 +17,7 @@ package io.helidon.webserver.cors;
 
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -66,5 +67,17 @@ class CorsServerResponseAdapter implements CorsResponseAdapter<ServerResponse> {
     @Override
     public int status() {
         return serverResponse.status().code();
+    }
+
+    @Override
+    public void clearCorsHeaders() {
+        var headers = serverResponse.headers();
+        headers.remove(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN);
+        headers.remove(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS);
+        headers.remove(HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS);
+        headers.remove(HeaderNames.ACCESS_CONTROL_EXPOSE_HEADERS);
+        headers.remove(HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS);
+        headers.remove(HeaderNames.ACCESS_CONTROL_MAX_AGE);
+
     }
 }

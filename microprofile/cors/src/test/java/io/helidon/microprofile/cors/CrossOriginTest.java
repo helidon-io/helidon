@@ -354,7 +354,7 @@ class CrossOriginTest extends BaseCrossOriginTest {
         @Cors.AllowedOrigins({"http://foo.bar", "http://bar.foo"})
         @Cors.AllowedHeaders({"X-foo", "X-bar"})
         @Cors.AllowedMethods({HttpMethod.DELETE, HttpMethod.PUT})
-        @Cors.AllowCredentials(true)
+        @Cors.AllowCredentials
         @Cors.MaxAgeSeconds(0)
         public void options() {
         }

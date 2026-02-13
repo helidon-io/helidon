@@ -78,4 +78,10 @@ public interface CorsResponseAdapter<T> {
      * @return HTTP status code.
      */
     int status();
+
+    /**
+     * Clear CORS headers from the response.
+     */
+    default void clearCorsHeaders() {
+    }
 }

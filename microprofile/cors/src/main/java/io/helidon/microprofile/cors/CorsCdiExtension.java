@@ -65,7 +65,7 @@ public class CorsCdiExtension implements Extension {
         String[] secondPath = corsPathConfig1.pathPattern().split("/");
 
         if (firstPath.length != secondPath.length) {
-            return -Integer.compare(firstPath.length, secondPath.length);
+            return Integer.compare(secondPath.length, firstPath.length);
         }
 
         int len = firstPath.length;

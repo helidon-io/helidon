@@ -489,6 +489,11 @@ public class CorsSupportHelper<Q, R> {
 
         Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(requestAdapter.path(), requestAdapter.method(),
                 secondaryCrossOriginLookup);
+
+        // remove existing CORS headers, this may have been handled by the new CorsFeature approach, yet if
+        // we have an explicit route with CORS, we need to revisit the rules specific to this route
+        responseAdapter.clearCorsHeaders();
+
         if (crossOriginOpt.isEmpty()) {
             return Optional.of(forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
                     () -> "no matching CORS configuration for path " + requestAdapter.path()));
@@ -560,6 +565,10 @@ public class CorsSupportHelper<Q, R> {
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
     R processCorsPreFlightRequest(CorsRequestAdapter<Q> requestAdapter, CorsResponseAdapter<R> responseAdapter) {
+        // remove existing CORS headers, this may have been handled by the new CorsFeature approach, yet if
+        // we have an explicit route with CORS, we need to revisit the rules specific to this route
+        responseAdapter.clearCorsHeaders();
+
 
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
         if (originOpt.isEmpty()) {

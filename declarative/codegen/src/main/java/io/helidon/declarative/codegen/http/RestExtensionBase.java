@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.declarative.codegen.http;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -209,26 +208,6 @@ public abstract class RestExtensionBase {
                     });
         }
         return result;
-    }
-
-    /**
-     * Find an annotation with the provided "meta-annotation".
-     *
-     * @param metaAnnotation type of the meta annotation we are looking for
-     * @param annotations    set of annotations on the element
-     * @return the meta annotation instance, or empty optional if not found
-     */
-    protected Optional<Annotation> findMetaAnnotated(TypeName metaAnnotation,
-                                                     Set<Annotation> annotations) {
-        for (Annotation annotation : annotations) {
-            if (annotation.typeName().equals(metaAnnotation)) {
-                return Optional.of(annotation);
-            }
-            if (annotation.hasMetaAnnotation(metaAnnotation)) {
-                return Annotations.findFirst(metaAnnotation, annotation.metaAnnotations());
-            }
-        }
-        return Optional.empty();
     }
 
     private String ensureHeaderProducerField(FieldHandler fieldHandler, String serviceName) {

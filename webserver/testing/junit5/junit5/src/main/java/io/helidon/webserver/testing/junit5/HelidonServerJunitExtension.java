@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                    AfterEachCallback,
                    ParameterResolver {
 
+    private static final System.Logger LOGGER = System.getLogger(HelidonServerJunitExtension.class.getName());
+
     private final Map<String, URI> uris = new ConcurrentHashMap<>();
     private final List<ServerJunitExtension> extensions;
 
@@ -87,7 +89,15 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                 System.setProperty("helidon.config.profile", "test");
             }
             TestConfigSource testConfigSource = new TestConfigSource();
-            Services.addNamed(ConfigSource.class, 10000D, testConfigSource, "helidon-test");
+            try {
+                Services.addNamed(ConfigSource.class, 10000D, testConfigSource, "helidon-test");
+            } catch (Exception e) {
+                LOGGER.log(System.Logger.Level.INFO, "Cannot register test config source. Details in trace level. "
+                        + "Exception message: " + e.getMessage());
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Details of issues when registering test config source", e);
+                }
+            }
 
             Class<?> testClass = context.getRequiredTestClass();
             super.testClass(testClass);

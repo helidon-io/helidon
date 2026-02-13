@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
@@ -239,7 +240,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                           TypedElementInfo method) {
         Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, endpoint, method));
 
-        Optional<Annotation> httpMethodAnnotation = findMetaAnnotated(HTTP_METHOD_ANNOTATION, annotations);
+        Optional<Annotation> httpMethodAnnotation = DeclarativeUtils.findMetaAnnotated(annotations, HTTP_METHOD_ANNOTATION);
         if (httpMethodAnnotation.isEmpty()) {
             // this method does not have an Http.Method meta annotation present, we can skip it
             return;
