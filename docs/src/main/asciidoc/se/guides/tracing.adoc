@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ Spans are automatically created by Helidon as needed during execution of the RES
 == Getting Started with Tracing
 
 The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace
-across multiple services, and how to integrate tracing with Kubernetes. All examples use Jaeger and traces
+across multiple services, and how to integrate tracing with Kubernetes. All examples use the Jaeger backend and traces
 will be viewed using the Jaeger UI.
 
 === Create a Sample Helidon SE Project
@@ -85,10 +85,10 @@ cd helidon-quickstart-se
 
 === Set up Jaeger
 
-First, you need to run the Jaeger tracer.  Helidon will communicate with this tracer at runtime.
+First, run the Jaeger backend. Helidon communicates with this backend at runtime.
 
 [source,bash]
-.Run Jaeger within a docker container, then check the Jaeger server working:
+.Run Jaeger within a docker container
 ----
 docker run -d --name jaeger \ # <1>
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -109,9 +109,9 @@ docker run -d --name jaeger \ # <1>
 
 === Enable Tracing in the Helidon Application
 
-Update the `pom.xml` file and add the following Jaeger dependency to the `<dependencies>`
-section (*not* `<dependencyManagement>`). This will enable Helidon to use Jaeger at the
-default host and port, `localhost:14250`.
+Update the `pom.xml` file and add the following OpenTelemetry dependency to the `<dependencies>`
+section (*not* `<dependencyManagement>`). This will enable Helidon to use OpenTelemetry at the
+default host and port, `localhost:4317`.
 
 [source,xml]
 .Add the following dependencies to `pom.xml`:
@@ -128,25 +128,23 @@ default host and port, `localhost:14250`.
      </dependency>
      <dependency>
          <groupId>io.helidon.tracing.providers</groupId>
-         <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
+         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  <!--3-->
          <scope>runtime</scope>
      </dependency>
 </dependencies>
 ----
 <1> Helidon Tracing dependencies.
 <2> Observability features for tracing.
-<3> Jaeger tracing provider.
+<3> OpenTelemetry tracing provider.
 
-All spans sent by Helidon to Jaeger need to be associated with a service, assigned by the `tracing.service` setting in the example below.
+Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated).
+All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
 [source,bash]
 .Add the following lines to `src/main/resources/application.yaml`:
 ----
 tracing:
   service: helidon-se-1
-  protocol: http
-  port: 14250
-  path: /api/traces
   tags:
     env: development
   enabled: true
@@ -177,7 +175,7 @@ curl http://localhost:8080/greet
 
 === Viewing Traces Using the Jaeger UI
 
-Jaeger provides a web-based UI at http://localhost:16686 where you can see a visual
+The Jaeger backend provides a web-based UI at http://localhost:16686 where you can see a visual
 representation of the traces and spans within them.
 
 . From the `Service` drop list select `helidon-se-1`. This name corresponds to the `tracing.service` setting you assigned in the `application.yaml` config file.
@@ -252,8 +250,8 @@ Note the row for `mychildSpan`--the custom span created by the added code.
 
 === Using Tracing Across Services
 
-Helidon automatically traces across services if the services use the same tracer, for example, the same instance of Jaeger.
-This means a single trace can include spans from multiple services and hosts.  Helidon uses a `SpanContext` to
+Helidon automatically traces across services if the services propagate span information.
+This means a single trace can include spans from multiple services and hosts. Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
 internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
@@ -296,14 +294,14 @@ cd helidon-quickstart-se-2
      </dependency>
      <dependency>
          <groupId>io.helidon.tracing.providers</groupId>
-         <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
+         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  <!--3-->
          <scope>runtime</scope>
      </dependency>
 </dependencies>
 ----
 <1> Helidon Tracing API.
 <2> Observability features for tracing.
-<3> Jaeger tracing provider.
+<3> OpenTelemetry tracing provider.
 
 [source,bash]
 .Replace `src/main/resources/application.yaml` with the following:
@@ -313,9 +311,6 @@ app:
 
 tracing:
   service: helidon-se-2
-  protocol: http
-  port: 14250
-  path: /api/traces
   tags:
     env: development
   enabled: true
