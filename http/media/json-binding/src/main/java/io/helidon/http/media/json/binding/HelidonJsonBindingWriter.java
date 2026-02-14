@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json;
+package io.helidon.http.media.json.binding;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,11 +33,11 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.json.binding.JsonBinding;
 
-class HelidonJsonWriter<T> implements EntityWriter<T> {
+class HelidonJsonBindingWriter<T> implements EntityWriter<T> {
 
     private final JsonBinding jsonBinding;
 
-    HelidonJsonWriter(JsonBinding jsonBinding) {
+    HelidonJsonBindingWriter(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json;
+package io.helidon.http.media.json.binding;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -56,7 +56,7 @@ class HelidonJsonMediaTest {
     private final MediaSupport provider;
 
     HelidonJsonMediaTest() {
-        this.provider = HelidonJsonSupport.create(Config.empty());
+        this.provider = HelidonJsonBindingSupport.create(Config.empty());
         provider.init(MediaContext.create());
     }
 

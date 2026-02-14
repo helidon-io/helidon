@@ -22,6 +22,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
+import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
@@ -139,5 +140,322 @@ public class OptionalTest {
         OptionalDouble deserialized = jsonBinding.deserialize(expected, OptionalDouble.class);
         assertThat(deserialized, is(optional));
     }
+
+    @Test
+    void testEmptyOptionalInObject() {
+        OptionalInObject obj = new OptionalInObject("test", Optional.empty());
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObject deserialized = jsonBinding.deserialize(expected, OptionalInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalInObject() {
+        OptionalInObject obj = new OptionalInObject("test", Optional.of("value"));
+        String expected = "{\"name\":\"test\",\"optionalField\":\"value\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObject deserialized = jsonBinding.deserialize(expected, OptionalInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalIntInObject() {
+        OptionalIntInObject obj = new OptionalIntInObject("test", OptionalInt.empty());
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObject deserialized = jsonBinding.deserialize(expected, OptionalIntInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalIntInObject() {
+        OptionalIntInObject obj = new OptionalIntInObject("test", OptionalInt.of(42));
+        String expected = "{\"name\":\"test\",\"optionalField\":42}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObject deserialized = jsonBinding.deserialize(expected, OptionalIntInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalLongInObject() {
+        OptionalLongInObject obj = new OptionalLongInObject("test", OptionalLong.empty());
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObject deserialized = jsonBinding.deserialize(expected, OptionalLongInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalLongInObject() {
+        OptionalLongInObject obj = new OptionalLongInObject("test", OptionalLong.of(42L));
+        String expected = "{\"name\":\"test\",\"optionalField\":42}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObject deserialized = jsonBinding.deserialize(expected, OptionalLongInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalDoubleInObject() {
+        OptionalDoubleInObject obj = new OptionalDoubleInObject("test", OptionalDouble.empty());
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObject deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalDoubleInObject() {
+        OptionalDoubleInObject obj = new OptionalDoubleInObject("test", OptionalDouble.of(42.5));
+        String expected = "{\"name\":\"test\",\"optionalField\":42.5}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObject deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObject.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalInObjectWithSerializeNulls() {
+        OptionalInObjectWithSerializeNulls obj = new OptionalInObjectWithSerializeNulls("test", Optional.empty());
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalInObjectWithSerializeNulls() {
+        OptionalInObjectWithSerializeNulls obj = new OptionalInObjectWithSerializeNulls("test", Optional.of("value"));
+        String expected = "{\"name\":\"test\",\"optionalField\":\"value\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalIntInObjectWithSerializeNulls() {
+        OptionalIntInObjectWithSerializeNulls obj = new OptionalIntInObjectWithSerializeNulls("test", OptionalInt.empty());
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalIntInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalIntInObjectWithSerializeNulls() {
+        OptionalIntInObjectWithSerializeNulls obj = new OptionalIntInObjectWithSerializeNulls("test", OptionalInt.of(42));
+        String expected = "{\"name\":\"test\",\"optionalField\":42}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalIntInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalLongInObjectWithSerializeNulls() {
+        OptionalLongInObjectWithSerializeNulls obj = new OptionalLongInObjectWithSerializeNulls("test", OptionalLong.empty());
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalLongInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalLongInObjectWithSerializeNulls() {
+        OptionalLongInObjectWithSerializeNulls obj = new OptionalLongInObjectWithSerializeNulls("test", OptionalLong.of(42L));
+        String expected = "{\"name\":\"test\",\"optionalField\":42}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalLongInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testEmptyOptionalDoubleInObjectWithSerializeNulls() {
+        OptionalDoubleInObjectWithSerializeNulls obj = new OptionalDoubleInObjectWithSerializeNulls("test", OptionalDouble.empty());
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testOptionalDoubleInObjectWithSerializeNulls() {
+        OptionalDoubleInObjectWithSerializeNulls obj = new OptionalDoubleInObjectWithSerializeNulls("test", OptionalDouble.of(42.5));
+        String expected = "{\"name\":\"test\",\"optionalField\":42.5}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(obj));
+    }
+
+    @Test
+    void testNullOptionalInObject() {
+        OptionalInObject obj = new OptionalInObject("test", null);
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObject deserialized = jsonBinding.deserialize(expected, OptionalInObject.class);
+        assertThat(deserialized, is(new OptionalInObject("test", Optional.empty())));
+    }
+
+    @Test
+    void testNullOptionalIntInObject() {
+        OptionalIntInObject obj = new OptionalIntInObject("test", null);
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObject deserialized = jsonBinding.deserialize(expected, OptionalIntInObject.class);
+        assertThat(deserialized, is(new OptionalIntInObject("test", OptionalInt.empty())));
+    }
+
+    @Test
+    void testNullOptionalLongInObject() {
+        OptionalLongInObject obj = new OptionalLongInObject("test", null);
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObject deserialized = jsonBinding.deserialize(expected, OptionalLongInObject.class);
+        assertThat(deserialized, is(new OptionalLongInObject("test", OptionalLong.empty())));
+    }
+
+    @Test
+    void testNullOptionalDoubleInObject() {
+        OptionalDoubleInObject obj = new OptionalDoubleInObject("test", null);
+        String expected = "{\"name\":\"test\"}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObject deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObject.class);
+        assertThat(deserialized, is(new OptionalDoubleInObject("test", OptionalDouble.empty())));
+    }
+
+    @Test
+    void testNullOptionalInObjectWithSerializeNulls() {
+        OptionalInObjectWithSerializeNulls obj = new OptionalInObjectWithSerializeNulls("test", null);
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(new OptionalInObjectWithSerializeNulls("test", Optional.empty())));
+    }
+
+    @Test
+    void testNullOptionalIntInObjectWithSerializeNulls() {
+        OptionalIntInObjectWithSerializeNulls obj = new OptionalIntInObjectWithSerializeNulls("test", null);
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalIntInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalIntInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(new OptionalIntInObjectWithSerializeNulls("test", OptionalInt.empty())));
+    }
+
+    @Test
+    void testNullOptionalLongInObjectWithSerializeNulls() {
+        OptionalLongInObjectWithSerializeNulls obj = new OptionalLongInObjectWithSerializeNulls("test", null);
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalLongInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalLongInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(new OptionalLongInObjectWithSerializeNulls("test", OptionalLong.empty())));
+    }
+
+    @Test
+    void testNullOptionalDoubleInObjectWithSerializeNulls() {
+        OptionalDoubleInObjectWithSerializeNulls obj = new OptionalDoubleInObjectWithSerializeNulls("test", null);
+        String expected = "{\"name\":\"test\",\"optionalField\":null}";
+        String serialized = jsonBinding.serialize(obj);
+
+        assertThat(serialized, is(expected));
+
+        OptionalDoubleInObjectWithSerializeNulls deserialized = jsonBinding.deserialize(expected, OptionalDoubleInObjectWithSerializeNulls.class);
+        assertThat(deserialized, is(new OptionalDoubleInObjectWithSerializeNulls("test", OptionalDouble.empty())));
+    }
+
+
+    @Json.Entity
+    public record OptionalInObject(String name, Optional<String> optionalField) {}
+
+    @Json.Entity
+    public record OptionalIntInObject(String name, OptionalInt optionalField) {}
+
+    @Json.Entity
+    public record OptionalLongInObject(String name, OptionalLong optionalField) {}
+
+    @Json.Entity
+    public record OptionalDoubleInObject(String name, OptionalDouble optionalField) {}
+
+    @Json.Entity
+    @Json.SerializeNulls
+    public record OptionalInObjectWithSerializeNulls(String name, Optional<String> optionalField) {}
+
+    @Json.Entity
+    @Json.SerializeNulls
+    public record OptionalIntInObjectWithSerializeNulls(String name, OptionalInt optionalField) {}
+
+    @Json.Entity
+    @Json.SerializeNulls
+    public record OptionalLongInObjectWithSerializeNulls(String name, OptionalLong optionalField) {}
+
+    @Json.Entity
+    @Json.SerializeNulls
+    public record OptionalDoubleInObjectWithSerializeNulls(String name, OptionalDouble optionalField) {}
 
 }
