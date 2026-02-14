@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class TestAnnotation {
                     seContainer = initializer.initialize());
             assertThat("Exception error message",
                        e.getMessage(),
-                       allOf(containsString("annotation is valid only on @OPTIONS methods"),
+                       allOf(containsString("CORS annotations are valid only on @OPTIONS methods"),
                              containsString(CorsResourceWithBadAnnotation.class.getName())));
 
         } finally {

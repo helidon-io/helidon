@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ The following configuration keys can be used to set up integration with WebServe
 
 |`graphql.web-context` |`/graphql` |Context that serves the GraphQL endpoint.
 |`graphql.schema-uri` |`/schema.graphql` |URI that serves the schema (under web context)
-|`graphql.cors` |{nbsp} |CORS configuration for this service
 |`graphql.executor-service` |{nbsp} |Configuration of `ServerThreadPoolSupplier` used to set up executor service
 
 |===

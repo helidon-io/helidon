@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,15 @@ import io.helidon.webserver.http.HttpService;
  *     {@link #postSetup(HttpRouting.Builder, HttpRouting.Builder)} to do any service-specific routing.
  *     See also the {@link Builder} information for possible additional overrides.
  * </p>
+ *
+ * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+ *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+ *  server feature; reason for existence of this class was CORS configuration - as this is now not needed,
+ *  this class will most likely be removed in a future version of Helidon; implement an
+ *  {@link io.helidon.webserver.http.HttpFeature} directly instead
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
+@SuppressWarnings("removal")
 public abstract class HelidonFeatureSupport implements FeatureSupport {
 
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
@@ -207,7 +215,12 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
          *
          * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
+         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+         *  server feature
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.4.0")
         @ConfiguredOption
         public B crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");

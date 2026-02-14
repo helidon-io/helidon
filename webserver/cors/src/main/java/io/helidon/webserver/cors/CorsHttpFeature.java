@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,26 @@ import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 
 class CorsHttpFeature implements HttpFeature, Weighted {
-    private final double weight;
-    private final CorsSupport corsSupport;
+    private final CorsConfig config;
+    private final String socketName;
 
-    CorsHttpFeature(double weight, CorsSupport corsSupport) {
-        this.weight = weight;
-        this.corsSupport = corsSupport;
+    CorsHttpFeature(CorsConfig config, String socketName) {
+        this.config = config;
+        this.socketName = socketName;
     }
 
     @Override
     public void setup(HttpRouting.Builder routing) {
-        routing.register(corsSupport);
+        routing.addFilter(new CorsHttpFilter(CorsValidator.create(config, socketName), socketName));
     }
 
     @Override
     public double weight() {
-        return weight;
+        return config.weight();
+    }
+
+    @Override
+    public String toString() {
+        return "CORS HTTP Feature for " + socketName;
     }
 }
