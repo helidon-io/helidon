@@ -49,6 +49,11 @@ interface AutoHttpMetricsConfigBlueprint {
 
     /**
      * Automatic metrics collection settings. Default excludes built-in Helidon paths (e.g., metrics, health).
+     * A request's path and HTTP method are checked against each entry under {@code paths} in order.
+     * <ul>
+     *     <li>If a request matches no entry, then the request is measured.</li>
+     *     <li>If a request matches multiple entries, then the last match wins.</li>
+     * </ul>
      *
      * @return automatic metrics collection settings
      */
