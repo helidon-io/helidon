@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,23 +72,25 @@ final class InterceptorSyntheticRestRequest extends HelidonInterceptor.Base<Synt
 
     @Override
     public void preInvocation(InvocationContext context, SyntheticRestRequestWorkItem workItem) {
-        MetricsInterceptorBase.verifyMetric(workItem.successfulTimerMetricID(),
-                                            workItem.successfulTimer());
-        MetricsInterceptorBase.verifyMetric(workItem.unmappedExceptionCounterMetricID(),
-                                            workItem.unmappedExceptionCounter());
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, String.format(
-                    "%s (%s) is starting processing of a REST request on %s triggered by @%s",
-                    getClass().getSimpleName(),
-                    MetricsInterceptorBase.ActionType.PREINVOKE,
-                    context.getMethod() != null ? context.getMethod() : context.getConstructor(),
-                    SyntheticRestRequest.class.getSimpleName()));
+        if (workItem.isMeasured(request)) {
+            MetricsInterceptorBase.verifyMetric(workItem.successfulTimerMetricID(),
+                                                workItem.successfulTimer());
+            MetricsInterceptorBase.verifyMetric(workItem.unmappedExceptionCounterMetricID(),
+                                                workItem.unmappedExceptionCounter());
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, String.format(
+                        "%s (%s) is starting processing of a REST request on %s triggered by @%s",
+                        getClass().getSimpleName(),
+                        MetricsInterceptorBase.ActionType.PREINVOKE,
+                        context.getMethod() != null ? context.getMethod() : context.getConstructor(),
+                        SyntheticRestRequest.class.getSimpleName()));
+            }
+
+            PostCompletionMetricsUpdate update = new PostCompletionMetricsUpdate(workItem);
+            PostRequestMetricsSupport.recordPostProcessingWork(request, update::updateRestRequestMetrics);
+
+            startNanos = System.nanoTime();
         }
-
-        PostCompletionMetricsUpdate update = new PostCompletionMetricsUpdate(workItem);
-        PostRequestMetricsSupport.recordPostProcessingWork(request, update::updateRestRequestMetrics);
-
-        startNanos = System.nanoTime();
     }
 
     private class PostCompletionMetricsUpdate {
