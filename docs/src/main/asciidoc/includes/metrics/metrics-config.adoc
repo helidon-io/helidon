@@ -83,8 +83,6 @@ Helidon can make the registered {metrics} and their current values available ext
 
 include::io_helidon_webserver_observe_metrics_MetricsObserver_extra.adoc[tag=config,leveloffset=+1]
 
-The `auto` subsection lets you control the metrics which Helidon gathers automatically.
-These settings control the Helidon key performance indicator {metrics} as well as the {metrics} for OpenTelemetry semantic conventions.
 ifdef::se-flavor[]
 See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
 
@@ -93,8 +91,20 @@ endif::se-flavor[]
 ==== Selecting REST Endpoints for Automatic Measurement
 You can choose which endpoints to include in Helidon's automatic measurements using the `auto` config section.
 
-By default, if you specify the `auto` section Helidon does not measure built-in endpoints such as metrics, health, and openapi but does measure all application endpoints. You can add items under  `auto.paths` to control more exactly which endpoints to measure.
+If you omit the `auto` section, Helidon measures all endpoints.
+
+If you specify the `auto` section, by default Helidon does not measure built-in endpoints such as metrics, health, and openapi. You can add items under  `auto.paths` to control more exactly which endpoints to measure.
+
+If you include the  `paths` section, a given request matches an entry if its path matches the path pattern and its HTTP method is in the `methods` list. If there is no `methods` list for an entry, all HTTP methods match the entry.
+
+If a request matches an entry, the request is measured if the entry's `enabled` setting is true (the default).
+
+If a request matches multiple entries, the last one matched wins.
+
+If a request matches no entries, it is measured.
+
 You can also control which sockets are included in the measurements.
+
 [source,yaml]
 .Including and Excluding Endpoints from Automatic Measurement
 ----
