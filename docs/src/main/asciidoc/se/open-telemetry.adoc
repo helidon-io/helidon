@@ -202,6 +202,13 @@ OpenTelemetry prescribes its own link:{metrics-semconv-link}[semantic convention
 </dependency>
 ----
 
+[NOTE]
+====
+Do not attempt to add both the Helidon support for OpenTelemetry HTTP server semantic conventions (the `helidon-webserver-observe-telemetry-metrics` component) and Helidon's Microprofile Metrics support to your project.
+
+The MicroProfile Metrics specification prohibits tag names which contain dots (".") and OpenTelemetry semantic conventions prescribe tag names with dots. The MicroProfile Metrics implementation of the `Tag` type throws an exception during the attempt to create such a tag.
+====
+
 === Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
 Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the xref:{docdir}/webclient.adoc#_configuring_telemetry[Helidon WebClient documentation].
 
