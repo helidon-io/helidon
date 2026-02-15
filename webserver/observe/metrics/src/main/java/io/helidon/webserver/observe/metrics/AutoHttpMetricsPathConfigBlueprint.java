@@ -28,8 +28,11 @@ import io.helidon.http.PathMatchers;
 /**
  * Settings for path-based automatic metrics configuration.
  * <p>
- * The {@link #enabled} setting (true or false) applies to any request which matches the {@linkplain #path() path matcher} and the
- * {@linkplain #methods() HTTP methods} specified.
+ * An HTTP request matches a path entry if the request path matches the entry's path pattern and the request's HTTP method
+ * matches one of the entry's methods. If there no {@code methods} list for the entry, then all HTTP methods match the entry.
+ * <p>
+ * If a request matches an entry, then the entry's {@code enabled} value (which defaults to {@code}) determines the entry's vote
+ * whether the request should be measured. If a request matches multiple entries, the vote of the last matched entry wins.
  *
  */
 @Prototype.Configured
@@ -51,7 +54,8 @@ interface AutoHttpMetricsPathConfigBlueprint {
     }
 
     /**
-     * Whether automatic metrics are to be enabled for the specified {@link io.helidon.http.PathMatcher} and HTTP methods.
+     * Whether automatic metrics are to be enabled for requests which match the specified {@link io.helidon.http.PathMatcher}
+     * and HTTP methods.
      *
      * @return whether auto metrics are to be enabled for this path config's path matcher and HTTP methods
      */
@@ -68,7 +72,7 @@ interface AutoHttpMetricsPathConfigBlueprint {
     PathMatcher path();
 
     /**
-     * HTTP methods for which this path config applies.
+     * HTTP methods for which this path config applies; default is to match all HTTP methods.
      *
      * @return HTTP methods
      */
