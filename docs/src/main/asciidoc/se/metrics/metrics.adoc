@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -75,9 +75,9 @@ The no-op implementation:
 * does not update {metric} values
 * does not expose the metrics endpoint for reporting {metric} values.
 
-To include the full-featured metrics implementation, add the following dependency to your project:
+To include the full-featured metrics implementation and support for the metrics endpoint, add the following dependency to your project:
 
-.Packaging a full-featured metrics implementation
+.Packaging the metrics endpoint support and a full-featured metrics implementation
 [source,xml]
 ----
 <dependency>

@@ -42,8 +42,8 @@ interface MetricExporterConfigBlueprint extends OtlpExporterConfigBlueprint {
     MetricExporterType type();
 
     /**
-     * Preferred output aggregation technique, configurable as a
-     * {@link io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType} value.
+     * Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a
+     * {@link io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType} value: {@code CUMULATIVE, DELTA, LOWMEMORY}.
      *
      * @return output aggregation technique
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,20 @@
 
 package io.helidon.webserver.observe.metrics;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
+import io.helidon.service.registry.Services;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.DisabledObserverFeature;
+import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -134,6 +139,8 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
             for (HttpRouting.Builder routing : observeEndpointRouting) {
                 // register the service itself
                 routing.addFeature(new MetricsHttpFeature(endpoint, metricsFeature));
+
+                prepareAutoMetrics(featureContext);
             }
         } else {
             for (HttpRouting.Builder builder : observeEndpointRouting) {
@@ -149,6 +156,29 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
         metricsFeature.configureVendorMetrics(rules);
+    }
+
+    private void prepareAutoMetrics(ServerFeature.ServerFeatureContext featureContext) {
+
+        /*
+        Apply default auto-metrics config if none is specified.
+         */
+        var autoHttpMetricsConfig = config.autoHttpMetrics().orElse(AutoHttpMetricsConfig.create());
+
+        Set<String> socketNamesForAutoMetrics = new HashSet<>(autoHttpMetricsConfig.sockets());
+        if (socketNamesForAutoMetrics.isEmpty()) {
+            socketNamesForAutoMetrics.addAll(featureContext.sockets());
+            socketNamesForAutoMetrics.add(WebServer.DEFAULT_SOCKET_NAME);
+        }
+
+        for (String socketName : socketNamesForAutoMetrics) {
+            for (AutoHttpMetricsProvider metricsProvider : Services.all(AutoHttpMetricsProvider.class)) {
+                metricsProvider.filter(config)
+                        .ifPresent(filter -> featureContext.socket(socketName)
+                                .httpRouting()
+                                .addFilter(filter));
+            }
+        }
     }
 
     private static class MetricsHttpFeature implements HttpFeature {
