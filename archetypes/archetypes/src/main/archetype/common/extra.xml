@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -262,7 +262,7 @@ restrictive-cors:
                             <list key="main-class-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
     private static CorsSupport corsSupportForGreeting() {
-        Config restrictiveConfig = Config.global().get("restrictive-cors");
+        Config restrictiveConfig = Services.get(Config.class).get("restrictive-cors");
         if (!restrictiveConfig.exists()) {
             Logger.getLogger(Main.class.getName())
                     .warning("Missing restrictive config; continuing with default CORS support");
@@ -270,7 +270,7 @@ restrictive-cors:
 
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
-        Config.global().get("cors")
+        Services.get(Config.class).get("cors")
                 .ifExists(c -> {
                     Logger.getLogger(Main.class.getName()).info("Using the override configuration");
                     corsBuilder.mappedConfig(c);
