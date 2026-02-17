@@ -11,6 +11,19 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.4.0]
+
+### NOTABLE CHANGES
+
+Helidon 4.4.0 introduces the following changes:
+
+- CORS is now simplified to a component configured in one place, feature specific CORS setup is deprecated 
+    (i.e. for OpenAPI, observers), and a single point of configuration is expected, either through Config, 
+    or through setup of the `CorsFeature`; in addition annotations can be used in MP and in SE Declarative, 
+    now moved to a single class `io.helidon.webserver.cors.Cors`, original MP annotation is now deprecated and marked for 
+    removal; existing configuration will work in this major version of Helidon
+    (the implementation is fully backward compatible)
+
 ## [4.3.0]
 
 This minor release of Helidon contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
