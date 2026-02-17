@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1223,7 +1223,12 @@ public final class OidcConfig extends TenantConfigImpl {
          *
          * @param crossOriginConfig cross-origin settings to apply to the redirect endpoint
          * @return updated builder instance
+         * @deprecated feature specific CORS configuration is deprecated and will be removed; use either config based CORS setup
+         *  (configuration key {@code cors}, or programmatic setup using the {@code io.helidon.webserver.cors.CorsFeature}
+         *  server feature
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.4.0")
         @ConfiguredOption(key = "cors")
         public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             this.crossOriginConfig = crossOriginConfig;

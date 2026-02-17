@@ -120,7 +120,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 </map>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
-                                <value>io.helidon.microprofile.cors.CrossOrigin</value>
+                                <value>io.helidon.webserver.cors.Cors</value>
                                 <value>jakarta.ws.rs.OPTIONS</value>
                                 <value>jakarta.ws.rs.PUT</value>
                                 <value>jakarta.ws.rs.core.Response</value>
@@ -149,8 +149,8 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
      * CORS set-up for getCustomMessage.
      */
     @OPTIONS
-    @CrossOrigin(value = {"http://foo.com", "http://there.com"},
-            allowMethods = {HttpMethod.PUT})
+    @Cors.AllowOrigins({"http://foo.com", "http://there.com"})
+    @Cors.AllowMethods({HttpMethod.PUT, HttpMethod.GET})
     public void optionsForGetCustomMessage() {
     }
 ]]>
