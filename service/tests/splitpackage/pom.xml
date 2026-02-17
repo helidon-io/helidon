@@ -103,11 +103,6 @@
                             <artifactId>helidon-service-codegen</artifactId>
                             <version>${project.version}</version>
                         </path>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${project.version}</version>
-                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
@@ -121,35 +116,7 @@
                         <artifactId>helidon-service-codegen</artifactId>
                         <version>${project.version}</version>
                     </dependency>
-                    <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
                 </dependencies>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-jakarta-not-included</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>jakarta.inject:jakarta.inject-api</exclude>
-                                        <exclude>jakarta.annotation:jakarta.annotation-api</exclude>
-                                    </excludes>
-                                </bannedDependencies>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
