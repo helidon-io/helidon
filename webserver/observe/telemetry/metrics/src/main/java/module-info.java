@@ -27,14 +27,17 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 
 module io.helidon.webserver.observe.telemetry.metrics {
+    requires io.helidon.telemetry.otelconfig;
     requires io.helidon.webserver.observe.metrics;
     requires io.helidon.service.registry;
     requires io.helidon.webserver;
-    requires io.helidon.metrics.api;
 
     requires io.opentelemetry.api;
     requires io.opentelemetry.semconv;
     requires io.helidon.common.features.api;
     requires micrometer.core;
+    requires io.helidon.metrics.api;
+    requires io.opentelemetry.sdk.metrics;
+    requires java.logging;
 
 }

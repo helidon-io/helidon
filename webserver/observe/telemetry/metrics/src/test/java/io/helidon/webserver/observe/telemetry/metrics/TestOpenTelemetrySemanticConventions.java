@@ -21,16 +21,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.MatcherWithRetry;
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.Method;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -39,13 +37,12 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
+import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
@@ -115,7 +112,6 @@ class TestOpenTelemetrySemanticConventions {
 
     @Test
     void checkAutoMetrics() {
-        var meterRegistry = Metrics.globalRegistry();
 
         // Use default socket.
         try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -132,7 +128,9 @@ class TestOpenTelemetrySemanticConventions {
                         .request();
                 Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
-                        .request()) {
+                        .request();
+                TestLogHandler testLogHandler = TestLogHandler.create(
+                        Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
 
             assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             assertThat("Private endpoint", privateResponse.status().code(), is(200));
@@ -140,11 +138,6 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
 
-            /*
-            Helidon registers and updates the timer asynchronously, so tolerate some delay.
-            Despite all the requests we sent, we expect only two timers to have been created (and updated).
-             */
-            AtomicReference<List<Timer>> timersRef = requestTimers(meterRegistry, 2);
 
             /*
             There should be two timers, one for each of the greet endpoints and none for the
@@ -152,25 +145,31 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
+            var dataPoints = MatcherWithRetry.assertThatWithRetry("Metrics entries",
+                                                                  () -> dataPoints(testLogHandler.messages()),
+                                                                  hasSize(2));
+
             List<String> socketNamesInTimers = new ArrayList<>();
 
-            for (Timer timer : timersRef.get()) {
-                Map<String, String> tags = timer.id().tagsMap();
+            for (MetricsEnvelope.HistogramDataPoint dataPoint : dataPoints) {
+                assertThat("Histogram data count", dataPoint.count(), is(1));
+                assertThat("Histogram data sum", dataPoint.sum(), greaterThan(0D));
+                var httpStatus = dataPoint.attributes().get(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE);
+                assertThat("Histogram data attributes",
+                           httpStatus.asLong(),
+                           OptionalMatcher.optionalValue(is(200L)));
 
-                /*
-                Perform the checks below only on timers for successful requests. We'll verify the unsuccessful one later.
-                 */
-                if (!tags.get(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE).equals("200")) {
-                    continue;
-                }
-
-                var socketName = tags.get(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME);
+                //
+                var socketNameValue = dataPoint.attributes().get(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME);
+                assertThat("Histogram data socket name", socketNameValue.asString(), OptionalMatcher.optionalPresent());
+                String socketName = socketNameValue.asString().get();
 
                 var expectedHttpRoute = switch (socketName) {
                     case "private" -> "/greet";
                     case "@default" -> "/greet/{name}";
                     default -> "unexpected";
                 };
+
                 var expectedPort = switch (socketName) {
                     case "private" -> server.port("private");
                     case "@default" -> server.port();
@@ -180,35 +179,39 @@ class TestOpenTelemetrySemanticConventions {
                 socketNamesInTimers.add(socketName);
 
                 /*
-                Even after the timer appears in the registry, it's possible we would check its count before the filter had
+                Even after the timer appears in the registry, it's possible we would check its count before the
+                filter had
                 updated the timer. So retry when we check the count as well.
 
                 This test is written so each timer should be updated once, hence the hard-coded 1 below.
                  */
                 MatcherWithRetry.assertThatWithRetry("Socket " + socketName + " timer update count",
-                                                     timer::count,
-                                                     is(1L));
+                                                     dataPoint::count,
+                                                     is(1));
 
-                assertThat("Socket " + socketName + " timer total time", timer.totalTime(TimeUnit.NANOSECONDS),
+                assertThat("Socket " + socketName + " timer total time", dataPoint.sum(),
                            greaterThan(0D));
-                assertThat("Socket " + socketName + " timer name", timer.id().name(),
-                           is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME));
 
                 var portMatcher = hasKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT);
                 if (!checkPort) {
                     portMatcher = not(portMatcher);
                 }
-                assertThat("Tags", tags, allOf(
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD, "GET"),
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.URL_SCHEME, "HTTP"),
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE, "200"),
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE, ""),
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE, expectedHttpRoute),
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS, "localhost"),
-                        portMatcher,
-                        hasEntry(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME, socketName)));
 
+                assertThat("Port", dataPoint.attributes(), portMatcher);
+
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD, "GET");
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.URL_SCHEME, "HTTP");
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE, 200);
+
+                assertThat("Attribute error type ",
+                           dataPoint.attributes().get(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE).asString(),
+                           OptionalMatcher.optionalEmpty());
+
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE, expectedHttpRoute);
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS, "localhost");
+                checkAttribute(dataPoint.attributes(), OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME, socketName);
             }
+
             assertThat("Expected sockets", socketNamesInTimers, allOf(
                     hasItem("@default"),
                     hasItem("private"),
@@ -218,25 +221,35 @@ class TestOpenTelemetrySemanticConventions {
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
             assertThat("Unexpectedly untimed sockets", unexpectedlyUntimedSockets, hasSize(0));
-
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
     }
 
-    private AtomicReference<List<Timer>> requestTimers(MeterRegistry meterRegistry, int expectedCount) {
+    private void checkAttribute(Map<String, MetricsEnvelope.AnyValue> attributes, String attribute, String expectedValue) {
+        assertThat("Attribute " + attribute,
+                   attributes.get(attribute).asString(),
+                   OptionalMatcher.optionalValue(is(expectedValue)));
+    }
 
-        AtomicReference<List<Timer>> timersRef = new AtomicReference<>();
-        MatcherWithRetry.assertThatWithRetry("Automatic timers",
-                                             () -> {
-                                                 timersRef.set(meterRegistry.meters(meter -> meter.id().name()
-                                                                 .equals(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
-                                                                       .stream()
-                                                                       .filter(m -> m instanceof Timer)
-                                                                       .map(m -> (Timer) m)
-                                                                       .toList());
-                                                 return timersRef.get();
-                                             },
-                                             hasSize(greaterThanOrEqualTo(expectedCount)));
-        return timersRef;
+    private void checkAttribute(Map<String, MetricsEnvelope.AnyValue> attributes, String attribute, long expectedValue) {
+        assertThat("Attribute " + attribute,
+                   attributes.get(attribute).asLong(),
+                   OptionalMatcher.optionalValue(is(expectedValue)));
+    }
+
+    private List<MetricsEnvelope.HistogramDataPoint> dataPoints(List<String> logMessages) {
+        var parser = OtlpJsonpMetricsParser.create();
+
+        var results = logMessages.stream()
+                .map(parser::parse)
+                .flatMap(metricsDocument -> metricsDocument.resourceMetrics().stream())
+                .flatMap(rm -> rm.scopeMetrics().stream())
+                .flatMap(sm -> sm.metrics().stream())
+                .map(MetricsEnvelope.Metric::histogram)
+                .flatMap(h -> h.dataPoints().stream())
+                .toList();
+        return results;
     }
 }

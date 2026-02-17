@@ -16,20 +16,13 @@
 
 package io.helidon.webserver.observe.telemetry.metrics;
 
-import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
-import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.Tag;
-import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
+import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
@@ -38,6 +31,12 @@ import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.api.metrics.DoubleHistogram;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.semconv.ErrorAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
@@ -45,6 +44,10 @@ import io.opentelemetry.semconv.UrlAttributes;
 
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
+ * <p>
+ * By using the OpenTelemetry API directly, rather than the Helidon metrics API, we can support the semantic conventions
+ * even in apps that use MicroProfile Metrics. Using the Helidon metrics API in an MP app would trigger errors because
+ * MicroProfile metrics prohibits tag names containing dots.
  */
 @Service.Singleton
 class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProvider {
@@ -64,20 +67,20 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     Bucket boundaries as recommended by the OpenTelemetry spec.
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
      */
-    private static final Duration[] BUCKET_BOUNDARIES =
-            Stream.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
-                    .map(d -> d * 1000.0) // seconds to milliseconds
-                    .map(Double::longValue)
-                    .map(Duration::ofMillis)
-                    .toList()
-                    .toArray(new Duration[0]);
+    private static final List<Double> BUCKET_BOUNDARIES =
+            List.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0);
 
-    /*
-    The MetricsFeature might set up the meter registry--using the deprecated globalRegistry approach--from its configuration,
-    so use lazy instantiation here to give it a chance before the service registry triggers creation of one based on the top-level
-    metrics config.
-     */
-    private final LazyValue<MeterRegistry> meterRegistry = LazyValue.create(Metrics::globalRegistry);
+    private final DoubleHistogram httpRequestDuration;
+
+    @Service.Inject
+    OpenTelemetryMetricsHttpSemanticConventions(OpenTelemetry openTelemetry, Config config) {
+        HelidonOpenTelemetry helidonOpenTelemetry = HelidonOpenTelemetry.builder()
+                .config(config.get(HelidonOpenTelemetry.CONFIG_KEY))
+                .build();
+
+        httpRequestDuration = httpRequestDuration(openTelemetry.meterBuilder(helidonOpenTelemetry.prototype().service())
+                .build());
+    }
 
     @Override
     public Optional<Filter> filter(MetricsObserverConfig config) {
@@ -90,18 +93,27 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
          */
         return (config.autoHttpMetrics().isPresent() && !config.autoHttpMetrics().get().enabled())
                 ? Optional.empty()
-                : Optional.of(MetricsRecordingFilter.create(meterRegistry.get(),
+                : Optional.of(MetricsRecordingFilter.create(httpRequestDuration,
                                                             config.autoHttpMetrics().orElse(AutoHttpMetricsConfig.create())));
+    }
+
+    private static DoubleHistogram httpRequestDuration(Meter meter) {
+        return meter
+                .histogramBuilder(TIMER_NAME)
+                .setDescription("HTTP request dureation")
+                .setUnit("s") // seconds
+                .setExplicitBucketBoundariesAdvice(BUCKET_BOUNDARIES)
+                .build();
     }
 
     static class MetricsRecordingFilter implements Filter {
 
+        private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
-        private final MeterRegistry meterRegistry;
 
-        private MetricsRecordingFilter(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
+        private MetricsRecordingFilter(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
+            this.httpRequestDuration = httpRequestDuration;
             this.config = config;
-            this.meterRegistry = meterRegistry;
         }
 
         @Override
@@ -120,8 +132,8 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
         }
 
-        private static MetricsRecordingFilter create(MeterRegistry meterRegistry, AutoHttpMetricsConfig config) {
-            return new MetricsRecordingFilter(meterRegistry, config);
+        private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
+            return new MetricsRecordingFilter(httpRequestDuration, config);
         }
 
         private void updateMetricsIfMeasured(RoutingRequest req,
@@ -132,18 +144,20 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
                 return;
             }
-            List<Tag> tags = new ArrayList<>(List.of(Tag.create(HTTP_METHOD, req.prologue().method().text()),
-                                                     Tag.create(URL_SCHEME, req.prologue().protocol()),
-                                                     Tag.create(ERROR_TYPE, errorType(resp, exception)),
-                                                     Tag.create(STATUS_CODE, statusCode(resp, exception)),
-                                                     Tag.create(HTTP_ROUTE, req.matchingPattern().orElse("")),
-                                                     Tag.create(SOCKET_NAME, req.listenerContext().config().name())));
+            AttributesBuilder attrBuilder = Attributes.builder();
+
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+                    .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
+                    .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
+                    .put(AttributeKey.longKey(STATUS_CODE), statusCode(resp, exception))
+                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
+                    .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
             if (config.isOptedIn(TIMER_NAME, SERVER_ADDRESS)) {
-                tags.add(Tag.create(SERVER_ADDRESS, req.requestedUri().host()));
+                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
             }
             if (config.isOptedIn(TIMER_NAME, SERVER_PORT)) {
-                tags.add(Tag.create(SERVER_PORT, Integer.toString(req.requestedUri().port())));
+                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
             }
 
             /*
@@ -152,14 +166,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             don't currently have a way to get the HTTP version at runtime from a request.
              */
 
-            /*
-            If we search for the meter and find it we avoid constructing the builder unnecessarily.
-             */
-            var timer = meterRegistry.timer(TIMER_NAME, tags)
-                    .orElse(meterRegistry.getOrCreate(Timer.builder(TIMER_NAME)
-                                                              .tags(tags)
-                                                              .buckets(BUCKET_BOUNDARIES)));
-            timer.record(endTime - startTime, TimeUnit.NANOSECONDS);
+            httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {
@@ -170,10 +177,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                             : resp.status().codeText();
         }
 
-        private String statusCode(RoutingResponse resp, Exception exception) {
+        private long statusCode(RoutingResponse resp, Exception exception) {
             return (exception != null)
-                    ? ""
-                    : resp.status().codeText();
+                    ? 0L
+                    : resp.status().code();
         }
     }
 }
