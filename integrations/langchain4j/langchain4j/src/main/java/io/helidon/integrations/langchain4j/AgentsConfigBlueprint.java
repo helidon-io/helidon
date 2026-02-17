@@ -38,7 +38,7 @@ import dev.langchain4j.guardrail.OutputGuardrail;
  * </ul>
  */
 @Prototype.Blueprint
-@Prototype.Configured(HelidonConstants.AGENTS_KEY)
+@Prototype.Configured("langchain4j.agents") // constants in annotations should not reference generated code
 @Prototype.CustomMethods(AgentsConfigSupport.class)
 interface AgentsConfigBlueprint {
 
