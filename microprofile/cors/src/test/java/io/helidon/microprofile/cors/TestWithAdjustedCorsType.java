@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.microprofile.cors;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddExtension;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.Extension;
@@ -68,7 +68,7 @@ class TestWithAdjustedCorsType extends BaseCrossOriginTest {
     }
 
     @Target(ElementType.TYPE)
-    static @interface AugmentingAnnotation {
+    @interface AugmentingAnnotation {
             class Literal extends AnnotationLiteral<AugmentingAnnotation> implements AugmentingAnnotation {
 
             private static final long serialVersionUID = 1L;

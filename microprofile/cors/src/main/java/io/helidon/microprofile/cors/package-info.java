@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
  * Adding the Helidon MP CORS module to your application enables CORS support automatically, implementing the configuration in
  * the {@value io.helidon.microprofile.cors.CorsCdiExtension#CORS_CONFIG_KEY} section of your MicroProfile configuration.
  * <p>
- * Many MP developers will use the {@link io.helidon.microprofile.cors.CrossOrigin} annotation on the endpoint implementations in
+ * Many MP developers will use the {@link io.helidon.webserver.cors.Cors} annotations on the endpoint implementations in
  * their code to set up the CORS behavior, but any values in configuration will override the annotations or set up CORS for
  * endpoints without the annotation.
  * </p>
@@ -38,7 +38,7 @@
  *         allow-methods: ["DELETE", "PUT"]
  *         allow-headers: ["X-bar", "X-foo"]
  *         allow-credentials: true
- *         max-age: -1
+ *         max-age: PT1H # Duration format (1 hour)
  * </pre>
  *
  */
