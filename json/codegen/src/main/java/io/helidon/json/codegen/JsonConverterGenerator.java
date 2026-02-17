@@ -84,39 +84,283 @@ class JsonConverterGenerator {
                 .addInterface(converterInterfaceType)
                 .javadoc(Javadoc.builder()
                                  .add("Json converter for {@link " + converterInfo.originalType().fqName() + "}.")
-                                 .build())
-                .addMethod(method -> generateToJsonMethod(classBuilder,
-                                                          method,
-                                                          converterInfo,
-                                                          toConfigure))
-                .addMethod(method -> generateFromJsonMethod(classBuilder,
-                                                            method,
-                                                            converterInfo,
-                                                            toConfigure));
+                                 .build());
+
+        boolean hasPolymorphismInfo = converterInfo.polymorphismInfo().isPresent();
+        if (hasPolymorphismInfo) {
+            classBuilder.addField(field -> field.name("configurator").type(JsonTypes.JSON_BINDING_CONFIGURATOR).isVolatile(true))
+                    .addMethod(method -> generatePolySerializeMethod(classBuilder,
+                                                                     method,
+                                                                     converterInfo,
+                                                                     converterInfo.polymorphismInfo().get(),
+                                                                     toConfigure))
+                    .addMethod(method -> generatePolyDeserializeMethod(classBuilder,
+                                                                       method,
+                                                                       converterInfo,
+                                                                       converterInfo.polymorphismInfo().get(),
+                                                                       toConfigure));
+        } else {
+            classBuilder.addMethod(method -> generateSerializeMethod(classBuilder,
+                                                                     method,
+                                                                     converterInfo,
+                                                                     toConfigure))
+                    .addMethod(method -> generateDeserializeMethod(classBuilder,
+                                                                   method,
+                                                                   converterInfo,
+                                                                   toConfigure));
+        }
 
         if (factory) {
-            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure, converterInfo));
+            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure, converterInfo, hasPolymorphismInfo));
             classBuilder.addMethod(method -> addTypeMethodFactory(method, converterInfo));
         } else {
-            classBuilder.addMethod(method -> addConfigurationMethod(method, toConfigure));
+            classBuilder.addMethod(method -> addConfigurationMethod(method, toConfigure, hasPolymorphismInfo));
             classBuilder.addMethod(method -> addTypeMethod(method, converterInfo));
         }
     }
 
-    private static void addConfigurationMethod(Method.Builder method, Map<String, TypeToConfigure> toConfigure) {
+    private static void generatePolySerializeMethod(ClassBase.Builder<?, ?> classBuilder,
+                                                    Method.Builder method,
+                                                    ConvertedTypeInfo converterInfo,
+                                                    PolymorphismInfo polymorphismInfo,
+                                                    Map<String, TypeToConfigure> toConfigure) {
+        method.name("serialize")
+                .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
+                .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
+                .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
+                .addAnnotation(Annotation.create(Override.class));
+
+        Set<String> createdSerializers = new HashSet<>();
+        Map<String, TypeName> aliases = polymorphismInfo.aliases();
+        boolean first = true;
+        for (TypeName typeName : aliases.values()) {
+            TypeName resolved = typeName.boxed();
+            String fieldName = "serializer" + ensureUpperStart(typeName);
+            if (!createdSerializers.contains(fieldName)) {
+                createdSerializers.add(fieldName);
+                TypeName converterType = TypeName.builder()
+                        .from(JsonTypes.JSON_SERIALIZER_TYPE)
+                        .addTypeArgument(resolved)
+                        .build();
+                classBuilder.addField(fieldBuilder -> fieldBuilder.name(fieldName)
+                        .isVolatile(true)
+                        .type(converterType));
+                toConfigure.putIfAbsent(fieldName,
+                                        new TypeToConfigure(TypeConfigMode.SERIALIZATION,
+                                                            fieldName,
+                                                            resolved,
+                                                            typeName,
+                                                            converterType));
+            }
+            if (first) {
+                first = false;
+                method.addContent("if (instance instanceof ");
+            } else {
+                method.addContent("}") //Automatic padding decrease
+                        .addContent(" else if (instance instanceof ");
+            }
+            method.addContent(resolved)
+                    .addContentLine(" _instance) {")
+                    .addContentLine(fieldName + ".serialize(generator, _instance, writeNulls);");
+        }
+        TypeName serializerType = TypeName.builder()
+                .from(JsonTypes.JSON_SERIALIZER_TYPE)
+                .addTypeArgument(converterInfo.originalType())
+                .build();
+        if (!first) {
+            method.addContent("}") //Automatic padding decrease
+                    .addContentLine(" else {");
+        }
+        method.addContent(serializerType)
+                .addContent(" defaultSerializer = (")
+                .addContent(serializerType)
+                .addContentLine(") configurator.serializer(instance.getClass());");
+        method.addContentLine("defaultSerializer.serialize(generator, instance, writeNulls);");
+        if (!first) {
+            method.addContent("}");
+        }
+    }
+
+    private static void generatePolyDeserializeMethod(ClassBase.Builder<?, ?> classBuilder,
+                                                      Method.Builder method,
+                                                      ConvertedTypeInfo converterInfo,
+                                                      PolymorphismInfo polymorphismInfo,
+                                                      Map<String, TypeToConfigure> toConfigure) {
+        Set<String> createdDeserializers = new HashSet<>();
+        boolean hasDefault = polymorphismInfo.defaultImpl().isPresent();
+
+        method.name("deserialize")
+                .returnType(converterInfo.wildcardsGenerics())
+                .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                .addAnnotation(Annotation.create(Override.class))
+                .addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
+                .addContent("if (lastByte != ")
+                .addContent(BYTES)
+                .addContentLine(".BRACE_OPEN_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected '{' to start an object\", lastByte);")
+                .addContentLine("}")
+                .addContentLine("parser.mark();")
+                .addContentLine("lastByte = parser.nextToken();")
+                .addContent("if (lastByte == ")
+                .addContent(BYTES)
+                .addContentLine(".BRACE_CLOSE_BYTE) {");
+
+        if (hasDefault) {
+            addPolyDeserializerInvocation(classBuilder,
+                                          method,
+                                          toConfigure,
+                                          polymorphismInfo.defaultImpl().get(),
+                                          createdDeserializers,
+                                          true);
+        } else {
+            method.addContentLine("throw parser.createException(\"Missing property containing alias\", lastByte);");
+        }
+        method.addContent("}")
+                .addContent(" else if (lastByte != ")
+                .addContent(BYTES)
+                .addContentLine(".DOUBLE_QUOTE_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
+                .addContentLine("}");
+
+        String polyPropertyName = polymorphismInfo.property();
+        int polyPropertyHash = calculateNameHash(polyPropertyName);
+        method.addContentLine("int hash = parser.readStringAsHash();")
+                .addContentLine("if (hash != " + polyPropertyHash + ") { //Property name: " + polyPropertyName)
+                .increaseContentPadding();
+        if (hasDefault) {
+            addPolyDeserializerInvocation(classBuilder,
+                                          method,
+                                          toConfigure,
+                                          polymorphismInfo.defaultImpl().get(),
+                                          createdDeserializers,
+                                          true);
+        } else {
+            method.addContentLine("throw parser.createException(\"Missing property containing alias\", lastByte);");
+        }
+        method.addContentLine("}");
+        method.addContentLine("lastByte = parser.nextToken();")
+                .addContent("if (lastByte != ")
+                .addContent(BYTES)
+                .addContentLine(".COLON_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected ':' to separate key and value\", lastByte);")
+                .addContentLine("}")
+                .addContentLine("lastByte = parser.nextToken();")
+                .addContent("if (lastByte != ")
+                .addContent(BYTES)
+                .addContentLine(".DOUBLE_QUOTE_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected '\\\"' as an alias value\", lastByte);")
+                .addContentLine("}")
+                .addContentLine("parser.dumpMark();")
+                .addContentLine("hash = parser.readStringAsHash();")
+                .addContentLine("lastByte = parser.nextToken();")
+                .addContent("if (lastByte == ")
+                .addContent(BYTES)
+                .addContentLine(".COMMA_BYTE) {")
+                .addContentLine("parser.nextToken();")
+                .addContent("}")
+                .addContent(" else if (lastByte != ")
+                .addContent(BYTES)
+                .addContentLine(".BRACE_CLOSE_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected ',' or '}' as the next bytes\", lastByte);")
+                .addContentLine("}");
+
+        boolean switchUsed = polymorphismInfo.aliases().size() > 9;
+        if (switchUsed) {
+            method.addContentLine("switch (hash) { ");
+        }
+        boolean first = true;
+        for (Map.Entry<String, TypeName> subtypes : polymorphismInfo.aliases().entrySet()) {
+            String alias = subtypes.getKey();
+            int aliasHash = calculateNameHash(alias);
+            String constantName = constantName("alias_" + alias);
+            classBuilder.addField(builder -> builder.isFinal(true)
+                    .isStatic(true)
+                    .type(int.class)
+                    .name(constantName)
+                    .defaultValue(String.valueOf(aliasHash)));
+            if (switchUsed) {
+                method.addContentLine("case " + constantName + ":");
+                method.increaseContentPadding();
+            } else if (first) {
+                method.addContentLine("if (hash == " + constantName + ") {");
+                first = false;
+            } else {
+                method.addContentLine(" else if (hash == " + constantName + ") {");
+            }
+            addPolyDeserializerInvocation(classBuilder, method, toConfigure, subtypes.getValue(), createdDeserializers, false);
+            if (!switchUsed) {
+                method.addContent("}");
+            } else {
+                method.decreaseContentPadding();
+            }
+        }
+        if (switchUsed) {
+            method.addContentLine("default:").padContent();
+        } else if (!first) {
+            method.addContentLine();
+        }
+        method.addContentLine("throw parser.createException(\"Unknown alias value\");");
+        if (switchUsed) {
+            method.addContentLine("}");
+        }
+    }
+
+    private static void addPolyDeserializerInvocation(ClassBase.Builder<?, ?> classBuilder,
+                                                      Method.Builder method,
+                                                      Map<String, TypeToConfigure> toConfigure,
+                                                      TypeName type,
+                                                      Set<String> createdDeserializers,
+                                                      boolean resetToMark) {
+        String fieldName = "deserializer" + ensureUpperStart(type);
+        createdDeserializers.add(fieldName);
+        TypeName converterType = TypeName.builder()
+                .from(JsonTypes.JSON_DESERIALIZER_TYPE)
+                .addTypeArgument(type)
+                .build();
+        classBuilder.addField(fieldBuilder -> fieldBuilder.name(fieldName)
+                .isVolatile(true)
+                .type(converterType));
+        toConfigure.putIfAbsent(fieldName,
+                                new TypeToConfigure(TypeConfigMode.DESERIALIZATION,
+                                                    fieldName,
+                                                    type,
+                                                    type,
+                                                    converterType));
+        if (resetToMark) {
+            method.addContentLine("parser.resetToMark();");
+            method.addContentLine("return " + fieldName + ".deserialize(parser);");
+        } else {
+            method.addContent("return " + fieldName + ".deserialize(")
+                    .addContent(JsonTypes.JSON_PARSER)
+                    .addContentLine(".objectStart(parser));");
+        }
+    }
+
+    private static void addConfigurationMethod(Method.Builder method,
+                                               Map<String, TypeToConfigure> toConfigure,
+                                               boolean saveConfigurator) {
         method.name("configure")
                 .addAnnotation(Annotation.create(Override.class))
                 .addParameter(param -> param.type(JsonTypes.JSON_BINDING_CONFIGURATOR).name(CONFIGURE_PARAM));
+
+        if (saveConfigurator) {
+            method.addContentLine("this.configurator = " + CONFIGURE_PARAM + ";");
+        }
 
         initializeNoRuntimeResolving(method, toConfigure);
     }
 
     private static void addConfigurationFactory(Method.Builder method,
                                                 Map<String, TypeToConfigure> toConfigure,
-                                                ConvertedTypeInfo convertedTypeInfo) {
+                                                ConvertedTypeInfo convertedTypeInfo,
+                                                boolean saveConfigurator) {
         method.name("configure")
                 .addAnnotation(Annotation.create(Override.class))
                 .addParameter(builder -> builder.type(JsonTypes.JSON_BINDING_CONFIGURATOR).name(CONFIGURE_PARAM));
+
+        if (saveConfigurator) {
+            method.addContentLine("this.configurator = " + CONFIGURE_PARAM + ";");
+        }
 
         initializeNoRuntimeResolving(method, toConfigure);
 
@@ -271,16 +515,19 @@ class JsonConverterGenerator {
         }
     }
 
-    private static void generateToJsonMethod(ClassBase.Builder<?, ?> classBuilder,
-                                             Method.Builder method,
-                                             ConvertedTypeInfo converterInfo,
-                                             Map<String, TypeToConfigure> toConfigure) {
+    private static void generateSerializeMethod(ClassBase.Builder<?, ?> classBuilder,
+                                                Method.Builder method,
+                                                ConvertedTypeInfo converterInfo,
+                                                Map<String, TypeToConfigure> toConfigure) {
         method.name("serialize")
                 .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
                 .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
                 .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
                 .addAnnotation(Annotation.create(Override.class))
                 .addContentLine("generator.writeObjectStart();");
+
+        addExtraProperties(method, converterInfo);
+
         List<JsonProperty> jsonProperties = converterInfo.jsonProperties()
                 .values()
                 .stream()
@@ -347,6 +594,12 @@ class JsonConverterGenerator {
         method.addContentLine("generator.writeObjectEnd();");
     }
 
+    private static void addExtraProperties(Method.Builder method, ConvertedTypeInfo converterInfo) {
+        for (Map.Entry<String, String> entry : converterInfo.extraProperties().entrySet()) {
+            method.addContentLine("generator.write(\"" + entry.getKey() + "\", \"" + entry.getValue() + "\");");
+        }
+    }
+
     private static boolean usableForSerialization(JsonProperty property) {
         if ((property.getterIgnored().isPresent() && property.getterIgnored().get()) || property.getterName().isEmpty()) {
             return !property.fieldIgnored() && property.directFieldRead();
@@ -360,10 +613,10 @@ class JsonConverterGenerator {
      * Generates the deserialize method that parses JSON object into the target type.
      * Handles different creation patterns: constructors, factory methods, builders.
      */
-    private static void generateFromJsonMethod(ClassBase.Builder<?, ?> classBuilder,
-                                               Method.Builder method,
-                                               ConvertedTypeInfo converterInfo,
-                                               Map<String, TypeToConfigure> toConfigure) {
+    private static void generateDeserializeMethod(ClassBase.Builder<?, ?> classBuilder,
+                                                  Method.Builder method,
+                                                  ConvertedTypeInfo converterInfo,
+                                                  Map<String, TypeToConfigure> toConfigure) {
         CreatorInfo creatorInfo = converterInfo.creatorInfo();
         ElementKind creatorKind = creatorInfo.creatorKind();
         boolean hasCreator = creatorKind != null && !creatorInfo.parameters().isEmpty();

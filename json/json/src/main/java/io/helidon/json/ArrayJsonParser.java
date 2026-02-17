@@ -99,6 +99,9 @@ class ArrayJsonParser implements JsonParser {
     private int currentIndex = 0;
     private final int bufferLength;
 
+    private int mark = -1;
+    private boolean replayMarked = false;
+
     ArrayJsonParser(byte[] buffer) {
         this.buffer = buffer;
         this.bufferLength = buffer.length;
@@ -239,6 +242,9 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonArray readJsonArray() {
+        if (currentByte() != '[') {
+            throw createException("Array start expected", currentByte());
+        }
         byte b = nextToken();
         if (b == ']') {
             return JsonArray.EMPTY_ARRAY;
@@ -719,6 +725,7 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonException createException(String message) {
+        dumpMark();
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
@@ -729,6 +736,33 @@ class ArrayJsonParser implements JsonParser {
                                          + "Data index: " + dataIndex + "\n"
                                          + "Data: \n"
                                          + bufferData.debugDataHex(false));
+    }
+
+    @Override
+    public void mark() {
+        if (replayMarked) {
+            throw new IllegalStateException("Parser has already been marked for replaying. "
+                                                    + "Cant do it twice without consuming the mark with either "
+                                                    + "dumpMark or resetToMark methods");
+        }
+        replayMarked = true;
+        mark = currentIndex;
+    }
+
+    @Override
+    public void dumpMark() {
+        replayMarked = false;
+        mark = -1;
+    }
+
+    @Override
+    public void resetToMark() {
+        if (replayMarked) {
+            replayMarked = false;
+            currentIndex = mark;
+        } else {
+            throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
+        }
     }
 
     @Override

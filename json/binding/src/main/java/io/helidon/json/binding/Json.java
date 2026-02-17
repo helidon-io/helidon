@@ -230,4 +230,60 @@ public final class Json {
 
     }
 
+    /**
+     * Polymorphism supporting annotation.
+     * This annotation defined which are the known subtypes of the annotated type
+     * and how to successfully deserialize into them.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public @interface TypeInfo {
+
+        /**
+         * Allowed aliases of the handled type.
+         *
+         * @return allowed aliases
+         */
+        Subtype[] value();
+
+        /**
+         * Key used for keeping the alias information.
+         * Default value is {@code @type}.
+         *
+         * @return key name
+         */
+        String key() default "@type";
+
+        /**
+         * The default implementation to be used when alias is not provided.
+         * The default value {@link java.lang.Object} is intended as a "not specified"
+         * marker. In that case, no default implementation will be used and an exception
+         * will be thrown instead.
+         *
+         * @return the default implementation of the annotated type.
+         */
+        Class<?> defaultImplementation() default Object.class;
+
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({})
+    public @interface Subtype {
+
+        /**
+         * Type alias which is used instead of a class name.
+         *
+         * @return alias value
+         */
+        String alias();
+
+        /**
+         * An actual type bound to the alias.
+         *
+         * @return alias bound type
+         */
+        Class<?> type();
+
+    }
+
 }

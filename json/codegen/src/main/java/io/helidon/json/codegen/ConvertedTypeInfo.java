@@ -17,6 +17,7 @@
 package io.helidon.json.codegen;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -54,10 +56,13 @@ record ConvertedTypeInfo(TypeName converterType,
                          TypeName objectsGenerics,
                          boolean nullable,
                          boolean failOnUnknown,
+                         Map<String, String> extraProperties,
                          Map<String, JsonProperty> jsonProperties,
                          Comparator<String> orderedProperties,
                          CreatorInfo creatorInfo,
-                         Optional<BuilderInfo> builderInfo, Map<TypeName, Integer> genericParamsWithIndexes) {
+                         Optional<BuilderInfo> builderInfo,
+                         Optional<PolymorphismInfo> polymorphismInfo,
+                         Map<TypeName, Integer> genericParamsWithIndexes) {
 
     private static final Set<ElementSignature> IGNORED_METHODS = Set.of(
             // equals, hash code and toString
@@ -77,10 +82,10 @@ record ConvertedTypeInfo(TypeName converterType,
             "REVERSE_ALPHABETICAL", Comparator.reverseOrder());
 
     public static ConvertedTypeInfo create(TypeInfo typeInfo, CodegenContext ctx) {
-        String classNameWithEnclosingNames = typeInfo.typeName().classNameWithEnclosingNames();
+        TypeName typeName = typeInfo.typeName();
+        String classNameWithEnclosingNames = typeName.classNameWithEnclosingNames();
         String replacedDot = classNameWithEnclosingNames.replace(".", "_");
-        String nameBase = typeInfo.typeName().fqName().replace(classNameWithEnclosingNames, replacedDot);
-        TypeName converterTypeName = TypeName.create(nameBase + "__GeneratedConverter");
+        String nameBase = typeName.fqName().replace(classNameWithEnclosingNames, replacedDot);
         AccessorStyle recordAccessors = typeInfo.annotation(JsonTypes.JSON_ENTITY)
                 .enumValue("accessorStyle", AccessorStyle.class)
                 .orElse(AccessorStyle.AUTO);
@@ -113,20 +118,60 @@ record ConvertedTypeInfo(TypeName converterType,
                                                            properties,
                                                            resolvedGenerics))
                 .or(() -> processBuilderInfo(typeInfo, properties, ctx, resolvedGenerics));
+        Optional<PolymorphismInfo> polymorphismInfo = typeInfo.findAnnotation(JsonTypes.JSON_TYPE_INFO)
+                .flatMap(ConvertedTypeInfo::processPolymorphismInfo);
+        TypeName converterTypeName = polymorphismInfo
+                .map(it -> TypeName.create(nameBase + "__GeneratedPolyConverter"))
+                .orElseGet(() -> TypeName.create(nameBase + "__GeneratedConverter"));
+        LinkedHashMap<String, String> extraProperties = new LinkedHashMap<>();
+        discoverExtraProperties(extraProperties, typeInfo, typeName);
         CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
         Map<String, JsonProperty> jsonProperties = finalizeJsonProperties(properties);
         Comparator<String> orderComparator = PROPERTY_ORDER.getOrDefault(orderStrategy, (o1, o2) -> 0);
         return new ConvertedTypeInfo(converterTypeName,
-                                     typeInfo.typeName(),
-                                     transformGenerics(typeInfo.typeName(), TypeArgument.create("?")),
-                                     transformGenerics(typeInfo.typeName(), TypeArgument.create(OBJECT)),
+                                     typeName,
+                                     transformGenerics(typeName, TypeArgument.create("?")),
+                                     transformGenerics(typeName, TypeArgument.create(OBJECT)),
                                      nullable,
                                      failOnUnknown,
+                                     extraProperties,
                                      jsonProperties,
                                      orderComparator,
                                      creatorInfo,
                                      builderInfo,
+                                     polymorphismInfo,
                                      genericParamsWithIndexes);
+    }
+
+    private static void discoverExtraProperties(LinkedHashMap<String, String> extraProperties, TypeInfo typeInfo, TypeName targetType) {
+        Optional<Annotation> typeInfoAnnotation = typeInfo.findAnnotation(JsonTypes.JSON_TYPE_INFO);
+        Optional<List<Annotation>> subtypes = typeInfoAnnotation.flatMap(Annotation::annotationValues);
+
+        for (Annotation annotation : subtypes.orElseGet(List::of)) {
+            if (annotation.typeValue("type").orElseThrow().equals(targetType)) {
+                String key = typeInfoAnnotation.get().stringValue("key").orElseThrow();
+                extraProperties.putFirst(key, annotation.stringValue("alias").orElseThrow());
+                targetType = typeInfo.typeName();
+                break;
+            }
+        }
+
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            discoverExtraProperties(extraProperties, interfaceInfo, targetType);
+        }
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private static Optional<PolymorphismInfo> processPolymorphismInfo(Annotation annotation) {
+        String key = annotation.stringValue("key").orElse("@type");
+        Optional<TypeName> defaultImpl = annotation.typeValue("defaultImplementation")
+                .filter(it -> !it.equals(OBJECT));
+        Map<String, TypeName> aliases = annotation.annotationValues()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(annot -> annot.stringValue("alias").get(),
+                                          annot -> annot.typeValue("type").get()));
+        return Optional.of(new PolymorphismInfo(key, defaultImpl, aliases));
     }
 
     private static Map<TypeName, Integer> obtainGenericParamsWithIndexes(TypeInfo typeInfo) {

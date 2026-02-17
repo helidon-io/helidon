@@ -88,6 +88,7 @@ class JsonTypesTest {
         checkField(toCheck, checked, fields, "JSON_SERIALIZE_NULLS", Json.SerializeNulls.class);
         checkField(toCheck, checked, fields, "JSON_PROPERTY_ORDER", Json.PropertyOrder.class);
         checkField(toCheck, checked, fields, "JSON_BUILDER_INFO", Json.BuilderInfo.class);
+        checkField(toCheck, checked, fields, "JSON_TYPE_INFO", Json.TypeInfo.class);
         checkField(toCheck, checked, fields, "JSON_FAIL_ON_UNKNOWN", Json.FailOnUnknown.class);
 
         checkField(toCheck, checked, fields, "JSON_DESERIALIZER_TYPE", JsonDeserializer.class);

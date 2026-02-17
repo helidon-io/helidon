@@ -32,6 +32,7 @@ final class JsonTypes {
     static final TypeName JSON_SERIALIZE_NULLS = TypeName.create("io.helidon.json.binding.Json.SerializeNulls");
     static final TypeName JSON_PROPERTY_ORDER = TypeName.create("io.helidon.json.binding.Json.PropertyOrder");
     static final TypeName JSON_BUILDER_INFO = TypeName.create("io.helidon.json.binding.Json.BuilderInfo");
+    static final TypeName JSON_TYPE_INFO = TypeName.create("io.helidon.json.binding.Json.TypeInfo");
     static final TypeName JSON_FAIL_ON_UNKNOWN = TypeName.create("io.helidon.json.binding.Json.FailOnUnknown");
 
     //Types
