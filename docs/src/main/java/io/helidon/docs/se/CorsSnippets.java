@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package io.helidon.docs.se;
 
-import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.CorsSupport;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.http.Method;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.cors.CorsFeature;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 
@@ -32,29 +31,20 @@ class CorsSnippets {
         }
     }
 
-    void snippet_1(HttpRouting.Builder routing) {
-        // tag::snippet_1[]
-        CorsSupport corsSupport = CorsSupport.builder()  // <1>
-                .addCrossOrigin(CrossOriginConfig.builder() // <2>
-                                        .allowOrigins("http://foo.com", "http://there.com") // <3>
-                                        .allowMethods("PUT", "DELETE") // <4>
-                                        .build()) // <5>
-                .addCrossOrigin(CrossOriginConfig.create()) // <6>
-                .build(); // <7>
-        routing.register("/greet", corsSupport, new GreetService()); // <8>
-        // end::snippet_1[]
-    }
+    void snippet_3() {
+        // tag::snippet_3[]
+        CorsFeature corsFeature = CorsFeature.builder() // <1>
+                .addPath(path -> path // <2>
+                        .pathPattern("/greet/*") // <3>
+                        .addAllowOrigin("http://foo.bar") // <4>
+                        .addAllowMethod(Method.PUT) // <5>
+                )
+                .build(); // <6>
 
-    void snippet_2(HttpRouting.Builder routing, Config config) {
-        // tag::snippet_2[]
-        CorsSupport corsSupport = CorsSupport.builder()
-                .update(builder -> {
-                    config.get("my-cors").ifExists(builder::mappedConfig); // <1>
-                    config.get("restrictive-cors").ifExists(builder::config); // <2>
-                    builder.addCrossOrigin(CrossOriginConfig.create()); // <3>
-                }).build();
-
-        routing.register("/greet", corsSupport, new GreetService()); // <4>
-        // end::snippet_2[]
+        WebServer.builder()
+                .port(8080)
+                .addFeature(corsFeature) // <7>
+                .build();
+        // end::snippet_3[]
     }
 }

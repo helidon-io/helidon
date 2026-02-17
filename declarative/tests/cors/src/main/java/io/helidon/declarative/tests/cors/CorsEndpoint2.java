@@ -47,7 +47,7 @@ class CorsEndpoint2 {
     void put() {
     }
 
-    @Http.HttpMethod(Method.OPTIONS_NAME)
+    @Http.OPTIONS
     @Cors.AllowOrigins("${app.cors.allow-origins:http://foos.bar,http://bars.foo}")
     @Cors.AllowHeaders({"X-foo", "X-bar"})
     @Cors.AllowMethods({Method.DELETE_NAME, Method.PUT_NAME, "LIST"})

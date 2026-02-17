@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.docs.mp.cors;
 
-import io.helidon.microprofile.cors.CrossOrigin;
+import io.helidon.webserver.cors.Cors;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -47,14 +47,14 @@ class CorsSnippets {
         }
 
         @OPTIONS
-        @CrossOrigin()
+        @Cors.Defaults
         public void optionsForRetrievingUnnamedGreeting() { // <4>
         }
 
         @OPTIONS
         @Path("/greeting")
-        @CrossOrigin(value = {"http://foo.com", "http://there.com"},
-                     allowMethods = {HttpMethod.PUT})
+        @Cors.AllowOrigins({"http://foo.com", "http://there.com"})
+        @Cors.AllowMethods(HttpMethod.PUT)
         public void optionsForUpdatingGreeting() { // <5>
         }
     }
