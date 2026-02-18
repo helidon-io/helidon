@@ -26,6 +26,7 @@ public class TestSpanExporterProvider implements ConfigurableSpanExporterProvide
     private static final LazyValue<TestSpanExporter> SPAN_EXPORTER = LazyValue.create(TestSpanExporter::new);
 
     public TestSpanExporterProvider() {
+        System.err.println("provider ctor");
     }
 
     @Override
