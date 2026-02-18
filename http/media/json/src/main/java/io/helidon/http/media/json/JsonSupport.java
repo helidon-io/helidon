@@ -27,6 +27,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 
 /**
@@ -78,6 +79,15 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
      */
     public static JsonSupport create(JsonSupportConfig config) {
         return new JsonSupport(config);
+    }
+
+    /**
+     * Create a JSON writer with default settings.
+     *
+     * @return a writer for {@link io.helidon.json.JsonObject}
+     */
+    public static EntityWriter<JsonObject> serverResponseWriter() {
+        return new JsonValueWriter<>(JsonSupportConfig.create());
     }
 
     /**
@@ -150,6 +160,10 @@ public class JsonSupport implements MediaSupport, RuntimeType.Api<JsonSupportCon
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
+        if (!isSupportedType(type)) {
+            return WriterResponse.unsupported();
+        }
+
         // client request writer
         var configuredContentType = requestHeaders.contentType();
 
