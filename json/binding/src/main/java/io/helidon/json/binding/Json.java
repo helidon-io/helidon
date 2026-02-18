@@ -266,6 +266,10 @@ public final class Json {
 
     }
 
+    /**
+     * Polymorphic subtype information.
+     * Contains alias and specific type bound to it.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({})
     public @interface Subtype {
