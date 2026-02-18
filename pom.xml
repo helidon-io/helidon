@@ -200,6 +200,7 @@
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
+        <javadoc.link.grpc-api>https://grpc.github.io/grpc-java/javadoc</javadoc.link.grpc-api>
 
         <!--suppress UnresolvedMavenProperty -->
         <javadoc.pkg.dir>${top.parent.basedir}/etc/javadoc</javadoc.pkg.dir>
@@ -452,6 +453,10 @@
                                 <url>${javadoc.link.oci-addons-oke-workload-identity}</url>
                                 <location>${javadoc.pkg.dir}/oci-addons-oke-workload-identity</location>
                             </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.grpc-api}</url>
+                                <location>${javadoc.pkg.dir}/grpc-api</location>
+                            </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
@@ -577,6 +582,7 @@
                                 <failOnWarning>true</failOnWarning>
                                 <ignoredDependencies>
                                     <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
+                                    <dependency>io.helidon.config:helidon-config-metadata:*</dependency>
                                 </ignoredDependencies>
                             </configuration>
                         </execution>
