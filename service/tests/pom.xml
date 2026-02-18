@@ -57,6 +57,7 @@
         <module>events</module>
         <module>maven-plugin</module>
         <module>system-exit</module>
+        <module>splitpackage</module>
     </modules>
 
 </project>
