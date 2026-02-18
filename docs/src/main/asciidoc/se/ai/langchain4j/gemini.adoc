@@ -1,0 +1,90 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4j Google Gemini Provider
+:description: LangChain4j Google Gemini
+:keywords: helidon, AI, LangChain4j, LC4J, Google Gemini
+:feature-name: LangChain4j Integration
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<GoogleAiGeminiChatModel, GoogleAiGeminiChatModel>>
+** <<GoogleAiGeminiStreamingChatModel, GoogleAiGeminiStreamingChatModel>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+This module adds support for selected https://ai.google.dev/gemini-api/docs/models[Google Gemini] models.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4j core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>
+</dependency>
+----
+
+== Components
+
+=== GoogleAiGeminiChatModel
+
+To automatically create and add `GoogleAiGeminiChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  google-gemini:
+    chat-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+include::{rootdir}/config/io_helidon_integrations_langchain4j_providers_gemini_GoogleAiGeminiChatModelConfig.adoc[tag=config,leveloffset=+1]
+
+=== GoogleAiGeminiStreamingChatModel
+
+To automatically create and add `GoogleAiGeminiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  google-gemini:
+    streaming-chat-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+include::{rootdir}/config/io_helidon_integrations_langchain4j_providers_gemini_GoogleAiGeminiStreamingChatModelConfig.adoc[tag=config,leveloffset=+1]
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4j Integration]
+* https://docs.langchain4j.dev/integrations/language-models/google-ai-gemini[LangChain4j Google AI Gemini Documentation]
+* https://ai.google.dev/gemini-api/docs[Google AI Gemini Website]

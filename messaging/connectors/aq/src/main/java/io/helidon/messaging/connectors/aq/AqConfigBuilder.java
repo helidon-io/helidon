@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package io.helidon.messaging.connectors.aq;
 
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.messaging.ConnectorConfigBuilder;
 import io.helidon.messaging.connectors.jms.AcknowledgeMode;
+import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.Type;
 
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
@@ -25,6 +28,7 @@ import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 /**
  * Build AQ specific config.
  */
+@Configured
 public class AqConfigBuilder extends ConnectorConfigBuilder {
 
     AqConfigBuilder() {
@@ -56,6 +60,7 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * @param dataSourceName data source identifier
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder dataSource(String dataSourceName) {
         super.property(AqConnector.DATASOURCE_ATTRIBUTE, dataSourceName);
         return this;
@@ -72,32 +77,35 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * duplicate messages being delivered.</li>
      * </ul>
      *
-     * <ul>
-     * <li>Type: enum</li>
-     * <li>Default: AUTO_ACKNOWLEDGE</li>
-     * <li>Valid Values: AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE</li>
-     * </ul>
-     *
      * @param acknowledgeMode AUTO_ACKNOWLEDGE, CLIENT_ACKNOWLEDGE, DUPS_OK_ACKNOWLEDGE
      * @return this builder
      */
+    @ConfiguredOption("AUTO_ACKNOWLEDGE")
     public AqConfigBuilder acknowledgeMode(AcknowledgeMode acknowledgeMode) {
         super.property("acknowledge-mode", acknowledgeMode.name());
         return this;
     }
 
     /**
-     * Indicates whether the session will use a local transaction.
+     * Select {@link jakarta.jms.ConnectionFactory ConnectionFactory}
+     * in case factory is injected as a named bean or configured with name.
      *
-     * <ul>
-     * <li>Type: boolean</li>
-     * <li>Default: false</li>
-     * <li>Valid Values: true, false</li>
-     * </ul>
+     * @param factoryName connection factory name
+     * @return this builder
+     */
+    @ConfiguredOption
+    public AqConfigBuilder namedFactory(String factoryName) {
+        super.property(JmsConnector.NAMED_FACTORY_ATTRIBUTE, factoryName);
+        return this;
+    }
+
+    /**
+     * Indicates whether the session will use a local transaction.
      *
      * @param transacted true if so
      * @return this builder
      */
+    @ConfiguredOption("false")
     public AqConfigBuilder transacted(boolean transacted) {
         super.property("transacted", String.valueOf(transacted));
         return this;
@@ -106,13 +114,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * User name used for creating JMS connection.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param username JMS connection user name
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder username(String username) {
         super.property("username", username);
         return this;
@@ -121,13 +126,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Password used for creating JMS connection.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param password JMS connection password
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder password(String password) {
         super.property("password", password);
         return this;
@@ -137,17 +139,11 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * Specify if connection is {@link io.helidon.messaging.connectors.jms.Type#QUEUE queue}
      * or {@link io.helidon.messaging.connectors.jms.Type#TOPIC topic}.
      *
-     * <ul>
-     * <li>Type: enum</li>
-     * <li>Default: {@link io.helidon.messaging.connectors.jms.Type#QUEUE QUEUE}</li>
-     * <li>Valid Values: {@link io.helidon.messaging.connectors.jms.Type#QUEUE QUEUE},
-     * {@link io.helidon.messaging.connectors.jms.Type#TOPIC TOPIC}</li>
-     * </ul>
-     *
      * @param type {@link io.helidon.messaging.connectors.jms.Type#QUEUE queue} or
      *             {@link io.helidon.messaging.connectors.jms.Type#TOPIC topic}
      * @return this builder
      */
+    @ConfiguredOption("QUEUE")
     public AqConfigBuilder type(Type type) {
         super.property("type", type.toString());
         return this;
@@ -156,13 +152,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Queue or topic name.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param destination queue or topic name
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder destination(String destination) {
         super.property("destination", destination);
         return this;
@@ -171,13 +164,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Use supplied destination name and {@link Type#QUEUE QUEUE} as type.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param destination queue name
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder queue(String destination) {
         this.type(Type.QUEUE);
         this.destination(destination);
@@ -187,13 +177,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Use supplied destination name and {@link Type#TOPIC TOPIC} as type.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param destination topic name
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder topic(String destination) {
         this.type(Type.TOPIC);
         this.destination(destination);
@@ -205,13 +192,13 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * Expression can only access headers and properties, not the payload.
      *
      * <ul>
-     * <li>Type: string</li>
      * <li>Example: NewsType = ’Sports’ OR NewsType = ’Opinion’</li>
      * </ul>
      *
      * @param messageSelector message selector expression
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder messageSelector(String messageSelector) {
         super.property("message-selector", messageSelector);
         return this;
@@ -220,14 +207,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Timeout for polling for next message in every poll cycle in millis.
      *
-     * <ul>
-     * <li>Type: milliseconds</li>
-     * <li>Default: 50</li>
-     * </ul>
-     *
      * @param pollTimeout timeout of polling for next message
      * @return this builder
      */
+    @ConfiguredOption("50")
     public AqConfigBuilder pollTimeout(long pollTimeout) {
         super.property("poll-timeout", String.valueOf(pollTimeout));
         return this;
@@ -236,14 +219,10 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
     /**
      * Period for executing poll cycles in millis.
      *
-     * <ul>
-     * <li>Type: milliseconds</li>
-     * <li>Default: 100</li>
-     * </ul>
-     *
      * @param periodExecutions period for executing poll cycles in millis
      * @return this builder
      */
+    @ConfiguredOption("100")
     public AqConfigBuilder periodExecutions(long periodExecutions) {
         super.property("period-executions", String.valueOf(periodExecutions));
         return this;
@@ -253,15 +232,63 @@ public class AqConfigBuilder extends ConnectorConfigBuilder {
      * When multiple channels share same session-group-id,
      * they share same JMS session.
      *
-     * <ul>
-     * <li>Type: string</li>
-     * </ul>
-     *
      * @param sessionGroupId identifier for channels sharing same JMS session
      * @return this builder
      */
+    @ConfiguredOption
     public AqConfigBuilder sessionGroupId(String sessionGroupId) {
         super.property("session-group-id", sessionGroupId);
+        return this;
+    }
+
+    /**
+     * Client identifier for JMS connection.
+     *
+     * @param clientId client identifier for JMS connection
+     * @return this builder
+     */
+    @ConfiguredOption
+    public AqConfigBuilder clientId(String clientId) {
+        super.property("client-id", clientId);
+        return this;
+    }
+
+    /**
+     * Indicates whether the consumer should be created as durable
+     * (only relevant for topic destinations).
+     *
+     * @param durable {@code true} to create a durable consumer
+     * @return this builder
+     */
+    @ConfiguredOption("false")
+    public AqConfigBuilder durable(boolean durable) {
+        super.property("durable", String.valueOf(durable));
+        return this;
+    }
+
+    /**
+     * Subscriber name used to identify a durable subscription.
+     *
+     * @param subscriberName name of the subscriber
+     * @return this builder
+     */
+    @ConfiguredOption
+    public AqConfigBuilder subscriberName(String subscriberName) {
+        super.property("subscriber-name", subscriberName);
+        return this;
+    }
+
+    /**
+     * When set to {@code true}, messages published by this connection, or
+     * any connection with the same client identifier, will not be delivered
+     * to this durable subscription.
+     *
+     * @param nonLocal {@code true} to disable delivery of local messages
+     * @return this builder
+     */
+    @ConfiguredOption("false")
+    public AqConfigBuilder nonLocal(boolean nonLocal) {
+        super.property("non-local", String.valueOf(nonLocal));
         return this;
     }
 }

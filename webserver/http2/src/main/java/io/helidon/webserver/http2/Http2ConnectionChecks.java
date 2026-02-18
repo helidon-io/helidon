@@ -18,10 +18,10 @@ package io.helidon.webserver.http2;
 
 import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
-import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.webserver.CloseConnectionException;
 
 class Http2ConnectionChecks {
     private static final System.Logger LOGGER = System.getLogger(Http2ConnectionChecks.class.getName());
@@ -82,9 +82,7 @@ class Http2ConnectionChecks {
         writer.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
         // Finish to avoid implicit goaway after close
         connection.finish();
-        // Close and interrupt
-        connection.close(true);
         // Avoid further processing changing the connection state
-        throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, msg);
+        throw new CloseConnectionException("Enhance your calm.");
     }
 }

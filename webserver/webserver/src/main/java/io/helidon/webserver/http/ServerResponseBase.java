@@ -58,6 +58,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     /**
+     * Stream result OK.
+     */
+    protected static final Header STREAM_RESULT_OK = HeaderValues.create(STREAM_RESULT_NAME, "OK");
+
+    /**
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
@@ -267,7 +272,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @return output stream to write plain data to
      */
     protected OutputStream contentEncode(OutputStream outputStream) {
-        if (contentEncodingContext.contentEncodingEnabled()) {
+        if (contentEncodingContext.contentEncodingEnabled() && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
 

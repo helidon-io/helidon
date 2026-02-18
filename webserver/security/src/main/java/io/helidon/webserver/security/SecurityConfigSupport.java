@@ -22,6 +22,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Contexts;
+import io.helidon.http.Method;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.Security;
 
@@ -29,6 +30,7 @@ class SecurityConfigSupport {
     private SecurityConfigSupport() {
     }
 
+    @SuppressWarnings("removal")
     static class SecurityFeatureConfigDecorator implements Prototype.BuilderDecorator<SecurityFeatureConfig.BuilderBase<?, ?>> {
         private static final System.Logger LOGGER = System.getLogger(SecurityFeatureConfig.class.getName());
 
@@ -162,5 +164,16 @@ class SecurityConfigSupport {
                 builder.audit(true);
             }
         }
+    }
+
+    static class PathConfigCustomMethods {
+        private PathConfigCustomMethods() {
+        }
+
+        @Prototype.ConfigFactoryMethod("methods")
+        static Method createMethods(Config config) {
+            return config.asString().map(Method::create).orElseThrow();
+        }
+
     }
 }

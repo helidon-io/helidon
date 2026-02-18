@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HttpPrologue;
 
 /**
  * WebSocket session.
@@ -90,4 +91,14 @@ public interface WsSession {
      * @return socket context
      */
     SocketContext socketContext();
+
+    /**
+     * The HTTP prologue received when opening this session.
+     * This will only be available on server sessions.
+     *
+     * @return HTTP prologue
+     */
+    default HttpPrologue prologue() {
+        throw new UnsupportedOperationException();
+    }
 }

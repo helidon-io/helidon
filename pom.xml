@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Force upgrade fourth party dependency of jlama langchain4j provider  -->
-        <version.lib.jinjava>2.8.1</version.lib.jinjava>
+        <version.lib.jinjava>2.8.3</version.lib.jinjava>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
         <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
@@ -75,8 +75,6 @@
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
-        <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
-        <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.junit-platform>1.9.3</version.lib.junit-platform>
@@ -101,7 +99,7 @@
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
-        <version.lib.commons-text>1.11.0</version.lib.commons-text>
+        <version.lib.commons-text>1.15.0</version.lib.commons-text>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
         <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
@@ -149,7 +147,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>12.1.8</version.plugin.dependency-check>
+        <version.plugin.dependency-check>12.1.9</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -664,8 +662,6 @@
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                        <!--suppress MavenModelInspection -->
-                        <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
                             <exclude>io.helidon.tracing:helidon-tracing-tests</exclude>
@@ -1199,7 +1195,7 @@
                 <version>${version.lib.maven-wagon}</version>
             </dependency>
             <dependency>
-                <!-- for dependency convergence with handlebars -->
+                <!-- for dependency convergence with handlebars and force upgrade -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${version.lib.commons-text}</version>

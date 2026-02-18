@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
     private boolean wasLastDataFrame = false;
+    private boolean hasEntity = true;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
     // used from this instance and from connection
@@ -113,7 +114,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
      * A new HTTP/2 server stream.
      *
      * @param ctx                   connection context
-     * @param streams
+     * @param streams               connection streams
      * @param routing               HTTP routing
      * @param http2Config           HTTP/2 configuration
      * @param subProviders          HTTP/2 sub protocol selectors
@@ -240,6 +241,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     public void headers(Http2Headers headers, boolean endOfStream) {
         this.headers = headers;
         if (endOfStream) {
+            hasEntity = false;
             closeFromRemote();
         } else {
             this.state = Http2StreamState.OPEN;
@@ -247,6 +249,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
+            if (expectedLength == 0) {
+                hasEntity = false;
+            }
         }
     }
 
@@ -583,8 +588,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    headers,
                                                                    decoder,
                                                                    streamId,
+                                                                   hasEntity,
                                                                    this::readEntityFromPipeline,
-                                                                   outcome);
+                                                                   outcome,
+                                                                   http2Config.maxBufferedEntitySize().toBytes());
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {

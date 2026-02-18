@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
     }
 
     private AuthenticationResponse mapSubject(AuthenticationResponse prevResponse) {
-        ProviderRequest providerRequest = new ProviderRequest(context, request.resources());
+        ProviderRequest providerRequest = ProviderRequest.create(context, request.resources());
 
         if (prevResponse.status() == SecurityResponse.SecurityStatus.SUCCESS) {
             AuthenticationResponse newResponse = security.subjectMapper()
@@ -70,7 +70,7 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
 
     private AuthenticationResponse authenticate(AuthenticationProvider providerInstance) {
         // prepare request to provider
-        ProviderRequest providerRequest = new ProviderRequest(context, request.resources());
+        ProviderRequest providerRequest = ProviderRequest.create(context, request.resources());
         AuthenticationResponse response = providerInstance.authenticate(providerRequest);
 
         try {

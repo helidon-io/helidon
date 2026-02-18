@@ -46,7 +46,7 @@ class PropertySupport {
      * @param namePart the name element
      * @return new instance of entity property
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Property create(CharSequence namePart) {
         Objects.requireNonNull(namePart, "Value of namePart is null");
         return Property.builder()
@@ -60,7 +60,7 @@ class PropertySupport {
      * @param nameParts the name elements
      * @return new instance of entity property
      */
-    @Prototype.FactoryMethod
+    @Prototype.PrototypeFactoryMethod
     static Property create(CharSequence[] nameParts) {
         Objects.requireNonNull(nameParts, "Value of nameParts is null");
         if (nameParts.length < 1) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -284,12 +285,12 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
         String manifestFile = config.manifestFile();
         Set<String> metadataFiles = config.metadataFiles();
 
-        var manfiestStream = cl.resources(location + "/" + manifestFile)
+        var manifestStream = cl.resources(location + "/" + manifestFile)
                 .distinct()
                 .flatMap(it -> parseHelidonManifest(cl, it));
         var nonManfiestStream = defaultMetadata(cl, location, metadataFiles);
 
-        Stream.concat(manfiestStream, nonManfiestStream)
+        Stream.concat(manifestStream, nonManfiestStream)
                 // remove duplicates, which may happen
                 .distinct()
                 .forEach(it -> metadataMap.computeIfAbsent(it.fileName(), k -> new ArrayList<>()).add(it));
@@ -343,21 +344,30 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
                 // the line now contains an exact location of a resource
                 String resourceLocation = line;
                 FoundFile fileName = fileName(line);
-                URL resourceUrl = cl.getResource(resourceLocation);
-                if (resourceUrl == null) {
+
+                List<URL> resources = cl.resources(resourceLocation)
+                        .collect(Collectors.toUnmodifiableList());
+
+
+                if (resources.isEmpty()) {
                     throw new IllegalArgumentException("Metadata file " + resourceLocation + " not found, it is defined in "
                                                                + "manifest " + url + " at line " + lineNumber);
                 }
 
-                if (LOGGER.isLoggable(Level.DEBUG)) {
-                    LOGGER.log(Level.DEBUG, "Adding file from manifest: " + resourceLocation + " at line " + lineNumber);
-                }
+                // we can safely add even resources that are duplicate, as there is a distinct on result of this method call
+                for (URL resourceUrl : resources) {
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG,
+                                   "Adding file from manifest: " + resourceLocation + " at line "
+                                           + lineNumber + ", location: " + resourceUrl);
+                    }
 
-                // only add files that are either in non-default directory, or that we do not know about
-                // if in default directory, and in metadataFiles, we will look it up later
-                foundFiles.add(MetadataFileImpl.create(resourceLocation,
-                                                       fileName.fileName(),
-                                                       resourceUrl));
+                    // only add files that are either in non-default directory, or that we do not know about
+                    // if in default directory, and in metadataFiles, we will look it up later
+                    foundFiles.add(MetadataFileImpl.create(resourceLocation,
+                                                           fileName.fileName(),
+                                                           resourceUrl));
+                }
             }
 
             return foundFiles.stream();

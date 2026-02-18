@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public final class ConfigFilters {
          * @return a provider of config filter
          */
         public Function<Config, ConfigFilter> build() {
-            return (c) -> new ValueResolvingFilter(failOnMissingReference);
+            return new FilterProvider(failOnMissingReference);
         }
 
         @Override
@@ -120,5 +120,22 @@ public final class ConfigFilters {
             return build();
         }
 
+        private static class FilterProvider implements Function<Config, ConfigFilter> {
+            private final boolean failOnMissingReference;
+
+            private FilterProvider(boolean failOnMissingReference) {
+                this.failOnMissingReference = failOnMissingReference;
+            }
+
+            @Override
+            public ConfigFilter apply(Config config) {
+                return new ValueResolvingFilter(failOnMissingReference);
+            }
+
+            @Override
+            public String toString() {
+                return "ValueResolvingFilterProvider(failOnMissingReference=" + failOnMissingReference + ")";
+            }
+        }
     }
 }

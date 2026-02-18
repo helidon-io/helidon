@@ -16,9 +16,11 @@
 
 package io.helidon.webserver;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.nio.channels.SocketChannel;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +30,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;
@@ -36,9 +40,11 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.Tls;
@@ -66,7 +72,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
     private final Map<String, ServerConnection> activeConnections;
-    private final Socket socket;
+    private final SocketChannel socket;
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
@@ -83,7 +89,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
                       Map<String, ServerConnection> activeConnections,
-                      Socket socket,
+                      SocketChannel socket,
                       String serverChannelId,
                       Router router,
                       Tls tls) {
@@ -102,7 +108,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     @Override
     public boolean canInterrupt() {
-       return connection instanceof InterruptableTask<?> task && task.canInterrupt();
+        return connection instanceof InterruptableTask<?> task && task.canInterrupt();
     }
 
     @Override
@@ -111,36 +117,15 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
         // proxy protocol before SSL handshake
         if (listenerConfig.enableProxyProtocol()) {
-            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
+            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket.socket(), channelId);
             proxyProtocolData = handler.get();
         }
 
         // handle SSL and init helidonSocket, reader and writer
         try {
-            if (tls.enabled()) {
-                SSLSocket sslSocket = (SSLSocket) socket;
-                sslSocket.setHandshakeApplicationProtocolSelector(
-                        (sslEngine, list) -> {
-                            for (String protocolId : list) {
-                                if (connectionProviders.supportedApplicationProtocols()
-                                        .contains(protocolId)) {
-                                    return protocolId;
-                                }
-                            }
-                            return null;
-                        });
-                try {
-                    sslSocket.startHandshake();
-                } catch (Exception e) {
-                    sslSocket.close();
-                    throw e;
-                }
-                helidonSocket = TlsSocket.server(sslSocket, channelId, serverChannelId);
-            } else {
-                helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
-            }
+            helidonSocket = createSocket(tls, socket, channelId);
 
-            reader = new DataReader(new MapExceptionDataSupplier(helidonSocket));
+            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
             writer = SocketWriter.create(listenerContext.executor(),
                                          helidonSocket,
                                          listenerConfig.writeQueueLength(),
@@ -150,11 +135,13 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
             }
+            closeChannel(channelId);
             return;
         } catch (Exception e) {
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
             }
+            closeChannel(channelId);
             return;
         }
 
@@ -212,7 +199,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             connectionSemaphore.release();
             activeConnections.remove(socketsId);
             writer.close();
-            closeChannel();
+            closeChannel(channelId);
         }
 
         helidonSocket.log(LOGGER, DEBUG, "socket closed");
@@ -276,6 +263,65 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public HelidonSocket serverSocket() {
         return helidonSocket;
+    }
+
+    private HelidonSocket createSocket(Tls tls, SocketChannel socket, String channelId) throws IOException {
+        if (listenerConfig.useNio()) {
+          return createNioSocket(tls, socket, channelId);
+        }
+        return createByteSocket(tls, socket, channelId);
+    }
+
+    private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) {
+        if (tls.enabled()) {
+            var address = channel.socket().getRemoteSocketAddress();
+
+            SSLEngine engine;
+            if (address instanceof InetSocketAddress isa) {
+                engine = tls.sslContext().createSSLEngine(isa.getHostName(), isa.getPort());
+            } else {
+                engine = tls.sslContext().createSSLEngine();
+            }
+
+            SSLParameters parameters = tls.sslParameters();
+            parameters.setEndpointIdentificationAlgorithm("");
+            engine.setSSLParameters(parameters);
+
+            engine.setHandshakeApplicationProtocolSelector((sslEngine, list) -> {
+                for (String protocolId : list) {
+                    if (connectionProviders.supportedApplicationProtocols()
+                            .contains(protocolId)) {
+                        return protocolId;
+                    }
+                }
+                return null;
+            });
+
+            return TlsNioSocket
+                    .server(channel, engine, channelId, serverChannelId);
+        }
+        return NioSocket.server(channel, channelId, serverChannelId);
+    }
+
+    private HelidonSocket createByteSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
+        if (tls.enabled()) {
+            SSLSocket sslSocket = (SSLSocket) tls.sslContext()
+                    .getSocketFactory()
+                    .createSocket(channel.socket(), null, false);
+            sslSocket.setHandshakeApplicationProtocolSelector(
+                    (sslEngine, list) -> {
+                        for (String protocolId : list) {
+                            if (connectionProviders.supportedApplicationProtocols()
+                                    .contains(protocolId)) {
+                                return protocolId;
+                            }
+                        }
+                        return null;
+                    });
+            sslSocket.startHandshake();
+            return TlsSocket.server(sslSocket, channelId, serverChannelId);
+        }
+        return PlainSocket.server(channel.socket(), channelId, serverChannelId);
     }
 
     private ServerConnection identifyConnection() {
@@ -353,11 +399,21 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
     }
 
-    private void closeChannel() {
-        try {
-            helidonSocket.close();
-        } catch (Throwable e) {
-            helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
+    private void closeChannel(String channelId) {
+        if (helidonSocket == null) {
+            try {
+                socket.close();
+            } catch (Throwable e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
+                }
+            }
+        } else {
+            try {
+                helidonSocket.close();
+            } catch (Throwable e) {
+                helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
+            }
         }
     }
 

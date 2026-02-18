@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.scheduling;
+
+import java.time.ZoneId;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -38,6 +40,21 @@ interface CronConfigBlueprint extends TaskConfigBlueprint, Prototype.Factory<Cro
     @Option.Configured
     @Option.Required
     String expression();
+
+    /**
+     * Time zone to use for cron expression evaluation.
+     * Defaults to {@link java.time.ZoneId#systemDefault()}.
+     * <p>
+     * The time zone determines when the cron expression triggers. For example,
+     * a cron expression {@code 0 0 9 * * ?} (every day at 9:00 AM) with zone
+     * {@code America/New_York} will trigger at 9:00 AM Eastern Time, regardless
+     * of the system's default time zone.
+     *
+     * @return time zone for cron expression evaluation
+     */
+    @Option.Configured
+    @Option.DefaultCode("@java.time.ZoneId@.systemDefault()")
+    ZoneId zone();
 
     /**
      * Allow concurrent execution if previous task didn't finish before next execution.

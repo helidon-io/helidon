@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.LazyConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
 
 /**
@@ -334,12 +335,26 @@ public final class ConfigSources {
     /**
      * Environment variables config source.
      */
-    static final class EnvironmentVariablesConfigSource extends MapConfigSource {
-        /**
-         * Constructor.
+    static final class EnvironmentVariablesConfigSource extends MapConfigSource implements LazyConfigSource {
+        /*
+        This config source combines a map config source and lazy - the initial value will be the
+        existing environment variables as they are (i.e. USER_HOME), and mapping will be done as part of the
+        LazyConfigSource implementation (i.e. when user.home is requested, we will return value of USER_HOME)
          */
         EnvironmentVariablesConfigSource() {
-            super(MapConfigSource.builder().map(EnvironmentVariables.expand()).name(""));
+            /*
+            This is only for backward compatibility, as the method ConfigSources.environmentVariables() returns
+            a MapConfigSource
+             */
+            super(MapConfigSource.builder()
+                          .map(Map.of())
+                          .name(""));
+        }
+
+        @Override
+        public Optional<ConfigNode> node(String key) {
+            // actual check against environment variables
+            return EnvVars.node(key);
         }
     }
 

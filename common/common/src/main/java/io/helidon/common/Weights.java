@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,6 @@ import java.util.List;
  * Weight utilities.
  */
 public final class Weights {
-    // used to identify components that do not have a weight
-    private static final double INVALID_WEIGHT = -101;
-
     private Weights() {
     }
 
@@ -120,38 +117,16 @@ public final class Weights {
                 return -1;
             }
 
-            double firstWeight = find(o1, INVALID_WEIGHT);
-            double secondWeight = find(o2, INVALID_WEIGHT);
+            double firstWeight = find(o1, Weighted.DEFAULT_WEIGHT);
+            double secondWeight = find(o2, Weighted.DEFAULT_WEIGHT);
 
-            if (firstWeight != INVALID_WEIGHT && secondWeight != INVALID_WEIGHT) {
-                // both are weighted
-                if (firstWeight != secondWeight) {
-                    // only return if they differ
-                    return Double.compare(secondWeight, firstWeight);
-                }
+            if (firstWeight != secondWeight) {
+                // only return if they differ
+                return Double.compare(secondWeight, firstWeight);
             }
 
-            if (firstWeight != INVALID_WEIGHT && secondWeight != INVALID_WEIGHT) {
-                // same weight, compare based on class name
-                return o1.getClass().getName().compareTo(o2.getClass().getName());
-            }
-
-            // both are non-null and at least one of them is NOT weighted
-            if (firstWeight != INVALID_WEIGHT) {
-                return -1;
-            }
-            if (secondWeight != INVALID_WEIGHT) {
-                return 1;
-            }
-
-            // compare class names
-            int result = o1.getClass().getName().compareTo(o2.getClass().getName());
-            if (result != 0) {
-                return result;
-            }
-
-            // same class, same weight, compare to string (if same, then we consider it to be the same)
-            return o1.toString().compareTo(o2.toString());
+            // same weight, compare based on class name
+            return o1.getClass().getName().compareTo(o2.getClass().getName());
         };
     }
 }

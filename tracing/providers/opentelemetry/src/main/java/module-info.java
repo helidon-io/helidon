@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,11 @@ module io.helidon.tracing.providers.opentelemetry {
     requires io.helidon.config;
     requires io.helidon.service.registry;
     requires io.opentelemetry.context;
+    requires io.opentelemetry.exporter.otlp;
     requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.sdk;
+    requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.semconv;
 
     requires transitive io.helidon.tracing;

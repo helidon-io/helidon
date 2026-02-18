@@ -215,6 +215,14 @@ public interface BufferData {
     int readFrom(InputStream in);
 
     /**
+     * Read bytes from the provided buffer.
+     *
+     * @param buf byte buffer with data
+     * @return number of bytes read, -1 if the buffer is finished
+     */
+    int readFrom(ByteBuffer buf);
+
+    /**
      * Read a single byte from this buffer.
      * @return next byte
      */

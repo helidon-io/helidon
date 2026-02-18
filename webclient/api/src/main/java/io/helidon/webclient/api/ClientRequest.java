@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -88,6 +89,19 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     T uri(URI uri);
+
+    /**
+     * Socket address to use. This can be used to connect to a UNIX domain socket.
+     * Note that if UNIX domain socket address is configured, all other address configuration is ignored.
+     * This includes if it is configured as a base address on the client.
+     *
+     * @param socketAddress socket address to use, this will override any other address configuration
+     * @return updated request
+     */
+    @SuppressWarnings("unchecked")
+    default T address(SocketAddress socketAddress) {
+        return (T) this;
+    }
 
     /**
      * Configure request URI. This always replaces the existing URI (even if base URI is configured).

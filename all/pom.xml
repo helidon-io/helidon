@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -622,6 +622,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-exporter-jaeger</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-tracer-resolver</artifactId>
         </dependency>
         <dependency>
@@ -913,6 +917,14 @@
             <artifactId>helidon-integrations-langchain4j-providers-coherence</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
@@ -1055,6 +1067,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json-binding</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonb</artifactId>
         </dependency>
         <dependency>
@@ -1179,6 +1195,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
@@ -1228,6 +1248,18 @@
         <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-telemetry-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -1304,6 +1336,14 @@
         <dependency>
             <groupId>io.helidon.discovery.providers</groupId>
             <artifactId>helidon-discovery-providers-eureka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.json.schema</groupId>

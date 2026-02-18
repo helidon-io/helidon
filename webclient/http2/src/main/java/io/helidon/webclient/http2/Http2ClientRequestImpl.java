@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,7 +203,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                            resolvedUri,
                                            serviceResponse.connection(),
                                            complete,
-                                           callChain::closeResponse);
+                                           callChain::closeResponse,
+                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes());
 
     }
 }

@@ -22,54 +22,125 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 
 = Service Registry Reference
 
-The following section lists all services and modules that provide them, grouped by module.
+The following section lists all services and modules that provide them.
 
 Note: this is a work in progress, not listing the full set of contracts yet!
 
-- <<helidon-common-config, Common Config>>
-- <<helidon-scheduling, Scheduling>>
-- <<helidon-validation, Validation>>
+== Service registry contracts
 
-== Module `io.helidon.common.config` [[helidon-common-config]]
 
+[cols="2,1,2,6,5"]
 |===
-|Contract |Weight |Name qualifier |Description
-
-|`io.helidon.common.config.Config`
+|Contract (package, class) |Weight | Module | Description |Qualifiers
+.2+|`io.helidon.common.config`
+`Config`
 |`80`
+|`io.helidon.common.config`
+|Empty config instance
 |N/A
-|Common config instance (empty)
-|===
-
-== Module `io.helidon.scheduling` [[helidon-scheduling]]
-
-|===
-|Contract |Weight |Name qualifier |Description
-
-|`io.helidon.scheduling.TaskManager`
 |`90`
+|`io.helidon.config`
+|Configuration either from meta configuration (config profiles), or from service registry
 |N/A
+|`io.helidon.config`
+`Config`
+|`90`
+|`io.helidon.config`
+|Configuration either from meta configuration (config profiles), or from service registry (same instance that implements `io.helidon.common.config.Config`)
+|N/A
+|`io.helidon.scheduling`
+`TaskManager`
+|`90`
+|`io.helidon.scheduling`
 |Management of scheduled tasks
-|===
-
-== Module `io.helidon.validation` [[helidon-validation]]
-
-|===
-|Contract |Weight |Name qualifier |Description
-
-|`java.time.Clock`
-|`90`
 |N/A
+|`java.time`
+`Clock`
+|`90`
+|`io.helidon.validation`
 |Clock used to check calendar related constraints, defaults to current time-zone
-
-|`io.helidon.validation.TypeValidation`
-|`90`
 |N/A
+|`io.helidon.validation`
+`TypeValidation`
+|`90`
+|`io.helidon.validation`
 |Methods to validate type annotated with `@Validation.Validated`
-
-|`io.helidon.validation.spi.ConstraintValidatorProvider`
+|N/A
+|`io.helidon.validation.spi`
+`ConstraintValidatorProvider`
 |`70`
-|Named by the constraint annotation type (for each built-in constraint)
+|`io.helidon.validation`
 |Constraint validator providers for each built-in constraint
-
+|Named by the constraint annotation type (for each built-in constraint)
+|`io.helidon.common.mapper`
+`Mappers`
+|`100`
+|`io.helidon.common.mapper`
+|Access to mappers, to map (convert) types
+|N/A
+|`io.helidon.common.mapper`
+`MapperProvider`
+|`0.1`
+|`io.helidon.common.mapper`
+|A provider of mappers
+|N/A
+|`io.helidon.common.mapper`
+`DefaultResolver`
+|`100`
+|`io.helidon.common.mapper`
+|Resolver of defaults annotation to a list of expected types
+|N/A
+|`*`
+|N/A
+|`io.helidon.config`
+|Injection point of a configured object
+|`@Configuration.Value`
+|`io.helidon.config`
+`MetaConfig`
+|`100`
+|`io.helidon.config`
+|Config "meta-configuration" - the whole content of a file, such as `meta-config.yaml`
+|N/A
+|`io.helidon.config`
+`MetaConfig`
+|`100`
+|`io.helidon.config`
+|Config source "meta-configuration" - section of the single config source
+|Named with a config type (i.e. `@Service.Named("file")`)
+|`io.helidon.webserver.http.spi`
+`ErrorHandlerProvider`
+|`100`
+|N/A
+|Error handler provider to add to WebServer
+|N/A
+|`io.helidon.webserver`
+`WebServer`
+|`100`
+|`io.helidon.webserver`
+|WebServer instance, only available in Helidon Declarative
+|N/A
+|`io.helidon.security`
+`Security`
+|`100`
+|`io.helidon.security`
+|Security
+|N/A
+|`io.helidon.health`
+`HealthCheck`
+|N/A
+|N/A
+|Health check instances to be added to WebServer health observer
+|N/A
+|`io.helidon.metrics.api`
+`MetricsFactory`
+|90
+|`io.helidon.metrics.api`
+|Factory of meter registries
+|N/A
+|`io.helidon.metrics.api`
+`MeterRegistry`
+|90
+|`io.helidon.metrics.api`
+|The "global" meter registry, can be used to create/get custom metrics that cannot be achieved through interception
+|N/A
 |===

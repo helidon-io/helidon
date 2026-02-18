@@ -26,6 +26,7 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.scheduling;
     requires io.helidon.webclient.api;
     requires io.helidon.faulttolerance;
+    requires io.helidon.metrics.api;
 
     // Security related dependencies
     requires io.helidon.security;

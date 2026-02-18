@@ -45,7 +45,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 |------------------|--------------------------------------|-----------------------------------------------------------|
 | HTTP             | `Http`, `RestServer`, `RestClient`   | `WebServer` cannot be freed, `HttpClient` cannot be freed |
 | Config           | `Configuration`                      | `Config` cannot be freed                                  |
-| Metrics          | `Metrics`                            | TODO: contains a bunch of static methods                  |
+| Metrics          | `Metric`                             | New class, as `Metrics` is already used                   |
 | Fault Tolerance  | `Ft`                                 | `FaultTolerance` could theoretically be freed             |
 | GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
 | WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |

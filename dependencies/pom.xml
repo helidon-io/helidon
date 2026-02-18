@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.commons-io>2.16.1</version.lib.commons-io>
         <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
-        <version.lib.commons-logging>1.2</version.lib.commons-logging>
+        <version.lib.commons-logging>1.3.5</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
@@ -60,8 +60,9 @@
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
-        <version.lib.gson>2.13.1</version.lib.gson>
+        <version.lib.gson>2.13.2</version.lib.gson>
         <version.lib.grpc>1.73.0</version.lib.grpc>
+        <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
         <version.lib.guava>33.3.1-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -71,7 +72,7 @@
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.20.0</version.lib.jackson>
+        <version.lib.jackson>2.21.0</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
@@ -96,7 +97,7 @@
         <version.lib.jboss.classfilewriter>1.3.1.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
-        <version.lib.jersey>3.1.10</version.lib.jersey>
+        <version.lib.jersey>3.1.11</version.lib.jersey>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
@@ -105,15 +106,15 @@
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>1.6.0</version.lib.langchain4j>
-        <version.lib.langchain4j-community>1.6.0-beta12</version.lib.langchain4j-community>
-        <version.lib.log4j>2.21.1</version.lib.log4j>
+        <version.lib.langchain4j>1.11.0</version.lib.langchain4j>
+        <version.lib.langchain4j-community>1.11.0-beta19</version.lib.langchain4j-community>
+        <version.lib.log4j>2.25.3</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>4.2.2</version.lib.micronaut>
-        <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
+        <version.lib.micronaut>4.10.9</version.lib.micronaut>
+        <version.lib.micronaut.validation>4.12.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
         <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
         <version.lib.microprofile-config>3.1</version.lib.microprofile-config>
@@ -135,19 +136,22 @@
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
-        <version.lib.narayana>7.0.0.Final</version.lib.narayana>
+        <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
-        <version.lib.netty>4.1.126.Final</version.lib.netty>
-        <version.lib.oci>3.76.0</version.lib.oci>
+        <version.lib.netty>4.1.130.Final</version.lib.netty>
+        <version.lib.oci>3.78.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
-        <version.lib.ojdbc>${version.lib.ojdbc.family}.9.0.25.07</version.lib.ojdbc>
+        <version.lib.ojdbc>${version.lib.ojdbc.family}.26.0.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
+        <!-- Force upgrade of okio for dependency convergence: make the OTel otlp exporter use the release langchain4j uses -->
+        <version.lib.okio>3.6.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
-        <version.lib.opentelemetry.semconv>1.29.0-alpha</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.29.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.29.0</version.lib.opentelemetry.opentracing.shim>
-        <version.lib.opentelemetry>1.29.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
+        <version.lib.opentelemetry.opentracing.shim>1.58.0</version.lib.opentelemetry.opentracing.shim>
+        <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -156,10 +160,10 @@
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
-        <version.lib.slf4j>2.0.16</version.lib.slf4j>
+        <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
-        <version.lib.testcontainers>1.19.8</version.lib.testcontainers>
+        <version.lib.testcontainers>1.21.4</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
@@ -247,15 +251,26 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry</groupId>
+                <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${version.lib.opentelemetry.semconv}</version>
             </dependency>
+            <!--
+            By default, OpenTelemetry's OTLP exporter uses okhttp. To reduce 3rd-party dependencies and more easily
+            manage dependency convergence use the OpenTelemetry JDK client support instead.
+            -->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-opentracing-shim</artifactId>
-                <version>${version.lib.opentelemetry.opentracing.shim}</version>
+                <artifactId>opentelemetry-exporter-otlp</artifactId>
+                <version>${version.lib.opentelemetry}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.opentelemetry</groupId>
+                        <artifactId>opentelemetry-exporter-sender-okhttp</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
+            <!-- -->
             <dependency>
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-util</artifactId>
@@ -270,17 +285,12 @@
             <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-annotations</artifactId>
-                <version>${version.lib.opentelemetry}</version>
+                <version>${version.lib.opentelemetry.instrumentation.annotations}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-api</artifactId>
                 <version>${version.lib.opentelemetry}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-                <version>${version.lib.opentelemetry-sdk-extension-autoconfigure}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
@@ -376,11 +386,11 @@
                 <artifactId>jakarta.interceptor-api</artifactId>
                 <version>${version.lib.jakarta.interceptor-api}</version>
                 <exclusions>
-                  <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
-                  <exclusion>
-                      <groupId>jakarta.ejb</groupId>
-                      <artifactId>jakarta.ejb-api</artifactId>
-                  </exclusion>
+                    <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
+                    <exclusion>
+                        <groupId>jakarta.ejb</groupId>
+                        <artifactId>jakarta.ejb-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1231,6 +1241,17 @@
                 <artifactId>okhttp</artifactId>
                 <version>${version.lib.okhttp3}</version>
             </dependency>
+            <dependency>
+                <!-- For dependency convergence -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${version.lib.okio}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${version.lib.google-findbugs-jsr305}</version>
+            </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->
@@ -1394,6 +1415,28 @@
                 <version>${version.lib.grpc}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-api</artifactId>
+                <version>${version.lib.grpc}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${version.lib.grpc}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>

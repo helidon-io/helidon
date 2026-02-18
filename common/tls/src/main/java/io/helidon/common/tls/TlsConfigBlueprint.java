@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.common.tls.spi.TlsManagerProvider;
 
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Prototype.Configured
+@Prototype.CustomMethods(TlsConfigSupport.CustomMethods.class)
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
      * The default protocol is set to {@value}.
@@ -47,17 +48,17 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      */
     String DEFAULT_SESSION_TIMEOUT = "PT24H";
 
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static Optional<PrivateKey> createPrivateKey(Keys config) {
         return config.privateKey();
     }
 
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static List<X509Certificate> createPrivateKeyCertChain(Keys config) {
         return config.certChain();
     }
 
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static List<X509Certificate> createTrust(Keys config) {
         return config.certs();
     }

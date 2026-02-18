@@ -29,7 +29,6 @@ import io.helidon.webserver.spi.ServerFeature;
  * Adds {@link io.helidon.common.context.Context} support to Helidon WebServer.
  * When added to the processing, further processing will be executed in a request specific context.
  */
-@RuntimeType.PrototypedBy(ContextFeatureConfig.class)
 public class ContextFeature implements Weighted, ServerFeature, RuntimeType.Api<ContextFeatureConfig> {
     /**
      * Default weight of the feature. It is quite high, as context is used by a lot of other features.

@@ -36,7 +36,6 @@ import static java.lang.System.Logger.Level;
 /**
  * Adds gRPC reflection support to Helidon WebServer.
  */
-@RuntimeType.PrototypedBy(GrpcReflectionConfig.class)
 public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeType.Api<GrpcReflectionConfig> {
     private static final System.Logger LOGGER = System.getLogger(GrpcReflectionFeature.class.getName());
 

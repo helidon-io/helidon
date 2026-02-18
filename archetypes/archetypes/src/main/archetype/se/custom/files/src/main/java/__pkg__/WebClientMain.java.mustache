@@ -2,6 +2,7 @@ package {{package}};
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
 
 
@@ -25,7 +26,7 @@ public class WebClientMain {
      * @param args main method
      */
     public static void main(String[] args) {
-        Config config = Config.global();
+        Config config = Services.get(Config.class);
         String url;
         if (args.length == 0) {
             ConfigValue<Integer> port = config.get("server.port").asInt();

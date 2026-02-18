@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,12 @@ class OpenTelemetryTracingConfigSupport {
             var sdkTracerProviderBuilder = SdkTracerProvider.builder();
 
             var attributesBuilder = Attributes.builder();
-            target.stringAttributes().forEach(attributesBuilder::put);
-            target.longAttributes().forEach(attributesBuilder::put);
-            target.doubleAttributes().forEach(attributesBuilder::put);
-            target.booleanAttributes().forEach(attributesBuilder::put);
-            target.stringAttributes().forEach(attributesBuilder::put);
+            TypedAttributes.apply(attributesBuilder,
+                                  target.stringAttributes(),
+                                  target.longAttributes(),
+                                  target.doubleAttributes(),
+                                  target.booleanAttributes());
+
 
             target.sampler().ifPresent(sdkTracerProviderBuilder::setSampler);
             target.spanLimits().ifPresent(sdkTracerProviderBuilder::setSpanLimits);
@@ -73,22 +74,22 @@ class OpenTelemetryTracingConfigSupport {
         private CustomMethods() {
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("processorConfigs")
         static SpanProcessorConfig createProcessorConfigs(Config config) {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("sampler")
         static Sampler createSampler(Config config) {
             return OtelConfigSupport.createSampler(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("spanLimits")
         static SpanLimits createSpanLimits(Config config) {
             return OtelConfigSupport.createSpanLimits(config);
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("exporterConfigs")
         static SpanExporter createExporterConfigs(Config config) {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
         }

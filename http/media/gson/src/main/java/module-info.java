@@ -35,6 +35,8 @@ module io.helidon.http.media.gson {
 
     exports io.helidon.http.media.gson;
 
+    uses com.google.gson.TypeAdapterFactory;
+
     provides io.helidon.http.media.spi.MediaSupportProvider
             with io.helidon.http.media.gson.GsonMediaSupportProvider;
 

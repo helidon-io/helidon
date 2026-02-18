@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
+import io.helidon.tracing.Tracing;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
@@ -49,7 +50,7 @@ class WithSpanInterceptor {
     @Inject
     WithSpanInterceptor(Tracer tracer, Config config) {
         this.tracer = tracer;
-        isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
+        this.isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
     }
 
     /**
@@ -74,7 +75,18 @@ class WithSpanInterceptor {
 
         WithSpan annotation = method.getAnnotation(WithSpan.class);
 
-        String spanName = annotation.value();
+        String spanName;
+
+        if (annotation == null) {
+            Tracing.Traced traced = method.getAnnotation(Tracing.Traced.class);
+            if (traced != null) {
+                spanName = String.format(traced.value(), method.getDeclaringClass().getName(), method.getName());
+            } else {
+                spanName = "";
+            }
+        } else {
+            spanName = annotation.value();
+        }
 
         //Process span name. Should be class name, as well as inner classes.
         if (spanName.isEmpty()) {
@@ -93,6 +105,24 @@ class WithSpanInterceptor {
             Parameter p = method.getParameters()[i];
             if (p.isAnnotationPresent(SpanAttribute.class)) {
                 SpanAttribute spanAttribute = p.getAnnotation(SpanAttribute.class);
+                var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
+                Class<?> paramType = p.getType();
+                Object pValue = context.getParameters()[i];
+
+                if (String.class.isAssignableFrom(paramType)) {
+                    helidonSpanBuilder.tag(attrName, (String) pValue);
+                } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
+                    helidonSpanBuilder.tag(attrName, (Long) pValue);
+                } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
+                    helidonSpanBuilder.tag(attrName, (Double) pValue);
+                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
+                    helidonSpanBuilder.tag(attrName, (Boolean) pValue);
+                } else {
+                    helidonSpanBuilder.tag(attrName, pValue.toString());
+                }
+            }
+            if (p.isAnnotationPresent(Tracing.ParamTag.class)) {
+                Tracing.ParamTag spanAttribute = p.getAnnotation(Tracing.ParamTag.class);
                 var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
                 Class<?> paramType = p.getType();
                 Object pValue = context.getParameters()[i];

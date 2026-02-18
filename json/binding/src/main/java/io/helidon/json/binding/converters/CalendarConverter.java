@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.json.binding.converters;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import io.helidon.common.GenericType;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonParser;
+import io.helidon.json.binding.JsonConverter;
+import io.helidon.service.registry.Service;
+
+@Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
+class CalendarConverter implements JsonConverter<Calendar> {
+
+    private static final GenericType<Calendar> TYPE = GenericType.create(Calendar.class);
+
+    private static final ZoneId UTC = ZoneId.of("UTC");
+
+    @Override
+    public void serialize(JsonGenerator generator, Calendar instance, boolean writeNulls) {
+        generator.write(serializeAsMapKey(instance));
+    }
+
+    @Override
+    public boolean isMapKeySerializer() {
+        return true;
+    }
+
+    @Override
+    public String serializeAsMapKey(Calendar instance) {
+        ZonedDateTime zonedDateTime = instance.toInstant()
+                .atZone(instance.getTimeZone().toZoneId());
+        return DateTimeFormatter.ISO_DATE_TIME.format(zonedDateTime);
+    }
+
+    @Override
+    public Calendar deserialize(JsonParser parser) {
+        if (parser.currentByte() == '"') {
+            String value = parser.readString();
+            ZonedDateTime zonedDateTime;
+            if (value.contains("T")) {
+                zonedDateTime = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
+            } else {
+                zonedDateTime = LocalDate.parse(value, DateTimeFormatter.ISO_DATE)
+                        .atStartOfDay(UTC);
+            }
+            return GregorianCalendar.from(zonedDateTime);
+        }
+        throw parser.createException("Only the string format of the Calendar is supported");
+    }
+
+    @Override
+    public GenericType<Calendar> type() {
+        return TYPE;
+    }
+
+}

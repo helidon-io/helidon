@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,9 +243,22 @@ public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tr
      *
      * @param config configuration node of the tracer configuration
      * @return updated builder instance
+     * @deprecated Use {@link #config(io.helidon.config.Config)} instead.
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     T config(Config config);
 
+    /**
+     * Load configuration of tracer from configuration of the application.
+     * The configuration keys are specific for each tracer integration and documented
+     * in these integration projects.
+     *
+     * @param config configuration node of the tracer configuration
+     * @return updated builder instance
+     */
+    default T config(io.helidon.config.Config config) {
+        return config((Config) config);
+    }
     /**
      * When enabled, tracing will be sent. If enabled is false, tracing should
      * use a no-op tracer.

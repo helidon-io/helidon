@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
@@ -165,20 +166,18 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testMapToArrayWithParser() {
-        final String PROPS = ""
-                + "uri-array.0=http://localhost\n"
-                + "uri-array.1=http://localhost\n"
-                + "uri-array.2=http://localhost\n"
-                + "uri-localhost=http://localhost\n"
-                + "uri.array.0=http://localhost\n"
-                + "uri.array.1=http://localhost\n"
-                + "uri.array.2=http://localhost\n"
-                + "uri.localhost=http://localhost\n";
-
-        Config config = Config.builder()
-                .sources(ConfigSources.create(PROPS, PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
-                .addParser(ConfigParsers.properties())
-                .build();
+        Config config = Config.just(
+                """
+                        uri-array.0=http://localhost
+                        uri-array.1=http://localhost
+                        uri-array.2=http://localhost
+                        uri-localhost=http://localhost
+                        uri.array.0=http://localhost
+                        uri.array.1=http://localhost
+                        uri.array.2=http://localhost
+                        uri.localhost=http://localhost
+                        """,
+                MediaTypes.TEXT_PROPERTIES);
 
         assertThat(config.get("uri").asNodeList().get().size(), CoreMatchers.is(2));
         assertThat(config.get("uri.array").asNodeList().get().size(), CoreMatchers.is(3));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,30 @@ public final class Ai {
          * @return {@code true} if auto-discovery is enabled, {@code false} if manual discovery mode is used.
          */
         boolean autoDiscovery() default true;
+
+        /**
+         * Logical name of the service.
+         *
+         * @return the service name
+         */
+        String value() default "";
+    }
+
+    /**
+     * Annotation that marks a type (typically a LangChain4j declarative service interface)
+     * as an {@code agent} and assigns it a logical name.
+     *
+     * @see dev.langchain4j.agentic.Agent
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface Agent {
+        /**
+         * The logical name of the agent.
+         *
+         * @return the agent name
+         */
+        String value();
     }
 
     /**

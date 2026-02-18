@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.mp.spi.MpConfigFilter;
 import io.helidon.config.mp.spi.MpConfigSourceProvider;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -287,6 +288,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
         }
         if (useDiscoveredSources) {
             addDiscoveredSources(ordinalSources);
+            addServiceRegistrySources(ordinalSources);
         }
 
         // now it is from lowest to highest
@@ -363,7 +365,14 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                         .forEach(source -> targetConfigSources.add(new OrdinalSource(source))));
     }
 
-    private void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
+    private static void addServiceRegistrySources(List<OrdinalSource> targetConfigSources) {
+        Services.all(io.helidon.config.spi.ConfigSource.class)
+                .forEach(it ->
+                    targetConfigSources.add(new OrdinalSource(MpConfigSources.create(it)))
+                );
+    }
+
+    private static void addDiscoveredConverters(List<OrdinalConverter> targetConverters) {
         ServiceLoader.load(Converter.class)
                 .forEach(it -> targetConverters.add(new OrdinalConverter(it)));
     }

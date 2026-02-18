@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package io.helidon.webclient.api;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.UnixDomainSocketAddress;
 import java.util.ServiceLoader;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
@@ -145,6 +149,42 @@ class HttpClientConfigSupport {
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {
             builder.addHeader(HeaderValues.create(name, value));
+        }
+
+        /**
+         * Config method to get {@link io.helidon.webclient.api.ClientUri}.
+         *
+         * @param config configuration instance
+         * @return client URI for the config node
+         */
+        @Prototype.ConfigFactoryMethod("baseUri")
+        static ClientUri createBaseUri(Config config) {
+            return config.as(URI.class).map(ClientUri::create).orElseThrow();
+        }
+
+        @Prototype.ConfigFactoryMethod("baseAddress")
+        static SocketAddress createBaseAddress(Config config) {
+            String address = config.asString().get();
+            // unix:/path/to/socket
+            if (address.startsWith("unix:")) {
+                String path = address.substring(7);
+                return UnixDomainSocketAddress.of(path);
+            }
+            // must be localhost:8080 or similar (localhost, :8080 are also OK)
+            int col = address.indexOf(':');
+            String host;
+            int port;
+            if (col == 0) {
+                host = "localhost";
+                port = Integer.parseInt(address.substring(1));
+            } else if (col > 0) {
+                host = address.substring(0, col);
+                port = Integer.parseInt(address.substring(col + 1));
+            } else {
+                host = address;
+                port = 80;
+            }
+            return new InetSocketAddress(host, port);
         }
     }
 

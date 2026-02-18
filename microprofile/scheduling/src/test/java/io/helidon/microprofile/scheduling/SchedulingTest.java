@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,8 @@ public class SchedulingTest {
 
     static final long TWO_SEC_MILLIS = 2 * 1000L;
 
+    private volatile boolean disabledCronInvoked = false;
+    private volatile boolean disabledFixedRateInvoked = false;
     final CountDownLatch fixedRateLatch = new CountDownLatch(5);
     final CountDownLatch fixedRateFromConfigLatch = new CountDownLatch(2);
     final CountDownLatch exprLatch = new CountDownLatch(1);
@@ -87,6 +89,16 @@ public class SchedulingTest {
     @Scheduling.Cron("${test-cron-expr}")
     void placeholder() {
         exprLatch.countDown();
+    }
+
+    @Scheduling.Cron("0/1 * * * * ? *")
+    void disabledCron() {
+        disabledCronInvoked = true;
+    }
+
+    @Scheduling.FixedRate("PT0.1S")
+    void disabledFixedRate() {
+        disabledFixedRateInvoked = true;
     }
 
     @Scheduling.Cron(value = "0/1 * * * * ? *", concurrent = false)
@@ -120,6 +132,18 @@ public class SchedulingTest {
     void expressionPlaceHolder() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least once",
                    exprLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void disabledCronShouldNotBeInvoked() throws InterruptedException {
+        Thread.sleep(3000);
+        assertFalse(disabledCronInvoked);
+    }
+
+    @Test
+    void disabledFixedRateShouldNotBeInvoked() throws InterruptedException {
+        Thread.sleep(3000);
+        assertFalse(disabledFixedRateInvoked);
     }
 
     @Test
@@ -207,12 +231,13 @@ public class SchedulingTest {
 
         @Scheduling.Cron("0/2 * * * * ? *")
         public void test2sec() {
-            if(stamp != 0) {
+            if (stamp != 0) {
                 duration = System.currentTimeMillis() - stamp;
                 durations.add(Duration.ofMillis(duration));
             }
             stamp = System.currentTimeMillis();
-            LOGGER.log(System.Logger.Level.DEBUG, () -> Thread.currentThread().getName() + " Executed at " + Instant.ofEpochMilli(stamp) + "(" + stamp);
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       () -> Thread.currentThread().getName() + " Executed at " + Instant.ofEpochMilli(stamp) + "(" + stamp);
             countDownLatch.countDown();
         }
     }

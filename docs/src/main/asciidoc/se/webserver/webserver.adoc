@@ -676,6 +676,12 @@ include::{rootdir}/config/io_helidon_webserver_accesslog_AccessLogConfig.adoc[le
 Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge, HTTP/2 with prior knowledge, and HTTP/2 with ALPN over TLS.
 HTTP/2 support is enabled in WebServer by default when it's artifact is available on classpath.
 
+[WARNING]
+====
+For HTTP/2 `request.content().hasEntity()` returns `true` by default.
+It returns `false` only if the request's header frame includes the `END_STREAM` flag or the `Content‑Length` header is present with a value of `0`.
+====
+
 === Maven Coordinates
 To enable HTTP/2 support add the following dependency to your project's `pom.xml`.
 
@@ -1038,6 +1044,10 @@ WebServer responds by selecting an encoding it supports and setting it in a head
 effectively _negotiating_ the content encoding of the response. If none of the
 advertised encodings is supported by the WebServer, the response is returned
 uncompressed.
+
+Handlers can encode the response and set the appropriate header to preempt encoding by the
+WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
+response will not be additionally compressed.
 
 === Configuring HTTP Encoding
 

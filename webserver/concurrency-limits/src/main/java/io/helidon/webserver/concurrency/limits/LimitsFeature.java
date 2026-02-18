@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import io.helidon.webserver.spi.ServerFeature;
  * When using this feature, the limits operation is enforced within a filter, i.e. after the request
  * is accepted. This means it is used only for HTTP requests.
  */
-@RuntimeType.PrototypedBy(LimitsFeatureConfig.class)
 public class LimitsFeature implements ServerFeature, Weighted, RuntimeType.Api<LimitsFeatureConfig> {
     /**
      * Default weight of this feature. It is the first feature to be registered (above context and access log).

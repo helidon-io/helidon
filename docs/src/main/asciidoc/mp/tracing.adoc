@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Additional Information, Additional Information>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
+** <<OpenTelemetry Tracing, OpenTelemetry Tracing>>
 ** <<Tracing-callbacks, Responding to Span Life Cycle Events>>
 - <<Reference, Reference>>
 
@@ -509,6 +510,12 @@ As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger 
 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
+=== OpenTelemetry Tracing [[opentelemetry-tracing]]
+
+include::{rootdir}/includes/tracing/tracer-otel.adoc[tags=setup;intro;otel-dependency]
+include::{rootdir}/includes/tracing/tracer-otel.adoc[tag=otel-configuration]
+include::{rootdir}/includes/tracing/tracer-otel.adoc[tag=exporters]
 
 
 include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]

@@ -181,6 +181,13 @@ Your code can then operate on the returned meter as needed to record new measure
 
 The example code in the <<Examples>> section below illustrates how to register, retrieve, and update meters.
 
+==== Understanding Timers, Units, and Output
+Your application can assign the meter builder's link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)[`Meter.Builder baseUnit`] setting for any meter your application creates. In particular, the link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)[`Timer.Builder baseUnit`] method allows code to assign a `baseUnit` for a timer, passing a Java link:{jdk-javadoc-url}/java.base/java/util/concurrent/TimeUnit.html[`TimeUnit`] value. The timer builder also has the `String` variant of the `baseUnit` method and enforces that the value corresponds (case-insensitively) to one of the `TimeUnit` enum values.
+
+Note that, regardless of the `baseUnit` setting for a `Timer`, by convention and specification Prometheus output expresses time values in `seconds`.
+
+By default, the same is true of Helidon's JSON format: timer values are displayed in `seconds` regardless of any timer's `baseUnit` setting. You can override this as described in the <<controlling_timer_output,Controlling Timer Output>> section, in which case the JSON output for each timer reflects its `baseUnit` setting.
+
 === Accessing the Underlying Implementation: `unwrap`
 The neutral Helidon metrics API is an abstraction of common metrics behavior independent from any given implementation. As such, we intentionally excluded some implementation-specific behavior from the API.
 

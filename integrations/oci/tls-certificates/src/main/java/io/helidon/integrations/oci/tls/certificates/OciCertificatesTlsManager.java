@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import io.helidon.common.tls.TlsManager;
  * {@link io.helidon.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
  * Certificates Service, and then allow for a scheduled update check of the Tls instance for changes.
  */
-@RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)
 public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<OciCertificatesTlsManagerConfig> {
 
     /**

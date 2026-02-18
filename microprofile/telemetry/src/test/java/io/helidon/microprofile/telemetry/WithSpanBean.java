@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.microprofile.telemetry;
+
+import io.helidon.tracing.Tracing;
 
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
@@ -33,9 +35,10 @@ class WithSpanBean {
 
     }
 
-    @WithSpan(TEST_SPAN_NAME_OBJECT)
+    // combining with SE annotations, to ensure both work
+    @Tracing.Traced(TEST_SPAN_NAME_OBJECT)
     void runWithAttrsObject(@SpanAttribute String bString,
-                            @SpanAttribute(LONG_ATTR_NAME) Long bLong) {
+                            @Tracing.ParamTag(LONG_ATTR_NAME) Long bLong) {
 
     }
 }

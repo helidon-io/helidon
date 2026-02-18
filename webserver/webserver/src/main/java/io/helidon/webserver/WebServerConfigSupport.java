@@ -16,8 +16,11 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
+import java.net.UnixDomainSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -125,6 +128,11 @@ class WebServerConfigSupport {
     static class ListenerConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
+            if (target.bindAddress().isPresent()) {
+                if (target.address().isEmpty()) {
+                    target.address(InetAddress.getLoopbackAddress());
+                }
+            }
             String name = target.name();
             if (name == null && target.config().isPresent()) {
                 Config config = target.config().get();
@@ -148,8 +156,10 @@ class WebServerConfigSupport {
                 }
             }
             Map<SocketOption<?>, Object> socketOptions = target.listenerSocketOptions();
-            if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
-                target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
+            if (target.bindAddress().isEmpty() || !(target.bindAddress().get() instanceof UnixDomainSocketAddress)) {
+                if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
+                    target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
+                }
             }
             if (target.requestedUriDiscoveryContext().isEmpty()) {
                 target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
@@ -171,6 +181,31 @@ class WebServerConfigSupport {
             HttpRouting.Builder routingBuilder = HttpRouting.builder();
             builderConsumer.accept(routingBuilder);
             builder.routing(routingBuilder);
+        }
+
+        @Prototype.ConfigFactoryMethod("bindAddress")
+        static SocketAddress createBindAddress(Config config) {
+            String address = config.asString().get();
+            // unix:/path/to/socket
+            if (address.startsWith("unix:")) {
+                String path = address.substring(7);
+                return UnixDomainSocketAddress.of(path);
+            }
+            // must be localhost:8080 or similar
+            int col = address.indexOf(':');
+            String host;
+            int port;
+            if (col == 0) {
+                host = "localhost";
+                port = Integer.parseInt(address.substring(1));
+            } else if (col > 0) {
+                host = address.substring(0, col);
+                port = Integer.parseInt(address.substring(col + 1));
+            } else {
+                host = address;
+                port = 0;
+            }
+            return new InetSocketAddress(host, port);
         }
     }
 

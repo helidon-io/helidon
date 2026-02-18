@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -723,7 +723,7 @@ class Http1ClientTest {
         }
 
         private DataReader reader(ArrayBlockingQueue<byte[]> queue) {
-            return new DataReader(() -> {
+            return DataReader.create(() -> {
                 if (serverException != null) {
                     throw new IllegalStateException("Server exception", serverException);
                 }

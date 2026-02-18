@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 final class OpenTelemetryConfigSupport {
 
@@ -49,12 +49,26 @@ final class OpenTelemetryConfigSupport {
             var sdkTracerProviderBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
 
             var attributesBuilder = tracingConfig.tracingBuilderInfo().attributesBuilder();
-            attributesBuilder.put(ResourceAttributes.SERVICE_NAME, target.service().orElseThrow());
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
 
             var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
             sdkTracerProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setTracerProvider(sdkTracerProviderBuilder.build());
+        }
+
+        if (target.metricsConfig().isPresent()) {
+            var metricsConfig = target.metricsConfig().get();
+            var metricsBuilderInfo = metricsConfig.metricsBuilderInfo();
+            var sdkMeterProviderBuilder = metricsBuilderInfo.sdkMeterProviderBuilder();
+
+            var attributesBuilder = metricsConfig.metricsBuilderInfo().attributesBuilder();
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
+
+            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            sdkMeterProviderBuilder.setResource(resource);
+
+            openTelemetrySdkBuilder.setMeterProvider(sdkMeterProviderBuilder.build());
         }
 
         var sdk = openTelemetrySdkBuilder.build();
@@ -96,7 +110,7 @@ final class OpenTelemetryConfigSupport {
          * @param config config node (node list of string nodes or a single node)
          * @return list of selected propagators
          */
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("propagators")
         static List<TextMapPropagator> createPropagators(Config config) {
 
             Stream<String> propagatorNames = config.isList()
@@ -109,11 +123,15 @@ final class OpenTelemetryConfigSupport {
                     .toList();
         }
 
-        @Prototype.FactoryMethod
+        @Prototype.ConfigFactoryMethod("tracingConfig")
         static OpenTelemetryTracingConfig createTracingConfig(Config config) {
             return OpenTelemetryTracingConfig.create(config);
         }
 
+        @Prototype.ConfigFactoryMethod("metricsConfig")
+        static OpenTelemetryMetricsConfig createMetricsConfig(Config config) {
+            return OpenTelemetryMetricsConfig.create(config);
+        }
     }
 
 }

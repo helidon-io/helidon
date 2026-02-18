@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
@@ -61,7 +62,7 @@ class Http2ServerRequest implements RoutingRequest {
     private final HttpPrologue originalPrologue;
     private final int requestId;
     private final String authority;
-    private final LazyValue<Http2ServerRequestEntity> entity;
+    private final LazyValue<ReadableEntity> entity;
     private final HttpSecurity security;
     private final LazyValue<UriInfo> uriInfo = LazyValue.create(this::createUriInfo);
     private final LimitAlgorithm.Outcome limitOutcome;
@@ -81,8 +82,10 @@ class Http2ServerRequest implements RoutingRequest {
                        Http2Headers headers,
                        ContentDecoder decoder,
                        int requestId,
+                       boolean hasEntity,
                        Supplier<BufferData> entitySupplier,
-                       LimitAlgorithm.Outcome limitOutcome) {
+                       LimitAlgorithm.Outcome limitOutcome,
+                       long maxBufferedEntitySize) {
         this.ctx = ctx;
         this.security = security;
         this.originalPrologue = prologue;
@@ -92,12 +95,18 @@ class Http2ServerRequest implements RoutingRequest {
         this.authority = headers.authority();
         this.limitOutcome = limitOutcome;
 
-        this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
-                                                                             decoder,
-                                                                             it -> entitySupplier.get(),
-                                                                             NO_OP_RUNNABLE,
-                                                                             this.headers,
-                                                                             ctx.listenerContext().mediaContext()));
+        if (hasEntity) {
+            this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
+                                                                                 decoder,
+                                                                                 it -> entitySupplier.get(),
+                                                                                 NO_OP_RUNNABLE,
+                                                                                 this.headers,
+                                                                                 ctx.listenerContext().mediaContext(),
+                                                                                 maxBufferedEntitySize));
+        } else {
+            this.entity = LazyValue.create(ReadableEntityBase.empty());
+        }
+
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -107,9 +116,20 @@ class Http2ServerRequest implements RoutingRequest {
                                      Http2Headers headers,
                                      ContentDecoder decoder,
                                      int streamId,
+                                     boolean hasEntity,
                                      Supplier<BufferData> entitySupplier,
-                                     LimitAlgorithm.Outcome limitOutcome) {
-        return new Http2ServerRequest(ctx, security, httpPrologue, headers, decoder, streamId, entitySupplier, limitOutcome);
+                                     LimitAlgorithm.Outcome limitOutcome,
+                                     long maxBufferedEntitySize) {
+        return new Http2ServerRequest(ctx,
+                                      security,
+                                      httpPrologue,
+                                      headers,
+                                      decoder,
+                                      streamId,
+                                      hasEntity,
+                                      entitySupplier,
+                                      limitOutcome,
+                                      maxBufferedEntitySize);
     }
 
     @Override

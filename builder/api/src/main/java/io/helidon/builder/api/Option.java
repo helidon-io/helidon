@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -531,5 +531,25 @@ public final class Option {
          */
         boolean value() default true;
 
+    }
+
+    /**
+     * An option may return a type that is not under our control, yet we have a prototype that can be used to
+     * create it. Such a prototype can be referenced through this annotation, so we use it for builder consumer,
+     * to add a builder method with it as a parameter, and to use it in {@code config} method if it is configured.
+     * <p>
+     * IMPORTANT: the referenced prototype {@code build} method must return the type returned by this option
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface PrototypedBy {
+        /**
+         * Type of the prototype that is a factory of the type returned by the annotated method.
+         * If the type is in the same package as the type of the annotated method, class name is sufficient, otherwise
+         * a fully qualified name must be used.
+         *
+         * @return prototype class that builds the type of the annotated option
+         */
+        String value();
     }
 }

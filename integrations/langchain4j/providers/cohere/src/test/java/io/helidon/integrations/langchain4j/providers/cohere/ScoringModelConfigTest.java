@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.integrations.langchain4j.providers.cohere;
 import java.net.Proxy;
 import java.time.Duration;
 
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.service.registry.ServiceRegistry;
@@ -27,8 +26,10 @@ import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.media.type.MediaTypes.APPLICATION_X_YAML;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static io.helidon.integrations.langchain4j.providers.cohere.CohereConstants.ConfigCategory.MODEL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -38,9 +39,8 @@ import static org.hamcrest.Matchers.notNullValue;
 class ScoringModelConfigTest {
 
     @Test
-    void testDefaultRoot() {
-        var config = CohereScoringModelConfig.create(Config.just(ConfigSources.classpath("application.yaml"))
-                                                             .get(CohereScoringModelConfig.CONFIG_ROOT));
+    void testDefaultRoot(Config c) {
+        var config = CohereScoringModelConfig.create(CohereConstants.create(c, MODEL, "test-model"));
 
         assertThat(config, is(notNullValue()));
         assertThat(config.apiKey().isPresent(), equalTo(true));
@@ -63,16 +63,21 @@ class ScoringModelConfigTest {
     @Test
     void testCustomProxy(ServiceRegistry registry) {
 
+        // language=YAML
         var yaml = """
-                langchain4j.cohere:
-                  scoring-model:
-                    proxy.service-registry.named: customProxy
+                langchain4j:
+                  models:
+                    test-model:
+                      provider: cohere
+                
+                  providers:
+                    cohere:
+                      proxy.service-registry.named: customProxy
                 """;
 
         var config = CohereScoringModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
-                                .get(CohereScoringModelConfig.CONFIG_ROOT))
+                .config(CohereConstants.create(Config.just(ConfigSources.create(yaml, APPLICATION_X_YAML)), MODEL, "test-model"))
                 .build();
 
         assertThat(config.proxy().map(Proxy::toString), optionalValue(equalTo("customProxy")));
@@ -81,16 +86,21 @@ class ScoringModelConfigTest {
     @Test
     void testNoProxy(ServiceRegistry registry) {
 
+        // language=YAML
         var yaml = """
-                langchain4j.cohere:
-                  scoring-model:
-                    proxy.service-registry.named:
+                langchain4j:
+                  models:
+                    test-model:
+                      provider: cohere
+                
+                  providers:
+                    cohere:
+                      proxy.service-registry.named:
                 """;
 
         var config = CohereScoringModelConfig.builder()
                 .serviceRegistry(registry)
-                .config(Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML))
-                                .get(CohereScoringModelConfig.CONFIG_ROOT))
+                .config(CohereConstants.create(Config.just(ConfigSources.create(yaml, APPLICATION_X_YAML)), MODEL, "test-model"))
                 .build();
 
         assertThat(config.proxy().map(Proxy::toString), optionalEmpty());

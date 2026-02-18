@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,6 +149,11 @@ public class HoconConfigParser implements ConfigParser {
     @Override
     public List<String> supportedSuffixes() {
         return SUPPORTED_SUFFIXES;
+    }
+
+    @Override
+    public String toString() {
+        return "HOCON(" + MediaTypes.APPLICATION_HOCON.text() + ")";
     }
 
     private static ObjectNode fromConfig(ConfigObject config) {

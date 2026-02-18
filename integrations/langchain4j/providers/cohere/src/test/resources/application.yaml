@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,19 @@
 # limitations under the License.
 #
 
-langchain4j.cohere:
-  # EmbeddingModel
-  embedding-model:
-    api-key: api-key
-    model-name: model-name
-    base-url: base-url
-    input-type: inputType
-    timeout: PT10M
-    log-requests: true
-    log-responses: true
-    max-segments-per-batch: 10
-  # ScoringModel
-  scoring-model:
-    api-key: api-key
-    model-name: model-name
-    base-url: base-url
-    timeout: PT10M
-    max-retries: 5
-    log-requests: true
-    log-responses: true
+langchain4j:
+  models:
+    test-model:
+      provider: cohere
+      max-retries: 5
+
+  providers:
+    cohere:
+      api-key: api-key
+      model-name: model-name
+      base-url: base-url
+      input-type: inputType
+      timeout: PT10M
+      log-requests: true
+      log-responses: true
+      max-segments-per-batch: 10

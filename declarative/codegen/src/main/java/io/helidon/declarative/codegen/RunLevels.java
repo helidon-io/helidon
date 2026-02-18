@@ -45,6 +45,11 @@ public final class RunLevels {
      */
     public static final double SCHEDULING = 70D;
 
+    /**
+     * Service that register gauges after the server is started.
+     */
+    public static final double METRICS = 120D;
+
     private RunLevels() {
     }
 }

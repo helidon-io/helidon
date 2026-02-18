@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +71,15 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return client connection if explicitly defined
      */
     Optional<ClientConnection> connection();
+
+    /**
+     * Address of the connection, if configured.
+     *
+     * @return socket address - may be an {@link java.net.InetSocketAddress} or {@link java.net.UnixDomainSocketAddress}
+     */
+    default Optional<SocketAddress> address() {
+        return Optional.empty();
+    }
 
     /**
      * Read timeout.

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -104,6 +105,7 @@ public class TcpClientConnection implements ClientConnection {
      *
      * @return this connection, connected to the remote socket
      */
+    @Override
     public TcpClientConnection connect() {
         Tls tls = connectionKey.tls();
         InetSocketAddress targetAddress = inetSocketAddress();
@@ -140,14 +142,14 @@ public class TcpClientConnection implements ClientConnection {
                 throw new UncheckedIOException("Failed to execute SSL handshake", e);
             }
             if (LOGGER.isLoggable(TRACE)) {
-                debugTls(sslSocket);
+                debugTls(sslSocket, channelId);
             }
             this.helidonSocket = TlsSocket.client(sslSocket, channelId);
         } else {
             this.helidonSocket = PlainSocket.client(socket, channelId);
         }
 
-        this.reader = new DataReader(helidonSocket);
+        this.reader = DataReader.create(helidonSocket);
         int writeBufferSize = webClient.prototype().writeBufferSize();
         this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
@@ -234,6 +236,7 @@ public class TcpClientConnection implements ClientConnection {
         return helidonSocket;
     }
 
+    @Override
     public boolean isConnected() {
         return socket != null && socket.isConnected() && helidonSocket().isConnected();
     }
@@ -262,16 +265,29 @@ public class TcpClientConnection implements ClientConnection {
         return new InetSocketAddress(address, connectionKey.port());
     }
 
-    private void debugTls(SSLSocket sslSocket) {
-        SSLSession sslSession = sslSocket.getSession();
+    static void debugTls(SSLEngine sslEngine, String channelId) {
+        String appProtocol = sslEngine.getApplicationProtocol();
+        String handshakeProtocol = sslEngine.getHandshakeApplicationProtocol();
+
+        debugTls(sslEngine.getSession(), channelId, appProtocol, handshakeProtocol);
+    }
+
+    private static void debugTls(SSLSocket sslSocket, String channelId) {
+        String appProtocol = sslSocket.getApplicationProtocol();
+        String handshakeProtocol = sslSocket.getHandshakeApplicationProtocol();
+
+        debugTls(sslSocket.getSession(), channelId, appProtocol, handshakeProtocol);
+    }
+
+    private static void debugTls(SSLSession sslSession, String channelId, String appProtocol, String handshakeProtocol) {
         if (sslSession == null) {
             LOGGER.log(TRACE, "No SSL session");
             return;
         }
 
         String msg = "[client " + channelId + "] TLS negotiated:\n"
-                + "Application protocol: " + sslSocket.getApplicationProtocol() + "\n"
-                + "Handshake application protocol: " + sslSocket.getHandshakeApplicationProtocol() + "\n"
+                + "Application protocol: " + appProtocol + "\n"
+                + "Handshake application protocol: " + handshakeProtocol + "\n"
                 + "Protocol: " + sslSession.getProtocol() + "\n"
                 + "Cipher Suite: " + sslSession.getCipherSuite() + "\n"
                 + "Peer host: " + sslSession.getPeerHost() + "\n"
@@ -290,7 +306,7 @@ public class TcpClientConnection implements ClientConnection {
         LOGGER.log(TRACE, msg);
     }
 
-    private String certsToString(Certificate[] peerCertificates) {
+    private static String certsToString(Certificate[] peerCertificates) {
         String[] certs = new String[peerCertificates.length];
 
         for (int i = 0; i < peerCertificates.length; i++) {

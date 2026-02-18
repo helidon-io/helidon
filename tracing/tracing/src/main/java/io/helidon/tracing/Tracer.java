@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,10 @@ public interface Tracer {
      * Get the currently registered global tracer.
      *
      * @return global tracer
+     * @deprecated we are switching to service registry for global instances, kindly use
+     * {@link io.helidon.service.registry.Services#get(Class)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static Tracer global() {
         return TracerProviderHelper.global();
     }
@@ -44,8 +47,11 @@ public interface Tracer {
      * Register a global tracer, behavior depends on implementation.
      *
      * @param tracer tracer to use as a global tracer
+     * @deprecated we are switching to Service registry for global instances, kindly use
+     * {@link io.helidon.service.registry.Services#set(Class, Object[])} before using tracing instead
+     * of calling this method
      */
-
+    @Deprecated(forRemoval = true, since = "4.4.0")
     static void global(Tracer tracer) {
         TracerProviderHelper.global(tracer);
     }

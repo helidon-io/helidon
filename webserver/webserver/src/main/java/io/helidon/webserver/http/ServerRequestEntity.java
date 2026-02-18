@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,16 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private ServerRequestEntity(Consumer<Boolean> entityRequestedCallback,
                                 UnaryOperator<InputStream> streamFilter,
                                 UnaryOperator<InputStream> decoder,
                                 Function<Integer, BufferData> readEntityFunction,
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
-                                MediaContext mediaContext) {
-        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable);
+                                MediaContext mediaContext,
+                                long maxBufferedEntitySize) {
+        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
         this.streamFilter = streamFilter;
         this.decoder = decoder;
         this.requestHeaders = requestHeaders;
@@ -63,22 +65,26 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
      * @param entityProcessedRunnable runnable to run once the entity is fully read
      * @param requestHeaders          request headers
      * @param mediaContext            media context to map to correct types
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
      * @return a new entity
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static ServerRequestEntity create(Consumer<Boolean> entityRequestedCallback,
                                              UnaryOperator<InputStream> streamFilter,
                                              ContentDecoder decoder,
                                              Function<Integer, BufferData> readEntityFunction,
                                              Runnable entityProcessedRunnable,
                                              ServerRequestHeaders requestHeaders,
-                                             MediaContext mediaContext) {
+                                             MediaContext mediaContext,
+                                             long maxBufferedEntitySize) {
         return new ServerRequestEntity(entityRequestedCallback,
                                        streamFilter,
                                        decoder,
                                        readEntityFunction,
                                        entityProcessedRunnable,
                                        requestHeaders,
-                                       mediaContext);
+                                       mediaContext,
+                                       maxBufferedEntitySize);
     }
 
     @Override
@@ -89,7 +95,8 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                        readEntityFunction(),
                                        entityProcessedRunnable(),
                                        requestHeaders,
-                                       mediaContext);
+                                       mediaContext,
+                                       maxBufferedEntitySize());
     }
 
     @Override

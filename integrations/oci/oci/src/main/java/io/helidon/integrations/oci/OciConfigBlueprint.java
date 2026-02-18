@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,16 @@ interface OciConfigBlueprint {
      * <ul>
      *     <li>{@value #AUTHENTICATION_METHOD_AUTO} - use the list of
      *     {@link io.helidon.integrations.oci.OciConfig#allowedAuthenticationMethods()}
-     *          (in the provided order), and choose the first one capable of providing data</li>
+     *     (in the provided order), and choose the first one capable of providing data</li>
      *     <li>{@value AuthenticationMethodConfig#METHOD} -
      *     use configuration of the application to obtain values needed to set up connectivity, uses
      *     {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider}</li>
-     *     <li>{@value AuthenticationMethodConfigFile#METHOD} - use configuration file of OCI ({@code home/.oci/config}), uses
+     *     <li>{@value AuthenticationMethodConfigFile#METHOD} -
+     *     use configuration file of OCI ({@code home/.oci/config}), uses
      *     {@link com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}</li>
+     *     <li>{@value AuthenticationMethodSessionToken#METHOD} -
+     *     use configuration of the application to obtain values needed to set up connectivity, uses
+     *     {@link com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider}</li>
      *     <li>{@code resource-principal}  - use identity of the OCI resource the service is executed on
      *     (fn), uses
      *     {@link com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}, and is available in a

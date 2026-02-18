@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,14 @@ class GrowingBufferData implements BufferData {
     }
 
     @Override
+    public int readFrom(ByteBuffer buf) {
+        int read = Math.min(buf.remaining(), bytes.length - writePosition);
+        buf.get(bytes, writePosition, read);
+        writePosition += read;
+        return read;
+    }
+
+    @Override
     public int read() {
         if (readPosition >= writePosition) {
             throw new ArrayIndexOutOfBoundsException("This buffer has " + length
@@ -120,8 +128,9 @@ class GrowingBufferData implements BufferData {
         return this;
     }
 
+    @Override
     public int writeTo(ByteBuffer writeBuffer, int limit) {
-        int toWrite = Math.min(writeBuffer.capacity(), length - readPosition);
+        int toWrite = Math.min(writeBuffer.limit() - writeBuffer.position(), writePosition - readPosition);
         toWrite = Math.min(toWrite, limit);
         if (toWrite == 0) {
             return 0;

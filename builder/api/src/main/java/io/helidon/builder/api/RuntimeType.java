@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,16 +42,15 @@ public final class RuntimeType {
         T prototype();
     }
 
-
     /**
-     * Mark this runtime type as prototyped by a specific prototype.
-     * The prototype is generated through {@link io.helidon.builder.api.Prototype.Blueprint} definition.
-     * <p>
-     * This is complementing {@link RuntimeType} interface.
-     * We need to have both the annotation and implement the interface, to correctly validate the object tree.
+     * This annotation is no longer used.
+     *
+     * @deprecated this is an unnecessary duplication of what is required on the blueprint, use only blueprint
+     * {@link io.helidon.builder.api.Prototype.Factory} instead.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
+    @Deprecated(forRemoval = true, since = "4.4.0")
     public @interface PrototypedBy {
         /**
          * Type of the prototype.

@@ -103,7 +103,7 @@ class ProviderTest {
                                                           () -> WithProvider.create(config.get("fail")));
 
         assertThat(fail.getMessages(), hasSize(1));
-        assertThat(fail.getMessage(), containsString("\"one-not-discover\" must not be null"));
+        assertThat(fail.getMessage(), containsString("\"oneNotDiscover\" must not be null"));
     }
 
     @Test

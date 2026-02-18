@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.common.types.AnnotationProperty;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -131,8 +131,7 @@ public final class Annotation extends CommonComponent {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         writer.write("@" + imports.typeName(type(), includeImport()));
         if (!parameters.isEmpty()) {
             writer.write("(");

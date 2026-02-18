@@ -57,7 +57,7 @@ class IdleInputStream extends InputStream {
     IdleInputStream(Socket socket, InputStream upstream, String childSocketId, String socketId) {
         this.socket = socket;
         this.upstream = upstream;
-        executor = LazyValue.create(() -> Executors.newThreadPerTaskExecutor(
+        this.executor = LazyValue.create(() -> Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual()
                         .name("helidon-socket-monitor-" + childSocketId + "-" + socketId, 0)
                         .factory())
@@ -100,6 +100,9 @@ class IdleInputStream extends InputStream {
     public void close() throws IOException {
         upstream.close();
         closed = true;
+        if (idlingThread != null) {
+            idlingThread.cancel(true);
+        }
     }
 
     /**

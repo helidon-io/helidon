@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.api;
 
+import java.net.SocketAddress;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -49,12 +50,13 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
-     * Config method to get {@link io.helidon.webclient.api.ClientUri}.
+     * This method is internal only and was used from the builder and will be removed without replacement.
+     * You can easily map ClientUri from config using {@code config.asString().map(ClientUri::create)}.
      *
-     * @param config configuration instance
-     * @return client URI for the config node
+     * @param config config instance
+     * @return client URI mapped
      */
-    @Prototype.FactoryMethod
+    @Deprecated(forRemoval = true, since = "4.3.0")
     static ClientUri createBaseUri(Config config) {
         return config.as(URI.class).map(ClientUri::create).orElseThrow();
     }
@@ -66,6 +68,14 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @Option.Configured
     Optional<ClientUri> baseUri();
+
+    /**
+     * Base address used by the client in all requests.
+     * This may be either an Inet address or a UNIX domain socket address.
+     *
+     * @return base address of the client requests
+     */
+    Optional<SocketAddress> baseAddress();
 
     /**
      * Base query used by the client in all requests.
@@ -218,7 +228,9 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     boolean sendExpectContinue();
 
     /**
-     * Maximal size of the connection cache.
+     * Maximal size of the connection cache for a single connection key.
+     * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DNS address lookup, and proxy.
+     * <p>
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections
      * to be closed and reopened frequently.

@@ -16,6 +16,7 @@
 
 package io.helidon.http;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,12 +119,14 @@ enum HeaderNameEnum implements HeaderName {
 
     private final String lowerCase;
     private final String http1Case;
+    private final byte[] nameBytes;
     private final int index;
 
     HeaderNameEnum(String http1Case) {
         this.http1Case = http1Case;
         this.lowerCase = this.http1Case.toLowerCase();
         this.index = this.ordinal();
+        this.nameBytes = http1Case.getBytes(StandardCharsets.US_ASCII);
     }
 
     static HeaderName byCapitalizedName(String name) {
@@ -151,6 +154,11 @@ enum HeaderNameEnum implements HeaderName {
     @Override
     public int index() {
         return index;
+    }
+
+    @Override
+    public byte[] nameBytes() {
+        return nameBytes;
     }
 
     static class Strings {

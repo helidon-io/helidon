@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package io.helidon.config;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -40,7 +40,7 @@ public class PropertiesConfigParserTest {
     @Test
     public void testGetSupportedMediaTypes() {
         PropertiesConfigParser parser = new PropertiesConfigParser();
-        assertThat(parser.supportedMediaTypes(), containsInAnyOrder(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
+        assertThat(parser.supportedMediaTypes(), containsInAnyOrder(MediaTypes.TEXT_PROPERTIES));
     }
 
     @Test

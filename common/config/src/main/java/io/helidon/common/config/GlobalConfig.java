@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,10 @@ public final class GlobalConfig {
     @Deprecated(forRemoval = true, since = "4.3.0")
     public static void config(Config config, boolean fromServiceRegistry) {
         GLOBAL_FROM_REGISTRY.set(fromServiceRegistry);
-        CONFIG.set(config);
+        if (!fromServiceRegistry) {
+            // only set if not from service registry, as otherwise we may cause recursion of lookups
+            CONFIG.set(config);
+        }
     }
 
     static Config create() {

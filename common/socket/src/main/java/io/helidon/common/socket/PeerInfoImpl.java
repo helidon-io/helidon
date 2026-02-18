@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,21 +20,20 @@ import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
-
-import io.helidon.common.LazyValue;
+import java.util.function.Supplier;
 
 class PeerInfoImpl implements PeerInfo {
-    private final LazyValue<SocketAddress> socketAddress;
-    private final LazyValue<String> host;
-    private final LazyValue<Integer> port;
-    private final LazyValue<Optional<Principal>> principalSupplier;
-    private final LazyValue<Optional<Certificate[]>> certificateSupplier;
+    private final Supplier<SocketAddress> socketAddress;
+    private final Supplier<String> host;
+    private final Supplier<Integer> port;
+    private final Supplier<Optional<Principal>> principalSupplier;
+    private final Supplier<Optional<Certificate[]>> certificateSupplier;
 
-    private PeerInfoImpl(LazyValue<SocketAddress> socketAddress,
-                         LazyValue<String> host,
-                         LazyValue<Integer> port,
-                         LazyValue<Optional<Principal>> principalSupplier,
-                         LazyValue<Optional<Certificate[]>> certificateSupplier) {
+    private PeerInfoImpl(Supplier<SocketAddress> socketAddress,
+                         Supplier<String> host,
+                         Supplier<Integer> port,
+                         Supplier<Optional<Principal>> principalSupplier,
+                         Supplier<Optional<Certificate[]>> certificateSupplier) {
         this.socketAddress = socketAddress;
         this.host = host;
         this.port = port;
@@ -43,37 +42,67 @@ class PeerInfoImpl implements PeerInfo {
     }
 
     static PeerInfo createLocal(PlainSocket socket) {
-        return new PeerInfoImpl(LazyValue.create(socket::localSocketAddress),
-                                LazyValue.create(socket::localHost),
-                                LazyValue.create(socket::localPort),
-                                LazyValue.create(Optional.empty()),
-                                LazyValue.create(Optional.empty()));
+        return new PeerInfoImpl(socket::localSocketAddress,
+                                socket::localHost,
+                                socket::localPort,
+                                Optional::empty,
+                                Optional::empty);
     }
 
     static PeerInfoImpl createLocal(TlsSocket socket) {
-        // remote socket - all lazy values, as they cannot change (and they require creating another object)
-        return new PeerInfoImpl(LazyValue.create(socket::localSocketAddress),
-                                LazyValue.create(socket::localHost),
-                                LazyValue.create(socket::localPort),
-                                LazyValue.create(socket::tlsPrincipal),
-                                LazyValue.create(socket::tlsCertificates));
+        return new PeerInfoImpl(socket::localSocketAddress,
+                                socket::localHost,
+                                socket::localPort,
+                                socket::tlsPrincipal,
+                                socket::tlsCertificates);
     }
 
     static PeerInfoImpl createRemote(TlsSocket socket) {
-        // remote socket - all lazy values, as they cannot change (and they require creating another object)
-        return new PeerInfoImpl(LazyValue.create(socket::remoteSocketAddress),
-                                LazyValue.create(socket::remoteHost),
-                                LazyValue.create(socket::remotePort),
-                                LazyValue.create(socket::tlsPeerPrincipal),
-                                LazyValue.create(socket::tlsPeerCertificates));
+        return new PeerInfoImpl(socket::remoteSocketAddress,
+                                socket::remoteHost,
+                                socket::remotePort,
+                                socket::tlsPeerPrincipal,
+                                socket::tlsPeerCertificates);
     }
 
     static PeerInfoImpl createRemote(PlainSocket socket) {
-        return new PeerInfoImpl(LazyValue.create(socket::remoteSocketAddress),
-                                LazyValue.create(socket::remoteHost),
-                                LazyValue.create(socket::remotePort),
-                                LazyValue.create(Optional.empty()),
-                                LazyValue.create(Optional.empty()));
+        return new PeerInfoImpl(socket::remoteSocketAddress,
+                                socket::remoteHost,
+                                socket::remotePort,
+                                Optional::empty,
+                                Optional::empty);
+    }
+
+    static PeerInfo createLocal(NioSocket socket) {
+        return new PeerInfoImpl(socket::localSocketAddress,
+                                socket::localHost,
+                                socket::localPort,
+                                Optional::empty,
+                                Optional::empty);
+    }
+
+    static PeerInfo createRemote(NioSocket socket) {
+        return new PeerInfoImpl(socket::remoteSocketAddress,
+                                socket::remoteHost,
+                                socket::remotePort,
+                                Optional::empty,
+                                Optional::empty);
+    }
+
+    static PeerInfoImpl createLocal(TlsNioSocket socket) {
+        return new PeerInfoImpl(socket::localSocketAddress,
+                                socket::localHost,
+                                socket::localPort,
+                                socket::tlsPrincipal,
+                                socket::tlsCertificates);
+    }
+
+    static PeerInfoImpl createRemote(TlsNioSocket socket) {
+        return new PeerInfoImpl(socket::remoteSocketAddress,
+                                socket::remoteHost,
+                                socket::remotePort,
+                                socket::tlsPeerPrincipal,
+                                socket::tlsPeerCertificates);
     }
 
     @Override

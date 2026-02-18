@@ -1337,11 +1337,11 @@ Thanks to @lilac for their contributions.
 
 We are pleased to announce the release of Helidon 4.0.0. The big news in Helidon 4.0.0 is the introduction of Helidon Níma -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
 
-The Helidon SE API in 4.0.0 has changed significantly from Helidon 3. The use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon SE code will require modification to run on these new APIs. For more information see the [Helidon SE Upgrade Guide](https://helidon.io/docs/v4/#/se/guides/upgrade_4x).
+The Helidon SE API in 4.0.0 has changed significantly from Helidon 3. The use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon SE code will require modification to run on these new APIs. For more information see the [Helidon SE Upgrade Guide](https://helidon.io/docs/v4/se/guides/upgrade_4x).
 
-Helidon 4 supports MicroProfile 6. This means your existing Helidon MP 3.x applications will run on Helidon 4 with only minor modifications. And since Helidon’s MicroProfile server is based on the new Níma WebServer you get all the benefits of running on virtual threads. For more information see the [Helidon MP Upgrade Guide](https://helidon.io/docs/v4/#/mp/guides/upgrade_4x).
+Helidon 4 supports MicroProfile 6. This means your existing Helidon MP 3.x applications will run on Helidon 4 with only minor modifications. And since Helidon’s MicroProfile server is based on the new Níma WebServer you get all the benefits of running on virtual threads. For more information see the [Helidon MP Upgrade Guide](https://helidon.io/docs/v4/mp/guides/upgrade_4x).
 
-New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/#/about/prerequisites).
+New to Helidon? Then jump in and [get started](https://helidon.io/docs/v4/about/prerequisites).
 
 Java 21 is required to use Helidon 4.0.0.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package io.helidon.tracing;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.logging.common.HelidonMdc;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.spi.TracerProvider;
 
 /**
@@ -29,6 +31,7 @@ import io.helidon.tracing.spi.TracerProvider;
 final class TracerProviderHelper {
     private static final System.Logger LOGGER = System.getLogger(TracerProviderHelper.class.getName());
     private static final TracerProvider TRACER_PROVIDER;
+    private static final AtomicBoolean GLOBAL_REGISTRY = new AtomicBoolean(false);
 
     static {
         TracerProvider provider = null;
@@ -82,6 +85,9 @@ final class TracerProviderHelper {
         if (TRACER_PROVIDER == null) {
             throw new IllegalStateException("Use before initialization has completed");
         }
+        if (GLOBAL_REGISTRY.get()) {
+            return Services.get(Tracer.class);
+        }
         return TRACER_PROVIDER.global();
     }
 
@@ -90,6 +96,13 @@ final class TracerProviderHelper {
             throw new IllegalStateException("Use before initialization has completed");
         }
         TRACER_PROVIDER.global(tracer);
+        try {
+            Services.set(Tracer.class, tracer);
+            GLOBAL_REGISTRY.set(true);
+        } catch (Exception e) {
+            GLOBAL_REGISTRY.set(false);
+            LOGGER.log(System.Logger.Level.TRACE, "Tracer instance already set in service registry", e);
+        }
     }
 
     static TracerBuilder<?> findTracerBuilder() {

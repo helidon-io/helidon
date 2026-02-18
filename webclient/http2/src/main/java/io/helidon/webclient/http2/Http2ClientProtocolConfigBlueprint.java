@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Size;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
+@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {
@@ -76,6 +78,16 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultLong(-1L)
     long maxHeaderListSize();
+
+    /**
+     * Configure the maximum size allowed for an entity that can be explicitly
+     * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
+     *
+     * @return maximum size for a buffered entity
+     */
+    @Option.Configured
+    @Option.Default("64 KB")
+    Size maxBufferedEntitySize();
 
     /**
      * Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections.

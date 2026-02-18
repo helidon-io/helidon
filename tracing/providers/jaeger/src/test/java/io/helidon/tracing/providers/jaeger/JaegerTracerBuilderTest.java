@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,12 @@ import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
-import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -138,7 +136,7 @@ class JaegerTracerBuilderTest {
         builder.addTracerTag("tracerLevelTag", "val-1");
         JaegerTracerBuilder jaegerTracerBuilder = builder.unwrap(JaegerTracerBuilder.class);
         jaegerTracerBuilder.scheduleDelay(Duration.ofMillis(100)); // for faster test runs
-        jaegerTracerBuilder.exporter(new TestSpanExporterProvider().createExporter(null));
+        jaegerTracerBuilder.addSpanExporter(new TestSpanExporterProvider().createExporter(null));
         Tracer tracer = builder.build();
 
         Span span = tracer.spanBuilder("testSpan").tag("spanLevelTag", "val-2").start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.spi;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.config.NamedService;
@@ -99,6 +100,25 @@ public interface ServerFeature extends NamedService {
          * @see #hasRouting(Class)
          */
         <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType);
+
+        /**
+         * Get the routing builder for the provided type, or create a new builder.
+         * <p>
+         * Default implementation of this method always returns a builder, though if created using
+         * {@code builderSupplier} it is ignored by the server.
+         *
+         * @param builderType type of the routing builder
+         * @param builderSupplier supplier of a new builder instance
+         * @return instance of the routing builder
+         * @param <T> type that is expected
+         */
+        // Developer note: default method to be backward compatible
+        default <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType, Supplier<T> builderSupplier) {
+            if (hasRouting(builderType)) {
+                return routingBuilder(builderType);
+            }
+            return builderSupplier.get();
+        }
     }
 
     /**

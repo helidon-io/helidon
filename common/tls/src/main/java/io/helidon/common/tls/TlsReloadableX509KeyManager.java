@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
@@ -29,9 +30,25 @@ class TlsReloadableX509KeyManager extends X509ExtendedKeyManager implements TlsR
     private static final System.Logger LOGGER = System.getLogger(TlsReloadableX509KeyManager.class.getName());
 
     private volatile X509KeyManager keyManager;
+    private volatile X509ExtendedKeyManager extended;
 
     private TlsReloadableX509KeyManager(X509KeyManager keyManager) {
         this.keyManager = keyManager;
+        extended(keyManager);
+    }
+
+    static TlsReloadableX509KeyManager create(X509KeyManager keyManager) {
+        if (keyManager instanceof TlsReloadableX509KeyManager) {
+            return (TlsReloadableX509KeyManager) keyManager;
+        }
+        assertValid(keyManager);
+        return new TlsReloadableX509KeyManager(keyManager);
+    }
+
+    static void assertValid(X509KeyManager keyManager) {
+        if (keyManager instanceof TlsReloadableX509KeyManager) {
+            throw new IllegalArgumentException();
+        }
     }
 
     @Override
@@ -65,6 +82,16 @@ class TlsReloadableX509KeyManager extends X509ExtendedKeyManager implements TlsR
     }
 
     @Override
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+        return extended.chooseEngineClientAlias(keyType, issuers, engine);
+    }
+
+    @Override
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+        return extended.chooseEngineServerAlias(keyType, issuers, engine);
+    }
+
+    @Override
     public void reload(Tls tls) {
         tls.keyManager().ifPresent(this::reload);
     }
@@ -74,20 +101,55 @@ class TlsReloadableX509KeyManager extends X509ExtendedKeyManager implements TlsR
         assertValid(keyManager);
         LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
         this.keyManager = keyManager;
+        extended(keyManager);
     }
 
-    static TlsReloadableX509KeyManager create(X509KeyManager keyManager) {
-        if (keyManager instanceof TlsReloadableX509KeyManager) {
-            return (TlsReloadableX509KeyManager) keyManager;
+    private void extended(X509KeyManager keyManager) {
+        if (keyManager instanceof X509ExtendedKeyManager ekm) {
+            this.extended = ekm;
+            return;
         }
-        assertValid(keyManager);
-        return new TlsReloadableX509KeyManager(keyManager);
-    }
+        this.extended = new X509ExtendedKeyManager() {
+            @Override
+            public String[] getClientAliases(String s, Principal[] principals) {
+                return keyManager.getClientAliases(s, principals);
+            }
 
-    static void assertValid(X509KeyManager keyManager) {
-        if (keyManager instanceof TlsReloadableX509KeyManager) {
-            throw new IllegalArgumentException();
-        }
+            @Override
+            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                return keyManager.chooseClientAlias(strings, principals, socket);
+            }
+
+            @Override
+            public String[] getServerAliases(String s, Principal[] principals) {
+                return keyManager.getServerAliases(s, principals);
+            }
+
+            @Override
+            public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+                return keyManager.chooseServerAlias(s, principals, socket);
+            }
+
+            @Override
+            public X509Certificate[] getCertificateChain(String s) {
+                return keyManager.getCertificateChain(s);
+            }
+
+            @Override
+            public PrivateKey getPrivateKey(String s) {
+                return keyManager.getPrivateKey(s);
+            }
+
+            @Override
+            public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+                return keyManager.chooseClientAlias(keyType, issuers, null);
+            }
+
+            @Override
+            public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+                return keyManager.chooseServerAlias(keyType, issuers, null);
+            }
+        };
     }
 
     static class NotReloadableKeyManager extends TlsReloadableX509KeyManager {

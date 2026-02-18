@@ -27,7 +27,6 @@ import io.helidon.builder.api.RuntimeType;
 /**
  * Retry supports retry policies to be applied on an execution of asynchronous tasks.
  */
-@RuntimeType.PrototypedBy(RetryConfig.class)
 public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
 
     /**

@@ -36,6 +36,8 @@ module io.helidon.webserver.observe.log {
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.webserver.observe;
+    requires io.helidon.builder.api;
+    requires io.helidon.http;
 
     exports io.helidon.webserver.observe.log;
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,6 +116,7 @@ jobs:
         with:
           build-cache: read-only
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
+          free-space: true
           run: |
             mvn ${MVN_ARGS} \
               -DreactorRule=tests \
@@ -348,7 +349,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-22.04, macos-14, windows-2022 ]
-        module: [ mp-1, mp-2, mp-3, se-1, inject ]
+        module: [ se-1, inject ]
         include:
           - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }

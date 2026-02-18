@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,8 @@ public class CoherenceEmbeddingStoreIT {
 
         @Service.Inject
         StoreWrapper(
-                @Service.Named("coherence") EmbeddingStore<TextSegment> namedStore,
+                // name of the configured embedding store(used to be type)
+                @Service.Named("test-embedding-store") EmbeddingStore<TextSegment> namedStore,
                 EmbeddingStore<?> defaultStore
         ) {
             this.namedStore = namedStore;

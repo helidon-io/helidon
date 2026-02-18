@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.ConfigException;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -241,6 +242,7 @@ import io.helidon.service.registry.Services;
  * config system merges these together so that values from config sources with higher {@link io.helidon.common.Weight weight}
  * have priority over values from config sources with lower weight.
  */
+@SuppressWarnings("removal")
 @Service.Contract
 public interface Config extends io.helidon.common.config.Config {
     /**
@@ -398,6 +400,26 @@ public interface Config extends io.helidon.common.config.Config {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
+    }
+
+    /**
+     * Create configuration from a string. The string format must match the provided media type, and a parser must be
+     * present for that media type. {@link io.helidon.common.media.type.MediaTypes#TEXT_PROPERTIES} is always supported
+     * (Java properties media type).
+     * <p>
+     * The created config will only use a config source created from the provided content, and will not add any other
+     * config sources.
+     *
+     * @param configContent config content, such as YAML, properties, HOCON
+     * @param mediaType     media type of the provided {@code configContent}, such as
+     *                      io.helidon.common.media.type.{@link io.helidon.common.media.type.MediaTypes#APPLICATION_YAML};
+     *                      appropriate parser must be available on classpath
+     * @return a new config instance from the provided content
+     * @throws java.lang.RuntimeException in case there is no config parser for the provided media type, or if the content
+     *                                    cannot be parsed into a valid configuration
+     */
+    static Config just(String configContent, MediaType mediaType) {
+        return Config.just(ConfigSources.create(configContent, mediaType));
     }
 
     /**

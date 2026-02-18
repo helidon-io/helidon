@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -146,7 +147,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     Router router(String socketName) {
         ListenerBuildersImpl listener = listenerBuilder(socketName);
 
-        boolean containsHttp = listener.routings.stream()
+        boolean containsHttp = listener.routings().stream()
                 .anyMatch(it -> it instanceof HttpRouting.Builder);
 
         Router.Builder builder = Router.builder();
@@ -207,6 +208,11 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                         }
                         return delegate.routingBuilder(builderType);
                     }
+
+                    @Override
+                    public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType, Supplier<T> builderSupplier) {
+                        return delegate.routingBuilder(builderType, builderSupplier);
+                    }
                 };
             }
         };
@@ -233,7 +239,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
             this.buildersByType = builders;
         }
 
-        static ServerFeature.RoutingBuilders create(String socketName, List<Builder<?, ? extends Routing>> routings) {
+        static RoutingBuildersImpl create(String socketName, List<Builder<?, ? extends Routing>> routings) {
             Map<Class<?>, Object> byType = new IdentityHashMap<>();
             for (var routing : routings) {
                 byType.put(routing.getClass(), routing);
@@ -256,13 +262,26 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                                                      + builderType.getName()
                                                      + " available on socket \"" + socketName + "\"");
         }
+
+        @Override
+        public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType, Supplier<T> builderSupplier) {
+            if (hasRouting(builderType)) {
+                return routingBuilder(builderType);
+            }
+            var response = builderSupplier.get();
+            buildersByType.put(builderType, response);
+            return response;
+        }
+
+        Collection<Object> routings() {
+            return buildersByType.values();
+        }
     }
 
     private static class ListenerBuildersImpl implements ServerFeature.SocketBuilders {
         private final ListenerConfig listenerConfig;
         private final HttpRouting.Builder httpRouting;
-        private final List<Builder<?, ? extends Routing>> routings;
-        private final ServerFeature.RoutingBuilders routingBuilders;
+        private final RoutingBuildersImpl routingBuilders;
 
         ListenerBuildersImpl(String socketName,
                              ListenerConfig listenerConfig,
@@ -270,8 +289,6 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                              List<Builder<?, ? extends Routing>> routings) {
             this.listenerConfig = listenerConfig;
             this.httpRouting = httpRouting;
-            this.routings = routings;
-
             this.routingBuilders = RoutingBuildersImpl.create(socketName, routings);
         }
 
@@ -290,8 +307,9 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
             return routingBuilders;
         }
 
-        List<Builder<?, ? extends Routing>> routings() {
-            return routings;
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<Builder<?, ? extends Routing>> routings() {
+            return (Collection) routingBuilders.routings();
         }
     }
 

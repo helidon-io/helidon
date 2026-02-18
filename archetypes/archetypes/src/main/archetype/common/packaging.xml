@@ -40,7 +40,7 @@
                     <value order="50" template="mustache"><![CDATA[
 ## Run the application in Kubernetes
 
-If you don’t have access to a Kubernetes cluster, you can [install one](https://helidon.io/docs/latest/#/about/kubernetes) on your desktop.
+If you don’t have access to a Kubernetes cluster, you can [install one](https://helidon.io/docs/latest/about/kubernetes) on your desktop.
 
 ### Verify connectivity to cluster
 

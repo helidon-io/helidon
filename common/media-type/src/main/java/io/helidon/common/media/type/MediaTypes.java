@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,15 @@ public final class MediaTypes {
      * String value of media type: {@value}.
      */
     public static final String APPLICATION_HOCON_VALUE = "application/hocon";
+    /**
+     * String value of media type: {@value}.
+     * This type is used for Java properties format.
+     */
+    public static final String TEXT_PROPERTIES_VALUE = "text/x-java-properties";
+    /**
+     * {@value #TEXT_PROPERTIES_VALUE} media type.
+     */
+    public static final MediaType TEXT_PROPERTIES = create("text", "x-java-properties");
 
     // prevent instantiation of utility class
     private MediaTypes() {

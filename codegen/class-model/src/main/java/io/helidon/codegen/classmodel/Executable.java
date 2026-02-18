@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -53,8 +53,7 @@ public abstract class Executable extends AnnotatedComponent {
         exceptions.forEach(exc -> exc.addImports(imports));
     }
 
-    void writeThrows(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writeThrows(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         if (!exceptionTypes().isEmpty()) {
             writer.write(" throws ");
             boolean first = true;
@@ -69,7 +68,7 @@ public abstract class Executable extends AnnotatedComponent {
         }
     }
 
-    void writeBody(ModelWriter writer, ImportOrganizer imports) throws IOException {
+    void writeBody(ModelWriter writer, ImportOrganizer imports) {
         writer.increasePaddingLevel();
         writer.write("\n");
         content.writeBody(writer, imports);
@@ -204,6 +203,18 @@ public abstract class Executable extends AnnotatedComponent {
         }
 
         /**
+         * Add a new method parameter.
+         *
+         * @param type type of the parameter
+         * @param name name of the parameter
+         * @return updated builder instance
+         */
+        public B addParameter(TypeName type, String name) {
+            return addParameter(it -> it.type(type)
+                    .name(name));
+        }
+
+        /**
          * Add new method parameter.
          *
          * @param parameter method parameter
@@ -252,6 +263,18 @@ public abstract class Executable extends AnnotatedComponent {
             consumer.accept(builder);
             return addThrows(builder);
         }
+
+        /**
+         * Add a declared throws definition.
+         *
+         * @param thrownType type of the exception thrown
+         * @return updated builder instance
+         */
+        public B addThrows(TypeName thrownType) {
+            Objects.requireNonNull(thrownType);
+            return addThrows(it -> it.type(thrownType));
+        }
+
 
         /**
          * Add a declared throws definition.

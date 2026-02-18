@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,9 +142,11 @@ class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
         if (rpcMethod == null) {
             throw new IllegalStateException("rpcMethod is null");
         }
-        HttpClientResponse res = delegate.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE)
-                .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON_VALUE)
-                .submit(asJsonObject());
+        delegate.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_JSON_VALUE);
+        if (!delegate.headers().contains(HeaderNames.ACCEPT)) {
+            delegate.header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON_VALUE);
+        }
+        HttpClientResponse res = delegate.submit(asJsonObject());
         return new JsonRpcClientResponseImpl(res);
     }
 

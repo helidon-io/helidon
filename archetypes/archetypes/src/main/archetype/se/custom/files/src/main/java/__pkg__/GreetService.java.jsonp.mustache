@@ -6,7 +6,9 @@ import java.util.concurrent.atomic.AtomicReference;
 {{#GreetService-imports}}
 import {{.}};
 {{/GreetService-imports}}
+import io.helidon.config.Config;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -44,7 +46,7 @@ class GreetService implements HttpService {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     GreetService() {
-        this(Config.global().get("app"));
+        this(Services.get(Config.class).get("app"));
     }
 
     GreetService(Config appConfig) {

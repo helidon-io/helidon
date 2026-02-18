@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package io.helidon.config;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
@@ -40,7 +38,6 @@ final class ConfigFactory {
     private final Map<ConfigKeyImpl, ConfigNode> fullKeyToNodeMap;
     private final ConfigFilter filter;
     private final ProviderImpl provider;
-    private final Function<String, List<String>> aliasGenerator;
     private final Map<PrefixedKey, AbstractConfigImpl> configCache;
     private final ReentrantReadWriteLock configCacheLock = new ReentrantReadWriteLock();
     private final Instant timestamp;
@@ -52,13 +49,11 @@ final class ConfigFactory {
      *                       {@link Config} instances on.
      * @param filter         config filter used to filter each single value
      * @param provider       shared config provider
-     * @param aliasGenerator key alias generator (may be {@code null})
      */
     ConfigFactory(ConfigMapperManager mapperManager,
                   ObjectNode node,
                   ConfigFilter filter,
-                  ProviderImpl provider,
-                  Function<String, List<String>> aliasGenerator) {
+                  ProviderImpl provider) {
 
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
@@ -69,7 +64,6 @@ final class ConfigFactory {
         this.fullKeyToNodeMap = ConfigHelper.createFullKeyToNodeMap(node);
         this.filter = filter;
         this.provider = provider;
-        this.aliasGenerator = aliasGenerator;
 
         // all access must be guarded by configCacheLock
         this.configCache = new HashMap<>();
@@ -154,15 +148,6 @@ final class ConfigFactory {
     private ConfigNode findNode(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         ConfigKeyImpl realKey = prefix.child(key);
         ConfigNode node = fullKeyToNodeMap.get(realKey);
-        if (node == null && aliasGenerator != null) {
-            final String fullKey = key.toString();
-            for (final String keyAlias : aliasGenerator.apply(fullKey)) {
-                node = fullKeyToNodeMap.get(prefix.child(keyAlias));
-                if (node != null) {
-                    break;
-                }
-            }
-        }
         if (node == null) {
             // check if any lazy source supports this node
             return provider.lazyValue(realKey.toString())

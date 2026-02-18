@@ -4,6 +4,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.Services;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.Invocation;
@@ -81,7 +82,7 @@ class TestCORS {
                 .header(HeaderNames.HOST.defaultCase(), "here.com");
 
         Response r = putResponse("Ahoy", builder);
-        boolean isOverriding = Config.global().get("cors").exists();
+        boolean isOverriding = Services.get(Config.class).get("cors").exists();
         assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
     }
 

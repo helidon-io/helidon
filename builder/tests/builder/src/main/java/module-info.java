@@ -19,8 +19,6 @@
  * Helidon Builder Test module.
  */
 module io.helidon.builder.test.builder {
-    requires static com.fasterxml.jackson.annotation;
-
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.builder.api;

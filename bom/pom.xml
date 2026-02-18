@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2017, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -846,6 +846,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-exporter-jaeger</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <!-- to add TracerResolver support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-tracer-resolver</artifactId>
@@ -1228,6 +1233,16 @@
                 <artifactId>helidon-integrations-langchain4j-providers-coherence</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-mock</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- OpenAPI support -->
             <dependency>
@@ -1425,6 +1440,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-json-binding</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.http.media</groupId>
                 <artifactId>helidon-http-media-jsonb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1580,6 +1600,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-discovery</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1646,6 +1671,21 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-jsonrpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-telemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-telemetry-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-telemetry-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1766,6 +1806,22 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- JSON support -->
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json-binding</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.json</groupId>
+                <artifactId>helidon-json-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.helidon.validation</groupId>

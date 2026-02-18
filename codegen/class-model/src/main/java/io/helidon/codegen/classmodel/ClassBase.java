@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package io.helidon.codegen.classmodel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,11 +37,13 @@ import io.helidon.common.types.TypeName;
 /**
  * Abstract class type model. Contains common logic for all class related models.
  */
+@SuppressWarnings("removal")
 public abstract class ClassBase extends AnnotatedComponent {
 
     private final boolean isFinal;
     private final boolean isAbstract;
     private final boolean isStatic;
+    private final List<EnumConstant> enumConstants;
     private final List<Field> fields;
     private final List<Field> staticFields;
     private final List<Method> methods;
@@ -52,7 +53,7 @@ public abstract class ClassBase extends AnnotatedComponent {
     private final List<Constructor> constructors;
     private final List<TypeArgument> genericParameters;
     private final List<InnerClass> innerClasses;
-    private final ClassType classType;
+    private final ElementKind classType;
     private final Type superType;
 
     ClassBase(Builder<?, ?> builder) {
@@ -65,6 +66,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         } else {
             this.fields = List.copyOf(builder.fields.values());
         }
+        this.enumConstants = List.copyOf(builder.enumConstants);
         if (builder.sortStaticFields) {
             this.staticFields = builder.staticFields.values().stream().sorted(ClassBase::fieldComparator).toList();
         } else {
@@ -98,7 +100,10 @@ public abstract class ClassBase extends AnnotatedComponent {
      * @return methods
      */
     public List<Method> methods() {
-        return List.copyOf(methods);
+        List<Method> result = new ArrayList<>(methods);
+        result.addAll(staticMethods);
+
+        return List.copyOf(result);
     }
 
     /**
@@ -125,10 +130,7 @@ public abstract class ClassBase extends AnnotatedComponent {
      * @return kind
      */
     public ElementKind kind() {
-        return switch (classType) {
-            case CLASS -> ElementKind.CLASS;
-            case INTERFACE -> ElementKind.INTERFACE;
-        };
+        return this.classType;
     }
 
     /**
@@ -180,8 +182,7 @@ public abstract class ClassBase extends AnnotatedComponent {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType) throws
-            IOException {
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ElementKind classType) {
         Set<String> combinedTokens = Stream.concat(declaredTokens.stream(), this.tokenNames.stream()).collect(Collectors.toSet());
         if (javadoc().generate()) {
             javadoc().writeComponent(writer, combinedTokens, imports, this.classType);
@@ -208,9 +209,23 @@ public abstract class ClassBase extends AnnotatedComponent {
             }
             writer.write("abstract ");
         }
-        writer.write(this.classType.typeName() + " " + name());
+        writer.write(ClassType.toTypeName(this.classType) + " " + name());
         if (!genericParameters.isEmpty()) {
             writeGenericParameters(writer, combinedTokens, imports);
+        }
+
+        if (this.classType == ElementKind.RECORD) {
+            writer.write("(");
+            boolean first = true;
+            for (Field field : fields()) {
+                if (first) {
+                    first = false;
+                } else {
+                    writer.write(", ");
+                }
+                field.writeComponent(writer, combinedTokens, imports, this.classType);
+            }
+            writer.write(")");
         }
         writer.write(" ");
         if (superType != null) {
@@ -224,6 +239,10 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.write("{");
         writer.writeSeparatorLine();
 
+        if (classType == ElementKind.ENUM) {
+            writeEnumConstants(writer, combinedTokens, imports);
+        }
+
         if (!staticFields.isEmpty()) {
             writeClassFields(staticFields, writer, combinedTokens, imports);
         }
@@ -231,7 +250,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         // support for static initializers
         writePostConstantDeclaration(writer, declaredTokens, imports, classType);
 
-        if (!fields.isEmpty()) {
+        if (!fields.isEmpty() && this.classType != ElementKind.RECORD) {
             writeClassFields(fields, writer, combinedTokens, imports);
         }
         if (!constructors.isEmpty()) {
@@ -250,8 +269,10 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.write("}");
     }
 
-    void writePostConstantDeclaration(ModelWriter writer,  Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
+    void writePostConstantDeclaration(ModelWriter writer,
+                                      Set<String> declaredTokens,
+                                      ImportOrganizer imports,
+                                      ElementKind classType) {
         // default impl does nothing, as interfaces do not support this
     }
 
@@ -274,7 +295,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
     }
 
-    ClassType classType() {
+    ElementKind classType() {
         return classType;
     }
 
@@ -316,8 +337,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
     }
 
-    private void writeGenericParameters(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports)
-            throws IOException {
+    private void writeGenericParameters(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports) {
         writer.write("<");
         boolean first = true;
         for (Type parameter : genericParameters) {
@@ -331,9 +351,8 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.write(">");
     }
 
-    private void writeClassInterfaces(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports)
-            throws IOException {
-        if (classType == ClassType.INTERFACE) {
+    private void writeClassInterfaces(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports) {
+        if (classType == ElementKind.INTERFACE) {
             writer.write("extends ");
         } else {
             writer.write("implements ");
@@ -350,10 +369,28 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.write(" ");
     }
 
+    private void writeEnumConstants(ModelWriter writer,
+                                    Set<String> declaredTokens,
+                                    ImportOrganizer imports) {
+        writer.increasePaddingLevel();
+        boolean first = true;
+        for (var enumConstant : enumConstants) {
+            if (first) {
+                first = false;
+                writer.writeLine("");
+            } else {
+                writer.writeLine(",");
+            }
+            enumConstant.writeComponent(writer, declaredTokens, imports, this.classType);
+        }
+        writer.writeLine(";");
+        writer.decreasePaddingLevel();
+    }
+
     private void writeClassFields(Collection<Field> fields,
                                   ModelWriter writer,
                                   Set<String> declaredTokens,
-                                  ImportOrganizer imports) throws IOException {
+                                  ImportOrganizer imports) {
         writer.increasePaddingLevel();
         for (Field field : fields) {
             writer.write("\n");
@@ -365,7 +402,7 @@ public abstract class ClassBase extends AnnotatedComponent {
 
     private void writerClassConstructors(ModelWriter writer,
                                          Set<String> declaredTokens,
-                                         ImportOrganizer imports) throws IOException {
+                                         ImportOrganizer imports) {
         writer.increasePaddingLevel();
         for (Constructor constructor : constructors) {
             writer.write("\n");
@@ -378,7 +415,7 @@ public abstract class ClassBase extends AnnotatedComponent {
     private void writerClassMethods(List<Method> methods,
                                     ModelWriter writer,
                                     Set<String> declaredTokens,
-                                    ImportOrganizer imports) throws IOException {
+                                    ImportOrganizer imports) {
         writer.increasePaddingLevel();
         for (Method method : methods) {
             writer.write("\n");
@@ -388,11 +425,11 @@ public abstract class ClassBase extends AnnotatedComponent {
         writer.decreasePaddingLevel();
     }
 
-    private void writeInnerClasses(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports) throws IOException {
+    private void writeInnerClasses(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports) {
         writer.increasePaddingLevel();
         for (InnerClass innerClass : innerClasses) {
             writer.write("\n");
-            innerClass.writeComponent(writer, declaredTokens, imports, this.classType);
+            innerClass.writeComponent(writer, declaredTokens, imports, innerClass.classType());
             writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();
@@ -410,13 +447,14 @@ public abstract class ClassBase extends AnnotatedComponent {
         private final Set<Method> methods = new LinkedHashSet<>();
         private final Set<Method> staticMethods = new LinkedHashSet<>();
         private final Set<Type> interfaces = new LinkedHashSet<>();
+        private final List<EnumConstant> enumConstants = new ArrayList<>();
         private final Map<String, Field> fields = new LinkedHashMap<>();
         private final Map<String, Field> staticFields = new LinkedHashMap<>();
         private final Map<String, InnerClass> innerClasses = new LinkedHashMap<>();
         private final List<Constructor> constructors = new ArrayList<>();
         private final List<TypeArgument> genericParameters = new ArrayList<>();
         private final ImportOrganizer.Builder importOrganizer = ImportOrganizer.builder();
-        private ClassType classType = ClassType.CLASS;
+        private ElementKind classType = ElementKind.CLASS;
         private Type superType;
         private boolean isFinal;
         private boolean isAbstract;
@@ -741,9 +779,16 @@ public abstract class ClassBase extends AnnotatedComponent {
          *
          * @param classType Java type
          * @return updated builder instance
+         * @deprecated use {@link #classType(io.helidon.common.types.ElementKind)}
          */
+        @SuppressWarnings("removal")
+        @Deprecated(forRemoval = true, since = "4.4.0")
         public B classType(ClassType classType) {
-            this.classType = classType;
+            switch (classType) {
+            case INTERFACE -> classType(ElementKind.INTERFACE);
+            case CLASS -> classType(ElementKind.CLASS);
+            default -> throw new IllegalStateException("Unexpected value: " + classType);
+            }
             return identity();
         }
 
@@ -753,14 +798,20 @@ public abstract class ClassBase extends AnnotatedComponent {
          *
          * @param kind the element kind, must be a supported top level type
          * @return updated builder instance
-         * @throws java.lang.IllegalArgumentException in case the kind is not supported
+         * @throws IllegalArgumentException in case the kind is not supported
          */
         public B classType(ElementKind kind) {
-            return switch (kind) {
-                case CLASS -> classType(ClassType.CLASS);
-                case INTERFACE -> classType(ClassType.INTERFACE);
-                default -> throw new IllegalArgumentException("Top level class is not supported for kind: " + kind);
-            };
+            switch (kind) {
+            case CLASS:
+            case INTERFACE:
+            case ENUM:
+            case RECORD:
+                this.classType = kind;
+                break;
+            default:
+                throw new IllegalArgumentException("Top level class is not supported for kind: " + kind);
+            }
+            return identity();
         }
 
         /**
@@ -798,12 +849,36 @@ public abstract class ClassBase extends AnnotatedComponent {
             return identity();
         }
 
+        /**
+         * Add an enum constant (only valid if the class type is set to ENUM.
+         *
+         * @param builderConsumer consumer of field builder, type does not have to be specified.
+         * @return updated builder
+         */
+        public B addEnumConstant(Consumer<EnumConstant.Builder> builderConsumer) {
+            var builder = EnumConstant.builder();
+            builderConsumer.accept(builder);
+            this.enumConstants.add(builder.build());
+            return identity();
+        }
+
         ImportOrganizer.Builder importOrganizer() {
             return importOrganizer;
         }
 
         Map<String, InnerClass> innerClasses() {
             return innerClasses;
+        }
+
+        void preBuild() {
+            if (classType == ElementKind.RECORD) {
+                for (Field field : fields.values()) {
+                    addJavadocParameter(field.name(), field.javadoc().content());
+                }
+            }
+            if (!enumConstants.isEmpty() && classType != ElementKind.ENUM) {
+                throw new IllegalStateException("Trying to add enum constants to a class of type: " + classType);
+            }
         }
     }
 }

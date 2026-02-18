@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,9 +75,45 @@ public final class Bytes {
      */
     public static final byte PERCENT_BYTE = (byte) '%';
     /**
+     * {@code ,} byte.
+     */
+    public static final byte COMMA_BYTE = (byte) ',';
+    /**
+     * &#123; byte.
+     */
+    public static final byte BRACE_OPEN_BYTE = (byte) '{';
+    /**
+     * &#125; byte.
+     */
+    public static final byte BRACE_CLOSE_BYTE = (byte) '}';
+    /**
+     * {@code "} byte.
+     */
+    public static final byte DOUBLE_QUOTE_BYTE = (byte) '"';
+    /**
      * Horizontal tabulator byte.
      */
     public static final byte TAB_BYTE = (byte) '\t';
+    /**
+     * {@code [} byte.
+     */
+    public static final byte SQUARE_BRACKET_OPEN_BYTE = (byte) '[';
+    /**
+     * {@code ]} byte.
+     */
+    public static final byte SQUARE_BRACKET_CLOSE_BYTE = (byte) ']';
+    /**
+     * {@code \} byte.
+     */
+    public static final byte BACKSLASH_BYTE = (byte) '\\';
+    /**
+     * {@code 0} byte.
+     */
+    public static final byte ZERO_DIGIT_BYTE = (byte) '0';
+    /**
+     * {@code -} byte.
+     */
+    public static final byte MINUS_SIGN_BYTE = (byte) '-';
 
     private static final boolean BYTE_ORDER_LE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 
@@ -130,7 +166,7 @@ public final class Bytes {
     }
 
     /**
-     * Converts the first 8 bytes from {@code offset} to a long, using appropriate byte order for this machine.
+     * Converts the first 8 bytes from {@code offset} to a long, using little endian byte order.
      * <ul>
      *     <li>This method DOES NOT do a bound check</li>
      *     <li>This method DOES NOT validate there are 8 bytes available</li>
@@ -141,7 +177,7 @@ public final class Bytes {
      * @return long word from the first 8 bytes from offset
      */
     public static long toWord(byte[] buffer, int offset) {
-        return BYTE_ORDER_LE ? toWordLe(buffer, offset) : toWordBe(buffer, offset);
+        return toWordLe(buffer, offset);
     }
 
     // create a pattern for a byte, so we can search for it in a whole word
@@ -168,17 +204,6 @@ public final class Bytes {
                 | ((long) buffer[index + 5] & 0xff) << 40
                 | ((long) buffer[index + 6] & 0xff) << 48
                 | ((long) buffer[index + 7] & 0xff) << 56;
-    }
-
-    private static long toWordBe(byte[] buffer, int index) {
-        return ((long) buffer[index] & 0xff) << 56
-                | ((long) buffer[index + 1] & 0xff) << 48
-                | ((long) buffer[index + 2] & 0xff) << 40
-                | ((long) buffer[index + 3] & 0xff) << 32
-                | ((long) buffer[index + 4] & 0xff) << 24
-                | ((long) buffer[index + 5] & 0xff) << 16
-                | ((long) buffer[index + 6] & 0xff) << 8
-                | (long) buffer[index + 7] & 0xff;
     }
 
     // this method is copied from Netty, and validated by them that it is the optimal

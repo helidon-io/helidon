@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.config.mp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +31,9 @@ import io.helidon.common.GenericType;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.LazyConfigSource;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -53,18 +57,27 @@ import static org.hamcrest.Matchers.hasSize;
 public class MpConfigTest {
     private static Config config;
     private static io.helidon.config.Config emptyConfig;
+    private static final String KEY_NAME = "keyName";
+    private static final String KEY_VALUE = "KeyValue";
 
     @BeforeAll
     static void initClass() {
+        // Inject Custom ConfigSource into Service Registry
+        TestConfigSource testConfigSource = new TestConfigSource();
+        Services.add(io.helidon.config.spi.ConfigSource.class, 2000, testConfigSource);
+        testConfigSource.set(KEY_NAME, KEY_VALUE);
+
         config = ConfigProviderResolver.instance()
                 .getBuilder()
+                .addDiscoveredSources()
                 .withSources(MpConfigSources.create(Map.of("mp-1", "mp-value-1",
                                                            "mp-2", "mp-value-2",
                                                            "app.storageEnabled", "false",
                                                            "mp-array", "a,b,c",
                                                            "mp-list.0", "1",
                                                            "mp-list.1", "2",
-                                                           "mp-list.2", "3")),
+                                                           "mp-list.2", "3",
+                                                           ConfigSource.CONFIG_ORDINAL, "500")),
                              MpConfigSources.create(Map.of("app.storageEnabled", "true",
                                                            ConfigSource.CONFIG_ORDINAL, "1000")))
                 .build();
@@ -82,7 +95,7 @@ public class MpConfigTest {
             asList.add(configSource);
         }
 
-        assertThat(asList, hasSize(2));
+        assertThat(asList, hasSize(3));
 
         assertThat(asList.get(0), instanceOf(MpMapSource.class));
         assertThat(asList.get(1), instanceOf(MpMapSource.class));
@@ -224,6 +237,11 @@ public class MpConfigTest {
         assertThat(mpConfig.getValue("foo", String.class), is("bar"));
     }
 
+    @Test
+    void testInjectedConfigSource() {
+        assertThat(config.getValue(KEY_NAME, String.class), is(KEY_VALUE));
+    }
+
     private static class MutableConfigSource implements ConfigSource {
         private final AtomicReference<String> value = new AtomicReference<>("initial");
 
@@ -349,6 +367,20 @@ public class MpConfigTest {
             assertThat(fooBar, is("mapped-env-value"));
         } finally {
             instance.registerConfig(current, myCl);
+        }
+    }
+
+    private static class TestConfigSource implements io.helidon.config.spi.ConfigSource, LazyConfigSource {
+        private final Map<String, String> values = new HashMap<>();
+
+        @Override
+        public Optional<ConfigNode> node(String key) {
+            return Optional.ofNullable(values.get(key))
+                    .map(ConfigNode.ValueNode::create);
+        }
+
+        private void set(String key, String value) {
+            values.put(key, value);
         }
     }
 }

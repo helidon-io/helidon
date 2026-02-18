@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,18 +31,17 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporter;
+import io.helidon.tracing.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporterBuilder;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -54,7 +53,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 /**
  * The JaegerTracerBuilder is a convenience builder for {@link io.helidon.tracing.Tracer} to use with Jaeger.
@@ -149,7 +148,10 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  * </table>
+ *
+ * @deprecated Use another tracing provider, such as OpenTelemetry.
  */
+@Deprecated(since = "4.4.0", forRemoval = true)
 @Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final System.Logger LOGGER = System.getLogger(JaegerTracerBuilder.class.getName());
@@ -517,7 +519,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             };
 
             AttributesBuilder attributesBuilder = Attributes.builder()
-                    .put(ResourceAttributes.SERVICE_NAME, serviceName);
+                    .put(ServiceAttributes.SERVICE_NAME, serviceName);
             tags.forEach(attributesBuilder::put);
             Resource otelResource = Resource.create(attributesBuilder.build());
 
@@ -535,10 +537,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                     .build();
 
             result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), Map.of());
-
-            if (global) {
-                GlobalOpenTelemetry.set(ot);
-            }
 
             LOGGER.log(Level.INFO, () -> "Creating Jaeger tracer for '" + this.serviceName + "' configured with " + protocol
                     + "://" + host + ":" + port);
@@ -616,8 +614,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 .toList();
     }
 
-    // Primarily for testing
-    JaegerTracerBuilder exporter(SpanExporter spanExporter) {
+    /**
+     * Add a span exporter.
+     *
+     * @param spanExporter span exporter to use
+     * @return updated builder instance
+     */
+    public JaegerTracerBuilder addSpanExporter(SpanExporter spanExporter) {
         adHocExporters.add(spanExporter);
         return this;
     }

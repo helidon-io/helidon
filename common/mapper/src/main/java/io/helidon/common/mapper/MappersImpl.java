@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import io.helidon.service.registry.Service;
  * Implementation of {@link io.helidon.common.mapper.Mappers}.
  */
 @SuppressWarnings("removal")
-@Service.Singleton
 final class MappersImpl implements MapperManager, Mappers {
     private final Map<ClassCacheKey, Mapper<?, ?>> classCache = new ConcurrentHashMap<>();
     private final Map<GenericCacheKey, Mapper<?, ?>> typeCache = new ConcurrentHashMap<>();

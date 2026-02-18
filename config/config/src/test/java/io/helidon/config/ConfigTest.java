@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 import io.helidon.config.Config.Key;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -81,6 +82,17 @@ public class ConfigTest {
     }
 
     @Test
+    public void testCreateWithMediaType() {
+        Config config = Config.just("""
+                key=value
+                key2=value2
+                """, MediaTypes.TEXT_PROPERTIES);
+
+        assertThat(config.get("key").asString(), is(ConfigValues.simpleValue("value")));
+        assertThat(config.get("key2").asString(), is(ConfigValues.simpleValue("value2")));
+    }
+
+    @Test
     public void testCreateKeyNotSet() {
         testKeyNotSet(Config.create());
     }
@@ -108,12 +120,6 @@ public class ConfigTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         testKeyFromSysProps(Config.builder().build());
-    }
-
-    private void testKeyFromEnvVars(Config config) {
-        assertThat(config, not(nullValue()));
-        assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(ConfigSourceTest.TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(ConfigSourceTest.TEST_ENV_VAR_VALUE)));
     }
 
     @Test

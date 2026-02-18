@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.tracing.Span;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
@@ -42,8 +43,8 @@ import jakarta.ws.rs.ext.Provider;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_NAME;
-import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_PORT;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_PEER_NAME;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_PEER_PORT;
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -96,8 +97,11 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                 .tag(HTTP_METHOD, clientRequestContext.getMethod())
                 .tag(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
                 .tag(HTTP_URL, clientRequestContext.getUri().toString())
-                .tag(NET_PEER_NAME.getKey(), clientRequestContext.getUri().getHost())
-                .tag(NET_PEER_PORT.getKey(), clientRequestContext.getUri().getPort())
+                .tag(ServerAttributes.SERVER_ADDRESS.getKey(), clientRequestContext.getUri().getHost())
+                .tag(ServerAttributes.SERVER_PORT.getKey(), clientRequestContext.getUri().getPort())
+                .tag(NET_PEER_NAME, clientRequestContext.getUri().getHost())
+                .tag(NET_PEER_PORT, clientRequestContext.getUri().getPort())
+
                 .update(builder -> Span.current()
                         .map(Span::context)
                         .ifPresent(builder::parent))

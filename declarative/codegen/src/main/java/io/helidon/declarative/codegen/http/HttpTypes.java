@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import io.helidon.common.types.TypeName;
  */
 public final class HttpTypes {
     /**
+     * HTTP Prologue.
+     */
+    public static final TypeName HTTP_PROLOGUE = TypeName.create("io.helidon.http.HttpPrologue");
+    /**
      * HTTP Method.
      */
     public static final TypeName HTTP_METHOD = TypeName.create("io.helidon.http.Method");
@@ -42,6 +46,10 @@ public final class HttpTypes {
      * HTTP Header.
      */
     public static final TypeName HTTP_HEADER = TypeName.create("io.helidon.http.Header");
+    /**
+     * HTTP Headers.
+     */
+    public static final TypeName HTTP_HEADERS = TypeName.create("io.helidon.http.Headers");
     /**
      * HTTP HeaderValues.
      */

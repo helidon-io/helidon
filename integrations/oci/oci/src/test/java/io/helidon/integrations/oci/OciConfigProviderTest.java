@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,29 @@
 
 package io.helidon.integrations.oci;
 
-import java.util.Properties;
+import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class OciConfigProviderTest {
-    @Test
-    void testConfig() {
-        final String FEDERATION_ENDPOINT = "https://auth.us-myregion-1.oraclecloud.com";
-        final String TENANT_ID = "ocid1.tenancy.oc1..mytenancyid";
-        final String REGION = "us-phoenix-1";
-        final String CONFIG_FILE_PATH = "/path1/path2/.oci/config";
+    private static final String FEDERATION_ENDPOINT = "https://auth.us-myregion-1.oraclecloud.com";
+    private static final String TENANT_ID = "ocid1.tenancy.oc1..mytenancyid";
+    private static final String REGION = "us-phoenix-1";
+    private static final String CONFIG_FILE_PATH = "/path1/path2/.oci/config";
 
-        Properties p = System.getProperties();
-        p.put("helidon.oci.authentication-method", AuthenticationMethodConfigFile.METHOD);
-        p.put("helidon.oci.federation-endpoint", FEDERATION_ENDPOINT);
-        p.put("helidon.oci.tenant-id", TENANT_ID);
-        p.put("HELIDON_OCI_REGION", REGION);
-        p.put("helidon.oci.authentication.config-file.path", CONFIG_FILE_PATH);
-        System.setProperties(p);
+    @Test
+    @ExtendWith(RestoreSystemPropertiesExt.class)
+    void testConfig() {
+        System.setProperty("helidon.oci.authentication-method", AuthenticationMethodConfigFile.METHOD);
+        System.setProperty("helidon.oci.federation-endpoint", FEDERATION_ENDPOINT);
+        System.setProperty("helidon.oci.tenant-id", TENANT_ID);
+        // system properties must be exact match
+        System.setProperty("helidon.oci.region", REGION);
+        System.setProperty("helidon.oci.authentication.config-file.path", CONFIG_FILE_PATH);
 
         // clean up ociConfig from OciConfigProvider
         OciConfigProvider.config(null);

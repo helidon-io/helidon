@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class TestLraCoordinatorConfigSource implements ConfigSource {
             // Extra socket for coordinator on random port
             "server.sockets." + PORT_IDX + ".name", TestLraCoordinator.ROUTING_NAME,
             "server.sockets." + PORT_IDX + ".port", "0",
-            "server.sockets." + PORT_IDX + ".bind-address", "localhost",
+            "server.sockets." + PORT_IDX + ".host", "localhost",
             // Avoid using persistent tx log in test LRA coordinator
             "helidon.lra.coordinator.persistence", "false",
             // Avoid using build time Jandex index

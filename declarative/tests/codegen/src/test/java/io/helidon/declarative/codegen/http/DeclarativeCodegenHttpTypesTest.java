@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 
@@ -84,6 +86,8 @@ class DeclarativeCodegenHttpTypesTest {
         checkField(toCheck, checked, fields, "HTTP_ENTITY_ANNOTATION", Http.Entity.class);
         checkField(toCheck, checked, fields, "HTTP_HEADER_FUNCTION", Http.HeaderFunction.class);
         checkField(toCheck, checked, fields, "HTTP_MEDIA_TYPE", HttpMediaType.class);
+        checkField(toCheck, checked, fields, "HTTP_HEADERS", Headers.class);
+        checkField(toCheck, checked, fields, "HTTP_PROLOGUE", HttpPrologue.class);
         checkField(toCheck, checked, fields, "BAD_REQUEST_EXCEPTION", BadRequestException.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",

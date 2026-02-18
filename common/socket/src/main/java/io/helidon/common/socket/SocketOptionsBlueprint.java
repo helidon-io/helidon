@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
+import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -126,6 +127,26 @@ interface SocketOptionsBlueprint {
                 socket.setOption(opt, entry.getValue());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    /**
+     * Configure socket with defined socket options.
+     *
+     * @param socket socket to update
+     */
+    @SuppressWarnings("unchecked")
+    default void configureSocket(SocketChannel socket) {
+        var logger = System.getLogger(SocketOptions.class.getName());
+        for (Map.Entry<SocketOption<?>, Object> entry : socketOptions().entrySet()) {
+            try {
+                SocketOption<Object> opt = (SocketOption<Object>) entry.getKey();
+                socket.setOption(opt, entry.getValue());
+            } catch (Exception e) {
+                if (logger.isLoggable(System.Logger.Level.TRACE)) {
+                    logger.log(System.Logger.Level.TRACE, "Failed to set option " + entry.getKey() + " on socket: " + socket, e);
+                }
             }
         }
     }

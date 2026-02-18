@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,6 +155,7 @@ public class SchedulingCdiExtension implements Extension {
                         .delayBy(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.delayBy())))
                         .delayType(annotation.delayType())
                         .interval(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.value())))
+                        .config(methodConfig)
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();
@@ -182,6 +183,7 @@ public class SchedulingCdiExtension implements Extension {
                 Task task = Cron.builder()
                         .concurrentExecution(annotation.concurrent())
                         .expression(ConfigBuilderSupport.resolveExpression(config, annotation.value()))
+                        .config(methodConfig)
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
                         .build();

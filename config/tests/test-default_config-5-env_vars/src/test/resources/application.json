@@ -1,3 +1,4 @@
 {
-    "value": "JSON"
+    "value": "JSON",
+    "camel.CaseS": "JSON"
 }

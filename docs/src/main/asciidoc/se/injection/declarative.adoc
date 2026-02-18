@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,6 +83,11 @@ The following features are currently implemented:
 - <<Dec-FT, Fault Tolerance>>
 - <<Dec-Scheduling, Scheduling>>
 - <<Dec-Validation, Validation>>
+- <<Dec-Security, Security>>
+- <<Dec-Metrics, Metrics>>
+- <<Dec-Tracing, Tracing>>
+- <<Dec-WebSocket-Server, WebSocket Server>>
+- <<Dec-WebSocket-Client, WebSocket Client>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -370,4 +375,187 @@ For each constraint annotation, there MUST be a service that validates it.
 .Example of constraint validation provider
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_10, indent=0]
+----
+
+=== Security [[Dec-Security]]
+
+Security provides protection of WebServer endpoints.
+
+Identity propagation (when using a WebClient) depends on configuration of the client and configuration of security.
+We currently do not have a declarative way of modifying client behavior.
+
+Supported annotations:
+
+- `io.helidon.security.annotations.Authenticated` - mark an endpoint or a method as requiring authentication
+- `io.helidon.security.annotations.Authorized` - mark an endpoint or a method as requiring authorization
+- `io.helidon.security.annotations.Audited` - mark an endpoint or a method as requiring audit logging
+- `io.helidon.security.abac.role.RoleValidator.PermitAll` - annotated method does not require any authentication or authorization (even if endpoint does)
+- `jakarta.annotation.security.PermitAll` - same as `RoleValidator.PermitAll`
+- `jakarta.annotation.security.DenyAll` - annotated method will not be callable with any kind of authentication or authorization
+- link:{security-javadoc-base-url}/io/helidon/security/abac/role/RoleValidator.Roles.html[`io.helidon.security.abac.role.RoleValidator.Roles`] - provide a set of roles that can access a resource, implies authentication is required
+- `jakarta.annotation.security.RolesAllowed` - same as above (`RoleValidator.Roles`)
+
+=== Metrics [[Dec-Metrics]]
+
+Add support for the following meters:
+
+- Counter
+- Timer
+- Gauge
+
+Method annotations:
+
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Counted.html[`io.helidon.metrics.api.Metrics.Counted`] - adds a counter metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Timed.html[`io.helidon.metrics.api.Metrics.Timed`] - adds a timer metric to the metric registry for method executions
+- link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Gauge.html[`io.helidon.metrics.api.Metrics.Gauge`] - marks a method that returns a number as a gauge
+
+In addition, we can use link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Tag.html[`io.helidon.metrics.api.Metrics.Tag`] annotation on a type, method, or as a `tags` property of an annotation to add tags to the metric. Tags from type definition will be added to all metrics on the type, tags on methods on all metrics on the method, and tags in the metric annotation will only be used by that metric.
+
+The example below shows additional tags. The counter on method `counted` will have the following tags: `service=Metered;method=counted` (and of course the scope tag that is always added).
+
+[source,java]
+.Example of a counted method with type tags and counter tags
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_11, indent=0]
+----
+
+A gauge is a method that returns a `Number`, and is invoked by the metrics implementation to obtain a value. Example below shows a definition of a `Gauge`. Note that a `unit` is mandatory for gauges.
+
+[source,java]
+.Example of a gauge
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_12, indent=0]
+----
+
+=== Tracing [[Dec-Tracing]]
+
+Add support for tracing of methods.
+This feature will add a new span for each annotated method (or all methods on an annotated type).
+
+Annotations:
+
+- link:{tracing-javadoc}/io/helidon/tracing/Tracing.Traced.html[`io.helidon.tracing.Tracing.Traced`] - all methods on the annotated type are will be traced, or the annotated method will be traced
+- link:{tracing-javadoc}/io/helidon/tracing/Tracing.ParamTag.html[`io.helidon.tracing.Tracing.ParamTag`] - the annotated method parameter will be added as a tag to the span
+
+
+Notes on defaults:
+
+- if a `kind` is defined to other value than `INTERNAL`, it will be used unless a `kind` other than `INTERNAL` is defined on a method annotation (i.e. it is not possible to have `SERVER` on type, and `INTERNAL` on method)
+- span name defaults to `fully-qualified-class-name.method-name`
+
+The following example shows annotation on a type. This would make all methods traced with span kind of `SERVER`, and with a tag `service` with value `TracedService`.
+
+[source,java]
+.Example of traced type
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_13, indent=0]
+----
+
+A traced method with an explicit span name, adding a tag with a constant value, and a tag with a value from annotated parameter. The tag name defaults to parameter name (`userAgent` in this case).
+
+[source,java]
+.Annotated traced method
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_14, indent=0]
+----
+
+=== WebSocket Server [[Dec-WebSocket-Server]]
+
+To create a WebSocket endpoint, simply annotate a class with `@WebSocketServer.Endpoint`, and
+add at least one method annotated with one of the WebSocket method annotations, such as `@WebSocket.OnMessage`.
+
+Services available for injection:
+
+N/A
+
+Supported method parameters (no annotation required):
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WsSession.html[`io.helidon.websocket.WsSession`]
+- `boolean` in a method annotated with `@WebSocket.OnMessage` - indicator of "last" message (if not present, the message will be combined before delivery)
+- `java.lang.String` (`@WebSocket.OnMessage`) - the message delivered (text)
+- `java.io.Reader` (`@WebSocket.OnMessage`) - the message delivered (text)
+- link:{buffers-javadoc-base-url}/io/helidon/common/buffers/BufferData.html[`io.helidon.common.buffers.BufferData`] (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.nio.ByteBuffer` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.io.InputStream` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `io.helidon.http.HttpPrologue` (`@WebSocket.OnHttpUpgrade) - the HTTP prologue (method, path, protocol version)
+- `io.helidon.http.Headers` (`@WebSocket.OnHttpUpgrade) - the request headers
+- `int` (`@WebSocket.OnClose`) - the close code
+- `java.lang.String` (`@WebSocket.OnClose`) - the close reason
+- `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown
+
+
+Annotations on endpoint type:
+
+- link:{websocket-server-javadoc-base-url}/io/helidon/webserver/websocket/WebSocketServer.Endpoint.html[`io.helidon.webserver.websocket.WebSocketServer.Endpoint`] - required annotation
+- link:{websocket-server-javadoc-base-url}/io/helidon/webserver/websocket/WebSocketServer.Listener.html[`io.helidon.webserver.websocket.WebSocketServer.Listener`] - to define the named listener this should be served on (named port/socket)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnMessage.html[`io.helidon.websocket.WebSocket.OnMessage`] - receives either a binary or a text message
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnHttpUpgrade.html[`io.helidon.websocket.WebSocket.OnHttpUpgrade`] - invoked during HTTP upgrade, the method may return `Headers` to be sent during the upgrade response
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnOpen.html[`io.helidon.websocket.WebSocket.OnOpen`] - invoked when the WebSocket connection is established (after upgrade)
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnClose.html[`io.helidon.websocket.WebSocket.OnClose`] - invoked when the WebSocket connection is closed
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnError.html[`io.helidon.websocket.WebSocket.OnError`] - invoked when an error occurs when invoking other methods
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template
+
+[source,java]
+.Example of a WebSocket Server Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_15, indent=0]
+----
+
+=== WebSocket Client [[Dec-WebSocket-Client]]
+
+To create a WebSocket client endpoint, simply annotate a class with `@WebSocketClient.Endpoint`, and
+add at least one method annotated with one of the WebSocket method annotations, such as `@WebSocket.OnMessage`.
+
+Services available for injection:
+
+- a factory for the endpoint (generated), if endpoint is named `EchoEndpoint`, an `EchoEndpointFactory` will be generated with methods to connect to remote server
+
+Supported method parameters (no annotation required):
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WsSession.html[`io.helidon.websocket.WsSession`]
+- `boolean` in a method annotated with `@WebSocket.OnMessage` - indicator of "last" message (if not present, the message will be combined before delivery)
+- `java.lang.String` (`@WebSocket.OnMessage`) - the message delivered (text)
+- `java.io.Reader` (`@WebSocket.OnMessage`) - the message delivered (text)
+- link:{buffers-javadoc-base-url}/io/helidon/common/buffers/BufferData.html[`io.helidon.common.buffers.BufferData`] (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.nio.ByteBuffer` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `java.io.InputStream` (`@WebSocket.OnMessage`) - the message delivered (binary)
+- `int` (`@WebSocket.OnClose`) - the close code
+- `java.lang.String` (`@WebSocket.OnClose`) - the close reason
+- `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown
+
+
+Annotations on endpoint type:
+
+- link:{websocket-client-javadoc-base-url}/io/helidon/webclient/websocket/WebSocketClient.Endpoint.html[`io.helidon.webclient.websocket.WebSocketClient`] - required annotation
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
+
+Annotations on endpoint methods:
+
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnMessage.html[`io.helidon.websocket.WebSocket.OnMessage`] - receives either a binary or a text message
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnHttpUpgrade.html[`io.helidon.websocket.WebSocket.OnHttpUpgrade`] - invoked during HTTP upgrade, the method may return `Headers` to be sent during the upgrade response
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnOpen.html[`io.helidon.websocket.WebSocket.OnOpen`] - invoked when the WebSocket connection is established (after upgrade)
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnClose.html[`io.helidon.websocket.WebSocket.OnClose`] - invoked when the WebSocket connection is closed
+- link:{websocket-javadoc-base-url}/io/helidon/websocket/WebSocket.OnError.html[`io.helidon.websocket.WebSocket.OnError`] - invoked when an error occurs when invoking other methods
+
+Annotations on method parameters:
+
+- link:{http-javadoc-base-url}/io/helidon/http/Http.PathParam.html[`io.helidon.http.Http.PathParam`] - Typed parameter from path template defined by `@Http.Path` on the class
+
+[source,java]
+.Example of a WebSocket Client Endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_16, indent=0]
+----
+
+[source,java]
+.Example of a component connecting the websocket
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_17, indent=0]
 ----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class ParsingJmhTest {
 
     @Benchmark
     public void prologue(Blackhole bh) {
-        DataReader reader = new DataReader(() -> PROLOGUE_WITH_EOL);
+        DataReader reader = DataReader.create(() -> PROLOGUE_WITH_EOL);
         Http1Prologue p = new Http1Prologue(reader, 1024, false);
         HttpPrologue httpPrologue = p.readPrologue();
         bh.consume(httpPrologue.method());
@@ -66,7 +66,7 @@ public class ParsingJmhTest {
 
     @Benchmark
     public void headers(Blackhole bh) {
-        DataReader reader = new DataReader(() -> HEADERS);
+        DataReader reader = DataReader.create(() -> HEADERS);
         Http1Headers p = new Http1Headers(reader, 1024, false);
         WritableHeaders<?> headers = p.readHeaders(PROLOGUE);
 

@@ -16,8 +16,10 @@
 
 package io.helidon.config.metadata.codegen;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenContext;
@@ -109,25 +111,50 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
 
     @Override
     void addInterfaces(ConfiguredType type, TypeInfo typeInfo, TypeName requiredAnnotation) {
-        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            if (interfaceInfo.hasAnnotation(requiredAnnotation)) {
-                TypeName ifaceTypeName = interfaceInfo.typeName();
+         /*
+        SomeConfig extends SomeConfigBlueprint, Prototype.Api, BlueprintSupertype (which extends blueprint)
+        - we need to ignore BlueprintSupertype, because it is inherited through the blueprint
 
-                if (interfaceInfo.hasAnnotation(BLUEPRINT)) {
-                    String className = ifaceTypeName.className();
-                    if (className.endsWith("Blueprint")) {
-                        className = className.substring(0, className.length() - "Blueprint".length());
-                    }
-                    ifaceTypeName = TypeName.builder(ifaceTypeName)
-                            .className(className)
-                            .build();
-                }
+        1. collect type set inherited through blueprint
+        2. find closest blueprint in that typeset (this is our supertype)
+        3. collect all implemented interfaces sans the ones inherited through blueprint
+        4. add them manually (as these will not be documented)
+         */
+        Optional<TypeInfo> parentBlueprint = findParentBlueprint(typeInfo, requiredAnnotation);
+        Set<TypeName> inheritedThroughParentBlueprint = new HashSet<>();
 
-                type.addInherited(ifaceTypeName);
+        if (parentBlueprint.isPresent()) {
+            TypeInfo parentBlueprintInfo = parentBlueprint.get();
+            TypeName prototype = prototypeFromBlueprint(parentBlueprintInfo);
+            TypeInfo parentPrototypeInfo = ctx().typeInfo(prototype)
+                            .orElse(null);
+
+            if (parentPrototypeInfo == null) {
+                inheritedThroughParentBlueprint.add(prototype);
+                typeSet(parentBlueprintInfo, inheritedThroughParentBlueprint, Set.of(), it -> true);
             } else {
-                addSuperClasses(type, interfaceInfo, requiredAnnotation);
+                typeSet(parentPrototypeInfo, inheritedThroughParentBlueprint, Set.of(), it -> true);
             }
+            inheritedThroughParentBlueprint.add(parentBlueprintInfo.typeName());
+            inheritedThroughParentBlueprint.add(prototype);
         }
+
+        // we only collect super interfaces that are annotated with configured annotation
+        Set<TypeName> inherited = new HashSet<>();
+        typeSet(typeInfo, inherited, inheritedThroughParentBlueprint, it -> it.hasAnnotation(requiredAnnotation));
+
+        // if we inherit from a blueprint, add it to inherited
+        parentBlueprint.map(this::prototypeFromBlueprint)
+                .ifPresent(type::addInherited);
+
+        // remove this prototype (it is added as part of the processing above as we start from current blueprint)
+        inherited.remove(typeInfo.typeName());
+        inherited.remove(prototypeFromBlueprint(typeInfo));
+
+        // and all other interfaces
+        inherited.stream()
+                .map(this::prototypeFromBlueprint)
+                .forEach(type::addInherited);
     }
 
     // for blueprints, we only want the description, not the return information (as it duplicates information)
@@ -157,6 +184,55 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
                 .map(it -> it.typeArguments().getFirst())
                 .findAny()
                 .orElse(prototype);
+    }
+
+    private void typeSet(TypeInfo typeInfo, Set<TypeName> typeSet, Set<TypeName> ignoredTypes, Predicate<TypeInfo> predicate) {
+        TypeName typeName = typeInfo.typeName();
+        if (ignoredTypes.contains(typeName) || !predicate.test(typeInfo) || !typeSet.add(typeName)) {
+            return;
+        }
+        for (TypeInfo superIface : typeInfo.interfaceTypeInfo()) {
+            typeSet(superIface, typeSet, ignoredTypes, predicate);
+        }
+    }
+
+    private TypeName prototypeFromBlueprint(TypeInfo parentBlueprintInfo) {
+        String className = parentBlueprintInfo.typeName().className();
+        if (className.endsWith("Blueprint")) {
+            className = className.substring(0, className.length() - "Blueprint".length());
+        }
+        return TypeName.builder(parentBlueprintInfo.typeName())
+                .className(className)
+                .build();
+    }
+
+    private TypeName prototypeFromBlueprint(TypeName blueprintType) {
+        String className = blueprintType.className();
+        if (className.endsWith("Blueprint")) {
+            className = className.substring(0, className.length() - "Blueprint".length());
+        }
+        return TypeName.builder(blueprintType)
+                .className(className)
+                .build();
+    }
+
+    private Optional<TypeInfo> findParentBlueprint(TypeInfo typeInfo, TypeName requiredAnnotation) {
+        Set<TypeName> processedTypes = new HashSet<>();
+
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            if (processedTypes.add(interfaceInfo.typeName())) {
+                if (interfaceInfo.hasAnnotation(BLUEPRINT) && interfaceInfo.hasAnnotation(requiredAnnotation)) {
+                    // first extended blueprint we find
+                    return Optional.of(interfaceInfo);
+                }
+                // if not a blueprint, go through all superifaces
+                var found = findParentBlueprint(interfaceInfo, requiredAnnotation);
+                if (found.isPresent()) {
+                    return found;
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private OptionType typeForBlueprintFromSignature(TypedElementInfo element,

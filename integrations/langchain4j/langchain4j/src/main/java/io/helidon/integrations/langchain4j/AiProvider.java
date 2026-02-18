@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,12 @@ public final class AiProvider {
      * Default config key used under langchain4j context for all model configs in the same class.
      * Override provider key otherwise derived from class name prefix.
      */
-    @Target({ElementType.TYPE})
+    @Target(ElementType.TYPE)
     public @interface ConfigKey {
 
         /**
          * Default config key used under langchain4j context for all model configs in the same class.
+         *
          * @return string key
          */
         String value() default "";
@@ -63,7 +64,7 @@ public final class AiProvider {
      *       model-name: model-name
      * }</pre>
      */
-    @Target({ElementType.TYPE})
+    @Target(ElementType.TYPE)
     @Repeatable(ModelConfigs.class)
     public @interface ModelConfig {
 
@@ -113,7 +114,7 @@ public final class AiProvider {
      * Typically used on classes requiring multiple LangChain4j model configurations to be introspected
      * for generating service provider beans and configuration blueprints.
      */
-    @Target({ElementType.TYPE})
+    @Target(ElementType.TYPE)
     public @interface ModelConfigs {
 
         /**
@@ -129,14 +130,14 @@ public final class AiProvider {
      * {@link io.helidon.integrations.langchain4j.AiProvider.ModelConfig#weight()}.
      * Annotated field needs to be a {@code double} constant.
      */
-    @Target({ElementType.FIELD})
+    @Target(ElementType.FIELD)
     public @interface DefaultWeight {
     }
 
     /**
      * Marks nested properties which types should be introspected too.
      */
-    @Target({ElementType.METHOD})
+    @Target(ElementType.METHOD)
     public @interface NestedConfig {
         /**
          * Model class that is having method {@code builder()}
@@ -166,7 +167,16 @@ public final class AiProvider {
     /**
      * Skip builder mapping generation as it is done manually in {@code configuredBuilder()} method.
      */
-    @Target({ElementType.METHOD})
+    @Target(ElementType.METHOD)
     public @interface CustomBuilderMapping {
+    }
+
+    /**
+     * Use this annotation to specify LangChain4J Model Provider with custom (non-generated model providers).
+     * Only utility classes will be generated.
+     * Mutually exclusive with {@link ModelConfig}.
+     */
+    @Target(ElementType.TYPE)
+    public @interface CustomModelFactories {
     }
 }

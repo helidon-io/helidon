@@ -110,7 +110,9 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
     @Override
     public void close() {
         try {
-            delegate.close();
+            delegate.shutdownOutput();
+            // according to the contract of Socket.getInputStream(), this will also close the socket
+            inputStream.close();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

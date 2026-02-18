@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,13 @@ public class OpenTelemetryDataPropagationProvider
         implements DataPropagationProvider<OpenTelemetryDataPropagationProvider.OpenTelemetryContext> {
 
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryDataPropagationProvider.class.getName());
+
+    /**
+     * Creates a new instance. (For service loading/registration.)
+     */
+    @Deprecated
+    public OpenTelemetryDataPropagationProvider() {
+    }
 
     @Override
     public OpenTelemetryContext data() {
@@ -69,6 +76,13 @@ public class OpenTelemetryDataPropagationProvider
         private final Tracer tracer;
         private Scope scope;
 
+        /**
+         * Creates a new context instance based on the provided {@link io.helidon.tracing.Tracer} and
+         * {@link io.helidon.tracing.Span}.
+         *
+         * @param tracer Helidon tracer to include in the context
+         * @param span   Helidon span to include in the context
+         */
         protected OpenTelemetryContext(Tracer tracer, Span span) {
             this.tracer = tracer;
             this.span = span;

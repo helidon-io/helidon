@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,11 +37,6 @@ public class WsRouting implements Routing {
         this.routes = new ArrayList<>(builder.routes);
     }
 
-    @Override
-    public Class<? extends Routing> routingType() {
-        return WsRouting.class;
-    }
-
     /**
      * Builder for WebSocket routing.
      *
@@ -58,6 +53,11 @@ public class WsRouting implements Routing {
      */
     public static WsRouting empty() {
         return EMPTY;
+    }
+
+    @Override
+    public Class<? extends Routing> routingType() {
+        return WsRouting.class;
     }
 
     @Override
@@ -127,7 +127,13 @@ public class WsRouting implements Routing {
             return route(WsRoute.create(path, listener));
         }
 
-        private Builder route(WsRoute wsRoute) {
+        /**
+         * Add a WebSocket route.
+         *
+         * @param wsRoute route to add
+         * @return updated builder
+         */
+        public Builder route(WsRoute wsRoute) {
             routes.add(wsRoute);
             return this;
         }

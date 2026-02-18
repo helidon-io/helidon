@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,6 +238,24 @@ final class Activators {
 
         @Override
         public ActivationResult deactivate() {
+            if (currentPhase == ActivationPhase.CONSTRUCTING
+                    || currentPhase == ActivationPhase.INJECTING
+                    || currentPhase == ActivationPhase.POST_CONSTRUCTING) {
+                // shutdown/deactivation was called as part of (while) activating this instance
+                // we must resolve this gracefully (as the next lock would end up in a deadlock)
+
+                var response = ActivationResult.builder()
+                        .success(false)
+                        .startingActivationPhase(currentPhase)
+                        .finishingActivationPhase(ActivationPhase.DESTROYED)
+                        .targetActivationPhase(ActivationPhase.DESTROYED)
+                        .error(new IllegalStateException("Deactivation request received while constructing an instance"))
+                        .build();
+
+                currentPhase = ActivationPhase.DESTROYED;
+
+                return response;
+            }
             // probably re-entering the same lock
             instanceLock.writeLock().lock();
             try {

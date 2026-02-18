@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -147,7 +148,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        effectiveConnection = connection == null ? obtainConnection(serviceRequest, timeout) : connection;
+        effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
@@ -316,15 +317,29 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return true;
     }
 
-    private ClientConnection obtainConnection(WebClientServiceRequest request, Duration requestReadTimeout) {
-        return http1Client.connectionCache()
-                .connection(http1Client,
-                            requestReadTimeout,
-                            tls,
-                            proxy,
-                            request.uri(),
-                            request.headers(),
-                            keepAlive);
+    private ClientConnection obtainConnection(WebClientServiceRequest request) {
+        var address = originalRequest.address();
+        UnixDomainSocketAddress udsAddress = address.filter(a -> a instanceof UnixDomainSocketAddress)
+                .map(UnixDomainSocketAddress.class::cast)
+                .orElse(null);
+
+        if (udsAddress == null) {
+            return http1Client.connectionCache()
+                    .connection(http1Client,
+                                tls,
+                                proxy,
+                                request.uri(),
+                                request.headers(),
+                                keepAlive);
+        } else {
+            return http1Client.connectionCache()
+                    .connection(http1Client,
+                                tls,
+                                request.uri(),
+                                request.headers(),
+                                keepAlive,
+                                udsAddress);
+        }
     }
 
     static class ContentLengthInputStream extends InputStream {

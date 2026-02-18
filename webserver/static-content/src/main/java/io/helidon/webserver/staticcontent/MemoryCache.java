@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import io.helidon.builder.api.RuntimeType;
  * Memory cache to allow in-memory storage of static content, rather than reading it from file system each time the
  * resource is requested.
  */
-@RuntimeType.PrototypedBy(MemoryCacheConfig.class)
 public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     private final MemoryCacheConfig config;
     private final long maxSize;
