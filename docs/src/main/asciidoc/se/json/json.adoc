@@ -88,13 +88,6 @@ Alternatively, you can use the `helidon-bundles-apt` dependency which includes t
                     </path>
                 </annotationProcessorPaths>
             </configuration>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.bundles</groupId>
-                    <artifactId>helidon-bundles-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </dependency>
-            </dependencies>
         </plugin>
     </plugins>
 </build>
@@ -132,24 +125,6 @@ Configure the annotation processors in your Maven build:
                     </path>
                 </annotationProcessorPaths>
             </configuration>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.codegen</groupId>
-                    <artifactId>helidon-codegen-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </dependency>
-                <!-- To enable automatic converter discovery -->
-                <dependency>
-                    <groupId>io.helidon.service</groupId>
-                    <artifactId>helidon-service-codegen</artifactId>
-                    <version>${helidon.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>io.helidon.json.codegen</groupId>
-                    <artifactId>helidon-json-codegen</artifactId>
-                    <version>${helidon.version}</version>
-                </dependency>
-            </dependencies>
         </plugin>
     </plugins>
 </build>
@@ -279,8 +254,8 @@ Why use it: Ensures critical properties are present in JSON input, failing deser
 
 ==== @Json.SerializeNulls
 
-Controls whether null values are included in JSON output. By default, null values are omitted from JSON output,
-unless explicitly configured otherwise using this annotation. This affects the visibility and size of generated JSON.
+Controls whether null values are included in JSON output. Null values are omitted from JSON output,
+unless this annotation is used. This affects the visibility and size of generated JSON.
 
 [source,java]
 .Default behavior - nulls omitted

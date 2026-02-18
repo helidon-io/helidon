@@ -94,13 +94,13 @@ public final class Serializers {
      * @param instance the instance to serialize
      * @param key the key to write
      * @param writeNulls whether to write null values
-     * @param <T> the type of the instance
      */
-    public static <T extends OptionalInt> void serialize(JsonGenerator generator,
-                                                         JsonSerializer<T> serializer,
-                                                         T instance,
-                                                         String key,
-                                                         boolean writeNulls) {
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalInt> serializer,
+                                 OptionalInt instance,
+                                 String key,
+                                 boolean writeNulls) {
         if (instance == null || instance.isEmpty()) {
             if (writeNulls) {
                 generator.writeKey(key);
@@ -120,13 +120,13 @@ public final class Serializers {
      * @param instance the instance to serialize
      * @param key the key to write
      * @param writeNulls whether to write null values
-     * @param <T> the type of the instance
      */
-    public static <T extends OptionalLong> void serialize(JsonGenerator generator,
-                                                          JsonSerializer<T> serializer,
-                                                          T instance,
-                                                          String key,
-                                                          boolean writeNulls) {
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalLong> serializer,
+                                 OptionalLong instance,
+                                 String key,
+                                 boolean writeNulls) {
         if (instance == null || instance.isEmpty()) {
             if (writeNulls) {
                 generator.writeKey(key);
@@ -146,13 +146,13 @@ public final class Serializers {
      * @param instance the instance to serialize
      * @param key the key to write
      * @param writeNulls whether to write null values
-     * @param <T> the type of the instance
      */
-    public static <T extends OptionalDouble> void serialize(JsonGenerator generator,
-                                                            JsonSerializer<T> serializer,
-                                                            T instance,
-                                                            String key,
-                                                            boolean writeNulls) {
+    @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "OptionalAssignedToNull"})
+    public static void serialize(JsonGenerator generator,
+                                 JsonSerializer<OptionalDouble> serializer,
+                                 OptionalDouble instance,
+                                 String key,
+                                 boolean writeNulls) {
         if (instance == null || instance.isEmpty()) {
             if (writeNulls) {
                 generator.writeKey(key);
@@ -163,6 +163,5 @@ public final class Serializers {
             serializer.serialize(generator, instance, writeNulls);
         }
     }
-
 
 }
