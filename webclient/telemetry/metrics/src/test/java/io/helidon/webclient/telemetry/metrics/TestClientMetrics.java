@@ -16,39 +16,36 @@
 
 package io.helidon.webclient.telemetry.metrics;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Method;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @ServerTest
 class TestClientMetrics {
 
     private final WebServer server;
-    private final MeterRegistry meterRegistry;
 
-    TestClientMetrics(WebServer server, MeterRegistry meterRegistry) {
+    TestClientMetrics(WebServer server) {
         this.server = server;
-        this.meterRegistry = meterRegistry;
     }
 
     @SetUpRoute
@@ -57,67 +54,69 @@ class TestClientMetrics {
     }
 
     @Test
-    void testClientMetrics() {
-        var client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port())
-                .addService(WebClientTelemetryMetrics.create())
-                .build();
+    void testClientMetrics() throws InterruptedException {
+        try (TestLogHandler handler = TestLogHandler.create(Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
 
-        var response = client.get("/greet")
-                .accept(MediaTypes.TEXT_PLAIN)
-                .request(String.class);
+            var client = WebClient.builder()
+                    .baseUri("http://localhost:" + server.port())
+                    .addService(WebClientTelemetryMetrics.create())
+                    .build();
 
-        assertThat("Response status", response.status().code(), is(200));
+            var response = client.get("/greet")
+                    .accept(MediaTypes.TEXT_PLAIN)
+                    .request(String.class);
 
-        List<Timer> timers = meterRegistry.meters(meter -> meter.id().name().equals(WebClientTelemetryMetrics.REQUEST_DURATION))
-                .stream()
-                .filter(m -> m instanceof Timer)
-                .map(m -> (Timer) m)
-                .toList();
+            assertThat("Response status", response.status().code(), is(200));
 
-        assertThat("Timers", timers, hasSize(equalTo(1)));
+            List<String> messages = handler.messages(1);
 
-        Timer goodTimer = timers.getFirst();
+            var patternText = ".*\"dataPoints\":.*\"count\":\"([^\"]+)\".*\"sum\":([^,]+),(.*)";
 
-        assertThat("Timer count", goodTimer.count(), is(greaterThan(0L)));
-        assertThat("Timer duration", goodTimer.totalTime(TimeUnit.NANOSECONDS), is(greaterThan(0D)));
-        var tags = goodTimer.id().tagsMap();
+            var jsonPattern = Pattern.compile(patternText);
+            var matcher = jsonPattern.matcher(messages.getFirst());
 
-        assertThat("Timer tags", tags, allOf(
-                hasEntry(WebClientTelemetryMetrics.HTTP_REQUEST_METHOD, Method.GET_NAME),
-                hasEntry(WebClientTelemetryMetrics.SERVER_ADDRESS, "localhost"),
-                hasEntry(WebClientTelemetryMetrics.SERVER_PORT, Integer.toString(server.port())),
-                hasEntry(WebClientTelemetryMetrics.ERROR_TYPE, ""),
-                hasEntry(WebClientTelemetryMetrics.HTTP_RESPONSE_STATUS_CODE, "200"),
-                hasEntry(WebClientTelemetryMetrics.URL_SCHEME, "http")));
+            assertThat("Matched log line", matcher, allOf(
+                    matches(true),
+                    hasGroupAsInteger(1, is(1)),
+                    hasGroupAsDouble(2, not(equalTo(0D))),
+                    hasGroupAsString(3, containsString("\"key\":\"" + WebClientTelemetryMetrics.URL_TEMPLATE + "\","
+                                                                     + "\"value\":{\"stringValue\":\"/greet\""))));
 
-        var response404 = client.get("/missing")
-                .accept(MediaTypes.TEXT_PLAIN)
-                .request(String.class);
+        }
+    }
+    static Matcher<java.util.regex.Matcher> matches(boolean expected) {
+        return new FeatureMatcher<>(is(expected), "matches text", "matches") {
+            @Override
+            protected Boolean featureValueOf(java.util.regex.Matcher actual) {
+                return actual.matches();
+            }
+        };
+    }
 
-        assertThat("Expected failed response", response404.status().code(), is(404));
+    static Matcher<java.util.regex.Matcher> hasGroupAsString(int groupNumber, Matcher<String> matcher) {
+        return new FeatureMatcher<>(matcher, "matches group " + groupNumber, "matches") {
+            @Override
+            protected String featureValueOf(java.util.regex.Matcher actual) {
+                return actual.group(groupNumber);
+            }
+        };
+    }
 
-        timers = new ArrayList<>(meterRegistry.meters(meter -> meter.id().name().equals(WebClientTelemetryMetrics.REQUEST_DURATION))
-                .stream()
-                .filter(m -> m instanceof Timer)
-                .map(m -> (Timer) m)
-                .toList());
-        timers.remove(goodTimer);
+    static Matcher<java.util.regex.Matcher> hasGroupAsInteger(int groupNumber, Matcher<Integer> matcher) {
+        return new FeatureMatcher<>(matcher, "matches group " + groupNumber, "matches") {
+            @Override
+            protected Integer featureValueOf(java.util.regex.Matcher actual) {
+                return Integer.parseInt(actual.group(groupNumber));
+            }
+        };
+    }
 
-        assertThat("Bad timer count", timers, hasSize(1));
-
-        var badTimer = timers.getFirst();
-        assertThat("Timer count", badTimer.count(), is(greaterThan(0L)));
-        assertThat("Bad timer duration",  badTimer.totalTime(TimeUnit.NANOSECONDS), is(greaterThan(0D)));
-
-        tags = badTimer.id().tagsMap();
-        assertThat("Bad timer tags", tags, allOf(
-                hasEntry(WebClientTelemetryMetrics.HTTP_REQUEST_METHOD, Method.GET_NAME),
-                hasEntry(WebClientTelemetryMetrics.SERVER_ADDRESS, "localhost"),
-                hasEntry(WebClientTelemetryMetrics.SERVER_PORT, Integer.toString(server.port())),
-                hasEntry(WebClientTelemetryMetrics.ERROR_TYPE, "404"),
-                hasEntry(WebClientTelemetryMetrics.HTTP_RESPONSE_STATUS_CODE, "404"),
-                hasEntry(WebClientTelemetryMetrics.URL_SCHEME, "http")));
-
+    static Matcher<java.util.regex.Matcher> hasGroupAsDouble(int groupNumber, Matcher<Double> matcher) {
+        return new FeatureMatcher<>(matcher, "matches group " + groupNumber, "matches") {
+            @Override
+            protected Double featureValueOf(java.util.regex.Matcher actual) {
+                return Double.parseDouble(actual.group(groupNumber));
+            }
+        };
     }
 }

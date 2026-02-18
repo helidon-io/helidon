@@ -17,24 +17,32 @@
 package io.helidon.webclient.telemetry.metrics;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.Status;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Tag;
-import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
+import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
+
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.DoubleHistogram;
 
 /**
  * Webclient service for providing metrics which comply with the OpenTelemetry semantic conventions for
  * client metrics.
  */
 public class WebClientTelemetryMetrics implements WebClientService {
+
+    /*
+    Bucket boundaries as recommended by the OpenTelemetry semantic conventions.
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientrequestduration
+     */
+    private static final List<Double> BUCKET_BOUNDARIES =
+        List.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0);
 
     static final String REQUEST_DURATION = "http.client.request.duration";
 
@@ -44,8 +52,10 @@ public class WebClientTelemetryMetrics implements WebClientService {
     static final String ERROR_TYPE = "error.type";
     static final String HTTP_RESPONSE_STATUS_CODE = "http.response.status.code";
     static final String URL_SCHEME = "url.scheme";
+    static final String URL_TEMPLATE = "url.template";
 
-    private final LazyValue<MeterRegistry>  meterRegistry = LazyValue.create(() -> Services.get(MeterRegistry.class));
+    private final LazyValue<DoubleHistogram> outboundHttpRequestDuration =
+            LazyValue.create(WebClientTelemetryMetrics::createHistogram);
 
     private WebClientTelemetryMetrics() {
     }
@@ -71,30 +81,46 @@ public class WebClientTelemetryMetrics implements WebClientService {
 
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest clientRequest) {
-        long start = System.nanoTime();
+        long startTime = System.nanoTime();
 
         String errorType = "";
-        String statusCodeTagValue = "";
+        int statusCodeTagValue = 0;
         try {
             var response = chain.proceed(clientRequest);
-            statusCodeTagValue = response.status().codeText();
-            errorType = response.status().family() == Status.Family.SUCCESSFUL ? "" : statusCodeTagValue;
+            statusCodeTagValue = response.status().code();
+            errorType = response.status().family() == Status.Family.SUCCESSFUL ? "" : Integer.toString(statusCodeTagValue);
             return response;
         } catch (Exception ex) {
             errorType = ex.getClass().getSimpleName();
             throw ex;
         } finally {
-            var tags = List.of(
-                    Tag.create(HTTP_REQUEST_METHOD, clientRequest.method().text()),
-                    Tag.create(SERVER_ADDRESS, clientRequest.uri().host()),
-                    Tag.create(SERVER_PORT, Integer.toString(clientRequest.uri().port())),
-                    Tag.create(ERROR_TYPE, errorType),
-                    Tag.create(HTTP_RESPONSE_STATUS_CODE, statusCodeTagValue),
-                    Tag.create(URL_SCHEME, clientRequest.uri().scheme()));
+            long endTime = System.nanoTime();
+            var attributes = Attributes.builder()
+                    .put(HTTP_REQUEST_METHOD, clientRequest.method().text())
+                    .put(SERVER_ADDRESS, clientRequest.uri().host())
+                    .put(SERVER_PORT, clientRequest.uri().port())
+                    .put(ERROR_TYPE, errorType)
+                    .put(HTTP_RESPONSE_STATUS_CODE, statusCodeTagValue)
+                    .put(URL_SCHEME, clientRequest.uri().scheme())
+                    .put(URL_TEMPLATE, clientRequest.uri().path().path())
+                    .build();
 
-            var timer = meterRegistry.get().getOrCreate(Timer.builder(REQUEST_DURATION)
-                    .tags(tags));
-            timer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+            outboundHttpRequestDuration.get().record(endTime - startTime, attributes);
         }
+    }
+
+    private static DoubleHistogram createHistogram() {
+        var config = Services.get(Config.class);
+        HelidonOpenTelemetry helidonOpenTelemetry = HelidonOpenTelemetry.builder()
+                .config(config.get(HelidonOpenTelemetry.CONFIG_KEY))
+                .build();
+        return Services.get(OpenTelemetry.class)
+                .getMeterProvider()
+                .get(helidonOpenTelemetry.prototype().service())
+                .histogramBuilder(REQUEST_DURATION)
+                .setDescription("Outbound HTTP request duration")
+                .setUnit("s") // seconds
+                .setExplicitBucketBoundariesAdvice(BUCKET_BOUNDARIES)
+                .build();
     }
 }
