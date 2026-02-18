@@ -84,18 +84,21 @@ To add meta configuration:
     <dependency>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-metadata</artifactId>
-        <optional>true</optional>
     </dependency>
     ```
 2. Update the `module-info.java` by adding 
     ```java
-    requires static io.helidon.config.metadata;
+    requires io.helidon.config.metadata;
     ```
 3. Annotate the configured class using `@Configured` - usually the builder class. If there is only a factory method, annotate the class containing the factory method
 4. Annotate builder methods using `@ConfiguredOption` - the type of the parameter will be used as type of the property, provides full customization using annotation properties 
 5. In case a factory method is the only one available, annotate it with repeating `@ConfiguredOption` to list all annotations
 6. Look at existing examples if in doubt
 7. Check the output in `target/classes/META-INF/helidon` to see what was generated
+
+NOTE: you can use `optional` dependency and `requires static` if you never use an enum constant from the metadata module.
+In case an enum constant (such as `Kind.LIST`) is used, the dependency must be transitive, and you must use `requires` without 
+static
 
 ## Generate Config Reference Documentation
 

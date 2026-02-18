@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  * using an annotation processor.
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.SOURCE)
 public @interface Configured {
     /**
      * Whether this is a root configuration object.
