@@ -29,6 +29,35 @@ import io.helidon.webserver.http.ServerRequest;
  */
 public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
+     * The command kind, indicating whether the connection was established on purpose by the
+     * proxy without being relayed (LOCAL) or on behalf of another relayed node (PROXY).
+     * @return The command.
+     */
+    Command command();
+
+    /**
+     * The source address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
+     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
+     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * @return The source socket address.
+     */
+    SocketAddress sourceSocketAddress();
+
+    /**
+     * The destination address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
+     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
+     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * @return The destination socket address.
+     */
+    SocketAddress destSocketAddress();
+
+    /**
+     * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
+     * @return A never-null list of Tag-Length-Value data.
+     */
+    List<Tlv> tlvs();
+
+    /**
      * The proxy command. {@link Command#LOCAL} indicates that this connection represents
      * a non-proxied connection. In that case, the server should ignore the rest of the
      * information exposed by this proxy header data.
@@ -372,33 +401,4 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
             }
         }
     }
-
-    /**
-     * The command kind, indicating whether the connection was established on purpose by the
-     * proxy without being relayed (LOCAL) or on behalf of another relayed node (PROXY).
-     * @return The command.
-     */
-    Command command();
-
-    /**
-     * The source address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
-     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
-     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
-     * @return The source socket address.
-     */
-    SocketAddress sourceSocketAddress();
-
-    /**
-     * The destination address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
-     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
-     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
-     * @return The destination socket address.
-     */
-    SocketAddress destSocketAddress();
-
-    /**
-     * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
-     * @return A never-null list of Tag-Length-Value data.
-     */
-    List<Tlv> tlvs();
 }

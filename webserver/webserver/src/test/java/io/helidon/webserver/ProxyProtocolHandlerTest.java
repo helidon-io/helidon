@@ -247,11 +247,11 @@ class ProxyProtocolHandlerTest {
             // destination address. A sequence of the 4 bytes of "/bar" repeated 27 times == 108 bytes
             "2F:62:61:72:".repeat(27).substring(0, "2F:62:61:72:".length() * 27 - 1)
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.UNIX, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals("/foo".repeat(27), ((UnixDomainSocketAddress) data.sourceSocketAddress()).getPath().toString());
-        Assertions.assertEquals("/bar".repeat(27), ((UnixDomainSocketAddress) data.destSocketAddress()).getPath().toString());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.UNIX));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(((UnixDomainSocketAddress) data.sourceSocketAddress()).getPath().toString(), is("/foo".repeat(27)));
+        assertThat(((UnixDomainSocketAddress) data.destSocketAddress()).getPath().toString(), is("/bar".repeat(27)));
     }
 
     @Test
@@ -270,15 +270,15 @@ class ProxyProtocolHandlerTest {
                 // destination port 48042
                 "BB:AA"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.UNKNOWN, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.sourceSocketAddress());
-        Assertions.assertEquals("", data.sourceAddress());
-        Assertions.assertEquals(-1, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.destSocketAddress());
-        Assertions.assertEquals("", data.destAddress());
-        Assertions.assertEquals(-1, data.destPort());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0)));
+        assertThat(data.sourceAddress(), is(""));
+        assertThat(data.sourcePort(), is(-1));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0)));
+        assertThat(data.destAddress(), is(""));
+        assertThat(data.destPort(), is(-1));
     }
 
     @Test
@@ -299,15 +299,15 @@ class ProxyProtocolHandlerTest {
                 // 4 extra TLV bytes. Not a valid TLV, but UNKNOWN handling logic shouldn't care
                 "DE:AD:C0:DE"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.UNKNOWN, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.UDP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.sourceSocketAddress());
-        Assertions.assertEquals("", data.sourceAddress());
-        Assertions.assertEquals(-1, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0), data.destSocketAddress());
-        Assertions.assertEquals("", data.destAddress());
-        Assertions.assertEquals(-1, data.destPort());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.UNKNOWN));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.UDP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0)));
+        assertThat(data.sourceAddress(), is(""));
+        assertThat(data.sourcePort(), is(-1));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 0)));
+        assertThat(data.destAddress(), is(""));
+        assertThat(data.destPort(), is(-1));
     }
 
     @Test
@@ -326,15 +326,15 @@ class ProxyProtocolHandlerTest {
                 // destination port 48042
                 "BB:AA"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
-        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
-        Assertions.assertEquals(43707, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
-        Assertions.assertEquals("0.255.0.255", data.destAddress());
-        Assertions.assertEquals(48042, data.destPort());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707)));
+        assertThat(data.sourceAddress(), is("255.0.255.0"));
+        assertThat(data.sourcePort(), is(43707));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042)));
+        assertThat(data.destAddress(), is("0.255.0.255"));
+        assertThat(data.destPort(), is(48042));
     }
 
     @Test
@@ -359,18 +359,18 @@ class ProxyProtocolHandlerTest {
                 // TLV payload
                 "00:01:02:03"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
-        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
-        Assertions.assertEquals(43707, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
-        Assertions.assertEquals("0.255.0.255", data.destAddress());
-        Assertions.assertEquals(48042, data.destPort());
-        Assertions.assertEquals(1, data.tlvs().size());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707)));
+        assertThat(data.sourceAddress(), is("255.0.255.0"));
+        assertThat(data.sourcePort(), is(43707));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042)));
+        assertThat(data.destAddress(), is("0.255.0.255"));
+        assertThat(data.destPort(), is(48042));
+        assertThat(data.tlvs().size(), is(1));
         final var tlv = (ProxyProtocolV2Data.Tlv.Unregistered) data.tlvs().getFirst();
-        Assertions.assertEquals(0xE0, tlv.type());
+        assertThat(tlv.type(), is(0xE0));
         Assertions.assertArrayEquals(new byte[] {0, 1, 2, 3}, tlv.value());
     }
 
@@ -391,7 +391,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            Assertions.assertTrue(e.getMessage().contains("end of data stream reached before proxy protocol header was complete"));
+            assertThat(e.getMessage().contains("end of data stream reached before proxy protocol header was complete"), is(true));
         }
     }
 
@@ -417,8 +417,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            System.out.println(e.getMessage());
-            Assertions.assertTrue(e.getMessage().contains("end of data reached unexpectedly"));
+            assertThat(e.getMessage().contains("end of data reached unexpectedly"), is(true));
         }
     }
 
@@ -447,7 +446,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            Assertions.assertTrue(e.getMessage().contains("insufficient remaining TLV bytes to read TLV type and length"));
+            assertThat(e.getMessage().contains("insufficient remaining TLV bytes to read TLV type and length"), is(true));
         }
     }
 
@@ -476,7 +475,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            Assertions.assertTrue(e.getMessage().contains("TLV length exceeds remaining available header bytes"));
+            assertThat(e.getMessage().contains("TLV length exceeds remaining available header bytes"), is(true));
         }
     }
 
@@ -502,19 +501,19 @@ class ProxyProtocolHandlerTest {
                 // TLV payload
                 "B5:2E:83:7B"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
-        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
-        Assertions.assertEquals(43707, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
-        Assertions.assertEquals("0.255.0.255", data.destAddress());
-        Assertions.assertEquals(48042, data.destPort());
-        Assertions.assertEquals(1, data.tlvs().size());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707)));
+        assertThat(data.sourceAddress(), is("255.0.255.0"));
+        assertThat(data.sourcePort(), is(43707));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042)));
+        assertThat(data.destAddress(), is("0.255.0.255"));
+        assertThat(data.destPort(), is(48042));
+        assertThat(data.tlvs().size(), is(1));
         final var tlv = (ProxyProtocolV2Data.Tlv.Crc32c) data.tlvs().getFirst();
-        Assertions.assertEquals(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C, tlv.type());
-        Assertions.assertEquals(0xB52E837B, tlv.checksum());
+        assertThat(tlv.type(), is(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C));
+        assertThat(tlv.checksum(), is(0xB52E837B));
     }
 
     @Test
@@ -542,7 +541,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            Assertions.assertTrue(e.getMessage().contains("proxy header checksum mismatch"));
+            assertThat(e.getMessage().contains("proxy header checksum mismatch"), is(true));
         }
     }
 
@@ -574,19 +573,19 @@ class ProxyProtocolHandlerTest {
                 // TLV payload
                 "C6:69:E9:4D"
         )));
-        Assertions.assertEquals(ProxyProtocolV2Data.Command.PROXY, data.command());
-        Assertions.assertEquals(ProxyProtocolData.Family.IPv4, data.family());
-        Assertions.assertEquals(ProxyProtocolData.Protocol.TCP, data.protocol());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707), data.sourceSocketAddress());
-        Assertions.assertEquals("255.0.255.0", data.sourceAddress());
-        Assertions.assertEquals(43707, data.sourcePort());
-        Assertions.assertEquals(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042), data.destSocketAddress());
-        Assertions.assertEquals("0.255.0.255", data.destAddress());
-        Assertions.assertEquals(48042, data.destPort());
-        Assertions.assertEquals(2, data.tlvs().size());
+        assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
+        assertThat(data.family(), is(ProxyProtocolData.Family.IPv4));
+        assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
+        assertThat(data.sourceSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {(byte) 255, 0, (byte) 255, 0}), 43707)));
+        assertThat(data.sourceAddress(), is("255.0.255.0"));
+        assertThat(data.sourcePort(), is(43707));
+        assertThat(data.destSocketAddress(), is(new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, (byte) 255, 0, (byte) 255}), 48042)));
+        assertThat(data.destAddress(), is("0.255.0.255"));
+        assertThat(data.destPort(), is(48042));
+        assertThat(data.tlvs().size(), is(2));
         for (var tlv : data.tlvs()) {
-            Assertions.assertEquals(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C, tlv.type());
-            Assertions.assertEquals(0xC669E94D, ((ProxyProtocolV2Data.Tlv.Crc32c) tlv).checksum());
+            assertThat(tlv.type(), is(ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C));
+            assertThat(((ProxyProtocolV2Data.Tlv.Crc32c) tlv).checksum(), is(0xC669E94D));
         }
     }
 
@@ -621,7 +620,7 @@ class ProxyProtocolHandlerTest {
             )));
             Assertions.fail("Should have thrown");
         } catch (RequestException e) {
-            Assertions.assertTrue(e.getMessage().contains("duplicate CRC32c checksum TLVs present with non-matching checksums"));
+            assertThat(e.getMessage().contains("duplicate CRC32c checksum TLVs present with non-matching checksums"), is(true));
         }
     }
 
@@ -716,29 +715,29 @@ class ProxyProtocolHandlerTest {
         V2Header header = makeHeader(data);
         var output = (ProxyProtocolV2Data) ProxyProtocolHandler.handleAnyProtocol(new ByteArrayInputStream(header.bytes));
 
-        Assertions.assertEquals(data.protocol(), output.protocol());
-        Assertions.assertEquals(data.family(), output.family());
-        Assertions.assertEquals(data.command(), output.command());
-        Assertions.assertEquals(data.sourceSocketAddress(), output.sourceSocketAddress());
-        Assertions.assertEquals(data.destSocketAddress(), output.destSocketAddress());
-        Assertions.assertEquals(data.sourceAddress(), output.sourceAddress());
-        Assertions.assertEquals(data.sourcePort(), output.sourcePort());
-        Assertions.assertEquals(data.destAddress(), output.destAddress());
-        Assertions.assertEquals(data.destPort(), output.destPort());
+        assertThat(output.protocol(), is(data.protocol()));
+        assertThat(output.family(), is(data.family()));
+        assertThat(output.command(), is(data.command()));
+        assertThat(output.sourceSocketAddress(), is(data.sourceSocketAddress()));
+        assertThat(output.destSocketAddress(), is(data.destSocketAddress()));
+        assertThat(output.sourceAddress(), is(data.sourceAddress()));
+        assertThat(output.sourcePort(), is(data.sourcePort()));
+        assertThat(output.destAddress(), is(data.destAddress()));
+        assertThat(output.destPort(), is(data.destPort()));
 
         if (ProxyProtocolData.Family.UNKNOWN.equals(family)) {
-            Assertions.assertEquals(0, output.tlvs().size());
+            assertThat(output.tlvs().size(), is(0));
         } else {
-            Assertions.assertEquals(data.tlvs().size(), output.tlvs().size());
+            assertThat(output.tlvs().size(), is(data.tlvs().size()));
 
             for (int i = 0; i < data.tlvs().size(); i++) {
                 final var inputTlv = data.tlvs().get(i);
                 final var outputTlv = output.tlvs().get(i);
 
                 if (inputTlv instanceof ProxyProtocolV2Data.Tlv.Crc32c && outputTlv instanceof ProxyProtocolV2Data.Tlv.Crc32c outputCrc) {
-                    Assertions.assertEquals(header.checksum, outputCrc.checksum());
+                    assertThat(outputCrc.checksum(), is(header.checksum));
                 } else {
-                    Assertions.assertEquals(inputTlv, outputTlv);
+                    assertThat(outputTlv, is(inputTlv));
                 }
             }
         }
