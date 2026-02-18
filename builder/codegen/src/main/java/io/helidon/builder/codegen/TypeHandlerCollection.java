@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,10 +150,13 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
                 method.addContent(configGet(optionConfigured))
                         .addContent(".asList(")
                         .update(it -> generateMapListFromConfig(it, fm))
-                        .addContentLine(").ifPresent(this::" + setterName + ");");
+                        .addContent(")");
+                configMapper.ifPresent(it -> it.accept(method));
+                method.addContentLine(".ifPresent(this::" + setterName + ");");
             } else {
                 method.addContent(configGet(optionConfigured));
                 generateFromConfig(method, fm);
+                configMapper.ifPresent(it -> it.accept(method));
                 method.addContentLine(".ifPresent(this::" + setterName + ");");
             }
         } else if (BUILT_IN_MAPPERS.contains(actualType)) {
@@ -188,7 +191,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             generateFromConfig(method);
             method.addContent(".get()).");
             collector.accept(method);
-            method.addContent(").ifPresent(this::" + setterName + ");");
+            method.addContentLine(").ifPresent(this::" + setterName + ");");
         }
     }
 

@@ -33,11 +33,11 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.json.binding.JsonBinding;
 
-class HelidonJsonBindingWriter<T> implements EntityWriter<T> {
+class JsonBindingWriter<T> implements EntityWriter<T> {
 
     private final JsonBinding jsonBinding;
 
-    HelidonJsonBindingWriter(JsonBinding jsonBinding) {
+    JsonBindingWriter(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
     }
 

@@ -15,10 +15,10 @@
  */
 
 /**
- * Helidon JSON Binding Media Support.
- * Provide JSON Binding media type support for HTTP requests and responses,
- * enabling automatic serialization and deserialization of JSON data.
+ * Helidon JSON Media Support.
+ * Provide JSON media type support for HTTP requests and responses,
+ * enabling automatic serialization and deserialization of {@link io.helidon.json.JsonValue} data.
  *
- * @see io.helidon.http.media.json.binding.JsonBindingSupport
+ * @see io.helidon.http.media.json.JsonSupport
  */
-package io.helidon.http.media.json.binding;
+package io.helidon.http.media.json;

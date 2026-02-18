@@ -24,27 +24,27 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 /**
  * Media support provider for Helidon JSON Binding media support.
  * <p>
- * This provider creates instances of {@link HelidonJsonBindingSupport} for handling
+ * This provider creates instances of {@link JsonBindingSupport} for handling
  * JSON serialization and deserialization in HTTP requests and responses.
  */
-public class HelidonJsonBindingMediaSupportProvider implements MediaSupportProvider, Weighted {
+public class JsonBindingMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
      * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
      */
     @Deprecated
-    public HelidonJsonBindingMediaSupportProvider() {
+    public JsonBindingMediaSupportProvider() {
         super();
     }
 
     @Override
     public String configKey() {
-        return HelidonJsonBindingSupport.HELIDON_JSON_BINDING_TYPE;
+        return JsonBindingSupport.HELIDON_JSON_BINDING_TYPE;
     }
 
     @Override
     public MediaSupport create(Config config, String name) {
-        return HelidonJsonBindingSupport.create(config, name);
+        return JsonBindingSupport.create(io.helidon.config.Config.config(config), name);
     }
 
     @Override

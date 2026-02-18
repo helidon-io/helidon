@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.io.ByteArrayOutputStream;
+
 /**
  * Base class for all JSON value types in Helidon JSON processing.
  */
@@ -52,6 +54,15 @@ public abstract sealed class JsonValue
      * @param generator the generator to write to
      */
     public abstract void toJson(JsonGenerator generator);
+
+    @Override
+    public String toString() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonGenerator.create(baos)
+                .write(this)
+                .close();
+        return baos.toString();
+    }
 
     /**
      * Return the byte character that starts this JSON value type.

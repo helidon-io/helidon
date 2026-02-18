@@ -18,6 +18,7 @@ package io.helidon.json;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
@@ -223,11 +224,15 @@ class JsonGeneratorOutputStream extends AbstractJsonGenerator {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (!closed) {
             closed = true;
-            outputStream.write(buffer, 0, index);
-            outputStream.flush();
+            try {
+                outputStream.write(buffer, 0, index);
+                outputStream.flush();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 

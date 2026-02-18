@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json.binding;
+package io.helidon.http.media.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
-import io.helidon.http.HeaderValues;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
-import io.helidon.json.binding.Json;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -46,17 +46,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 When adding/updating tests in this class, consider if it should be done
  in the following tests a well:
     - JacksonMediaTest
-    - JsonpMediaTest
+    - JsonbMediaTest
     - GsonMediaTest
  */
-class HelidonJsonMediaTest {
+class JsonMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
-    private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
-    private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
+    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
+    private static final GenericType<JsonArray> JSON_ARRAY_TYPE = GenericType.create(JsonArray.class);
+
     private final MediaSupport provider;
 
-    HelidonJsonMediaTest() {
-        this.provider = HelidonJsonBindingSupport.create(Config.empty());
+    JsonMediaTest() {
+        this.provider = JsonSupport.create();
         provider.init(MediaContext.create());
     }
 
@@ -64,55 +65,56 @@ class HelidonJsonMediaTest {
     void testWriteSingle() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupport.WriterResponse<Book> res = provider.writer(BOOK_TYPE, headers);
+        MediaSupport.WriterResponse<JsonObject> res = provider.writer(JSON_OBJECT_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         res.supplier().get()
-                .write(BOOK_TYPE, new Book("test-title"), os, headers);
+                .write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON_UTF_8.text()));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"test-title\""));
 
-        // sanity check, parse back to book
-        Book sanity = provider.reader(BOOK_TYPE, headers)
+        // sanity check, parse back to JsonObject
+        JsonObject sanity = provider.reader(JSON_OBJECT_TYPE, headers)
                 .supplier()
                 .get()
-                .read(BOOK_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
+                .read(JSON_OBJECT_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
-        assertThat(sanity.getTitle(), is("test-title"));
+        assertThat(sanity.stringValue("title", "wrong"), is("test-title"));
     }
 
     @Test
     void testWriteList() {
         WritableHeaders<?> headers = WritableHeaders.create();
 
-        MediaSupport.WriterResponse<List<Book>> res = provider.writer(BOOK_LIST_TYPE, headers);
+        MediaSupport.WriterResponse<JsonArray> res = provider.writer(JSON_ARRAY_TYPE, headers);
         assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        List<Book> books = List.of(new Book("first"), new Book("second"), new Book("third"));
-        res.supplier().get()
-                .write(BOOK_LIST_TYPE, books, os, headers);
+        JsonArray jsonArray = createArray("first", "second", "third");
+        res.supplier()
+                .get()
+                .write(JSON_ARRAY_TYPE, jsonArray, os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, HttpMediaTypes.JSON_UTF_8.text()));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"first\""));
         assertThat(result, containsString("\"second\""));
         assertThat(result, containsString("\"third\""));
 
-        // sanity check, parse back to books
-        List<Book> sanity = provider.reader(BOOK_LIST_TYPE, headers)
+        // sanity check, parse back to JsonObjects
+        JsonArray sanity = provider.reader(JSON_ARRAY_TYPE, headers)
                 .supplier()
                 .get()
-                .read(BOOK_LIST_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
+                .read(JSON_ARRAY_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
-        assertThat(sanity, hasItems(new Book("first"), new Book("second"), new Book("third")));
+        assertThat(sanity, is(createArray("first", "second", "third")));
     }
 
     @Test
@@ -120,14 +122,14 @@ class HelidonJsonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
-        Book book = res.supplier().get()
-                .read(BOOK_TYPE, is, requestHeaders);
+        JsonObject JsonObject = res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders);
 
-        assertThat(book.getTitle(), is("utf-8: řžýčň"));
+        assertThat(JsonObject.stringValue("title", "wrong"), is("utf-8: řžýčň"));
     }
 
     @Test
@@ -137,14 +139,14 @@ class HelidonJsonMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(StandardCharsets.UTF_8));
-        Book book = res.supplier().get()
-                .read(BOOK_TYPE, is, requestHeaders, responseHeaders);
+        JsonObject JsonObject = res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders, responseHeaders);
 
-        assertThat(book.getTitle(), is("utf-8: řžýčň"));
+        assertThat(JsonObject.stringValue("title", "wrong"), is("utf-8: řžýčň"));
     }
 
     @Test
@@ -152,15 +154,15 @@ class HelidonJsonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
 
-        MediaSupport.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"first\"}, {\"title\": \"second\"}]".getBytes(StandardCharsets.UTF_8));
-        List<Book> books = res.supplier().get()
-                .read(BOOK_LIST_TYPE, is, requestHeaders);
+        JsonArray jsonArray = res.supplier().get()
+                .read(JSON_ARRAY_TYPE, is, requestHeaders);
 
-        assertThat(books, hasItems(new Book("first"), new Book("second")));
+        assertThat(jsonArray, is(createArray("first", "second")));
     }
 
     @Test
@@ -168,14 +170,14 @@ class HelidonJsonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"is-8859-2: řžýčň\"}".getBytes(ISO_8859_2));
-        Book book = res.supplier().get()
-                .read(BOOK_TYPE, is, requestHeaders);
+        JsonObject JsonObject = res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders);
 
-        assertThat(book.getTitle(), is("is-8859-2: řžýčň"));
+        assertThat(JsonObject.stringValue("title", "wrong"), is("is-8859-2: řžýčň"));
     }
 
     @Test
@@ -185,14 +187,14 @@ class HelidonJsonMediaTest {
         requestHeaders.contentType(MediaTypes.APPLICATION_XML);
         responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<Book> res = provider.reader(BOOK_TYPE, requestHeaders, responseHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
-        Book book = res.supplier().get()
-                .read(BOOK_TYPE, is, requestHeaders, responseHeaders);
+        JsonObject JsonObject = res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders, responseHeaders);
 
-        assertThat(book.getTitle(), is("utf-8: řžýčň"));
+        assertThat(JsonObject.stringValue("title", "wrong"), is("utf-8: řžýčň"));
     }
 
     @Test
@@ -200,56 +202,28 @@ class HelidonJsonMediaTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset(ISO_8859_2));
 
-        MediaSupport.ReaderResponse<List<Book>> res = provider.reader(BOOK_LIST_TYPE, requestHeaders);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+        MediaSupport.ReaderResponse<JsonArray> res = provider.reader(JSON_ARRAY_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
 
         InputStream is =
                 new ByteArrayInputStream("[{\"title\": \"čř\"}, {\"title\": \"šň\"}]".getBytes(ISO_8859_2));
-        List<Book> books = res.supplier().get()
-                .read(BOOK_LIST_TYPE, is, requestHeaders);
+        JsonArray jsonObjects = res.supplier().get()
+                .read(JSON_ARRAY_TYPE, is, requestHeaders);
 
-        assertThat(books, hasItems(new Book("čř"), new Book("šň")));
+        assertThat(jsonObjects, is(createArray("čř", "šň")));
     }
 
-    @Json.Entity
-    public static class Book {
-        private String title;
+    private JsonObject createObject(String title) {
+        return JsonObject.builder()
+                .set("title", title)
+                .build();
+    }
 
-        public Book() {
+    private JsonArray createArray(String... titles) {
+        List<JsonObject> objects = new ArrayList<>();
+        for (String title : titles) {
+            objects.add(createObject(title));
         }
-
-        public Book(String title) {
-            this.title = title;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Book book = (Book) o;
-            return Objects.equals(title, book.title);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(title);
-        }
-
-        @Override
-        public String toString() {
-            return title;
-        }
+        return JsonArray.create(objects);
     }
 }

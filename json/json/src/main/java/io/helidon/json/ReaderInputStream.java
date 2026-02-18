@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.json.binding;
+package io.helidon.json;
 
 import java.io.IOException;
 import java.io.InputStream;
