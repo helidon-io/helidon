@@ -585,6 +585,29 @@ To set up metrics and tracing, add the following single dependency to your proje
 </dependency>
 ----
 
+To transmit the metrics semantic conventions to a backend, add a dependency on an OpenTelemetry exporter and in the `telemetry` configuration set up an exporter under `signals.metrics`.
+
+.Dependency for exporting metrics semantic conventions data using OTLP
+[source,xml]
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-otlp</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+.Configuration for an OpenTelemetry exporter
+[source,yaml]
+----
+telemetry:
+  service: my-app
+  signals:
+    metrics:
+      exporters:
+        type: otlp
+----
+
 To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` and, below it, add `metrics`, `tracing`, or both.
 
 .Enabling metrics and tracing telemetry using configuration

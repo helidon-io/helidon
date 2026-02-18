@@ -30,8 +30,9 @@ module io.helidon.webclient.telemetry.metrics {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.config;
-    requires io.helidon.metrics.api;
+    requires io.helidon.telemetry.otelconfig;
     requires transitive io.helidon.webclient.api;
+    requires io.opentelemetry.api;
 
     exports io.helidon.webclient.telemetry.metrics;
 }
