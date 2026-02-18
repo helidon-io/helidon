@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@
             <list key="Main-helidon-imports">
                 <value>io.helidon.logging.common.LogConfig</value>
                 <value>io.helidon.config.Config</value>
+                <value>io.helidon.service.registry.Services</value>
                 <value>io.helidon.webserver.WebServer</value>
                 <value>io.helidon.webserver.http.HttpRouting</value>
             </list>
@@ -115,7 +116,7 @@
 
         // initialize global config from default configuration
         Config config = Config.create();
-        Config.global(config);
+        Services.set(Config.class, config);
 
         {{#Main-main}}
         {{.}}
