@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Base class for all JSON value types in Helidon JSON processing.
@@ -61,7 +62,7 @@ public abstract sealed class JsonValue
         JsonGenerator.create(baos)
                 .write(this)
                 .close();
-        return baos.toString();
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
     /**
