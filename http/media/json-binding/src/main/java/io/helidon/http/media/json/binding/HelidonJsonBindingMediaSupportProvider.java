@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json;
+package io.helidon.http.media.json.binding;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
@@ -22,29 +22,29 @@ import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
- * Media support provider for Helidon JSON media support.
+ * Media support provider for Helidon JSON Binding media support.
  * <p>
- * This provider creates instances of {@link HelidonJsonSupport} for handling
+ * This provider creates instances of {@link HelidonJsonBindingSupport} for handling
  * JSON serialization and deserialization in HTTP requests and responses.
  */
-public class HelidonJsonMediaSupportProvider implements MediaSupportProvider, Weighted {
+public class HelidonJsonBindingMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**
      * This class should be only instantiated as part of java {@link java.util.ServiceLoader}.
      */
     @Deprecated
-    public HelidonJsonMediaSupportProvider() {
+    public HelidonJsonBindingMediaSupportProvider() {
         super();
     }
 
     @Override
     public String configKey() {
-        return HelidonJsonSupport.HELIDON_JSON_TYPE;
+        return HelidonJsonBindingSupport.HELIDON_JSON_BINDING_TYPE;
     }
 
     @Override
     public MediaSupport create(Config config, String name) {
-        return HelidonJsonSupport.create(config, name);
+        return HelidonJsonBindingSupport.create(config, name);
     }
 
     @Override

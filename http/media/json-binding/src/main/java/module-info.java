@@ -16,17 +16,18 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.http.media.json.binding.HelidonJsonBindingMediaSupportProvider;
 
 /**
- * Helidon JSON Media Support.
- * Provides JSON media type support for HTTP requests and responses,
+ * Helidon JSON Binding Media Support.
+ * Provides JSON Binding media type support for HTTP requests and responses,
  * enabling automatic serialization and deserialization of JSON data.
  */
-@Features.Name("Helidon JSON")
-@Features.Description("Helidon JSON media support")
+@Features.Name("Helidon JSON Binding")
+@Features.Description("Helidon JSON Binding media support")
 @Features.Flavor(HelidonFlavor.SE)
-@Features.Path({"Media", "JSON"})
-module io.helidon.http.media.json {
+@Features.Path({"Media", "JSON Binding"})
+module io.helidon.http.media.json.binding {
 
     requires static io.helidon.common.features.api;
 
@@ -37,8 +38,8 @@ module io.helidon.http.media.json {
     requires io.helidon.common.media.type;
     requires io.helidon.http;
 
-    exports io.helidon.http.media.json;
+    exports io.helidon.http.media.json.binding;
 
     provides io.helidon.http.media.spi.MediaSupportProvider
-            with io.helidon.http.media.json.HelidonJsonMediaSupportProvider;
+            with HelidonJsonBindingMediaSupportProvider;
 }

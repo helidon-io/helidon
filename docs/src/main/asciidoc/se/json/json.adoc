@@ -1,0 +1,642 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= JSON Processing in Helidon SE
+
+:description: Helidon SE JSON Support
+:keywords: helidon, java, json, se, parsing, binding, serialization
+:feature-name: JSON Processing
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<JSON Binding, JSON Binding>>
+- <<JSON Processor, JSON Processor>>
+
+== Overview
+
+Helidon provides comprehensive JSON processing capabilities through two core modules that work together to offer efficient, streaming JSON processing optimized for virtual threads and modern Java applications.
+
+== JSON Binding
+
+The JSON Binding module (`helidon-json-binding`) provides high-level object serialization and deserialization.
+
+=== Maven Coordinates
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.json</groupId>
+    <artifactId>helidon-json-binding</artifactId>
+</dependency>
+----
+
+=== Features
+
+* Automatic conversion between Java objects and JSON
+* Custom serializers and deserializers for complex types
+* Type-safe binding with generic support
+* Extensive configuration and customizations
+
+=== Code Generation
+
+==== What Code Generation Does and When to Use It
+Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with link:{json-binding-base-url}/io/helidon/json/binding/Json.Entity.html[`@Json.Entity`].
+
+Use code generation if you want an automatic, annotation-driven mapping for your POJOs.
+If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement link:{json-binding-base-url}/io/helidon/json/binding/JsonSerializer.html[`JsonSerializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonDeserializer.html[`JsonDeserializer`], link:{json-binding-base-url}/io/helidon/json/binding/JsonConverter.html[`JsonConverter`], or a link:{json-binding-base-url}/io/helidon/json/binding/JsonBindingFactory.html[`JsonBindingFactory`]).
+
+==== Enabling Code Generation
+For automatic code generation, you can either add individual annotation processors or use the Helidon bundles APT dependency that includes all necessary processors.
+
+==== Option 1: Using Helidon Bundles APT
+
+Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
+
+[source,xml]
+.Annotation processor configuration with bundles
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.bundles</groupId>
+                        <artifactId>helidon-bundles-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+
+==== Option 2: Individual Annotation Processors
+
+Configure the annotation processors in your Maven build:
+
+[source,xml]
+.Annotation processor configuration
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                    <!-- To enable automatic converter discovery -->
+                    <path>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                    <path>
+                        <groupId>io.helidon.json.codegen</groupId>
+                        <artifactId>helidon-json-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+
+=== JSON Binding
+
+The main entry point for JSON binding is the
+link:{json-binding-base-url}/io/helidon/json/binding/JsonBinding.html[`JsonBinding`] class.
+
+The link:{json-binding-base-url}/io/helidon/json/binding/JsonBinding.html[`JsonBinding`]
+API provides common serialization and deserialization methods:
+
+[source,java]
+.JsonBinding usage
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_1, indent=0]
+----
+
+=== Annotations
+
+Helidon JSON binding provides annotations to control serialization and deserialization behavior.
+
+==== @Json.Entity
+
+Marks a class/record as a JSON entity that can be serialized/deserialized.
+
+This annotation also lets you control how the binder discovers properties using the `accessorStyle` attribute.
+This is useful if your code uses fluent methods, record-style accessors, or non-standard naming.
+
+[source,java]
+.Using @Json.Entity
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_2, indent=0]
+----
+
+Why use it: Required for classes to participate in JSON binding. Without this annotation, automatic converter generation
+will not trigger.
+
+==== @Json.Property
+
+Customizes the JSON property name for a field or method. This affects how fields are named in JSON output and input, providing control over JSON structure and API compatibility.
+
+[source,java]
+.Basic property name customization
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_3, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"firstName":"John","last_name":"Doe"}
+----
+
+[source,java]
+.Method-level property naming
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_4, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"firstName":"John","lastName":"Doe","fullName":"John Doe"}
+----
+
+Why use it: Allows mapping between Java field names and JSON property names, enabling better JSON structure control
+and compatibility with existing APIs. Essential for maintaining API contracts when Java field names don't match desired JSON
+structure.
+
+==== @Json.Ignore
+
+Excludes fields or methods from serialization/deserialization. Fields marked as `transient` are ignored automatically,
+or you can explicitly use this annotation. This affects field visibility in JSON output and input processing.
+
+[source,java]
+.Basic field exclusion
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_5, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John","age":30}
+----
+
+[source,java]
+.Automatic transient field exclusion
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_6, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John","data":"value"}
+----
+
+[source,java]
+.Method-level exclusion
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_7, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"lastName":"Doe"}
+----
+
+Why use it: Prevents sensitive data, computed fields, or internal state from being included in JSON output.
+Critical for security (excluding passwords, tokens) and performance (excluding large internal data structures).
+
+==== @Json.Required
+
+Marks properties as required during deserialization.
+
+[source,java]
+.Using @Json.Required
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_8, indent=0]
+----
+
+Why use it: Ensures critical properties are present in JSON input, failing deserialization if they're missing.
+
+==== @Json.SerializeNulls
+
+Controls whether null values are included in JSON output. Null values are omitted from JSON output,
+unless this annotation is used. This affects the visibility and size of generated JSON.
+
+[source,java]
+.Default behavior - nulls omitted
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_9, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John"}
+----
+
+[source,java]
+.Class-level null serialization
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_10, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John","age":null}
+----
+
+[source,java]
+.Field-level null serialization
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_11, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John","city":null}
+----
+
+[source,java]
+.Mixed scenarios - different null handling
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_12, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John"}
+----
+
+Why use it: Provides control over JSON size and API contract.
+
+==== @Json.Creator
+
+Marks constructors or factory methods for object creation during deserialization.
+
+[source,java]
+.Using @Json.Creator constructor
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_13, indent=0]
+----
+
+[source,java]
+.Using @Json.Creator factory method
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_14, indent=0]
+----
+
+Why use it: Enables deserialization of immutable objects or objects requiring specific construction logic.
+
+==== @Json.PropertyOrder
+
+Controls the order of properties in JSON output. By default, the order is undefined, so the properties can appear in any order.
+
+[source,java]
+.Undefined/Any declaration order (default)
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_15, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"zebra":"value","alpha":"value","beta":"value"}
+----
+
+[source,java]
+.Alphabetical ordering
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_16, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"alpha":"value","beta":"value","zebra":"value"}
+----
+
+[source,java]
+.Reverse alphabetical ordering
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_17, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"zebra":"value","beta":"value","alpha":"value"}
+----
+
+Why use it: Ensures consistent JSON structure for APIs, when order matters for processing.
+
+==== @Json.Deserializer, @Json.Serializer, @Json.Converter
+
+Specify custom serialization/deserialization logic using `JsonSerializer` and `JsonDeserializer` implementations.
+
+[source,java]
+.Using @Json.Deserializer
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_18, indent=0]
+----
+
+Why use it: Enables handling of complex types, legacy formats, or types requiring special conversion logic.
+
+==== @Json.BuilderInfo
+
+Provides information about a builder class for object construction.
+
+[source,java]
+.Using @Json.BuilderInfo
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_19, indent=0]
+----
+
+Why use it: Specifies custom builder classes for object construction during deserialization, enabling more complex instantiation patterns.
+
+==== @Json.FailOnUnknown
+
+Controls behavior when unknown properties are encountered during deserialization.
+
+[source,java]
+.Using @Json.FailOnUnknown
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_20, indent=0]
+----
+
+Why use it: Provides strict validation of JSON input, failing if unexpected properties are present.
+
+=== Optional Handling
+
+Helidon provides special handling for Java Optional types (`Optional<T>`, `OptionalInt`, `OptionalLong`, `OptionalDouble`) in JSON serialization and deserialization.
+
+==== Empty Optional Behavior
+
+By default, empty Optional fields are omitted from JSON output.
+When `@Json.SerializeNulls` is applied (either at class or field level), empty Optional fields are included in JSON output
+as `null` values.
+
+[source,java]
+.Default behavior - empty optionals omitted
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_30, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John"}
+----
+
+[source,java]
+.With @Json.SerializeNulls - empty optionals included as null
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_31, indent=0]
+----
+
+This produces the following JSON output:
+[source,json]
+----
+{"name":"John","middleName":null}
+----
+
+During the deserialization process, null values are always converted into the empty instance of the deserialized Optional type.
+
+**Supported Optional Types:**
+
+- `Optional<T>` - For any object type
+- `OptionalInt` - For primitive int values
+- `OptionalLong` - For primitive long values
+- `OptionalDouble` - For primitive double values
+
+=== Automatic Custom Converter Registration
+
+In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be
+automatically registered with the JSON binding system through Helidon's Service Registry. So they get automatically discovered
+and one does not need to register them manually at runtime.
+
+See xref:../injection/declarative.adoc#Overview[Helidon Declarative]
+
+=== Binding Factories
+
+For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types,
+you can implement custom link:{json-binding-base-url}/io/helidon/json/binding/JsonBindingFactory.html[`JsonBindingFactory`] instances. Binding factories are particularly useful for handling parameterized
+types, collections, or types that require special instantiation logic.
+
+==== What is a Binding Factory?
+
+A link:{json-binding-base-url}/io/helidon/json/binding/JsonBindingFactory.html[`JsonBindingFactory`] is responsible for creating type-specific serializers and deserializers for a family of related types.
+Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes
+or parameterized versions of a base type.
+
+==== How Binding Factories Work
+
+Binding factories implement the `JsonBindingFactory<T>` interface, which requires:
+
+- `createDeserializer(Class<? extends T> type)` - Creates a deserializer for a specific class type
+- `createDeserializer(GenericType<? extends T> type)` - Creates a deserializer for a generic type
+- `createSerializer(Class<? extends T> type)` - Creates a serializer for a specific class type
+- `createSerializer(GenericType<? extends T> type)` - Creates a serializer for a generic type
+- `supportedTypes()` - Returns the set of types this factory can handle
+
+Typical example for the binding factory would be a handling of the Collection. We would have a converter, which has some
+common logic for this Collection, but we cant hardcode any specific type this common logic should handle, because Collection
+has a generic parameter and it could be more or less anything. Because of that, this common logic serves as a template
+and waits till runtime to have some specific type converter assigned based on the runtime type it received.
+
+New instance of the converter must be created for each runtime type. JSON Binding implementation handles the caching of these
+converters, so they are also getting reused.
+
+== JSON Processor
+
+The JSON module (`helidon-json`) provides fundamental JSON parsing and generation capabilities.
+
+=== Maven Coordinates
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.json</groupId>
+    <artifactId>helidon-json</artifactId>
+</dependency>
+----
+
+=== Features
+
+* Streaming JSON parser for efficient processing of large documents
+* JSON generator for building JSON output
+* Support for all JSON data types
+* Memory-efficient processing without loading entire documents
+
+=== JsonParser
+
+link:{json-base-url}/io/helidon/json/JsonParser.html[`JsonParser`] is a streaming JSON parser that provides efficient, low-level access to JSON data without loading the entire document into memory. It's designed for processing large JSON documents or streaming data sources.
+
+==== What it's used for
+
+* Parsing large JSON documents efficiently
+* Streaming JSON processing from files, network streams, or other sources
+* Token-by-token JSON parsing with fine-grained control
+* Memory-efficient processing of JSON data
+
+==== How to use it
+
+[source,java]
+.Creating and using JsonParser
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_21, indent=0]
+----
+
+For more control, JsonParser also supports manual token-by-token parsing:
+
+[source,java]
+.Manual token-by-token parsing with JsonParser
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_32, indent=0]
+----
+
+This approach provides fine-grained control over parsing, allowing you to handle different field types and skip unknown fields efficiently.
+
+=== JsonGenerator
+
+link:{json-base-url}/io/helidon/json/JsonGenerator.html[`JsonGenerator`] is a streaming JSON generator that builds JSON output efficiently. It provides a fluent API for constructing JSON documents without building intermediate representations.
+
+==== What it's used for
+
+* Building JSON documents programmatically
+* Streaming JSON generation to files or network streams
+* Memory-efficient JSON construction
+* Building complex nested JSON structures
+
+==== How to use it
+
+[source,java]
+.Basic JSON generation
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_22, indent=0]
+----
+
+This generates the following JSON output:
+[source,json]
+----
+{"name":"John","age":30}
+----
+
+[source,java]
+.Complex JSON structure generation
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_23, indent=0]
+----
+
+This generates the following JSON output:
+[source,json]
+----
+{
+  "person": {
+    "name": "John",
+    "age": 30
+  },
+  "hobbies": ["reading", "coding"]
+}
+----
+
+=== JsonValue Types
+
+link:{json-base-url}/io/helidon/json/JsonValue.html[`JsonValue`] is the base class for all JSON value types in Helidon. It provides a type-safe representation of JSON data with specific implementations for different JSON data types.
+
+==== JsonObject
+
+link:{json-base-url}/io/helidon/json/JsonObject.html[`JsonObject`] represents a JSON object (key-value pairs enclosed in `{}`). It's used for structured data with named properties.
+
+[source,java]
+.Using JsonObject
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_24, indent=0]
+----
+
+==== JsonArray
+
+link:{json-base-url}/io/helidon/json/JsonArray.html[`JsonArray`] represents a JSON array (ordered list of values enclosed in `[]`). It's used for collections of values.
+
+[source,java]
+.Using JsonArray
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_25, indent=0]
+----
+
+==== JsonString
+
+link:{json-base-url}/io/helidon/json/JsonString.html[`JsonString`] represents a JSON string value (text enclosed in `"`). It's used for textual data.
+
+[source,java]
+.Using JsonString
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_26, indent=0]
+----
+
+==== JsonNumber
+
+link:{json-base-url}/io/helidon/json/JsonNumber.html[`JsonNumber`] represents a JSON number value. It's used for numeric data and provides access to different numeric types.
+
+[source,java]
+.Using JsonNumber
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_27, indent=0]
+----
+
+==== JsonBoolean
+
+link:{json-base-url}/io/helidon/json/JsonBoolean.html[`JsonBoolean`] represents a JSON boolean value (`true` or `false`). It's used for logical values.
+
+[source,java]
+.Using JsonBoolean
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_28, indent=0]
+----
+
+==== JsonNull
+
+link:{json-base-url}/io/helidon/json/JsonNull.html[`JsonNull`] represents a JSON null value. It's used when a value is absent or undefined.
+
+[source,java]
+.Using JsonNull
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_29, indent=0]
+----

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json;
+package io.helidon.http.media.json.binding;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,10 +30,10 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.EntityReader;
 import io.helidon.json.binding.JsonBinding;
 
-class HelidonJsonReader<T> implements EntityReader<T> {
+class HelidonJsonBindingReader<T> implements EntityReader<T> {
     private final JsonBinding jsonBinding;
 
-    HelidonJsonReader(JsonBinding jsonBinding) {
+    HelidonJsonBindingReader(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
     }
 

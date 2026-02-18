@@ -211,8 +211,7 @@ public class DateTimeTest {
 
         String json = jsonBinding.serialize(model);
         assertThat(json, is("{\"optionalLocalDate\":\"2023-10-15\","
-                                    + "\"optionalInstant\":\"2023-10-15T12:30:45Z\","
-                                    + "\"optionalPeriod\":null}"));
+                                    + "\"optionalInstant\":\"2023-10-15T12:30:45Z\"}"));
         OptionalDateTimeModel deserialized = jsonBinding.deserialize(json, OptionalDateTimeModel.class);
 
         assertThat(deserialized.optionalLocalDate, is(model.optionalLocalDate));

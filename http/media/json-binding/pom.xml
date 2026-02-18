@@ -24,8 +24,8 @@
         <version>4.4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-http-media-json</artifactId>
-    <name>Helidon HTTP Media Helidon JSON</name>
+    <artifactId>helidon-http-media-json-binding</artifactId>
+    <name>Helidon HTTP Media Helidon JSON Binding</name>
 
     <dependencies>
         <dependency>

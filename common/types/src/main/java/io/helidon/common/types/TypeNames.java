@@ -25,6 +25,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -79,6 +82,18 @@ public final class TypeNames {
      * Type name for {@link java.util.Optional}.
      */
     public static final TypeName OPTIONAL = TypeName.create(Optional.class);
+    /**
+     * Type name for {@link java.util.OptionalInt}.
+     */
+    public static final TypeName OPTIONAL_INT = TypeName.create(OptionalInt.class);
+    /**
+     * Type name for {@link java.util.OptionalLong}.
+     */
+    public static final TypeName OPTIONAL_LONG = TypeName.create(OptionalLong.class);
+    /**
+     * Type name for {@link java.util.OptionalDouble}.
+     */
+    public static final TypeName OPTIONAL_DOUBLE = TypeName.create(OptionalDouble.class);
     /**
      * Type name for {@link java.util.function.Supplier}.
      */
