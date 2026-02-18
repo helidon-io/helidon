@@ -46,7 +46,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * CDI extension for processing CORS-annotated types.
  * <p>
  * Pre-computes the {@link io.helidon.webserver.cors.CorsPathConfig} for each method which should have one and makes
- * sure that CORS annotations appears only on methods which also have {@code OPTIONS}.
+ * sure that CORS annotations appear only on methods which also have {@code OPTIONS}.
  * </p>
  */
 public class CorsCdiExtension implements Extension {

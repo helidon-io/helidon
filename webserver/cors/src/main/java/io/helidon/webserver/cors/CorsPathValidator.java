@@ -177,6 +177,7 @@ class CorsPathValidator {
         if (setMaxAge) {
             resHeaders.set(HeaderNames.ACCESS_CONTROL_MAX_AGE, maxAgeSeconds);
         }
+        log(req, Level.DEBUG, "CORS allowing request");
         return Result.ALLOWED;
     }
 

@@ -93,9 +93,11 @@ class CorsPathConfigGenerator {
             var path = optionMethod.path();
             if (path.isEmpty()) {
                 wantTypeConfig = false;
+                break;
             } else {
                 if (path.get().equals("/")) {
                     wantTypeConfig = false;
+                    break;
                 }
             }
         }

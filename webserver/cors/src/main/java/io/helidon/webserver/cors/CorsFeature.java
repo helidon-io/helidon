@@ -204,6 +204,7 @@ public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<Cor
                     // already processed
                     res.status(Status.NO_CONTENT_204)
                             .send();
+                    return;
                 }
                 if (validator.preFlight(req, res).shouldContinue()) {
                     res.status(Status.NO_CONTENT_204)
