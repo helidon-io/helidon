@@ -110,7 +110,7 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
                 }
             });
 
-            List<String> results = future.get(500, TimeUnit.SECONDS);
+            List<String> results = future.get(5, TimeUnit.SECONDS);
             assertThat(results.size(), is(2));
             assertThat(results.getFirst(), is("RUNNING"));
             assertThat(results.getLast(), is("RUNNING"));
