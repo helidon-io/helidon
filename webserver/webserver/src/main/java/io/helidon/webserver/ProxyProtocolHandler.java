@@ -265,7 +265,7 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
                 sourceSocketAddress = null;
                 destinationSocketAddress = null;
             }
-        };
+        }
 
         // Account for the consumed address bytes.
         int remainingHeaderLength = headerLength - addressBytesLength;
