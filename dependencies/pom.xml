@@ -101,8 +101,8 @@
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
-        <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
+        <version.lib.junit>5.12.2</version.lib.junit>
+        <version.lib.junit-platform-testkit>1.12.2</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
