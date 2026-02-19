@@ -101,8 +101,7 @@
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
-        <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
+        <version.lib.junit>5.12.2</version.lib.junit>
         <version.lib.kafka>3.9.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
@@ -1256,21 +1255,6 @@
 
             <!-- Section 4: Testing -->
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${version.lib.junit}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${version.lib.hamcrest}</version>
@@ -1279,11 +1263,6 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-testkit</artifactId>
-                <version>${version.lib.junit-platform-testkit}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1484,6 +1463,13 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
                 <version>${version.lib.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.lib.junit}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
