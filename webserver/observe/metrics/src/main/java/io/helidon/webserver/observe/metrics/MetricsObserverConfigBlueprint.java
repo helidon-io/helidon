@@ -31,6 +31,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Blueprint
 @Prototype.Configured("metrics")
 @Prototype.Provides(ObserveProvider.class)
+@Prototype.IncludeDefaultMethods
 interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<MetricsObserver> {
     @Option.Configured
     @Option.Default("metrics")
@@ -46,7 +47,9 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * @return auto metrics collection settings
      */
     @Option.Configured()
-    Optional<AutoHttpMetricsConfig> autoHttpMetrics();
+    default Optional<AutoHttpMetricsConfig> autoHttpMetrics() {
+        return Optional.empty();
+    }
 
     /**
      * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.

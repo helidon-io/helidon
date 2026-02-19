@@ -23,7 +23,6 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.http.Method;
 import io.helidon.http.MethodPredicate;
 import io.helidon.http.PathMatcher;
-import io.helidon.http.PathMatchers;
 
 /**
  * Settings for path-based automatic metrics configuration.
@@ -39,19 +38,6 @@ import io.helidon.http.PathMatchers;
 @Prototype.Blueprint(decorator = AutoHttpMetricsPathConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(AutoHttpMetricsPathConfigSupport.CustomMethods.class)
 interface AutoHttpMetricsPathConfigBlueprint {
-
-    /**
-     * Creates a metrics path config that disables automatic metrics collection for the specified exact path.
-     *
-     * @param path exact path to exclude
-     * @return metrics path config disabling collection for the path
-     */
-    static AutoHttpMetricsPathConfig disabled(String path) {
-        return AutoHttpMetricsPathConfig.builder()
-                .enabled(false)
-                .path(PathMatchers.exact(path))
-                .build();
-    }
 
     /**
      * Whether automatic metrics are to be enabled for requests which match the specified {@link io.helidon.http.PathMatcher}

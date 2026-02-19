@@ -22,19 +22,31 @@ import java.util.List;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.uri.UriPath;
 import io.helidon.http.Method;
+import io.helidon.http.PathMatchers;
 
 class AutoHttpMetricsConfigSupport {
 
     private static final List<AutoHttpMetricsPathConfig> MEASUREMENT_DISABLED_HELIDON_ENDPOINTS = List.of(
-            AutoHttpMetricsPathConfigBlueprint.disabled("/metrics"),
-            AutoHttpMetricsPathConfigBlueprint.disabled("/observe/metrics"),
-            AutoHttpMetricsPathConfigBlueprint.disabled("/health"),
-            AutoHttpMetricsPathConfigBlueprint.disabled("/observe/health"),
-            AutoHttpMetricsPathConfigBlueprint.disabled("/openapi"),
-            AutoHttpMetricsPathConfigBlueprint.disabled("/observe/openapi")
+            disabled("/metrics/*"),
+            disabled("/observe/*"),
+            disabled("/health/*"),
+            disabled("/openapi")
             );
 
     private AutoHttpMetricsConfigSupport() {
+    }
+
+    /**
+     * Creates a metrics path config that disables automatic metrics collection for the specified exact path.
+     *
+     * @param path exact path to exclude
+     * @return metrics path config disabling collection for the path
+     */
+    static AutoHttpMetricsPathConfig disabled(String path) {
+        return AutoHttpMetricsPathConfig.builder()
+                .enabled(false)
+                .path(PathMatchers.create(path))
+                .build();
     }
 
     static class CustomMethods {

@@ -50,7 +50,7 @@ class TestAutoMetricsConfig {
                                 enabled: false
                 """;
         var config = AutoHttpMetricsConfig.create(Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_X_YAML))
-                                             .get("server.features.observe.observers.metrics.auto"));
+                                             .get("server.features.observe.observers.metrics.auto-http-metrics"));
 
         assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
         assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(false));
@@ -77,7 +77,7 @@ class TestAutoMetricsConfig {
                         metrics:
                 """;
         var config = AutoHttpMetricsConfig.create(Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_X_YAML))
-                                                          .get("server.features.observe.observers.metrics.auto"));
+                                                          .get("server.features.observe.observers.metrics.auto-http-metrics"));
 
         assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
         assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));

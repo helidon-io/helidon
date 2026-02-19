@@ -59,6 +59,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
+/**
+ * Makes sure the emitted data (as JSON written to a logger) is as expected.
+ * <p>
+ * Note that values we might expect to be JSON integers are expressed as strings. See
+ * <a href="https://github.com/open-telemetry/opentelemetry-collector/issues/10457">this explanation</a>.
+ */
 @ServerTest
 class TestOpenTelemetrySemanticConventions {
 
@@ -136,7 +142,7 @@ class TestOpenTelemetrySemanticConventions {
                 return actual.asJsonObject().getJsonArray("attributes").stream()
                         .map(JsonValue::asJsonObject)
                         .filter(attribute -> attribute.getString("key").equals(key))
-                        .map(attribute -> attribute.getString("stringValue"))
+                        .map(attribute -> attribute.getJsonObject("value").getString("stringValue"))
                         .findFirst()
                         .orElse(null);
             }
@@ -217,7 +223,7 @@ class TestOpenTelemetrySemanticConventions {
                                 .map(JsonValue::asJsonObject)
                                 .flatMap(resourceMetric -> resourceMetric.getJsonArray("scopeMetrics").stream());
             } else {
-                scopeMetricsEntries = Stream.of(root.getJsonArray("scopeMetrics"));
+                scopeMetricsEntries = root.getJsonArray("scopeMetrics").stream();
             }
 
             List<JsonObject> metricsEntries = scopeMetricsEntries
@@ -238,11 +244,11 @@ class TestOpenTelemetrySemanticConventions {
                            is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME));
                 assertThat("Metrics entry histogram data points entry",
                            dataPoints,
-                           hasItem(allOf(hasInteger("count", is(1)),
+                           hasItem(allOf(hasString("count", is("1")),
                                          hasDouble("sum", greaterThan(0.0D)),
                                          hasStringAttribute("http.route", notNullValue(String.class)))));
 
-                AtomicInteger port = new AtomicInteger();
+                AtomicInteger port = new AtomicInteger(-2);
                 AtomicReference<String> socketName = new AtomicReference<>();
 
                 dataPoints.stream()
@@ -251,15 +257,15 @@ class TestOpenTelemetrySemanticConventions {
                         .forEach(attribute -> {
                             String key = attribute.getString("key");
                             if (key.equals(OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE)) {
-                                routesSeen.add(attribute.getString("stringValue"));
+                                routesSeen.add(attribute.getJsonObject("value").getString("stringValue"));
                             }
                             if (key.equals(OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME)) {
-                                var sName = attribute.getString("stringValue");
+                                var sName = attribute.getJsonObject("value").getString("stringValue");
                                 socketName.set(sName);
                                 socketNamesInTimers.add(sName);
                             }
                             if (key.equals(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT)) {
-                                port.set(Integer.parseInt(attribute.getString("intValue")));
+                                port.set(attribute.getJsonObject("value").getInt("intValue"));
                             }
                         });
 
@@ -269,7 +275,11 @@ class TestOpenTelemetrySemanticConventions {
                     default -> -1;
                 };
 
-                assertThat("Port", port.get(), is(expectedPort));
+                var portMatcher = is(expectedPort);
+                if (!checkPort) {
+                    portMatcher = not(portMatcher);
+                }
+                assertThat("Port", port.get(), portMatcher);
 
             }
 
@@ -280,8 +290,9 @@ class TestOpenTelemetrySemanticConventions {
             ));
 
 
-            assertThat("Routes seen", routesSeen, allOf(not(hasItem("/greet")),
-                                                        hasItem("/greet/{name}")));
+            assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
+                                                        hasItem("/greet/{name}"),
+                                                        not(hasItem("/observe/metrics"))));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);

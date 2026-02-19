@@ -21,11 +21,10 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 @Features.Preview
-@Features.Name("OpenTelemetry Server HTTP Semantic Conventions")
+@Features.Name("OTel Automatic Metrics")
 @Features.Description("Automatic metrics for compliance with OpenTelemetry server HTTP semantic conventions")
 @Features.Path({"Metrics", "Automatic Metrics", "Server", "HTTP", "OpenTelemetry"})
 @Features.Flavor(HelidonFlavor.SE)
-
 module io.helidon.webserver.observe.telemetry.metrics {
     requires io.helidon.telemetry.otelconfig;
     requires io.helidon.webserver.observe.metrics;
@@ -38,6 +37,5 @@ module io.helidon.webserver.observe.telemetry.metrics {
     requires micrometer.core;
     requires io.helidon.metrics.api;
     requires io.opentelemetry.sdk.metrics;
-    requires java.logging;
 
 }
