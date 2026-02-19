@@ -18,6 +18,7 @@ package io.helidon.webserver;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PushbackInputStream;
 import java.net.InetAddress;
@@ -250,8 +251,8 @@ class ProxyProtocolHandlerTest {
         assertThat(data.command(), is(ProxyProtocolV2Data.Command.PROXY));
         assertThat(data.family(), is(ProxyProtocolData.Family.UNIX));
         assertThat(data.protocol(), is(ProxyProtocolData.Protocol.TCP));
-        assertThat(((UnixDomainSocketAddress) data.sourceSocketAddress()).getPath().toString(), is("/foo".repeat(27)));
-        assertThat(((UnixDomainSocketAddress) data.destSocketAddress()).getPath().toString(), is("/bar".repeat(27)));
+        assertThat(((UnixDomainSocketAddress) data.sourceSocketAddress()).getPath().toString(), is((File.separator + "foo").repeat(27)));
+        assertThat(((UnixDomainSocketAddress) data.destSocketAddress()).getPath().toString(), is((File.separator + "bar").repeat(27)));
     }
 
     @Test
