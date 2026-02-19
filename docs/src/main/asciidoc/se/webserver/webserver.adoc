@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -1138,6 +1138,23 @@ address and source port available in the HTTP headers `X-Forwarded-For`
 and `X-Forwarded-Port`, respectively. In some cases, it is just simpler
 to inspect these headers instead of getting the complete `ProxyProtocolData`
 instance as shown above.
+
+=== Accessing Proxy Protocol V2 Data
+
+The binary (V2) version of the Proxy Protocol includes additional information
+beyond that found in the text (V1) protocol version. The V2 version exposes
+a proxy command type (LOCAL or PROXY), allows source and destination addresses
+to be Unix domain sockets, and supports structured metadata using Tag-Length-Value
+(TLV) encoded structures. Helidon makes this additional information available
+through the `ProxyProtocolV2Data` interface, which extends `ProxyProtocolData`.
+
+To access the V2 data, check whether the `ProxyProtocolData` object obtained
+from the request implements the `ProxyProtocolV2Data` interface:
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_37, indent=0]
+----
 
 == Additional Information
 
