@@ -60,10 +60,10 @@ import static org.hamcrest.Matchers.nullValue;
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
 @AddConfigBlock(value = """
-        metrics.auto.paths.0.path=/
-        metrics.auto.paths.0.methods=HEAD,OPTIONS
-        metrics.auto.paths.1.path=/withArg/{name}
-        metrics.auto.paths.1.enabled=false
+        metrics.auto-http-metrics.paths.0.path=/
+        metrics.auto-http-metrics.paths.0.methods=HEAD,OPTIONS
+        metrics.auto-http-metrics.paths.1.path=/withArg/{name}
+        metrics.auto-http-metrics.paths.1.enabled=false
         """)
 
 @AddBean(CatchAllExceptionMapper.class)
