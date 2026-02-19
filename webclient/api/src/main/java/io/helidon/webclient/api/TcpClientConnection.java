@@ -129,6 +129,9 @@ public class TcpClientConnection implements ClientConnection {
                                             Thread.currentThread().getName()));
         }
 
+        webClient.prototype().connectionInitializer()
+            .initializeConnectedSocket(new ConnectionInitializer.ConnectedSocket(this.socket, this.channelId));
+
         if (tls.enabled()) {
             SSLSocket sslSocket = tls.createSocket(tcpProtocolIds, socket, targetAddress);
             try {

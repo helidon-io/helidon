@@ -291,4 +291,14 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     @Option.Configured
     @Option.DefaultInt(4096)
     int writeBufferSize();
+
+    /**
+     * Initializer logic that is called immediately after the client connection is
+     * established, before any TLS or HTTP data is written. The default initializer
+     * does nothing.
+     *
+     * @return The connection initializer
+     */
+    @Option.Default("noop()")
+    ConnectionInitializer connectionInitializer();
 }

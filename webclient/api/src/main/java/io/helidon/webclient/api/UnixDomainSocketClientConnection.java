@@ -203,6 +203,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                     .socketOptions()
                     .configureSocket(this.channel);
 
+            this.webClient.prototype().connectionInitializer()
+                .initializeConnectedSocket(new ConnectionInitializer.ConnectedSocketChannel(this.channel, this.channelId));
+
             if (this.tls.enabled()) {
                 SSLEngine engine = this.tls.sslContext().createSSLEngine();
                 engine.setEnabledProtocols(this.alpnId.toArray(new String[0]));
