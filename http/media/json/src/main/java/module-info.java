@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.json.JsonMediaSupportProvider;
 
 /**
  * Helidon JSON Media Support.
@@ -45,5 +44,5 @@ module io.helidon.http.media.json {
     exports io.helidon.http.media.json;
 
     provides io.helidon.http.media.spi.MediaSupportProvider
-            with JsonMediaSupportProvider;
+            with io.helidon.http.media.json.JsonMediaSupportProvider;
 }
