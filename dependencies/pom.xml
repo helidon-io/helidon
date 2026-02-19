@@ -386,11 +386,11 @@
                 <artifactId>jakarta.interceptor-api</artifactId>
                 <version>${version.lib.jakarta.interceptor-api}</version>
                 <exclusions>
-                  <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
-                  <exclusion>
-                      <groupId>jakarta.ejb</groupId>
-                      <artifactId>jakarta.ejb-api</artifactId>
-                  </exclusion>
+                    <!-- Exclude EJB. See https://github.com/eclipse-ee4j/interceptor-api/issues/31 -->
+                    <exclusion>
+                        <groupId>jakarta.ejb</groupId>
+                        <artifactId>jakarta.ejb-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1258,6 +1258,8 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${version.lib.google-error-prone-annotations}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.lib.google-findbugs-jsr305}</version>

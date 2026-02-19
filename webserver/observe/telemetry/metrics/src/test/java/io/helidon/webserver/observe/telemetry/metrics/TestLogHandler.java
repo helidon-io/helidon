@@ -23,6 +23,10 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
+
+import static org.hamcrest.Matchers.hasSize;
+
 /**
  * Handler to tap into the OpenTelemetry logger and capture metrics JSON output.
  */
@@ -54,8 +58,10 @@ class TestLogHandler extends Handler implements AutoCloseable {
         logger.removeHandler(this);
     }
 
-    List<String> messages() {
-        var result = List.copyOf(messages);
+    List<String> messages(int expectedCount) {
+        var result = MatcherWithRetry.assertThatWithRetry("Logged messages",
+                                                          () -> List.copyOf(messages),
+                                                          hasSize(expectedCount));
         messages.clear();
         return result;
     }

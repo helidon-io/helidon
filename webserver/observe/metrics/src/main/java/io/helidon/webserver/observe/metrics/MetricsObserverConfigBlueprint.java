@@ -45,7 +45,7 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      *
      * @return auto metrics collection settings
      */
-    @Option.Configured("auto")
+    @Option.Configured()
     Optional<AutoHttpMetricsConfig> autoHttpMetrics();
 
     /**

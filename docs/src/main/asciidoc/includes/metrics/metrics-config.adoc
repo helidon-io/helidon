@@ -141,7 +141,7 @@ server:
     observe:
       observers:
         metrics:
-          auto:
+          auto-http-metrics:
             paths:
               - path: "/greet"              # <1>
                 methods: ["GET","HEAD"]

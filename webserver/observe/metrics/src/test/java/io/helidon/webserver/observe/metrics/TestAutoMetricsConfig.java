@@ -37,7 +37,7 @@ class TestAutoMetricsConfig {
                     observe:
                       observers:
                         metrics:
-                          auto:
+                          auto-http-metrics:
                             paths:
                               - path: "/greet"
                                 methods: ["GET","HEAD"]
