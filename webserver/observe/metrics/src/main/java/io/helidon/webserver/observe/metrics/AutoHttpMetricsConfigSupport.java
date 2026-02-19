@@ -54,19 +54,13 @@ class AutoHttpMetricsConfigSupport {
         /**
          * Decides whether the specified HTTP method and path should be measured.
          * <p>
-         * Given a request (actually, its method and path pair), Helidon searches for a matching config element
-         * based on path matching. Each time Helidon finds a path match, it then checks the HTTP methods associated with
-         * that entry. If the request's method appears among the config entry's methods(or if there are no methods explicitly
-         * configured for that path element), then Helidon considers the request a match to that entry. Helidon then saves
-         * that entry's {@code enabled} settings as the latest result for the request and goes on to check the next
-         * configured path entry.
+         * Given a request, we search for a path config that matches the request's path and HTTP method.
+         * We immediately return the {@code enabled} value for the first path config that the request matches.
          * <p>
-         * A given request might match any number of entries, and the last match wins.
-         * <p>
-         * If a request's path matches no configured entry then the request is measured, subject to the next note.
+         * If we find no match, we return true.
          * <p>
          * Helidon automatically prefixes the explicitly-configured path entries with implicit entries for Helidon-provided
-         * endpoints with measurement disabled. Users can enable automatic metrics for sucb an endpoint
+         * endpoints with measurement disabled. Users can enable automatic metrics for such an endpoint
          * by adding explicit configuration for it with {@code enabled} set to {@code true}.
          *
          * @param config automatic metrics configuration
@@ -81,14 +75,12 @@ class AutoHttpMetricsConfigSupport {
                 return true;
             }
 
-            boolean latestResult = true;
-
             for (AutoHttpMetricsPathConfig cfg : config.effectivePathConfigs()) {
-                if (cfg.matchesPath(uriPath)) {
-                    latestResult = cfg.matchesMethod(method) == cfg.enabled();
+                if (cfg.matchesPath(uriPath) && cfg.matchesMethod(method)) {
+                    return cfg.enabled();
                 }
             }
-            return latestResult;
+            return true;
         }
 
         /**
@@ -113,8 +105,8 @@ class AutoHttpMetricsConfigSupport {
         @Override
         public void decorate(AutoHttpMetricsConfig.BuilderBase<?, ?> target) {
 
-            var fullList = new ArrayList<>(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
-            fullList.addAll(target.autoHttpMetricsPathConfigs());
+            var fullList = new ArrayList<>(target.autoHttpMetricsPathConfigs());
+            fullList.addAll(MEASUREMENT_DISABLED_HELIDON_ENDPOINTS);
             target.effectivePathConfigs(fullList);
         }
     }

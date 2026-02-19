@@ -89,7 +89,7 @@ See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-ht
 endif::se-flavor[]
 
 ==== Selecting REST Endpoints for Automatic Measurement
-You can choose which endpoints to include in Helidon's automatic measurements using the `auto` config section.
+You can choose which endpoints to include in Helidon's automatic measurements using the `auto-http-metrics` config section.
 
 include::{rootdir}/config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.adoc[tag=config,leveloffset=+2]
 
@@ -112,20 +112,20 @@ a| Path-matching expression:
 
 | `methods` | {nbsp} | all HTTP method types | Which HTTP methods match this entry
 
-| `enabled` | {nbsp} | `true` | Whether this entry votes to match requests which match the entry
+| `enabled` | {nbsp} | `true` | Whether requests that match this entry should be measured
 |====
 --
 
 Helidon decides whether to measure incoming requests as follows:
 
-* If you omit the `auto` configuration, Helidon measures all endpoints.
-* If you specify the `auto` configuration, by default Helidon does not measure built-in endpoints such as metrics, health, and openapi. You can add items under  `auto.paths` to control more exactly which endpoints to measure.
+* If you omit the `auto-http-metrics` configuration, Helidon measures all endpoints.
+* If you specify the `auto-http-metrics` configuration, by default Helidon does not measure built-in endpoints such as metrics, health, and openapi. You can add items under  `auto-http-metrics.paths` to control more exactly which endpoints to measure.
 * If you include the  `paths` section, Helidon checks a request against the path entries in order. A given request matches an entry if its path matches the path pattern and its HTTP method is in the `methods` list. If there is no `methods` list for an entry, all HTTP methods match the entry.
-* If a request matches an entry, the entry "votes" whether the request should be measured based on the entry's `enabled` setting.
-* If a request matches multiple entries, the last one voting wins.
-* If a request matches no entries, it is measured.
+* If a request matches an entry, the entry's `enabled` setting determines if the request should be measured.
+* If a request matches multiple entries, the first match wins.
+* If a request matches no entry, it is measured.
 
-The `auto.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
+The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
 ifdef::se-flavor[]
 [source,yaml]
@@ -152,13 +152,13 @@ server:
 endif::se-flavor[]
 ifdef::mp-flavor[]
 ----
-server.features.observe.observers.metrics.auto.paths.0.path=/greet        # <1>
-server.features.observe.observers.metrics.auto.paths.0.methods=GET,HEAD
+server.features.observe.observers.metrics.auto-http-metrics.paths.0.path=/greet        # <1>
+server.features.observe.observers.metrics.auto-http-metrics.paths.0.methods=GET,HEAD
 
-server.features.observe.observers.metrics.auto.paths.1.path=/greet/{name} # <2>
-server.features.observe.observers.metrics.auto.paths.1.enabled=false
+server.features.observe.observers.metrics.auto-http-metrics.paths.1.path=/greet/{name} # <2>
+server.features.observe.observers.metrics.auto-http-metrics.paths.1.enabled=false
 
-server.features.observe.observers.metrics.auto.sockets=@default,private   # <3>
+server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,private   # <3>
 ----
 endif::mp-flavor[]
 <1> Measure `/greet` for only `GET` and `HEAD` requests.

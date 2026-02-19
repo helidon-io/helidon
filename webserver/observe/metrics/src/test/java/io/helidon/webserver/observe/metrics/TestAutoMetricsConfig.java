@@ -21,6 +21,7 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.Method;
+import io.helidon.http.PathMatchers;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,24 +40,28 @@ class TestAutoMetricsConfig {
                         metrics:
                           auto-http-metrics:
                             paths:
-                              - path: "/greet"
-                                methods: ["GET","HEAD"]
                               - path: "/greet/{name}"
                                 methods: ["GET","OPTIONS"]
+                              - path: "/greet"
+                                methods: ["GET","HEAD"]
                               - path: "/stuff"
                                 methods: ["HEAD","OPTIONS"]
                                 enabled: false
                               - path: "/hi"
                                 enabled: false
+                              - path: "/another/{name}"
+                                methods: ["PUT","POST","OPTIONS"]
+                                enabled: false
+                              - path: "/another/{name}"
                 """;
-        var config = AutoHttpMetricsConfig.create(Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_X_YAML))
-                                             .get("server.features.observe.observers.metrics.auto-http-metrics"));
+        var configFromText = Config.just(ConfigSources.create(configText, MediaTypes.APPLICATION_X_YAML))
+                .get("server.features.observe.observers.metrics.auto-http-metrics");
+        var config = AutoHttpMetricsConfig.create(configFromText);
 
         assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
-        assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(false));
+        assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));
 
         assertThat("GET /greet/Joe",  config.isMeasured(Method.GET, UriPath.create("/greet/Joe")), is(true));
-        assertThat("GET /other", config.isMeasured(Method.GET, UriPath.create("/other")), is(true));
 
         assertThat("GET /hi", config.isMeasured(Method.GET, UriPath.create("/hi")), is(false));
 
@@ -64,6 +69,29 @@ class TestAutoMetricsConfig {
 
         assertThat("GET /stuff", config.isMeasured(Method.GET, UriPath.create("/stuff")), is(true));
         assertThat("HEAD /stuff", config.isMeasured(Method.HEAD, UriPath.create("/stuff")), is(false));
+
+        assertThat("PUT /another/Joe", config.isMeasured(Method.PUT, UriPath.create("/another/Joe")), is(false));
+        assertThat("GET /another/Joe", config.isMeasured(Method.GET, UriPath.create("/another/Joe")), is(true));
+
+        assertThat("GET /undeclared", config.isMeasured(Method.GET, UriPath.create("/unknown")), is(true));
+
+        assertThat("GET /observe/metrics",
+                   config.isMeasured(Method.GET, UriPath.create("/observe/metrics")),
+                   is(false));
+
+        assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
+
+        var withCatchAll = AutoHttpMetricsConfig.builder()
+                .config(configFromText)
+                .addAutoHttpMetricsPathConfig(AutoHttpMetricsPathConfig.builder()
+                                                      .path(PathMatchers.create("/*"))
+                                                      .enabled(false)
+                                                      .build())
+                .build();
+
+        assertThat("PUT /greet with catchall", withCatchAll.isMeasured(Method.PUT, UriPath.create("/greet")), is(false));
+        assertThat("GET /undeclared with catchall", withCatchAll.isMeasured(Method.GET, UriPath.create("/undeclared")), is(false));
+        assertThat("GET /another/Joe", config.isMeasured(Method.GET, UriPath.create("/another/Joe")), is(true));
 
     }
 
