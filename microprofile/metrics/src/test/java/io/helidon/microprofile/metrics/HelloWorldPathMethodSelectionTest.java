@@ -139,11 +139,11 @@ class HelloWorldPathMethodSelectionTest {
         pause();
 
         Map<MetricID, Timer> timers = restRequestMetricsRegistry.getTimers((id, metric) -> id.getName().equals("REST.request"));
-        assertThat("REST request timers", timers.keySet(), hasSize(1));
+        assertThat("REST request timers", timers.keySet(), hasSize(2));
 
         assertThat("Normal greeting timer",
                    getSyntheticTimer(HelloWorldResource.class.getMethod("message")),
-                   nullValue());
+                   notNullValue());
 
         assertThat("HEAD timer",
                    getSyntheticTimer(HelloWorldResource.class.getMethod("plainHead", Request.class)),
