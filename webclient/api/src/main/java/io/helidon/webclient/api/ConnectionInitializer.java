@@ -1,5 +1,6 @@
 package io.helidon.webclient.api;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Objects;
@@ -24,14 +25,14 @@ public interface ConnectionInitializer {
      * applied, but before any TLS or HTTP application traffic has been sent.
      * @param socket The newly connected socket.
      */
-    void initializeConnectedSocket(ConnectedSocket socket);
+    void initializeConnectedSocket(ConnectedSocket socket) throws IOException;
 
     /**
      * Called when the given {@link SocketChannel} connection has been established and
      * {@link io.helidon.common.socket.SocketOptions} applied, but before any TLS or HTTP application traffic has been sent.
      * @param socket The newly connected socket channel.
      */
-    void initializeConnectedSocket(ConnectedSocketChannel socket);
+    void initializeConnectedSocket(ConnectedSocketChannel socket) throws IOException;
 
     /**
      * Context information about a newly connected {@link Socket}.

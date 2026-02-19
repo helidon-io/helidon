@@ -129,8 +129,13 @@ public class TcpClientConnection implements ClientConnection {
                                             Thread.currentThread().getName()));
         }
 
-        webClient.prototype().connectionInitializer()
-            .initializeConnectedSocket(new ConnectionInitializer.ConnectedSocket(this.socket, this.channelId));
+        try {
+            webClient.prototype().connectionInitializer()
+                .initializeConnectedSocket(new ConnectionInitializer.ConnectedSocket(this.socket, this.channelId));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to execute connection initializer", e);
+        }
+
 
         if (tls.enabled()) {
             SSLSocket sslSocket = tls.createSocket(tcpProtocolIds, socket, targetAddress);
