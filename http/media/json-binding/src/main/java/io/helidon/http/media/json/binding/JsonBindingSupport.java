@@ -18,11 +18,10 @@ package io.helidon.http.media.json.binding;
 
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
@@ -44,34 +43,42 @@ import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
  * framework.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class HelidonJsonBindingSupport implements MediaSupport, RuntimeType.Api<HelidonJsonBindingSupportConfig> {
+public class JsonBindingSupport implements MediaSupport, RuntimeType.Api<JsonBindingSupportConfig> {
 
     static final String HELIDON_JSON_BINDING_TYPE = "json-binding";
 
     private final String name;
-    private final HelidonJsonBindingSupportConfig supportConfig;
+    private final JsonBindingSupportConfig supportConfig;
     private final JsonBinding jsonBinding;
 
-    private final HelidonJsonBindingReader reader;
-    private final HelidonJsonBindingWriter writer;
+    private final JsonBindingReader reader;
+    private final JsonBindingWriter writer;
 
-    private HelidonJsonBindingSupport(HelidonJsonBindingSupportConfig supportConfig) {
+    private JsonBindingSupport(JsonBindingSupportConfig supportConfig) {
         this.name = supportConfig.name();
         this.supportConfig = supportConfig;
         this.jsonBinding = supportConfig.jsonBinding();
 
-        this.reader = new HelidonJsonBindingReader(jsonBinding);
-        this.writer = new HelidonJsonBindingWriter(jsonBinding);
+        this.reader = new JsonBindingReader(jsonBinding);
+        this.writer = new JsonBindingWriter(jsonBinding);
     }
 
     /**
      * Create a new Helidon JSON media support from configuration.
      *
      * @param config the configuration to use
-     * @return a new MediaSupport instance
+     * @return a new {@link JsonBindingSupport} instance
      */
     public static MediaSupport create(Config config) {
         return create(config, HELIDON_JSON_BINDING_TYPE);
+    }
+
+    /**
+     * Create a new Helidon JSON Binding media support with default configuration.
+     * @return a new {@link JsonBindingSupport} instance
+     */
+    public static MediaSupport create() {
+        return create(JsonBindingSupportConfig.create());
     }
 
     /**
@@ -89,32 +96,32 @@ public class HelidonJsonBindingSupport implements MediaSupport, RuntimeType.Api<
     }
 
     /**
-     * Create a new Helidon JSON support from a configuration object.
+     * Create a new Helidon JSON Binding support from a configuration object.
      *
      * @param config the configuration object
-     * @return a new HelidonJsonSupport instance
+     * @return a new {@link JsonBindingSupport} instance
      */
-    public static HelidonJsonBindingSupport create(HelidonJsonBindingSupportConfig config) {
-        return new HelidonJsonBindingSupport(config);
+    public static JsonBindingSupport create(JsonBindingSupportConfig config) {
+        return new JsonBindingSupport(config);
     }
 
     /**
      * Create a new Helidon JSON support using a configuration consumer.
      *
      * @param consumer the consumer to configure the builder
-     * @return a new HelidonJsonSupport instance
+     * @return a new {@link JsonBindingSupport} instance
      */
-    public static HelidonJsonBindingSupport create(Consumer<HelidonJsonBindingSupportConfig.Builder> consumer) {
+    public static JsonBindingSupport create(Consumer<JsonBindingSupportConfig.Builder> consumer) {
         return builder().update(consumer).build();
     }
 
     /**
-     * Create a new builder for HelidonJsonSupport.
+     * Create a new builder for {@link JsonBindingSupport}.
      *
      * @return a new builder instance
      */
-    public static HelidonJsonBindingSupportConfig.Builder builder() {
-        return HelidonJsonBindingSupportConfig.builder();
+    public static JsonBindingSupportConfig.Builder builder() {
+        return JsonBindingSupportConfig.builder();
     }
 
     @Override
@@ -128,7 +135,7 @@ public class HelidonJsonBindingSupport implements MediaSupport, RuntimeType.Api<
     }
 
     @Override
-    public HelidonJsonBindingSupportConfig prototype() {
+    public JsonBindingSupportConfig prototype() {
         return supportConfig;
     }
 
@@ -197,15 +204,5 @@ public class HelidonJsonBindingSupport implements MediaSupport, RuntimeType.Api<
             return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
         }
         return WriterResponse.unsupported();
-    }
-
-    static class Decorator implements Prototype.BuilderDecorator<HelidonJsonBindingSupportConfig.BuilderBase<?, ?>> {
-
-        @Override
-        public void decorate(HelidonJsonBindingSupportConfig.BuilderBase<?, ?> target) {
-            if (target.jsonBinding().isEmpty()) {
-                target.jsonBinding(JsonBinding.create());
-            }
-        }
     }
 }

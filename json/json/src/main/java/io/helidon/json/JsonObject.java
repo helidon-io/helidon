@@ -370,6 +370,30 @@ public final class JsonObject extends JsonValue {
         generator.writeObjectEnd();
     }
 
+    @Override
+    public int hashCode() {
+        ensureResolvedKeys();
+        return Objects.hash(content);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof JsonObject that)) {
+            return false;
+        }
+        if (that == this) {
+            return true;
+        }
+
+        this.ensureResolvedKeys();
+        that.ensureResolvedKeys();
+
+        if (!this.content.keySet().containsAll(that.content.keySet())) {
+            return false;
+        }
+        return this.content.values().containsAll(that.content.values());
+    }
+
     private void ensureResolvedKeys() {
         if (!resolved) {
             for (Pair pair : pairs) {

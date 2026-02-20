@@ -25,9 +25,9 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
@@ -49,14 +49,14 @@ When adding/updating tests in this class, consider if it should be done
     - JsonpMediaTest
     - GsonMediaTest
  */
-class HelidonJsonMediaTest {
+class JsonBindingMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
     private final MediaSupport provider;
 
-    HelidonJsonMediaTest() {
-        this.provider = HelidonJsonBindingSupport.create(Config.empty());
+    JsonBindingMediaTest() {
+        this.provider = JsonBindingSupport.create();
         provider.init(MediaContext.create());
     }
 

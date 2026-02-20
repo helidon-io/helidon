@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,10 @@ import io.helidon.http.HtmlEncoder;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.JsonObject;
 
 class SingleCheckHandler implements Handler {
     private static final System.Logger LOGGER = System.getLogger(SingleCheckHandler.class.getName());
@@ -86,7 +84,7 @@ class SingleCheckHandler implements Handler {
 
         if (details) {
             try (OutputStream out = res.outputStream()) {
-                entityWriter.write(JsonpSupport.JSON_OBJECT_TYPE,
+                entityWriter.write(HealthHandler.JSON_OBJECT_TYPE,
                                    HealthHelper.toJson(check.name(), response),
                                    out,
                                    req.headers(),

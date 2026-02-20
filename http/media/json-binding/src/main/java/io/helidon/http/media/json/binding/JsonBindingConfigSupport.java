@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * Helidon JSON Binding Media Support.
- * Provide JSON Binding media type support for HTTP requests and responses,
- * enabling automatic serialization and deserialization of JSON data.
- *
- * @see io.helidon.http.media.json.binding.JsonBindingSupport
- */
 package io.helidon.http.media.json.binding;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.json.binding.JsonBinding;
+
+final class JsonBindingConfigSupport {
+    private JsonBindingConfigSupport() {
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<JsonBindingSupportConfig.BuilderBase<?, ?>> {
+        Decorator() {
+        }
+
+        @Override
+        public void decorate(JsonBindingSupportConfig.BuilderBase<?, ?> target) {
+            if (target.jsonBinding().isEmpty()) {
+                target.jsonBinding(JsonBinding.create());
+            }
+        }
+    }
+}

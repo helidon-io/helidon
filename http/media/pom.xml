@@ -36,6 +36,7 @@
         <module>jackson</module>
         <module>gson</module>
         <module>multipart</module>
+        <module>json</module>
         <module>json-binding</module>
     </modules>
 </project>

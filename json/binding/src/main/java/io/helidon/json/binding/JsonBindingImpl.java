@@ -242,12 +242,22 @@ final class JsonBindingImpl implements JsonBinding, JsonBindingConfigurator {
 
     @Override
     public <T> T deserialize(Reader reader, Class<T> type) {
-        return deserialize(new ReaderInputStream(reader), type);
+        JsonDeserializer<T> deserializer = deserializer(type);
+        JsonParser parser = JsonParser.create(reader);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override
     public <T> T deserialize(Reader reader, GenericType<T> type) {
-        return deserialize(new ReaderInputStream(reader), type);
+        JsonDeserializer<T> deserializer = deserializer(type);
+        JsonParser parser = JsonParser.create(reader);
+        if (WHITESPACE_CHARS[parser.currentByte() & 0xff]) {
+            parser.nextToken();
+        }
+        return Deserializers.deserialize(parser, deserializer);
     }
 
     @Override

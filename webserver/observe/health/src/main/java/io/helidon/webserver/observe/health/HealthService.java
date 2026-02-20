@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import java.util.List;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckType;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
-
-import jakarta.json.JsonObject;
 
 import static io.helidon.health.HealthCheckType.LIVENESS;
 import static io.helidon.health.HealthCheckType.READINESS;
@@ -60,7 +59,7 @@ class HealthService implements HttpService {
 
     @Override
     public void routing(HttpRules rules) {
-        EntityWriter<JsonObject> entityWriter = JsonpSupport.serverResponseWriter();
+        EntityWriter<JsonObject> entityWriter = JsonSupport.serverResponseWriter();
 
         rules.get("/", new HealthHandler(entityWriter, details, all))
                 .get("/" + READINESS.defaultEndpoint(), new HealthHandler(entityWriter, details, ready))
