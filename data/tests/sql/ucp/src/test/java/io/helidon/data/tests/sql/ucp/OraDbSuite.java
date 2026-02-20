@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.testcontainers.utility.DockerImageName;
 public class OraDbSuite implements SuiteProvider {
 
     private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/express");
+            "container-registry.oracle.com/database/free:latest-lite");
 
     private final TestContainerHandler containerHandler;
 
@@ -48,8 +48,9 @@ public class OraDbSuite implements SuiteProvider {
                 .ifPresent(password -> container.withEnv("ORACLE_PWD", password));
 
         container.withExposedPorts(this.containerHandler.originalPort())
-                .waitingFor(Wait.forHealthcheck()
-                                    .withStartupTimeout(Duration.ofMinutes(5)));
+                .withStartupAttempts(3)
+                .waitingFor(Wait.forLogMessage(".*DATABASE IS READY TO USE.*", 1)
+                        .withStartupTimeout(Duration.ofMinutes(5)));
     }
 
     @TestSuite.BeforeSuite

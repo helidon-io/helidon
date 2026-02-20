@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-hibernate-mysql-jta</artifactId>
-    <name>Helidon Data Tests Hibernate with MySQL JTA DataSource</name>
+    <name>Helidon Data Tests Hibernate MySQL JTA DataSource</name>
 
     <dependencies>
         <dependency>
@@ -57,8 +57,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <artifactId>helidon-logging-jul</artifactId>
             <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -182,11 +187,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
