@@ -34,6 +34,7 @@ module io.helidon.service.maven.plugin {
     requires io.helidon.service.registry;
     requires io.helidon.service.metadata;
     requires io.helidon.common;
+    requires io.helidon.common.types;
 
     exports io.helidon.service.maven.plugin;
 }
