@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.Size;
+import io.helidon.common.Weight;
 
 /**
  * Commonly used type names.
@@ -44,6 +49,23 @@ public final class TypeNames {
      * Type name for {@link java.lang.Object}.
      */
     public static final TypeName OBJECT = TypeName.create(Object.class);
+    /**
+     * Type name for {@link java.lang.Class}.
+     */
+    public static final TypeName CLASS = TypeName.create(Class.class);
+    /**
+     * Wildcard type name, represented in code by {@code ?}.
+     */
+    public static final TypeName WILDCARD = TypeName.builder()
+            .className("?")
+            .wildcard(true)
+            .build();
+    /**
+     * Type name for {@link java.lang.Class} with wildcard {@code Class<?>}.
+     */
+    public static final TypeName CLASS_WILDCARD = TypeName.builder(CLASS)
+            .addTypeArgument(WILDCARD)
+            .build();
     /**
      * Type name for {@link java.util.List}.
      */
@@ -61,9 +83,25 @@ public final class TypeNames {
      */
     public static final TypeName OPTIONAL = TypeName.create(Optional.class);
     /**
+     * Type name for {@link java.util.OptionalInt}.
+     */
+    public static final TypeName OPTIONAL_INT = TypeName.create(OptionalInt.class);
+    /**
+     * Type name for {@link java.util.OptionalLong}.
+     */
+    public static final TypeName OPTIONAL_LONG = TypeName.create(OptionalLong.class);
+    /**
+     * Type name for {@link java.util.OptionalDouble}.
+     */
+    public static final TypeName OPTIONAL_DOUBLE = TypeName.create(OptionalDouble.class);
+    /**
      * Type name for {@link java.util.function.Supplier}.
      */
     public static final TypeName SUPPLIER = TypeName.create(Supplier.class);
+    /**
+     * Type name for {@link java.util.function.Consumer}.
+     */
+    public static final TypeName CONSUMER = TypeName.create(Consumer.class);
     /**
      * Type name for {@link java.util.Collection}.
      */
@@ -88,13 +126,6 @@ public final class TypeNames {
      * Type name for {@link java.lang.annotation.Target}.
      */
     public static final TypeName TARGET = TypeName.create(Target.class);
-    /**
-     * Wildcard type name, represented in code by {@code ?}.
-     */
-    public static final TypeName WILDCARD = TypeName.builder()
-            .className("?")
-            .wildcard(true)
-            .build();
 
     /*
     Primitive types and their boxed counterparts
@@ -207,6 +238,10 @@ public final class TypeNames {
      * Helidon {@link io.helidon.common.GenericType}.
      */
     public static final TypeName GENERIC_TYPE = TypeName.create(GenericType.class);
+    /**
+     * Type name for {@link io.helidon.common.Weight}.
+     */
+    public static final TypeName WEIGHT = TypeName.create(Weight.class);
     /**
      * Type name for {@link io.helidon.common.Size}.
      */

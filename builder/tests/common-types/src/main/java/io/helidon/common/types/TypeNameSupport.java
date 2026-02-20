@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,6 +151,7 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String name(TypeName instance) {
         return calcName(instance, "$");
     }
@@ -168,6 +169,7 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String fqName(TypeName instance) {
         String name = calcName(instance, ".");
         StringBuilder nameBuilder = new StringBuilder(instance.wildcard() ? "?" : name);
@@ -178,6 +180,7 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String declaredName(TypeName instance) {
         String name = name(instance);
         StringBuilder nameBuilder = new StringBuilder(name);
@@ -188,6 +191,7 @@ final class TypeNameSupport {
     }
 
     @Prototype.PrototypeMethod
+    @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String resolvedName(TypeName instance) {
         if (instance.generic() || instance.wildcard()) {
             return resolveGenericName(instance);
@@ -507,7 +511,18 @@ final class TypeNameSupport {
     private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
-        builder.className(componentType.getSimpleName());
+        String className = componentType.getSimpleName();
+        if (className.isBlank()) {
+            // anonymous inner classes - name must be guessed from the fully qualified class name
+            className = componentType.getName();
+            int lastDollar = className.lastIndexOf('$');
+            if (lastDollar > 0) {
+                className = className.substring(lastDollar + 1);
+            } else {
+                throw new IllegalArgumentException("Anonymous inner classes must have a name: " + className);
+            }
+        }
+        builder.className(className);
         builder.array(classType.isArray());
 
         if (classType.isArray()) {

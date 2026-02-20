@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ final class TypeStash {
             return TypeNameSupport.doCreate(className);
         }
         // using rw lock to make sure we do not have a concurrent modification exception
-        // it may happen if we have typed argument that need a creation of another type name
+        // in case this is called first (again possible conflict with class initialization)
         TYPE_STASH_LOCK.readLock().lock();
         TypeName typeName;
         try {
