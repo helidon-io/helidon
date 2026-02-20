@@ -118,7 +118,15 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         // proxy protocol before SSL handshake
         if (listenerConfig.enableProxyProtocol()) {
             ProxyProtocolHandler handler = new ProxyProtocolHandler(socket.socket(), channelId);
-            proxyProtocolData = handler.get();
+            try {
+                proxyProtocolData = handler.get();
+            } catch (IOException | RuntimeException e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+                }
+                closeChannel(channelId);
+                return;
+            }
         }
 
         // handle SSL and init helidonSocket, reader and writer

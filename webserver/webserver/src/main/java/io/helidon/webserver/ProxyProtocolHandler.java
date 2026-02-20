@@ -43,7 +43,7 @@ import io.helidon.http.RequestException;
 import io.helidon.webserver.ProxyProtocolData.Family;
 import io.helidon.webserver.ProxyProtocolData.Protocol;
 
-class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
+class ProxyProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
@@ -106,15 +106,9 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
         this.channelId = channelId;
     }
 
-    @Override
-    public ProxyProtocolData get() {
+    public ProxyProtocolData get() throws IOException {
         LOGGER.log(Level.DEBUG, "Reading proxy protocol data for channel %s", channelId);
-
-        try {
-            return handleAnyProtocol(socket.getInputStream());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return handleAnyProtocol(socket.getInputStream());
     }
 
     static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {
@@ -226,6 +220,11 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case IPv6 -> 36;
             case UNIX -> 216;
         };
+
+        if (headerLength < addressBytesLength) {
+            throw badProtocolException("Insufficient number of bytes to encode addresses");
+        }
+
         final byte[] addressBytes = new byte[addressBytesLength];
         readExactlyNBytes(inputStream, addressBytes, 0, addressBytesLength);
 
