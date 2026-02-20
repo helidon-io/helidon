@@ -293,12 +293,13 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     int writeBufferSize();
 
     /**
+     * Socket lifecycle callbacks. The default implementation does nothing, and
      * Initializer logic that is called immediately after the client connection is
      * established, before any TLS or HTTP data is written. The default initializer
      * does nothing.
      *
-     * @return The connection initializer
+     * @return The socket listener.
      */
     @Option.Default("noop()")
-    ConnectionInitializer connectionInitializer();
+    ConnectionListener connectionListener();
 }

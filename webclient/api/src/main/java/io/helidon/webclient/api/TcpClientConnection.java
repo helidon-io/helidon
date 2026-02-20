@@ -130,8 +130,8 @@ public class TcpClientConnection implements ClientConnection {
         }
 
         try {
-            webClient.prototype().connectionInitializer()
-                .initializeConnectedSocket(new ConnectionInitializer.ConnectedSocket(this.socket, this.channelId));
+            webClient.prototype().connectionListener()
+                .socketConnected(new ConnectionListener.ConnectedSocket(this.socket, this.channelId));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to execute connection initializer", e);
         }

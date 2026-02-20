@@ -22,18 +22,18 @@ import java.nio.channels.SocketChannel;
 import java.util.Objects;
 
 /**
- * This interface provides callback methods that are invoked when a client connection is first established,
- * before any TLS or HTTP application traffic is sent. This can be used for use cases such as the HAProxy
+ * This interface provides callback methods that are invoked when the client connection is first established,
+ * before any TLS or HTTP application traffic is sent. This can be used for cases such as the HAProxy
  * Proxy Protocol, which involves sending protocol-specific data bytes on the connection before the TLS
  * handshake occurs.
  */
-public interface ConnectionInitializer {
+public interface ConnectionListener {
     /**
-     * The default initializer, which does nothing.
-     * @return The no-op default initializer.
+     * Returns a {@link ConnectionListener} which does nothing.
+     * @return The no-op listener.
      */
-    static ConnectionInitializer noop() {
-        return new DefaultConnectionInitializer();
+    static ConnectionListener noop() {
+        return new DefaultConnectionListener();
     }
 
     /**
@@ -41,14 +41,14 @@ public interface ConnectionInitializer {
      * applied, but before any TLS or HTTP application traffic has been sent.
      * @param socket The newly connected socket.
      */
-    void initializeConnectedSocket(ConnectedSocket socket) throws IOException;
+    void socketConnected(ConnectedSocket socket) throws IOException;
 
     /**
      * Called when the given {@link SocketChannel} connection has been established and
      * {@link io.helidon.common.socket.SocketOptions} applied, but before any TLS or HTTP application traffic has been sent.
      * @param socket The newly connected socket channel.
      */
-    void initializeConnectedSocket(ConnectedSocketChannel socket) throws IOException;
+    void socketConnected(ConnectedSocketChannel socket) throws IOException;
 
     /**
      * Context information about a newly connected {@link Socket}.

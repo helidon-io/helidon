@@ -17,16 +17,16 @@
 package io.helidon.webclient.api;
 
 /**
- * The default {@link ConnectionInitializer} implementation, which does nothing.
+ * The default {@link ConnectionListener} implementation, which does nothing.
  */
-class DefaultConnectionInitializer implements ConnectionInitializer {
+class DefaultConnectionListener implements ConnectionListener {
     @Override
-    public void initializeConnectedSocket(final ConnectedSocket socket) {
+    public void socketConnected(final ConnectedSocket socket) {
         // No-op
     }
 
     @Override
-    public void initializeConnectedSocket(final ConnectedSocketChannel socket) {
+    public void socketConnected(final ConnectedSocketChannel socket) {
         // No-op
     }
 }
