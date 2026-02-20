@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,19 @@ final class AnnotationSupport {
      */
     @Prototype.BuilderMethod
     static void value(Annotation.BuilderBase<?, ?> builder, String value) {
-        builder.putValue("value", value);
+        builder.putProperty("value", AnnotationProperty.create(value));
+    }
+
+    /**
+     * Configure the value of an annotation property.
+     *
+     * @param builder ignored
+     * @param name name of the property
+     * @param value value of the property
+     */
+    @Prototype.BuilderMethod
+    static void property(Annotation.BuilderBase<?, ?> builder, String name, Object value) {
+        builder.putProperty(name, AnnotationProperty.create(value));
     }
 
     static Optional<String> asString(TypeName typeName, Map<String, Object> values, String property) {

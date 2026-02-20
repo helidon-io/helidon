@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.Modifier;
@@ -105,7 +106,7 @@ final class ContentSupport {
 
     static void addCreateAnnotation(ContentBuilder<?> contentBuilder, Annotation annotation) {
 
-        Map<String, Object> values = annotation.values();
+        Map<String, AnnotationProperty> values = annotation.properties();
         if (values.isEmpty() && annotation.metaAnnotations().isEmpty()) {
             // Annotation.create(TypeName.create("my.type.AnnotationType"))
             contentBuilder.addContent(ANNOTATION)
@@ -125,16 +126,14 @@ final class ContentSupport {
                 .addContentCreate(annotation.typeName())
                 .addContentLine(")");
 
-        // .putValue("key", 14)
-        annotation.values()
-                .keySet()
-                .forEach(propertyName -> {
-                    contentBuilder.addContent(".putValue(\"")
-                            .addContent(propertyName)
-                            .addContent("\", ");
-                    addAnnotationValue(contentBuilder, annotation.objectValue(propertyName).get());
-                    contentBuilder.addContentLine(")");
-                });
+        // .property("key", 14)
+        values.forEach((key, value) -> {
+            contentBuilder.addContent(".property(\"")
+                    .addContent(key)
+                    .addContent("\", ");
+            addAnnotationValue(contentBuilder, value.value());
+            contentBuilder.addContentLine(")");
+        });
 
         // .addMetaAnnotation(...)
         annotation.metaAnnotations()

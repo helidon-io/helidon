@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,16 @@ final class TypeNameSupport {
     private TypeNameSupport() {
     }
 
+    /**
+     * Compare with another type name.
+     * First compares by {@link io.helidon.common.types.TypeName#name()}, than by
+     * {@link io.helidon.common.types.TypeName#primitive}, and finally by {@link io.helidon.common.types.TypeName#array()}.
+     *
+     * @param typeName ignored
+     * @param o type name to compare to
+     * @return comparison result
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override")
     static int compareTo(TypeName typeName, TypeName o) {

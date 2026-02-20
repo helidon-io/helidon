@@ -69,7 +69,7 @@ class AnnotationTest {
                 .name("name")
                 .addAnnotation(Annotation.builder()
                                        .typeName(ANNOTATION_TYPE)
-                                       .putValue("enumValue", EnumValue.create(enumType,
+                                       .property("enumValue", EnumValue.create(enumType,
                                                                                "ONE"))
                                        .build())
                 .build();
@@ -88,10 +88,10 @@ class AnnotationTest {
                 .name("annotation")
                 .addContentCreate(Annotation.builder()
                                           .typeName(ANNOTATION_TYPE)
-                                          .putValue("value", "someValue")
+                                          .property("value", "someValue")
                                           .addMetaAnnotation(Annotation.builder()
                                                                      .typeName(ANNOTATION_TYPE)
-                                                                     .putValue("value", "string")
+                                                                     .property("value", "string")
                                                                      .build())
                                           .build())
                 .build();
@@ -100,10 +100,10 @@ class AnnotationTest {
         String expected = """
                 private Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("org.junit.jupiter.api.Test"))
-                .putValue("value", "someValue")
+                .property("value", "someValue")
                 .addMetaAnnotation(Annotation.builder()
                 .typeName(TypeName.create("org.junit.jupiter.api.Test"))
-                .putValue("value", "string")
+                .property("value", "string")
                 .build()
                 )
                 .build();""";
@@ -121,7 +121,7 @@ class AnnotationTest {
                 .name("annotation")
                 .addContentCreate(Annotation.builder()
                                           .typeName(ANNOTATION_TYPE)
-                                          .putValue("enumValue", EnumValue.create(enumType,
+                                          .property("enumValue", EnumValue.create(enumType,
                                                                                   "ONE"))
                                           .build())
                 .build();
@@ -130,7 +130,7 @@ class AnnotationTest {
         String expected = """
                 private Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("org.junit.jupiter.api.Test"))
-                .putValue("enumValue", EnumValue.create(TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"),"ONE"))
+                .property("enumValue", EnumValue.create(TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"),"ONE"))
                 .build();""";
 
         assertThat(text, is(expected));
@@ -146,7 +146,7 @@ class AnnotationTest {
                 .name("name")
                 .addAnnotation(Annotation.builder()
                                        .typeName(ANNOTATION_TYPE)
-                                       .putValue("classValue", enumType)
+                                       .property("classValue", enumType)
                                        .build())
                 .build();
         String text = write(field);
@@ -166,7 +166,7 @@ class AnnotationTest {
                 .name("annotation")
                 .addContentCreate(Annotation.builder()
                                           .typeName(ANNOTATION_TYPE)
-                                          .putValue("classValue", enumType)
+                                          .property("classValue", enumType)
                                           .build())
                 .build();
         String text = write(field);
@@ -174,7 +174,7 @@ class AnnotationTest {
         String expected = """
                 private Annotation annotation = Annotation.builder()
                 .typeName(TypeName.create("org.junit.jupiter.api.Test"))
-                .putValue("classValue", TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"))
+                .property("classValue", TypeName.create("io.helidon.codegen.classmodel.AnnotationTest.TestEnum"))
                 .build();""";
 
         assertThat(text, is(expected));

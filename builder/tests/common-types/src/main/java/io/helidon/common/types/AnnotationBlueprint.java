@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ interface AnnotationBlueprint {
     Map<String, Object> values();
 
     /**
-     * List of properties defined on this annotation.
+     * Properties defined on this annotation.
      *
      * @return properties
      */
@@ -157,7 +157,7 @@ interface AnnotationBlueprint {
      * @return object value
      */
     default Optional<Object> objectValue(String property) {
-        return Optional.ofNullable(values().get(property));
+        return Optional.ofNullable(properties().get(property).value());
     }
 
     /**
