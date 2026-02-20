@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,15 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         // proxy protocol before SSL handshake
         if (listenerConfig.enableProxyProtocol()) {
             ProxyProtocolHandler handler = new ProxyProtocolHandler(socket.socket(), channelId);
-            proxyProtocolData = handler.get();
+            try {
+                proxyProtocolData = handler.get();
+            } catch (IOException | RuntimeException e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
+                }
+                closeChannel(channelId);
+                return;
+            }
         }
 
         // handle SSL and init helidonSocket, reader and writer
