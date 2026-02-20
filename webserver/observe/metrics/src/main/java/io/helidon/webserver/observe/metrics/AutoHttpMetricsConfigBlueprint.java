@@ -27,7 +27,6 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
-@Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
@@ -52,7 +51,7 @@ interface AutoHttpMetricsConfigBlueprint {
      * A request's path and HTTP method are checked against each entry under {@code paths} in order.
      * <ul>
      *     <li>If a request matches no entry, then the request is measured.</li>
-     *     <li>If a request matches multiple entries, then the last match wins.</li>
+     *     <li>If a request matches multiple entries, then the first match wins.</li>
      * </ul>
      *
      * @return automatic metrics collection settings
@@ -60,15 +59,6 @@ interface AutoHttpMetricsConfigBlueprint {
     @Option.Configured("paths")
     @Option.Singular
     List<AutoHttpMetricsPathConfig> autoHttpMetricsPathConfigs();
-
-    /**
-     * Default suppressions for Helidon-provided paths plus explicitly-configured settings.
-     *
-     * @hidden internal use only
-     * @return effective auto metrics settings
-     */
-    @Option.Access("")
-    List<AutoHttpMetricsPathConfig> effectivePathConfigs();
 
     /**
      * Elective attribute for which to opt in. Each string in the list is of the form

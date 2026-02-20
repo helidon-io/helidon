@@ -27,6 +27,7 @@ import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
+import io.helidon.webserver.observe.metrics.AutoHttpMetrics;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
@@ -136,12 +137,17 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             return new MetricsRecordingFilter(httpRequestDuration, config);
         }
 
+        private static boolean isOptedIn(AutoHttpMetricsConfig config, String attributeName) {
+            return config.optIn().stream()
+                    .anyMatch(optIn -> optIn.equals(TIMER_NAME) || optIn.equals(TIMER_NAME + ":" + attributeName));
+        }
+
         private void updateMetricsIfMeasured(RoutingRequest req,
                                              RoutingResponse resp,
                                              Long startTime,
                                              long endTime,
                                              Exception exception) {
-            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
+            if (!AutoHttpMetrics.isMeasured(config, req.prologue().method(), req.prologue().uriPath())) {
                 return;
             }
             AttributesBuilder attrBuilder = Attributes.builder();
@@ -153,10 +159,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
-            if (config.isOptedIn(TIMER_NAME, SERVER_ADDRESS)) {
+            if (isOptedIn(config, SERVER_ADDRESS)) {
                 attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
             }
-            if (config.isOptedIn(TIMER_NAME, SERVER_PORT)) {
+            if (isOptedIn(config, SERVER_PORT)) {
                 attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
             }
 

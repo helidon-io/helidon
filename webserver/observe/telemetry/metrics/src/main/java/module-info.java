@@ -38,4 +38,6 @@ module io.helidon.webserver.observe.telemetry.metrics {
     requires io.helidon.metrics.api;
     requires io.opentelemetry.sdk.metrics;
 
+    exports io.helidon.webserver.observe.telemetry.metrics;
+
 }

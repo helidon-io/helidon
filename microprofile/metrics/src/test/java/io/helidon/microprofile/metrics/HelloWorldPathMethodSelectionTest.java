@@ -19,12 +19,9 @@ package io.helidon.microprofile.metrics;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.server.CatchAllExceptionMapper;
 import io.helidon.microprofile.testing.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.AddBean;
@@ -40,16 +37,13 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.hamcrest.FeatureMatcher;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
-import static io.helidon.microprofile.metrics.HelloWorldResource.MESSAGE_TIMER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -79,39 +73,10 @@ class HelloWorldPathMethodSelectionTest {
     @RegistryType(type = MetricRegistry.Type.BASE)
     MetricRegistry restRequestMetricsRegistry;
 
-    @BeforeAll
-    public static void initialize() {
-        System.setProperty("jersey.config.server.logging.verbosity", "FINE");
-    }
-
     @AfterAll
     public static void cleanup() {
         MetricsMpServiceTest.wrapupTest();
     }
-
-    private static void clearMetrics() {
-        RegistryFactory.getInstance()
-                .getRegistry(Registry.APPLICATION_SCOPE)
-                .removeMatching(MetricFilter.ALL);
-    }
-
-    // Gives the server a chance to update metrics after sending the response before the test code
-    // checks those metrics.
-    static <T> T runAndPause(Callable<T> c) throws Exception {
-        T result = c.call();
-        pause();
-        return result;
-    }
-
-    static void pause() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(500L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
 
     @BeforeEach
     public void registerCounter() {
@@ -126,7 +91,7 @@ class HelloWorldPathMethodSelectionTest {
         var helloResponse = webTarget.path("/helloworld").request(MediaType.TEXT_PLAIN_TYPE).get();
         assertThat("Hello World response", helloResponse.getStatus(), is(200));
 
-        // This should create a timer.
+        // These should create timers.
         var headResponse = webTarget.path("/helloworld").request(MediaType.TEXT_PLAIN_TYPE).head();
         assertThat("HEAD response", headResponse.getStatus(), is(200));
         assertThat("HEAD header", headResponse.getHeaders(), hasEntry("X-result", List.of("good")));
@@ -136,10 +101,11 @@ class HelloWorldPathMethodSelectionTest {
         assertThat("With name response", withNameResponse.getStatus(), is(200));
 
         // Wait for the metrics to update.
-        pause();
-
-        Map<MetricID, Timer> timers = restRequestMetricsRegistry.getTimers((id, metric) -> id.getName().equals("REST.request"));
-        assertThat("REST request timers", timers.keySet(), hasSize(2));
+        Map<MetricID, Timer> timers =
+                MatcherWithRetry.assertThatWithRetry("REST request timers",
+                                                     () -> restRequestMetricsRegistry.getTimers((id, metric) ->
+                                                                           id.getName().equals("REST.request")),
+                                                     aMapWithSize(is(2)));
 
         assertThat("Normal greeting timer",
                    getSyntheticTimer(HelloWorldResource.class.getMethod("message")),
@@ -155,35 +121,13 @@ class HelloWorldPathMethodSelectionTest {
 
     }
 
-    void testSyntheticTimer(long iterationsToRun) {
-        Timer explicitTimer = registry.getTimer(new MetricID(MESSAGE_TIMER));
-        assertThat("SimpleTimer from explicit @SimplyTimed", explicitTimer, is(notNullValue()));
-        Timer syntheticTimer = getSyntheticTimer("messageWithArg", String.class);
-        assertThat("SimpleTimer from @SyntheticRestRequest", syntheticTimer, is(notNullValue()));
-        long explicitTimerStartCount = explicitTimer.getCount();
-        long syntheticTimerStartCount = syntheticTimer.getCount();
-        IntStream.range(0, (int) iterationsToRun).forEach(
-                i -> webTarget
-                        .path("helloworld/withArg/Joe")
-                        .request(MediaType.TEXT_PLAIN_TYPE)
-                        .get(String.class));
-
-        pause();
-        assertThatWithRetry("Change in SimpleTimer from explicit @SimpleTimed count",
-                            () -> explicitTimer.getCount() - explicitTimerStartCount,
-                            is(iterationsToRun));
-
-        assertThatWithRetry("Change in SimpleTimer from @SyntheticRestRequest count",
-                            () -> syntheticTimer.getCount() - syntheticTimerStartCount,
-                            is(iterationsToRun));
-    }
-
-    Timer getSyntheticTimer(String methodName, Class<?>... paramTypes) {
-        try {
-            return getSyntheticTimer(HelloWorldResource.class.getMethod(methodName, paramTypes));
-        } catch (NoSuchMethodException ex) {
-            throw new RuntimeException(ex);
-        }
+    private static org.hamcrest.Matcher<Map<?, ?>> aMapWithSize(org.hamcrest.Matcher<Integer> matcher) {
+        return new FeatureMatcher<Map<?, ?>, Integer>(matcher, "has size", "matcher") {
+            @Override
+            protected Integer featureValueOf(Map<?, ?> actual) {
+                return actual.size();
+            }
+        };
     }
 
     Timer getSyntheticTimer(Method method) {
@@ -194,20 +138,5 @@ class HelloWorldPathMethodSelectionTest {
 
         Map<MetricID, Timer> timers = restRequestMetricsRegistry.getTimers();
         return timers.get(metricID);
-    }
-
-    void checkMetricsUrl(int iterations) {
-        assertThatWithRetry("helloCounter count", () -> {
-            String promOutput = webTarget
-                    .path("metrics")
-                    .request()
-                    .accept(MediaType.TEXT_PLAIN)
-                    .get(String.class);
-            Pattern pattern = Pattern.compile(".*?^helloCounter_total\\S*\\s+(\\S+).*?", Pattern.MULTILINE | Pattern.DOTALL);
-            Matcher matcher = pattern.matcher(promOutput);
-            assertThat("Output matched pattern", matcher.matches(), is(true));
-            assertThat("Matched output contains a capturing group for the count", matcher.groupCount(), is(1));
-            return (int) Double.parseDouble(matcher.group(1));
-        }, is(iterations));
     }
 }

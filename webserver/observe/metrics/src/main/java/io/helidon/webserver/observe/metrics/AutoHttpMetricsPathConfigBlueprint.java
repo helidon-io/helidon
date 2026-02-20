@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.http.Method;
 import io.helidon.http.MethodPredicate;
 import io.helidon.http.PathMatcher;
 
@@ -50,12 +49,12 @@ interface AutoHttpMetricsPathConfigBlueprint {
     boolean enabled();
 
     /**
-     * Path matcher for this path config for which this path config applies.
+     * Path matching expression for this path config entry.
      *
-     * @return path matcher
+     * @return path matching expression
      */
     @Option.Configured
-    PathMatcher path();
+    String path();
 
     /**
      * HTTP methods for which this path config applies; default is to match all HTTP methods.
@@ -64,7 +63,7 @@ interface AutoHttpMetricsPathConfigBlueprint {
      */
     @Option.Configured
     @Option.Singular
-    List<Method> methods();
+    List<String> methods();
 
     /**
      * Method predicate for checking a request's HTTP method against this config's methods.
@@ -75,4 +74,11 @@ interface AutoHttpMetricsPathConfigBlueprint {
     @Option.Access("")
     MethodPredicate methodPredicate();
 
+    /**
+     * Path matcher for internal use by this component.
+     *
+     * @return {@link io.helidon.http.PathMatcher} derived from the {@link #path()} setting
+     */
+    @Option.Access("")
+    PathMatcher pathMatcher();
 }
