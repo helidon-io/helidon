@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-eclipselink-ucp</artifactId>
-    <name>Helidon Data Tests Eclipselink with UCP DataSource</name>
+    <name>Helidon Data Tests Eclipselink UCP DataSource</name>
 
     <dependencies>
         <dependency>

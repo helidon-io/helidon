@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-eclipselink-mysql-scripts</artifactId>
-    <name>Helidon Data Tests DDL Scripts with MySQL</name>
+    <name>Helidon Data Tests DDL Scripts MySQL</name>
 
     <dependencies>
         <dependency>

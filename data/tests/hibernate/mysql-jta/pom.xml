@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-hibernate-mysql-jta</artifactId>
-    <name>Helidon Data Tests Hibernate with MySQL JTA DataSource</name>
+    <name>Helidon Data Tests Hibernate MySQL JTA DataSource</name>
 
     <dependencies>
         <dependency>

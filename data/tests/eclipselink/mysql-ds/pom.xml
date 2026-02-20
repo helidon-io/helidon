@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-eclipselink-mysql-ds</artifactId>
-    <name>Helidon Data Tests Eclipselink with MySQL DataSource</name>
+    <name>Helidon Data Tests Eclipselink MySQL DataSource</name>
 
     <dependencies>
         <dependency>

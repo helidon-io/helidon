@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-hibernate-ucp</artifactId>
-    <name>Helidon Data Tests Hibernate with UCP DataSource</name>
+    <name>Helidon Data Tests Hibernate UCP DataSource</name>
 
     <dependencies>
         <dependency>

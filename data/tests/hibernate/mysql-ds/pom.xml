@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-data-tests-hibernate-mysql-ds</artifactId>
-    <name>Helidon Data Tests Hibernate with MySQL DataSource</name>
+    <name>Helidon Data Tests Hibernate MySQL DataSource</name>
 
     <dependencies>
         <dependency>
