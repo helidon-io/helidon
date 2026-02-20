@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,10 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
@@ -136,8 +138,13 @@ class BindingGenerator {
         classModel.addMethod(bindingMethod -> bindingMethod
                 .addAnnotation(Annotations.OVERRIDE)
                 .name("binding")
-                // constructors of services for service loader are usually deprecated in Helidon
-                .addAnnotation(Annotation.create(SuppressWarnings.class, "deprecation"))
+                // constructors of services for service loader are marked as private API
+                .addAnnotation(Annotation.builder()
+                                       .type(SuppressWarnings.class)
+                                       .putProperty("value", AnnotationProperty.create(Api.SUPPRESS_ALL,
+                                                                                       TypeName.create(Api.class),
+                                                                                       "SUPPRESS_ALL"))
+                                       .build())
                 .addParameter(binderParam -> binderParam
                         .name("binder")
                         .type(SERVICE_PLAN_BINDER))
@@ -411,7 +418,7 @@ class BindingGenerator {
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContent(sl.serviceType()).addContentLine(".class,")
-                .addContent("() -> new ").addContent(sl.serviceType()).addContentLine("(),")
+                .addContent(sl.serviceType()).addContentLine("::new,")
                 .addContent(String.valueOf(sl.weight()))
                 .addContentLine("));")
                 .decreaseContentPadding()

@@ -24,15 +24,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
  * APIs to define a declarative server endpoint.
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *         and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Incubating
 public final class RestServer {
     private RestServer() {
     }

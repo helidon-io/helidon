@@ -31,6 +31,7 @@
     <description>
         Annotation processing bundles for Helidon.
         Contains:
+        - Helidon API stability
         - Helidon Blueprint (builders)
         - Helidon Service Inject
         - Helidon @Generated extension
@@ -41,6 +42,7 @@
         - Helidon JSON
         Does not contain:
         - Helidon Copyright extension
+        - Helidon Data implementation (JPA specific)
     </description>
 
     <properties>
@@ -81,6 +83,10 @@
         <dependency>
             <groupId>io.helidon.json</groupId>
             <artifactId>helidon-json-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability</artifactId>
         </dependency>
     </dependencies>
 

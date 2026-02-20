@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Properties;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
@@ -63,6 +64,7 @@ public class PropertiesConfigParser implements ConfigParser {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Private
     public PropertiesConfigParser() {
     }
 
