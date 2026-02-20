@@ -37,7 +37,7 @@ abstract class OracleTestContainer {
                     .withStartupTimeout(Duration.ofMinutes(5)));
 
     static Map<String, String> config() {
-        return Map.of("javax.sql.DataSource.test.dataSource.uMp2PackagingTestITrl", jdbcUrl());
+        return Map.of("javax.sql.DataSource.test.dataSource.url", jdbcUrl());
     }
 
     static String jdbcUrl() {
