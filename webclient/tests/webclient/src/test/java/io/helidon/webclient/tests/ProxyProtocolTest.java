@@ -19,16 +19,12 @@ package io.helidon.webclient.tests;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ConnectionInitializer;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ProxyProtocolV2Data;
 import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.SocketOptions;
-import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
