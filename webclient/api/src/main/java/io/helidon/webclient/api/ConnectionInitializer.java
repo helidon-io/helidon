@@ -56,6 +56,11 @@ public interface ConnectionInitializer {
      * @param channelId The channel id.
      */
     record ConnectedSocket(Socket socket, String channelId) {
+        /**
+         * Canonical constructor, enforces null checks.
+         * @param socket The socket itself.
+         * @param channelId The channel id.
+         */
         public ConnectedSocket(final Socket socket, final String channelId) {
             this.socket = Objects.requireNonNull(socket);
             this.channelId = Objects.requireNonNull(channelId);
@@ -68,6 +73,11 @@ public interface ConnectionInitializer {
      * @param channelId The channel id.
      */
     record ConnectedSocketChannel(SocketChannel socket, String channelId) {
+        /**
+         * Canonical constructor, enforces null checks.
+         * @param socket The socket itself.
+         * @param channelId The channel id.
+         */
         public ConnectedSocketChannel(final SocketChannel socket, final String channelId) {
             this.socket = Objects.requireNonNull(socket);
             this.channelId = Objects.requireNonNull(channelId);
