@@ -27,6 +27,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
+@Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
@@ -56,9 +57,9 @@ interface AutoHttpMetricsConfigBlueprint {
      *
      * @return automatic metrics collection settings
      */
-    @Option.Configured("paths")
+    @Option.Configured
     @Option.Singular
-    List<AutoHttpMetricsPathConfig> autoHttpMetricsPathConfigs();
+    List<AutoHttpMetricsPathConfig> paths();
 
     /**
      * Elective attribute for which to opt in. Each string in the list is of the form

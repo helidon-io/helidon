@@ -54,7 +54,6 @@ import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.observe.metrics.AutoHttpMetrics;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
@@ -435,7 +434,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     }
 
     boolean isMeasuredForAutomaticRestMetrics(ServerRequest request) {
-        return autoHttpMetricsConfig.map(cfg -> AutoHttpMetrics.isMeasured(cfg, request.prologue().method(), request.path()))
+        return autoHttpMetricsConfig.map(cfg -> cfg.isMeasured(request.prologue().method(), request.path()))
                 .orElse(true);
     }
 
@@ -829,7 +828,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         whether the request corresponding to the method should be measured).
          */
         workItemsManager.put(method, SyntheticRestRequest.class,
-                             autoHttpMetricsConfig.isEmpty() || autoHttpMetricsConfig.get().autoHttpMetricsPathConfigs().isEmpty()
+                             autoHttpMetricsConfig.isEmpty() || autoHttpMetricsConfig.get().paths().isEmpty()
                                      ? SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(clazz, method),
                                                                            restEndpointTimer(clazz, method),
                                                                            restEndpointCounterMetricID(clazz, method),

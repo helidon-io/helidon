@@ -19,9 +19,7 @@ package io.helidon.webserver.observe.metrics;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.http.Method;
-import io.helidon.http.PathMatchers;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,40 +56,46 @@ class TestAutoMetricsConfig {
                 .get("server.features.observe.observers.metrics.auto-http-metrics");
         var config = AutoHttpMetricsConfig.create(configFromText);
 
-        assertThat("GET /greet", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/greet")), is(true));
-        assertThat("PUT /greet", AutoHttpMetrics.isMeasured(config, Method.PUT, UriPath.create("/greet")), is(true));
+        assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
+        assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));
 
-        assertThat("GET /greet/Joe",  AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/greet/Joe")), is(true));
+        assertThat("GET /greet/Joe", config.isMeasured(Method.GET, UriPath.create("/greet/Joe")), is(true));
 
-        assertThat("GET /hi", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/hi")), is(false));
+        assertThat("GET /hi", config.isMeasured(Method.GET, UriPath.create("/hi")), is(false));
 
-        assertThat("GET /metrics", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/metrics")), is(false));
+        assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
 
-        assertThat("GET /stuff", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/stuff")), is(true));
-        assertThat("HEAD /stuff", AutoHttpMetrics.isMeasured(config, Method.HEAD, UriPath.create("/stuff")), is(false));
+        assertThat("GET /stuff", config.isMeasured(Method.GET, UriPath.create("/stuff")), is(true));
+        assertThat("HEAD /stuff", config.isMeasured(Method.HEAD, UriPath.create("/stuff")), is(false));
 
-        assertThat("PUT /another/Joe", AutoHttpMetrics.isMeasured(config, Method.PUT, UriPath.create("/another/Joe")), is(false));
-        assertThat("GET /another/Joe", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/another/Joe")), is(true));
+        assertThat("PUT /another/Joe", config.isMeasured(Method.PUT, UriPath.create("/another/Joe")), is(false));
+        assertThat("GET /another/Joe", config.isMeasured(Method.GET, UriPath.create("/another/Joe")), is(true));
 
-        assertThat("GET /undeclared", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/unknown")), is(true));
+        assertThat("GET /undeclared", config.isMeasured(Method.GET, UriPath.create("/unknown")), is(true));
 
         assertThat("GET /observe/metrics",
-                   AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/observe/metrics")),
+                   config.isMeasured(Method.GET, UriPath.create("/observe/metrics")),
                    is(false));
 
-        assertThat("GET /metrics", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/metrics")), is(false));
+        assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
 
         var withCatchAll = AutoHttpMetricsConfig.builder()
                 .config(configFromText)
-                .addAutoHttpMetricsPathConfig(AutoHttpMetricsPathConfig.builder()
-                                                      .path("/*")
-                                                      .enabled(false)
-                                                      .build())
+                .addPath(AutoHttpMetricsPathConfig.builder()
+                                 .path("/*")
+                                 .enabled(false)
+                                 .build())
                 .build();
 
-        assertThat("PUT /greet with catchall", AutoHttpMetrics.isMeasured(withCatchAll, Method.PUT, UriPath.create("/greet")), is(false));
-        assertThat("GET /undeclared with catchall", AutoHttpMetrics.isMeasured(withCatchAll, Method.GET, UriPath.create("/undeclared")), is(false));
-        assertThat("GET /another/Joe", AutoHttpMetrics.isMeasured(withCatchAll, Method.GET, UriPath.create("/another/Joe")), is(true));
+        assertThat("PUT /greet with catchall",
+                   withCatchAll.isMeasured(Method.PUT, UriPath.create("/greet")),
+                   is(false));
+        assertThat("GET /undeclared with catchall",
+                   withCatchAll.isMeasured(Method.GET, UriPath.create("/undeclared")),
+                   is(false));
+        assertThat("GET /another/Joe",
+                   withCatchAll.isMeasured(Method.GET, UriPath.create("/another/Joe")),
+                   is(true));
 
     }
 
@@ -107,15 +111,15 @@ class TestAutoMetricsConfig {
         var config = AutoHttpMetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML)
                                                           .get("server.features.observe.observers.metrics.auto-http-metrics"));
 
-        assertThat("GET /greet", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/greet")), is(true));
-        assertThat("PUT /greet", AutoHttpMetrics.isMeasured(config, Method.PUT, UriPath.create("/greet")), is(true));
+        assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
+        assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));
 
-        assertThat("GET /greet/Joe",  AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/greet/Joe")), is(true));
-        assertThat("GET /other", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/other")), is(true));
+        assertThat("GET /greet/Joe", config.isMeasured(Method.GET, UriPath.create("/greet/Joe")), is(true));
+        assertThat("GET /other", config.isMeasured(Method.GET, UriPath.create("/other")), is(true));
 
-        assertThat("GET /hi", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/hi")), is(true));
+        assertThat("GET /hi", config.isMeasured(Method.GET, UriPath.create("/hi")), is(true));
 
-        assertThat("GET /metrics", AutoHttpMetrics.isMeasured(config, Method.GET, UriPath.create("/metrics")), is(false));
+        assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
 
     }
 }

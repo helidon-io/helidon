@@ -27,7 +27,6 @@ import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
-import io.helidon.webserver.observe.metrics.AutoHttpMetrics;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
@@ -147,7 +146,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                                              Long startTime,
                                              long endTime,
                                              Exception exception) {
-            if (!AutoHttpMetrics.isMeasured(config, req.prologue().method(), req.prologue().uriPath())) {
+            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
                 return;
             }
             AttributesBuilder attrBuilder = Attributes.builder();
