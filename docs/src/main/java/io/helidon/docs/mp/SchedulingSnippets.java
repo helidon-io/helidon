@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class SchedulingSnippets {
     class Snippet2 {
 
         // tag::snippet_2[]
-        @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
+        @Scheduling.FixedRate(delayBy = "${app.schedule.cache.delay-by:PT5M}", value = "${app.schedule.cache.interval:PT10M}")
         // end::snippet_2[]
         public void methodName(FixedRateInvocation invocation) { /* ... */ }
     }
@@ -93,5 +93,16 @@ class SchedulingSnippets {
             System.out.println("Method invoked " + inv.description());
         }
         // end::snippet_8[]
+    }
+
+    class Snippet9 {
+
+        // tag::snippet_9[]
+        @Scheduling.Cron("${app.schedule.cache.cron:0 15 8 ? * *}")
+        // end::snippet_9[]
+        public void methodName(CronInvocation inv) {
+            { /* ... */ }
+        }
+
     }
 }
