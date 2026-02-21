@@ -703,21 +703,21 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        if (currentByte() != '"') {
+        int b = buffer[currentIndex] & 0xFF;
+        if (b != '"') {
             throw createException("Hash calculation is intended only for String values");
         }
         // Compute FNV-1a hash of the string content (excluding quotes) using recommended offset basis and prime values.
         // This optimized loop scans the buffer directly without calling readNextByte() for each character.
         int fnv1aHash = FNV_OFFSET_BASIS;
-        byte b;
-        int i = ++currentIndex;
-        for (; i < bufferLength; i++) {
-            b = buffer[i];
+        currentIndex++;
+        for (int i = currentIndex; i < bufferLength; i++) {
+            b = buffer[i] & 0xFF;
             if (b == '"') {
                 currentIndex = i;
                 return fnv1aHash;
             }
-            fnv1aHash ^= (b & 0xFF);
+            fnv1aHash ^= b;
             fnv1aHash *= FNV_PRIME;
         }
         throw createException("Unexpected end of string value. Probably incomplete JSON");

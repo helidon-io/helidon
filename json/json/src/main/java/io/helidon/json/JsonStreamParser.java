@@ -629,7 +629,8 @@ final class JsonStreamParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        if (currentByte() != '"') {
+        int b = buffer[currentIndex] & 0xFF;
+        if (b != '"') {
             throw createException("Hash calculation is intended only for String values");
         } else if (!hasNext()) {
             throw createException("Incomplete JSON");
@@ -639,14 +640,13 @@ final class JsonStreamParser implements JsonParser {
         while (true) {
             //Based on recommended offset basis and prime values.
             int fnv1aHash = FNV_OFFSET_BASIS;
-            byte b;
             while (i < bufferLength) {
-                b = buffer[i++];
+                b = buffer[i++] & 0xFF;
                 if (b == '"') {
                     currentIndex = i - 1;
                     return fnv1aHash;
                 }
-                fnv1aHash ^= (b & 0xFF);
+                fnv1aHash ^= b;
                 fnv1aHash *= FNV_PRIME;
             }
             fetchData();
