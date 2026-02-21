@@ -13,27 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.telemetry.otelconfig;
-
-import java.util.List;
-
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-
 /**
- * Settings for explicit bucket histogram default aggregation.
+ * Support for metrics telemetry on web requests/responses.
  */
-@Prototype.Blueprint
-@Prototype.Configured
-@Prototype.CustomMethods(ExplicitBucketHistogramAggregationSupport.CustomMethods.class)
-interface ExplicitBucketHistogramAggregationConfigBlueprint {
-
-    /**
-     * Explicit bucket boundaries.
-     *
-     * @return bucket boundaries
-     */
-    @Option.Configured
-    List<Double> bucketBoundaries();
-}
+package io.helidon.webserver.observe.telemetry.metrics;

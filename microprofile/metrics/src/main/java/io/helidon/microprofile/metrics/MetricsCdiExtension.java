@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -52,6 +53,8 @@ import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
@@ -172,6 +175,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
     private Errors.Collector errors = Errors.collector();
     private String syntheticTimerMetricUnmappedExceptionName;
+    private Optional<AutoHttpMetricsConfig> autoHttpMetricsConfig;
 
     /**
      * Creates a new extension instance.
@@ -327,6 +331,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
          // this needs to be done early on, so the registry is configured before accessed
         MetricsObserver observer = configure();
 
+        autoHttpMetricsConfig = observer.prototype().autoHttpMetrics();
+
         registerMetricsForAnnotatedSites();
         registerAnnotatedGauges(bm);
         registerRestRequestMetrics();
@@ -425,6 +431,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                     + " reporting 'false'", t);
             return false;
         }
+    }
+
+    boolean isMeasuredForAutomaticRestMetrics(ServerRequest request) {
+        return autoHttpMetricsConfig.map(cfg -> cfg.isMeasured(request.prologue().method(), request.path()))
+                .orElse(true);
     }
 
     @Override
@@ -806,11 +817,23 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     }
 
     private void registerAndSaveRestRequestMetrics(Class<?> clazz, Method method) {
+        /*
+        If the auto config section is absent, or if it is present but there are no path matchers specified, then
+        we know we need to measure all REST endpoints and can register those metrics here.
+
+        But if there are path matchers, only the code running during the request is able to decide whether the
+        request's path and method matches the path selection and, therefore, whether the corresponding metric
+        should be registered and updated. The work item we create here is either "prepared" (meaning we already know
+        everything we need to set up the work item) or "ad hoc" (meaning the work item will decide on first usage
+        whether the request corresponding to the method should be measured).
+         */
         workItemsManager.put(method, SyntheticRestRequest.class,
-                             SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(clazz, method),
-                                                                 restEndpointTimer(clazz, method),
-                                                                 restEndpointCounterMetricID(clazz, method),
-                                                                 restEndpointCounter(clazz, method)));
+                             autoHttpMetricsConfig.isEmpty() || autoHttpMetricsConfig.get().paths().isEmpty()
+                                     ? SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(clazz, method),
+                                                                           restEndpointTimer(clazz, method),
+                                                                           restEndpointCounterMetricID(clazz, method),
+                                                                           restEndpointCounter(clazz, method))
+                                     : SyntheticRestRequestWorkItem.create(this, clazz, method));
     }
 
     private void collectRestRequestMetrics(@Observes ProcessManagedBean<?> pmb) {

@@ -24,6 +24,7 @@
 include::{rootdir}/includes/se.adoc[]
 :version-doc-opentelemetry: v{version-lib-opentelemetry}
 :semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-doc-opentelemetry}/docs/http/http-spans.md#http-server
+:metrics-semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-doc-opentelemetry}/docs/http/http-metrics.md#http-server
 
 :helidon-otelcfg-javadoc: {otel-config-javadoc-base-url}/io/helidon/telemetry/otelconfig/
 
@@ -36,7 +37,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Additional Information, Additional Information>>
 
 == Overview
-NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently an link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Incubating.html[incubating feature]. We intend to support it going forward, but we might withdraw the feature entirely or change its external API and behavior in backward-incompatible ways across dot releases.
+NOTE: Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature]. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
 
 Helidon SE supports OpenTelemetry in several important ways:
 
@@ -45,9 +46,9 @@ Helidon SE supports OpenTelemetry in several important ways:
 ** Declaratively, using Helidon config under the top-level `telemetry` config key
 ** Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
 
-* Conforms to the link:{semconv-link}[OpenTelemetry semantic conventions] for automatically-created spans
+* Conforms to the link:{semconv-link}[OpenTelemetry semantic conventions] for automatically-created spans and metrics for HTTP requests
 
-OpenTelemetry models observability as a set of link:https://opentelemetry.io/docs/concepts/signals/[_signals_]. Each signal--for example metrics, tracing, and logging--is an origin of monitoring data, and each has configurable settings which control its behavior.
+OpenTelemetry models observability as a set of link:https://opentelemetry.io/docs/concepts/signals/[_signals_]. Each signal--for example metrics and tracing--is an origin of monitoring data, and each has configurable settings which control its behavior.
 
 Helidon's config support for OpenTelemetry has certain config attributes which apply to OpenTelemetry as a whole, others which pertain to individual signals, and still more which describe lower-level elements within a signal.
 
@@ -76,7 +77,7 @@ There are _two_ APIs that might be useful to developers working with OpenTelemet
 * The Helidon OpenTelemetry API - useful for mapping configuration sources to Helidon builders and, ultimately, OpenTelemetry objects.
 * The OpenTelemetry API - useful for creating OpenTelemetry objects apart from Helidon configuration sources.
 
-The types of the Helidon OpenTelemetry API correspond closely to the configuration structures described in later sections of this document. Application code can use Helidon OpenTelemetry builders to prepare and construct each of the configurable entities to ultimately prepare an `OpenTelemetry` instance set up according to the application's needs.
+The types in the Helidon OpenTelemetry API correspond closely to the configuration structures described in later sections of this document. Application code can use Helidon OpenTelemetry builders to prepare and construct each of the configurable entities to ultimately prepare an `OpenTelemetry` instance set up according to the application's needs.
 
 That said, application code can equally well use the OpenTelemetry API and its builders to prepare the `OpenTelemetry` instance.
 
@@ -110,6 +111,8 @@ Using Helidon to set the global `OpenTelemetry` instance has these effects:
 
 * Assigns the instance as the OpenTelemetry global instance.
 * Creates a Helidon `Tracer` using the OpenTelemetry instance and makes that the Helidon global `Tracer`.
+
+NOTE: Helidon is deprecating its use of "global" Helidon objects in favor of retrieving the correct instance from the Helidon service registry. Applications should migrate toward using, for example, `Services.get(Tracer.class)` instead of `Tracer.global()`.
 
 
 // Dependencies
@@ -164,7 +167,7 @@ By default, when Helidon {flavor-uc} creates spans automatically for HTTP reques
 OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
 
 [source,xml]
-.Dependency for Helidon support of the OpenTelemetry semantic conventions
+.Dependency for Helidon support of the OpenTelemetry tracing semantic conventions
 ----
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
@@ -173,8 +176,38 @@ OpenTelemetry prescribes its own link:{semconv-link}[semantic conventions]. If y
 </dependency>
 ----
 
+[[enabling-automatic-metrics-for-inbound-http]]
+=== Enabling Automatic Metrics for Incoming HTTP Requests
+Helidon's metrics observability support automatically registers and updates one or more meters (depending on configuration) and updates them accordingly as HTTP requests arrive.
+
+[source,xml]
+.Dependency for automatic HTTP request measurements
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
+OpenTelemetry prescribes its own link:{metrics-semconv-link}[semantic conventions] for metrics--their names and tha attributes (tags) they have. If you add the following dependency, Helidon registers and updates meters according to the OpenTelemetry metrics semantic conventions.
+
+[source,xml]
+.Dependency for Helidon support of the OpenTelemetry metrics semantic conventions for incoming HTTP requests
+----
+<dependency>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
+  <scope>runtime</scope>
+</dependency>
+----
+
+=== Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
+Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the xref:{docdir}/webclient.adoc#_configuring_telemetry[Helidon WebClient documentation].
+
 === Specifying Additional OpenTelemetry Dependencies
-Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various span exporters individually. (See https://github.com/open-telemetry/opentelemetry-java/tree/{version-doc-opentelemetry}/exporters[this OpenTelemetry page] on span exporters in particular.)
+Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various exporters individually.
+These exporters transmit telemetry data using a different protocol. (See https://github.com/open-telemetry/opentelemetry-java/tree/{version-doc-opentelemetry}/exporters[this OpenTelemetry page].)
 
 
 == Configuration
@@ -449,6 +482,8 @@ The link:https://opentelemetry.io/docs/languages/java/sdk/#sampler[OpenTelemetry
 === Controlling OpenTelemetry Metrics Behavior
 The settings under `settings.metrics` prepare an OpenTelemetry `MeterProvider`. If your code uses the OpenTelemetry API to obtain an OpenTelemetry meter, meter provider, or meter builder, OpenTelemetry uses the `MeterProvider` prepared from this configuration.
 
+The sections below describe Helidon config settings that correspond very directly to OpenTelemetry builders for the relevant OpenTelemetry type. Refer to the relevant OpenTelemetry documentation or Javadoc to understand the effect each setting has.
+
 The next table describes the OpenTelemetry metrics settings.
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_OpenTelemetryMetricsConfig.adoc[tag=config,leveloffset=+2]
@@ -544,6 +579,25 @@ OpenTelemetry uses one or more metric exporters to transmit metrics data. If you
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricExporterConfig.adoc[tag=config,leveloffset=+2]
 
+===== Metric Aggregation
+OpenTelemetry allows control over how each exporter aggregates histogram data prior to transmission to a backend.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_MetricDefaultHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+You can configure the explicit bucket boundaries for `EXPLICIT_BUCKET_HISTOGRAM` aggregation.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_ExplicitBucketHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+You can configure the exponential histogram aggregation behavior.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_Base2ExponentialHistogramAggregationConfig.adoc[tag=config, leveloffset=+2]
+
+
+===== Retry Policy
+You can control how each exporter retries if a transmission to a backend fails.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_RetryPolicyConfig.adoc[tag=config, leveloffset=+2]
+
 [[metric-readers-config]]
 ==== Metric Readers
 An OpenTelemetry metric reader collects metric data in the server and then uses the associated metric exporter to send that data to the endpoint configured.
@@ -559,6 +613,10 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_PeriodicMetricReaderCo
 OpenTelemetry metric views allow you to influence how meters are aggregated for reporting to backend systems.
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_ViewRegistrationConfig.adoc[tag=config,leveloffset=+2]
+
+The instrument selector controls which meters this view reflects.
+
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_InstrumentSelectorConfig.adoc[tag=config, leveloffset=+2]
 
 == Additional Information
 
