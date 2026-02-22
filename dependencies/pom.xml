@@ -56,6 +56,7 @@
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
+        <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
@@ -1245,6 +1246,18 @@
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio</artifactId>
                 <version>${version.lib.okio}</version>
+            </dependency>
+            <dependency>
+            <!-- For dependency convergence -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-jvm</artifactId>
+                <version>${version.lib.okio}</version>
+            </dependency>
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${version.lib.google-error-prone-annotations}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>

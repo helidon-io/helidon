@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
 Certain default configuration values depend on the fact that you are using Helidon {flavor-uc} as described in the <<flavor-specific-defaults,second table below>>.
 
-include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
+// include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
+include::{rootdir}/config/io_helidon_metrics_api_MetricsConfig.adoc[tag=config,leveloffset=+1]
+
 
 // It seems we need an explicit open block for the website rendering to create the anchor properly. I tried adding the anchor to the table (without the block) but that didn't work on the live site.
 [#flavor-specific-defaults]
@@ -75,6 +77,95 @@ But for others the differences between the programmatic APIs for `Counter` and `
 {metric}. Further, the difference in output--particularly in the OpenMetrics/Prometheus format--might affect their application or downstream monitoring tools.
 
 The ability to choose the {metric} type for `gc.time` is deprecated and is planned for removal in a future major release of Helidon at which time Helidon will always use a gauge.
+
+=== Controlling the Metrics Observer
+Helidon can make the registered {metrics} and their current values available externally at an endpoint ({metrics-endpoint} by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
+
+include::io_helidon_webserver_observe_metrics_MetricsObserver_extra.adoc[tag=config,leveloffset=+1]
+
+ifdef::se-flavor[]
+See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
+
+endif::se-flavor[]
+
+==== Selecting REST Endpoints for Automatic Measurement
+You can choose which endpoints to include in Helidon's automatic measurements using the `auto-http-metrics` config section.
+
+include::{rootdir}/config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.adoc[tag=config,leveloffset=+2]
+
+The `paths` section contains zero or more entries, each entry having the following settings:
+
+--
+.`path` entry settings
+[cols="4,2,4,20"]
+|====
+|Key | Required | Default Value | Usage
+
+| `path`
+| yes
+| {nbsp}
+a| Path-matching expression:
+
+* an exact match (`/greet`)
+* a prefix match (`/greet/*`)
+* a pattern match (`/greet/{name}`)
+
+| `methods` | {nbsp} | all HTTP method types | Which HTTP methods match this entry
+
+| `enabled` | {nbsp} | `true` | Whether requests that match this entry should be measured
+|====
+--
+
+Helidon decides whether to measure incoming requests as follows:
+
+* If you omit the `auto-http-metrics` configuration, Helidon measures all endpoints.
+* If you specify the `auto-http-metrics` configuration, by default Helidon does not measure built-in endpoints such as metrics, health, and openapi. You can add items under  `auto-http-metrics.paths` to control more exactly which endpoints to measure.
+* If you include the  `paths` section, Helidon checks a request against the path entries in order. A given request matches an entry if its path matches the path pattern and its HTTP method is in the `methods` list. If there is no `methods` list for an entry, all HTTP methods match the entry.
+* If a request matches an entry, the entry's `enabled` setting determines if the request should be measured.
+* If a request matches multiple entries, the first match wins.
+* If a request matches no entry, it is measured.
+
+The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
+
+ifdef::se-flavor[]
+[source,yaml]
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,properties]
+endif::mp-flavor[]
+.Including and Excluding Endpoints from Automatic Measurement
+ifdef::se-flavor[]
+----
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          auto-http-metrics:
+            paths:
+              - path: "/greet"              # <1>
+                methods: ["GET","HEAD"]
+              - path: "/greet/{name}"       # <2>
+                enabled: false
+            sockets: ["@default","private"] # <3>
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+----
+server.features.observe.observers.metrics.auto-http-metrics.paths.0.path=/greet        # <1>
+server.features.observe.observers.metrics.auto-http-metrics.paths.0.methods=GET,HEAD
+
+server.features.observe.observers.metrics.auto-http-metrics.paths.1.path=/greet/{name} # <2>
+server.features.observe.observers.metrics.auto-http-metrics.paths.1.enabled=false
+
+server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,private   # <3>
+----
+endif::mp-flavor[]
+<1> Measure `/greet` for only `GET` and `HEAD` requests.
+<2> Do not measure the personalized greeting requests.
+<3> Measure only endpoints on the default socket and the socket named `private`. Endpoints on other sockets (such as if you had an `admin` socket) are not measured.
+
+The xref:{rootdir}/config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.adoc[AutoHttpMetricsConfig documentation] describes the configuration more fully.
 
 // end::config-intro[]
 
