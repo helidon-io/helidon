@@ -18,6 +18,7 @@ package io.helidon.webclient.grpc.tests;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -133,6 +134,9 @@ public class GrpcProxyProtocolTest {
         assertThat(response.getCommand(), is(ProxyProtocolV2Data.Command.PROXY.name()));
         assertThat(response.getSourceSocketAddress(), is("/192.168.0.1:57005"));
         assertThat(response.getDestinationSocketAddress(), is("/127.0.0.1:49374"));
+        assertThat(response.getTlvsList().get(0).getType(), is(0x05));
+        assertThat(response.getTlvsList().get(1).getType(), is(0xE0));
+        assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), response.getTlvsList().get(1).getData().toByteArray());
 
         server.stop();
     }
@@ -234,6 +238,10 @@ public class GrpcProxyProtocolTest {
         assertThat(response.getCommand(), is(ProxyProtocolV2Data.Command.PROXY.name()));
         assertThat(response.getSourceSocketAddress(), is("/192.168.0.1:57005"));
         assertThat(response.getDestinationSocketAddress(), is("/127.0.0.1:49374"));
+        assertThat(response.getTlvsCount(), is(2));
+        assertThat(response.getTlvsList().get(0).getType(), is(0x05));
+        assertThat(response.getTlvsList().get(1).getType(), is(0xE0));
+        assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), response.getTlvsList().get(1).getData().toByteArray());
 
         server.stop();
     }
