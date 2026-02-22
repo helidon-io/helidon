@@ -91,7 +91,8 @@ public class ArchetypeTest {
                 .header("Access-Control-Request-Method", "PUT")
                 .options();
 
-        assertThat("pre-flight status", r.getStatus(), is(200));
+        // status is 204, as that is the status provided by Jersey on void methods
+        assertThat("pre-flight status", r.getStatus(), is(204));
         MultivaluedMap<String, Object> responseHeaders = r.getHeaders();
         assertThat("Header " + HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME,
                    r.getHeaders().get(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME),
