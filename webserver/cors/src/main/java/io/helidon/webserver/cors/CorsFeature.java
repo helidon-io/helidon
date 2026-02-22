@@ -202,17 +202,17 @@ public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<Cor
                 // this is for backward compatibility
                 if (res.headers().contains(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN)) {
                     // already processed
-                    res.status(Status.NO_CONTENT_204)
+                    res.status(Status.OK_200)
                             .send();
                     return;
                 }
                 if (validator.preFlight(req, res).shouldContinue()) {
-                    res.status(Status.NO_CONTENT_204)
+                    res.status(Status.OK_200)
                             .send();
                 }
                 /*
                 Uncomment this code once we remove deprecated code from CORS
-                res.status(Status.NO_CONTENT_204)
+                res.status(Status.OK_200)
                             .send();
                  */
             }

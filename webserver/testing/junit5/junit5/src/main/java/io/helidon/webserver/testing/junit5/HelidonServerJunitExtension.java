@@ -233,25 +233,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         });
     }
 
-    private static void setupWebServerFromRegistry(WebServerConfig.Builder serverBuilder) {
-        Object o = GlobalServiceRegistry.registry()
-                .get(WebServerService__ServiceDescriptor.INSTANCE)
-                .orElseThrow(() -> {
-                    return new IllegalStateException("Could not discover WebServerService in service registry, both "
-                                                             + "'helidon-service-registry' and `helidon-webserver` must be on "
-                                                             + "classpath.");
-                });
-        // the service is package local
-        Class<?> clazz = o.getClass();
-        try {
-            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
-            method.setAccessible(true);
-            method.invoke(o, serverBuilder);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
-        }
-    }
-
     private URI uri(Executable declaringExecutable, String socketName) {
         URI uri = uris.computeIfAbsent(socketName, it -> {
             int port = server.port(it);

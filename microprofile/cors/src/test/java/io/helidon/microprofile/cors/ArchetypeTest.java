@@ -91,7 +91,7 @@ public class ArchetypeTest {
                 .header("Access-Control-Request-Method", "PUT")
                 .options();
 
-        assertThat("pre-flight status", r.getStatus(), is(204));
+        assertThat("pre-flight status", r.getStatus(), is(200));
         MultivaluedMap<String, Object> responseHeaders = r.getHeaders();
         assertThat("Header " + HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME,
                    r.getHeaders().get(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME),
@@ -123,7 +123,7 @@ public class ArchetypeTest {
 
         Response r = putResponse("Ahoy", builder);
         boolean isOverriding = Config.global().get("cors").exists();
-        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
+        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 200 : 403));
     }
 
     private static String fromPayload(Response response) {

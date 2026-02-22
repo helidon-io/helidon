@@ -86,7 +86,7 @@ class TestCORS {
 
         Response r = putResponse("Ahoy", builder);
         boolean isOverriding = Services.get(Config.class).get("cors").exists();
-        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
+        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 200 : 403));
     }
 
     private static String fromPayload(Response response) {

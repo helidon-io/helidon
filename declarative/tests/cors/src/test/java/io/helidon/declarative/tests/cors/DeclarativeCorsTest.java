@@ -56,7 +56,7 @@ public class DeclarativeCorsTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
                 .request(Void.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
 
         var headers = res.headers();
         assertThat(headers, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is("*")));
@@ -126,7 +126,7 @@ public class DeclarativeCorsTest {
                 .readTimeout(Duration.ofHours(1))
                 .request(String.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
         assertThat(res.headers().contentLength(), is(OptionalLong.of(0L)));
     }
 
@@ -137,7 +137,7 @@ public class DeclarativeCorsTest {
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .request(Void.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
         assertThat(res.headers().contentLength(), is(OptionalLong.of(0L)));
     }
 
@@ -149,7 +149,7 @@ public class DeclarativeCorsTest {
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo", "X-bar", "X-oops")
                 .request(Void.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
         assertThat(res.headers().contentLength(), is(OptionalLong.of(0L)));
     }
 
@@ -161,7 +161,7 @@ public class DeclarativeCorsTest {
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo")
                 .request(Void.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
 
         var headers = res.headers();
         assertThat(headers, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is("*")));
@@ -178,7 +178,7 @@ public class DeclarativeCorsTest {
                 .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo", "X-bar")
                 .request(Void.class);
 
-        assertThat(res.status(), is(Status.NO_CONTENT_204));
+        assertThat(res.status(), is(Status.OK_200));
 
         var headers = res.headers();
         assertThat(headers, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is("*")));

@@ -79,7 +79,7 @@ Decision whether to invoke "Pre-Flight" or "Flight" check:
 If the request is not a CORS request, we ignore it and do not send any headers back.
 
 # "Pre Flight" Check
-Pre-flight check is done in `CorsHttpFilter`, and finalized in the `CorsFeature.CorsOptionsHttpFeature` where we ensure that a `204` is returned for any options method, even if such a routing does not exist in the application.
+Pre-flight check is done in `CorsHttpFilter`, and finalized in the `CorsFeature.CorsOptionsHttpFeature` where we ensure that a `200` is returned for any options method, even if such a routing does not exist in the application.
 
 Pre flight validation sequence:
 

@@ -61,7 +61,7 @@ class CorsHttpFilter implements Filter {
                 // assume user code (such as filter) has thrown this - ignore, as this still means we should return pre-flight
                 // in case of a pre-flight check that is not served by any endpoint, we must send the response to options request
                 if (CorsValidator.isPreflight(req)) {
-                    res.status(Status.NO_CONTENT_204)
+                    res.status(Status.OK_200)
                             .send();
                 }
             }
