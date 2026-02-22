@@ -38,13 +38,11 @@ import io.helidon.common.testing.virtualthreads.PinningRecorder;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.LazyConfigSource;
-import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.WebServerService__ServiceDescriptor;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
