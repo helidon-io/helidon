@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Annotation processor validating use of Helidon APIs.
+ */
 package io.helidon.codegen.api.stability;
-
-enum Action {
-    DEFAULT,
-    FAIL,
-    WARN,
-    IGNORE
-}

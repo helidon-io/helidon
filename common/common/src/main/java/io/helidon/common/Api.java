@@ -37,9 +37,21 @@ import java.lang.annotation.Target;
  * </ul>
  */
 public final class Api {
+    /**
+     * Suppression constant to ignore any use of Helidon APIs that are not production.
+     */
     public static final String SUPPRESS_ALL = "helidon:api";
+    /**
+     * Suppression constant to ignore any use of Helidon preview APIs.
+     */
     public static final String SUPPRESS_PREVIEW = "helidon:api:preview";
+    /**
+     * Suppression constant to ignore any use of Helidon incubating APIs.
+     */
     public static final String SUPPRESS_INCUBATING = "helidon:api:incubating";
+    /**
+     * Suppression constant to ignore any use of Helidon private APIs.
+     */
     public static final String SUPPRESS_PRIVATE = "helidon:api:private";
 
     private Api() {
