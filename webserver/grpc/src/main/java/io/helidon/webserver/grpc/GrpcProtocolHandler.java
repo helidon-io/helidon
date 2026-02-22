@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -101,6 +103,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
+    private final GrpcConnectionContext connectionContext;
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -125,13 +128,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
-    GrpcProtocolHandler(Http2Headers headers,
+    GrpcProtocolHandler(GrpcConnectionContext connectionContext,
+                        Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
                         GrpcConfig grpcConfig) {
+        this.connectionContext = connectionContext;
         this.headers = headers;
         this.streamWriter = streamWriter;
         this.streamId = streamId;
@@ -157,9 +162,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 methodMetrics.callStarted.increment();
             }
 
+            // Include the GrpcConnectionContext in the Helidon Context so that the gRPC customer
+            // handler can access the peer info and proxy protocol data.
+            final Context context = Contexts.context().orElse(Context.create());
+            context.register(GrpcConnectionContext.class, connectionContext);
+
             // initiate server call
             ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-            listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
+            listener = Contexts.runInContext(context, () ->
+                callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers)));
             listener.onReady();
             bytesReceived = 0L;
         } catch (Throwable e) {

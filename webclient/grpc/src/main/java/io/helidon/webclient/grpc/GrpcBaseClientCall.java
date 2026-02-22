@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.tls.Tls;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -55,6 +57,7 @@ import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientConnection;
@@ -285,8 +288,21 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected ClientConnection clientConnection(ClientUri clientUri) {
+
+
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
+
+        if (clientConfig.baseAddress().isPresent() && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
+            return UnixDomainSocketClientConnection.create(
+                webClient,
+                clientConfig.tls(),
+                List.of(Http2Client.PROTOCOL_ID),
+                udsAddress,
+                connection -> false,
+                connection -> {}).connect();
+        }
+
         ConnectionKey connectionKey = ConnectionKey.create(
                 clientUri.scheme(),
                 clientUri.host(),

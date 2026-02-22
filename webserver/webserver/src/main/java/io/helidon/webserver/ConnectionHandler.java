@@ -117,7 +117,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
         // proxy protocol before SSL handshake
         if (listenerConfig.enableProxyProtocol()) {
-            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket.socket(), channelId);
+            ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
             try {
                 proxyProtocolData = handler.get();
             } catch (IOException | RuntimeException e) {
