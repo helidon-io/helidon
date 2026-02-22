@@ -125,6 +125,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                             <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
+                                <value if="${flavor} == 'se'">java.logging</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
                                 <value if="${flavor} == 'mp'">@AddExtension(CorsCdiExtension.class)</value>
@@ -225,9 +226,6 @@ Hola World!
 
 Note that the tests in the example `MainTest` class follow these same steps.
 ]]></value>
-                            </list>
-                            <list key="Main-java-imports" if="${flavor} == 'se'">
-                                <value>java.util.logging.Logger</value>
                             </list>
                             <list key="application-yaml-entries" if="${flavor} == 'se'">
                                 <value><![CDATA[

@@ -426,7 +426,7 @@ class CorsPathConfigGenerator {
         }
 
         CorsConfig(boolean defaults) {
-            this(true, null, null, null, null, null, null);
+            this(defaults, null, null, null, null, null, null);
         }
 
         CorsConfig combine(CorsConfig other) {
