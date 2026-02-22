@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.codegen;
+package io.helidon.codegen.api.stability;
 
-import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.Api;
-import io.helidon.common.types.TypeName;
 
-/**
- * A code generated type.
- *
- * @param newType the type that is to be created
- * @param classModel class code
- * @param mainTrigger main type responsible for this code generation
- * @param originatingElements to map to source types that triggered this code generation
- */
 @Api.Private
-public record ClassCode(TypeName newType, ClassModel.Builder classModel, TypeName mainTrigger, Object... originatingElements) {
+public class PrivateApi {
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
@@ -64,10 +65,8 @@ public class YamlConfigParser implements ConfigParser {
 
     /**
      * Default constructor needed by Java Service loader.
-     * @deprecated This method should not be directly used, use {@link #create()}
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
+    @Api.Private
     public YamlConfigParser() {
         // fix for NPE in Yaml parser when running in Graal
         // cannot be in static block, as that gets ignored
