@@ -139,10 +139,15 @@ interface SocketOptionsBlueprint {
     @SuppressWarnings("unchecked")
     default void configureSocket(SocketChannel socket) {
         var logger = System.getLogger(SocketOptions.class.getName());
+        final var supportedOptions = socket.supportedOptions();
         for (Map.Entry<SocketOption<?>, Object> entry : socketOptions().entrySet()) {
             try {
                 SocketOption<Object> opt = (SocketOption<Object>) entry.getKey();
-                socket.setOption(opt, entry.getValue());
+                if (supportedOptions.contains(opt)) {
+                    socket.setOption(opt, entry.getValue());
+                } else if (logger.isLoggable(System.Logger.Level.TRACE)) {
+                    logger.log(System.Logger.Level.TRACE, "Option " + entry.getKey() + " is unsupported by socket: " + socket);
+                }
             } catch (Exception e) {
                 if (logger.isLoggable(System.Logger.Level.TRACE)) {
                     logger.log(System.Logger.Level.TRACE, "Failed to set option " + entry.getKey() + " on socket: " + socket, e);

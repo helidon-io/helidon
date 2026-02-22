@@ -37,6 +37,15 @@ public interface ConnectionListener {
     }
 
     /**
+     * Returns a {@link ConnectionListener} which writes bytes to the socket once the socket is connected.
+     * @param bytes The bytes to write.
+     * @return The listener which will write the given bytes to the socket.
+     */
+    static ConnectionListener writeBytes(byte[] bytes) {
+        return new BytesWritingConnectionListener(bytes);
+    }
+
+    /**
      * Called when the given {@link Socket} connection has been established and {@link io.helidon.common.socket.SocketOptions}
      * applied, but before any TLS or HTTP application traffic has been sent.
      * @param socket The newly connected socket.

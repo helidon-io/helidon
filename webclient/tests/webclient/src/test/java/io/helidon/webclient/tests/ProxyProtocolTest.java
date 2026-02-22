@@ -24,7 +24,6 @@ import io.helidon.webserver.ProxyProtocolV2Data;
 import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -67,6 +66,8 @@ public class ProxyProtocolTest {
             assertThat(contents[4], is("56324"));
             assertThat(contents[5], is("443"));
         }
+
+        server.stop();
     }
 
     @Test
@@ -103,6 +104,8 @@ public class ProxyProtocolTest {
             assertThat(contents[4], is("56324"));
             assertThat(contents[5], is("443"));
         }
+
+        server.stop();
     }
 
     @Test
@@ -158,6 +161,8 @@ public class ProxyProtocolTest {
             assertThat(contents[8], is("/127.0.0.1:49374"));
             assertThat(contents[9], is("0"));
         }
+
+        server.stop();
     }
 
     @Test
@@ -213,6 +218,8 @@ public class ProxyProtocolTest {
             assertThat(contents[8], is("/[ffff:0:0:0:0:0:0:ffff]:49374"));
             assertThat(contents[9], is("0"));
         }
+
+        server.stop();
     }
 
     @Test
@@ -285,20 +292,12 @@ public class ProxyProtocolTest {
             assertThat(contents[12], is("" + 0xE0));
             assertThat(contents[13], is("abc"));
         }
+
+        server.stop();
     }
 
     private ConnectionListener v1Listener(final String proxyHeader) {
-        return new ConnectionListener() {
-            @Override
-            public void socketConnected(final ConnectedSocket socket) throws IOException {
-                socket.socket().getOutputStream().write(proxyHeader.getBytes(StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public void socketConnected(final ConnectedSocketChannel socket) {
-                throw new UnsupportedOperationException("Not implemented");
-            }
-        };
+        return ConnectionListener.writeBytes(proxyHeader.getBytes(StandardCharsets.UTF_8));
     }
 
     private ConnectionListener v2Listener(final int[] proxyHeader) {
@@ -306,16 +305,6 @@ public class ProxyProtocolTest {
         for (int i = 0; i < proxyHeader.length; i++) {
             proxyHeaderBytes[i] = (byte) proxyHeader[i];
         }
-        return new ConnectionListener() {
-            @Override
-            public void socketConnected(final ConnectedSocket socket) throws IOException {
-                socket.socket().getOutputStream().write(proxyHeaderBytes);
-            }
-
-            @Override
-            public void socketConnected(final ConnectedSocketChannel socket) {
-                throw new UnsupportedOperationException("Not implemented");
-            }
-        };
+        return ConnectionListener.writeBytes(proxyHeaderBytes);
     }
 }

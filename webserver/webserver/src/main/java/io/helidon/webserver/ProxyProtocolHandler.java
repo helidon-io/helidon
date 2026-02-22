@@ -19,14 +19,14 @@ import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -97,35 +97,33 @@ class ProxyProtocolHandler {
             .build();
     }
 
-    private final SocketChannel channel;
+    private final SocketChannel socketChannel;
     private final String channelId;
-    private final ByteBuffer readBuffer;
 
-    ProxyProtocolHandler(SocketChannel channel, String channelId) {
-        this.channel = channel;
+    ProxyProtocolHandler(SocketChannel socketChannel, String channelId) {
+        this.socketChannel = socketChannel;
         this.channelId = channelId;
-        readBuffer = ByteBuffer.allocate(4096);
     }
 
     public ProxyProtocolData get() throws IOException {
         LOGGER.log(Level.DEBUG, "Reading proxy protocol data for channel %s", channelId);
-        return handleAnyProtocol(channel, readBuffer);
+        return handleAnyProtocol(Channels.newInputStream(socketChannel));
     }
 
-    static ProxyProtocolData handleAnyProtocol(ReadableByteChannel channel, ByteBuffer readBuffer) throws IOException {
-
-        final ByteBuffer prefix = readExactlyNBytes(channel, readBuffer, V1_PREFIX.length);
-
-        if (prefix.equals(ByteBuffer.wrap(V1_PREFIX))) {
-            return handleV1Protocol(channel, readBuffer);
-        } else if (prefix.equals(ByteBuffer.wrap(V2_PREFIX_1))) {
+    static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {
+        byte[] prefix = new byte[V1_PREFIX.length];
+        readExactlyNBytes(socketInputStream, prefix, 0, V1_PREFIX.length);
+        if (arrayEquals(prefix, V1_PREFIX, V1_PREFIX.length)) {
+            return handleV1Protocol(socketInputStream);
+        } else if (arrayEquals(prefix, V2_PREFIX_1, V2_PREFIX_1.length)) {
             return handleV2Protocol(socketInputStream);
         } else {
             throw BAD_PROTOCOL_EXCEPTION;
         }
     }
 
-    static ProxyProtocolData handleV1Protocol(ReadableByteChannel channel, ByteBuffer readBuffer) throws IOException {
+    static ProxyProtocolData handleV1Protocol(InputStream socketInputStream) throws IOException {
+        final var inputStream = new PushbackInputStream(socketInputStream);
         try {
             int n;
             byte[] buffer = new byte[MAX_V1_FIELD_LENGTH];
@@ -133,7 +131,7 @@ class ProxyProtocolHandler {
             match(inputStream, (byte) ' ');
 
             // protocol and family
-            n = inefficientlyReadUntil(inputStream, buffer, (byte) ' ', (byte) '\r');
+            n = readUntil(inputStream, buffer, (byte) ' ', (byte) '\r');
             String familyProtocol = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             var family = Family.fromString(familyProtocol);
             var protocol = Protocol.fromString(familyProtocol);
@@ -149,22 +147,22 @@ class ProxyProtocolHandler {
             match(b, (byte) ' ');
 
             // source address
-            n = inefficientlyReadUntil(inputStream, buffer, (byte) ' ');
+            n = readUntil(inputStream, buffer, (byte) ' ');
             var sourceAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             match(inputStream, (byte) ' ');
 
             // destination address
-            n = inefficientlyReadUntil(inputStream, buffer, (byte) ' ');
+            n = readUntil(inputStream, buffer, (byte) ' ');
             var destAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             match(inputStream, (byte) ' ');
 
             // source port
-            n = inefficientlyReadUntil(inputStream, buffer, (byte) ' ');
+            n = readUntil(inputStream, buffer, (byte) ' ');
             int sourcePort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
             match(inputStream, (byte) ' ');
 
             // destination port
-            n = inefficientlyReadUntil(inputStream, buffer, (byte) '\r');
+            n = readUntil(inputStream, buffer, (byte) '\r');
             int destPort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
             match(inputStream, (byte) '\r');
             match(inputStream, (byte) '\n');
@@ -175,7 +173,7 @@ class ProxyProtocolHandler {
         }
     }
 
-    static ProxyProtocolData handleV2Protocol(ReadableByteChannel channel, ByteBuffer readBuffer) throws IOException {
+    static ProxyProtocolData handleV2Protocol(InputStream socketInputStream) throws IOException {
         final Checksum checksum = new CRC32C();
         checksum.update(V2_PREFIX_1);
         final CheckedInputStream inputStream = new CheckedInputStream(socketInputStream, checksum);
@@ -408,27 +406,24 @@ class ProxyProtocolHandler {
         return (bits[offset] & 0xFF) << 8 | (bits[offset + 1] & 0xFF);
     }
 
-    private static byte readNext(ReadableByteChannel channel, ByteBuffer readBuffer) throws IOException {
-        return readExactlyNBytes(channel, readBuffer, 1).get(0);
+    private static byte readNext(InputStream inputStream) throws IOException {
+        int b = inputStream.read();
+        if (b < 0) {
+            throw badProtocolException("end of data reached unexpectedly");
+        }
+        return (byte) b;
     }
 
-    private static ByteBuffer readExactlyNBytes(
-        ReadableByteChannel channel,
-        ByteBuffer readBuffer,
+    private static void readExactlyNBytes(
+        InputStream inputStream,
+        byte[] destination,
+        int offset,
         int length
     ) throws IOException {
-        readBuffer.clear();
-        if (length > readBuffer.capacity()) {
-            throw badProtocolException("attempted to read more bytes than allowed by max proxy protocol read buffer size");
+        final int actuallyRead = inputStream.readNBytes(destination, offset, length);
+        if (actuallyRead < length) {
+            throw badProtocolException("end of data reached unexpectedly");
         }
-        readBuffer.limit(length);
-        while (readBuffer.hasRemaining()) {
-            final int read = channel.read(readBuffer);
-            if (read < 0) {
-                throw badProtocolException("end of data reached unexpectedly");
-            }
-        }
-        return readBuffer.flip();
     }
 
     private static void match(byte a, byte b) {
@@ -437,8 +432,8 @@ class ProxyProtocolHandler {
         }
     }
 
-    private static void match(ReadableByteChannel channel, ByteBuffer readBuffer, byte b) throws IOException {
-        if (readNext(channel, readBuffer) != b) {
+    private static void match(PushbackInputStream inputStream, byte b) throws IOException {
+        if (inputStream.read() != b) {
             throw BAD_PROTOCOL_EXCEPTION;
         }
     }
@@ -452,21 +447,7 @@ class ProxyProtocolHandler {
         }
     }
 
-    private int inefficientlyReadUntil(ReadableByteChannel channel, byte... delims) throws IOException {
-        readBuffer.clear();
-
-        // Extremely inefficient 1-byte-at-a-time read loop, because we must guarantee that
-        // we do not read beyond the bounds of the proxy protocol data. The fundamental problem
-        // is that Helidon's webserver code does not currently allow us to only partially consume
-        // bytes read from the channel in this ProxyProtocolHandler, because there's no mechanism
-        // for passing read-but-not-consumed bytes to further code in the ConnectionHandler.
-
-        while (readBuffer.hasRemaining()) {
-            if (channel.read(readBuffer) < 0) {
-
-            }
-        }
-
+    private static int readUntil(PushbackInputStream inputStream, byte[] buffer, byte... delims) throws IOException {
         int n = 0;
         do {
             byte b = readNext(inputStream);
@@ -559,35 +540,6 @@ class ProxyProtocolHandler {
                 return inet.getPort();
             }
             return -1;
-        }
-    }
-
-    private static class ChecksummedByteChannel implements ReadableByteChannel {
-        private final Checksum checksum;
-        private final ReadableByteChannel delegate;
-
-        private ChecksummedByteChannel(final Checksum checksum, final ReadableByteChannel delegate) {
-            this.checksum = checksum;
-            this.delegate = delegate;
-        }
-
-        @Override
-        public int read(final ByteBuffer dst) throws IOException {
-            final int amountRead = delegate.read(dst);
-            if (amountRead > 0) {
-                checksum.update(dst.array(), dst.position() - amountRead - dst.arrayOffset(), amountRead);
-            }
-            return amountRead;
-        }
-
-        @Override
-        public boolean isOpen() {
-            return delegate.isOpen();
-        }
-
-        @Override
-        public void close() throws IOException {
-            delegate.close();
         }
     }
 }
