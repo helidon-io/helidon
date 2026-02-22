@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,12 @@ import io.helidon.common.config.Config;
 /**
  * Cross-origin {@link CrossOriginConfig} instances linked to paths, plus an {@code enabled} setting. Most developers will not
  * need to use this directly from their applications.
+ * @deprecated this module will be removed, CORS configuration is centralized to module {@code helidon-webserver-cors} with
+ *         {@code io.helidon.webserver.cors.CorsFeature} either from {@link io.helidon.service.registry.ServiceRegistry}, or
+ *         through one of the feature's static factory or builder methods; paths configured in config are registered first,
+ *         before paths configured through service registry; this class will be removed in a future version of Helidon
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, CrossOriginConfig>> {
 
     private String name = "";

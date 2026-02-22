@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,37 @@
 package io.helidon.microprofile.cors;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.config.mp.MpConfig;
-import io.helidon.cors.CrossOriginConfig;
+import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.cors.Cors;
+import io.helidon.webserver.cors.CorsFeature;
+import io.helidon.webserver.cors.CorsPathConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * CDI extension for processing CORS-annotated types.
  * <p>
- *     Pre-computes the {@link CrossOriginConfig} for each method which should have one and makes sure that the
- *     {@link CrossOrigin} annotation appears only on methods which also have {@code OPTIONS}.
+ * Pre-computes the {@link io.helidon.webserver.cors.CorsPathConfig} for each method which should have one and makes
+ * sure that CORS annotations appear only on methods which also have {@code OPTIONS}.
  * </p>
  */
 public class CorsCdiExtension implements Extension {
@@ -54,113 +56,166 @@ public class CorsCdiExtension implements Extension {
      */
     static final String CORS_CONFIG_KEY = "cors";
 
-    private Supplier<Optional<CrossOriginConfig>> supplierOfCrossOriginConfigFromAnnotation;
-
-    private CorsSupportMp corsSupportMp;
-
     private final Set<Method> methodsWithCrossOriginIncorrectlyUsed = new HashSet<>();
-    private final Map<Method, CrossOriginConfig> corsConfigs = new HashMap<>();
+    private final List<CorsPathConfig> corsConfigs = new ArrayList<>();
+
+    private Config config;
+
+    static int endpointPathComparator(CorsPathConfig corsPathConfig, CorsPathConfig corsPathConfig1) {
+        String[] firstPath = corsPathConfig.pathPattern().split("/");
+        String[] secondPath = corsPathConfig1.pathPattern().split("/");
+
+        if (firstPath.length != secondPath.length) {
+            return Integer.compare(secondPath.length, firstPath.length);
+        }
+
+        int len = firstPath.length;
+        for (int i = 0; i < len; i++) {
+            String firstElement = firstPath[i];
+            String secondElement = secondPath[i];
+            if (firstElement.equals(secondElement)) {
+                // same prefix, continue
+                continue;
+            }
+            // different element on the same depth - just use alphabet
+            return firstElement.compareTo(secondElement);
+        }
+        return 0;
+    }
 
     void processManagedBean(@Observes ProcessManagedBean<?> pmb) {
+        // we need to collect all annotated options methods, sorted by most specific path first
+        // i.e. if there is /greet and /greet/{name}, /greet/{name} must be first
+
+        List<CorsPathConfig> endpointList = new ArrayList<>();
+
         pmb.getAnnotatedBeanClass().getMethods().forEach(am -> {
             Method method = am.getJavaMember();
-            if (am.isAnnotationPresent(CrossOrigin.class) && !am.isAnnotationPresent(OPTIONS.class)) {
-                methodsWithCrossOriginIncorrectlyUsed.add(method);
-            } else {
-                crossOriginConfigFromAnnotationOnAssociatedMethod(method)
-                        .ifPresent(crossOriginConfig -> corsConfigs.put(method,
-                                                                        crossOriginConfig));
+            String path = pathOfMethod(method);
+
+            var corsConfig = corsConfig(am, path);
+
+            if (corsConfig.isPresent()) {
+                if (am.isAnnotationPresent(OPTIONS.class)) {
+                    endpointList.add(corsConfig.get());
+                } else {
+                    methodsWithCrossOriginIncorrectlyUsed.add(method);
+                }
             }
         });
+
+        if (endpointList.isEmpty()) {
+            return;
+        }
+
+        // most specific paths must be registered first
+        endpointList.sort(CorsCdiExtension::endpointPathComparator);
+
+        corsConfigs.addAll(endpointList);
     }
 
-    void recordSupplierOfCrossOriginConfigFromAnnotation(Supplier<Optional<CrossOriginConfig>> supplier) {
-        supplierOfCrossOriginConfigFromAnnotation = supplier;
+    void prepareRuntime(@Observes @RuntimeStart Config config) {
+        this.config = config;
     }
 
-    void ready(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
+    void ready(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+               ServerCdiExtension server) {
 
         if (!methodsWithCrossOriginIncorrectlyUsed.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format(
-                            "%s annotation is valid only on @OPTIONS methods; found incorrectly on the following methods:%n%s",
-                            CrossOrigin.class.getSimpleName(),
+                            "CORS annotations are valid only on @OPTIONS methods; found incorrectly on the following "
+                                    + "methods:%n%s",
                             methodsWithCrossOriginIncorrectlyUsed));
         }
 
-        Config corsConfig = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CORS_CONFIG_KEY);
-
-        CorsSupportMp.Builder corsBuilder = CorsSupportMp.builder();
-        corsConfig.ifExists(corsBuilder::mappedConfig);
-        corsSupportMp = corsBuilder
-                .secondaryLookupSupplier(this::deferringSecondaryLookupSupplier)
+        CorsFeature corsFeature = CorsFeature.builder()
+                .config(config.get(CORS_CONFIG_KEY))
+                .addPaths(List.copyOf(corsConfigs))
                 .build();
+
+        server.addFeature(corsFeature);
     }
 
-    Optional<CrossOriginConfig> crossOriginConfig(Method method) {
-        return Optional.ofNullable(corsConfigs.get(method));
-    }
-
-    CorsSupportMp corsSupportMp() {
-        return corsSupportMp;
-    }
-
-    private Optional<CrossOriginConfig> deferringSecondaryLookupSupplier() {
-        /*
-         * The CrossOriginFilter instance is not created yet when this extension is initialized, but only the
-         * filter knows the active resource method which this code uses to look up the correct CORS config.
-         * To work around that, we register a deferring supplier with the CorsMpSupport.Builder (in the @Initialized observer).
-         * When the filter is instantiated, it registers its own supplier with this extension. The deferring supplier
-         * invokes the filter's supplier, which the filter has registered by the time we need it.
-         */
-        return supplierOfCrossOriginConfigFromAnnotation.get();
-    }
-
-    private Optional<CrossOriginConfig> crossOriginConfigFromAnnotationOnAssociatedMethod(Method resourceMethod) {
-
-        /*
-         * Only @OPTIONS methods should bear the @CrossOrigin annotation, but the annotation on such methods applies to
-         * all methods sharing the same path.
-         */
-        Class<?> resourceClass = resourceMethod.getDeclaringClass();
-
-        CrossOrigin corsAnnot;
-        OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
-        Path pathAnnot = resourceMethod.getAnnotation(Path.class);
-        if (optsAnnot != null) {
-            corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
-        } else {
-            // Find the @OPTIONS method with the same path as the resource method, if any. That one might have a
-            // @CrossOrigin annotation which applies to the resource method.
-            Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
-                    .filter(m -> {
-                        OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
-                        Path pathAnnot2 = m.getAnnotation(Path.class);
-                        if (optsAnnot2 != null) {
-                            if (pathAnnot != null) {
-                                return pathAnnot2 != null && pathAnnot.value()
-                                        .equals(pathAnnot2.value());
-                            }
-                            return pathAnnot2 == null;
-                        }
-                        return false;
-                    })
-                    .findFirst();
-            corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
-                    .orElse(null);
-        }
-        return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
-    }
-
-    private static CrossOriginConfig annotationToConfig(CrossOrigin crossOrigin) {
-        return CrossOriginConfig.builder()
-                .allowOrigins(crossOrigin.value())
-                .allowHeaders(crossOrigin.allowHeaders())
-                .exposeHeaders(crossOrigin.exposeHeaders())
-                .allowMethods(crossOrigin.allowMethods())
+    @SuppressWarnings("removal")
+    private static CorsPathConfig annotationToConfig(CrossOrigin crossOrigin, String path) {
+        return CorsPathConfig.builder()
+                .pathPattern(path)
+                .allowOrigins(Set.of(crossOrigin.value()))
+                .allowHeaders(Set.of(crossOrigin.allowHeaders()))
+                .exposeHeaders(Set.of(crossOrigin.exposeHeaders()))
+                .allowMethods(Set.of(crossOrigin.allowMethods()))
                 .allowCredentials(crossOrigin.allowCredentials())
-                .maxAgeSeconds(crossOrigin.maxAge())
+                .maxAge(Duration.ofSeconds(crossOrigin.maxAge()))
                 .build();
+    }
+
+    private String pathOfMethod(Method javaMember) {
+        var containingClass = javaMember.getDeclaringClass();
+        String prefix = "/";
+        if (containingClass.isAnnotationPresent(Path.class)) {
+            prefix = containingClass.getAnnotation(Path.class).value();
+            if (!prefix.endsWith("/")) {
+                prefix = prefix + "/";
+            }
+        }
+
+        if (javaMember.isAnnotationPresent(Path.class)) {
+            String methodPath = javaMember.getAnnotation(Path.class).value();
+            if (methodPath.equals("/") || methodPath.isEmpty()) {
+                return prefix + "*";
+            }
+            String path = prefix + (methodPath.startsWith("/") ? methodPath.substring(1) : methodPath);
+            return path + (path.endsWith("/") ? "*" : "/*");
+        } else {
+            return prefix + "*";
+        }
+    }
+
+    @SuppressWarnings("removal")
+    private Optional<CorsPathConfig> corsConfig(AnnotatedMethod<?> am, String path) {
+        if (am.isAnnotationPresent(CrossOrigin.class)) {
+            return Optional.of(annotationToConfig(am.getAnnotation(CrossOrigin.class), path));
+        }
+        boolean found = false;
+        var builder = CorsPathConfig.builder()
+                .pathPattern(path);
+
+        if (am.isAnnotationPresent(Cors.Defaults.class)) {
+            // use all defaults
+            return Optional.of(builder.build());
+        }
+
+        if (am.isAnnotationPresent(Cors.AllowOrigins.class)) {
+            found = true;
+            builder.allowOrigins(Set.of(am.getAnnotation(Cors.AllowOrigins.class).value()));
+        }
+        if (am.isAnnotationPresent(Cors.AllowHeaders.class)) {
+            found = true;
+            builder.allowHeaders(Set.of(am.getAnnotation(Cors.AllowHeaders.class).value()));
+        }
+        if (am.isAnnotationPresent(Cors.AllowMethods.class)) {
+            found = true;
+            builder.allowMethods(Set.of(am.getAnnotation(Cors.AllowMethods.class).value()));
+        }
+        if (am.isAnnotationPresent(Cors.ExposeHeaders.class)) {
+            found = true;
+            builder.exposeHeaders(Set.of(am.getAnnotation(Cors.ExposeHeaders.class).value()));
+        }
+        if (am.isAnnotationPresent(Cors.MaxAgeSeconds.class)) {
+            found = true;
+            builder.maxAge(Duration.ofSeconds(am.getAnnotation(Cors.MaxAgeSeconds.class).value()));
+        }
+        if (am.isAnnotationPresent(Cors.AllowCredentials.class)) {
+            found = true;
+            builder.allowCredentials(am.getAnnotation(Cors.AllowCredentials.class).value());
+        }
+
+        if (found) {
+            return Optional.of(builder.build());
+        } else {
+            return Optional.empty();
+        }
     }
 
 }

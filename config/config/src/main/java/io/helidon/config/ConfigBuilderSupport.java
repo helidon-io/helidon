@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package io.helidon.config;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
@@ -234,6 +238,61 @@ public final class ConfigBuilderSupport {
             m.appendTail(sb);
             m = PATTERN_BACKSLASH.matcher(sb.toString());
             return m.replaceAll("");
+        } catch (ConfigException e) {
+            throw new ConfigException("Failed to resolve expression: " + expression, e);
+        }
+    }
+
+    /**
+     * Resolve expressions from a set of values.
+     * This is mostly used from annotations (generated code), where the {@code expressions} is either a single string,
+     * that resolved to a configured value (with comma separated defaults), or multiple strings, each representing a value.
+     *
+     * @param config configuration to obtain values for expression
+     * @param expressions expressions to use to get actual values
+     * @return a set of values to be used by an application
+     */
+    public static Set<String> resolveSetExpressions(Config config, Collection<String> expressions) {
+        if (expressions.size() == 1) {
+            String expression = expressions.iterator().next();
+            if (expression.contains("${") && expression.contains("}")) {
+                // the config value may be an array itself (should be)
+                return resolveExpressions(config, expression);
+            }
+            return Set.of(expression);
+        }
+        return expressions.stream()
+                .map(it -> ConfigBuilderSupport.resolveExpression(config, it))
+                .collect(Collectors.toSet());
+    }
+
+    private static Set<String> resolveExpressions(Config config, String expression) {
+        // single expression, may be something as "${my.values:first,second}" - i.e. an array in config, an array default values
+
+        if (!expression.startsWith("${") || !expression.endsWith("}")) {
+            throw new IllegalArgumentException("Invalid expression for a set of values: \"" + expression + "\", "
+                                                       + "expression must be the whole string, i.e."
+                                                       + " \"${key:comma-separated-defaults}\".");
+        }
+
+        Matcher m = PATTERN_REFERENCE.matcher(expression);
+
+        try {
+            if (m.matches()) {
+                String configKey = m.group(1);
+                String defaultValue = m.group(2);
+
+                ConfigValue<List<String>> configValues = config.get(configKey).asList(String.class);
+                if (defaultValue == null || configValues.isPresent())  {
+                    return Set.copyOf(configValues.orElseGet(List::of));
+                } else {
+                    return Stream.of(defaultValue.split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toSet());
+                }
+            }
+
+            return Set.of(expression);
         } catch (ConfigException e) {
             throw new ConfigException("Failed to resolve expression: " + expression, e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,21 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static io.helidon.cors.CrossOriginConfig.DEFAULT_AGE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * CrossOrigin annotation.
+ *
+ * @deprecated use annotations from {@link io.helidon.webserver.cors.Cors} to configure CORS; each method in this annotation
+ * is equivalent to an annotation class in the referenced class. I.e. {@link #value()} is replaced with
+ * {@link io.helidon.webserver.cors.Cors.AllowOrigins}; this class will be removed from a future version of Helidon.
  */
+@SuppressWarnings("removal")
 @Target(METHOD)
 @Retention(RUNTIME)
 @Documented
+@Deprecated(forRemoval = true, since = "4.4.0")
 public @interface CrossOrigin {
 
     /**
@@ -79,5 +84,5 @@ public @interface CrossOrigin {
      *
      * @return Max age.
      */
-    long maxAge() default DEFAULT_AGE;
+    long maxAge() default io.helidon.cors.CrossOriginConfig.DEFAULT_AGE;
 }

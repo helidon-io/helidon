@@ -50,6 +50,7 @@
         <module>metrics</module>
         <module>tracing</module>
         <module>websocket</module>
+        <module>cors</module>
     </modules>
 
 </project>

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,9 +39,6 @@ security:
       identity-uri: "https://your-tenant.identity-server.com"
       frontend-uri: "http://my-service:8080"
       audience: "http://my-service"
-      cors:
-        allow-origins: ["https://foo.com", "https://there.com"]
-        allow-methods: ["PUT", "DELETE"]
       outbound:
         - name: "internal-services"
           hosts: ["*.example.org"]
@@ -155,6 +152,7 @@ configuration.
 
 [[cors]]
 == CORS Settings
-As an experimental feature, you can set up cross-origin handling for the redirect and logout endpoints in an optional `cors` block inside the `oidc` configuration.
 
-include::{rootdir}/includes/cors.adoc[tag=basic-cross-origin-config-no-heading-or-intro]
+CORS is (now) a single component configured either through config (key `cors`), or programmatically via
+`io.helidon.webserver.cors.CorsFeature`. To add proper CORS setup for the OIDC endpoint, use one of these.
+Component specific CORS setup will be removed from Helidon.
