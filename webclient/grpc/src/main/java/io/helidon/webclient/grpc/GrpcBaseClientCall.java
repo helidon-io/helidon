@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.tls.Tls;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -288,12 +287,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected ClientConnection clientConnection(ClientUri clientUri) {
-
-
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
 
-        if (clientConfig.baseAddress().isPresent() && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
+        if (clientConfig.baseAddress().isPresent()
+            && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
             return UnixDomainSocketClientConnection.create(
                 webClient,
                 clientConfig.tls(),
