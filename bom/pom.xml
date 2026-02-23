@@ -1445,6 +1445,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-json</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.http.media</groupId>
                 <artifactId>helidon-http-media-json-binding</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

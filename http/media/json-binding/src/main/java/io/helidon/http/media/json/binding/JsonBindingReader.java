@@ -30,10 +30,10 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.EntityReader;
 import io.helidon.json.binding.JsonBinding;
 
-class HelidonJsonBindingReader<T> implements EntityReader<T> {
+class JsonBindingReader<T> implements EntityReader<T> {
     private final JsonBinding jsonBinding;
 
-    HelidonJsonBindingReader(JsonBinding jsonBinding) {
+    JsonBindingReader(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
     }
 

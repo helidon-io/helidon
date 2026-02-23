@@ -256,9 +256,7 @@ public interface JsonGenerator extends AutoCloseable {
     /**
      * This method does not close the stream it is writing to.
      * It only performs final writing operations.
-     *
-     * @throws Exception exception when closing the generator
      */
     @Override
-    void close() throws Exception;
+    void close();
 }

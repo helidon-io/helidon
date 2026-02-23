@@ -22,23 +22,23 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 import io.helidon.json.binding.JsonBinding;
 
 /**
- * Configuration blueprint for Helidon JSON Binding media support.
+ * Configuration for Helidon JSON Binding media support.
  * <p>
  * This interface defines the configuration options for the Helidon JSON binding media support,
  * which provides JSON serialization and deserialization capabilities for HTTP requests
  * and responses.
  */
-@Prototype.Configured(value = HelidonJsonBindingSupport.HELIDON_JSON_BINDING_TYPE, root = false)
+@Prototype.Configured(value = JsonBindingSupport.HELIDON_JSON_BINDING_TYPE, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
-@Prototype.Blueprint(decorator = HelidonJsonBindingSupport.Decorator.class)
-interface HelidonJsonBindingSupportConfigBlueprint extends Prototype.Factory<HelidonJsonBindingSupport> {
+@Prototype.Blueprint(decorator = JsonBindingConfigSupport.Decorator.class)
+interface JsonBindingSupportConfigBlueprint extends Prototype.Factory<JsonBindingSupport> {
 
     /**
      * Name of the support. Default value is {@code json-binding}.
      *
      * @return name of the support
      */
-    @Option.Default(HelidonJsonBindingSupport.HELIDON_JSON_BINDING_TYPE)
+    @Option.Default(JsonBindingSupport.HELIDON_JSON_BINDING_TYPE)
     @Option.Configured
     String name();
 

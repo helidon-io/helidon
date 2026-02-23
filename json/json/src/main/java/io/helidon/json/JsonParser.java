@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.io.InputStream;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -131,6 +132,22 @@ public interface JsonParser {
      */
     static JsonParser create(JsonValue value) {
         return new JsonValueParser(value);
+    }
+
+    /**
+     * Create a new JSON parser from a reader.
+     * <p>
+     * This method creates a streaming parser that reads JSON content from the
+     * reader incrementally. Suitable for parsing large JSON content or
+     * streaming sources.
+     * </p>
+     *
+     * @param reader the reader containing JSON data
+     * @return a new JsonParser instance
+     */
+    static JsonParser create(Reader reader) {
+        Objects.requireNonNull(reader);
+        return create(new ReaderInputStream(reader));
     }
 
     /**
