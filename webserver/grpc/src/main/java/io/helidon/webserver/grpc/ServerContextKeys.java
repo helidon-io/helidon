@@ -20,6 +20,8 @@ import io.grpc.Context;
 
 /**
  * A collection of gRPC {@link Context.Key} instances available for use in Helidon WebServer gRPC request handlers.
+ * Other keys which are not specific to server handlers can be found in the {@link io.helidon.grpc.core.ContextKeys}
+ * class.
  */
 public final class ServerContextKeys {
     /**
