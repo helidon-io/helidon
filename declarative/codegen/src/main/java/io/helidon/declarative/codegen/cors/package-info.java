@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.cors;
 
-import jakarta.ws.rs.ConstrainedTo;
-import jakarta.ws.rs.RuntimeType;
-import jakarta.ws.rs.core.FeatureContext;
-import org.glassfish.jersey.internal.spi.AutoDiscoverable;
-
-@ConstrainedTo(RuntimeType.SERVER)
-public class TestFilterAutoDiscoverable implements AutoDiscoverable {
-
-    @Override
-    public void configure(FeatureContext context) {
-        context.register(AdapterTest.TestFilter.class);
-    }
-}
+/**
+ * CORS related code generation.
+ */
+package io.helidon.declarative.codegen.cors;

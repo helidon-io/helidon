@@ -88,6 +88,7 @@ The following features are currently implemented:
 - <<Dec-Tracing, Tracing>>
 - <<Dec-WebSocket-Server, WebSocket Server>>
 - <<Dec-WebSocket-Client, WebSocket Client>>
+- <<Dec-CORS, WebServer CORS>>
 
 A Helidon Declarative application should be started using the generated application binding, to ensure no lookup and no reflection.
 The call to `ServiceRegistryManager.start` ensures that all services with a defined `RunLevel` are started, including Helidon WebServer, Scheduled services etc.
@@ -559,3 +560,31 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_16, indent=0]
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_17, indent=0]
 ----
+
+=== WebServer CORS [[Dec-CORS]]
+
+CORS can be configured through Helidon Config, the root key is `cors`.
+
+To add an explicit CORS (Cross-origin resource sharing) configuration to an endpoint method, you may annotate it
+with one of the annotations in the `Cors` class, such as `@Cors.Defaults`.
+
+Annotations on endpoint method (must be an `OPTIONS` method):
+
+- link:{ws-cors-javadoc}/Cors.Defaults.html[`io.helidon.webserver.cors.Cors.Defaults`] - support all methods, all origins, do not combine with other annotations from `Cors` class
+- link:{ws-cors-javadoc}/Cors.AllowOrigins.html[`io.helidon.webserver.cors.Cors.AllowOrigins`] - configure allowed origins, either as a exact string, or regular expression (if the value contains `\`, `*` or `{`, it is considered a regular expression)
+- link:{ws-cors-javadoc}/Cors.AllowMethods.html[`io.helidon.webserver.cors.Cors.AllowMethods`] - set of allowed methods that the different origin script can use
+- link:{ws-cors-javadoc}/Cors.AllowHeaders.html[`io.helidon.webserver.cors.Cors.AllowHeaders`] - set of allowed headers sent from the different origin script
+- link:{ws-cors-javadoc}/Cors.ExposeHeaders.html[`io.helidon.webserver.cors.Cors.ExposeHeaders`] - set of headers from response exposed to the different origin script
+- link:{ws-cors-javadoc}/Cors.AllowCredentials.html[`io.helidon.webserver.cors.Cors.AllowCredentials`] - whether to add credentials (such as Cookie) to requests from the different origin script
+- link:{ws-cors-javadoc}/Cors.MaxAgeSeconds.html[`io.helidon.webserver.cors.Cors.MaxAgeSeconds`] - maximal number of seconds the pre-flight is considered valid
+
+
+[source,java]
+.Example of a CORS protected endpoint
+----
+include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_18, indent=0]
+----
+<1> Configure origins that can be overridden using config key `app.cors.allow-origins` with the provided default values (comma separated)
+<2> Configure headers the script can send to this host
+<3> Configure allowed methods for CORS requests
+<4> Configure max age to be 3 minutes

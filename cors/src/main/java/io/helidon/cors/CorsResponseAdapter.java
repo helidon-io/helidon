@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,12 @@ import io.helidon.http.HeaderName;
  * </p>
  *
  * @param <T> the type of the response wrapped by the adapter
+ * @deprecated this module will be removed, CORS configuration is centralized to module {@code helidon-webserver-cors} with
+ *         {@code io.helidon.webserver.cors.CorsFeature} either from {@link io.helidon.service.registry.ServiceRegistry}, or
+ *         through one of the feature's static factory or builder methods; paths configured in config are registered first,
+ *         before paths configured through service registry; this class will be removed in a future version of Helidon
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public interface CorsResponseAdapter<T> {
 
     /**
@@ -73,4 +78,10 @@ public interface CorsResponseAdapter<T> {
      * @return HTTP status code.
      */
     int status();
+
+    /**
+     * Clear CORS headers from the response.
+     */
+    default void clearCorsHeaders() {
+    }
 }

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,16 +38,10 @@ ifndef::se-flavor[:built-in-service-prefix: ]
 
 The link:https://www.w3.org/TR/cors[cross-origin resource sharing (CORS) protocol] helps developers control if and how REST resources served by their applications can be shared across origins.
 Helidon {flavor-uc} includes an implementation of CORS that you can use to add CORS behavior
-to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone or
-together with configuration.
+to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone or together with configuration.
 
-Helidon also provides three built-in services that add their
-own endpoints to your application--health, metrics, and OpenAPI--that have integrated CORS support.
-By adding very little code to your application, you control how all the resources in
-your application--the ones you write and the ones provided by the Helidon built-in services--can be shared across origins.
-
-=== Before You Begin
-ifdef::se-flavor[==== Planning Your Resource Sharing]
+== Before You Begin
+ifdef::se-flavor[=== Planning Your Resource Sharing]
 Before you revise your application to add CORS support, you need to decide what type of cross-origin sharing you want
 to allow for each resource your application exposes.
 For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
@@ -74,188 +68,59 @@ the following dependency in your project:
 
 //tag::cors-configuration-formats-intro[]
 === Understanding the CORS Configuration Formats [[cors-configuration-formats]]
-Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
-Each format corresponds to a class
-in the Helidon CORS library.
-The basic format corresponds to the link:{cors-javadoc}/CrossOriginConfig.html[`CrossOriginConfig`]
-class, and the mapped format corresponds to the
-link:{cors-javadoc}/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] class.
+
+CORS configuration is done through link:{ws-cors-javadoc}/CorsFeature.html[`CorsFeature`], a `WebServer` feature that configures CORS for the whole application.
+This configuration contains a list of protected `paths`, which use the Cross-Origin options and are mapped to the link:{ws-cors-javadoc}/CorsPathConfig.html[`CorsPathConfig`].
 //end::cors-configuration-formats-intro[]
 
-//tag::basic-cross-origin-config[]
-[[basic-cross-origin-config]]
-=== Basic Cross-Origin Configuration
-In configuration, Helidon represents basic CORS information as a section{cors-config-key-explanation} that contains
-one or more key/value pairs. Each key-value pair assigns one characteristic of CORS behavior.
+//tag::cors-feature-config[]
+[[cross-origin-feature-config]]
+=== Cross-Origin Server Feature Configuration
 
-//tag::basic-cross-origin-config-no-heading-or-intro[]
+include::{rootdir}/config/io_helidon_webserver_cors_CorsFeature.adoc[leveloffset=+1,tag=config]
+//end::cors-feature-config[]
 
-[subs=attributes+]
-{basic-table-intro}
+The following example only adds defaults (allow all origins and all methods):
 
-[[config-key-table]]
-include::cors.adoc[tag=cors-config-table]
-
-The following example of basic cross-origin
-ifdef::se-flavor[configuration, when explicitly loaded and used by your application code,]
-ifndef::se-flavor[configuration]
-limits cross-origin resource sharing for `PUT` and
-`DELETE` operations to only `foo.com` and `there.com`:
-
-ifdef::se-flavor[]
 [source,yaml]
 ----
-restrictive-cors:
-  allow-origins: ["https://foo.com", "https://there.com"]
-  allow-methods: ["PUT", "DELETE"]
+cors:
+  enabled: true <1>
 ----
-endif::[]
-ifndef::se-flavor[]
+<1> To only use defaults, enabled must be set to `true`, as otherwise the feature is enabled only if at least one path is configured under `paths`
+
+The following example limits cross-origin resource sharing for `PUT` and
+`DELETE` operations to only `foo.com` and `there.com`, and allows all other methods and origins
+
 [source,yaml]
 ----
-allow-origins: ["https://foo.com", "https://there.com"]
-allow-methods: ["PUT", "DELETE"]
+cors:
+  paths:
+    path-pattern: "/*" <1>
+    allow-origins: ["https://foo.com", "https://there.com"]
+    allow-methods: ["PUT", "DELETE"]
 ----
-endif::[]
-//end::basic-cross-origin-config-no-heading-or-intro[]
-//end::basic-cross-origin-config[]
+<1> A path pattern that matches all paths on the server
 
+=== Cross-Origin Path Configuration
 
-// The following table is parameterized.
-//
-// To exclude the first column of the table -- the method or annotation parameter list -- and
-// the text that describes it, define the cors-config-table-exclude-methods attribute in the including file.
-// The value does not matter.
-//
-// To exclude the second column -- the config keys -- and the text that describes it, define
-// cors-config-table-exclude-keys in the including file. The value does not matter.
-//
-// To customize the column heading for the first column, set config-table-methods-column-header to
-// the header you want used.
-//
-// You can also customize the following names for methods (on the builder) or annotation attribute names (because the builder and annotation names differ in these cases):
-//  allow-origins-method-name
-//  max-age-method-name
-//  enabled-method-name
-//
-// tag::cors-config-table[]
-:allow-origins-method-name: allowOrigins
-:max-age-method-name: maxAgeSeconds
-:enabled-method-name: enabled
+All configuration options that can be used for each `path` when configuring CORS.
 
-ifndef::cors-config-table-exclude-methods+cors-config-table-exclude-keys[]
-[width="100%",options="header",cols="6*"]
-endif::[]
-ifdef::cors-config-table-exclude-methods[]
-[width="100%",options="header",cols="5*"]
-endif::[]
-ifdef::cors-config-table-exclude-keys[]
-[width="100%",options="header",cols="5*"]
-endif::[]
+include::{rootdir}/config/io_helidon_webserver_cors_CorsPathConfig.adoc[leveloffset=+1,tag=config]
 
-|====================
-ifndef::cors-config-table-exclude-methods[| {config-table-methods-column-header} ]
-ifndef::cors-config-table-exclude-keys[| config key]
-| type | default | description | CORS header name
+// tag::accessing-shared-resources-intro[]
+=== Accessing the Shared Resources
+If you have edited the Helidon {flavor-uc} QuickStart application as described in the previous topics and saved your changes,
+you can build and run the application. Once you do so you can execute `curl` commands to demonstrate the behavior changes
+in the metric and health services with the addition of the CORS functionality. Note the addition of the
+`Origin` header value in the `curl` commands, and the `Access-Control-Allow-Origin` in the successful responses.
 
-ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
-ifndef::cors-config-table-exclude-keys[|`allow-credentials`]
-|boolean |`false`|Sets the allow credentials flag. |`Access-Control-Allow-Credentials`
-
-ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
-ifndef::cors-config-table-exclude-keys[|`allow-headers`]
-|string[]|`*`|Sets the allowed headers.|`Access-Control-Allow-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`allowMethods`]
-ifndef::cors-config-table-exclude-keys[|`allow-methods`]
-|string[]|`*`|Sets the allowed methods. |`Access-Control-Allow-Methods`
-
-ifndef::cors-config-table-exclude-methods[|`{allow-origins-method-name}`]
-ifndef::cors-config-table-exclude-keys[|`allow-origins`]
-|string[]|`*`| Sets the allowed origins.|`Access-Control-Allow-Origins`
-
-ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
-ifndef::cors-config-table-exclude-keys[|`expose-headers`]
-|string[] | {nbsp} |Sets the expose headers. |`Access-Control-Expose-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`{max-age-method-name}`]
-ifndef::cors-config-table-exclude-keys[|`max-age-seconds`]
-|long |`3600`|Sets the maximum age. |`Access-Control-Max-Age`
-
-ifndef::cors-config-table-exclude-methods[|`{enabled-method-name}`]
-ifndef::cors-config-table-exclude-keys[|`enabled`]
-|boolean|`true`|Sets whether this config should be enabled or not.|n/a|
-|====================
-
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
-// end::cors-config-table[]
-
-// tag::mapped-config[]
-// tag::mapped-config-prefix[]
-[[mapped-config-descr]]
-Helidon represents mapped CORS information as a config section that contains:
-
-* An optional `enabled` setting which defaults to `true` and applies to the whole mapped CORS config section, and
-
-* An optional `paths` subsection containing zero or more entries, each of which contains:
-
-** a basic CORS config section, and
-
-** a `path-pattern` path pattern that maps that basic CORS config section to the resource(s) it affects.
-
-You can use mapped configuration to your advantage if you want to specify all CORS behavior using configuration (with no explicit coding changes) or to allow your users to override the CORS behavior that your code explicitly sets up.
-
-The following example illustrates the mapped cross-origin configuration format.
-
-[source,yaml,subs="attributes+"]
-----
-{mapped-config-top-key}: # <1>
-  paths: <2>
-    - path-pattern: /greeting // <3>
-      allow-origins: ["https://foo.com", "https://there.com", "https://other.com"] # <4>
-      allow-methods: ["PUT", "DELETE"]
-    - path-pattern: / # <5>
-      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] # <6>
-----
-// We want to use the following to insert the SE or MP callout 1 text; we need to use the blank, plus,
-// and subs because the MP attribute value contains backticks, and this is the only way we've found
-// for the substitution in the callout to work the way we want. And this works when
-// rendered in our editing tools and via the asciidoctor command to HTML but not on our built site.
-//
-// <1> {blank}
-// +
-// [subs=attributes+]
-// {mapped-config-id-callout}
-//
-// So instead we have the prefix and suffix tags and the including document provides its own callout 1.
-// If at some point the rendering for our site handles this, we can just remove the tag and end
-// for the prefix and suffix and just have the including file include the mapped-config instead of
-// include the prefix, then provide its own callout 1, then include the suffix.
-//
-// end::mapped-config-prefix[]
-
-// tag::mapped-config-suffix[]
-<2> Collects the sequence of entries, each of which maps a basic CORS config to a path pattern.
-<3> Marks the beginning of an entry (the `-` character) and maps the associated basic CORS config
-to the `/greeting` subresource (the `path-pattern` key and value).
-<4> Begins the basic CORS config section for `/greeting`; it
-restricts sharing via `PUT` and `DELETE` to the listed origins.
-<5> Marks the beginning of the next entry (the `-` character) and maps the associated basic CORS config to
-the top-level resource in the app (the `path-pattern` key and value).
-<6> Begins the basic CORS config section for `/`; it permits sharing of resources at the top-level path with all origins
-for the indicated HTTP methods.
-
-Path patterns can be any expression accepted by the link:{http-javadoc-base-url}/io/helidon/http/PathMatcher.html[`PathMatcher`] class.
-
-NOTE: Be sure to arrange the entries in the order that you want Helidon to check them.
-Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
-matches an incoming request's path pattern and HTTP method.
-
-// end::mapped-config-suffix[]
-// end::mapped-config[]
+==== Build and Run the Application
+Build and run the QuickStart application as usual.
+// end::accessing-shared-resources-intro[]
 
 // tag::cors-and-requested-uri-intro[]
-=== CORS and the Requested URI Feature
+== CORS and the Requested URI Feature
 The decisions the Helidon CORS feature makes depend on accurate information about each incoming request,
 particularly the host to which the request is sent.
 Conveyed as headers in the request, this information can be changed or overwritten by intermediate nodes--such as load
@@ -269,102 +134,33 @@ The CORS support in Helidon uses the requested URI feature to discover the corre
 according to your configuration, so it can make accurate decisions about whether to permit cross-origin accesses.
 // end::cors-and-requested-uri-wrapup[]
 
-// tag::understanding-cors-support-in-services[]
-=== Using CORS Support in Built-in Helidon Services
-
-
-Several built-in Helidon services--xref:{health-page}[health], xref:{metrics-page}[metrics], and
-xref:{openapi-page}[OpenAPI]--have integrated CORS support.
-You can include these services in your application and control how those resources can be  shared across origins.
-
-For example, several websites related to OpenAPI run a web application in your browser.
-You provide the URL for your application to the browser application.
-The browser application uses the URL to retrieve the OpenAPI document
-that describes the application's endpoints directly from your application.
-The browser application then displays a user interface that you use to "drive" your application. That is,
-you provide input, have the web application
-send requests to your application endpoints, and then view the responses.
-This scenario is exactly the situation CORS addresses: an application in the browser from one origin -- the user
- interface downloaded from the website -- requests a resource from another origin -- the `/openapi` endpoint which
- Helidon's OpenAPI built-in service automatically adds to your application.
-
-Integrating CORS support into these built-in services allows such third-party web sites and their browser applications -- or
-more generally, apps from any other origin -- to work with your Helidon application.
-
-Because all three of these built-in Helidon services serve primarily `GET` endpoints, by default the
-integrated CORS support in all three services permits
-any origin to share their resources using `GET`, `HEAD`, and `OPTIONS` HTTP requests. You can customize the CORS set-up
-for these built-in services independently from each other using
-ifdef::se-flavor[ either the Helidon API, configuration, or both.]
-ifndef::se-flavor[ configuration.]
-You can use this override feature to control the CORS behavior of the built-in services even if you do not add CORS behavior
-to your own endpoints.
-
-// end::understanding-cors-support-in-services[]
-
-// tag::builtin-getting-started[]
-==== Built-in Services with CORS
-
-
-To use built-in services with CORS support and customize the
-CORS behavior:
-
-. Add the built-in service or services to your application.
-. {blank}
-+
---
-Add a dependency on the `io.helidon.webserver:helidon-webserver-cors` CORS artifact to your Maven `pom.xml` file.
-
-NOTE: If you want the built-in services to support CORS, then you need to add the CORS dependency even if your own endpoints do not use CORS.
-
---
-. Use
-configuration to set up the CORS behavior by path as needed.
-
-The documentation for the individual built-in services describes how to add each
-service to your application, including
-adding a Maven dependency for the built-in feature.
-
-// end::builtin-getting-started[]
-
 // tag::configuring-cors-for-builtin-services[]
-==== Configuring CORS for Built-in Services
+== Configuring CORS for Built-in Services
 Use configuration to control whether and how each of the built-in services works with CORS.
 
 In the `cors` configuration section add a block for each built-in service using its path as described in the
-ifdef::se-flavor[xref:mapped-config-descr[mapped ]]
 CORS configuration section.
 // Tag the following example so we can exclude it from MP which supplies its own complete example.
 // tag::se-config-example[]
 The following example restricts sharing of the
 `{built-in-service-prefix}/health` resource, provided by the health built-in service, to only the origin `\https://there.com`.
-[source,hocon,subs="attributes+"]
+[source,yaml,subs="attributes+"]
 ----
 cors:
   paths:
-    - path-pattern: "{built-in-service-prefix}/health"
-      allow-origins: [https://there.com]
-    - path-pattern: "{built-in-service-prefix}/metrics"
-      allow-origins: [https://foo.com]
+    - "path-pattern": "{built-in-service-prefix}/health"
+      "allow-origins": ["https://there.com"]
+    - "path-pattern": "{built-in-service-prefix}/metrics"
+      "allow-origins": ["https://foo.com"]
 ----
 
 // end::se-config-example[]
 
 // end::configuring-cors-for-builtin-services[]
 
-// tag::accessing-shared-resources-intro[]
-==== Accessing the Shared Resources
-If you have edited the Helidon {flavor-uc} QuickStart application as described in the previous topics and saved your changes,
-you can build and run the application. Once you do so you can execute `curl` commands to demonstrate the behavior changes
-in the metric and health services with the addition of the CORS functionality. Note the addition of the
-`Origin` header value in the `curl` commands, and the `Access-Control-Allow-Origin` in the successful responses.
-
-===== Build and Run the Application
-Build and run the QuickStart application as usual.
-// end::accessing-shared-resources-intro[]
 
 // tag::accessing-shared-resources-main[]
-===== Retrieve Metrics
+=== Retrieve Metrics
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 [source,bash,subs="attributes+"]
 ----
@@ -402,7 +198,7 @@ content-length: 6065
 base_classloader_loadedClasses_count 3568
 ----
 
-===== Retrieve Health
+==== Retrieve Health
 The health service rejects requests from origins not specifically approved.
 
 [source,bash,subs="attributes+"]

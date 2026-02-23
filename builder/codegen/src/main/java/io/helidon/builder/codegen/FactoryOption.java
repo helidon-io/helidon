@@ -260,7 +260,7 @@ final class FactoryOption {
         boolean recordStyle = prototypeInfo.recordStyle();
 
         OptionInfo.Builder option = OptionInfo.builder();
-        TypeName type = propertyTypeName(candidate);
+        TypeName type = propertyTypeName(prototypeInfo, candidate);
         String maybeReservedName = propertyName(candidate.elementName(),
                                                 type.boxed().equals(TypeNames.BOXED_BOOLEAN),
                                                 recordStyle);
@@ -284,7 +284,7 @@ final class FactoryOption {
                 .filter(a -> a.hasMetaAnnotation(Types.SERVICE_QUALIFIER))
                 .toList();
         Optional<TypeName> prototypedBy = candidate.findAnnotation(Types.OPTION_PROTOTYPED_BY)
-                        .flatMap(Annotation::typeValue);
+                .flatMap(Annotation::typeValue);
 
         option.interfaceMethod(candidate)
                 .name(name)
@@ -580,7 +580,7 @@ final class FactoryOption {
                                              TypedElementInfo element) {
         if (element.elementModifiers().contains(Modifier.DEFAULT)) {
             // default methods are OK only if allowed by the blueprint
-            if (element.typeName().equals(TypeNames.PRIMITIVE_BOOLEAN)) {
+            if (element.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
                 // void default methods can never be options
                 return false;
             }
@@ -741,7 +741,8 @@ final class FactoryOption {
     }
 
     @SuppressWarnings({"removal", "deprecation"})
-    private static void configFactoryMethod(RoundContext roundContext, PrototypeInfo prototypeInfo,
+    private static void configFactoryMethod(RoundContext roundContext,
+                                            PrototypeInfo prototypeInfo,
                                             OptionInfo.Builder option,
                                             TypeName optionType,
                                             String optionName,
@@ -975,11 +976,51 @@ final class FactoryOption {
                 .build();
     }
 
-    private static TypeName propertyTypeName(TypedElementInfo element) {
-        return element.findAnnotation(Types.OPTION_TYPE)
+    // if no package, assume same package as blueprint (generated as part of this annotation round)
+    static TypeName fixEmptyPackage(TypeName typeName, String packageName) {
+        if (typeName.packageName().isBlank()) {
+            // if not package, assume same package as blueprint (generated as part of this annotation round)
+            return TypeName.builder(typeName)
+                    .packageName(packageName)
+                    .build();
+        }
+        return typeName;
+    }
+
+    private static TypeName propertyTypeName(PrototypeInfo prototypeInfo, TypedElementInfo element) {
+        String blueprintPackage = prototypeInfo.blueprint().typeName().packageName();
+
+        TypeName typeName = element.findAnnotation(Types.OPTION_TYPE)
                 .flatMap(Annotation::value)
                 .map(TypeName::create)
                 .orElseGet(element::typeName);
+        typeName = fixEmptyPackage(typeName, blueprintPackage);
+
+        if (typeName.typeArguments().size() == 1) {
+            // we may have an Optional, List, Set of the same
+            if (typeName.typeArguments().getFirst().packageName().isBlank()) {
+                return TypeName.builder(typeName)
+                        .typeArguments(List.of(TypeName.builder(typeName.typeArguments().getFirst())
+                                                       .packageName(blueprintPackage)
+                                                       .build()))
+                        .build();
+            }
+            return typeName;
+        }
+        if (typeName.typeArguments().size() == 2) {
+            // and finally a map
+            // we may have an Optional, List, Set of the same
+            if (typeName.typeArguments().get(1).packageName().isBlank()) {
+                return TypeName.builder(typeName)
+                        .typeArguments(List.of(typeName.typeArguments().get(0),
+                                               TypeName.builder(typeName.typeArguments().get(1))
+                                                       .packageName(blueprintPackage)
+                                                       .build()))
+                        .build();
+            }
+            return typeName;
+        }
+        return typeName;
     }
 
     private static String setterName(String name, boolean recordStyle) {

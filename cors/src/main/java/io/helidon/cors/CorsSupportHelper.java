@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,12 @@ import static java.lang.Character.isDigit;
  * </p>
  * @param <Q> type of request wrapped by request adapter
  * @param <R> type of response wrapped by response adapter
+ * @deprecated this module will be removed, CORS configuration is centralized to module {@code helidon-webserver-cors} with
+ *         {@code io.helidon.webserver.cors.CorsFeature} either from {@link io.helidon.service.registry.ServiceRegistry}, or
+ *         through one of the feature's static factory or builder methods; paths configured in config are registered first,
+ *         before paths configured through service registry; this class will be removed in a future version of Helidon
  */
+@Deprecated(forRemoval = true, since = "4.4.0")
 public class CorsSupportHelper<Q, R> {
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
@@ -482,8 +487,13 @@ public class CorsSupportHelper<Q, R> {
             CorsRequestAdapter<Q> requestAdapter,
             CorsResponseAdapter<R> responseAdapter) {
 
+        // remove existing CORS headers, this may have been handled by the new CorsFeature approach, yet if
+        // we have an explicit route with CORS, we need to revisit the rules specific to this route
+        responseAdapter.clearCorsHeaders();
+
         Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(requestAdapter.path(), requestAdapter.method(),
                 secondaryCrossOriginLookup);
+
         if (crossOriginOpt.isEmpty()) {
             return Optional.of(forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
                     () -> "no matching CORS configuration for path " + requestAdapter.path()));
@@ -555,6 +565,10 @@ public class CorsSupportHelper<Q, R> {
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
     R processCorsPreFlightRequest(CorsRequestAdapter<Q> requestAdapter, CorsResponseAdapter<R> responseAdapter) {
+        // remove existing CORS headers, this may have been handled by the new CorsFeature approach, yet if
+        // we have an explicit route with CORS, we need to revisit the rules specific to this route
+        responseAdapter.clearCorsHeaders();
+
 
         Optional<String> originOpt = requestAdapter.firstHeader(HeaderNames.ORIGIN);
         if (originOpt.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
@@ -192,7 +193,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                                         TypeName metaAnnotation,
                                         Set<Annotation> annotations) {
 
-        return findMetaAnnotated(metaAnnotation, annotations)
+        return DeclarativeUtils.findMetaAnnotated(annotations, metaAnnotation)
                 .orElseThrow(() -> new CodegenException("Cannot find meta annotation " + metaAnnotation.fqName() + " on method",
                                                         method.originatingElementValue()));
     }
