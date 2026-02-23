@@ -273,6 +273,16 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected ',' or '}' as the next bytes\", lastByte);")
                 .addContentLine("}");
 
+        processAliasValues(classBuilder, method, polymorphismInfo, toConfigure, aliasHashes, createdDeserializers, collisionsDetected);
+    }
+
+    private static void processAliasValues(ClassBase.Builder<?, ?> classBuilder,
+                                           Method.Builder method,
+                                           PolymorphismInfo polymorphismInfo,
+                                           Map<String, TypeToConfigure> toConfigure,
+                                           Map<Integer, List<AliasInfo>> aliasHashes,
+                                           Set<String> createdDeserializers,
+                                           boolean collisionsDetected) {
         boolean switchUsed = polymorphismInfo.aliases().size() > 9;
         if (switchUsed) {
             method.addContentLine("switch (hash) { ");
@@ -849,7 +859,8 @@ class JsonConverterGenerator {
                         }
                         method.addContentLine("default:").padContent();
                         if (converterInfo.failOnUnknown()) {
-                            method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
+                            method.addContent("throw parser.createException("
+                                                      + "\"Unknown properties are not allowed for this type: \" + ")
                                     .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
                         } else {
                             method.addContentLine("parser.skip();");

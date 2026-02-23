@@ -143,7 +143,9 @@ record ConvertedTypeInfo(TypeName converterType,
                                      genericParamsWithIndexes);
     }
 
-    private static void discoverExtraProperties(LinkedHashMap<String, String> extraProperties, TypeInfo typeInfo, TypeName targetType) {
+    private static void discoverExtraProperties(LinkedHashMap<String, String> extraProperties,
+                                                TypeInfo typeInfo,
+                                                TypeName targetType) {
         Optional<Annotation> typeInfoAnnotation = typeInfo.findAnnotation(JsonTypes.JSON_TYPE_INFO);
         Optional<List<Annotation>> subtypes = typeInfoAnnotation.flatMap(Annotation::annotationValues);
 
