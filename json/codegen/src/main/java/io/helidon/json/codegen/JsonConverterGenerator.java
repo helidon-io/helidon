@@ -273,7 +273,13 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected ',' or '}' as the next bytes\", lastByte);")
                 .addContentLine("}");
 
-        processAliasValues(classBuilder, method, polymorphismInfo, toConfigure, aliasHashes, createdDeserializers, collisionsDetected);
+        processAliasValues(classBuilder,
+                           method,
+                           polymorphismInfo,
+                           toConfigure,
+                           aliasHashes,
+                           createdDeserializers,
+                           collisionsDetected);
     }
 
     private static void processAliasValues(ClassBase.Builder<?, ?> classBuilder,
@@ -363,20 +369,22 @@ class JsonConverterGenerator {
                                                       Set<String> createdDeserializers,
                                                       boolean resetToMark) {
         String fieldName = "deserializer" + ensureUpperStart(type);
-        createdDeserializers.add(fieldName);
-        TypeName converterType = TypeName.builder()
-                .from(JsonTypes.JSON_DESERIALIZER_TYPE)
-                .addTypeArgument(type)
-                .build();
-        classBuilder.addField(fieldBuilder -> fieldBuilder.name(fieldName)
-                .isVolatile(true)
-                .type(converterType));
-        toConfigure.putIfAbsent(fieldName,
-                                new TypeToConfigure(TypeConfigMode.DESERIALIZATION,
-                                                    fieldName,
-                                                    type,
-                                                    type,
-                                                    converterType));
+        if (!createdDeserializers.contains(fieldName)) {
+            createdDeserializers.add(fieldName);
+            TypeName converterType = TypeName.builder()
+                    .from(JsonTypes.JSON_DESERIALIZER_TYPE)
+                    .addTypeArgument(type)
+                    .build();
+            classBuilder.addField(fieldBuilder -> fieldBuilder.name(fieldName)
+                    .isVolatile(true)
+                    .type(converterType));
+            toConfigure.putIfAbsent(fieldName,
+                                    new TypeToConfigure(TypeConfigMode.DESERIALIZATION,
+                                                        fieldName,
+                                                        type,
+                                                        type,
+                                                        converterType));
+        }
         if (resetToMark) {
             method.addContentLine("parser.resetToMark();");
             method.addContentLine("return " + fieldName + ".deserialize(parser);");
