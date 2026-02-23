@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webclient.api;
 
-/**
- * The default {@link ConnectionListener} implementation, which does nothing.
- */
-final class DefaultConnectionListener implements ConnectionListener {
-    @Override
-    public void socketConnected(ConnectedSocketInfo socketInfo) {
-        // no-op
-    }
+import java.net.Socket;
 
-    @Override
-    public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
-        // no-op
-    }
+/**
+ * Context information about a newly connected {@link Socket}.
+ */
+public interface ConnectedSocketInfo {
+    /**
+     * The channel id.
+     * @return The channel id.
+     */
+    String channelId();
+
+    /**
+     * The newly connected socket.
+     * @return The socket.
+     */
+    Socket socket();
 }

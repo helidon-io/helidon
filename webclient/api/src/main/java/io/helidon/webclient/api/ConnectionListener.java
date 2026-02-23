@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webclient.api;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-import java.util.Objects;
 
 /**
  * This interface provides callback methods that are invoked when the client connection is first established,
@@ -32,7 +30,7 @@ public interface ConnectionListener {
      * Returns a {@link ConnectionListener} which does nothing.
      * @return The no-op listener.
      */
-    static ConnectionListener noop() {
+    static ConnectionListener createNoop() {
         return new DefaultConnectionListener();
     }
 
@@ -41,55 +39,21 @@ public interface ConnectionListener {
      * @param bytes The bytes to write.
      * @return The listener which will write the given bytes to the socket.
      */
-    static ConnectionListener writeBytes(byte[] bytes) {
+    static ConnectionListener createWriteOnConnect(byte[] bytes) {
         return new BytesWritingConnectionListener(bytes);
     }
 
     /**
      * Called when the given {@link Socket} connection has been established and {@link io.helidon.common.socket.SocketOptions}
      * applied, but before any TLS or HTTP application traffic has been sent.
-     * @param socket The newly connected socket.
+     * @param socketInfo The newly connected socket.
      */
-    void socketConnected(ConnectedSocket socket) throws IOException;
+    void socketConnected(ConnectedSocketInfo socketInfo) throws IOException;
 
     /**
      * Called when the given {@link SocketChannel} connection has been established and
      * {@link io.helidon.common.socket.SocketOptions} applied, but before any TLS or HTTP application traffic has been sent.
-     * @param socket The newly connected socket channel.
+     * @param socketInfo The newly connected socket channel.
      */
-    void socketConnected(ConnectedSocketChannel socket) throws IOException;
-
-    /**
-     * Context information about a newly connected {@link Socket}.
-     * @param socket The socket itself.
-     * @param channelId The channel id.
-     */
-    record ConnectedSocket(Socket socket, String channelId) {
-        /**
-         * Canonical constructor, enforces null checks.
-         * @param socket The socket itself.
-         * @param channelId The channel id.
-         */
-        public ConnectedSocket(final Socket socket, final String channelId) {
-            this.socket = Objects.requireNonNull(socket);
-            this.channelId = Objects.requireNonNull(channelId);
-        }
-    }
-
-    /**
-     * Context information about a newly connected {@link SocketChannel}.
-     * @param socket The socket itself.
-     * @param channelId The channel id.
-     */
-    record ConnectedSocketChannel(SocketChannel socket, String channelId) {
-        /**
-         * Canonical constructor, enforces null checks.
-         * @param socket The socket itself.
-         * @param channelId The channel id.
-         */
-        public ConnectedSocketChannel(final SocketChannel socket, final String channelId) {
-            this.socket = Objects.requireNonNull(socket);
-            this.channelId = Objects.requireNonNull(channelId);
-        }
-    }
+    void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException;
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webclient.api;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ import java.nio.ByteBuffer;
 final class BytesWritingConnectionListener implements ConnectionListener {
     private final byte[] bytes;
 
-    BytesWritingConnectionListener(final byte[] bytes) {
+    BytesWritingConnectionListener(byte[] bytes) {
         this.bytes = bytes;
     }
 
@@ -33,18 +32,18 @@ final class BytesWritingConnectionListener implements ConnectionListener {
      * {@inheritDoc}
      */
     @Override
-    public void socketConnected(final ConnectedSocket socket) throws IOException {
-        socket.socket().getOutputStream().write(bytes);
+    public void socketConnected(ConnectedSocketInfo socketInfo) throws IOException {
+        socketInfo.socket().getOutputStream().write(bytes);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void socketConnected(final ConnectedSocketChannel socket) throws IOException {
-        final var buffer = ByteBuffer.wrap(bytes);
+    public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException {
+        var buffer = ByteBuffer.wrap(bytes);
         while (buffer.hasRemaining()) {
-            socket.socket().write(buffer);
+            socketInfo.socketChannel().write(buffer);
         }
     }
 }

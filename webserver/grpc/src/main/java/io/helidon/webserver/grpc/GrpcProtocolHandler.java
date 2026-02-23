@@ -56,6 +56,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
@@ -103,7 +104,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
-    private final GrpcConnectionContext connectionContext;
+    private final ConnectionContext connectionContext;
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -128,7 +129,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
-    GrpcProtocolHandler(GrpcConnectionContext connectionContext,
+    GrpcProtocolHandler(ConnectionContext connectionContext,
                         Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
@@ -164,8 +165,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             // Include the GrpcConnectionContext in the Helidon Context so that the gRPC customer
             // handler can access the peer info and proxy protocol data.
-            final Context context = Contexts.context().orElse(Context.create());
-            context.register(GrpcConnectionContext.class, connectionContext);
+            Context context = Context.create(connectionContext.listenerContext().context());
+            context.register(GrpcConnectionContext.class, new GrpcConnectionContextImpl(connectionContext));
 
             // initiate server call
             ServerCallHandler<REQ, RES> callHandler = route.callHandler();

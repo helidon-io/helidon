@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -105,9 +106,13 @@ class ProxyProtocolHandler {
         this.channelId = channelId;
     }
 
-    public ProxyProtocolData get() throws IOException {
+    public ProxyProtocolData get() {
         LOGGER.log(Level.DEBUG, "Reading proxy protocol data for channel %s", channelId);
-        return handleAnyProtocol(Channels.newInputStream(socketChannel));
+        try {
+            return handleAnyProtocol(Channels.newInputStream(socketChannel));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     static ProxyProtocolData handleAnyProtocol(InputStream socketInputStream) throws IOException {

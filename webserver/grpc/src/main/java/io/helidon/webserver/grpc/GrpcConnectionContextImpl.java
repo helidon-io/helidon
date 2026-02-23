@@ -29,7 +29,7 @@ import io.helidon.webserver.ProxyProtocolData;
 final class GrpcConnectionContextImpl implements GrpcConnectionContext {
     private final ConnectionContext connectionContext;
 
-    GrpcConnectionContextImpl(final ConnectionContext connectionContext) {
+    GrpcConnectionContextImpl(ConnectionContext connectionContext) {
         this.connectionContext = connectionContext;
     }
 

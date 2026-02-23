@@ -300,6 +300,6 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return The socket listener.
      */
-    @Option.Default("noop()")
+    @Option.Default("createNoop()")
     ConnectionListener connectionListener();
 }

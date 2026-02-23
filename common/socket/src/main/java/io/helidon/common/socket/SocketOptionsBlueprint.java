@@ -139,7 +139,7 @@ interface SocketOptionsBlueprint {
     @SuppressWarnings("unchecked")
     default void configureSocket(SocketChannel socket) {
         var logger = System.getLogger(SocketOptions.class.getName());
-        final var supportedOptions = socket.supportedOptions();
+        var supportedOptions = socket.supportedOptions();
         for (Map.Entry<SocketOption<?>, Object> entry : socketOptions().entrySet()) {
             try {
                 SocketOption<Object> opt = (SocketOption<Object>) entry.getKey();

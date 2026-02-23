@@ -82,7 +82,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                                  new GrpcProtocolHandlerNotFound(streamWriter, streamId, currentStreamState));
                 }
                 return new SubProtocolResult(true,
-                                             new GrpcProtocolHandler<>(new GrpcConnectionContextImpl(ctx),
+                                             new GrpcProtocolHandler<>(ctx,
                                                                        headers,
                                                                        streamWriter,
                                                                        streamId,

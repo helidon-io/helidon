@@ -51,7 +51,7 @@ public class GrpcProxyProtocolTest {
 
     @Test
     public void testProxyProtocolV1OverTcp() throws IOException {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
@@ -83,7 +83,7 @@ public class GrpcProxyProtocolTest {
 
     @Test
     public void testProxyProtocolV2OverTcp() throws IOException {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
@@ -140,9 +140,9 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV1OverUds() throws IOException {
         Files.createDirectories(tempDir);
-        final var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
+        var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
             .bindAddress(bindAddress)
@@ -180,9 +180,9 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV2OverUds() throws IOException {
         Files.createDirectories(tempDir);
-        final var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
+        var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
             .bindAddress(bindAddress)
@@ -242,23 +242,23 @@ public class GrpcProxyProtocolTest {
         server.stop();
     }
 
-    private ConnectionListener v1Listener(final String proxyHeader) {
-        return ConnectionListener.writeBytes(proxyHeader.getBytes(StandardCharsets.UTF_8));
+    private ConnectionListener v1Listener(String proxyHeader) {
+        return ConnectionListener.createWriteOnConnect(proxyHeader.getBytes(StandardCharsets.UTF_8));
     }
 
-    private ConnectionListener v2Listener(final int[] proxyHeader) {
-        final byte[] proxyHeaderBytes = new byte[proxyHeader.length];
+    private ConnectionListener v2Listener(int[] proxyHeader) {
+        byte[] proxyHeaderBytes = new byte[proxyHeader.length];
         for (int i = 0; i < proxyHeader.length; i++) {
             proxyHeaderBytes[i] = (byte) proxyHeader[i];
         }
-        return ConnectionListener.writeBytes(proxyHeaderBytes);
+        return ConnectionListener.createWriteOnConnect(proxyHeaderBytes);
     }
 
     static void getProxyData(Empty req, StreamObserver<Proxy.ProxyProtocolDataMessage> streamObserver) {
-        final var context = ContextKeys.HELIDON_CONTEXT.get();
-        final var connContext = context.get(GrpcConnectionContext.class, GrpcConnectionContext.class).get();
-        final var data = connContext.proxyProtocolData().get();
-        final var response = Proxy.ProxyProtocolDataMessage.newBuilder()
+        var context = ContextKeys.HELIDON_CONTEXT.get();
+        var connContext = context.get(GrpcConnectionContext.class, GrpcConnectionContext.class).get();
+        var data = connContext.proxyProtocolData().get();
+        var response = Proxy.ProxyProtocolDataMessage.newBuilder()
             .setVersion(1)
             .setSourceAddress(data.sourceAddress())
             .setSourcePort(data.sourcePort())
@@ -272,7 +272,7 @@ public class GrpcProxyProtocolTest {
                 .setSourceSocketAddress(v2.sourceSocketAddress().toString())
                 .setDestinationSocketAddress(v2.destSocketAddress().toString());
             for (var tlv : v2.tlvs()) {
-                final var tlvBuilder = Proxy.ProxyProtocolTlvMessage.newBuilder()
+                var tlvBuilder = Proxy.ProxyProtocolTlvMessage.newBuilder()
                     .setType(tlv.type());
                 if (tlv instanceof ProxyProtocolV2Data.Tlv.Unregistered unregistered) {
                     tlvBuilder.setData(ByteString.copyFrom(unregistered.value()));

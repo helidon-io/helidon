@@ -120,7 +120,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
             try {
                 proxyProtocolData = handler.get();
-            } catch (IOException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 if (LOGGER.isLoggable(TRACE)) {
                     LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
                 }

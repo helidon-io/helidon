@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -23,13 +25,15 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2StreamState;
 
-import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.Router;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 class GrpcProtocolHandlerTest {
 
@@ -102,35 +106,55 @@ class GrpcProtocolHandlerTest {
         assertThat(next, is(Http2StreamState.CLOSED));
     }
 
-    private static class UnimplementedGrpcConnectionContext implements GrpcConnectionContext {
+    private static class UnimplementedGrpcConnectionContext implements ConnectionContext {
         @Override
-        public String serverSocketId() {
-            throw new UnsupportedOperationException("Not implemented");
+        public ListenerContext listenerContext() {
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
-        public String connectionSocketId() {
-            throw new UnsupportedOperationException("Not implemented");
+        public ExecutorService executor() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public DataWriter dataWriter() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public DataReader dataReader() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Router router() {
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
         public PeerInfo remotePeer() {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
         public PeerInfo localPeer() {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
         public boolean isSecure() {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Should not be called");
         }
 
         @Override
-        public Optional<ProxyProtocolData> proxyProtocolData() {
-            throw new UnsupportedOperationException("Not implemented");
+        public String socketId() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public String childSocketId() {
+            throw new UnsupportedOperationException("Should not be called");
         }
     }
 }

@@ -34,12 +34,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ProxyProtocolTest {
     @Test
     public void v1Tcp4() {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
-                final var data = req.proxyProtocolData().get();
-                final var sb = new StringBuilder();
+                var data = req.proxyProtocolData().get();
+                var sb = new StringBuilder();
                 sb.append(data.protocol().name()).append('\n')
                         .append(data.family().name()).append('\n')
                         .append(data.sourceAddress()).append('\n')
@@ -51,14 +51,14 @@ public class ProxyProtocolTest {
             .build();
         server.start();
 
-        final var client = WebClient.builder()
+        var client = WebClient.builder()
             .servicesDiscoverServices(false)
             .baseUri(URI.create("http://127.0.0.1:" + server.port()))
             .connectionListener(v1Listener("PROXY TCP4 192.168.0.1 192.168.0.11 56324 443\r\n"))
             .build();
         try (var response = client.get().path("/test").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            final var contents = response.entity().as(String.class).split("\\n");
+            var contents = response.entity().as(String.class).split("\\n");
             assertThat(contents[0], is(ProxyProtocolData.Protocol.TCP.name()));
             assertThat(contents[1], is(ProxyProtocolData.Family.IPv4.name()));
             assertThat(contents[2], is("192.168.0.1"));
@@ -72,12 +72,12 @@ public class ProxyProtocolTest {
 
     @Test
     public void v1Tcp6() {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
-                final var data = req.proxyProtocolData().get();
-                final var sb = new StringBuilder();
+                var data = req.proxyProtocolData().get();
+                var sb = new StringBuilder();
                 sb.append(data.protocol().name()).append('\n')
                     .append(data.family().name()).append('\n')
                     .append(data.sourceAddress()).append('\n')
@@ -89,14 +89,14 @@ public class ProxyProtocolTest {
             .build();
         server.start();
 
-        final var client = WebClient.builder()
+        var client = WebClient.builder()
             .servicesDiscoverServices(false)
             .baseUri(URI.create("http://127.0.0.1:" + server.port()))
             .connectionListener(v1Listener("PROXY TCP6 0000:0000:0000:0000:0000:0000:0000:0000 FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF 56324 443\r\n"))
             .build();
         try (var response = client.get().path("/test").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            final var contents = response.entity().as(String.class).split("\\n");
+            var contents = response.entity().as(String.class).split("\\n");
             assertThat(contents[0], is(ProxyProtocolData.Protocol.TCP.name()));
             assertThat(contents[1], is(ProxyProtocolData.Family.IPv6.name()));
             assertThat(contents[2], is("0000:0000:0000:0000:0000:0000:0000:0000"));
@@ -110,14 +110,14 @@ public class ProxyProtocolTest {
 
     @Test
     public void v2Ipv4() {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
-                final var data = req.proxyProtocolData().get();
-                final var data2 = (ProxyProtocolV2Data) data;
-                final var sb = new StringBuilder();
+                var data = req.proxyProtocolData().get();
+                var data2 = (ProxyProtocolV2Data) data;
+                var sb = new StringBuilder();
                 sb.append(data.protocol().name()).append('\n')
                     .append(data.family().name()).append('\n')
                     .append(data.sourceAddress()).append('\n')
@@ -133,7 +133,7 @@ public class ProxyProtocolTest {
             .build();
         server.start();
 
-        final var client = WebClient.builder()
+        var client = WebClient.builder()
             .servicesDiscoverServices(false)
             .baseUri(URI.create("http://127.0.0.1:" + server.port()))
             .connectionListener(v2Listener(new int[] {
@@ -149,7 +149,7 @@ public class ProxyProtocolTest {
             .build();
         try (var response = client.get().path("/test").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            final var contents = response.entity().as(String.class).split("\\n");
+            var contents = response.entity().as(String.class).split("\\n");
             assertThat(contents[0], is(ProxyProtocolData.Protocol.TCP.name()));
             assertThat(contents[1], is(ProxyProtocolData.Family.IPv4.name()));
             assertThat(contents[2], is("192.168.0.1"));
@@ -167,14 +167,14 @@ public class ProxyProtocolTest {
 
     @Test
     public void v2Ipv6() {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
-                final var data = req.proxyProtocolData().get();
-                final var data2 = (ProxyProtocolV2Data) data;
-                final var sb = new StringBuilder();
+                var data = req.proxyProtocolData().get();
+                var data2 = (ProxyProtocolV2Data) data;
+                var sb = new StringBuilder();
                 sb.append(data.protocol().name()).append('\n')
                     .append(data.family().name()).append('\n')
                     .append(data.sourceAddress()).append('\n')
@@ -190,7 +190,7 @@ public class ProxyProtocolTest {
             .build();
         server.start();
 
-        final var client = WebClient.builder()
+        var client = WebClient.builder()
             .servicesDiscoverServices(false)
             .baseUri(URI.create("http://127.0.0.1:" + server.port()))
             .connectionListener(v2Listener(new int[] {
@@ -206,7 +206,7 @@ public class ProxyProtocolTest {
             .build();
         try (var response = client.get().path("/test").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            final var contents = response.entity().as(String.class).split("\\n");
+            var contents = response.entity().as(String.class).split("\\n");
             assertThat(contents[0], is(ProxyProtocolData.Protocol.TCP.name()));
             assertThat(contents[1], is(ProxyProtocolData.Family.IPv6.name()));
             assertThat(contents[2], is("1:203:405:607:809:a0b:c0d:e0f"));
@@ -224,14 +224,14 @@ public class ProxyProtocolTest {
 
     @Test
     public void v2Ipv4WithTlvs() {
-        final var server = WebServer.builder()
+        var server = WebServer.builder()
             .enableProxyProtocol(true)
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
-                final var data = req.proxyProtocolData().get();
-                final var data2 = (ProxyProtocolV2Data) data;
-                final var sb = new StringBuilder();
+                var data = req.proxyProtocolData().get();
+                var data2 = (ProxyProtocolV2Data) data;
+                var sb = new StringBuilder();
                 sb.append(data.protocol().name()).append('\n')
                     .append(data.family().name()).append('\n')
                     .append(data.sourceAddress()).append('\n')
@@ -251,7 +251,7 @@ public class ProxyProtocolTest {
             .build();
         server.start();
 
-        final var client = WebClient.builder()
+        var client = WebClient.builder()
             .servicesDiscoverServices(false)
             .baseUri(URI.create("http://127.0.0.1:" + server.port()))
             .connectionListener(v2Listener(new int[] {
@@ -276,7 +276,7 @@ public class ProxyProtocolTest {
             .build();
         try (var response = client.get().path("/test").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            final var contents = response.entity().as(String.class).split("\\n");
+            var contents = response.entity().as(String.class).split("\\n");
             assertThat(contents[0], is(ProxyProtocolData.Protocol.TCP.name()));
             assertThat(contents[1], is(ProxyProtocolData.Family.IPv4.name()));
             assertThat(contents[2], is("192.168.0.1"));
@@ -296,15 +296,15 @@ public class ProxyProtocolTest {
         server.stop();
     }
 
-    private ConnectionListener v1Listener(final String proxyHeader) {
-        return ConnectionListener.writeBytes(proxyHeader.getBytes(StandardCharsets.UTF_8));
+    private ConnectionListener v1Listener(String proxyHeader) {
+        return ConnectionListener.createWriteOnConnect(proxyHeader.getBytes(StandardCharsets.UTF_8));
     }
 
-    private ConnectionListener v2Listener(final int[] proxyHeader) {
-        final byte[] proxyHeaderBytes = new byte[proxyHeader.length];
+    private ConnectionListener v2Listener(int[] proxyHeader) {
+        byte[] proxyHeaderBytes = new byte[proxyHeader.length];
         for (int i = 0; i < proxyHeader.length; i++) {
             proxyHeaderBytes[i] = (byte) proxyHeader[i];
         }
-        return ConnectionListener.writeBytes(proxyHeaderBytes);
+        return ConnectionListener.createWriteOnConnect(proxyHeaderBytes);
     }
 }
