@@ -21,6 +21,7 @@ import java.util.List;
 /**
  * Weight utilities.
  */
+@Api.Stable
 public final class Weights {
     private Weights() {
     }

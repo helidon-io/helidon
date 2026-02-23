@@ -36,6 +36,7 @@ import java.lang.annotation.Target;
  *              version of Helidon</li>
  * </ul>
  */
+@Api.Preview
 public final class Api {
     /**
      * Suppression constant to ignore any use of Helidon APIs that are not production.
@@ -50,11 +51,29 @@ public final class Api {
      */
     public static final String SUPPRESS_INCUBATING = "helidon:api:incubating";
     /**
-     * Suppression constant to ignore any use of Helidon private APIs.
+     * Suppression constant to ignore any use of Helidon internal APIs.
      */
-    public static final String SUPPRESS_PRIVATE = "helidon:api:private";
+    public static final String SUPPRESS_INTERNAL = "helidon:api:internal";
+    /**
+     * Suppression constant to ignore any use of Helidon deprecated APIs.
+     * You can also use {@code deprecated} as if the annotation was {@link java.lang.Deprecated}.
+     */
+    public static final String SUPPRESS_DEPRECATED = "helidon:api:deprecated";
 
     private Api() {
+    }
+
+    /**
+     * API may add this annotation to mark the first version that contains it.
+     * It is recommended to include it with {@link io.helidon.common.Api.Deprecated} and {@link io.helidon.common.Api.Stable}.
+     */
+    public @interface Since {
+        /**
+         * Version of Helidon this API was introduced in.
+         *
+         * @return version
+         */
+        String value();
     }
 
     /**
@@ -64,11 +83,11 @@ public final class Api {
      * We may change this API, including backward incompatible changes between minor releases, but we will not remove
      * this API without proper deprecation process.
      * <p>
-     * Mutually exclusive with {@link io.helidon.common.Api.Incubating} and {@link io.helidon.common.Api.Private}.
+     * Mutually exclusive with other API stability annotations.
      * <p>
      * The possible next lifecycle phases:
      * <ul>
-     *     <li>"GA" - production feature once we finalize the APIs</li>
+     *     <li>{@link io.helidon.common.Api.Stable} - production feature once we finalize the APIs</li>
      *     <li>{@link java.lang.Deprecated} - the feature will be removed in next major version of Helidon</li>
      * </ul>
      */
@@ -87,11 +106,11 @@ public final class Api {
      * We welcome feedback for incubating features. These are included to be played around with,
      * and to be improved.
      * <p>
-     * Mutually exclusive with {@link io.helidon.common.Api.Preview} and {@link io.helidon.common.Api.Private}.
+     * Mutually exclusive with other API stability annotations.
      * <p>
      * The possible next lifecycle phases:
      * <ul>
-     *     <li>"GA" - may become a production feature</li>
+     *     <li>{@link io.helidon.common.Api.Stable} - may become a production feature</li>
      *     <li>{@link io.helidon.common.Api.Preview} - may become a preview feature, when we decide it will stay in Helidon</li>
      *     <li>Removal - we may remove the feature if it does not bring the expected benefits</li>
      * </ul>
@@ -102,15 +121,43 @@ public final class Api {
     }
 
     /**
-     * A private API.
+     * An internal API.
      * <p>
-     * Private APIs are only intended for Helidon itself, and may not be used outside Helidon code base.
+     * Internal APIs are only intended for Helidon itself, and may not be used outside Helidon code base.
      * These APIs may change as we see fit, including removal between any versions of Helidon.
      * <p>
-     * Mutually exclusive with {@link io.helidon.common.Api.Preview} and {@link io.helidon.common.Api.Incubating}.
+     * Mutually exclusive with other API stability annotations.
      */
     @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
-    public @interface Private {
+    public @interface Internal {
+    }
+
+    /**
+     * A deprecated API.
+     * <p>
+     * Deprecated APIs will be removed in the next major version of Helidon (or later).
+     * <p>
+     * Mutually exclusive with other API stability annotations.
+     */
+    @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Deprecated {
+    }
+
+    /**
+     * Stable API.
+     * <p>
+     * This API will be backward compatible within this major version of Helidon.
+     * Changes to stable APIs will follow deprecation with alternative available.
+     * <p>
+     * Mutually exclusive with other API stability annotations.
+     * <p>
+     * Example: a stable API in Helidon 4.4.0. It may be deprecated in 4.5.0, and then removed in 5.0.0.
+     * This API will be available in any minor version of Helidon 4.
+     */
+    @Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Stable {
     }
 }

@@ -24,11 +24,8 @@ import java.lang.annotation.Target;
 
 /**
  * A container class for default values related types for Helidon declarative.
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Incubating
 public final class Default {
     private Default() {
     }
