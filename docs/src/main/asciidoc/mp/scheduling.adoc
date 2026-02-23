@@ -108,7 +108,7 @@ The Fixed rate annotation can have the delay by and value overridden using confi
 include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_2, indent=0]
 ----
 
-The default values are 5 minutes for delay-by, and 10 minutes for interface, and could be overridden:
+The default values are 5 minutes for delay-by, and 10 minutes for interval, and could be overridden:
 
 [source,yaml]
 .Overriding annotated values from config
