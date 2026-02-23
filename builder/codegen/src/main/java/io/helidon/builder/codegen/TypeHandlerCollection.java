@@ -188,7 +188,7 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             generateFromConfig(method);
             method.addContent(".get()).");
             collector.accept(method);
-            method.addContent(").ifPresent(this::" + setterName + ");");
+            method.addContentLine(").ifPresent(this::" + setterName + ");");
         }
     }
 
