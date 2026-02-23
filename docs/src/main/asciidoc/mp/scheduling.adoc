@@ -139,7 +139,7 @@ The default value is an expression of `0 15 8 ? * *`.
 app:
   schedule:
     cache:
-      cron: "* * * * * ? "
+      cron: "* * * * * ?"
 ----
 
 The configured values would be executing every 1 second.
