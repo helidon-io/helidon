@@ -39,7 +39,7 @@
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.bytebuddy>1.17.5</version.lib.bytebuddy>
+        <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
         <version.lib.coherence>25.03.1</version.lib.coherence>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
