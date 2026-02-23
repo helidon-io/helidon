@@ -27,6 +27,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the provided object
  */
+@Api.Stable
 public interface LazyValue<T> extends Supplier<T> {
     /**
      * Create a lazy value from a supplier.

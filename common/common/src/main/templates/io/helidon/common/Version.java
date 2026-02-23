@@ -19,6 +19,7 @@ package io.helidon.common;
 /**
  * Simple class to provide version information.
  */
+@Api.Stable
 public final class Version {
 
     private Version() {

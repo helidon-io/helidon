@@ -20,6 +20,7 @@ import java.util.Optional;
 /**
  * Utility for GraalVM native image.
  */
+@Api.Stable
 public final class NativeImageHelper {
     private static final String SYS_PROP_IMAGE_CODE = "org.graalvm.nativeimage.imagecode";
     private static final String BUILD_TIME = "buildtime";

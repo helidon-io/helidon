@@ -30,6 +30,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Api.Stable
 public @interface Weight {
     /**
      * Weight of this type.

@@ -26,6 +26,7 @@ import java.util.function.Supplier;
  * @param <K> type of the keys of the map
  * @param <V> type of the values of the map
  */
+@Api.Stable
 public interface LruCache<K, V> {
     /**
      * Default capacity of the cache: {@value}.

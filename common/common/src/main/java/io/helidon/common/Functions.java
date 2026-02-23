@@ -25,6 +25,7 @@ import java.util.function.Supplier;
  * Functional interfaces required to complement the {@link java.lang.Runnable}, {@link java.util.concurrent.Callable},
  * and {@link java.util.function.Supplier} to help with checked exceptions in lambdas.
  */
+@Api.Stable
 public final class Functions {
     private Functions() {
     }

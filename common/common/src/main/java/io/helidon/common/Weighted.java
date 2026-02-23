@@ -30,6 +30,7 @@ package io.helidon.common;
  * <p>
  * A {@code Weighted} with weight {@code 2} is more significant (will be returned before) weight {@code 1}.
  */
+@Api.Stable
 public interface Weighted extends Comparable<Weighted> {
     /**
      * Default weight for any weighted component (whether it implements this interface

@@ -74,6 +74,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * @see java.util.ServiceLoader
  * @see #builder(java.util.ServiceLoader)
  */
+@Api.Stable
 public final class HelidonServiceLoader<T> implements Iterable<T> {
     /**
      * System property used to exclude some implementation from the list of services that are configured for Java Service

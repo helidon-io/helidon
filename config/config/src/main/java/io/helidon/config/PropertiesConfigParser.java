@@ -64,7 +64,7 @@ public class PropertiesConfigParser implements ConfigParser {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Api.Private
+    @Api.Internal
     public PropertiesConfigParser() {
     }
 

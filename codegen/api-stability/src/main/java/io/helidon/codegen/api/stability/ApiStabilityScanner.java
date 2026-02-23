@@ -38,18 +38,21 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 
+import static io.helidon.codegen.api.stability.ApiStabilityProcessor.SUPPRESS_DEPRECATION;
 import static io.helidon.common.Api.SUPPRESS_ALL;
+import static io.helidon.common.Api.SUPPRESS_DEPRECATED;
 import static io.helidon.common.Api.SUPPRESS_INCUBATING;
+import static io.helidon.common.Api.SUPPRESS_INTERNAL;
 import static io.helidon.common.Api.SUPPRESS_PREVIEW;
-import static io.helidon.common.Api.SUPPRESS_PRIVATE;
 
 class ApiStabilityScanner extends TreeScanner<Void, Void> {
 
     private final Trees trees;
     private final CompilationUnitTree unit;
-    private final List<Ref> privateApis = new ArrayList<>();
+    private final List<Ref> internalApis = new ArrayList<>();
     private final List<Ref> incubatingApis = new ArrayList<>();
     private final List<Ref> previewApis = new ArrayList<>();
+    private final List<Ref> deprecatedApis = new ArrayList<>();
 
     ApiStabilityScanner(Trees trees, CompilationUnitTree unit) {
         this.trees = trees;
@@ -62,13 +65,16 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         if (path != null) {
             var elt = trees.getElement(path);
             if (elt instanceof TypeElement || elt instanceof ExecutableElement) {
-                if (checkAnnotation(path, elt, Api.Private.class, privateApis, SUPPRESS_PRIVATE)) {
+                if (checkAnnotation(path, elt, Api.Internal.class, internalApis, SUPPRESS_INTERNAL)) {
                     return null;
                 }
                 if (checkAnnotation(path, elt, Api.Incubating.class, incubatingApis, SUPPRESS_INCUBATING)) {
                     return null;
                 }
                 if (checkAnnotation(path, elt, Api.Preview.class, previewApis, SUPPRESS_PREVIEW)) {
+                    return null;
+                }
+                if (checkAnnotation(path, elt, Api.Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATED, SUPPRESS_DEPRECATION)) {
                     return null;
                 }
                 return null;
@@ -83,13 +89,16 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         if (path != null) {
             var elt = trees.getElement(path);
             if (elt instanceof TypeElement || elt instanceof ExecutableElement) {
-                if (checkAnnotation(path, elt, Api.Private.class, privateApis, SUPPRESS_PRIVATE)) {
+                if (checkAnnotation(path, elt, Api.Internal.class, internalApis, SUPPRESS_INTERNAL)) {
                     return null;
                 }
-                if (checkAnnotation(path, elt, Api.Incubating.class, privateApis, SUPPRESS_INCUBATING)) {
+                if (checkAnnotation(path, elt, Api.Incubating.class, internalApis, SUPPRESS_INCUBATING)) {
                     return null;
                 }
                 if (checkAnnotation(path, elt, Api.Preview.class, previewApis, SUPPRESS_PREVIEW)) {
+                    return null;
+                }
+                if (checkAnnotation(path, elt, Api.Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATED)) {
                     return null;
                 }
                 return null;
@@ -106,15 +115,19 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
         return incubatingApis;
     }
 
-    Collection<Ref> privateApis() {
-        return privateApis;
+    Collection<Ref> internalApis() {
+        return internalApis;
+    }
+
+    Collection<Ref> deprecatedApis() {
+        return deprecatedApis;
     }
 
     private boolean checkAnnotation(TreePath path,
                                     Element elt,
                                     Class<? extends Annotation> annotation,
                                     List<Ref> apiRefs,
-                                    String suppressString) {
+                                    String... suppressStrings) {
         var annot = elt.getAnnotation(annotation);
         if (annot == null) {
             // no annotation of the provided type, this is a safe usage
@@ -131,9 +144,11 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
             // we cannot identify who uses the element
             return true;
         } else {
-            if (isSuppressed(usingCode.get().enlosingElement(), suppressString)) {
-                // annotation exists, but usage is suppressed on one of the containing elements
-                return true;
+            for (String suppressString : suppressStrings) {
+                if (isSuppressed(usingCode.get().enlosingElement(), suppressString)) {
+                    // annotation exists, but usage is suppressed on one of the containing elements
+                    return true;
+                }
             }
         }
 

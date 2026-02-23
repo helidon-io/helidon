@@ -26,6 +26,7 @@ import java.util.Set;
 /**
  * A definition of size in bytes.
  */
+@Api.Stable
 public interface Size {
     /**
      * Empty size - zero bytes.

@@ -20,6 +20,7 @@ package io.helidon.common;
  * Severity of an event.
  * @see Errors
  */
+@Api.Stable
 public enum Severity {
     /**
      * Fatal. Processing MUST stop.

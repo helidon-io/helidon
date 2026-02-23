@@ -24,6 +24,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the provided object
  */
+@Api.Stable
 public interface LazyList<T> extends List<T> {
 
     /**

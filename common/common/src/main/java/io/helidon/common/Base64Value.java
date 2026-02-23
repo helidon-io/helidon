@@ -29,6 +29,7 @@ import java.util.Base64;
  * @see #toBase64()
  * @see #toBytes()
  */
+@Api.Stable
 public class Base64Value {
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
     private static final Base64.Decoder DECODER = Base64.getDecoder();

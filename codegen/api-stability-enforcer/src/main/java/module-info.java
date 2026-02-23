@@ -15,18 +15,14 @@
  */
 
 /**
- * Annotation processor to validate use of Helidon APIs.
+ * Annotation processor to enforce API stability annotations.
  */
-module io.helidon.codegen.api.stability {
+module io.helidon.codegen.api.stability.enforcer {
     requires jdk.compiler;
     requires java.compiler;
 
-    requires io.helidon.codegen;
-    requires io.helidon.common.types;
-    requires io.helidon.common;
-
-    exports io.helidon.codegen.api.stability;
+    exports io.helidon.codegen.api.stability.enforcer;
 
     provides javax.annotation.processing.Processor with
-            io.helidon.codegen.api.stability.ApiStabilityProcessor;
+            io.helidon.codegen.api.stability.enforcer.ApiStabilityEnforcerProcessor;
 }

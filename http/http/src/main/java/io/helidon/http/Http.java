@@ -43,6 +43,7 @@ import io.helidon.service.registry.Service;
  * </ul>
  */
 @Api.Incubating
+@Api.Since("4.3.0")
 public final class Http {
     private Http() {
     }

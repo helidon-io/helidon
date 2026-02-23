@@ -26,6 +26,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
+@Api.Stable
 public @interface Generated {
     /**
      * The code generator that generated this type.

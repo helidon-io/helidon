@@ -28,6 +28,6 @@ import io.helidon.common.types.TypeName;
  * @param mainTrigger main type responsible for this code generation
  * @param originatingElements to map to source types that triggered this code generation
  */
-@Api.Private
+@Api.Internal
 public record ClassCode(TypeName newType, ClassModel.Builder classModel, TypeName mainTrigger, Object... originatingElements) {
 }

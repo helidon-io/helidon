@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
  * }</pre>
  */
 @SuppressWarnings("WeakerAccess")
+@Api.Stable
 public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
             Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);

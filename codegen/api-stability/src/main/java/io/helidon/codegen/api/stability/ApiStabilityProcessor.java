@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -41,56 +42,73 @@ import com.sun.source.util.Trees;
 /**
  * Annotation processor checking usage of Helidon APIs.
  */
-@Api.Private
+@Api.Internal
 public class ApiStabilityProcessor extends AbstractProcessor {
+    static final String SUPPRESS_DEPRECATION = "deprecation";
 
+    private static final GenericType<Action> ACTION_TYPE = GenericType.create(Action.class);
+    private static final Function<String, Action> ACTION_LAMBDA = str -> Action.valueOf(str.toUpperCase(Locale.ROOT));
     private static final Option<Action> API_ACTION = Option.create("helidon.api",
-                                                                   "Action to take for violations",
+                                                                   "Action to take for API stability violations",
                                                                    Action.DEFAULT,
-                                                                   str -> Action.valueOf(str.toUpperCase(
-                                                                           Locale.ROOT)),
-                                                                   GenericType.create(Action.class));
+                                                                   ACTION_LAMBDA,
+                                                                   ACTION_TYPE);
     private static final Option<Action> PREVIEW_ACTION = Option.create("helidon.api.preview",
-                                                                       "Action to take for violations",
+                                                                       "Action to take for preview violations",
                                                                        Action.WARN,
-                                                                       str -> Action.valueOf(str.toUpperCase(Locale.ROOT)),
-                                                                       GenericType.create(Action.class));
-    private static final Option<Action> INCUBATING_ACTION = Option.create("helidon.api.incubating",
-                                                                          "Action to take for violations",
-                                                                          Action.WARN,
-                                                                          str -> Action.valueOf(str.toUpperCase(Locale.ROOT)),
-                                                                          GenericType.create(Action.class));
-    private static final Option<Action> PRIVATE_ACTION = Option.create("helidon.api.private",
-                                                                       "Action to take for violations",
-                                                                       Action.FAIL,
-                                                                       str -> Action.valueOf(str.toUpperCase(Locale.ROOT)),
-                                                                       GenericType.create(Action.class));
+                                                                       ACTION_LAMBDA,
+                                                                       ACTION_TYPE);
     private static final StabilityMeta PREVIEW_META = new StabilityMeta(Api.Preview.class,
                                                                         PREVIEW_ACTION,
-                                                                        Api.SUPPRESS_PREVIEW,
                                                                         "preview",
-                                                                        "APIs may change between minor versions.");
+                                                                        "APIs may change between minor versions.",
+                                                                        Api.SUPPRESS_PREVIEW);
+    private static final Option<Action> INCUBATING_ACTION = Option.create("helidon.api.incubating",
+                                                                          "Action to take for incubating violations",
+                                                                          Action.WARN,
+                                                                          ACTION_LAMBDA,
+                                                                          ACTION_TYPE);
     private static final StabilityMeta INCUBATING_META = new StabilityMeta(Api.Incubating.class,
                                                                            INCUBATING_ACTION,
-                                                                           Api.SUPPRESS_INCUBATING,
                                                                            "incubating",
                                                                            "APIs may change between minor versions, including "
-                                                                                   + "removal.");
-    private static final StabilityMeta PRIVATE_META = new StabilityMeta(Api.Private.class,
-                                                                        PRIVATE_ACTION,
-                                                                        Api.SUPPRESS_PRIVATE,
-                                                                        "private",
-                                                                        "Do not use these APIs.");
+                                                                                   + "removal.",
+                                                                           Api.SUPPRESS_INCUBATING);
+    private static final Option<Action> INTERNAL_ACTION = Option.create("helidon.api.internal",
+                                                                        "Action to take for internal violations",
+                                                                        Action.WARN,
+                                                                        ACTION_LAMBDA,
+                                                                        ACTION_TYPE);
+    private static final StabilityMeta INTERNAL_META = new StabilityMeta(Api.Internal.class,
+                                                                         INTERNAL_ACTION,
+                                                                         "internal",
+                                                                         "Do not use these APIs. This will fail the "
+                                                                                 + "build in the next major release of Helidon",
+                                                                         Api.SUPPRESS_INTERNAL);
+    private static final Option<Action> DEPRECATED_ACTION = Option.create("helidon.api.deprecated",
+                                                                          "Action to take for deprecated violations",
+                                                                          Action.WARN,
+                                                                          ACTION_LAMBDA,
+                                                                          ACTION_TYPE);
+    private static final StabilityMeta DEPRECATED_META = new StabilityMeta(Api.Deprecated.class,
+                                                                           DEPRECATED_ACTION,
+                                                                           "deprecated",
+                                                                           "APIs will be removed in next major version of "
+                                                                                   + "Helidon",
+                                                                           Api.SUPPRESS_DEPRECATED,
+                                                                           SUPPRESS_DEPRECATION);
 
     private Messager messager;
+
     private Action previewAction;
     private Action incubatingAction;
-    private Action privateAction;
+    private Action internalAction;
+    private Action deprecatedAction;
 
     /**
      * Constructor required for {@link java.util.ServiceLoader}.
      */
-    @Api.Private
+    @Api.Internal
     public ApiStabilityProcessor() {
     }
 
@@ -99,7 +117,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         super.init(processingEnv);
 
         CodegenOptions options = new StabilityOptions(processingEnv);
-        options.validate(Set.of(API_ACTION, PREVIEW_ACTION, INCUBATING_ACTION, PRIVATE_ACTION));
+        options.validate(Set.of(API_ACTION, PREVIEW_ACTION, INCUBATING_ACTION, INTERNAL_ACTION));
 
         this.messager = processingEnv.getMessager();
 
@@ -107,11 +125,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         if (apiAction == Action.DEFAULT) {
             previewAction = PREVIEW_ACTION.value(options);
             incubatingAction = INCUBATING_ACTION.value(options);
-            privateAction = PRIVATE_ACTION.value(options);
+            internalAction = INTERNAL_ACTION.value(options);
+            deprecatedAction = DEPRECATED_ACTION.value(options);
         } else {
             previewAction = PREVIEW_ACTION.findValue(options).orElse(apiAction);
             incubatingAction = INCUBATING_ACTION.findValue(options).orElse(apiAction);
-            privateAction = PRIVATE_ACTION.findValue(options).orElse(apiAction);
+            internalAction = INTERNAL_ACTION.findValue(options).orElse(apiAction);
+            deprecatedAction = DEPRECATED_ACTION.findValue(options).orElse(apiAction);
         }
     }
 
@@ -123,6 +143,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             Set<Ref> previewApis = new LinkedHashSet<>();
             Set<Ref> incubatingApis = new LinkedHashSet<>();
             Set<Ref> privateApis = new LinkedHashSet<>();
+            Set<Ref> deprecatedApis = new LinkedHashSet<>();
 
             for (var rootElement : roundEnv.getRootElements()) {
                 var path = trees.getPath(rootElement);
@@ -132,7 +153,8 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                     scanner.scan(unit, null);
                     previewApis.addAll(scanner.previewApis());
                     incubatingApis.addAll(scanner.incubatingApis());
-                    privateApis.addAll(scanner.privateApis());
+                    privateApis.addAll(scanner.internalApis());
+                    deprecatedApis.addAll(scanner.deprecatedApis());
                 }
             }
 
@@ -145,8 +167,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             }
 
             if (!privateApis.isEmpty()) {
-                log(privateAction, PRIVATE_META, privateApis);
+                log(internalAction, INTERNAL_META, privateApis);
             }
+
+            if (!deprecatedApis.isEmpty()) {
+                log(deprecatedAction, DEPRECATED_META, deprecatedApis);
+            }
+
         } catch (CodegenException e) {
             throw e;
         } catch (Throwable e) {
@@ -172,7 +199,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
         return Set.of(API_ACTION.name(),
                       PREVIEW_ACTION.name(),
                       INCUBATING_ACTION.name(),
-                      PRIVATE_ACTION.name());
+                      INTERNAL_ACTION.name());
     }
 
     private void log(Action previewAction, StabilityMeta meta, Set<Ref> usages) {
@@ -193,7 +220,7 @@ public class ApiStabilityProcessor extends AbstractProcessor {
                 + Api.class.getSimpleName() + "." + meta.annotation.getSimpleName() + ". " + meta.warning());
 
         messager.printMessage(kind, "This " + kind
-                + " can be suppressed with @SuppressWarnings(\"" + meta.suppressValue() + "\") or "
+                + " can be suppressed with @SuppressWarnings(\"" + meta.suppressValues[0] + "\") or "
                 + "compiler argument -A" + meta.compilerOption().name() + "=ignore");
 
         for (Ref ref : usages) {
@@ -221,9 +248,9 @@ public class ApiStabilityProcessor extends AbstractProcessor {
 
     private record StabilityMeta(Class<? extends Annotation> annotation,
                                  Option<Action> compilerOption,
-                                 String suppressValue,
                                  String name,
-                                 String warning) {
+                                 String warning,
+                                 String... suppressValues) {
 
     }
 }
