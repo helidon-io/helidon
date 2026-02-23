@@ -17,17 +17,19 @@
 package io.helidon.webserver.grpc;
 
 import io.grpc.Context;
-import io.grpc.Metadata;
 
 /**
- * A collection of gRPC {@link Context.Key} and {@link Metadata.Key} instances available for use in
- * Helidon WebServer handlers.
+ * A collection of gRPC {@link Context.Key} instances available for use in Helidon WebServer gRPC request handlers.
  */
 public final class ServerContextKeys {
     /**
      * The gRPC context key to use to obtain the Helidon {@link GrpcConnectionContext}
      * from the gRPC {@link Context}.
      */
-    public static final Context.Key<GrpcConnectionContext> GRPC_CONNECTION_CONTEXT =
+    public static final Context.Key<GrpcConnectionContext> CONNECTION_CONTEXT =
         Context.key(GrpcConnectionContext.class.getCanonicalName());
+
+    private ServerContextKeys() {
+        // Utility class
+    }
 }

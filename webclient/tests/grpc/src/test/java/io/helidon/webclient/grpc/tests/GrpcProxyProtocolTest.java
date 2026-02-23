@@ -254,7 +254,7 @@ public class GrpcProxyProtocolTest {
     }
 
     static void getProxyData(Empty req, StreamObserver<Proxy.ProxyProtocolDataMessage> streamObserver) {
-        var connContext = ServerContextKeys.GRPC_CONNECTION_CONTEXT.get();
+        var connContext = ServerContextKeys.CONNECTION_CONTEXT.get();
         var data = connContext.proxyProtocolData().get();
         var response = Proxy.ProxyProtocolDataMessage.newBuilder()
             .setVersion(1)

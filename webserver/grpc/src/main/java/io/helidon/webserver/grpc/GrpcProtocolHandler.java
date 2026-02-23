@@ -31,8 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -167,7 +165,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // handler can access the peer info and proxy protocol data.
             var grpcContextImpl = new GrpcConnectionContextImpl(connectionContext);
             io.grpc.Context.current()
-                .withValue(ServerContextKeys.GRPC_CONNECTION_CONTEXT, grpcContextImpl)
+                .withValue(ServerContextKeys.CONNECTION_CONTEXT, grpcContextImpl)
                 .run(() -> {
                     // initiate server call
                     ServerCallHandler<REQ, RES> callHandler = route.callHandler();
