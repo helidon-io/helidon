@@ -444,6 +444,56 @@ public class PolymorphismSupportTest {
         assertThat(((Dog) deserialize).name(), is("Test"));
     }
 
+    @Test
+    void testPolymorphismWithHashCollisionAliases() {
+        // Test polymorphism with aliases that have conflicting FNV1a hashes
+        // "costarring" and "liquid" both have FNV1a hash 0x89C62E45
+        HashCollisionParent obj1 = new HashCollisionType1();
+        obj1.value("test1");
+
+        String json1 = jsonBinding.serialize(obj1, HashCollisionParent.class);
+        assertThat(json1, is("{\"@type\":\"costarring\",\"value\":\"test1\"}"));
+
+        HashCollisionParent deserialize1 = jsonBinding.deserialize(json1, HashCollisionParent.class);
+        assertThat(deserialize1, instanceOf(HashCollisionType1.class));
+        assertThat(deserialize1.value(), is("test1"));
+
+        // Test the second colliding alias
+        HashCollisionParent obj2 = new HashCollisionType2();
+        obj2.value("test2");
+
+        String json2 = jsonBinding.serialize(obj2, HashCollisionParent.class);
+        assertThat(json2, is("{\"@type\":\"liquid\",\"value\":\"test2\"}"));
+
+        HashCollisionParent deserialize2 = jsonBinding.deserialize(json2, HashCollisionParent.class);
+        assertThat(deserialize2, instanceOf(HashCollisionType2.class));
+        assertThat(deserialize2.value(), is("test2"));
+    }
+
+    @Test
+    void testPolymorphismWithMultipleHashCollisions() {
+        // Test with multiple colliding aliases: "declinate" and "macallums" both have FNV1a hash 0x0BF8B80D
+        HashCollisionParent obj1 = new HashCollisionType3();
+        obj1.value("test3");
+
+        String json1 = jsonBinding.serialize(obj1, HashCollisionParent.class);
+        assertThat(json1, is("{\"@type\":\"declinate\",\"value\":\"test3\"}"));
+
+        HashCollisionParent deserialize1 = jsonBinding.deserialize(json1, HashCollisionParent.class);
+        assertThat(deserialize1, instanceOf(HashCollisionType3.class));
+        assertThat(deserialize1.value(), is("test3"));
+
+        HashCollisionParent obj2 = new HashCollisionType4();
+        obj2.value("test4");
+
+        String json2 = jsonBinding.serialize(obj2, HashCollisionParent.class);
+        assertThat(json2, is("{\"@type\":\"macallums\",\"value\":\"test4\"}"));
+
+        HashCollisionParent deserialize2 = jsonBinding.deserialize(json2, HashCollisionParent.class);
+        assertThat(deserialize2, instanceOf(HashCollisionType4.class));
+        assertThat(deserialize2.value(), is("test4"));
+    }
+
     @Json.Entity
     @Json.TypeInfo(value = {
             @Json.Subtype(alias = "dog", type = Dog.class),
@@ -844,6 +894,79 @@ public class PolymorphismSupportTest {
 
         public void nestedData(String nestedData) {
             this.nestedData = nestedData;
+        }
+    }
+
+    // Test interfaces and classes for hash collision testing
+    @Json.Entity
+    @Json.TypeInfo(value = {
+            @Json.Subtype(alias = "costarring", type = HashCollisionType1.class),  // FNV1a hash: 0x89C62E45
+            @Json.Subtype(alias = "liquid", type = HashCollisionType2.class),      // FNV1a hash: 0x89C62E45 (collision)
+            @Json.Subtype(alias = "declinate", type = HashCollisionType3.class),  // FNV1a hash: 0x0BF8B80D
+            @Json.Subtype(alias = "macallums", type = HashCollisionType4.class)   // FNV1a hash: 0x0BF8B80D (collision)
+    })
+    interface HashCollisionParent {
+        String value();
+        void value(String value);
+    }
+
+    @Json.Entity
+    static class HashCollisionType1 implements HashCollisionParent {
+        private String value;
+
+        @Override
+        public String value() {
+            return value;
+        }
+
+        @Override
+        public void value(String value) {
+            this.value = value;
+        }
+    }
+
+    @Json.Entity
+    static class HashCollisionType2 implements HashCollisionParent {
+        private String value;
+
+        @Override
+        public String value() {
+            return value;
+        }
+
+        @Override
+        public void value(String value) {
+            this.value = value;
+        }
+    }
+
+    @Json.Entity
+    static class HashCollisionType3 implements HashCollisionParent {
+        private String value;
+
+        @Override
+        public String value() {
+            return value;
+        }
+
+        @Override
+        public void value(String value) {
+            this.value = value;
+        }
+    }
+
+    @Json.Entity
+    static class HashCollisionType4 implements HashCollisionParent {
+        private String value;
+
+        @Override
+        public String value() {
+            return value;
+        }
+
+        @Override
+        public void value(String value) {
+            this.value = value;
         }
     }
 
