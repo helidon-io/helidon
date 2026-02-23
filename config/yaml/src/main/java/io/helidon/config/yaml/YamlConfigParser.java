@@ -66,7 +66,7 @@ public class YamlConfigParser implements ConfigParser {
     /**
      * Default constructor needed by Java Service loader.
      */
-    @Api.Private
+    @Api.Internal
     public YamlConfigParser() {
         // fix for NPE in Yaml parser when running in Graal
         // cannot be in static block, as that gets ignored

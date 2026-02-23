@@ -90,6 +90,7 @@ import io.helidon.metadata.MetadataFile;
  *     <li>{@code full} to enable full tracing (including sizes, depth etc.)</li>
  * </ul>
  */
+@Api.Stable
 public final class SerializationConfig {
     static final String PROP_WRONG_CONFIG_ACTION = "helidon.serialFilter.failure.action";
     static final String PROP_NO_CONFIG_ACTION = "helidon.serialFilter.missing.action";

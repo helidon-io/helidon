@@ -18,6 +18,7 @@ package io.helidon.common;
 /**
  * Unchecked exception.
  */
+@Api.Stable
 public class UncheckedException extends RuntimeException {
 
     /**

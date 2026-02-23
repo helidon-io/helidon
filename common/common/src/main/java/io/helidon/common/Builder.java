@@ -29,6 +29,7 @@ import java.util.function.Supplier;
  * @param <B> Type of the builder
  * @param <T> Type of the built instance
  */
+@Api.Stable
 @FunctionalInterface
 public interface Builder<B extends Builder<B, T>, T> extends Supplier<T> {
     /**

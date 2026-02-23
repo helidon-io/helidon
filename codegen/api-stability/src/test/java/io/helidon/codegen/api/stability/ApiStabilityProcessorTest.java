@@ -46,7 +46,7 @@ public class ApiStabilityProcessorTest {
     @Test
     void testPrivate() throws IOException {
         var messages = compile(new ApiStabilityProcessor(),
-                               paths(Api.Private.class,
+                               paths(Api.Internal.class,
                                      ClassCode.class,
                                      TypeName.class,
                                      ClassModel.class),

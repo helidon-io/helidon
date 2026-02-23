@@ -46,6 +46,7 @@
         <module>compiler</module>
         <module>testing</module>
         <module>api-stability</module>
+        <module>api-stability-enforcer</module>
     </modules>
 
     <build>
