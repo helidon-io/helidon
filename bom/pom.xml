@@ -394,6 +394,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.testing</groupId>
                 <artifactId>helidon-testing</artifactId>
                 <version>${helidon.version}</version>
