@@ -23,7 +23,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.helidon.config.Config;
-import io.helidon.grpc.core.ContextKeys;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.grpc.ClientUriSuppliers;
@@ -31,8 +30,8 @@ import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ProxyProtocolV2Data;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.grpc.GrpcConnectionContext;
 import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.grpc.ServerContextKeys;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -255,8 +254,7 @@ public class GrpcProxyProtocolTest {
     }
 
     static void getProxyData(Empty req, StreamObserver<Proxy.ProxyProtocolDataMessage> streamObserver) {
-        var context = ContextKeys.HELIDON_CONTEXT.get();
-        var connContext = context.get(GrpcConnectionContext.class, GrpcConnectionContext.class).get();
+        var connContext = ServerContextKeys.GRPC_CONNECTION_CONTEXT.get();
         var data = connContext.proxyProtocolData().get();
         var response = Proxy.ProxyProtocolDataMessage.newBuilder()
             .setVersion(1)

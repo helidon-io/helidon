@@ -163,17 +163,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 methodMetrics.callStarted.increment();
             }
 
-            // Include the GrpcConnectionContext in the Helidon Context so that the gRPC customer
+            // Include the GrpcConnectionContext in the gRPC Context so that the gRPC customer
             // handler can access the peer info and proxy protocol data.
-            Context context = Context.create(connectionContext.listenerContext().context());
-            context.register(GrpcConnectionContext.class, new GrpcConnectionContextImpl(connectionContext));
-
-            // initiate server call
-            ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-            listener = Contexts.runInContext(context, () ->
-                callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers)));
-            listener.onReady();
-            bytesReceived = 0L;
+            var grpcContextImpl = new GrpcConnectionContextImpl(connectionContext);
+            io.grpc.Context.current()
+                .withValue(ServerContextKeys.GRPC_CONNECTION_CONTEXT, grpcContextImpl)
+                .run(() -> {
+                    // initiate server call
+                    ServerCallHandler<REQ, RES> callHandler = route.callHandler();
+                    listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
+                    listener.onReady();
+                    bytesReceived = 0L;
+                });
         } catch (Throwable e) {
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;
