@@ -29,6 +29,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.Option;
 import io.helidon.codegen.api.stability.ApiStabilityScanner.Ref;
@@ -116,34 +117,41 @@ public class ApiStabilityProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        var trees = Trees.instance(processingEnv);
+        try {
+            var trees = Trees.instance(processingEnv);
 
-        Set<Ref> previewApis = new LinkedHashSet<>();
-        Set<Ref> incubatingApis = new LinkedHashSet<>();
-        Set<Ref> privateApis = new LinkedHashSet<>();
+            Set<Ref> previewApis = new LinkedHashSet<>();
+            Set<Ref> incubatingApis = new LinkedHashSet<>();
+            Set<Ref> privateApis = new LinkedHashSet<>();
 
-        for (var rootElement : roundEnv.getRootElements()) {
-            var path = trees.getPath(rootElement);
-            if (path != null) {
-                var unit = path.getCompilationUnit();
-                var scanner = new ApiStabilityScanner(trees, unit);
-                scanner.scan(unit, null);
-                previewApis.addAll(scanner.previewApis());
-                incubatingApis.addAll(scanner.incubatingApis());
-                privateApis.addAll(scanner.privateApis());
+            for (var rootElement : roundEnv.getRootElements()) {
+                var path = trees.getPath(rootElement);
+                if (path != null) {
+                    var unit = path.getCompilationUnit();
+                    var scanner = new ApiStabilityScanner(trees, unit);
+                    scanner.scan(unit, null);
+                    previewApis.addAll(scanner.previewApis());
+                    incubatingApis.addAll(scanner.incubatingApis());
+                    privateApis.addAll(scanner.privateApis());
+                }
             }
-        }
 
-        if (!previewApis.isEmpty()) {
-            log(previewAction, PREVIEW_META, previewApis);
-        }
+            if (!previewApis.isEmpty()) {
+                log(previewAction, PREVIEW_META, previewApis);
+            }
 
-        if (!incubatingApis.isEmpty()) {
-            log(incubatingAction, INCUBATING_META, incubatingApis);
-        }
+            if (!incubatingApis.isEmpty()) {
+                log(incubatingAction, INCUBATING_META, incubatingApis);
+            }
 
-        if (!privateApis.isEmpty()) {
-            log(privateAction, PRIVATE_META, privateApis);
+            if (!privateApis.isEmpty()) {
+                log(privateAction, PRIVATE_META, privateApis);
+            }
+        } catch (CodegenException e) {
+            throw e;
+        } catch (Throwable e) {
+            messager.printWarning("Failed in ApiStabilityProcessor: " + e);
+            e.printStackTrace();
         }
 
         return false;
