@@ -51,8 +51,6 @@ public class GrpcProxyProtocolTest {
 
     @Test
     public void testProxyProtocolV1OverTcp() throws IOException {
-        Files.createDirectories(tempDir);
-
         final var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
@@ -85,8 +83,6 @@ public class GrpcProxyProtocolTest {
 
     @Test
     public void testProxyProtocolV2OverTcp() throws IOException {
-        Files.createDirectories(tempDir);
-
         final var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
