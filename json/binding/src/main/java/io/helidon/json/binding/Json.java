@@ -286,10 +286,18 @@ public final class Json {
 
     }
 
+    /**
+     * A repeatable container for {@link io.helidon.json.binding.Json.Subtype}.
+     */
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface Subtypes {
 
+        /**
+         * Get the contained annotations.
+         *
+         * @return annotations
+         */
         Subtype[] value();
 
     }
