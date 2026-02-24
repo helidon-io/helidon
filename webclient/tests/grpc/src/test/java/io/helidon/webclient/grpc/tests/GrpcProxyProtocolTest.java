@@ -23,7 +23,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.helidon.config.Config;
-import io.helidon.testing.junit5.Testing;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.grpc.ClientUriSuppliers;
@@ -45,7 +44,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Testing.Test
 public class GrpcProxyProtocolTest {
     @TempDir
     public Path tempDir;
