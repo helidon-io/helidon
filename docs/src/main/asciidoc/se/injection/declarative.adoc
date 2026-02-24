@@ -235,6 +235,17 @@ Method annotations:
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_5, indent=0]
 ----
 
+The following annotation values can use configuration expressions:
+
+- `Scheduling.Cron#value()`
+- `Scheduling.Fixed#delayBy()`
+- `Scheduling.FixedRate#value()`
+
+Configuration expressions is a reference to a configuration key, with optional default value:
+
+`${config.key:default-value}`
+
+
 === Validation [[Dec-Validation]]
 
 Validation provides an ability to validate service method parameters and return types.
