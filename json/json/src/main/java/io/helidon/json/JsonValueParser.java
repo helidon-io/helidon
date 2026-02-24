@@ -270,7 +270,7 @@ class JsonValueParser implements JsonParser {
         if (replayMarked) {
             throw new IllegalStateException("Parser has already been marked for replaying. "
                                                     + "Cant do it twice without consuming the mark with either "
-                                                    + "dumpMark or resetToMark methods.");
+                                                    + "clearMark or resetToMark methods.");
         }
         replayIndex = replay.length - 1;
         replayMarked = true;
@@ -278,7 +278,7 @@ class JsonValueParser implements JsonParser {
     }
 
     @Override
-    public void dumpMark() {
+    public void clearMark() {
         replayMarked = false;
     }
 

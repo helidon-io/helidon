@@ -28,6 +28,7 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.common.types.TypeName;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
+import io.helidon.json.ObjectStartParser;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonBindingFactory;
@@ -88,7 +89,9 @@ class JsonTypesTest {
         checkField(toCheck, checked, fields, "JSON_SERIALIZE_NULLS", Json.SerializeNulls.class);
         checkField(toCheck, checked, fields, "JSON_PROPERTY_ORDER", Json.PropertyOrder.class);
         checkField(toCheck, checked, fields, "JSON_BUILDER_INFO", Json.BuilderInfo.class);
-        checkField(toCheck, checked, fields, "JSON_TYPE_INFO", Json.TypeInfo.class);
+        checkField(toCheck, checked, fields, "JSON_POLYMORPHIC", Json.Polymorphic.class);
+        checkField(toCheck, checked, fields, "JSON_SUBTYPE", Json.Subtype.class);
+        checkField(toCheck, checked, fields, "JSON_SUBTYPES", Json.Subtypes.class);
         checkField(toCheck, checked, fields, "JSON_FAIL_ON_UNKNOWN", Json.FailOnUnknown.class);
 
         checkField(toCheck, checked, fields, "JSON_DESERIALIZER_TYPE", JsonDeserializer.class);
@@ -99,6 +102,7 @@ class JsonTypesTest {
         checkField(toCheck, checked, fields, "JSON_SERIALIZERS", Serializers.class);
         checkField(toCheck, checked, fields, "JSON_GENERATOR", JsonGenerator.class);
         checkField(toCheck, checked, fields, "JSON_PARSER", JsonParser.class);
+        checkField(toCheck, checked, fields, "OBJECT_START_PARSER", ObjectStartParser.class);
 
         checkField(toCheck, checked, fields, "BUILDER_TYPE", Builder.class);
         checkField(toCheck, checked, fields, "BYTES", Bytes.class);

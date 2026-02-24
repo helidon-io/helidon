@@ -725,7 +725,7 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonException createException(String message) {
-        dumpMark();
+        clearMark();
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
@@ -743,14 +743,14 @@ class ArrayJsonParser implements JsonParser {
         if (replayMarked) {
             throw new IllegalStateException("Parser has already been marked for replaying. "
                                                     + "Cant do it twice without consuming the mark with either "
-                                                    + "dumpMark or resetToMark methods");
+                                                    + "clearMark or resetToMark methods");
         }
         replayMarked = true;
         mark = currentIndex;
     }
 
     @Override
-    public void dumpMark() {
+    public void clearMark() {
         replayMarked = false;
         mark = -1;
     }

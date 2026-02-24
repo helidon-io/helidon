@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for JsonParser marking mechanism.
- * Covers mark, resetToMark, and dumpMark functionality.
+ * Covers mark, resetToMark, and clearMark functionality.
  */
 abstract class MarkingTest {
 
@@ -135,7 +135,7 @@ abstract class MarkingTest {
         JsonParser parser = createParser(json);
 
         parser.mark();
-        parser.dumpMark();
+        parser.clearMark();
 
         // Should not be able to reset after dump
         assertThrows(IllegalStateException.class, parser::resetToMark);
@@ -167,7 +167,7 @@ abstract class MarkingTest {
         JsonParser parser = createParser(json);
 
         parser.mark();
-        parser.dumpMark();
+        parser.clearMark();
 
         // Reset after dump should throw exception
         assertThrows(IllegalStateException.class, parser::resetToMark);

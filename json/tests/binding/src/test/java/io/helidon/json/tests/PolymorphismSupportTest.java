@@ -156,7 +156,7 @@ public class PolymorphismSupportTest {
 
     @Test
     void testNoDefaultImplementationMissingTypeThrows() {
-        // With no defaultImplementation, missing discriminator should be an error.
+        // With no defaultSubtype, missing discriminator should be an error.
         assertThrows(Exception.class, () -> jsonBinding.deserialize("{}", Vehicle.class));
     }
 
@@ -494,11 +494,36 @@ public class PolymorphismSupportTest {
         assertThat(deserialize2.value(), is("test4"));
     }
 
+    @Test
+    void testClassInheritance() {
+        ChildClass childClass = new ChildClass();
+        childClass.valueParent("parent");
+        childClass.valueChild("child");
+        String json = jsonBinding.serialize(childClass, ParentClass.class);
+        assertThat(json, is("{\"@type\":\"childclass\",\"valueParent\":\"parent\",\"valueChild\":\"child\"}"));
+
+        ParentClass deserialized = jsonBinding.deserialize(json, ParentClass.class);
+        assertThat(deserialized, instanceOf(ChildClass.class));
+        assertThat(deserialized.valueParent(), is("parent"));
+        assertThat(((ChildClass) deserialized).valueChild(), is("child"));
+    }
+
+    @Test
+    void testClassInheritanceFallback() {
+        ParentClass childClass = new ParentClass();
+        childClass.valueParent("parent");
+        String json = jsonBinding.serialize(childClass, ParentClass.class);
+        assertThat(json, is("{\"valueParent\":\"parent\"}"));
+
+        ParentClass deserialized = jsonBinding.deserialize(json, ParentClass.class);
+        assertThat(deserialized, instanceOf(ParentClass.class));
+        assertThat(deserialized.valueParent(), is("parent"));
+    }
+
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "dog", type = Dog.class),
-            @Json.Subtype(alias = "cat", type = Cat.class)
-    }, defaultImplementation = Bird.class)
+    @Json.Polymorphic(defaultSubtype = Bird.class)
+    @Json.Subtype(Dog.class)
+    @Json.Subtype(Cat.class)
     interface Animal {
     }
 
@@ -576,10 +601,8 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "car", type = Car.class),
-            @Json.Subtype(alias = "bike", type = Bike.class)
-    })
+    @Json.Subtype(Car.class)
+    @Json.Subtype(Bike.class)
     interface Vehicle {
     }
 
@@ -610,10 +633,9 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "circle", type = Circle.class),
-            @Json.Subtype(alias = "square", type = Square.class)
-    }, key = "kind")
+    @Json.Polymorphic(key = "kind")
+    @Json.Subtype(Circle.class)
+    @Json.Subtype(Square.class)
     interface Shape {
     }
 
@@ -645,18 +667,17 @@ public class PolymorphismSupportTest {
 
     // Test interface with more than 9 subtypes to trigger switch structure in generated code
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "type1", type = ManyType1.class),
-            @Json.Subtype(alias = "type2", type = ManyType2.class),
-            @Json.Subtype(alias = "type3", type = ManyType3.class),
-            @Json.Subtype(alias = "type4", type = ManyType4.class),
-            @Json.Subtype(alias = "type5", type = ManyType5.class),
-            @Json.Subtype(alias = "type6", type = ManyType6.class),
-            @Json.Subtype(alias = "type7", type = ManyType7.class),
-            @Json.Subtype(alias = "type8", type = ManyType8.class),
-            @Json.Subtype(alias = "type9", type = ManyType9.class),
-            @Json.Subtype(alias = "type10", type = ManyType10.class)
-    }, defaultImplementation = ManyTypeDefault.class)
+    @Json.Polymorphic(defaultSubtype = ManyTypeDefault.class)
+    @Json.Subtype(value = ManyType1.class, alias = "type1")
+    @Json.Subtype(value = ManyType2.class, alias = "type2")
+    @Json.Subtype(value = ManyType3.class, alias = "type3")
+    @Json.Subtype(value = ManyType4.class, alias = "type4")
+    @Json.Subtype(value = ManyType5.class, alias = "type5")
+    @Json.Subtype(value = ManyType6.class, alias = "type6")
+    @Json.Subtype(value = ManyType7.class, alias = "type7")
+    @Json.Subtype(value = ManyType8.class, alias = "type8")
+    @Json.Subtype(value = ManyType9.class, alias = "type9")
+    @Json.Subtype(value = ManyType10.class, alias = "type10")
     interface ManyTypes {
     }
 
@@ -817,10 +838,9 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "a1", type = ConcreteA1.class),
-            @Json.Subtype(alias = "b", type = InterfaceB.class)
-    }, defaultImplementation = ConcreteADefault.class)
+    @Json.Polymorphic(defaultSubtype = ConcreteADefault.class)
+    @Json.Subtype(alias = "a1", value = ConcreteA1.class)
+    @Json.Subtype(alias = "b", value = InterfaceB.class)
     interface InterfaceA {
     }
 
@@ -851,10 +871,9 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "b1", type = ConcreteB1.class),
-            @Json.Subtype(alias = "b2", type = ConcreteB2.class)
-    }, defaultImplementation = ConcreteBDefault.class, key = "@type2")
+    @Json.Polymorphic(defaultSubtype = ConcreteBDefault.class, key = "@type2")
+    @Json.Subtype(alias = "b1", value = ConcreteB1.class)
+    @Json.Subtype(alias = "b2", value = ConcreteB2.class)
     interface InterfaceB extends InterfaceA {
     }
 
@@ -899,12 +918,10 @@ public class PolymorphismSupportTest {
 
     // Test interfaces and classes for hash collision testing
     @Json.Entity
-    @Json.TypeInfo(value = {
-            @Json.Subtype(alias = "costarring", type = HashCollisionType1.class),  // FNV1a hash: 0x89C62E45
-            @Json.Subtype(alias = "liquid", type = HashCollisionType2.class),      // FNV1a hash: 0x89C62E45 (collision)
-            @Json.Subtype(alias = "declinate", type = HashCollisionType3.class),  // FNV1a hash: 0x0BF8B80D
-            @Json.Subtype(alias = "macallums", type = HashCollisionType4.class)   // FNV1a hash: 0x0BF8B80D (collision)
-    })
+    @Json.Subtype(alias = "costarring", value = HashCollisionType1.class) // FNV1a hash: 0x89C62E45
+    @Json.Subtype(alias = "liquid", value = HashCollisionType2.class)     // FNV1a hash: 0x89C62E45 (collision)
+    @Json.Subtype(alias = "declinate", value = HashCollisionType3.class)  // FNV1a hash: 0x0BF8B80D
+    @Json.Subtype(alias = "macallums", value = HashCollisionType4.class)  // FNV1a hash: 0x0BF8B80D (collision)
     interface HashCollisionParent {
         String value();
         void value(String value);
@@ -967,6 +984,35 @@ public class PolymorphismSupportTest {
         @Override
         public void value(String value) {
             this.value = value;
+        }
+    }
+
+    @Json.Entity
+    @Json.Subtype(ChildClass.class)
+    static class ParentClass {
+
+        private String valueParent;
+
+        public String valueParent() {
+            return valueParent;
+        }
+
+        public void valueParent(String valueParent) {
+            this.valueParent = valueParent;
+        }
+    }
+
+    @Json.Entity
+    static class ChildClass extends ParentClass {
+
+        private String valueChild;
+
+        public String valueChild() {
+            return valueChild;
+        }
+
+        public void valueChild(String valueChild) {
+            this.valueChild = valueChild;
         }
     }
 

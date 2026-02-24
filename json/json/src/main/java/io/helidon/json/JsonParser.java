@@ -430,12 +430,12 @@ public interface JsonParser {
     void mark();
 
     /**
-     * Discards the current mark.
+     * Clears the current mark.
      * <p>
      * This method clears any previously set mark. Should be always called when backtracking is no longer needed.
      * </p>
      */
-    void dumpMark();
+    void clearMark();
 
     /**
      * Resets the parser position to the previously marked position.

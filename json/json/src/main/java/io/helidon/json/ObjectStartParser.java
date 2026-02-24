@@ -16,7 +16,10 @@
 
 package io.helidon.json;
 
-class ObjectStartParser implements JsonParser {
+/**
+ * An implementation of the {@link io.helidon.json.JsonParser} which enforces object start as the current value.
+ */
+public final class ObjectStartParser implements JsonParser {
 
     private static final JsonParser OBJECT_START_PARSER = new ForcedObjectStartParser();
 
@@ -25,8 +28,22 @@ class ObjectStartParser implements JsonParser {
     private boolean switched = false;
     private boolean marked = false;
 
-    ObjectStartParser(JsonParser realParser) {
+    private ObjectStartParser(JsonParser realParser) {
         this.realParser = realParser;
+    }
+
+    /**
+     * Create a new JSON parser that pretends to be at the beginning of an object.
+     * <p>
+     * This method wraps an existing parser to ensure that parsing begins
+     * at the start of a JSON object ('{'). It is expected the provided parser is at the key start or object end.
+     * </p>
+     *
+     * @param parser the base parser to wrap
+     * @return a new ObjectStartParser instance that starts at object beginning
+     */
+    public static ObjectStartParser create(JsonParser parser) {
+        return new ObjectStartParser(parser);
     }
 
     @Override
@@ -160,10 +177,10 @@ class ObjectStartParser implements JsonParser {
     }
 
     @Override
-    public void dumpMark() {
+    public void clearMark() {
         marked = false;
         if (switched) {
-            parser.dumpMark();
+            parser.clearMark();
         }
     }
 
@@ -299,7 +316,7 @@ class ObjectStartParser implements JsonParser {
         }
 
         @Override
-        public void dumpMark() {
+        public void clearMark() {
             throw new UnsupportedOperationException("This parser allows only currentByte");
         }
 

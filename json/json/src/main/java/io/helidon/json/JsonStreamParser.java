@@ -435,14 +435,14 @@ final class JsonStreamParser implements JsonParser {
         if (replayMarked) {
             throw new IllegalStateException("Parser has already been marked for replaying. "
                                                     + "Cant do it twice without consuming the mark with either "
-                                                    + "dumpMark or resetToMark methods.");
+                                                    + "clearMark or resetToMark methods.");
         }
         replayMarked = true;
         mark = currentIndex;
     }
 
     @Override
-    public void dumpMark() {
+    public void clearMark() {
         replayMarked = false;
         mark = -1;
     }

@@ -33,6 +33,7 @@ import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.Executable;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -86,35 +87,39 @@ class JsonConverterGenerator {
                                  .add("Json converter for {@link " + converterInfo.originalType().fqName() + "}.")
                                  .build());
 
-        boolean hasPolymorphismInfo = converterInfo.polymorphismInfo().isPresent();
-        if (hasPolymorphismInfo) {
+        boolean hasPolymorphicInfo = converterInfo.polymorphicInfo().isPresent();
+        boolean specialPolyConverter = converterInfo.polymorphicInfo().map(PolymorphicInfo::classConverterMethods).orElse(false);
+        if (hasPolymorphicInfo) {
             classBuilder.addField(field -> field.name("configurator").type(JsonTypes.JSON_BINDING_CONFIGURATOR).isVolatile(true))
                     .addMethod(method -> generatePolySerializeMethod(classBuilder,
                                                                      method,
                                                                      converterInfo,
-                                                                     converterInfo.polymorphismInfo().get(),
+                                                                     converterInfo.polymorphicInfo().get(),
                                                                      toConfigure))
                     .addMethod(method -> generatePolyDeserializeMethod(classBuilder,
                                                                        method,
                                                                        converterInfo,
-                                                                       converterInfo.polymorphismInfo().get(),
+                                                                       converterInfo.polymorphicInfo().get(),
                                                                        toConfigure));
-        } else {
+        }
+        if (!hasPolymorphicInfo || specialPolyConverter) {
             classBuilder.addMethod(method -> generateSerializeMethod(classBuilder,
                                                                      method,
                                                                      converterInfo,
-                                                                     toConfigure))
+                                                                     toConfigure,
+                                                                     specialPolyConverter))
                     .addMethod(method -> generateDeserializeMethod(classBuilder,
                                                                    method,
                                                                    converterInfo,
-                                                                   toConfigure));
+                                                                   toConfigure,
+                                                                   specialPolyConverter));
         }
 
         if (factory) {
-            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure, converterInfo, hasPolymorphismInfo));
+            classBuilder.addMethod(method -> addConfigurationFactory(method, toConfigure, converterInfo, hasPolymorphicInfo));
             classBuilder.addMethod(method -> addTypeMethodFactory(method, converterInfo));
         } else {
-            classBuilder.addMethod(method -> addConfigurationMethod(method, toConfigure, hasPolymorphismInfo));
+            classBuilder.addMethod(method -> addConfigurationMethod(method, toConfigure, hasPolymorphicInfo));
             classBuilder.addMethod(method -> addTypeMethod(method, converterInfo));
         }
     }
@@ -122,7 +127,7 @@ class JsonConverterGenerator {
     private static void generatePolySerializeMethod(ClassBase.Builder<?, ?> classBuilder,
                                                     Method.Builder method,
                                                     ConvertedTypeInfo converterInfo,
-                                                    PolymorphismInfo polymorphismInfo,
+                                                    PolymorphicInfo polymorphicInfo,
                                                     Map<String, TypeToConfigure> toConfigure) {
         method.name("serialize")
                 .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
@@ -131,7 +136,7 @@ class JsonConverterGenerator {
                 .addAnnotation(Annotation.create(Override.class));
 
         Set<String> createdSerializers = new HashSet<>();
-        Map<String, TypeName> aliases = polymorphismInfo.aliases();
+        Map<String, TypeName> aliases = polymorphicInfo.aliases();
         boolean first = true;
         for (TypeName typeName : aliases.values()) {
             TypeName resolved = typeName.boxed();
@@ -163,6 +168,17 @@ class JsonConverterGenerator {
                     .addContentLine(" _instance) {")
                     .addContentLine(fieldName + ".serialize(generator, _instance, writeNulls);");
         }
+        if (polymorphicInfo.classConverterMethods()) {
+            if (!first) {
+                method.addContent("}") //Automatic padding decrease
+                        .addContent(" else ");
+            }
+            first = false;
+            method.addContent("if (instance.getClass() == ")
+                    .addContent(converterInfo.originalType())
+                    .addContentLine(".class) {")
+                    .addContentLine("serializeSelf(generator, instance);");
+        }
         TypeName serializerType = TypeName.builder()
                 .from(JsonTypes.JSON_SERIALIZER_TYPE)
                 .addTypeArgument(converterInfo.originalType())
@@ -184,10 +200,10 @@ class JsonConverterGenerator {
     private static void generatePolyDeserializeMethod(ClassBase.Builder<?, ?> classBuilder,
                                                       Method.Builder method,
                                                       ConvertedTypeInfo converterInfo,
-                                                      PolymorphismInfo polymorphismInfo,
+                                                      PolymorphicInfo polymorphicInfo,
                                                       Map<String, TypeToConfigure> toConfigure) {
         Set<String> createdDeserializers = new HashSet<>();
-        boolean hasDefault = polymorphismInfo.defaultImpl().isPresent();
+        boolean hasDefault = polymorphicInfo.defaultSubtype().isPresent();
 
         method.name("deserialize")
                 .returnType(converterInfo.wildcardsGenerics())
@@ -209,7 +225,7 @@ class JsonConverterGenerator {
             addPolyDeserializerInvocation(classBuilder,
                                           method,
                                           toConfigure,
-                                          polymorphismInfo.defaultImpl().get(),
+                                          polymorphicInfo.defaultSubtype().get(),
                                           createdDeserializers,
                                           true);
         } else {
@@ -222,7 +238,7 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
                 .addContentLine("}");
 
-        String polyPropertyName = polymorphismInfo.property();
+        String polyPropertyName = polymorphicInfo.property();
         int polyPropertyHash = calculateNameHash(polyPropertyName);
         method.addContentLine("int hash = parser.readStringAsHash();")
                 .addContentLine("if (hash != " + polyPropertyHash + ") { //Property name: " + polyPropertyName)
@@ -231,9 +247,12 @@ class JsonConverterGenerator {
             addPolyDeserializerInvocation(classBuilder,
                                           method,
                                           toConfigure,
-                                          polymorphismInfo.defaultImpl().get(),
+                                          polymorphicInfo.defaultSubtype().get(),
                                           createdDeserializers,
                                           true);
+        } else if (polymorphicInfo.classConverterMethods()) {
+            method.addContentLine("parser.resetToMark();")
+                    .addContentLine("return deserializeSelf(parser);");
         } else {
             method.addContentLine("throw parser.createException(\"Missing property containing alias\");");
         }
@@ -250,13 +269,13 @@ class JsonConverterGenerator {
                 .addContentLine(".DOUBLE_QUOTE_BYTE) {")
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as an alias value\", lastByte);")
                 .addContentLine("}")
-                .addContentLine("parser.dumpMark();");
-        Map<Integer, List<AliasInfo>> aliasHashes = polymorphismInfo.aliases()
+                .addContentLine("parser.clearMark();");
+        Map<Integer, List<AliasInfo>> aliasHashes = polymorphicInfo.aliases()
                 .entrySet()
                 .stream()
                 .map(it -> new AliasInfo(it.getKey(), it.getValue()))
                 .collect(Collectors.groupingBy(it -> calculateNameHash(it.alias())));
-        boolean collisionsDetected = aliasHashes.size() != polymorphismInfo.aliases().size(); //Hash collisions detected
+        boolean collisionsDetected = aliasHashes.size() != polymorphicInfo.aliases().size(); //Hash collisions detected
         if (collisionsDetected) {
             method.addContentLine("parser.mark();");
         }
@@ -275,7 +294,7 @@ class JsonConverterGenerator {
 
         processAliasValues(classBuilder,
                            method,
-                           polymorphismInfo,
+                           polymorphicInfo,
                            toConfigure,
                            aliasHashes,
                            createdDeserializers,
@@ -284,12 +303,12 @@ class JsonConverterGenerator {
 
     private static void processAliasValues(ClassBase.Builder<?, ?> classBuilder,
                                            Method.Builder method,
-                                           PolymorphismInfo polymorphismInfo,
+                                           PolymorphicInfo polymorphicInfo,
                                            Map<String, TypeToConfigure> toConfigure,
                                            Map<Integer, List<AliasInfo>> aliasHashes,
                                            Set<String> createdDeserializers,
                                            boolean collisionsDetected) {
-        boolean switchUsed = polymorphismInfo.aliases().size() > 9;
+        boolean switchUsed = polymorphicInfo.aliases().size() > 9;
         if (switchUsed) {
             method.addContentLine("switch (hash) { ");
         }
@@ -333,7 +352,7 @@ class JsonConverterGenerator {
                 method.addContentLine("}");
             } else {
                 if (collisionsDetected) {
-                    method.addContentLine("parser.dumpMark();");
+                    method.addContentLine("parser.clearMark();");
                 }
                 addPolyDeserializerInvocation(classBuilder,
                                               method,
@@ -354,7 +373,7 @@ class JsonConverterGenerator {
             method.addContentLine();
         }
         if (collisionsDetected) {
-            method.addContentLine("parser.dumpMark();");
+            method.addContentLine("parser.clearMark();");
         }
         method.addContentLine("throw parser.createException(\"Unknown alias value\");");
         if (switchUsed) {
@@ -390,8 +409,8 @@ class JsonConverterGenerator {
             method.addContentLine("return " + fieldName + ".deserialize(parser);");
         } else {
             method.addContent("return " + fieldName + ".deserialize(")
-                    .addContent(JsonTypes.JSON_PARSER)
-                    .addContentLine(".objectStart(parser));");
+                    .addContent(JsonTypes.OBJECT_START_PARSER)
+                    .addContentLine(".create(parser));");
         }
     }
 
@@ -577,13 +596,21 @@ class JsonConverterGenerator {
     private static void generateSerializeMethod(ClassBase.Builder<?, ?> classBuilder,
                                                 Method.Builder method,
                                                 ConvertedTypeInfo converterInfo,
-                                                Map<String, TypeToConfigure> toConfigure) {
-        method.name("serialize")
-                .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
-                .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
-                .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
-                .addAnnotation(Annotation.create(Override.class))
-                .addContentLine("generator.writeObjectStart();");
+                                                Map<String, TypeToConfigure> toConfigure,
+                                                boolean specialPolyConverter) {
+        if (specialPolyConverter) {
+            method.name("serializeSelf")
+                    .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
+                    .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
+                    .accessModifier(AccessModifier.PRIVATE);
+        } else {
+            method.name("serialize")
+                    .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
+                    .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
+                    .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
+                    .addAnnotation(Annotation.create(Override.class));
+        }
+        method.addContentLine("generator.writeObjectStart();");
 
         addExtraProperties(method, converterInfo);
 
@@ -675,7 +702,8 @@ class JsonConverterGenerator {
     private static void generateDeserializeMethod(ClassBase.Builder<?, ?> classBuilder,
                                                   Method.Builder method,
                                                   ConvertedTypeInfo converterInfo,
-                                                  Map<String, TypeToConfigure> toConfigure) {
+                                                  Map<String, TypeToConfigure> toConfigure,
+                                                  boolean specialPolyConverter) {
         CreatorInfo creatorInfo = converterInfo.creatorInfo();
         ElementKind creatorKind = creatorInfo.creatorKind();
         boolean hasCreator = creatorKind != null && !creatorInfo.parameters().isEmpty();
@@ -686,11 +714,18 @@ class JsonConverterGenerator {
                 .filter(JsonConverterGenerator::usableForDeserialization)
                 .toList();
 
-        method.name("deserialize")
-                .returnType(converterInfo.wildcardsGenerics())
-                .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
-                .addAnnotation(Annotation.create(Override.class))
-                .addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
+        if (specialPolyConverter) {
+            method.name("deserializeSelf")
+                    .returnType(converterInfo.wildcardsGenerics())
+                    .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                    .accessModifier(AccessModifier.PRIVATE);
+        } else {
+            method.name("deserialize")
+                    .returnType(converterInfo.wildcardsGenerics())
+                    .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                    .addAnnotation(Annotation.create(Override.class));
+        }
+        method.addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
                 .addContent("if (lastByte != ")
                 .addContent(BYTES)
                 .addContentLine(".BRACE_OPEN_BYTE) {")
@@ -876,7 +911,7 @@ class JsonConverterGenerator {
                         method.addContentLine("}");
                     } else {
                         if (collisionsDetected) {
-                            method.addContentLine("parser.dumpMark();");
+                            method.addContentLine("parser.clearMark();");
                         }
                         addTypeHandling(jsonProperty,
                                         method,
@@ -899,7 +934,7 @@ class JsonConverterGenerator {
                 method.addContentLine(" else {");
             }
             if (collisionsDetected) {
-                method.addContentLine("parser.dumpMark();");
+                method.addContentLine("parser.clearMark();");
             }
             if (converterInfo.failOnUnknown()) {
                 method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")

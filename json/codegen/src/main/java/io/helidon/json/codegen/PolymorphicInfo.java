@@ -21,5 +21,8 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 
-record PolymorphismInfo(String property, Optional<TypeName> defaultImpl, Map<String, TypeName> aliases) {
+record PolymorphicInfo(String property,
+                       Optional<TypeName> defaultSubtype,
+                       Map<String, TypeName> aliases,
+                       boolean classConverterMethods) {
 }

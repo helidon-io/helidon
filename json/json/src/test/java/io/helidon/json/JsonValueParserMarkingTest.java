@@ -148,7 +148,7 @@ class JsonValueParserMarkingTest {
         JsonParser parser = JsonParser.create(original);
 
         parser.mark();
-        parser.dumpMark();
+        parser.clearMark();
 
         // Should not be able to reset after dump
         assertThrows(IllegalStateException.class, parser::resetToMark);
@@ -180,7 +180,7 @@ class JsonValueParserMarkingTest {
         JsonParser parser = JsonParser.create(original);
 
         parser.mark();
-        parser.dumpMark();
+        parser.clearMark();
 
         // Reset after dump should throw exception
         assertThrows(IllegalStateException.class, parser::resetToMark);
