@@ -2,7 +2,7 @@
                            Project Helidon
                            ===============
 
-Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+Copyright (c) 2017, 2026 Oracle and/or its affiliates.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,4 +27,3 @@ find a copy in the Helidon GitHub repository:
 https://github.com/oracle/helidon/blob/${project.version}/THIRD_PARTY_LICENSES.txt
 
 Or in the Helidon artifact: io.helidon.licensing:helidon-licensing:${project.version}
-
