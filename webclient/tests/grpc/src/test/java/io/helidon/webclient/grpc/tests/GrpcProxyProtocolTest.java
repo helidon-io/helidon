@@ -23,6 +23,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.helidon.config.Config;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.grpc.ClientUriSuppliers;
@@ -44,12 +45,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@Testing.Test
 public class GrpcProxyProtocolTest {
     @TempDir
     public Path tempDir;
 
     @Test
-    public void testProxyProtocolV1OverTcp() throws IOException {
+    public void testProxyProtocolV1OverTcp() {
         var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
@@ -98,7 +100,7 @@ public class GrpcProxyProtocolTest {
             .tls(t -> t.enabled(false))
             .connectionListener(v2Listener(new int[] {
                 0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, 0x55, 0x49, 0x54, 0x0A, // header
-                0x21, // version 1, PROXY command
+                0x21, // version 2, PROXY command
                 0x11, // AF_INET, STREAM
                 0x00, 0x20, // 32 bytes remaining,
                 // Addresses
@@ -197,7 +199,7 @@ public class GrpcProxyProtocolTest {
             .tls(t -> t.enabled(false))
             .connectionListener(v2Listener(new int[] {
                 0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, 0x55, 0x49, 0x54, 0x0A, // header
-                0x21, // version 1, PROXY command
+                0x21, // version 2, PROXY command
                 0x11, // AF_INET, STREAM
                 0x00, 0x20, // 32 bytes remaining,
                 // Addresses
