@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.util.Objects;
 import java.util.Optional;
 
 class AnnotationPropertyImpl implements AnnotationProperty {
@@ -39,5 +40,29 @@ class AnnotationPropertyImpl implements AnnotationProperty {
     @Override
     public Optional<ConstantValue> constantValue() {
         return Optional.ofNullable(constantValue);
+    }
+
+    @Override
+    public String toString() {
+        if (constantValue == null) {
+            return String.valueOf(value);
+        }
+        return constantValue.type().fqName() + "." + constantValue.name();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj instanceof AnnotationPropertyImpl api) {
+            return Objects.equals(value, api.value);
+        }
+        return Objects.equals(obj, value);
     }
 }

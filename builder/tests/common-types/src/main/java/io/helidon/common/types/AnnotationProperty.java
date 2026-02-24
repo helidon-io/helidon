@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,17 +39,14 @@ public interface AnnotationProperty {
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
 
-        if (value instanceof AnnotationProperty) {
-            throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
-                                                       + ", value: " + value);
-        }
-        if (value instanceof EnumValue ev) {
-            return new AnnotationPropertyImpl(value, ev);
-        }
-        if (value instanceof Enum en) {
-            return new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
-        }
-        return new AnnotationPropertyImpl(value);
+        return switch (value) {
+            case AnnotationProperty ap ->
+                    throw new IllegalArgumentException("Cannot use an existing annotation property to create a new one."
+                                                               + ", value: " + value + ", inlined value: " + ap.value());
+            case EnumValue ev -> new AnnotationPropertyImpl(value, ev);
+            case Enum en -> new AnnotationPropertyImpl(value, EnumValue.create(en.getDeclaringClass(), en));
+            default -> new AnnotationPropertyImpl(value);
+        };
     }
 
     /**
