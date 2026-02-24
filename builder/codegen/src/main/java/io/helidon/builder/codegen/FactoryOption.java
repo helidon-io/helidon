@@ -807,6 +807,31 @@ final class FactoryOption {
             );
             return;
         }
+        // first check if there is a factory method on the type itself (i.e. MyType create(Config))
+        // and lastly - maybe there is a config factory method on the type
+        var actualTypeInfo = roundContext.typeInfo(actualType);
+
+        if (actualTypeInfo.isPresent() && actualTypeInfo.get()
+                .elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .filter(it -> Utils.typesEqual(it.typeName(), actualType))
+                .filter(it -> it.parameterArguments().size() == 1)
+                .map(it -> it.parameterArguments().getFirst().typeName())
+                .anyMatch(it -> it.equals(COMMON_CONFIG) || it.equals(CONFIG))) {
+            // there is a config factory method on the type
+            configured.factoryMethod(fm -> fm
+                    .declaringType(actualType)
+                    .returnType(actualType)
+                    .methodName("create")
+                    .parameterType(COMMON_CONFIG)
+                    .optionName(optionName)
+            );
+            return;
+        }
+
         // check if a runtime type prototype is a configured prototype
         if (option.runtimeType().isPresent()) {
             var rt = option.runtimeType().get();
@@ -854,32 +879,7 @@ final class FactoryOption {
                         .parameterType(CONFIG)
                         .optionName(optionName)
                 );
-                return;
             }
-        }
-        // and lastly - maybe there is a config factory method on the type
-        var actualTypeInfo = roundContext.typeInfo(actualType);
-        if (actualTypeInfo.isEmpty()) {
-            return;
-        }
-        if (actualTypeInfo.get()
-                .elementInfo()
-                .stream()
-                .filter(ElementInfoPredicates::isMethod)
-                .filter(ElementInfoPredicates::isStatic)
-                .filter(not(ElementInfoPredicates::isPrivate))
-                .filter(it -> Utils.typesEqual(it.typeName(), actualType))
-                .filter(it -> it.parameterArguments().size() == 1)
-                .map(it -> it.parameterArguments().getFirst().typeName())
-                .anyMatch(it -> it.equals(COMMON_CONFIG) || it.equals(CONFIG))) {
-            // there is a config factory method on the type
-            configured.factoryMethod(fm -> fm
-                    .declaringType(actualType)
-                    .returnType(actualType)
-                    .methodName("create")
-                    .parameterType(COMMON_CONFIG)
-                    .optionName(optionName)
-            );
         }
     }
 

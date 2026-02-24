@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -125,6 +126,7 @@ class BuilderCodegen implements CodegenExtension {
 
     @Override
     public void process(RoundContext roundContext) {
+        ctx.logger().log(Level.DEBUG, "Processing builder codegen round.");
         Collection<TypeInfo> blueprints = roundContext.annotatedTypes(Types.PROTOTYPE_BLUEPRINT);
 
         List<TypeInfo> blueprintInterfaces = blueprints.stream()
@@ -161,10 +163,10 @@ class BuilderCodegen implements CodegenExtension {
                         .addObject(error.getSource());
 
                 switch (error.getSeverity()) {
-                case FATAL -> builder.level(System.Logger.Level.ERROR);
-                case WARN -> builder.level(System.Logger.Level.WARNING);
-                case HINT -> builder.level(System.Logger.Level.INFO);
-                default -> builder.level(System.Logger.Level.DEBUG);
+                case FATAL -> builder.level(Level.ERROR);
+                case WARN -> builder.level(Level.WARNING);
+                case HINT -> builder.level(Level.INFO);
+                default -> builder.level(Level.DEBUG);
                 }
 
                 ctx.logger().log(builder.build());
@@ -356,10 +358,14 @@ class BuilderCodegen implements CodegenExtension {
     }
 
     private void process(RoundContext roundContext, TypeInfo blueprint) {
+        ctx.logger().log(Level.DEBUG, "Analyzing blueprint: " + blueprint.typeName().fqName());
+
         /*
          All information about the prototype itself except for options
          */
         PrototypeInfo tmpPrototypeInfo = FactoryPrototypeInfo.create(roundContext, blueprint);
+
+        ctx.logger().log(Level.TRACE, "Prototype info from blueprint: " + tmpPrototypeInfo);
 
         // find all extensions, as these may modify handling of our types
         List<BuilderCodegenExtension> extensions = findExtensions(tmpPrototypeInfo);
@@ -368,6 +374,8 @@ class BuilderCodegen implements CodegenExtension {
         for (BuilderCodegenExtension extension : extensions) {
             tmpPrototypeInfo = extension.prototypeInfo(tmpPrototypeInfo);
         }
+
+        ctx.logger().log(Level.TRACE, "Prototype info after extensions: " + tmpPrototypeInfo);
 
         /*
          We must identify the first prototype/blueprint we extend, and then discover all options on interfaces we extend
@@ -475,6 +483,10 @@ class BuilderCodegen implements CodegenExtension {
         var optionHandlers = options.stream()
                 .map(it -> OptionHandler.create(extensions, prototypeInfo, it))
                 .toList();
+
+        for (OptionInfo option : options) {
+            ctx.logger().log(Level.TRACE, "Prototype option " + option.name() + ": " + option);
+        }
 
         generatePrototype(roundContext, extensions, prototypeInfo, optionHandlers, newDefaults);
     }
