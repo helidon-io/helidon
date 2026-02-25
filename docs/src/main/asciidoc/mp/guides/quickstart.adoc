@@ -29,7 +29,7 @@ This quick start describes how to create and run a basic Helidon MP application 
 
 The Helidon *Project Starter* allows you to quickly generate a project with basic functionality that lets you explore the features of Helidon and that's also customizable enough to use as a starting point for your own projects and applications.
 
-. Make sure your environment is properly set up for Helidon development. See xref:prerequisites.adoc[Getting Started].
+. Make sure your environment is properly set up for Helidon development. See xref:../../about/prerequisites.adoc[Getting Started].
 . Go to the https://helidon.io/starter[Helidon Project Starter] page on the Helidon website.
 . Under *Helidon Flavor*, select *Helidon MP* and click *Next*.
 . Under *Application Type*, select *Quickstart* and click *Next*.
