@@ -83,12 +83,12 @@ public class ApiStabilityEnforcerProcessor extends AbstractProcessor {
         }
 
         if (discovered.isEmpty()) {
-            messager.printError("Public API " + type + " is missing stability annotation (Api.*)", type);
+            messager.printError("Public API " + type + " is missing stability annotation (@Api.*)", type);
             return;
         }
 
         if (discovered.size() > 1) {
-            messager.printError("Public API " + type + " has more than one stability annotation (Api.*)", type);
+            messager.printError("Public API " + type + " has more than one stability annotation (@Api.*)", type);
             return;
         }
     }
