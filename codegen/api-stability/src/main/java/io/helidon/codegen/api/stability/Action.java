@@ -17,8 +17,20 @@
 package io.helidon.codegen.api.stability;
 
 enum Action {
+    /**
+     * Default, may be used by the overall option, to use defaults for each specific stability check.
+     */
     DEFAULT,
+    /**
+     * Fail if any API uses the annotated API.
+     */
     FAIL,
+    /**
+     * Warn if any API uses the annotated API.
+     */
     WARN,
+    /**
+     * Do nothing if an API uses the annotated API.
+     */
     IGNORE
 }

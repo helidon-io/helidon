@@ -27,6 +27,7 @@ import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
@@ -175,10 +176,25 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             }
 
         } catch (CodegenException e) {
-            throw e;
+            // exceptions are consumed, so we do not fail user's build when we have a problem in our own code
+            // build should only fail if we discover bad API usage
+
+            var origElement = e.originatingElement().orElse(null);
+            if (origElement instanceof Element el) {
+                messager.printWarning("Failed in API Stability processor, "
+                                              + "exception will not be re-thrown. Message: " + e.getMessage(),
+                                      el);
+            } else {
+                messager.printWarning("Failed in API Stability processor, "
+                                              + "exception will not be re-thrown. Message: " + e.getMessage()
+                                              + ", originating element: " + origElement);
+            }
         } catch (Throwable e) {
-            messager.printWarning("Failed in ApiStabilityProcessor: " + e);
-            e.printStackTrace();
+            // exceptions are consumed, so we do not fail user's build when we have a problem in our own code
+            // build should only fail if we discover bad API usage
+
+            messager.printWarning("Failed in ApiStabilityProcessor. Exception class: " + e.getClass().getName()
+                                          + ", message: " + e.getMessage());
         }
 
         return false;

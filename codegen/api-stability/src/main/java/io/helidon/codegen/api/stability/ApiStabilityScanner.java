@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -62,6 +63,33 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
     @Override
     public Void visitMemberSelect(MemberSelectTree node, Void unused) {
         var path = trees.getPath(unit, node);
+        return visit(path, () -> super.visitMemberSelect(node, null));
+    }
+
+    @Override
+    public Void visitIdentifier(IdentifierTree node, Void unused) {
+        var path = trees.getPath(unit, node);
+        return visit(path, () -> super.visitIdentifier(node, unused));
+    }
+
+    Collection<Ref> previewApis() {
+        return previewApis;
+    }
+
+    Collection<Ref> incubatingApis() {
+        return incubatingApis;
+    }
+
+    Collection<Ref> internalApis() {
+        return internalApis;
+    }
+
+    Collection<Ref> deprecatedApis() {
+        return deprecatedApis;
+    }
+
+    private Void visit(TreePath path, Supplier<Void> superCall) {
+
         if (path != null) {
             var elt = trees.getElement(path);
             if (elt instanceof TypeElement || elt instanceof ExecutableElement) {
@@ -80,47 +108,7 @@ class ApiStabilityScanner extends TreeScanner<Void, Void> {
                 return null;
             }
         }
-        return super.visitMemberSelect(node, unused);
-    }
-
-    @Override
-    public Void visitIdentifier(IdentifierTree node, Void unused) {
-        var path = trees.getPath(unit, node);
-        if (path != null) {
-            var elt = trees.getElement(path);
-            if (elt instanceof TypeElement || elt instanceof ExecutableElement) {
-                if (checkAnnotation(path, elt, Api.Internal.class, internalApis, SUPPRESS_INTERNAL)) {
-                    return null;
-                }
-                if (checkAnnotation(path, elt, Api.Incubating.class, internalApis, SUPPRESS_INCUBATING)) {
-                    return null;
-                }
-                if (checkAnnotation(path, elt, Api.Preview.class, previewApis, SUPPRESS_PREVIEW)) {
-                    return null;
-                }
-                if (checkAnnotation(path, elt, Api.Deprecated.class, deprecatedApis, SUPPRESS_DEPRECATED)) {
-                    return null;
-                }
-                return null;
-            }
-        }
-        return super.visitIdentifier(node, unused);
-    }
-
-    Collection<Ref> previewApis() {
-        return previewApis;
-    }
-
-    Collection<Ref> incubatingApis() {
-        return incubatingApis;
-    }
-
-    Collection<Ref> internalApis() {
-        return internalApis;
-    }
-
-    Collection<Ref> deprecatedApis() {
-        return deprecatedApis;
+        return superCall.get();
     }
 
     private boolean checkAnnotation(TreePath path,
