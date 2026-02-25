@@ -197,7 +197,7 @@ record ConvertedTypeInfo(TypeName converterType,
         if (polymorphic.isPresent()) {
             Annotation annotation = polymorphic.get();
             key = annotation.stringValue("key").orElse(key);
-            defaultSubtype = annotation.typeValue("defaultSubtype")
+            defaultSubtype = annotation.typeValue()
                     .filter(it -> !it.equals(OBJECT));
         }
 
