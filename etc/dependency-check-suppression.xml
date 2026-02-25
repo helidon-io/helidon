@@ -323,5 +323,47 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 
 
+<!-- False Positive.
+     This CVE is against Neo4J database, not the driver
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-5.28.3.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.neo4j\.driver/neo4j-java-driver@.*$</packageUrl>
+   <cve>CVE-2026-1337</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-bolt-connection-1.0.0.jar
+   file name: neo4j-bolt-connection-netty-1.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*$</packageUrl>
+   <cve>CVE-2026-1337</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:4.4.0-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*$</packageUrl>
+   <cve>CVE-2026-1337</cve>
+</suppress>
+
+<!-- 
+     This CVE is old and was fixed in Kotlin 1.4.21. The CPE recently changed in NVD.
+     Will keep an eye on this to see if the CPE in NVD is bad, or if there is something new.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: kotlin-stdlib-1.9.10.jar
+   file name: kotlin-stdlib-jdk7-1.9.10.jar
+   file name: kotlin-stdlib-jdk8-1.9.10.jar
+   file name: kotlin-stdlib-common-1.9.10.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*$</packageUrl>
+   <cve>CVE-2020-29582</cve>
+</suppress>
+
+
 </suppressions>
 
