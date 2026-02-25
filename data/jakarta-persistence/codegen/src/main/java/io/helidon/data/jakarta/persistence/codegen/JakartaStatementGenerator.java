@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -612,18 +612,19 @@ final class JakartaStatementGenerator
     }
 
     private static void addEmRemoveCollection(Method.Builder builder, String identifier) {
-        builder.addContent(identifier)
-                .addContent(".forEach(e -> ");
+        builder.addContentLine(" {");
+        builder.addContent("for (var e : ")
+                .addContent(identifier)
+                .addContentLine(") {");
         addEmRemove(builder,
                     b -> {
-                        b.addContent("em.contains(")
-                                .addContent("e")
-                                .addContent(") ? ")
-                                .addContent("e")
-                                .addContent(" : ");
+                        b.addContent("em.contains(e) ? e : ");
                         addEmMerge(b, "e");
                     });
-        builder.addContent(")");
+        builder.addContentLine(";");
+        // end the for cycle
+        builder.addContentLine("}");
+        builder.addContent("}");
     }
 
     private static void addEmFind(Method.Builder builder, String identifier, TypeName entity) {
