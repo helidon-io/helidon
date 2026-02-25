@@ -130,9 +130,9 @@ class JsonConverterGenerator {
                                                     PolymorphicInfo polymorphicInfo,
                                                     Map<String, TypeToConfigure> toConfigure) {
         method.name("serialize")
-                .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
-                .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
-                .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
+                .addParameter(JsonTypes.JSON_GENERATOR, "generator")
+                .addParameter(converterInfo.wildcardsGenerics(), "instance")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, WRITE_NULLS)
                 .addAnnotation(Annotation.create(Override.class));
 
         Set<String> createdSerializers = new HashSet<>();
@@ -600,14 +600,14 @@ class JsonConverterGenerator {
                                                 boolean specialPolyConverter) {
         if (specialPolyConverter) {
             method.name("serializeSelf")
-                    .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
-                    .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
+                    .addParameter(JsonTypes.JSON_GENERATOR, "generator")
+                    .addParameter(converterInfo.wildcardsGenerics(), "instance")
                     .accessModifier(AccessModifier.PRIVATE);
         } else {
             method.name("serialize")
-                    .addParameter(param -> param.name("generator").type(JsonTypes.JSON_GENERATOR))
-                    .addParameter(param -> param.name("instance").type(converterInfo.wildcardsGenerics()))
-                    .addParameter(param -> param.name(WRITE_NULLS).type(boolean.class))
+                    .addParameter(JsonTypes.JSON_GENERATOR, "generator")
+                    .addParameter(converterInfo.wildcardsGenerics(), "instance")
+                    .addParameter(TypeNames.PRIMITIVE_BOOLEAN, WRITE_NULLS)
                     .addAnnotation(Annotation.create(Override.class));
         }
         method.addContentLine("generator.writeObjectStart();");

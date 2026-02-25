@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedMap;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenContext;
@@ -79,11 +80,8 @@ record ConvertedTypeInfo(TypeName converterType,
             "ALPHABETICAL", Comparator.naturalOrder(),
             "REVERSE_ALPHABETICAL", Comparator.reverseOrder());
 
-    public static ConvertedTypeInfo create(TypeInfo typeInfo, CodegenContext ctx) {
+    static ConvertedTypeInfo create(TypeInfo typeInfo, CodegenContext ctx) {
         TypeName typeName = typeInfo.typeName();
-        String classNameWithEnclosingNames = typeName.classNameWithEnclosingNames();
-        String replacedDot = classNameWithEnclosingNames.replace(".", "_");
-        String nameBase = typeName.fqName().replace(classNameWithEnclosingNames, replacedDot);
         AccessorStyle recordAccessors = typeInfo.annotation(JsonTypes.JSON_ENTITY)
                 .enumValue("accessorStyle", AccessorStyle.class)
                 .orElse(AccessorStyle.AUTO);
@@ -120,9 +118,12 @@ record ConvertedTypeInfo(TypeName converterType,
                 .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPES))
                 .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE))
                 .flatMap(it -> processPolymorphismInfo(typeInfo));
-        TypeName converterTypeName = polymorphismInfo
-                .map(it -> TypeName.create(nameBase + "__GeneratedPolyConverter"))
-                .orElseGet(() -> TypeName.create(nameBase + "__GeneratedConverter"));
+
+        String suffix = polymorphismInfo.isPresent() ? "__GeneratedPolyConverter" : "__GeneratedConverter";
+        TypeName converterTypeName = TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.classNameWithEnclosingNames().replace('.', '_') + suffix)
+                .build();
         LinkedHashMap<String, String> extraProperties = new LinkedHashMap<>();
         discoverExtraProperties(extraProperties, typeInfo, typeName);
         CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
@@ -143,7 +144,16 @@ record ConvertedTypeInfo(TypeName converterType,
                                      genericParamsWithIndexes);
     }
 
-    private static void discoverExtraProperties(LinkedHashMap<String, String> extraProperties,
+    static boolean needsResolving(TypeName typeName) {
+        for (TypeName typeArgument : typeName.typeArguments()) {
+            if (needsResolving(typeArgument)) {
+                return true;
+            }
+        }
+        return typeName.generic();
+    }
+
+    private static void discoverExtraProperties(SequencedMap<String, String> extraProperties,
                                                 TypeInfo typeInfo,
                                                 TypeName targetType) {
         Optional<Annotation> typeInfoAnnotation = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC);
@@ -170,11 +180,10 @@ record ConvertedTypeInfo(TypeName converterType,
         }
     }
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private static String resolveAliasValue(Annotation subtypeAnnotation) {
-        String alias = subtypeAnnotation.stringValue("alias").get();
+        String alias = subtypeAnnotation.stringValue("alias").orElse("");
         if (alias.isEmpty()) {
-            TypeName subtype = subtypeAnnotation.typeValue().get();
+            TypeName subtype = subtypeAnnotation.typeValue().orElseThrow();
             alias = subtype.className().toLowerCase();
         }
         return alias;
@@ -240,15 +249,6 @@ record ConvertedTypeInfo(TypeName converterType,
 
         Optional<TypeInfo> superTypeInfo = typeInfo.superTypeInfo();
         superTypeInfo.ifPresent(info -> discoverAllPossibleGenerics(info, resolvedGenerics, typeGenerics));
-    }
-
-    static boolean needsResolving(TypeName typeName) {
-        for (TypeName typeArgument : typeName.typeArguments()) {
-            if (needsResolving(typeArgument)) {
-                return true;
-            }
-        }
-        return typeName.generic();
     }
 
     private static Optional<BuilderInfo> processBuilderInfo(TypeInfo createdTypeInfo,

@@ -233,8 +233,8 @@ public final class Json {
 
     /**
      * Polymorphism supporting annotation.
-     * This annotation defines the known subtypes of the annotated type
-     * and how to successfully deserialize into them.
+     * This annotation defines the default implementation of the as its {@link #value()}.
+     * It is also possible to configure the JSON key name to be used for alias. See {@link #key()}.
      */
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
@@ -249,14 +249,14 @@ public final class Json {
         String key() default "@type";
 
         /**
-         * The default implementation to be used when alias is not provided.
+         * The default implementation/extending class to be used when alias is not provided.
          * The default value {@link java.lang.Object} is intended as a "not specified"
-         * marker. In that case, no default implementation will be used and an exception
+         * marker. In that case, no default implementation/extending class will be used and an exception
          * will be thrown instead.
          *
-         * @return the default implementation of the annotated type.
+         * @return the default implementation/extending class of the annotated type.
          */
-        Class<?> defaultSubtype() default Object.class;
+        Class<?> value() default Object.class;
 
     }
 
@@ -271,7 +271,7 @@ public final class Json {
 
         /**
          * Type alias which is used instead of a class name.
-         * When empty (default) the name of the class in lowercase is used.
+         * When empty (default) the simple name of the class in lowercase is used.
          *
          * @return alias value
          */

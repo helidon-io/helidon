@@ -521,7 +521,7 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.Polymorphic(defaultSubtype = Bird.class)
+    @Json.Polymorphic(Bird.class)
     @Json.Subtype(Dog.class)
     @Json.Subtype(Cat.class)
     interface Animal {
@@ -667,7 +667,7 @@ public class PolymorphismSupportTest {
 
     // Test interface with more than 9 subtypes to trigger switch structure in generated code
     @Json.Entity
-    @Json.Polymorphic(defaultSubtype = ManyTypeDefault.class)
+    @Json.Polymorphic(ManyTypeDefault.class)
     @Json.Subtype(value = ManyType1.class, alias = "type1")
     @Json.Subtype(value = ManyType2.class, alias = "type2")
     @Json.Subtype(value = ManyType3.class, alias = "type3")
@@ -838,7 +838,7 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.Polymorphic(defaultSubtype = ConcreteADefault.class)
+    @Json.Polymorphic(ConcreteADefault.class)
     @Json.Subtype(alias = "a1", value = ConcreteA1.class)
     @Json.Subtype(alias = "b", value = InterfaceB.class)
     interface InterfaceA {
@@ -871,7 +871,7 @@ public class PolymorphismSupportTest {
     }
 
     @Json.Entity
-    @Json.Polymorphic(defaultSubtype = ConcreteBDefault.class, key = "@type2")
+    @Json.Polymorphic(value = ConcreteBDefault.class, key = "@type2")
     @Json.Subtype(alias = "b1", value = ConcreteB1.class)
     @Json.Subtype(alias = "b2", value = ConcreteB2.class)
     interface InterfaceB extends InterfaceA {
