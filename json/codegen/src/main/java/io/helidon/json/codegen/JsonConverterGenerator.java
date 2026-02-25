@@ -207,7 +207,7 @@ class JsonConverterGenerator {
 
         method.name("deserialize")
                 .returnType(converterInfo.wildcardsGenerics())
-                .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                .addParameter(JsonTypes.JSON_PARSER, "parser")
                 .addAnnotation(Annotation.create(Override.class))
                 .addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
                 .addContent("if (lastByte != ")
@@ -419,7 +419,7 @@ class JsonConverterGenerator {
                                                boolean saveConfigurator) {
         method.name("configure")
                 .addAnnotation(Annotation.create(Override.class))
-                .addParameter(param -> param.type(JsonTypes.JSON_BINDING_CONFIGURATOR).name(CONFIGURE_PARAM));
+                .addParameter(JsonTypes.JSON_BINDING_CONFIGURATOR, CONFIGURE_PARAM);
 
         if (saveConfigurator) {
             method.addContentLine("this.configurator = " + CONFIGURE_PARAM + ";");
@@ -434,7 +434,7 @@ class JsonConverterGenerator {
                                                 boolean saveConfigurator) {
         method.name("configure")
                 .addAnnotation(Annotation.create(Override.class))
-                .addParameter(builder -> builder.type(JsonTypes.JSON_BINDING_CONFIGURATOR).name(CONFIGURE_PARAM));
+                .addParameter(JsonTypes.JSON_BINDING_CONFIGURATOR, CONFIGURE_PARAM);
 
         if (saveConfigurator) {
             method.addContentLine("this.configurator = " + CONFIGURE_PARAM + ";");
@@ -717,12 +717,12 @@ class JsonConverterGenerator {
         if (specialPolyConverter) {
             method.name("deserializeSelf")
                     .returnType(converterInfo.wildcardsGenerics())
-                    .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                    .addParameter(JsonTypes.JSON_PARSER, "parser")
                     .accessModifier(AccessModifier.PRIVATE);
         } else {
             method.name("deserialize")
                     .returnType(converterInfo.wildcardsGenerics())
-                    .addParameter(param -> param.name("parser").type(JsonTypes.JSON_PARSER))
+                    .addParameter(JsonTypes.JSON_PARSER, "parser")
                     .addAnnotation(Annotation.create(Override.class));
         }
         method.addContent(byte.class).addContentLine(" lastByte = parser.currentByte();")
