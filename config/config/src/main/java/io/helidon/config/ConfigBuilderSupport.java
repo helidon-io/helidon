@@ -286,6 +286,8 @@ public final class ConfigBuilderSupport {
                 if (defaultValue == null || configValues.isPresent())  {
                     return Set.copyOf(configValues.orElseGet(List::of));
                 } else {
+                    // remove the : which is part of this group
+                    defaultValue = defaultValue.substring(1);
                     return Stream.of(defaultValue.split(","))
                             .map(String::trim)
                             .collect(Collectors.toSet());
