@@ -103,7 +103,7 @@
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
         <version.lib.junit>5.12.2</version.lib.junit>
-        <version.lib.kafka>3.9.1</version.lib.kafka>
+        <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.langchain4j>1.11.0</version.lib.langchain4j>
