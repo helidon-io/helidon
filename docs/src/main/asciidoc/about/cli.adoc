@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,19 +23,15 @@
 
 include::{rootdir}/includes/attributes.adoc[]
 
-== Introduction
+The Helidon command-line interface (CLI) helps you create and manage Helidon projects. You can use it to generate a new project, get project details, and build your application.
 
-The Helidon CLI lets you easily create a Helidon project by picking from a
-set of archetypes. It also supports a developer loop that performs continuous
-compilation and application restart, so you can easily iterate over source
-code changes.
+The Helidon CLI also includes a development loop feature that automatically recompiles and restarts your application, so you can iterate quickly while you edit your code.
 
-The CLI is distributed as a standalone executable (compiled using GraalVM) for
-ease of installation. It is currently available as a download for Linux, Mac and Windows.
-Simply download the binary, install it at a location accessible from your PATH
-and you’re ready to go.
+== Install the Helidon CLI
 
-== Prerequisites
+The Helidon CLI is a standalone executable (compiled using GraalVM) for Linux, macOS, and Windows systems. Download the executable and install it in a location that is accessible from your PATH.
+
+=== Prerequisites
 
 .Prerequisite product versions for Helidon {helidon-version}
 [%autowidth]
@@ -43,7 +39,7 @@ and you’re ready to go.
 include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-rows-core]
 |=======
 
-You should make sure `java` and `mvn` are in your path.
+Make sure `java` and `mvn` are in your PATH:
 
 [source,bash]
 ----
@@ -51,64 +47,78 @@ java -version
 mvn --version
 ----
 
-== Installation
+=== Install the Helidon CLI on Linux
 
+. Run the following commands to download the Helidon CLI binary, make it executable, and then move it to a location on your PATH:
++
 [source,bash]
-.MacOS
-----
-curl -L -O https://helidon.io/cli/latest/darwin/helidon
-chmod +x ./helidon
-sudo mv ./helidon /usr/local/bin/
-----
-
-If you get a warning that "the developer cannot be verified" when running the CLI
-this is due to the Helidon CLI not being signed and notarized yet. You can disable
-this check by running: `xattr -d com.apple.quarantine helidon`
-
-[source,bash]
-.Linux
 ----
 curl -L -O https://helidon.io/cli/latest/linux/helidon
 chmod +x ./helidon
 sudo mv ./helidon /usr/local/bin/
 ----
 
+. Confirm the installation was successful by running `helidon version`.
+
+=== Install the Helidon CLI on macOS
+
+. Run the following commands to download the Helidon CLI binary, make it executable, and then move it to a location on your PATH:
++
+[source,bash]
+----
+curl -L -O https://helidon.io/cli/latest/darwin/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+----
+
+. Confirm the installation was successful by running `helidon version`.
+
+If you get a "the developer cannot be verified" warning when you run the Helidon CLI, it is because the Helidon CLI has not been signed and notarized yet. You can disable this check by running: `xattr -d com.apple.quarantine helidon`, which removes the quarantine attribute on the file.
+
+=== Install the Helidon CLI on Windows
+
+. Install PowerShell and Visual C++ Redistributable Runtime. See xref:windows.adoc[Helidon on Windows]. 
+. Run the following command to download and install the Helidon CLI on Windows systems: 
++
 [source,powershell]
-.Windows
 ----
 PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
 ----
 
-For Windows you will also need the Visual C++ Redistributable Runtime. See xref:windows.adoc[Helidon on Windows]
-for more information.
+. Confirm the installation was successful by running `helidon version`.
 
-[source,bash]
-.Verify CLI installation
-----
-helidon version
-----
+== Usage
 
-== Create a New Project
+After you install the Helidon CLI, you can use it to manage your Helidon projects. Some examples are provided below. You can also run `helidon help` to get a list of the available commands.
 
-[source,bash]
-----
-helidon init
-----
+=== Create a New Project
 
-Then answer the questions.
+You can use the Helidon CLI to quickly create a new Helidon project.
 
-== Developer Loop
+. Open a command-line interface and navigate to the directory where you want to create the project.
+. Run `helidon init`.
+. Choose a *Helidon Version*. 
+. Choose a *Helidon Flavor*: SE or MP. 
+. Choose an *Application Type*. If you chose Helidon SE, the OCI option is not available.
+. Select a JSON library. If you chose Helidon MP, the JSON-P option is not available.
+. Customize your project by specifying a `groupId`, an `artifactId`, a `version`, and a `package name`.
 
-[source,bash]
-----
-cd myproject
-helidon dev
-----
+The Helidon CLI will create a new project folder in your current directory.
 
-As you make source code changes the project will automatically recompile and restart your
-application.
+=== Enable Development Loop
 
+You can use the Helidon CLI development loop feature to test changes to your application as you make them. When the development loop is active, the Helidon CLI will automatically recompile and restart your application so you can see the effects of your changes immediately.
 
-== Demo
+. Navigate to the Helidon project's home directory.
+. Run `helidon dev` to enable the development loop.
+. In another terminal window or an IDE, make and save changes to your application's source code.
+
+The build runs after each change. If you make an invalid change, the build fails until the error is fixed.
+
+To stop the development loop, enter `Ctrl+C`.
+
+== Helidon CLI Demo
+
+Watch the following demo to see some of the functionality of the Helidon CLI.
 
 image::cli/Helidon_cli.gif[CLI Demo, align="center"]

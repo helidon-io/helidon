@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,20 +17,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Get Started
-:description: Helidon pre-requisites and getting started
+:description: Helidon prerequisites and getting started
 :keywords: helidon
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/attributes.adoc[]
 
-Everything you need to get started with Helidon is listed here.
+Helidon is a collection of Java libraries for writing microservices. As such, you don't install Helidon itself. Instead, you install the tools necessary to create an environment suitable for developing Helidon projects and applications.
 
-== Prerequisites
+== System Requirements
 
-include::{rootdir}/about/introduction.adoc[tag=prereqs]
+You must have Java and Maven installed on your system to use Helidon. Depending on how you plan to deploy your services, you may need to install Docker and kubectl as well.
+
+.Requirements
+[%autowidth]
+|====
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-rows]
+|====
+
+If you use Windows, see xref:windows.adoc[Helidon on Windows] for additional prerequisites.
 
 [source,bash]
-.Verify Prerequisites
+.Verify System Requirements
 ----
 java -version
 mvn --version
@@ -38,28 +46,36 @@ docker --version
 kubectl version
 ----
 
-== Setting `JAVA_HOME`
+=== Set the `JAVA_HOME` Environment Variable
+
+Make sure you set the `JAVA_HOME` environment variable.
 
 [source,bash]
-.Setting `JAVA_HOME`
+.Set `JAVA_HOME` on Linux
 ----
-# On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 21`
-
-# On Linux
-# Use the appropriate path to your JDK
+# Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-21
 ----
 
-== Try the Quickstart Examples
+[source,bash]
+.Set `JAVA_HOME` on macOS
+----
+# Enter the appropriate path to your JDK
+export JAVA_HOME=`/usr/libexec/java_home -v 21`
+----
 
-Now you are ready to try the Quickstart Examples:
+[source,cmd]
+.Set `JAVA_HOME` on Windows
+----
+# Enter the appropriate path to your JDK
+setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-21
+----
 
-1. xref:../mp/guides/quickstart.adoc[Helidon MP Quickstart Example]
-2. xref:../se/guides/quickstart.adoc[Helidon SE Quickstart Example]
+== Next Steps
 
-TIP: See xref:introduction.adoc[About Helidon]
-for more information on the differences between Helidon MP and SE.
+Now that your environment is set up, you can get started with Helidon. Try out the Helidon MP and Helidon SE Quick Start tutorials to build your first Helidon project and application.
 
-TIP: See xref:windows.adoc[Helidon on Windows]
-for some tips on using Helidon on Windows.
+* xref:../mp/guides/quickstart.adoc[Helidon MP Quick Start]
+* xref:../se/guides/quickstart.adoc[Helidon SE Quick Start]
+
+TIP: Read xref:introduction.adoc[About Helidon] to help you understand the differences between Helidon MP and Helidon SE.
