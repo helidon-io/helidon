@@ -39,6 +39,7 @@ module io.helidon.integrations.cdi.hibernate {
     requires transitive jakarta.inject;
     requires jakarta.persistence;
     requires transitive jakarta.transaction;
+    requires transitive net.bytebuddy;
     requires org.graalvm.nativeimage;
     requires transitive org.hibernate.orm.core;
 

@@ -79,6 +79,11 @@
             <artifactId>svm</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Compile-scoped dependencies. -->
         <dependency>
