@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedMap;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenContext;
@@ -54,10 +55,13 @@ record ConvertedTypeInfo(TypeName converterType,
                          TypeName objectsGenerics,
                          boolean nullable,
                          boolean failOnUnknown,
+                         Map<String, String> extraProperties,
                          Map<String, JsonProperty> jsonProperties,
                          Comparator<String> orderedProperties,
                          CreatorInfo creatorInfo,
-                         Optional<BuilderInfo> builderInfo, Map<TypeName, Integer> genericParamsWithIndexes) {
+                         Optional<BuilderInfo> builderInfo,
+                         Optional<PolymorphicInfo> polymorphicInfo,
+                         Map<TypeName, Integer> genericParamsWithIndexes) {
 
     private static final Set<ElementSignature> IGNORED_METHODS = Set.of(
             // equals, hash code and toString
@@ -76,11 +80,8 @@ record ConvertedTypeInfo(TypeName converterType,
             "ALPHABETICAL", Comparator.naturalOrder(),
             "REVERSE_ALPHABETICAL", Comparator.reverseOrder());
 
-    public static ConvertedTypeInfo create(TypeInfo typeInfo, CodegenContext ctx) {
-        String classNameWithEnclosingNames = typeInfo.typeName().classNameWithEnclosingNames();
-        String replacedDot = classNameWithEnclosingNames.replace(".", "_");
-        String nameBase = typeInfo.typeName().fqName().replace(classNameWithEnclosingNames, replacedDot);
-        TypeName converterTypeName = TypeName.create(nameBase + "__GeneratedConverter");
+    static ConvertedTypeInfo create(TypeInfo typeInfo, CodegenContext ctx) {
+        TypeName typeName = typeInfo.typeName();
         AccessorStyle recordAccessors = typeInfo.annotation(JsonTypes.JSON_ENTITY)
                 .enumValue("accessorStyle", AccessorStyle.class)
                 .orElse(AccessorStyle.AUTO);
@@ -113,20 +114,110 @@ record ConvertedTypeInfo(TypeName converterType,
                                                            properties,
                                                            resolvedGenerics))
                 .or(() -> processBuilderInfo(typeInfo, properties, ctx, resolvedGenerics));
+        Optional<PolymorphicInfo> polymorphismInfo = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC)
+                .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPES))
+                .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE))
+                .flatMap(it -> processPolymorphismInfo(typeInfo));
+
+        String suffix = polymorphismInfo.isPresent() ? "__GeneratedPolyConverter" : "__GeneratedConverter";
+        TypeName converterTypeName = TypeName.builder()
+                .packageName(typeName.packageName())
+                .className(typeName.classNameWithEnclosingNames().replace('.', '_') + suffix)
+                .build();
+        LinkedHashMap<String, String> extraProperties = new LinkedHashMap<>();
+        discoverExtraProperties(extraProperties, typeInfo, typeName);
         CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
         Map<String, JsonProperty> jsonProperties = finalizeJsonProperties(properties);
         Comparator<String> orderComparator = PROPERTY_ORDER.getOrDefault(orderStrategy, (o1, o2) -> 0);
         return new ConvertedTypeInfo(converterTypeName,
-                                     typeInfo.typeName(),
-                                     transformGenerics(typeInfo.typeName(), TypeArgument.create("?")),
-                                     transformGenerics(typeInfo.typeName(), TypeArgument.create(OBJECT)),
+                                     typeName,
+                                     transformGenerics(typeName, TypeArgument.create("?")),
+                                     transformGenerics(typeName, TypeArgument.create(OBJECT)),
                                      nullable,
                                      failOnUnknown,
+                                     extraProperties,
                                      jsonProperties,
                                      orderComparator,
                                      creatorInfo,
                                      builderInfo,
+                                     polymorphismInfo,
                                      genericParamsWithIndexes);
+    }
+
+    static boolean needsResolving(TypeName typeName) {
+        for (TypeName typeArgument : typeName.typeArguments()) {
+            if (needsResolving(typeArgument)) {
+                return true;
+            }
+        }
+        return typeName.generic();
+    }
+
+    private static void discoverExtraProperties(SequencedMap<String, String> extraProperties,
+                                                TypeInfo typeInfo,
+                                                TypeName targetType) {
+        Optional<Annotation> typeInfoAnnotation = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC);
+        List<Annotation> subtypes = typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPES)
+                .flatMap(Annotation::annotationValues)
+                .orElseGet(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE).stream().toList());
+        TypeName newTargetType = targetType;
+
+        for (Annotation annotation : subtypes) {
+            if (annotation.typeValue().orElseThrow().equals(targetType)) {
+                String key = typeInfoAnnotation.flatMap(it -> it.stringValue("key")).orElse("@type");
+                String alias = resolveAliasValue(annotation);
+                extraProperties.putFirst(key, alias);
+                newTargetType = typeInfo.typeName();
+                break;
+            }
+        }
+
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            discoverExtraProperties(extraProperties, interfaceInfo, newTargetType);
+        }
+        if (typeInfo.superTypeInfo().isPresent()) {
+            discoverExtraProperties(extraProperties, typeInfo.superTypeInfo().get(), newTargetType);
+        }
+    }
+
+    private static String resolveAliasValue(Annotation subtypeAnnotation) {
+        String alias = subtypeAnnotation.stringValue("alias").orElse("");
+        if (alias.isEmpty()) {
+            TypeName subtype = subtypeAnnotation.typeValue().orElseThrow();
+            alias = subtype.className().toLowerCase();
+        }
+        return alias;
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private static Optional<PolymorphicInfo> processPolymorphismInfo(TypeInfo typeInfo) {
+        Optional<Annotation> polymorphic = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC);
+        String key = "@type";
+        Optional<TypeName> defaultSubtype = Optional.empty();
+        if (polymorphic.isPresent()) {
+            Annotation annotation = polymorphic.get();
+            key = annotation.stringValue("key").orElse(key);
+            defaultSubtype = annotation.typeValue()
+                    .filter(it -> !it.equals(OBJECT));
+        }
+
+        List<Annotation> subtypeAnnotations = typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPES)
+                .flatMap(Annotation::annotationValues)
+                .orElseGet(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE).stream().toList());
+
+        Map<String, TypeName> aliases = new LinkedHashMap<>();
+        for (Annotation subtypeAnnotation : subtypeAnnotations) {
+            String alias = resolveAliasValue(subtypeAnnotation);
+            TypeName subtype = subtypeAnnotation.typeValue().get();
+            if (aliases.containsKey(alias)) {
+                throw new CodegenException("Conflicting aliases " + alias
+                                                   + " for types: " + aliases.get(alias) + " and " + subtype, typeInfo);
+            }
+            aliases.put(alias, subtype);
+        }
+
+        boolean classConverterMethods = !typeInfo.elementModifiers().contains(Modifier.ABSTRACT) && defaultSubtype.isEmpty();
+        return Optional.of(new PolymorphicInfo(key, defaultSubtype, aliases, classConverterMethods));
     }
 
     private static Map<TypeName, Integer> obtainGenericParamsWithIndexes(TypeInfo typeInfo) {
@@ -158,15 +249,6 @@ record ConvertedTypeInfo(TypeName converterType,
 
         Optional<TypeInfo> superTypeInfo = typeInfo.superTypeInfo();
         superTypeInfo.ifPresent(info -> discoverAllPossibleGenerics(info, resolvedGenerics, typeGenerics));
-    }
-
-    static boolean needsResolving(TypeName typeName) {
-        for (TypeName typeArgument : typeName.typeArguments()) {
-            if (needsResolving(typeArgument)) {
-                return true;
-            }
-        }
-        return typeName.generic();
     }
 
     private static Optional<BuilderInfo> processBuilderInfo(TypeInfo createdTypeInfo,

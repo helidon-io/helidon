@@ -17,6 +17,7 @@
 package io.helidon.json.binding;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -34,7 +35,7 @@ public final class Json {
     /**
      * Marks a class as a JSON entity that should have converter generated.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface Entity {
 
@@ -52,7 +53,7 @@ public final class Json {
      * The class specified by this annotation must have a public or package-private no-arg constructor.
      * Helidon uses this constructor to instantiate the deserializer.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
     public @interface Deserializer {
 
@@ -70,7 +71,7 @@ public final class Json {
      * The class specified by this annotation must have a public or package-private no-arg constructor.
      * Helidon uses this constructor to instantiate the serializer.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD})
     public @interface Serializer {
 
@@ -88,7 +89,7 @@ public final class Json {
      * The class specified by this annotation must have a public or package-private no-arg constructor.
      * Helidon uses this constructor to instantiate the converter.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.TYPE_USE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
     public @interface Converter {
 
@@ -104,7 +105,7 @@ public final class Json {
     /**
      * Customizes the JSON property name for a field, method, or parameter.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
     public @interface Property {
 
@@ -120,7 +121,7 @@ public final class Json {
     /**
      * Excludes fields or methods from JSON serialization/deserialization.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.FIELD, ElementType.METHOD})
     public @interface Ignore {
 
@@ -137,7 +138,7 @@ public final class Json {
      * Marks properties as required during deserialization.
      * If a required property is missing, deserialization will fail.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
     public @interface Required {
     }
@@ -146,7 +147,7 @@ public final class Json {
      * Controls whether null values are included in JSON output.
      * By default, null values are omitted from JSON output.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
     public @interface SerializeNulls {
 
@@ -163,7 +164,7 @@ public final class Json {
      * Marks constructors or factory methods for object creation during deserialization.
      * Used for immutable objects or custom instantiation logic.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
     public @interface Creator {
     }
@@ -171,7 +172,7 @@ public final class Json {
     /**
      * Controls the order of properties in JSON output.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface PropertyOrder {
 
@@ -187,7 +188,7 @@ public final class Json {
     /**
      * Provide information about a builder class for object construction.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface BuilderInfo {
 
@@ -217,7 +218,7 @@ public final class Json {
     /**
      * Controls behavior when unknown properties are encountered during deserialization.
      */
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface FailOnUnknown {
 
@@ -227,6 +228,77 @@ public final class Json {
          * @return true to fail, false to ignore them
          */
         boolean value() default true;
+
+    }
+
+    /**
+     * Polymorphism supporting annotation.
+     * This annotation defines the default implementation of the as its {@link #value()}.
+     * It is also possible to configure the JSON key name to be used for alias. See {@link #key()}.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Polymorphic {
+
+        /**
+         * Key used for keeping the alias information. This key is used as a JSON property name.
+         * Default value is {@code @type}.
+         *
+         * @return JSON property name
+         */
+        String key() default "@type";
+
+        /**
+         * The default implementation/extending class to be used when alias is not provided.
+         * The default value {@link java.lang.Object} is intended as a "not specified"
+         * marker. In that case, no default implementation/extending class will be used and an exception
+         * will be thrown instead.
+         *
+         * @return the default implementation/extending class of the annotated type.
+         */
+        Class<?> value() default Object.class;
+
+    }
+
+    /**
+     * Polymorphic subtype information.
+     * Contains alias and specific type bound to it.
+     */
+    @Repeatable(Subtypes.class)
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Subtype {
+
+        /**
+         * Type alias which is used instead of a class name.
+         * When empty (default) the simple name of the class in lowercase is used.
+         *
+         * @return alias value
+         */
+        String alias() default "";
+
+        /**
+         * Subtype of the annotated type.
+         *
+         * @return annotated type subtype
+         */
+        Class<?> value();
+
+    }
+
+    /**
+     * A repeatable container for {@link io.helidon.json.binding.Json.Subtype}.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Subtypes {
+
+        /**
+         * Get the contained annotations.
+         *
+         * @return annotations
+         */
+        Subtype[] value();
 
     }
 

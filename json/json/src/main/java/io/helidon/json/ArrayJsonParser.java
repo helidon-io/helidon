@@ -99,6 +99,9 @@ class ArrayJsonParser implements JsonParser {
     private int currentIndex = 0;
     private final int bufferLength;
 
+    private int mark = -1;
+    private boolean replayMarked = false;
+
     ArrayJsonParser(byte[] buffer) {
         this.buffer = buffer;
         this.bufferLength = buffer.length;
@@ -239,6 +242,9 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonArray readJsonArray() {
+        if (currentByte() != '[') {
+            throw createException("Array start expected", currentByte());
+        }
         byte b = nextToken();
         if (b == ']') {
             return JsonArray.EMPTY_ARRAY;
@@ -697,21 +703,21 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        if (currentByte() != '"') {
+        int b = buffer[currentIndex] & 0xFF;
+        if (b != '"') {
             throw createException("Hash calculation is intended only for String values");
         }
         // Compute FNV-1a hash of the string content (excluding quotes) using recommended offset basis and prime values.
         // This optimized loop scans the buffer directly without calling readNextByte() for each character.
         int fnv1aHash = FNV_OFFSET_BASIS;
-        byte b;
-        int i = ++currentIndex;
-        for (; i < bufferLength; i++) {
-            b = buffer[i];
+        currentIndex++;
+        for (int i = currentIndex; i < bufferLength; i++) {
+            b = buffer[i] & 0xFF;
             if (b == '"') {
                 currentIndex = i;
                 return fnv1aHash;
             }
-            fnv1aHash ^= (b & 0xFF);
+            fnv1aHash ^= b;
             fnv1aHash *= FNV_PRIME;
         }
         throw createException("Unexpected end of string value. Probably incomplete JSON");
@@ -719,6 +725,7 @@ class ArrayJsonParser implements JsonParser {
 
     @Override
     public JsonException createException(String message) {
+        clearMark();
         int start = Math.max(currentIndex - 10, 0);
         int length = Math.min(currentIndex + 10, bufferLength - start);
         int dataIndex = currentIndex - start;
@@ -729,6 +736,33 @@ class ArrayJsonParser implements JsonParser {
                                          + "Data index: " + dataIndex + "\n"
                                          + "Data: \n"
                                          + bufferData.debugDataHex(false));
+    }
+
+    @Override
+    public void mark() {
+        if (replayMarked) {
+            throw new IllegalStateException("Parser has already been marked for replaying. "
+                                                    + "Cant do it twice without consuming the mark with either "
+                                                    + "clearMark or resetToMark methods");
+        }
+        replayMarked = true;
+        mark = currentIndex;
+    }
+
+    @Override
+    public void clearMark() {
+        replayMarked = false;
+        mark = -1;
+    }
+
+    @Override
+    public void resetToMark() {
+        if (replayMarked) {
+            replayMarked = false;
+            currentIndex = mark;
+        } else {
+            throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
+        }
     }
 
     @Override

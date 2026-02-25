@@ -61,6 +61,9 @@ final class JsonStreamParser implements JsonParser {
     private int currentIndex = 0;
     private int bufferLength;
 
+    private int mark = -1;
+    private boolean replayMarked = false;
+
     JsonStreamParser(InputStream inputStream, int bufferSize) {
         this.configuredBufferSize = bufferSize;
         this.inputStream = inputStream;
@@ -428,6 +431,35 @@ final class JsonStreamParser implements JsonParser {
     }
 
     @Override
+    public void mark() {
+        if (replayMarked) {
+            throw new IllegalStateException("Parser has already been marked for replaying. "
+                                                    + "Cant do it twice without consuming the mark with either "
+                                                    + "clearMark or resetToMark methods.");
+        }
+        replayMarked = true;
+        mark = currentIndex;
+    }
+
+    @Override
+    public void clearMark() {
+        replayMarked = false;
+        mark = -1;
+    }
+
+    @Override
+    public void resetToMark() {
+        if (replayMarked) {
+            replayMarked = false;
+            finished = false;
+            currentIndex = mark;
+        } else {
+            throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
+        }
+    }
+
+
+    @Override
     public void skip() {
         switch (currentByte()) {
         case '"':
@@ -597,7 +629,8 @@ final class JsonStreamParser implements JsonParser {
 
     @Override
     public int readStringAsHash() {
-        if (currentByte() != '"') {
+        int b = buffer[currentIndex] & 0xFF;
+        if (b != '"') {
             throw createException("Hash calculation is intended only for String values");
         } else if (!hasNext()) {
             throw createException("Incomplete JSON");
@@ -607,14 +640,13 @@ final class JsonStreamParser implements JsonParser {
         while (true) {
             //Based on recommended offset basis and prime values.
             int fnv1aHash = FNV_OFFSET_BASIS;
-            byte b;
             while (i < bufferLength) {
-                b = buffer[i++];
+                b = buffer[i++] & 0xFF;
                 if (b == '"') {
                     currentIndex = i - 1;
                     return fnv1aHash;
                 }
-                fnv1aHash ^= (b & 0xFF);
+                fnv1aHash ^= b;
                 fnv1aHash *= FNV_PRIME;
             }
             fetchData();
@@ -2122,8 +2154,9 @@ final class JsonStreamParser implements JsonParser {
      */
     private void readMoreData() {
         try {
-            if (bufferingJsonValue) {
-                // When buffering a JSON value (e.g., string or number), we need to preserve the value across reads
+            if (bufferingJsonValue || replayMarked) {
+                // When buffering a JSON value or replayability was marked (e.g., string or number),
+                // we need to preserve the value across reads
                 jsonNumberBuffering();
             } else if (currentIndex == bufferLength) {
                 // For structural parsing, keep one byte of look-ahead to detect value boundaries
@@ -2158,7 +2191,25 @@ final class JsonStreamParser implements JsonParser {
     }
 
     private void jsonNumberBuffering() throws IOException {
-        if (jsonValueStart > 0) {
+        if (replayMarked && mark > 0) {
+            // Move the partial value to the beginning of the buffer to make room for more data
+            int valueLen = bufferLength - mark;
+            int freed = mark;
+            System.arraycopy(buffer, mark, buffer, 0, valueLen);
+            currentIndex = valueLen - 1; // Position at end of moved value
+            mark = 0; // Reset start position
+            int lastRead = inputStream.read(buffer, valueLen, buffer.length - valueLen);
+            if (lastRead == -1) {
+                finished = true;
+                bufferLength = valueLen; // Only the moved value remains
+            } else {
+                bufferLength = valueLen + lastRead;
+                finished = false;
+            }
+            if (jsonValueStart > 0) {
+                jsonValueStart -= freed;
+            }
+        } else if (!replayMarked && jsonValueStart > 0) {
             // Move the partial value to the beginning of the buffer to make room for more data
             int valueLen = bufferLength - jsonValueStart;
             System.arraycopy(buffer, jsonValueStart, buffer, 0, valueLen);

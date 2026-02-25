@@ -32,6 +32,9 @@ final class JsonTypes {
     static final TypeName JSON_SERIALIZE_NULLS = TypeName.create("io.helidon.json.binding.Json.SerializeNulls");
     static final TypeName JSON_PROPERTY_ORDER = TypeName.create("io.helidon.json.binding.Json.PropertyOrder");
     static final TypeName JSON_BUILDER_INFO = TypeName.create("io.helidon.json.binding.Json.BuilderInfo");
+    static final TypeName JSON_POLYMORPHIC = TypeName.create("io.helidon.json.binding.Json.Polymorphic");
+    static final TypeName JSON_SUBTYPE = TypeName.create("io.helidon.json.binding.Json.Subtype");
+    static final TypeName JSON_SUBTYPES = TypeName.create("io.helidon.json.binding.Json.Subtypes");
     static final TypeName JSON_FAIL_ON_UNKNOWN = TypeName.create("io.helidon.json.binding.Json.FailOnUnknown");
 
     //Types
@@ -45,6 +48,7 @@ final class JsonTypes {
     static final TypeName JSON_GENERATOR = TypeName.create("io.helidon.json.JsonGenerator");
     static final TypeName BYTES = TypeName.create("io.helidon.common.buffers.Bytes");
     static final TypeName JSON_PARSER = TypeName.create("io.helidon.json.JsonParser");
+    static final TypeName OBJECT_START_PARSER = TypeName.create("io.helidon.json.ObjectStartParser");
 
     static final TypeName BUILDER_TYPE = TypeName.create("io.helidon.common.Builder");
 
