@@ -1,6 +1,23 @@
 API Stability
 ----
 
+API Stability allows Helidon maintainers to mark APIs with one of the stability annotations, to declare its expected use
+and state.
+
+Target state in Helidon:
+- all `public` types in Helidon production modules are annotated with one of the `Api` stability annotation
+- they may also be annotated with `@Api.Since("version")` to announce the version that the stability state changed
+- in Helidon, this is verified by an API Stability Enforcer annotation processor, that must be configured for `default-compile`
+
+Target state for users:
+- API Stability annotation processor should be present in user's projects in compiler configuration
+- user's build will fail if they use `Internal` or `Incubating` APIs, unless they suppress warnings, or configure the annotation processor to ignore/warn
+- user's build will print warnings if they use `Preview` or `Deprecated` APIs (also can be suppressed)
+
+Intermediate state:
+- partial annotation of the most relevant APIs (mostly incubating and preview) in Helidon code base
+- user's build will never fail - all actions are set to warn only, as we do not want to break builds (this will change in the next major release of Helidon)
+
 # Stability states and transition
 
 ## States:
