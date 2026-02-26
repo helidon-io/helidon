@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.Bytes;
 
 import static io.helidon.json.ArrayJsonParser.BYTE_SIZE_BORDER;
 import static io.helidon.json.ArrayJsonParser.DOT_MARK;
@@ -459,7 +458,6 @@ final class JsonStreamParser implements JsonParser {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
         }
     }
-
 
     @Override
     public void skip() {
@@ -2078,7 +2076,7 @@ final class JsonStreamParser implements JsonParser {
         }
         throw createException("The number is too big for a long value");
     }
-    
+
     private void skipRemaining(int mark) {
         if (mark == DOT_MARK) {
             skipNumber();
