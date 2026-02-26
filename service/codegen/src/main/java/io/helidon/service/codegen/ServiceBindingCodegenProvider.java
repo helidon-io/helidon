@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,21 +70,18 @@ public class ServiceBindingCodegenProvider implements CodegenExtensionProvider {
     private static class ServiceBindingCodegen implements CodegenExtension {
         private static final TypeName GENERATOR = TypeName.create(ServiceBindingCodegen.class);
 
-        private final List<BindingInfo> annotations = new ArrayList<>();
-
         private ServiceBindingCodegen() {
         }
 
         @Override
         public void process(RoundContext roundContext) {
+            List<BindingInfo> annotations = new ArrayList<>();
+
             roundContext.annotatedTypes(SERVICE_ANNOTATION_GENERATE_BINDING)
                     .stream()
                     .map(this::toInfo)
                     .forEach(annotations::add);
-        }
 
-        @Override
-        public void processingOver(RoundContext roundContext) {
             Map<TypeName, BindingInfo> allAnnotatedTypes = new LinkedHashMap<>();
             annotations.forEach(it -> allAnnotatedTypes.put(it.declaringType, it));
 

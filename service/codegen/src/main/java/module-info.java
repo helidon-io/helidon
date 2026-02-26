@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ module io.helidon.service.codegen {
     requires io.helidon.metadata.hson;
     requires io.helidon.service.metadata;
     requires io.helidon.metadata;
+    requires io.helidon.common;
 
     exports io.helidon.service.codegen;
     exports io.helidon.service.codegen.spi;
