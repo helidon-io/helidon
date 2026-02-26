@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,16 +41,13 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.providers.micrometer.ConfiguredPrometheusMeterRegistryProvider.ConfiguredPrometheusMeterRegistry;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exemplars.DefaultExemplarSampler;
 
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
@@ -116,8 +113,8 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .metricsConfig(metricsConfig)
-                            .build());
+                .metricsConfig(metricsConfig)
+                .build());
     }
 
     @SuppressWarnings("unchecked")
@@ -126,11 +123,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+                                                          this)
+                .metricsConfig(metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build());
     }
 
     @SuppressWarnings("unchecked")
@@ -141,27 +138,28 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onRemoveListener) {
 
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .clock(clock)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+                                                          this)
+                .metricsConfig(metricsConfig)
+                .clock(clock)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build());
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .clock(clock)
-                            .metricsConfig(metricsConfig)
-                            .build());
+                .clock(clock)
+                .metricsConfig(metricsConfig)
+                .build());
     }
 
     @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry != null
                 ? globalMeterRegistry
-                : globalRegistry(MetricsConfig.create(Services.get(Config.class).get(MetricsConfig.METRICS_CONFIG_KEY)));
+                : globalRegistry(MicrometerMetricsConfig.create(Services.get(Config.class)
+                                                                        .get(MetricsConfig.METRICS_CONFIG_KEY)));
     }
 
     @Override
@@ -179,10 +177,16 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 globalMeterRegistry.close();
                 meterRegistries.remove(globalMeterRegistry);
             }
-            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
+            if (metricsConfig instanceof MicrometerMetricsConfig micrometerMetricsConfig) {
+                micrometerMetricsConfig.registries().stream()
+                        .map(reg -> reg instanceof ConfiguredPrometheusMeterRegistry prometheusReg
+                                ? prometheusRegistryForExemplarAsNeeded(prometheusReg)
+                                : reg.meterRegistrySupplier().get())
+                        .forEach(Metrics.globalRegistry::add);
+            }
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                                               .metricsConfig(metricsConfig)
-                                               .build());
+                    .metricsConfig(metricsConfig)
+                    .build());
 
             /*
              Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
@@ -210,6 +214,16 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MetricsConfig metricsConfig() {
         return metricsConfig;
+    }
+
+    @Override
+    public MetricsConfig defaultMetricsConfig() {
+        return MicrometerMetricsConfig.create();
+    }
+
+    @Override
+    public MetricsConfig metricsConfig(Config config) {
+        return MicrometerMetricsConfig.create(config);
     }
 
     @Override
@@ -298,23 +312,12 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 
-    private void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
-                                          MetricsConfig metricsConfig) {
-        if (compositeMeterRegistry
-                .getRegistries()
-                .stream()
-                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
-            // If we have a non-no-op span context supplier provider we have to create the prometheus meter registry with
-            // some extra constructor arguments so that we can also pass the exemplar sampler with the span context supplier.
-            SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
-            PrometheusMeterRegistry prometheusMeterRegistry = provider instanceof NoOpSpanContextSupplierProvider
-                    ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
-                    : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
-                                                  new CollectorRegistry(),
-                                                  io.micrometer.core.instrument.Clock.SYSTEM,
-                                                  new DefaultExemplarSampler(provider.get()));
-            compositeMeterRegistry.add(prometheusMeterRegistry);
-        }
+    private io.micrometer.core.instrument.MeterRegistry prometheusRegistryForExemplarAsNeeded(
+            ConfiguredPrometheusMeterRegistry configuredPrometheusRegistry) {
+        SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
+        return provider instanceof NoOpSpanContextSupplierProvider
+                ? configuredPrometheusRegistry.meterRegistrySupplier().get()
+                : configuredPrometheusRegistry.meterRegistryFunction().apply(provider.get());
     }
 
     private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {

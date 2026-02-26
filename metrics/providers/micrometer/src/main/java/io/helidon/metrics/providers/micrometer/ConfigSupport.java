@@ -16,7 +16,12 @@
 
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Objects;
+import java.util.Properties;
+
 import io.helidon.builder.api.Prototype;
+
+import io.micrometer.prometheusmetrics.PrometheusConfig;
 
 class ConfigSupport {
 
@@ -33,11 +38,28 @@ class ConfigSupport {
             @Override
             public void decorate(MicrometerMetricsConfig.BuilderBase<?, ?> target) {
                 /*
-                Add enabled configured meter registries to any meter registries the app might have explicitly added.
+                Later code that sets up the Micrometer global meter registry needs to be able to create Prometheus registries
+                (in particular) at that time (if we need to set up exemplar handling). So create suppliers for any
+                explicitly-added meter registries.
                  */
+                target.meterRegistries().stream()
+                        .map(ConfiguredMeterRegistry::create)
+                        .forEach(r -> target.registries().add(r));
+
+                /*
+                If no meter registries were configured or added explicitly make sure we have a Prometheus one for backward
+                compatibility.
+                 */
+                if (target.registries().isEmpty()) {
+                    var defaultPrometheusRegistryConfig = PrometheusMeterRegistryConfig.create();
+                    target.registries()
+                            .add(ConfiguredPrometheusMeterRegistryProvider.ConfiguredPrometheusMeterRegistry.create(
+                                    defaultPrometheusRegistryConfig
+                            ));
+                }
                 target.meterRegistries().addAll(target.registries().stream()
                                                         .filter(ConfiguredMeterRegistry::isEnabled)
-                                                        .map(cmr -> cmr.meterRegistry().get())
+                                                        .map(cmr -> cmr.meterRegistrySupplier().get())
                                                         .toList());
             }
         }
@@ -57,6 +79,30 @@ class ConfigSupport {
             public static String get(OtlpMeterRegistryConfig config, String key) {
                 return config.properties().get(key);
             }
+        }
+    }
+
+    static class PrometheusMeterRegistrySupport {
+
+        private static final PrometheusConfig DEFAULT_PROMETHEUS_CONFIG = PrometheusConfig.DEFAULT;
+
+        private PrometheusMeterRegistrySupport() {
+        }
+
+        static Properties defaultProperties() {
+            // Slightly expensive but it allows the builder to use the Micrometer-provided defaults in case they change.
+            return Objects.requireNonNullElse(DEFAULT_PROMETHEUS_CONFIG.prometheusProperties(), new Properties());
+        }
+
+        static class CustomMethods {
+            private CustomMethods() {
+            }
+
+            @Prototype.PrototypeMethod
+            public static String get(PrometheusMeterRegistryConfig config, String key) {
+                return config.properties().get(key);
+            }
+
         }
     }
 }

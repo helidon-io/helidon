@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.metrics.providers.micrometer.ConfiguredOtlpMeterRegistryProvider;
-import io.helidon.metrics.providers.micrometer.spi.ConfiguredMeterRegistryProvider;
 
 /**
  * Micrometer adapter for Helidon metrics API.
@@ -53,9 +51,10 @@ module io.helidon.metrics.providers.micrometer {
 
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
     uses io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
-    uses ConfiguredMeterRegistryProvider;
+    uses io.helidon.metrics.providers.micrometer.spi.ConfiguredMeterRegistryProvider;
 
-    provides ConfiguredMeterRegistryProvider
-            with ConfiguredOtlpMeterRegistryProvider;
+    provides io.helidon.metrics.providers.micrometer.spi.ConfiguredMeterRegistryProvider
+            with io.helidon.metrics.providers.micrometer.ConfiguredOtlpMeterRegistryProvider,
+                 io.helidon.metrics.providers.micrometer.ConfiguredPrometheusMeterRegistryProvider;
 
 }

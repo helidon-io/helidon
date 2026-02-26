@@ -30,7 +30,7 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class ConfiguredOtlpMeterRegistryProvider implements ConfiguredMeterRegistryProvider {
 
     /**
-     * Type (and default name) to use for OTLP meter registrion configurations.
+     * Type (and default name) to use for OTLP meter registry configurations.
      */
     static final String TYPE = "otlp";
 
@@ -60,15 +60,16 @@ public class ConfiguredOtlpMeterRegistryProvider implements ConfiguredMeterRegis
     /**
      * The configured OTLP meter registry provided from config.
      *
-     * @param isEnabled     if the configured meter registry is enabled
-     * @param name          name for the configured meter registry
-     * @param type          type for the configured meter registry
-     * @param meterRegistry supplier for the Micrometer meter registry
+     * @param isEnabled            if the configured meter registry is enabled
+     * @param name                 name for the configured meter registry
+     * @param type                 type for the configured meter registry
+     * @param meterRegistrySupplier supplier for creating the Micrometer meter registry
      */
     record ConfiguredOtlpMeterRegistry(boolean isEnabled,
-                                      String name,
-                                      String type,
-                                      Supplier<MeterRegistry> meterRegistry) implements ConfiguredMeterRegistry {
+                                       String name,
+                                       String type,
+                                       Supplier<MeterRegistry> meterRegistrySupplier)
+            implements ConfiguredMeterRegistry {
 
     }
 }

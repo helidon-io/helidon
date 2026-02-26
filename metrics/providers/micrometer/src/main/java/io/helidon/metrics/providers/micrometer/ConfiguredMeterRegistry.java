@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import io.helidon.common.config.NamedService;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 
 /**
  * Behavior required of each configured meter registry.
@@ -28,11 +29,44 @@ import io.micrometer.core.instrument.MeterRegistry;
 public interface ConfiguredMeterRegistry extends NamedService {
 
     /**
+     * Creates a configured meter registry wrapper around a fully-formed existing meter registry.
+     *
+     * @param meterRegistry the meter registry to wrap
+     * @return configured meter registry wrapping the provider meter registry
+     */
+    static ConfiguredMeterRegistry create(MeterRegistry meterRegistry) {
+        return (meterRegistry instanceof PrometheusMeterRegistry prometheusMeterRegistry)
+                ? ConfiguredPrometheusMeterRegistryProvider.ConfiguredPrometheusMeterRegistry.create(prometheusMeterRegistry)
+                : new ConfiguredMeterRegistry() {
+
+                    @Override
+                    public String name() {
+                        return "unconfigured";
+                    }
+
+                    @Override
+                    public String type() {
+                        return "unconfigured";
+                    }
+
+                    @Override
+                    public Supplier<MeterRegistry> meterRegistrySupplier() {
+                        return () -> meterRegistry;
+                    }
+
+                    @Override
+                    public boolean isEnabled() {
+                        return true;
+                    }
+                };
+    }
+
+    /**
      * The {@link io.micrometer.core.instrument.MeterRegistry} created by this configured meter registry (if it is enabled).
      *
      * @return a supplier for the Micrometer meter registry that would be created by this group of settings
      */
-    Supplier<MeterRegistry> meterRegistry();
+    Supplier<MeterRegistry> meterRegistrySupplier();
 
     /**
      * Whether the configured meter registry is enabled and should be used.

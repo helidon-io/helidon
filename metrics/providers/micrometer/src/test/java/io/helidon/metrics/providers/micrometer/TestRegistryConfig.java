@@ -19,27 +19,65 @@ package io.helidon.metrics.providers.micrometer;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.registry.otlp.OtlpMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 
 class TestRegistryConfig {
 
     @Test
-    void testConfiguredRegistries() {
+    void testConfiguredOtlpRegistry() {
 
         var configText = """
                 metrics:
                   registries:
                     otlp:
                       step: PT1S
+                    prometheus:
+                      enabled: false
                 """;
 
         var config = Config.just(configText, MediaTypes.APPLICATION_YAML);
         var metrics = MicrometerMetricsConfig.create(config.get("metrics"));
 
-        assertThat("Registries", metrics.meterRegistries(), hasSize(greaterThanOrEqualTo(1)));
+        assertThat("Registries", metrics.meterRegistries(), hasSize(1));
+        assertThat("Registry", metrics.meterRegistries().getFirst(), instanceOf(OtlpMeterRegistry.class));
+    }
+
+    @Test
+    void testConfiguredPrometheusRegistry() {
+        var configText = """
+                metrics:
+                  registries:
+                    otlp:
+                      step: PT1S
+                      enabled: false
+                    prometheus:
+                """;
+
+        var config = Config.just(configText, MediaTypes.APPLICATION_YAML);
+        var metrics = MicrometerMetricsConfig.create(config.get("metrics"));
+
+        assertThat("Registries", metrics.meterRegistries(), hasSize(1));
+        assertThat("Registry", metrics.meterRegistries().getFirst(), instanceOf(PrometheusMeterRegistry.class));
+    }
+
+    @Test
+    void testBackwardCompatibility() {
+        var configText = """
+                metrics:
+                  enabled: true
+        """;
+
+        var config = Config.just(configText, MediaTypes.APPLICATION_YAML);
+        var metrics = MicrometerMetricsConfig.create(config.get("metrics"));
+
+        assertThat("Registries", metrics.meterRegistries(), hasSize(1));
+        assertThat("Registry", metrics.meterRegistries().getFirst(), instanceOf(PrometheusMeterRegistry.class));
+
     }
 }
