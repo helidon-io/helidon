@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Base class for all JSON value types in Helidon JSON processing.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public abstract sealed class JsonValue
         permits JsonArray, JsonBoolean, JsonControlValue, JsonNoopValue, JsonNull, JsonNumber, JsonObject, JsonString {

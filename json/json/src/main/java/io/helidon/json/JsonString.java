@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Represents a JSON string value.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonString extends JsonValue {
 

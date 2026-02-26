@@ -18,6 +18,8 @@ package io.helidon.json;
 
 /**
  * Enumeration of JSON value types.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public enum JsonValueType {
 

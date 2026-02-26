@@ -23,6 +23,8 @@ import java.util.Optional;
 
 /**
  * Represents a JSON array value containing an ordered list of JSON values.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonArray extends JsonValue {
 

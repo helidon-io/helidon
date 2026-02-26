@@ -18,6 +18,8 @@ package io.helidon.json;
 
 /**
  * Represents a JSON null value.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonNull extends JsonValue {
 
