@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 
 import static io.helidon.json.ArrayJsonParser.BYTE_SIZE_BORDER;
+import static io.helidon.json.ArrayJsonParser.DOT_MARK;
 import static io.helidon.json.ArrayJsonParser.FNV_OFFSET_BASIS;
 import static io.helidon.json.ArrayJsonParser.FNV_PRIME;
 import static io.helidon.json.ArrayJsonParser.HEX_DIGITS;
@@ -2079,7 +2080,7 @@ final class JsonStreamParser implements JsonParser {
     }
     
     private void skipRemaining(int mark) {
-        if (mark == -2) {
+        if (mark == DOT_MARK) {
             skipNumber();
         } else {
             currentIndex--;

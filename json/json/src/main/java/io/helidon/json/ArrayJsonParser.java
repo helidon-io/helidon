@@ -55,6 +55,7 @@ class ArrayJsonParser implements JsonParser {
             1000000000000000000.0, 10000000000000000000.0, 1.0e20, 1.0e21, 1.0e22
     };
     static final int POW10_DOUBLE_CACHE_SIZE = POW10_DOUBLE_CACHE.length;
+    static final int DOT_MARK = -2;
 
     static {
         Arrays.fill(WHOLE_NUMBER_PARTS, -1);
@@ -63,7 +64,7 @@ class ArrayJsonParser implements JsonParser {
         }
         //Marker for number resolving
         //if dot has been found and we wanted just the decimal part, we need to skip the rest of the number
-        WHOLE_NUMBER_PARTS[Bytes.DOT_BYTE] = -2;
+        WHOLE_NUMBER_PARTS[Bytes.DOT_BYTE] = DOT_MARK;
 
         //'e', 'E', '.', '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
         for (int i = '0'; i <= '9'; ++i) {
@@ -2037,7 +2038,7 @@ class ArrayJsonParser implements JsonParser {
     }
 
     private void skipRemaining(int mark) {
-        if (mark == -2) {
+        if (mark == DOT_MARK) {
             skipNumber();
         } else {
             currentIndex--;
