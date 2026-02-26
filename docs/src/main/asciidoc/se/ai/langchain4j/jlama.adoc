@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Jlama Provider
-:description: LangChain4J Jlama
+= Jlama
+:description: LangChain4j Jlama
 :keywords: helidon, AI, LangChain4J, LC4J, Jlama
 :feature-name: LangChain4J Jlama
 :rootdir: {docdir}/../../..
@@ -60,9 +60,13 @@ To automatically create and add `JlamaChatModel` to the service registry add the
 [source,yaml]
 ----
 langchain4j:
-  jlama:
-    chat-model:
-      enabled: true
+  providers:
+    jlama:
+      temperature: 1.2
+
+  models:
+    jlama-chat-model:
+      provider: jlama
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
@@ -75,7 +79,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`enabled` |boolean |If set to false, the component will not be available even if configured.
 |`model-name` |string |The model name to use.
 |`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
 |`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.
@@ -95,9 +99,13 @@ To automatically create and add `JlamaEmbeddingModel` to the service registry ad
 [source,yaml]
 ----
 langchain4j:
-  jlama:
-    embedding-model:
-      enabled: true
+  providers:
+    jlama:
+      temperature: 1.2
+
+  models:
+    jlama-embedding-model:
+      provider: jlama
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
@@ -110,7 +118,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`enabled` |boolean |If set to false, the component will not be available even if configured.
 |`model-name` |string |The model name to use.
 |`model-cache-path` | Path | Path to a directory where the model will be cached once downloaded.
 |`working-directory` | Path | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.
@@ -128,9 +136,13 @@ To automatically create and add `JlamaLanguageModel` to the service registry add
 [source,yaml]
 ----
 langchain4j:
-  jlama:
-    language-model:
-      enabled: true
+  providers:
+    jlama:
+      temperature: 1.2
+
+  models:
+    jlama-language-model:
+      provider: jlama
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
@@ -143,7 +155,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`enabled` |boolean |If set to false, the component will not be available even if configured.
 |`model-name` |string |The model name to use.
 |`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
 |`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.
@@ -164,9 +176,13 @@ To automatically create and add `JlamaStreamingChatModel` to the service registr
 [source,yaml]
 ----
 langchain4j:
-  jlama:
-    streaming-chat-model:
-      enabled: true
+  providers:
+    jlama:
+      temperature: 1.2
+
+  models:
+    jlama-streaming-chat-model:
+      provider: jlama
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ----
 
@@ -179,7 +195,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`enabled` |boolean |If set to false (default), the component will not be available even if configured.
+|`enabled` |boolean |If set to false, the component will not be available even if configured.
 |`model-name` |string |The model name to use.
 |`temperature` |double |Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
 |`working-quantized-type` | enum | Quantize the model at runtime. Default quantization is Q4.

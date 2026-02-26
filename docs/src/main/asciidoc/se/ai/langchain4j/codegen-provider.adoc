@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Model Provider Generator
+= Model Provider Generator
 :description: LangChain4J Model Provider Generator
 :keywords: helidon, AI, LangChain4J, LC4J, Codegen
 :feature-name: LangChain4J Codegen
@@ -53,40 +53,6 @@ Extra dependency for LangChain4j provider you want to generate binding for, here
     <artifactId>langchain4j-google-ai-gemini</artifactId>
     <version>1.1.0-rc1</version>
 </dependency>
-----
-
-You also need to extend the list of annotation processors with **builder** codegen:
-[source,xml]
-----
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-compiler-plugin</artifactId>
-    <configuration>
-        <annotationProcessorPaths>
-            <path>
-                <groupId>io.helidon.codegen</groupId>
-                <artifactId>helidon-codegen-apt</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-            <path>
-                <groupId>io.helidon.integrations.langchain4j</groupId>
-                <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-            <path>
-                <groupId>io.helidon.service</groupId>
-                <artifactId>helidon-service-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-            <!-- Builder codegen is needed too -->
-            <path>
-                <groupId>io.helidon.builder</groupId>
-                <artifactId>helidon-builder-codegen</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-        </annotationProcessorPaths>
-    </configuration>
-</plugin>
 ----
 
 == Lc4j Provider
@@ -131,11 +97,14 @@ LangChain4j provider config key is by default derived from the provider interfac
 [source,yaml]
 ----
 langchain4j:
-  google-ai-gemini: # <1>
-    chat-model:
-      enabled: true
-      model-name: gemini-2.5-flash
+  providers:
+    google-ai-gemini: # <1>
       api-key: ${GEMINI_AI_KEY}
+
+  models:
+    gemini-chat-model:
+      provider: google-ai-gemini
+      model-name: gemini-2.5-flash
 ----
 <1> Config key derived from `GoogleAiGeminiLc4jProvider` interface name
 
@@ -159,11 +128,14 @@ with the key of desired property is used as named qualifier for lookup when such
 [source,yaml]
 ----
 langchain4j:
-  google-ai-gemini:
-    chat-model:
-      enabled: true
-      model-name: gemini-2.5-flash
+  providers:
+    google-ai-gemini:
       api-key: ${GEMINI_AI_KEY}
+
+  models:
+    gemini-chat-model:
+      provider: google-ai-gemini
+      model-name: gemini-2.5-flash
       safety-settings:
         service-registry.named: custom-named-settings <1>
 ----

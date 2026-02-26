@@ -1,0 +1,85 @@
+<!--
+  - Copyright (c) 2026 Oracle and/or its affiliates.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" width="1010" height="575" viewBox="50 120 1010 575">
+  <defs>
+    <style>
+      .title { font: 700 20px "Segoe UI", Arial, sans-serif; fill: #1f2a44; }
+      .subtitle { font: 600 16px "Segoe UI", Arial, sans-serif; fill: #1f2a44; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #2b2b2b; }
+      .code { font: 12px "Fira Mono", "Courier New", monospace; fill: #1b1f23; }
+      .code-key { fill: #0969da; }
+      .code-string { fill: #0a7a45; }
+      .code-comment { fill: #6a737d; font-style: italic; }
+      .box { fill: #f8f9fb; stroke: #c8d1e0; stroke-width: 1.5; rx: 12; }
+      .note { fill: #fff4db; stroke: #f1c232; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #4b6cb7; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #4b6cb7; stroke-width: 2; fill: none; stroke-dasharray: 6 6; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <polygon points="0 0, 8 4, 0 8" fill="#4b6cb7" />
+    </marker>
+  </defs>
+    
+  <rect x="70" y="140" width="570" height="515" class="box" />
+
+  <path class="arrow" d="M 150 458 C 90 420, 90 300, 130 255" />
+  <path class="arrow" d="M 150 585 C 40 545, 90 300, 130 255" />
+
+  <text x="90" y="170" class="label">LangChain4j model configuration (application.yaml)</text>
+
+  <text x="100" y="205" class="code"><tspan class="code-key">langchain4j</tspan>:</text>
+  <text x="120" y="230" class="code"><tspan class="code-key">providers</tspan>:</text>
+  <text x="140" y="255" class="code"><tspan class="code-key">open-ai</tspan>:</text>
+  <text x="160" y="280" class="code"><tspan class="code-comment"># shared defaults for models referencing "open-ai" provider</tspan></text>
+  <text x="160" y="305" class="code"><tspan class="code-key">api-key</tspan>: <tspan class="code-string">"${OPENAI_TOKEN}"</tspan></text>
+  <text x="160" y="330" class="code"><tspan class="code-key">base-url</tspan>: <tspan class="code-string">"https://api.openai.com/v1"</tspan></text>
+  <text x="160" y="355" class="code"><tspan class="code-key">log-requests</tspan>: false</text>
+
+  <text x="120" y="390" class="code"><tspan class="code-key">models</tspan>:</text>
+  <text x="140" y="415" class="code"><tspan class="code-key">cheaper-model</tspan>:</text>
+  <text x="160" y="440" class="code"><tspan class="code-comment"># overrides provider defaults</tspan></text>
+  <text x="160" y="465" class="code"><tspan class="code-key">provider</tspan>: <tspan class="code-string">open-ai</tspan></text>
+  <text x="160" y="490" class="code"><tspan class="code-key">model-name</tspan>: <tspan class="code-string">"gpt-4o-mini"</tspan></text>
+  <text x="160" y="515" class="code"><tspan class="code-key">log-requests</tspan>: true</text>
+  <text x="140" y="540" class="code"><tspan class="code-key">powerful-model</tspan>:</text>
+  <text x="160" y="565" class="code"><tspan class="code-comment"># overrides provider defaults</tspan></text>
+  <text x="160" y="590" class="code"><tspan class="code-key">provider</tspan>: <tspan class="code-string">open-ai</tspan></text>
+  <text x="160" y="615" class="code"><tspan class="code-key">model-name</tspan>: <tspan class="code-string">"gpt-5.2-codex-max"</tspan></text>
+
+  <rect x="650" y="140" width="390" height="515" class="box" />
+  <text x="670" y="170" class="label">Resulting model configuration (merged)</text>
+
+  <text x="680" y="205" class="code"><tspan class="code-key">langchain4j</tspan>:</text>
+  <text x="700" y="230" class="code"><tspan class="code-key">models</tspan>:</text>
+  <text x="720" y="255" class="code"><tspan class="code-key">cheaper-model</tspan>:</text>
+  <text x="740" y="280" class="code"><tspan class="code-comment"># model override applied</tspan></text>
+  <text x="740" y="305" class="code"><tspan class="code-key">provider</tspan>: <tspan class="code-string">open-ai</tspan></text>
+  <text x="740" y="330" class="code"><tspan class="code-key">api-key</tspan>: <tspan class="code-string">"${OPENAI_TOKEN}"</tspan></text>
+  <text x="740" y="355" class="code"><tspan class="code-key">base-url</tspan>: <tspan class="code-string">"https://api.openai.com/v1"</tspan></text>
+  <text x="740" y="380" class="code"><tspan class="code-key">model-name</tspan>: <tspan class="code-string">"gpt-4o-mini"</tspan></text>
+  <text x="740" y="405" class="code"><tspan class="code-key">log-requests</tspan>: true</text>
+  <text x="720" y="430" class="code"><tspan class="code-key">powerful-model</tspan>:</text>
+  <text x="740" y="455" class="code"><tspan class="code-comment"># model override applied</tspan></text>
+  <text x="740" y="480" class="code"><tspan class="code-key">provider</tspan>: <tspan class="code-string">open-ai</tspan></text>
+  <text x="740" y="505" class="code"><tspan class="code-key">api-key</tspan>: <tspan class="code-string">"${OPENAI_TOKEN}"</tspan></text>
+  <text x="740" y="530" class="code"><tspan class="code-key">base-url</tspan>: <tspan class="code-string">"https://api.openai.com/v1"</tspan></text>
+  <text x="740" y="555" class="code"><tspan class="code-key">model-name</tspan>: <tspan class="code-string">"gpt-5.2-codex-max"</tspan></text>
+  <text x="740" y="580" class="code"><tspan class="code-key">log-requests</tspan>: false</text>
+
+
+
+</svg>

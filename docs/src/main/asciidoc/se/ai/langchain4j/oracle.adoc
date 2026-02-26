@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4j Oracle Provider
+= Oracle Embedding Store
 :description: LangChain4j Oracle
 :keywords: helidon, AI, LangChain4j, LC4J, Oracle
 :feature-name: LangChain4j Integration
@@ -28,9 +28,8 @@ include::{rootdir}/includes/se.adoc[]
 
 * <<Overview, Overview>>
 * <<Maven Coordinates, Maven Coordinates>>
-* <<Components, Components>>
-** <<OracleEmbeddingStore, OracleEmbeddingStore>>
-*** <<OracleEmbeddingTable, OracleEmbeddingTable>>
+* <<OracleEmbeddingStore, OracleEmbeddingStore>>
+** <<OracleEmbeddingTable, OracleEmbeddingTable>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -49,21 +48,36 @@ In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration w
 </dependency>
 ----
 
-== Components
-
-=== OracleEmbeddingStore
+== OracleEmbeddingStore
 
 To automatically create and add `OracleEmbeddingStore` to the service registry add the following lines to `application.yaml`:
 
 [source,yaml]
 ----
+# Oracle UCP datasource
+data:
+  sources:
+    sql:
+      - name: "foo-bar-data-source" # <1>
+        provider.ucp:
+          username: "vector"
+          password: "vector"
+          url: "jdbc:oracle:thin:@localhost:1521/freepdb1"
+          connection-factory-class-name: oracle.jdbc.pool.OracleDataSource
+
 langchain4j:
-  oracle:
-    embedding-store:
-      enabled: true
+  providers:
+    oracle:
+      # Configuration of a datasource default for all oracle embedding stores
+      data-source: "foo-bar-data-source"
+
+  embedding-stores:
+    foo-bar-oracle-db-embedding-store:
+      provider: oracle
       embedding-table:
-        name: "embeddings"
+        name: "foo-bar-embeddings"
 ----
+<1> Configured with `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see xref:{rootdir}/se/data.adoc[Helidon Data Repository] for more info
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
@@ -74,7 +88,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`data-source` |string |The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present the default unnamed service is used.
+|`data-source` |string |The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present, the default unnamed service is used.
 |`embedding-table` |<<OracleEmbeddingTable, OracleEmbeddingTable>> |Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store.
 |`enabled` |boolean |If set to `true`, Oracle embedding store will be enabled.
 |`exact-search` |boolean |Specifies whether exact matching is used in searches.
@@ -83,7 +97,7 @@ Full list of configuration properties:
 |===
 
 
-==== OracleEmbeddingTable
+=== OracleEmbeddingTable
 
 Full list of configuration properties:
 

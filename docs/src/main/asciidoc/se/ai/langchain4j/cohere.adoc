@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4j Cohere Provider
+= Cohere
 :description: LangChain4j Cohere
 :keywords: helidon, AI, LangChain4j, LC4J, Cohere
 :feature-name: LangChain4j Integration
@@ -58,9 +58,14 @@ To automatically create and add `CohereEmbeddingModel` to the service registry a
 [source,yaml]
 ----
 langchain4j:
-  cohere:
-    embedding-model:
-      enabled: true
+  providers:
+    cohere:
+      api-key: "${COHERE_TOKEN}"
+
+  models:
+    cohere-embedding-model:
+      provider: cohere
+      model-name: "embed-english-v3.0"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -75,7 +80,7 @@ Full list of configuration properties:
 |`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
 |`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4j is used.
 |`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
-|`enabled` |boolean |If set to false (default), this component will not be available even if configured.
+|`enabled` |boolean |If set to false, this component will not be available even if configured.
 |`input-type` |string |Input type.
 |`log-requests` |boolean |Whether to log API requests.
 |`log-responses` |boolean |Whether to log API responses.
@@ -93,9 +98,14 @@ To automatically create and add `CohereScoringModel` to the service registry add
 [source,yaml]
 ----
 langchain4j:
-  cohere:
-    scoring-model:
-      enabled: true
+  providers:
+    cohere:
+      api-key: "${COHERE_TOKEN}"
+
+  models:
+    cohere-scoring-model:
+      provider: cohere
+      model-name: "rerank-english-v3.0"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -110,7 +120,7 @@ Full list of configuration properties:
 |`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
 |`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4j is used.
 |`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
-|`enabled` |boolean |If set to false (default), this component will not be available even if configured.
+|`enabled` |boolean |If set to false, this component will not be available even if configured.
 |`log-requests` |boolean |Whether to log API requests.
 |`log-responses` |boolean |Whether to log API responses.
 |`max-retries` |int |The maximum number of retries for failed API requests.

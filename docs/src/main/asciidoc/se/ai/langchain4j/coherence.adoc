@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Coherence Provider
+= Coherence Embedding Store
 :description: LangChain4J Coherence
 :keywords: helidon, AI, LangChain4J, LC4J, Coherence
 :feature-name: LangChain4J Integration
@@ -30,7 +30,6 @@ include::{rootdir}/includes/se.adoc[]
 * <<Maven Coordinates, Maven Coordinates>>
 * <<Components, Components>>
 ** <<CoherenceEmbeddingStore, CoherenceEmbeddingStore>>
-** <<CoherenceChatMemoryStore, CoherenceChatMemoryStore>>
 * <<Additional Information, Additional Information>>
 
 == Overview
@@ -58,16 +57,18 @@ To automatically create and add `CoherenceEmbeddingStore` to the service registr
 [source,yaml]
 ----
 langchain4j:
-  coherence:
-    embedding-store:
-      enabled: true
+  providers:
+    coherence:
       session: "session"
+
+  embedding-stores:
+    coherence-embedding-store:
+      provider: coherence
       name: "namedMap"
       normalize-embeddings: false
       index: "hnsw"
       dimension: 768
-      embedding-model:
-        service-registry.named: beanName
+      embedding-model: beanName
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -79,7 +80,7 @@ Full list of configuration properties:
 |===
 |Key |Type |Description
 
-|`embedding-model`|string | Allows to configure embedding model by specifying named bean using `embeddingModel.service-registry.named: beanName`. Default embedding model is used otherwise, if exists.
+|`embedding-model`|string | Allows to configure embedding model by specifying named bean using `embeddingModel.service-registry.named: beanName`.
 |`dimension` |integer |The number of dimensions in the embeddings that will be stored in vector store.
 |`enabled` |boolean |If set to `true`, Coherence embedding store will be enabled.
 |`index` |string |Specifies vector index type use to create a vector index used to query embeddings. Only `hnsw` is supported.
@@ -88,19 +89,6 @@ Full list of configuration properties:
 |`session` |string |The name of the `com.tangosol.net.Session` use to obtain the `com.tangosol.net.NamedMap` as specified with `name`.
 
 |===
-
-=== CoherenceChatMemoryStore
-
-To automatically create and add persistence support backed by Coherence to `ChatMemory`, just specify `store="coherence"` as following:
-
-[source,java]
-----
-@Ai.Service
-@Ai.ChatMemoryWindow(value=3,store="coherence")
-public interface ChatAiService {
-    String chat(@UserMessage String question);
-}
-----
 
 == Additional Information
 

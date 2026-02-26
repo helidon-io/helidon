@@ -50,7 +50,7 @@ class ContentRetrieverFactory implements Service.ServicesFactory<ContentRetrieve
         this.registry = registry;
         this.config = config;
         this.contentRetrieverNames =
-                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.CONTENT_RETRIEVER, "helidon");
+                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.CONTENT_RETRIEVER, "langchain4j");
     }
 
     private Optional<EmbeddingStoreContentRetriever> create(String name) {

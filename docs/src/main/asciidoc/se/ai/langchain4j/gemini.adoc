@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4j Google Gemini Provider
+= Google Gemini
 :description: LangChain4j Google Gemini
 :keywords: helidon, AI, LangChain4j, LC4J, Google Gemini
 :feature-name: LangChain4j Integration
@@ -58,9 +58,14 @@ To automatically create and add `GoogleAiGeminiChatModel` to the service registr
 [source,yaml]
 ----
 langchain4j:
-  google-gemini:
-    chat-model:
-      enabled: true
+  providers:
+    google-gemini:
+      api-key: "${GEMINI_TOKEN}"
+
+  models:
+    gemini-chat-model:
+      provider: google-gemini
+      model-name: "gemini-2.0-flash"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
@@ -74,9 +79,14 @@ To automatically create and add `GoogleAiGeminiStreamingChatModel` to the servic
 [source,yaml]
 ----
 langchain4j:
-  google-gemini:
-    streaming-chat-model:
-      enabled: true
+  providers:
+    google-gemini:
+      api-key: "${GEMINI_TOKEN}"
+
+  models:
+    gemini-streaming-chat-model:
+      provider: google-gemini
+      model-name: "gemini-2.0-flash"
 ----
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
