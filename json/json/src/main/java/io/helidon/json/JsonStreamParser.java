@@ -2079,7 +2079,7 @@ final class JsonStreamParser implements JsonParser {
     }
     
     private void skipRemaining(int mark) {
-        if (buffer[currentIndex] == Bytes.DOT_BYTE) {
+        if (mark == -2) {
             skipNumber();
         } else {
             currentIndex--;
