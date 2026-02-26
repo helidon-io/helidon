@@ -19,6 +19,8 @@ package io.helidon.json;
 /**
  * An implementation of the {@link io.helidon.json.JsonParser} which enforces object start as the current value.
  * Delegates all other calls to the provided JsonParser.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class ObjectStartParser implements JsonParser {
 

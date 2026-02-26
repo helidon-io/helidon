@@ -17,6 +17,8 @@
 /**
  * Helidon JSON Processor.
  * Provides fundamental JSON parsing and generation capabilities.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  *
  * @see io.helidon.json.JsonParser
  * @see io.helidon.json.JsonGenerator

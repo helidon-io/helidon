@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a JSON object value containing key-value pairs.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonObject extends JsonValue {
 

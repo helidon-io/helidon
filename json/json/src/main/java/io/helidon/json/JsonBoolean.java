@@ -18,6 +18,8 @@ package io.helidon.json;
 
 /**
  * Represents a JSON boolean value (true or false).
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonBoolean extends JsonValue {
 
