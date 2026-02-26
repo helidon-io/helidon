@@ -138,6 +138,12 @@ public interface MetricsFactory {
         return MetricsConfig.create();
     }
 
+    /**
+     * Returns a {@link io.helidon.metrics.api.MetricsConfig} derived from the provided configuration.
+     *
+     * @param config metrics configuration
+     * @return {@code MetricsConfig} based on the config
+     */
     default MetricsConfig metricsConfig(Config config) {
         return MetricsConfig.create(config);
     }

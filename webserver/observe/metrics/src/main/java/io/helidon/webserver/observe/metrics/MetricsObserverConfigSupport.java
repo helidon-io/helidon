@@ -34,15 +34,4 @@ class MetricsObserverConfigSupport {
                     .ifPresent(mConfig -> target.metricsConfig(MetricsFactory.getInstance().metricsConfig(mConfig)));
         }
     }
-
-//        static class CustomMethods {
-//
-//            private CustomMethods() {
-//            }
-//
-//            @Prototype.PrototypeFactoryMethod
-//            static MetricsConfig.Builder builder() {
-//                return MetricsFactory.getInstance().configBuilder();
-//            }
-//    }
 }
