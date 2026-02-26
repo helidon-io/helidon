@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.common;
-
 /**
- * Severity of an event.
- * @see Errors
+ * Annotation processor enforcing use of Helidon stability annotations on top level public types.
  */
-@Api.Stable
-public enum Severity {
-    /**
-     * Fatal. Processing MUST stop.
-     */
-    FATAL,
-    /**
-     * Warning. Something is not as it should be, yet the problem
-     * is recoverable.
-     */
-    WARN,
-    /**
-     * Hint. Something may be better, this is not a problem.
-     */
-    HINT
-}
+package io.helidon.codegen.api.stability.enforcer;

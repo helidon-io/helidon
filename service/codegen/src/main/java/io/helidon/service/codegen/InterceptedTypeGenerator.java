@@ -248,6 +248,7 @@ class InterceptedTypeGenerator {
                                                                interceptedType,
                                                                "1",
                                                                ""))
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 .description("Intercepted sub-type for {@link " + serviceType.fqName() + "}.")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(interceptedType)

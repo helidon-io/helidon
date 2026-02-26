@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.mapper.spi.MapperProvider;
 
 /**
@@ -31,6 +32,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
 @Prototype.Blueprint(decorator = MappersConfigSupport.BuilderDecorator.class)
 @Prototype.RegistrySupport
 @Prototype.CustomMethods(MappersConfigSupport.CustomMethods.class)
+@Api.Stable
 interface MappersConfigBlueprint extends Prototype.Factory<Mappers> {
     /**
      * Mapper providers allow for introduction of new mappers into the system.

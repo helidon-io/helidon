@@ -32,6 +32,7 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.http.HttpTypes;
 import io.helidon.service.codegen.RegistryRoundContext;
 
@@ -78,6 +79,7 @@ class WebSocketClientFactoryGenerator {
                 .description("Factory to connect web socket endpoint {@link " + endpointType.fqName() + "} to a server.")
                 .type(generatedFactory)
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .superType(CLIENT_ENDPOINT_FACTORY)
                 .addAnnotation(Annotation.builder()
                                        .typeName(SERVICE_ANNOTATION_NAMED_BY_TYPE)

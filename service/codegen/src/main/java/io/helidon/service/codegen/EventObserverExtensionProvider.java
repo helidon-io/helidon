@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,7 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                     .description("Event observer registration service for {@link " + eventObject.fqName() + "}.")
                     .addInterface(SERVICE_G_EVENT_OBSERVER_REGISTRATION)
+                    .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                     .addAnnotation(Annotation.create(SERVICE_ANNOTATION_SINGLETON));
 
             // constant for event type
