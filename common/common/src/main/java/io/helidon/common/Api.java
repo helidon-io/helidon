@@ -51,7 +51,8 @@ import java.lang.annotation.Target;
  * add {@link java.lang.SuppressWarnings} with the constants provided in this class, such as {@link #SUPPRESS_PREVIEW},
  * or you can suppress all warnings/errors with {@link #SUPPRESS_ALL}.
  */
-@Api.Internal
+@Api.Stable
+// we expect people to use the constants defined here
 public final class Api {
     /**
      * Suppression constant to ignore any use of Helidon APIs that are not production.

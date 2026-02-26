@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.util.List;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -58,6 +60,7 @@ class MainGenerator {
                                                                generatedType,
                                                                "1",
                                                                ""))
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL))
                 .addDescriptionLine("Main class generated for Helidon Service Registry Application.")
                 .isFinal(true);
 

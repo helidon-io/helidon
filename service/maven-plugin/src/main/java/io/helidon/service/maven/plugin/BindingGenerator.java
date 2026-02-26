@@ -116,6 +116,7 @@ class BindingGenerator {
                                                  typeName))
                 .description("Generated Binding to provide explicit bindings for known services.")
                 .type(typeName)
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
                                                                GENERATOR,
                                                                typeName,

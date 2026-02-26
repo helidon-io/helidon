@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,6 +247,7 @@ class InterceptedTypeGenerator {
                                                                interceptedType,
                                                                "1",
                                                                ""))
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 .description("Intercepted sub-type for {@link " + serviceType.fqName() + "}.")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(interceptedType)
