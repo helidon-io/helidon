@@ -191,6 +191,12 @@ class JsonConverterGenerator {
                 .addContent(" defaultSerializer = (")
                 .addContent(serializerType)
                 .addContentLine(") configurator.serializer(instance.getClass());");
+        method.addContentLine("if (defaultSerializer == this) {");
+        method.addContent("throw new ")
+                .addContent(JsonTypes.JSON_BINDING_EXCEPTION)
+                .addContentLine("(\"Obtained the same serializer. "
+                                        + "This would cause an infinite cycle. Type: \" + instance.getClass());");
+        method.addContentLine("}");
         method.addContentLine("defaultSerializer.serialize(generator, instance, writeNulls);");
         if (!first) {
             method.addContent("}");

@@ -22,6 +22,7 @@ import io.helidon.common.GenericType;
 import io.helidon.json.JsonException;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
+import io.helidon.json.binding.JsonBindingException;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,14 @@ public class PolymorphismSupportTest {
         Animal deserialize = jsonBinding.deserialize(json, Animal.class);
         assertThat(deserialize, instanceOf(Dog.class));
         assertThat(((Dog) deserialize).name(), is("Alik"));
+    }
+
+    @Test
+    void testCyclicSerialization() {
+        Fish fish = new Fish();
+        fish.name("Nemo");
+
+        assertThrows(JsonBindingException.class, () -> jsonBinding.serialize(fish));
     }
 
     @Test
@@ -563,6 +572,18 @@ public class PolymorphismSupportTest {
 
     @Json.Entity
     static class Bird implements Animal {
+        private String name;
+
+        public String name() {
+            return name;
+        }
+
+        public void name(String name) {
+            this.name = name;
+        }
+    }
+
+    static class Fish implements Animal {
         private String name;
 
         public String name() {
