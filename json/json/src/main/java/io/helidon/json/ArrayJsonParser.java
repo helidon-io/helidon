@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 
 class ArrayJsonParser implements JsonParser {
 
@@ -54,12 +55,16 @@ class ArrayJsonParser implements JsonParser {
             1000000000000000000.0, 10000000000000000000.0, 1.0e20, 1.0e21, 1.0e22
     };
     static final int POW10_DOUBLE_CACHE_SIZE = POW10_DOUBLE_CACHE.length;
+    static final int DOT_MARK = -2;
 
     static {
         Arrays.fill(WHOLE_NUMBER_PARTS, -1);
         for (int i = '0'; i <= '9'; ++i) {
             WHOLE_NUMBER_PARTS[i] = i - '0';
         }
+        //Marker for number resolving
+        //if dot has been found and we wanted just the decimal part, we need to skip the rest of the number
+        WHOLE_NUMBER_PARTS[Bytes.DOT_BYTE] = DOT_MARK;
 
         //'e', 'E', '.', '-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
         for (int i = '0'; i <= '9'; ++i) {
@@ -1109,24 +1114,24 @@ class ArrayJsonParser implements JsonParser {
 
     private byte parseByte(boolean negative) {
         int digit1 = WHOLE_NUMBER_PARTS[currentByte() & 0xFF];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         if (currentIndex + 4 < bufferLength) {
             int digit2 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit2 == -1) {
-                currentIndex--;
+            if (digit2 < 0) {
+                skipRemaining(digit2);
                 return (byte) digit1;
             }
             int digit3 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
             int possibleResult = digit1 * 10 + digit2;
-            if (digit3 == -1) {
-                currentIndex--;
+            if (digit3 < 0) {
+                skipRemaining(digit3);
                 return (byte) possibleResult;
             }
             int digit4 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit4 == -1) {
-                currentIndex--;
+            if (digit4 < 0) {
+                skipRemaining(digit4);
                 if (negative) {
                     if (-possibleResult > -BYTE_SIZE_BORDER || (-possibleResult == -BYTE_SIZE_BORDER && digit3 <= 8)) {
                         return (byte) (possibleResult * 10 + digit3);
@@ -1139,26 +1144,26 @@ class ArrayJsonParser implements JsonParser {
         }
         boolean hasNext = hasNext();
         int digit2 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit2 == -1) {
+        if (digit2 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit2);
             }
             return (byte) digit1;
         }
         hasNext = hasNext();
         int digit3 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
         int possibleResult = digit1 * 10 + digit2;
-        if (digit3 == -1) {
+        if (digit3 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit3);
             }
             return (byte) possibleResult;
         }
         hasNext = hasNext();
         int digit4 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit4 == -1) {
+        if (digit4 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit4);
             }
             if (negative) {
                 if (-possibleResult > -BYTE_SIZE_BORDER || (-possibleResult == -BYTE_SIZE_BORDER && digit3 <= 8)) {
@@ -1173,34 +1178,34 @@ class ArrayJsonParser implements JsonParser {
 
     private short parseShort(boolean negative) {
         int digit1 = WHOLE_NUMBER_PARTS[currentByte() & 0xFF];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         if (currentIndex + 6 < bufferLength) {
             int digit2 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit2 == -1) {
-                currentIndex--;
+            if (digit2 < 0) {
+                skipRemaining(digit2);
                 return (short) digit1;
             }
             int digit3 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit3 == -1) {
-                currentIndex--;
+            if (digit3 < 0) {
+                skipRemaining(digit3);
                 return (short) (digit1 * 10 + digit2);
             }
             int digit4 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit4 == -1) {
-                currentIndex--;
+            if (digit4 < 0) {
+                skipRemaining(digit4);
                 return (short) (digit1 * 100 + digit2 * 10 + digit3);
             }
             int digit5 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
             short possibleResult = (short) (digit1 * 1000 + digit2 * 100 + digit3 * 10 + digit4);
-            if (digit5 == -1) {
-                currentIndex--;
+            if (digit5 < 0) {
+                skipRemaining(digit5);
                 return possibleResult;
             }
             int digit6 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-            if (digit6 == -1) {
-                currentIndex--;
+            if (digit6 < 0) {
+                skipRemaining(digit6);
                 if (negative) {
                     if (-possibleResult > -SHORT_SIZE_BORDER || (-possibleResult == -SHORT_SIZE_BORDER && digit5 <= 8)) {
                         return (short) (possibleResult * 10 + digit5);
@@ -1213,42 +1218,42 @@ class ArrayJsonParser implements JsonParser {
         }
         boolean hasNext = hasNext();
         int digit2 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit2 == -1) {
+        if (digit2 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit2);
             }
             return (short) digit1;
         }
         hasNext = hasNext();
         int digit3 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit3 == -1) {
+        if (digit3 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit3);
             }
             return (short) (digit1 * 10 + digit2);
         }
         hasNext = hasNext();
         int digit4 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit4 == -1) {
+        if (digit4 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit4);
             }
             return (short) (digit1 * 100 + digit2 * 10 + digit3);
         }
         hasNext = hasNext();
         int digit5 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
         short possibleResult = (short) (digit1 * 1000 + digit2 * 100 + digit3 * 10 + digit4);
-        if (digit5 == -1) {
+        if (digit5 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit5);
             }
             return possibleResult;
         }
         hasNext = hasNext();
         int digit6 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit6 == -1) {
+        if (digit6 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit6);
             }
             if (negative) {
                 if (-possibleResult > -SHORT_SIZE_BORDER || (-possibleResult == -SHORT_SIZE_BORDER && digit5 <= 8)) {
@@ -1266,30 +1271,30 @@ class ArrayJsonParser implements JsonParser {
             return parseIntFast(negative);
         }
         int digit1 = WHOLE_NUMBER_PARTS[currentByte()];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         boolean hasNext = hasNext();
         int digit2 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit2 == -1) {
+        if (digit2 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit2);
             }
             return digit1;
         }
         hasNext = hasNext();
         int digit3 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit3 == -1) {
+        if (digit3 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit3);
             }
             return digit1 * 10 + digit2;
         }
         hasNext = hasNext();
         int digit4 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit4 == -1) {
+        if (digit4 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit4);
             }
             return digit1 * 100
                     + digit2 * 10
@@ -1297,9 +1302,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit5 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit5 == -1) {
+        if (digit5 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit5);
             }
             return digit1 * 1000
                     + digit2 * 100
@@ -1308,9 +1313,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit6 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit6 == -1) {
+        if (digit6 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit6);
             }
             return digit1 * 10000
                     + digit2 * 1000
@@ -1320,9 +1325,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit7 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit7 == -1) {
+        if (digit7 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit7);
             }
             return digit1 * 100000
                     + digit2 * 10000
@@ -1333,9 +1338,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit8 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit8 == -1) {
+        if (digit8 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit8);
             }
             return digit1 * 1000000
                     + digit2 * 100000
@@ -1347,9 +1352,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit9 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit9 == -1) {
+        if (digit9 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit9);
             }
             return digit1 * 10000000
                     + digit2 * 1000000
@@ -1371,17 +1376,17 @@ class ArrayJsonParser implements JsonParser {
                 + digit7 * 100
                 + digit8 * 10
                 + digit9;
-        if (digit10 == -1) {
+        if (digit10 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit10);
             }
             return possibleResult;
         }
         hasNext = hasNext();
         int digit11 = hasNext ? WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF] : -1;
-        if (digit11 == -1) {
+        if (digit11 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit11);
             }
             // Check for overflow before adding the last digit
             // INT_SIZE_BORDER = Integer.MAX_VALUE / 10 = 214748364
@@ -1400,37 +1405,37 @@ class ArrayJsonParser implements JsonParser {
 
     private int parseIntFast(boolean negative) {
         int digit1 = WHOLE_NUMBER_PARTS[currentByte() & 0xFF];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         int digit2 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit2 == -1) {
-            currentIndex--;
+        if (digit2 < 0) {
+            skipRemaining(digit2);
             return digit1;
         }
         int digit3 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit3 == -1) {
-            currentIndex--;
+        if (digit3 < 0) {
+            skipRemaining(digit3);
             return digit1 * 10 + digit2;
         }
         int digit4 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit4 == -1) {
-            currentIndex--;
+        if (digit4 < 0) {
+            skipRemaining(digit4);
             return digit1 * 100
                     + digit2 * 10
                     + digit3;
         }
         int digit5 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit5 == -1) {
-            currentIndex--;
+        if (digit5 < 0) {
+            skipRemaining(digit5);
             return digit1 * 1000
                     + digit2 * 100
                     + digit3 * 10
                     + digit4;
         }
         int digit6 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit6 == -1) {
-            currentIndex--;
+        if (digit6 < 0) {
+            skipRemaining(digit6);
             return digit1 * 10000
                     + digit2 * 1000
                     + digit3 * 100
@@ -1438,8 +1443,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit5;
         }
         int digit7 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit7 == -1) {
-            currentIndex--;
+        if (digit7 < 0) {
+            skipRemaining(digit7);
             return digit1 * 100000
                     + digit2 * 10000
                     + digit3 * 1000
@@ -1448,8 +1453,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit6;
         }
         int digit8 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit8 == -1) {
-            currentIndex--;
+        if (digit8 < 0) {
+            skipRemaining(digit8);
             return digit1 * 1000000
                     + digit2 * 100000
                     + digit3 * 10000
@@ -1459,8 +1464,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit7;
         }
         int digit9 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit9 == -1) {
-            currentIndex--;
+        if (digit9 < 0) {
+            skipRemaining(digit9);
             return digit1 * 10000000
                     + digit2 * 1000000
                     + digit3 * 100000
@@ -1480,13 +1485,13 @@ class ArrayJsonParser implements JsonParser {
                 + digit7 * 100
                 + digit8 * 10
                 + digit9;
-        if (digit10 == -1) {
-            currentIndex--;
+        if (digit10 < 0) {
+            skipRemaining(digit10);
             return possibleResult;
         }
         int digit11 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit11 == -1) {
-            currentIndex--;
+        if (digit11 < 0) {
+            skipRemaining(digit11);
             if (negative) {
                 if (-possibleResult > -INT_SIZE_BORDER || (-possibleResult == -INT_SIZE_BORDER && digit10 <= 8)) {
                     return possibleResult * 10 + digit10;
@@ -1505,78 +1510,78 @@ class ArrayJsonParser implements JsonParser {
         }
         boolean hasNext = hasNext();
         int digit1 = WHOLE_NUMBER_PARTS[currentByte()];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         int digit2 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit2 == -1) {
+        if (digit2 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit2);
             }
             return digit1;
         }
         hasNext = hasNext();
         int digit3 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit3 == -1) {
+        if (digit3 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit3);
             }
             return digit1 * 10L + digit2;
         }
         hasNext = hasNext();
         int digit4 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit4 == -1) {
+        if (digit4 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit4);
             }
             return digit1 * 100L + digit2 * 10L + digit3;
         }
         hasNext = hasNext();
         int digit5 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit5 == -1) {
+        if (digit5 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit5);
             }
             return digit1 * 1000L + digit2 * 100L + digit3 * 10L + digit4;
         }
         hasNext = hasNext();
         int digit6 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit6 == -1) {
+        if (digit6 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit6);
             }
             return digit1 * 10000L + digit2 * 1000L + digit3 * 100L + digit4 * 10L + digit5;
         }
         hasNext = hasNext();
         int digit7 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit7 == -1) {
+        if (digit7 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit7);
             }
             return digit1 * 100000L + digit2 * 10000L + digit3 * 1000L + digit4 * 100L + digit5 * 10L + digit6;
         }
         hasNext = hasNext();
         int digit8 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit8 == -1) {
+        if (digit8 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit8);
             }
             return digit1 * 1000000L + digit2 * 100000L + digit3 * 10000L + digit4 * 1000L + digit5 * 100L + digit6 * 10L + digit7;
         }
         hasNext = hasNext();
         int digit9 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit9 == -1) {
+        if (digit9 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit9);
             }
             return digit1 * 10000000L + digit2 * 1000000L + digit3 * 100000L + digit4 * 10000L + digit5 * 1000L + digit6 * 100L
                     + digit7 * 10L + digit8;
         }
         hasNext = hasNext();
         int digit10 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit10 == -1) {
+        if (digit10 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit10);
             }
             return digit1 * 100000000L
                     + digit2 * 10000000L
@@ -1590,9 +1595,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit11 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit11 == -1) {
+        if (digit11 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit11);
             }
             return digit1 * 1000000000L
                     + digit2 * 100000000L
@@ -1607,9 +1612,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit12 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit12 == -1) {
+        if (digit12 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit12);
             }
             return digit1 * 10000000000L
                     + digit2 * 1000000000L
@@ -1625,9 +1630,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit13 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit13 == -1) {
+        if (digit13 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit13);
             }
             return digit1 * 100000000000L
                     + digit2 * 10000000000L
@@ -1644,9 +1649,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit14 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit14 == -1) {
+        if (digit14 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit14);
             }
             return digit1 * 1000000000000L
                     + digit2 * 100000000000L
@@ -1664,9 +1669,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit15 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit15 == -1) {
+        if (digit15 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit15);
             }
             return digit1 * 10000000000000L
                     + digit2 * 1000000000000L
@@ -1685,9 +1690,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit16 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit16 == -1) {
+        if (digit16 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit16);
             }
             return digit1 * 100000000000000L
                     + digit2 * 10000000000000L
@@ -1707,9 +1712,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit17 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit17 == -1) {
+        if (digit17 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit17);
             }
             return digit1 * 1000000000000000L
                     + digit2 * 100000000000000L
@@ -1730,9 +1735,9 @@ class ArrayJsonParser implements JsonParser {
         }
         hasNext = hasNext();
         int digit18 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit18 == -1) {
+        if (digit18 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit18);
             }
             return digit1 * 10000000000000000L
                     + digit2 * 1000000000000000L
@@ -1772,17 +1777,17 @@ class ArrayJsonParser implements JsonParser {
                 + digit16 * 100L
                 + digit17 * 10L
                 + digit18;
-        if (digit19 == -1) {
+        if (digit19 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit19);
             }
             return possibleResult;
         }
         hasNext = hasNext();
         int digit20 = hasNext ? WHOLE_NUMBER_PARTS[readNextByte() & 0xFF] : -1;
-        if (digit20 == -1) {
+        if (digit20 < 0) {
             if (hasNext) {
-                currentIndex--;
+                skipRemaining(digit20);
             }
             if (negative) {
                 if (-possibleResult > -LONG_SIZE_BORDER || (-possibleResult == -LONG_SIZE_BORDER && digit19 <= 8)) {
@@ -1798,53 +1803,53 @@ class ArrayJsonParser implements JsonParser {
     @SuppressWarnings("checkstyle:MethodLength")
     private long parseLongFast(boolean negative) {
         int digit1 = WHOLE_NUMBER_PARTS[currentByte()];
-        if (digit1 == -1) {
+        if (digit1 < 0) {
             throw createException("Expected number", currentByte());
         }
         int digit2 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit2 == -1) {
-            currentIndex--;
+        if (digit2 < 0) {
+            skipRemaining(digit2);
             return digit1;
         }
         int digit3 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit3 == -1) {
-            currentIndex--;
+        if (digit3 < 0) {
+            skipRemaining(digit3);
             return digit1 * 10L + digit2;
         }
         int digit4 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit4 == -1) {
-            currentIndex--;
+        if (digit4 < 0) {
+            skipRemaining(digit4);
             return digit1 * 100L + digit2 * 10L + digit3;
         }
         int digit5 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit5 == -1) {
-            currentIndex--;
+        if (digit5 < 0) {
+            skipRemaining(digit5);
             return digit1 * 1000L + digit2 * 100L + digit3 * 10L + digit4;
         }
         int digit6 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit6 == -1) {
-            currentIndex--;
+        if (digit6 < 0) {
+            skipRemaining(digit6);
             return digit1 * 10000L + digit2 * 1000L + digit3 * 100L + digit4 * 10L + digit5;
         }
         int digit7 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit7 == -1) {
-            currentIndex--;
+        if (digit7 < 0) {
+            skipRemaining(digit7);
             return digit1 * 100000L + digit2 * 10000L + digit3 * 1000L + digit4 * 100L + digit5 * 10L + digit6;
         }
         int digit8 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit8 == -1) {
-            currentIndex--;
+        if (digit8 < 0) {
+            skipRemaining(digit8);
             return digit1 * 1000000L + digit2 * 100000L + digit3 * 10000L + digit4 * 1000L + digit5 * 100L + digit6 * 10L + digit7;
         }
         int digit9 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit9 == -1) {
-            currentIndex--;
+        if (digit9 < 0) {
+            skipRemaining(digit9);
             return digit1 * 10000000L + digit2 * 1000000L + digit3 * 100000L + digit4 * 10000L + digit5 * 1000L + digit6 * 100L
                     + digit7 * 10L + digit8;
         }
         int digit10 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit10 == -1) {
-            currentIndex--;
+        if (digit10 < 0) {
+            skipRemaining(digit10);
             return digit1 * 100000000L
                     + digit2 * 10000000L
                     + digit3 * 1000000L
@@ -1856,8 +1861,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit9;
         }
         int digit11 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit11 == -1) {
-            currentIndex--;
+        if (digit11 < 0) {
+            skipRemaining(digit11);
             return digit1 * 1000000000L
                     + digit2 * 100000000L
                     + digit3 * 10000000L
@@ -1870,8 +1875,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit10;
         }
         int digit12 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit12 == -1) {
-            currentIndex--;
+        if (digit12 < 0) {
+            skipRemaining(digit12);
             return digit1 * 10000000000L
                     + digit2 * 1000000000L
                     + digit3 * 100000000L
@@ -1885,8 +1890,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit11;
         }
         int digit13 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit13 == -1) {
-            currentIndex--;
+        if (digit13 < 0) {
+            skipRemaining(digit13);
             return digit1 * 100000000000L
                     + digit2 * 10000000000L
                     + digit3 * 1000000000L
@@ -1901,8 +1906,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit12;
         }
         int digit14 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit14 == -1) {
-            currentIndex--;
+        if (digit14 < 0) {
+            skipRemaining(digit14);
             return digit1 * 1000000000000L
                     + digit2 * 100000000000L
                     + digit3 * 10000000000L
@@ -1918,8 +1923,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit13;
         }
         int digit15 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit15 == -1) {
-            currentIndex--;
+        if (digit15 < 0) {
+            skipRemaining(digit15);
             return digit1 * 10000000000000L
                     + digit2 * 1000000000000L
                     + digit3 * 100000000000L
@@ -1936,8 +1941,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit14;
         }
         int digit16 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit16 == -1) {
-            currentIndex--;
+        if (digit16 < 0) {
+            skipRemaining(digit16);
             return digit1 * 100000000000000L
                     + digit2 * 10000000000000L
                     + digit3 * 1000000000000L
@@ -1955,8 +1960,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit15;
         }
         int digit17 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit17 == -1) {
-            currentIndex--;
+        if (digit17 < 0) {
+            skipRemaining(digit17);
             return digit1 * 1000000000000000L
                     + digit2 * 100000000000000L
                     + digit3 * 10000000000000L
@@ -1975,8 +1980,8 @@ class ArrayJsonParser implements JsonParser {
                     + digit16;
         }
         int digit18 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit18 == -1) {
-            currentIndex--;
+        if (digit18 < 0) {
+            skipRemaining(digit18);
             return digit1 * 10000000000000000L
                     + digit2 * 1000000000000000L
                     + digit3 * 100000000000000L
@@ -2014,13 +2019,13 @@ class ArrayJsonParser implements JsonParser {
                 + digit16 * 100L
                 + digit17 * 10L
                 + digit18;
-        if (digit19 == -1) {
-            currentIndex--;
+        if (digit19 < 0) {
+            skipRemaining(digit19);
             return possibleResult;
         }
         int digit20 = WHOLE_NUMBER_PARTS[buffer[++currentIndex] & 0xFF];
-        if (digit20 == -1) {
-            currentIndex--;
+        if (digit20 < 0) {
+            skipRemaining(digit20);
             if (negative) {
                 if (-possibleResult > -LONG_SIZE_BORDER || (-possibleResult == -LONG_SIZE_BORDER && digit19 <= 8)) {
                     return possibleResult * 10 + digit19;
@@ -2030,6 +2035,14 @@ class ArrayJsonParser implements JsonParser {
             }
         }
         throw createException("The number is too big for a long value");
+    }
+
+    private void skipRemaining(int mark) {
+        if (mark == DOT_MARK) {
+            skipNumber();
+        } else {
+            currentIndex--;
+        }
     }
 
     private void skipObject() {
