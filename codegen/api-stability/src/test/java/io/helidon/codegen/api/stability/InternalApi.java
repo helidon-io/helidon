@@ -19,5 +19,5 @@ package io.helidon.codegen.api.stability;
 import io.helidon.common.Api;
 
 @Api.Internal
-public class PrivateApi {
+public class InternalApi {
 }

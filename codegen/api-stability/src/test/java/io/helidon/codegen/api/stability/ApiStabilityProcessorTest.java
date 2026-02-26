@@ -36,6 +36,7 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,7 +51,7 @@ public class ApiStabilityProcessorTest {
                                      ClassCode.class,
                                      TypeName.class,
                                      ClassModel.class),
-                               List.of("-Ahelidon.api.private=fail"),
+                               List.of("-Ahelidon.api.internal=fail"),
                                new JavaSourceFromString("MyClass.java", """
                                        package com.example;
                                        
@@ -63,13 +64,14 @@ public class ApiStabilityProcessorTest {
                                        }
                                        """));
         assertThat(messages, hasItems(
-                "error: Usage of Helidon APIs annotated with @Api.Private. Do not use these APIs.",
-                "error: This ERROR can be suppressed with @SuppressWarnings(\"helidon:api:private\") or compiler argument "
-                        + "-Ahelidon.api.private=ignore",
-                "error: /MyClass.java:[3,1] io.helidon.codegen.ClassCode is private API\n"
+                "error: Usage of Helidon APIs annotated with @Api.Internal. Do not use these APIs. "
+                        + "This will fail the build in the next major release of Helidon",
+                "error: This ERROR can be suppressed with @SuppressWarnings(\"helidon:api:internal\") or compiler argument "
+                        + "-Ahelidon.api.internal=ignore",
+                "error: /MyClass.java:[3,1] io.helidon.codegen.ClassCode is internal API\n"
                         + "  import io.helidon.codegen.ClassCode;\n"
                         + "  ^",
-                "error: /MyClass.java:[7,9] io.helidon.codegen.ClassCode is private API\n"
+                "error: /MyClass.java:[7,9] io.helidon.codegen.ClassCode is internal API\n"
                         + "          ClassCode c = new io.helidon.codegen.ClassCode(null, null, null);\n"
                         + "          ^"
         ));
@@ -116,7 +118,7 @@ public class ApiStabilityProcessorTest {
 
         private final String code;
 
-        JavaSourceFromString(String fileName, String code) {
+        JavaSourceFromString(String fileName, @Language("java") String code) {
             super(URI.create("string:///" + fileName), Kind.SOURCE);
             this.code = code;
         }
