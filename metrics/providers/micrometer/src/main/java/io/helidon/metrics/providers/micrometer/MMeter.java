@@ -188,6 +188,14 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
             return identity();
         }
 
+        HB from(Meter neutralMeter) {
+            neutralMeter.scope().ifPresent(this::scope);
+            neutralMeter.baseUnit().ifPresent(this::baseUnit);
+            neutralMeter.description().ifPresent(this::description);
+            tags(neutralMeter.id().tags());
+            return identity();
+        }
+
         public HB tags(Iterable<Tag> tags) {
             this.tags.clear();
             tags.forEach(tag -> this.tags.put(tag.key(), tag.value()));

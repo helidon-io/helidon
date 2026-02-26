@@ -67,13 +67,12 @@ class MetricsFeature {
 
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
-    private final MeterRegistry meterRegistry;
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
         this.metricsConfig = config.metricsConfig();
-        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
+        config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
     }
 
     /**
@@ -83,7 +82,7 @@ class MetricsFeature {
      */
     void configureVendorMetrics(HttpRouting.Builder rules) {
         kpiMetrics =
-                KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                KeyPerformanceIndicatorMetricsImpls.get(Metrics.globalRegistry(),
                                                         KPI_METER_NAME_PREFIX_WITH_DOT,
                                                         metricsConfig
                                                                 .keyPerformanceIndicatorMetricsConfig(),
@@ -118,7 +117,7 @@ class MetricsFeature {
     Optional<?> output(MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
-        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+        MeterRegistryFormatter formatter = chooseFormatter(Metrics.globalRegistry(),
                                                            mediaType,
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
@@ -130,7 +129,7 @@ class MetricsFeature {
     Optional<?> outputMetadata(MediaType mediaType,
                                Iterable<String> scopeSelection,
                                Iterable<String> nameSelection) {
-        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+        MeterRegistryFormatter formatter = chooseFormatter(Metrics.globalRegistry(),
                                                            mediaType,
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,

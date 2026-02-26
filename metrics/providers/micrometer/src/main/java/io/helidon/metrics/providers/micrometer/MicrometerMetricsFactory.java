@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -181,6 +182,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
         lock.lock();
         try {
+            List<Meter> previouslyRegisteredMeters = null;
+            List<Consumer<Meter>> previousOnAddListeners = null;
+            List<Consumer<Meter>> previousOnRemoveListeners = null;
+
             if (globalMeterRegistry != null) {
                 if (metricsConfig.equals(this.metricsConfig)) {
                     return globalMeterRegistry;
@@ -189,16 +194,26 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 // But it's possible for it to be invoked more than once with different
                 // settings. In such a case we need to clear the old global registry and create a new one because
                 // the new settings might affect its behavior.
+                previouslyRegisteredMeters = globalMeterRegistry.meters();
+                previousOnAddListeners = globalMeterRegistry.onMeterAddedListeners();
+                previousOnRemoveListeners = globalMeterRegistry.onMeterRemovedListeners();
+
                 globalMeterRegistry.close();
                 meterRegistries.remove(globalMeterRegistry);
+
             }
             if (metricsConfig instanceof MicrometerMetricsConfig micrometerMetricsConfig) {
+
+                var existingRegistries = Set.copyOf(Metrics.globalRegistry.getRegistries());
+                existingRegistries.forEach(Metrics.globalRegistry::remove);
+
                 micrometerMetricsConfig.registries().stream()
                         .map(reg -> reg instanceof ConfiguredPrometheusMeterRegistry prometheusReg
                                 ? prometheusRegistryForExemplarAsNeeded(prometheusReg)
                                 : reg.meterRegistrySupplier().get())
                         .forEach(Metrics.globalRegistry::add);
             }
+
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                     .metricsConfig(metricsConfig)
                     .build());
@@ -210,7 +225,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
              */
             notifyListenersOfCreate(globalMeterRegistry, metricsConfig);
 
-            applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+            if (previouslyRegisteredMeters != null) {
+                globalMeterRegistry.merge(previouslyRegisteredMeters, previousOnAddListeners, previousOnRemoveListeners);
+            } else {
+                applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+            }
 
             return globalMeterRegistry;
         } finally {

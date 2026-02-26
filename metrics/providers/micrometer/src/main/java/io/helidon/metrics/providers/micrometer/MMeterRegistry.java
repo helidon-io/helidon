@@ -232,9 +232,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public void close() {
         lock.writeLock().lock();
         try {
+            List.copyOf(meters.values()).forEach(this::remove);
             onAddListeners.clear();
             onRemoveListeners.clear();
-            List.copyOf(meters.values()).forEach(this::remove);
             meters.clear();
             buildersByPromMeterId.clear();
             scopeMembership.clear();
@@ -415,6 +415,32 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public io.helidon.metrics.api.MeterRegistry onMeterRemoved(Consumer<io.helidon.metrics.api.Meter> listener) {
         onRemoveListeners.add(listener);
         return this;
+    }
+
+    void merge(Collection<io.helidon.metrics.api.Meter> existingMeters,
+               List<Consumer<io.helidon.metrics.api.Meter>> existingOnAddListeners,
+               List<Consumer<io.helidon.metrics.api.Meter>> existingOnRemoveListeners) {
+        lock.writeLock().lock();
+
+        try {
+            existingMeters.forEach(this::merge);
+            if (existingOnRemoveListeners != null) {
+                onAddListeners.addAll(existingOnAddListeners);
+            }
+            if (existingOnRemoveListeners != null) {
+                onRemoveListeners.addAll(existingOnRemoveListeners);
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    List<Consumer<io.helidon.metrics.api.Meter>> onMeterAddedListeners() {
+        return onAddListeners;
+    }
+
+    List<Consumer<io.helidon.metrics.api.Meter>> onMeterRemovedListeners() {
+        return onRemoveListeners;
     }
 
     void erase() {
@@ -613,6 +639,17 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             joiner.add(element.toString());
         }
         return joiner.toString();
+    }
+
+    private void merge(io.helidon.metrics.api.Meter existingMeter) {
+        switch (existingMeter) {
+        case MCounter mCounter -> getOrCreate(MCounter.builder(mCounter));
+        case MTimer mTimer -> getOrCreate(MTimer.builder(mTimer));
+        case MDistributionSummary mDistributionSummary -> getOrCreate(MDistributionSummary.builder(mDistributionSummary));
+        case MGauge<?> mGauge -> getOrCreate(MGauge.builder(mGauge));
+        case MFunctionalCounter mFunctionalCounter -> getOrCreate(MFunctionalCounter.builder(mFunctionalCounter));
+        default -> throw new IllegalArgumentException("Unknown meter: " + existingMeter);
+        }
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {

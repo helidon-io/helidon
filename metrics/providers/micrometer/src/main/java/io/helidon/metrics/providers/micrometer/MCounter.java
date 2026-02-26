@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,13 @@ class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements 
      */
     static Builder builder(String name) {
         return new Builder(name, io.micrometer.core.instrument.Counter.builder(name));
+    }
+
+    static Builder builder(MCounter counter) {
+        /*
+        There are no counter-specific settings.
+         */
+        return builder(counter.id().name()).from(counter);
     }
 
     /**
