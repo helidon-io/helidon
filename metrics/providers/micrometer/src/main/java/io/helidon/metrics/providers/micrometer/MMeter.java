@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Wrapper;
-import io.helidon.metrics.providers.micrometer.MTimer;
 
 import io.micrometer.core.instrument.Timer;
 
