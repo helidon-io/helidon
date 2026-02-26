@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,9 +111,7 @@ class MetricsFactoryManager {
 
         MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
 
-        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-
-        metricsFactory = access(() -> completeGetInstance(metricsConfig, metricsConfigNode));
+        access(() -> completeGetInstance(metricsConfigNode));
 
         return metricsFactory;
     }
@@ -145,8 +143,6 @@ class MetricsFactoryManager {
      */
     static MetricsFactory create(Config metricsConfigNode) {
         return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
-                                                     MetricsConfig.create(
-                                                             metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
                                                      METER_PROVIDERS.get());
     }
 
@@ -164,21 +160,27 @@ class MetricsFactoryManager {
         return serverFeaturesMetricsConfig;
     }
 
-    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
+//    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
+//
+//        metricsConfig = applyOverrides(metricsConfig);
+//
+//        SystemTagsManager.instance(metricsConfig);
+//        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
+//
+//        return metricsFactory;
+//    }
 
-        metricsConfig = applyOverrides(metricsConfig);
-
-        SystemTagsManager.instance(metricsConfig);
-        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
+    private static MetricsFactory completeGetInstance(Config metricsConfigNode) {
+        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, METER_PROVIDERS.get());
 
         return metricsFactory;
     }
 
-    private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
-        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
-        METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
-        return metricsConfigBuilder.build();
-    }
+//    private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
+//        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
+//        METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
+//        return metricsConfigBuilder.build();
+//    }
 
     private static <T> T access(Callable<T> c) {
         LOCK.lock();

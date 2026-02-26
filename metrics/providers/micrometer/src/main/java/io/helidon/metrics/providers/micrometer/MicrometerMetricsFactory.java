@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,12 +40,15 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.ConfiguredPrometheusMeterRegistryProvider.ConfiguredPrometheusMeterRegistry;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
@@ -79,11 +83,22 @@ class MicrometerMetricsFactory implements MetricsFactory {
         this.metersProviders = metersProviders;
     }
 
+    private MicrometerMetricsFactory(Config metricsNode, Collection<MetersProvider> metersProviders) {
+        this(prepareMetricsConfig(metricsNode), metersProviders);
+    }
+
+    @Deprecated(since = "4.4.0", forRemoval = true)
     static MicrometerMetricsFactory create(io.helidon.common.config.Config rootConfig,
                                            MetricsConfig metricsConfig,
                                            Collection<MetersProvider> metersProviders) {
 
         return new MicrometerMetricsFactory(metricsConfig, metersProviders);
+    }
+
+    static MicrometerMetricsFactory create(io.helidon.common.config.Config metricsNode,
+                                           Collection<MetersProvider> metersProviders) {
+
+        return new MicrometerMetricsFactory(metricsNode, metersProviders);
     }
 
     void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
@@ -310,6 +325,35 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
+    }
+
+    private static MicrometerMetricsConfig prepareMetricsConfig(Config metricsNode) {
+        var builder = MicrometerMetricsConfig.builder()
+                .config(metricsNode);
+        MetricsProgrammaticConfig.apply(target(builder));
+
+        var result = builder.build();
+        SystemTagsManager.instance(result);
+        return result;
+    }
+
+    private static MetricsProgrammaticConfig.Target target(MicrometerMetricsConfig.Builder builder) {
+        return new MetricsProgrammaticConfig.Target() {
+            @Override
+            public Optional<ScopingConfig> scoping() {
+                return builder.scoping();
+            }
+
+            @Override
+            public void appTagName(String appTagName) {
+                builder.appTagName(appTagName);
+            }
+
+            @Override
+            public void scoping(ScopingConfig.Builder scopingBuilder) {
+                builder.scoping(scopingBuilder);
+            }
+        };
     }
 
     private io.micrometer.core.instrument.MeterRegistry prometheusRegistryForExemplarAsNeeded(

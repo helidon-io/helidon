@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,30 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
+     * Applies the current instance's programmatic config to the specified target.
+     *
+     * @param target the object to apply the programmatic config to
+     * @return the updated target
+     */
+    static Target apply(Target target) {
+        var instance = instance();
+
+        ScopingConfig.Builder scopingBuilder = target
+                .scoping()
+                .map(ScopingConfig::builder)
+                .orElseGet(ScopingConfig::builder);
+
+        instance.scopeDefaultValue().ifPresent(scopingBuilder::defaultValue);
+        instance.scopeTagName().ifPresent(scopingBuilder::tagName);
+
+        instance.appTagName().ifPresent(target::appTagName);
+
+        target.scoping(scopingBuilder);
+
+        return target;
+    }
+
+    /**
      * Default tag value to use for the scope tag if none is specified when the meter ID is created.
      *
      * @return default scope tag value
@@ -92,7 +116,9 @@ public interface MetricsProgrammaticConfig {
      *
      * @param builder original metrics configuration builder
      * @return metrics config with any overrides applied
+     * @deprecated Use {@link #apply(io.helidon.metrics.spi.MetricsProgrammaticConfig.Target)}
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     default MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
 
         ScopingConfig.Builder scopingBuilder = builder
@@ -115,9 +141,38 @@ public interface MetricsProgrammaticConfig {
      *
      * @param metricsConfig original metrics configuration
      * @return new metrics configuration with overrides applied
+     * @deprecated Use {@link #apply(io.helidon.metrics.spi.MetricsProgrammaticConfig.Target)}
      */
+    @Deprecated(since = "4.4.0", forRemoval = true)
     default MetricsConfig apply(MetricsConfig metricsConfig) {
         return apply(MetricsConfig.builder(metricsConfig)).build();
+    }
+
+    /**
+     * Behavior of types, independent of a particular builder, capable of accepting programmatic config.
+     */
+    interface Target {
+
+        /**
+         * Returns the existing scoping config set on the target.
+         *
+         * @return existing scoping config (if any)
+         */
+        Optional<ScopingConfig> scoping();
+
+        /**
+         * Assigns the tag name used for the app tag.
+         *
+         * @param appTagName app tag name
+         */
+        void appTagName(String appTagName);
+
+        /**
+         * Assigns the adjusted or created scoping the target should use.
+         *
+         * @param scopingBuilder scoping builder
+         */
+        void scoping(ScopingConfig.Builder scopingBuilder);
     }
 
     /**

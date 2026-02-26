@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,11 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
     @Override
     public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
         return save(MicrometerMetricsFactory.create(rootConfig, metricsConfig, metersProviders));
+    }
+
+    @Override
+    public MetricsFactory create(Config rootConfig, Collection<MetersProvider> metersProviders) {
+        return save(MicrometerMetricsFactory.create(rootConfig, metersProviders));
     }
 
     @Override

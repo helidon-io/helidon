@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ class TestSystemTagsManager {
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
         // By default, specifying just the app name in config should trigger the default or explicit app tag name and value.
         if (metricsConfig.appName().isPresent()) {
-            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName().get()));
         }
     }
 
@@ -164,7 +164,7 @@ class TestSystemTagsManager {
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
         // By default, specifying just the app name in config should trigger the default or explicit app tag name and value.
         if (metricsConfig.appName().isPresent()) {
-            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName().get()));
         }
     }
 }
