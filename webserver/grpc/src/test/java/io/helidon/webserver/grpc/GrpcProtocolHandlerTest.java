@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,24 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2StreamState;
 
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.Router;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+
+import java.util.concurrent.ExecutorService;
 
 class GrpcProtocolHandlerTest {
 
@@ -36,7 +44,8 @@ class GrpcProtocolHandlerTest {
     void testIdentityCompressorFlag() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "identity");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(new UnimplementedGrpcConnectionContext(),
+                                                              Http2Headers.create(headers),
                                                               null,
                                                               1,
                                                               null,
@@ -52,7 +61,8 @@ class GrpcProtocolHandlerTest {
     void testGzipCompressor() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "gzip");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(new UnimplementedGrpcConnectionContext(),
+                                                              Http2Headers.create(headers),
                                                               null,
                                                               1,
                                                               null,
@@ -68,7 +78,8 @@ class GrpcProtocolHandlerTest {
     void testIgnoreGzipCompressor() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "gzip");
-        GrpcProtocolHandler handler = new GrpcProtocolHandler(Http2Headers.create(headers),
+        GrpcProtocolHandler handler = new GrpcProtocolHandler(new UnimplementedGrpcConnectionContext(),
+                                                              Http2Headers.create(headers),
                                                               null,
                                                               1,
                                                               null,
@@ -93,5 +104,57 @@ class GrpcProtocolHandlerTest {
         Http2StreamState next = GrpcProtocolHandler.nextStreamState(
                 Http2StreamState.HALF_CLOSED_REMOTE, Http2StreamState.HALF_CLOSED_LOCAL);
         assertThat(next, is(Http2StreamState.CLOSED));
+    }
+
+    private static class UnimplementedGrpcConnectionContext implements ConnectionContext {
+        @Override
+        public ListenerContext listenerContext() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public ExecutorService executor() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public DataWriter dataWriter() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public DataReader dataReader() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Router router() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public PeerInfo remotePeer() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public PeerInfo localPeer() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public boolean isSecure() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public String socketId() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public String childSocketId() {
+            throw new UnsupportedOperationException("Should not be called");
+        }
     }
 }

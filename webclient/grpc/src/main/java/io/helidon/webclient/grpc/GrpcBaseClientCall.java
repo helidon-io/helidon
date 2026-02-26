@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
+import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientConnection;
@@ -287,6 +289,18 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected ClientConnection clientConnection(ClientUri clientUri) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
+
+        if (clientConfig.baseAddress().isPresent()
+            && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
+            return UnixDomainSocketClientConnection.create(
+                webClient,
+                clientConfig.tls(),
+                List.of(Http2Client.PROTOCOL_ID),
+                udsAddress,
+                connection -> false,
+                connection -> {}).connect();
+        }
+
         ConnectionKey connectionKey = ConnectionKey.create(
                 clientUri.scheme(),
                 clientUri.host(),

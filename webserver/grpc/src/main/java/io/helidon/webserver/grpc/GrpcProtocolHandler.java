@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 
 import io.grpc.Codec;
@@ -101,6 +102,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
+    private final ConnectionContext connectionContext;
     private final Http2Headers headers;
     private final Http2StreamWriter streamWriter;
     private final int streamId;
@@ -125,13 +127,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
-    GrpcProtocolHandler(Http2Headers headers,
+    GrpcProtocolHandler(ConnectionContext connectionContext,
+                        Http2Headers headers,
                         Http2StreamWriter streamWriter,
                         int streamId,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
                         GrpcConfig grpcConfig) {
+        this.connectionContext = connectionContext;
         this.headers = headers;
         this.streamWriter = streamWriter;
         this.streamId = streamId;
@@ -157,11 +161,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 methodMetrics.callStarted.increment();
             }
 
-            // initiate server call
-            ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-            listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
-            listener.onReady();
-            bytesReceived = 0L;
+            // Include the GrpcConnectionContext in the gRPC Context so that the gRPC customer
+            // handler can access the peer info and proxy protocol data.
+            var grpcContextImpl = new GrpcConnectionContextImpl(connectionContext);
+            io.grpc.Context.current()
+                .withValue(ServerContextKeys.CONNECTION_CONTEXT, grpcContextImpl)
+                .run(() -> {
+                    // initiate server call
+                    ServerCallHandler<REQ, RES> callHandler = route.callHandler();
+                    listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
+                    listener.onReady();
+                    bytesReceived = 0L;
+                });
         } catch (Throwable e) {
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;

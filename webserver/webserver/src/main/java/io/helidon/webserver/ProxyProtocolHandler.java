@@ -24,16 +24,16 @@ import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.Channels;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.zip.CRC32C;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.Checksum;
@@ -43,7 +43,7 @@ import io.helidon.http.RequestException;
 import io.helidon.webserver.ProxyProtocolData.Family;
 import io.helidon.webserver.ProxyProtocolData.Protocol;
 
-class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
+class ProxyProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
@@ -98,20 +98,18 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             .build();
     }
 
-    private final Socket socket;
+    private final SocketChannel socketChannel;
     private final String channelId;
 
-    ProxyProtocolHandler(Socket socket, String channelId) {
-        this.socket = socket;
+    ProxyProtocolHandler(SocketChannel socketChannel, String channelId) {
+        this.socketChannel = socketChannel;
         this.channelId = channelId;
     }
 
-    @Override
     public ProxyProtocolData get() {
         LOGGER.log(Level.DEBUG, "Reading proxy protocol data for channel %s", channelId);
-
         try {
-            return handleAnyProtocol(socket.getInputStream());
+            return handleAnyProtocol(Channels.newInputStream(socketChannel));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -226,6 +224,11 @@ class ProxyProtocolHandler implements Supplier<ProxyProtocolData> {
             case IPv6 -> 36;
             case UNIX -> 216;
         };
+
+        if (headerLength < addressBytesLength) {
+            throw badProtocolException("Insufficient number of bytes to encode addresses");
+        }
+
         final byte[] addressBytes = new byte[addressBytesLength];
         readExactlyNBytes(inputStream, addressBytes, 0, addressBytesLength);
 
