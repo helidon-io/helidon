@@ -72,7 +72,7 @@ class ViewRegistrationConfigSupport {
             };
         }
 
-        @Prototype.ConfigFactoryMethod
+        @Prototype.ConfigFactoryMethod("attributeFilter")
         static Predicate<String> createAttributeFilter(Config config) {
             Pattern attributePattern = Pattern.compile(config.asString().get());
             return attributeName -> attributePattern.matcher(attributeName).matches();

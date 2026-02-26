@@ -26,11 +26,11 @@ import java.io.Writer;
  * allowing for efficient writing of large JSON documents without building
  * the entire content in memory first. It supports writing to output streams
  * and writers with automatic JSON formatting.
- * </p>
  * <p>
  * The generator provides fluent method chaining for building JSON structures
  * and handles proper JSON syntax including quotes, commas, and brackets.
- * </p>
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public interface JsonGenerator extends AutoCloseable {
 
@@ -256,9 +256,7 @@ public interface JsonGenerator extends AutoCloseable {
     /**
      * This method does not close the stream it is writing to.
      * It only performs final writing operations.
-     *
-     * @throws Exception exception when closing the generator
      */
     @Override
-    void close() throws Exception;
+    void close();
 }

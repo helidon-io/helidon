@@ -17,6 +17,7 @@
 package io.helidon.integrations.langchain4j;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -33,16 +34,24 @@ class McpClientFactory implements Service.ServicesFactory<McpClient> {
     private final LazyValue<List<Service.QualifiedInstance<McpClient>>> clients;
 
     McpClientFactory(Config config) {
-        this.clients = LazyValue.create(() -> config.get(CONFIG_ROOT)
-                .asNodeList()
-                .orElse(List.of())
-                .stream()
+        this.clients = LazyValue.create(() -> configure(config)
                 .map(McpClientFactory::create)
                 .toList());
     }
 
-    private static Service.QualifiedInstance<McpClient> create(Config config) {
-        McpClientConfig mcpClientConfig = McpClientConfig.create(config);
+    static Stream<McpClientConfig> configure(Config config) {
+        return config.get(CONFIG_ROOT)
+                .asNodeList()
+                .orElse(List.of())
+                .stream()
+                .map(c -> McpClientConfig.builder()
+                        .key(c.key().name())
+                        .config(c)
+                        .build()
+                );
+    }
+
+    private static Service.QualifiedInstance<McpClient> create(McpClientConfig mcpClientConfig) {
         StreamableHttpMcpTransport.Builder transport = new StreamableHttpMcpTransport.Builder()
                 .url(mcpClientConfig.uri().toString());
 

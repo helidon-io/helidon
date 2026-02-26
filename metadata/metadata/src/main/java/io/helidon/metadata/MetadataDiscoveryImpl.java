@@ -506,6 +506,7 @@ class MetadataDiscoveryImpl implements MetadataDiscovery {
                 if (CACHE.size() > 10) {
                     var iterator = CACHE.entrySet().iterator();
                     while (CACHE.size() > 10 && iterator.hasNext()) {
+                        iterator.next();
                         iterator.remove();
                     }
                 }

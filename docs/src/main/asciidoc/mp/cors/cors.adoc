@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -61,14 +61,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 Once you have planned how each of your resources should support CORS, you specify the CORS behavior in one of two ways:
 
-* add `@CrossOrigin` annotations to the Java code for the resources, or
+* add `@Cors.*` annotations to the Java code for the resources, or
 * add configuration.
 
-You can do both. CORS configuration for a resource overrides any CORS settings declared using `@CrossOrigin` in the Java class for the resource.
+You can do both. CORS configuration for a resource overrides any CORS settings declared using `@Cors.*` in the Java class for the resource.
 
 == API
 
-=== The `@CrossOrigin` Annotation
+=== The `@Cors.*` Annotations
 
 Adding CORS behavior to your Helidon MP application involves just a few simple steps.
 
@@ -77,20 +77,28 @@ For each resource class in your application:
 . Identify the resources and sub-resources--in other words, the paths--declared in the resource class which you want to support CORS.
 . For each of those resources and sub-resources which should support CORS:
 .. Find or create a Java method annotated with `@OPTIONS` and with the correct `@Path`.
-.. To that `@OPTIONS` Java method add a Helidon link:{mp-cors-javadoc-base-url}/io/helidon/microprofile/cors/CrossOrigin.html[`@CrossOrigin`] annotation that describes the cross-origin sharing you want for that resource.
+.. To that `@OPTIONS` Java method add a Helidon link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.html[`@Cors.*`] annotation(s) that describes the cross-origin sharing you want for that resource.
 
 [NOTE]
-.Using @CrossOrigin Correctly
+.Using @Cors.* Correctly
 ====
-Use the `@CrossOrigin` annotation _only_ on methods which also have the `@OPTIONS` annotation. Remember that the `@CrossOrigin` settings apply to a given path and therefore to all Java resource methods which share that path.
+Use the `@Cors.*` annotations _only_ on methods which also have the `@OPTIONS` annotation. Remember that the CORS settings apply to a given path and therefore to all Java resource methods which share that path.
 
-Helidon MP aborts the server start-up if you use the `@CrossOrigin` annotation on a resource method other than an `@OPTIONS` method.
+Helidon MP aborts the server start-up if you use the `@Cors.*` annotations on a resource method other than an `@OPTIONS` method.
 
-For an informal look at the reasons for applying the `@CrossOrigin` annotation to the `@OPTIONS` method, instead of another
+For an informal look at the reasons for applying the `@Cors.*` annotations to the `@OPTIONS` method, instead of another
 method, see xref:{rootdir}/mp/cors/why-options.adoc[Why `@OPTIONS`?].
 ====
 
-The xref:config-table[configuration table] below describes the attributes of the `@CrossOrigin` annotation.
+The following annotations are available:
+
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.Defaults.html[`@Cors.Defaults] - has no values, applies all defaults (do not combine with annotations below)
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowOrigins.html[`@Cors.AllowOrigins] - value is the allowed origins, defaults to all origins
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowHeaders.html[`@Cors.AllowHeaders] - value is the allowed HTTP header names, defaults to all headers
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowMethods.html[`@Cors.AllowMethods] - value is the allowed HTTP method names, defaults to all methods
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.ExposeHeaders.html[`@Cors.ExposeHeaders] - value is the exposed HTTP header names, defaults to none
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.AllowCredentials.html[`@Cors.AllowCredentials] - value is a boolean, defaults to false
+- link:{webserver-cors-javadoc-base-url}/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html[`@Cors.MaxAgeSeconds] - value is the max age as a number of seconds
 
 
 == Configuration
@@ -107,18 +115,19 @@ cors.enabled= # <1>
 # <2>
 cors.paths._i_.path-pattern= # <3>
 cors.paths._i_.allow-headers=
-cors.paths._i_.max-age-seconds=
+cors.paths._i_.max-age= # <4>
 cors.paths._i_.allow-credentials=
 cors.paths._i_.allow-origins=
 cors.paths._i_.expose-headers=
 cors.paths._i_.allow-methods=
-cors.paths._i_.enabled= # <4>
+cors.paths._i_.enabled= # <5>
 ----
 <1> You can disable CORS processing for all resources by setting `cors.enabled` to `false`. Defaults to `true`.
 <2> Add a block for each resource you want to configure.
 The index `_i_` is an integer (0, 1, 2, etc).
 <3> Specify the settings as needed to define the CORS behavior you want for that resource.
-<4> The `enabled` setting lets you control whether the system uses that set of CORS configuration. Defaults to `true`.
+<4> The `max-age` option is a `Duration` string, such as `PT1H` for 1 hour
+<5> The `enabled` setting lets you control whether the system uses that set of CORS configuration. Defaults to `true`.
 
 The system uses the index `_i_`, not the position in the config file, to identify the settings for a particular resource.
 
@@ -128,10 +137,10 @@ link:{http-javadoc-base-url}/io/helidon/http/PathMatcher.html[`PathMatcher`] cla
 NOTE: Helidon scans the cross-origin entries in index order (0, 1, 2, etc.) until it finds an entry that
 matches an incoming request's path and HTTP method, so be sure to assign index values to the entries so Helidon will check them in the order you want. In particular, use lower index values for entries with more specific path patterns.
 
-The table below describes the attributes on the `@CrossOrigin` annotation and the configuration keys
-that map to the headers defined in the CORS protocol.
+Each annotation in `Cors` class (except for `Defaults`) is mapped to one of the configuration options, see details below:
+
 [#config-table]
-include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
+include::{rootdir}/config/io_helidon_webserver_cors_CorsPathConfig.adoc[leveloffset=+1,tag=config]
 
 == Examples
 
@@ -157,8 +166,8 @@ include::{sourcedir}/mp/cors/CorsSnippets.java[tag=snippet_1, indent=0]
 <1> Existing `GreetResource` resource class with path `/greet`.
 <2> Existing `@GET` method for resource `/greet`.
 <3> Existing `@PUT` method for resource `/greet/greeting`.
-<4> New `@OPTIONS` method for `/greet`. (Just like the `@GET` method `getDefaultMessage`, this `@OPTIONS` method does not have a `@Path` annotation; both "inherit" the class-level `@Path` setting `/greet`.) The `@CrossOrigin` annotation declares default cross-origin sharing which permits sharing via all HTTP methods to all origins.
-<5> New `@OPTIONS` method for `/greet/greeting`. The `@CrossOrigin` annotation specifies sharing only via the `PUT` HTTP method and only to the two listed origins.
+<4> New `@OPTIONS` method for `/greet`. (Just like the `@GET` method `getDefaultMessage`, this `@OPTIONS` method does not have a `@Path` annotation; both "inherit" the class-level `@Path` setting `/greet`.) The `@Cors.Defaults` annotation declares default cross-origin sharing which permits sharing via all HTTP methods to all origins.
+<5> New `@OPTIONS` method for `/greet/greeting`. The `@Cors.AllowMethods` annotations specifies sharing only via the `PUT` HTTP method, and the `@Cors.AllowOrigins` specifies sharing only to the two listed origins.
 
 === Adding Configuration
 You could use the following configuration in place of using annotations to set up the same CORS behavior.
@@ -175,7 +184,7 @@ cors.paths.1.allow-methods=PUT
 <1> Enables default CORS settings for the `/greet` resource.
 <2> Sets up sharing for the `/greet/greeting` resource only via `PUT` requests and only from the specified origins.
 
-Or, alternatively, the following configuration example augments the settings from the `@CrossOrigin` annotations in the code.
+Or, alternatively, the following configuration example augments the settings from the `@Cors.*` annotations in the code.
 
 .Using configuration to augment or override declared CORS behavior
 [source,properties]
@@ -191,18 +200,12 @@ cors.paths.1.allow-origins=https://foo.com
 <1> Changes the declared settings to restrict cross-origin use of `/greet` to only `GET` and only from `foo.com` and `there.com`.
 <2> Changes the settings for `/greet/greeting` from what they were declared; with this configuration, only the origin `foo.com` is permitted. (The declared setting also allowed `there.com`).
 
-
-
 == Additional Information
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
 You can configure how the Helidon server handles these headers as described in the documentation for xref:{rootdir}/mp/server.adoc#_using_requested_uri_discovery[requested URI discovery].
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
-
-include::{rootdir}/includes/cors.adoc[tag=understanding-cors-support-in-services]
-
-include::{rootdir}/includes/cors.adoc[tag=builtin-getting-started]
 
 include::{rootdir}/includes/cors.adoc[tags=configuring-cors-for-builtin-services;!se-config-example]
 

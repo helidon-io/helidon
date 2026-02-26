@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,35 @@ final class Utils {
                     .packageName("")
                     .build();
         }
+
+        // if it has type parameters, fix them
+        if (!first.typeArguments().isEmpty() && first.typeArguments().size() == second.typeArguments().size()) {
+            TypeName.Builder firstBuilder = TypeName.builder(first)
+                    .clearTypeArguments();
+            TypeName.Builder secondBuilder = TypeName.builder(first)
+                    .clearTypeArguments();
+
+            for (int i = 0; i < first.typeArguments().size(); i++) {
+                TypeName firstTypeArgument = first.typeArguments().get(i);
+                TypeName secondTypeArgument = second.typeArguments().get(i);
+
+                if (first.packageName().isEmpty()) {
+                    firstBuilder.addTypeArgument(firstTypeArgument);
+                    secondBuilder.addTypeArgument(TypeName.builder(secondTypeArgument)
+                            .packageName("")
+                            .build());
+                } else if (second.packageName().isEmpty()) {
+                    firstBuilder.addTypeArgument(TypeName.builder(firstTypeArgument)
+                                                         .packageName("")
+                                                         .build());
+                    secondBuilder.addTypeArgument(secondTypeArgument);
+                }
+            }
+
+            usedFirst = firstBuilder.build();
+            usedSecond = secondBuilder.build();
+        }
+
         return ResolvedType.create(usedFirst)
                 .equals(ResolvedType.create(usedSecond));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package io.helidon.webserver.cors;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -28,9 +30,11 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * Configuration of CORS feature.
  */
 @Prototype.Blueprint(decorator = CorsConfigSupport.BuilderDecorator.class)
-@Prototype.Configured(value = CorsFeature.CORS_ID, root = false)
+@Prototype.Configured(CorsFeature.CORS_ID)
 @Prototype.Provides(ServerFeatureProvider.class)
-interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
+@Prototype.IncludeDefaultMethods
+@Prototype.Annotated("java.lang.SuppressWarnings(\"removal\")")
+interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
 
     /**
      * Weight of the CORS feature. As it is used by other features, the default is quite high:
@@ -38,6 +42,7 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
      *
      * @return weight of the feature
      */
+    @SuppressWarnings("deprecation")
     @Option.DefaultDouble(CorsFeature.WEIGHT)
     @Option.Configured
     double weight();
@@ -61,6 +66,7 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
 
     /**
      * This feature can be disabled.
+     * This feature is automatically enabled if there is at least one {@link #paths()} defined.
      *
      * @return whether the feature is enabled
      */
@@ -69,9 +75,38 @@ interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature> {
     boolean enabled();
 
     /**
+     * Per path configuration.
+     * Default path is added, unless {@link #addDefaults()} is set to {@code false}.
+     *
+     * @return per path configurations
+     */
+    @Option.Singular
+    @Option.Configured
+    @Option.RegistryService
+    default List<CorsPathConfig> paths() {
+        return List.of();
+    }
+
+    /**
+     * Whether to add a default path configuration, that matches all paths, {@code GET, HEAD, POST} methods, and allows
+     * all origins, methods, and headers. This is always added as a last path.
+     *
+     * @return whether to add defaults as the last path, defaults to {@code true}
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    default boolean addDefaults() {
+        return true;
+    }
+
+    /**
      * Access to config that was used to create this feature.
      *
      * @return configuration
+     * @deprecated this method will be removed without a replacement, path based configuration is now handled by
+     *         {@link #paths()}
      */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.4.0")
     Optional<Config> config();
 }

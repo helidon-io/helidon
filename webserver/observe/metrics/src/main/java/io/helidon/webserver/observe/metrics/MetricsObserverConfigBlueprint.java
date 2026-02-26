@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Blueprint
 @Prototype.Configured("metrics")
 @Prototype.Provides(ObserveProvider.class)
+@Prototype.IncludeDefaultMethods
 interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<MetricsObserver> {
     @Option.Configured
     @Option.Default("metrics")
@@ -39,6 +40,16 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     @Override
     @Option.Default("metrics")
     String name();
+
+    /**
+     * Automatic metrics collection settings.
+     *
+     * @return auto metrics collection settings
+     */
+    @Option.Configured()
+    default Optional<AutoHttpMetricsConfig> autoHttpMetrics() {
+        return Optional.empty();
+    }
 
     /**
      * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.

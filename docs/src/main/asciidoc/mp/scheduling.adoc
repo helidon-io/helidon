@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -62,25 +62,8 @@ For simple fixed rate invocation interval, the `@Scheduling.FixedRate` is the ea
 include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
 
-All values defined with the annotation can be overridden from config.
-
-[source,yaml]
-.Overriding annotated values from config
-----
-fully.qualified.ClassName.methodName:
-  schedule:
-    initial-delay: 5
-    delay: 15
-    time-unit: HOURS
-----
-
 Metadata like human-readable interval description or configured values are available through
 _FixedRateInvocation_ injected as method parameter.
-
-[source,java]
-----
-include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_2, indent=0]
-----
 
 === Cron expression
 
@@ -103,24 +86,63 @@ include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_4, indent=0]
 
 == Configuration
 
-`Scheduled` annotation properties can be overridden using `application.yaml` properties
+`Scheduling` annotation properties can be overridden using `application.yaml` properties, if configured in the source code.
+
+The following annotation options can use configuration "expression":
+
+- `Scheduling.Fixed#delayBy()`
+- `Scheduling.FixedRate#value()`
+- `Scheduling.Cron#value()`
+
+
+Configuration expressions is a reference to a configuration key, with optional default value:
+
+`${config.key:default-value}`
+
+=== Fixed Rate
+The Fixed rate annotation can have the delay by and value overridden using config.
+
+.Annotation that allows config overrides
+[source,java]
+----
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_2, indent=0]
+----
+
+The default values are 5 minutes for delay-by, and 10 minutes for interval, and could be overridden:
 
 [source,yaml]
 .Overriding annotated values from config
 ----
-fully.qualified.ClassName.methodName:
+app:
   schedule:
-    cron: "* * * * * ?"
-    concurrent: false
+    cache:
+      delay-by: "PT10M"
+      interval: "PT1H"
 ----
 
-.Configuration properties
-[width="90%",cols="3,10",frame="topbot",options="header"]
-|====
-| Property              | Description
-| cron                  | String containing cron setup
-| concurrent            | Boolean, equivalent `concurrent` property of `@Scheduling.Cron`. Defaults to `true`.
-|====
+The configured values would be a 10-minute delay, with 1-hour interval.
+
+=== Cron
+The Cron annotation can have the value overridden using config.
+
+.Annotation that allows config overrides
+[source,java]
+----
+include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_9, indent=0]
+----
+
+The default value is an expression of `0 15 8 ? * *`.
+
+[source,yaml]
+.Overriding annotated values from config
+----
+app:
+  schedule:
+    cache:
+      cron: "* * * * * ?"
+----
+
+The configured values would be executing every 1 second.
 
 == Examples
 

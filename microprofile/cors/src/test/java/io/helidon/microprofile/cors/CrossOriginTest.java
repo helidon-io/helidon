@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package io.helidon.microprofile.cors;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
+import io.helidon.webserver.cors.Cors;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -31,22 +32,22 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.http.HeaderNames.ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_MAX_AGE_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD_NAME;
+import static io.helidon.http.HeaderNames.ORIGIN_NAME;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.isEmptyString;
 
 /**
@@ -58,20 +59,280 @@ import static org.hamcrest.Matchers.isEmptyString;
 @AddBean(CrossOriginTest.CorsResource3.class)
 @AddBean(CrossOriginTest.CorsResource4.class)
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
-@AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
-@AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
+@AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar,http://bar.foo")
+@AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE,PUT")
 @AddConfig(key = "cors.paths.1.path-pattern", value = "/cors4")
-@AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar, http://bar.foo")
+@AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar,http://bar.foo")
 @AddConfig(key = "cors.paths.1.allow-methods", value = "GET")
 class CrossOriginTest extends BaseCrossOriginTest {
     @Inject
     private WebTarget target;
 
+    @Test
+    void test1PreFlightAllowedOrigin() {
+        try (Response res = target.path("/cors1")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("*"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("*"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME), is(nullValue()));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is("3600"));
+        }
+    }
+
+    @Test
+    void test1PreFlightAllowedHeaders1() {
+        try (Response res = target.path("/cors1")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("*"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("*"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME), is("X-foo"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is("3600"));
+        }
+    }
+
+    @Test
+    void test1PreFlightAllowedHeaders2() {
+        try (Response res = target.path("/cors1")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo, X-bar")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("*"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("*"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS_NAME),
+                       contains("X-foo", "X-bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is("3600"));
+        }
+    }
+
+    @Test
+    void test2PreFlightForbiddenOrigin() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://not.allowed")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+            assertThat(res.readEntity(String.class), isEmptyString());
+        }
+    }
+
+    @Test
+    void test2PreFlightAllowedOrigin() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME), is("true"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_METHODS_NAME), hasItems("PUT"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME), is(nullValue()));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is(nullValue()));
+        }
+    }
+
+    @Test
+    void test2PreFlightForbiddenMethod() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "POST")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+            assertThat(res.readEntity(String.class), isEmptyString());
+        }
+    }
+
+    @Test
+    void test2PreFlightForbiddenHeader() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo, X-bar, X-oops")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+            assertThat(res.readEntity(String.class), isEmptyString());
+        }
+    }
+
+    @Test
+    void test2PreFlightAllowedHeaders1() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME), is("true"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("PUT"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME).toString(),
+                       containsString("X-foo"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is(nullValue()));
+        }
+    }
+
+    @Test
+    void test2PreFlightAllowedHeaders2() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo, X-bar")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME), is("true"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("PUT"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS_NAME),
+                       contains("X-foo", "X-bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is(nullValue()));
+        }
+    }
+
+    @Test
+    void test2PreFlightAllowedHeaders3() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS_NAME, "X-foo, X-bar")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME), is("true"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_METHODS_NAME), hasItems("PUT"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_HEADERS_NAME),
+                       contains("X-foo", "X-bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is(nullValue()));
+        }
+    }
+
+    @Test
+    void test1ActualAllowedOrigin() {
+        try (Response res = target.path("/cors1")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE))) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("*"));
+        }
+    }
+
+    @Test
+    void test2ActualAllowedOrigin() {
+        try (Response res = target.path("/cors2")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE))) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME), is("true"));
+        }
+    }
+
+    @Test
+    void test3PreFlightAllowedOrigin() {
+        try (Response res = target.path("/cors3")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().get(ACCESS_CONTROL_ALLOW_METHODS_NAME), hasItems("PUT", "DELETE"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME), is(nullValue()));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is("3600"));
+        }
+    }
+
+    @Test
+    void test3ActualAllowedOrigin() {
+        try (Response res = target.path("/cors3")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE))) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+        }
+    }
+
+    @Test
+    void testMainPathInPresenceOfSubpath() {
+        try (Response res = target.path("/cors0")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .get()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is(true));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("*"));
+        }
+    }
+
+    @Test
+    void testSubPathPreflightAllowed() {
+        try (Response res = target.path("/cors0/subpath")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .options()) {
+            assertThat(res.getStatusInfo(), is(Response.Status.NO_CONTENT));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS_NAME), is("PUT"));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS_NAME), is(nullValue()));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE_NAME), is("3600"));
+        }
+    }
+
+    @Test
+    void testSubPathActualAllowed() {
+        try (Response res = target.path("/cors0/subpath")
+                .request()
+                .header(ORIGIN_NAME, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE))) {
+            assertThat(res.getStatusInfo(), is(Response.Status.OK));
+            assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME), is("http://foo.bar"));
+        }
+    }
+
+    @Test
+    void testEntityAndHeadersWhenForbidden() {
+        try (Response res = target.path("/cors4")
+                .request()
+                .header(ORIGIN_NAME, "http://other.com")
+                .header(ACCESS_CONTROL_REQUEST_METHOD_NAME, "GET")
+                .get()) {
+            assertThat("Status of rejection response", res.getStatusInfo(), is(Response.Status.FORBIDDEN));
+            assertThat("Entity of rejection response", res.hasEntity(), is(false));
+            assertThat("Headers of rejection response",
+                       res.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN_NAME),
+                       nullValue());
+        }
+    }
+
     @Path("/cors1")
     static public class CorsResource1 {
 
         @OPTIONS
-        @CrossOrigin
+        @Cors.Defaults
         public void options() {
         }
 
@@ -91,11 +352,11 @@ class CrossOriginTest extends BaseCrossOriginTest {
     static public class CorsResource2 {
 
         @OPTIONS
-        @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
-                allowHeaders = {"X-foo", "X-bar"},
-                allowMethods = {HttpMethod.DELETE, HttpMethod.PUT},
-                allowCredentials = true,
-                maxAge = -1)
+        @Cors.AllowOrigins({"http://foo.bar", "http://bar.foo"})
+        @Cors.AllowHeaders({"X-foo", "X-bar"})
+        @Cors.AllowMethods({HttpMethod.DELETE, HttpMethod.PUT})
+        @Cors.AllowCredentials
+        @Cors.MaxAgeSeconds(0)
         public void options() {
         }
 
@@ -141,14 +402,14 @@ class CrossOriginTest extends BaseCrossOriginTest {
         }
 
         @OPTIONS
-        @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
-                allowMethods = {"PUT"})
+        @Cors.AllowOrigins({"http://foo.bar", "http://bar.foo"})
+        @Cors.AllowMethods(HttpMethod.PUT)
         @Path("/subpath")
         public void optionsForSubpath() {
         }
 
         @OPTIONS
-        @CrossOrigin()
+        @Cors.Defaults
         public void optionsForMainPath() {
         }
     }
@@ -161,253 +422,5 @@ class CrossOriginTest extends BaseCrossOriginTest {
         public Response get() {
             return Response.ok().build();
         }
-    }
-
-    @Test
-    void test1PreFlightAllowedOrigin() {
-        Response res = target.path("/cors1")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
-    }
-
-    @Test
-    void test1PreFlightAllowedHeaders1() {
-        Response res = target.path("/cors1")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
-    }
-
-    @Test
-    void test1PreFlightAllowedHeaders2() {
-        Response res = target.path("/cors1")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
-    }
-
-    @Test
-    void test2PreFlightForbiddenOrigin() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://not.allowed")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
-        assertThat(res.readEntity(String.class), isEmptyString());
-    }
-
-    @Test
-    void test2PreFlightAllowedOrigin() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
-    }
-
-    @Test
-    void test2PreFlightForbiddenMethod() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "POST")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
-        assertThat(res.readEntity(String.class), isEmptyString());
-    }
-
-    @Test
-    void test2PreFlightForbiddenHeader() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar, X-oops")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.FORBIDDEN));
-        assertThat(res.readEntity(String.class), isEmptyString());
-    }
-
-    @Test
-    void test2PreFlightAllowedHeaders1() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
-    }
-
-    @Test
-    void test2PreFlightAllowedHeaders2() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
-    }
-
-    @Test
-    void test2PreFlightAllowedHeaders3() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
-                .header(ACCESS_CONTROL_REQUEST_HEADERS.defaultCase(), "X-foo, X-bar")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-foo"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()).toString(),
-                containsString("X-bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is(nullValue()));
-    }
-
-    @Test
-    void test1ActualAllowedOrigin() {
-        Response res = target.path("/cors1")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("*"));
-    }
-
-    @Test
-    void test2ActualAllowedOrigin() {
-        Response res = target.path("/cors2")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_CREDENTIALS.defaultCase()), is("true"));
-    }
-
-    @Test
-    void test3PreFlightAllowedOrigin() {
-        Response res = target.path("/cors3")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
-    }
-
-    @Test
-    void test3ActualAllowedOrigin() {
-        Response res = target.path("/cors3")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-    }
-
-    @Test
-    void testMainPathInPresenceOfSubpath() {
-        Response res = target.path("/cors0")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .get();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is(true));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("*"));
-    }
-
-    @Test
-    void testSubPathPreflightAllowed() {
-        Response res = target.path("/cors0/subpath")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .options();
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS.defaultCase()), is("PUT"));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS.defaultCase()), is(nullValue()));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE.defaultCase()), is("3600"));
-    }
-
-    @Test
-    void testSubPathActualAllowed() {
-        Response res = target.path("/cors0/subpath")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "PUT")
-                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
-        assertThat(res.getStatusInfo(), is(Response.Status.OK));
-        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), is("http://foo.bar"));
-    }
-
-    @Test
-    void testEntityAndHeadersWhenForbidden() {
-        Response res = target.path("/cors4")
-                .request()
-                .header(ORIGIN.defaultCase(), "http://other.com")
-                .header(ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "GET")
-                .get();
-        assertThat("Status of rejection response", res.getStatusInfo(), is(Response.Status.FORBIDDEN));
-        assertThat("Entity of rejection response", res.hasEntity(), is(false));
-        assertThat("Headers of rejection response", res.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()), nullValue());
-
     }
 }

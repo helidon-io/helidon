@@ -807,6 +807,11 @@
                 <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>
@@ -1440,6 +1445,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-json</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.http.media</groupId>
                 <artifactId>helidon-http-media-json-binding</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1713,6 +1723,13 @@
             <dependency>
                 <groupId>io.helidon.builder</groupId>
                 <artifactId>helidon-builder-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- APT Bundle -->
+            <dependency>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-apt</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.testing.junit5.TestJunitExtension;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerService__ServiceDescriptor;
 import io.helidon.webserver.spi.ServerFeature;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -110,6 +112,26 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
             }
         }));
     }
+
+    static void setupWebServerFromRegistry(WebServerConfig.Builder serverBuilder) {
+        Object o = GlobalServiceRegistry.registry()
+                .get(WebServerService__ServiceDescriptor.INSTANCE)
+                .orElseThrow(() -> {
+                    return new IllegalStateException("Could not discover WebServerService in service registry, both "
+                                                             + "'helidon-service-registry' and `helidon-webserver` must be on "
+                                                             + "classpath.");
+                });
+        // the service is package local
+        Class<?> clazz = o.getClass();
+        try {
+            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
+            method.setAccessible(true);
+            method.invoke(o, serverBuilder);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
+        }
+    }
+
 
 
     void testClass(Class<?> testClass) {

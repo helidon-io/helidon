@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ module io.helidon.declarative.tests.metrics {
 
     // needed for generated binding
     requires io.helidon.config.yaml;
+    // this module will not be needed in the future, as CORS will be a feature added separately
+    // now included through other modules (metrics in this case)
+    requires io.helidon.webserver.cors;
 
     exports io.helidon.declarative.tests.metrics;
 }

@@ -29,6 +29,8 @@ import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.scheduling.Scheduling;
@@ -44,7 +46,9 @@ import io.helidon.validation.spi.ConstraintValidator;
 import io.helidon.validation.spi.ConstraintValidatorProvider;
 import io.helidon.webclient.api.RestClient;
 import io.helidon.webclient.websocket.WebSocketClient;
+import io.helidon.webserver.cors.Cors;
 import io.helidon.webserver.http.RestServer;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.websocket.WebSocketServer;
 import io.helidon.websocket.WebSocket;
 import io.helidon.websocket.WsSession;
@@ -283,6 +287,19 @@ public class DeclarativeExample {
     }
     // end::snippet_17[]
 
+    // tag::snippet_18[]
+    @Service.Singleton
+    @Http.Path("/cors")
+    static class CorsEndpoint {
+        @Http.OPTIONS
+        @Cors.AllowOrigins("${app.cors.allow-origins:http://foos.bar,http://bars.foo}") // <1>
+        @Cors.AllowHeaders({"X-foo", "X-bar"}) // <2>
+        @Cors.AllowMethods({Method.DELETE_NAME, Method.PUT_NAME, "LIST"}) // <3>
+        @Cors.MaxAgeSeconds(180) // <4>
+        void options() {
+        }
+    }
+    // end::snippet_18[]
 
     private static class EchoClientFactory {
         void connect(int count) {

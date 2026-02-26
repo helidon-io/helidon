@@ -16,6 +16,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS_NAME;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN_NAME;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -30,15 +33,15 @@ class TestCORS {
     void testAnonymousGreetWithCors() {
         Response r = target.path("/simple-greet")
                 .request()
-                .header(HeaderNames.ORIGIN.defaultCase(), "http://foo.com")
-                .header(HeaderNames.HOST.defaultCase(), "here.com")
+                .header(HeaderNames.ORIGIN_NAME, "http://foo.com")
+                .header(HeaderNames.HOST_NAME, "here.com")
                 .get();
 
         assertThat("HTTP response", r.getStatus(), is(200));
         String payload = fromPayload(r);
         assertThat("HTTP response payload", payload.contains("Hello World!"), is(true));
-        assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                r.getHeaders().getFirst(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+        assertThat("CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN_NAME,
+                r.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME),
                 is("http://foo.com"));
     }
 
@@ -46,30 +49,30 @@ class TestCORS {
     void testCustomGreetingWithCors() {
         Response r = target.path("/simple-greet")
                 .request()
-                .header(HeaderNames.ORIGIN.defaultCase(), "http://foo.com")
-                .header(HeaderNames.HOST.defaultCase(), "here.com")
+                .header(HeaderNames.ORIGIN_NAME, "http://foo.com")
+                .header(HeaderNames.HOST_NAME, "here.com")
                 .header("Access-Control-Request-Method", "PUT")
                 .options();
 
-        assertThat("pre-flight status", r.getStatus(), is(200));
+        assertThat("pre-flight status", r.getStatus(), is(204));
         MultivaluedMap<String, Object> responseHeaders = r.getHeaders();
-        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
-                r.getHeaders().getFirst(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS.defaultCase()),
-                is("PUT"));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                r.getHeaders().getFirst(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+        assertThat("Header " + ACCESS_CONTROL_ALLOW_METHODS_NAME,
+                r.getHeaders().get(ACCESS_CONTROL_ALLOW_METHODS_NAME),
+                hasItems("PUT", "GET"));
+        assertThat("Header " + ACCESS_CONTROL_ALLOW_ORIGIN_NAME,
+                r.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME),
                 is("http://foo.com"));
 
         Invocation.Builder builder = target.path("/simple-greet")
                 .request()
                 .headers(responseHeaders)
-                .header(HeaderNames.ORIGIN.defaultCase(), "http://foo.com")
-                .header(HeaderNames.HOST.defaultCase(), "here.com");
+                .header(HeaderNames.ORIGIN_NAME, "http://foo.com")
+                .header(HeaderNames.HOST_NAME, "here.com");
 
         r = putResponse("Cheers", builder);
         assertThat("HTTP response3", r.getStatus(), is(200));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                r.getHeaders().getFirst(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()),
+        assertThat( "Header " + ACCESS_CONTROL_ALLOW_ORIGIN_NAME,
+                r.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN_NAME),
                 is("http://foo.com"));
         assertThat(fromPayload(r), containsString("Cheers World!"));
     }
@@ -78,12 +81,12 @@ class TestCORS {
     void testGreetingChangeWithCorsAndOtherOrigin() {
         Invocation.Builder builder = target.path("/simple-greet")
                 .request()
-                .header(HeaderNames.ORIGIN.defaultCase(), "http://other.com")
-                .header(HeaderNames.HOST.defaultCase(), "here.com");
+                .header(HeaderNames.ORIGIN_NAME, "http://other.com")
+                .header(HeaderNames.HOST_NAME, "here.com");
 
         Response r = putResponse("Ahoy", builder);
         boolean isOverriding = Services.get(Config.class).get("cors").exists();
-        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 204 : 403));
+        assertThat("HTTP response3", r.getStatus(), is(isOverriding ? 200 : 403));
     }
 
     private static String fromPayload(Response response) {

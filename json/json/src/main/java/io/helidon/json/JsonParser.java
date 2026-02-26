@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.io.InputStream;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -25,7 +26,8 @@ import java.util.Objects;
  * <p>
  * The parser operates on a byte-by-byte basis, providing low-level access to
  * JSON tokens and values.
- * </p>
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public interface JsonParser {
 
@@ -131,6 +133,22 @@ public interface JsonParser {
      */
     static JsonParser create(JsonValue value) {
         return new JsonValueParser(value);
+    }
+
+    /**
+     * Create a new JSON parser from a reader.
+     * <p>
+     * This method creates a streaming parser that reads JSON content from the
+     * reader incrementally. Suitable for parsing large JSON content or
+     * streaming sources.
+     * </p>
+     *
+     * @param reader the reader containing JSON data
+     * @return a new JsonParser instance
+     */
+    static JsonParser create(Reader reader) {
+        Objects.requireNonNull(reader);
+        return create(new ReaderInputStream(reader));
     }
 
     /**
@@ -402,5 +420,31 @@ public interface JsonParser {
         }
         return createException(message + ". Found: " + Parsers.toPrintableForm(c));
     }
+
+    /**
+     * Marks the current position in the JSON.
+     * <p>
+     * This method saves the current parser position so it can be returned to later
+     * using {@link #resetToMark()}. Useful for backtracking during parsing operations.
+     * </p>
+     */
+    void mark();
+
+    /**
+     * Clears the current mark.
+     * <p>
+     * This method clears any previously set mark. Should be always called when backtracking is no longer needed.
+     * </p>
+     */
+    void clearMark();
+
+    /**
+     * Resets the parser position to the previously marked position.
+     * <p>
+     * This method restores the parser to the position that was saved with {@link #mark()}.
+     * Allows for backtracking to a previous parsing state.
+     * </p>
+     */
+    void resetToMark();
 
 }

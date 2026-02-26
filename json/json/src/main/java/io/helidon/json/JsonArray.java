@@ -18,10 +18,13 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Represents a JSON array value containing an ordered list of JSON values.
+ * <p>
+ * This module is incubating. These APIs may change in any version of Helidon, including backward incompatible changes.
  */
 public final class JsonArray extends JsonValue {
 
@@ -42,7 +45,7 @@ public final class JsonArray extends JsonValue {
      * @param jsonValues the list of JSON values
      * @return a new JsonArray
      */
-    public static JsonArray create(List<JsonValue> jsonValues) {
+    public static JsonArray create(List<? extends JsonValue> jsonValues) {
         return new JsonArray(jsonValues);
     }
 
@@ -138,6 +141,30 @@ public final class JsonArray extends JsonValue {
             jsonValue.toJson(generator);
         }
         generator.writeArrayEnd();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof JsonArray that)) {
+            return false;
+        }
+        if (that == this) {
+            return true;
+        }
+        if (this.jsonValues.size() != that.values().size()) {
+            return false;
+        }
+        for (int i = 0; i < this.jsonValues.size(); i++) {
+             if (!this.jsonValues.get(i).equals(that.values().get(i))) {
+                 return false;
+             }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(jsonValues);
     }
 
     @Override

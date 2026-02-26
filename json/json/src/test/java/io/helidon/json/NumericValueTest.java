@@ -473,6 +473,28 @@ abstract class NumericValueTest {
         assertThrows(JsonException.class, parser::readInt);
     }
 
+    @Test
+    public void testParseIntFromDecimalSkipsFraction() {
+        // Reading an int from a decimal number should consume the integer part (123),
+        // leave the parser positioned at the last digit of the fractional part ('6'),
+        // and allow parsing to continue.
+        String json = "123.456 true";
+        JsonParser parser = createParser(json);
+
+        int result = parser.readInt();
+        assertThat(result, is(123));
+
+        // Parser should now be at '6' (last digit of the fraction) and still have data left
+        assertThat(parser.currentByte(), is((byte) '6'));
+        assertThat(parser.hasNext(), is(true));
+
+        // Continue parsing to ensure the parser can proceed to the next token (should skip whitespace)
+        byte nextToken = parser.nextToken();
+        assertThat(nextToken, is((byte) 't'));
+        assertThat(parser.readBoolean(), is(true));
+        assertThat(parser.hasNext(), is(false));
+    }
+
     // Test different number formats and representations
     @Test
     public void testParseFloatNegativeExponent() {

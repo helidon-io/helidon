@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.json.binding.HelidonJsonBindingMediaSupportProvider;
 
 /**
  * Helidon JSON Binding Media Support.
@@ -32,14 +31,15 @@ module io.helidon.http.media.json.binding {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.builder.api;
-    requires io.helidon.common.config;
     requires io.helidon.http.media;
     requires io.helidon.json.binding;
     requires io.helidon.common.media.type;
     requires io.helidon.http;
 
+    requires transitive io.helidon.config;
+
     exports io.helidon.http.media.json.binding;
 
     provides io.helidon.http.media.spi.MediaSupportProvider
-            with HelidonJsonBindingMediaSupportProvider;
+            with io.helidon.http.media.json.binding.JsonBindingMediaSupportProvider;
 }

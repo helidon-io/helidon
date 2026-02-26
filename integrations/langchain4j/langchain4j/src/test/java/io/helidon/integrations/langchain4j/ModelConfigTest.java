@@ -19,7 +19,6 @@ package io.helidon.integrations.langchain4j;
 import java.net.URI;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,7 @@ class ModelConfigTest {
                         - test5
                         - test6
                 """;
-        var c = HelidonConstants.create(Config.create(ConfigSources.create(cfg, APPLICATION_YAML)),
+        var c = HelidonConstants.create(Config.just(cfg, APPLICATION_YAML),
                                    MODEL,
                                    "foo-bar-model");
         String model = c.get("model").asString().orElseThrow();
@@ -67,6 +66,7 @@ class ModelConfigTest {
         assertThat(c.get("array-prop-1").asList(String.class).orElseThrow(), contains("test1", "test2", "test3"));
         assertThat(c.get("array-prop-2").asList(String.class).orElseThrow(), contains("test4", "test5", "test6"));
     }
+
     @Test
     void testModelListing() {
         //language=YAML
@@ -83,7 +83,7 @@ class ModelConfigTest {
                     bar-foo-model:
                       provider: foo-bar-provider
                 """;
-        var c = Config.create(ConfigSources.create(cfg, APPLICATION_YAML));
+        var c = Config.just(cfg, APPLICATION_YAML);
         assertThat(HelidonConstants.modelNames(c, MODEL, "foo-bar-provider"),
                    containsInAnyOrder("foo-bar-model", "bar-foo-model"));
     }

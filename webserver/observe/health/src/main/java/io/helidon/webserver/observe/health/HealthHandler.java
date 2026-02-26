@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import io.helidon.common.GenericType;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-
 class HealthHandler implements Handler {
+    static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
     private static final System.Logger LOGGER = System.getLogger(HealthHandler.class.getName());
 
     private final EntityWriter<JsonObject> entityWriter;
@@ -89,7 +88,7 @@ class HealthHandler implements Handler {
                 .header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
 
         if (details) {
-            entityWriter.write(JsonpSupport.JSON_OBJECT_TYPE,
+            entityWriter.write(JSON_OBJECT_TYPE,
                                toJson(status, responses),
                                res.outputStream(),
                                req.headers(),
@@ -101,13 +100,13 @@ class HealthHandler implements Handler {
     }
 
     private static JsonObject toJson(HealthCheckResponse.Status status, List<NamedResponse> responses) {
-        JsonObjectBuilder response = HealthHelper.JSON.createObjectBuilder();
-        response.add("status", status.toString());
+        var response = JsonObject.builder();
+        response.set("status", status.toString());
 
-        JsonArrayBuilder checks = HealthHelper.JSON.createArrayBuilder();
+        List<JsonObject> checks = new ArrayList<>();
         responses.forEach(result -> checks.add(HealthHelper.toJson(result.name(), result.response())));
 
-        response.add("checks", checks);
+        response.set("checks", JsonArray.create(checks));
         return response.build();
     }
 }

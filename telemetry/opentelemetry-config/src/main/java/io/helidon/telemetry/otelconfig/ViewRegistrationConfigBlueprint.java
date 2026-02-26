@@ -50,7 +50,8 @@ interface ViewRegistrationConfigBlueprint {
     Optional<String> description();
 
     /**
-     * Aggregation for the metric view, configurable as an {@link io.helidon.telemetry.otelconfig.AggregationType}.
+     * Aggregation for the metric view, configurable as an {@link io.helidon.telemetry.otelconfig.AggregationType}:
+     * {@code DROP, DEFAULT, SUM, LAST_VALUE, EXPLICIT_BUCKET_HISTOGRAM, BASE2_EXPONENTIAL_BUCKET_HISTOGRAM}.
      *
      * @return aggregation for the metric view
      */

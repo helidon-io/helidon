@@ -49,13 +49,8 @@
             <artifactId>helidon-webserver-service-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

@@ -21,9 +21,13 @@ import java.util.Set;
 
 class JsonValueParser implements JsonParser {
 
-    private JsonValue[] values = new JsonValue[500];
+    private JsonValue[] values = new JsonValue[100];
+    private JsonValue[] replay = new JsonValue[10];
     private JsonValue current;
     private int index = 0;
+
+    private boolean replayMarked = false;
+    private int replayIndex = replay.length - 1;
 
     JsonValueParser(JsonValue jsonValue) {
         this.current = jsonValue;
@@ -91,9 +95,23 @@ class JsonValueParser implements JsonParser {
             if (current == null) {
                 throw new JsonException("No more JSON Values available");
             }
+            if (replayMarked) {
+                recordToReplayQueue();
+            }
             return current.jsonStartChar();
         }
         throw new JsonException("No more JSON Values available");
+    }
+
+    private void recordToReplayQueue() {
+        if (--replayIndex < 0) {
+            int previousLength = replay.length;
+            JsonValue[] newArray = new JsonValue[previousLength * 2];
+            System.arraycopy(replay, 0, newArray, newArray.length - previousLength - 1, previousLength);
+            replay = newArray;
+            replayIndex = newArray.length - previousLength - 2;
+        }
+        replay[replayIndex] = current;
     }
 
     void ensureCapacity(int capacity) {
@@ -245,6 +263,43 @@ class JsonValueParser implements JsonParser {
     @Override
     public JsonException createException(String message) {
         return new JsonException(message);
+    }
+
+    @Override
+    public void mark() {
+        if (replayMarked) {
+            throw new IllegalStateException("Parser has already been marked for replaying. "
+                                                    + "Cant do it twice without consuming the mark with either "
+                                                    + "clearMark or resetToMark methods.");
+        }
+        replayIndex = replay.length - 1;
+        replayMarked = true;
+        replay[replayIndex] = current;
+    }
+
+    @Override
+    public void clearMark() {
+        replayMarked = false;
+    }
+
+    @Override
+    public void resetToMark() {
+        if (replayMarked) {
+            replayMarked = false;
+            int amount = replay.length - replayIndex;
+            ensureCapacity(amount + 1);
+            int from = index;
+            boolean hadNext = hasNext();
+            if (hadNext) {
+                from++;
+            }
+            System.arraycopy(replay, replayIndex, values, from, amount);
+            index = hadNext ? index + amount : index + amount - 1;
+            current = values[index];
+            values[index--] = null;
+        } else {
+            throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
+        }
     }
 
 }

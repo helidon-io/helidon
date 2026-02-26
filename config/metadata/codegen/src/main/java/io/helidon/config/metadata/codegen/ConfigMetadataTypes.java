@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,14 @@ final class ConfigMetadataTypes {
     static final TypeName BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
     static final TypeName CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
     static final TypeName PROTOTYPE_PROVIDES = TypeName.create("io.helidon.builder.api.Prototype.Provides");
+    static final TypeName PROTOTYPE_DEFAULT_METHODS = TypeName.create("io.helidon.builder.api.Prototype.IncludeDefaultMethods");
     static final TypeName DESCRIPTION = TypeName.create("io.helidon.builder.api.Description");
     static final TypeName OPTION_CONFIGURED = TypeName.create("io.helidon.builder.api.Option.Configured");
     static final TypeName OPTION_REQUIRED = TypeName.create("io.helidon.builder.api.Option.Required");
     static final TypeName OPTION_PROVIDER = TypeName.create("io.helidon.builder.api.Option.Provider");
     static final TypeName OPTION_ALLOWED_VALUES = TypeName.create("io.helidon.builder.api.Option.AllowedValues");
     static final TypeName OPTION_ALLOWED_VALUE = TypeName.create("io.helidon.builder.api.Option.AllowedValue");
+    static final TypeName OPTION_DEPRECATED = TypeName.create("io.helidon.builder.api.Option.Deprecated");
     static final TypeName OPTION_DEFAULT = TypeName.create("io.helidon.builder.api.Option.Default");
     static final TypeName OPTION_DEFAULT_INT = TypeName.create("io.helidon.builder.api.Option.DefaultInt");
     static final TypeName OPTION_DEFAULT_DOUBLE = TypeName.create("io.helidon.builder.api.Option.DefaultDouble");

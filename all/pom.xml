@@ -597,6 +597,10 @@
             <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
@@ -1064,6 +1068,10 @@
         <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>

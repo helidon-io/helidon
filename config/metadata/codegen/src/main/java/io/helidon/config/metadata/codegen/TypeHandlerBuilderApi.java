@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.BLUEPRINT;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIG;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.CONFIGURED;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTION_CONFIGURED;
+import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.PROTOTYPE_DEFAULT_METHODS;
 import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.PROTOTYPE_FACTORY;
 
 /*
@@ -90,13 +91,15 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
 
         // and now process all blueprint methods - must be non default, non static
         // methods on this interface
+        Predicate<String> defaultMethodPredicate = defaultMethodPredicate(blueprint);
 
         blueprint.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(TypeHandlerBase.isMine(blueprint.typeName()))
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                .filter(Predicate.not(ElementInfoPredicates::isDefault))
+                .filter(it -> !ElementInfoPredicates.isDefault(it)
+                        || defaultMethodPredicate.test(it.elementName()))
                 .filter(ElementInfoPredicates.hasAnnotation(OPTION_CONFIGURED))
                 .forEach(it -> processBlueprintMethod(roundContext,
                                                       blueprint,
@@ -107,6 +110,21 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         return new TypeHandlerResult(targetType,
                                      module,
                                      type);
+    }
+
+    private Predicate<String> defaultMethodPredicate(TypeInfo blueprint) {
+        var defaultMethods = blueprint.findAnnotation(PROTOTYPE_DEFAULT_METHODS);
+        if (defaultMethods.isEmpty()) {
+            return it -> false;
+        }
+        var defaultMethodNames = defaultMethods.get()
+                .stringValues()
+                .orElseGet(List::of);
+
+        if (defaultMethodNames.isEmpty()) {
+            return it -> true;
+        }
+        return defaultMethodNames::contains;
     }
 
     @Override

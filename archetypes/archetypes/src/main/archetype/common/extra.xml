@@ -114,13 +114,9 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                     <value key="groupId">io.helidon.webserver</value>
                                     <value key="artifactId">helidon-webserver-cors</value>
                                 </map>
-                                <map if="${flavor} == 'se'">
-                                    <value key="groupId">io.helidon.cors</value>
-                                    <value key="artifactId">helidon-cors</value>
-                                </map>
                             </list>
                             <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
-                                <value>io.helidon.microprofile.cors.CrossOrigin</value>
+                                <value>io.helidon.webserver.cors.Cors</value>
                                 <value>jakarta.ws.rs.OPTIONS</value>
                                 <value>jakarta.ws.rs.PUT</value>
                                 <value>jakarta.ws.rs.core.Response</value>
@@ -129,7 +125,6 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                             <list key="module-requires">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
                                 <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
-                                <value if="${flavor} == 'se'">io.helidon.cors</value>
                                 <value if="${flavor} == 'se'">java.logging</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
@@ -149,8 +144,8 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
      * CORS set-up for getCustomMessage.
      */
     @OPTIONS
-    @CrossOrigin(value = {"http://foo.com", "http://there.com"},
-            allowMethods = {HttpMethod.PUT})
+    @Cors.AllowOrigins({"http://foo.com", "http://there.com"})
+    @Cors.AllowMethods({HttpMethod.PUT, HttpMethod.GET})
     public void optionsForGetCustomMessage() {
     }
 ]]>
@@ -232,68 +227,30 @@ Hola World!
 Note that the tests in the example `MainTest` class follow these same steps.
 ]]></value>
                             </list>
-                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.cors.CrossOriginConfig</value>
-                                <value>io.helidon.webserver.cors.CorsSupport</value>
-                            </list>
-                            <list key="Main-java-imports" if="${flavor} == 'se'">
-                                <value>java.util.logging.Logger</value>
-                            </list>
                             <list key="application-yaml-entries" if="${flavor} == 'se'">
                                 <value><![CDATA[
-restrictive-cors:
-  allow-origins: ["http://foo.com", "http://there.com"]
-  allow-methods: ["PUT", "DELETE"]
-
-# The example app uses the following for overriding other settings.
-#cors:
-#  paths:
-#    - path-pattern: /greeting
-#      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
-#      allow-methods: ["PUT", "DELETE"]
+cors:
+  paths:
+    - path-pattern: "/cors-greet"
+      allow-origins: ["http://foo.com", "http://there.com"]
+      allow-methods: ["PUT", "DELETE", "GET"]
 ]]>
                                 </value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(), new GreetService())
+                                <value><![CDATA[        .register("/cors-greet", new GreetService())
 ]]>
                                 </value>
                             </list>
-                            <list key="main-class-content" if="${flavor} == 'se'">
-                                <value><![CDATA[
-    private static CorsSupport corsSupportForGreeting() {
-        Config restrictiveConfig = Services.get(Config.class).get("restrictive-cors");
-        if (!restrictiveConfig.exists()) {
-            Logger.getLogger(Main.class.getName())
-                    .warning("Missing restrictive config; continuing with default CORS support");
-        }
-
-        CorsSupport.Builder corsBuilder = CorsSupport.builder();
-
-        Services.get(Config.class).get("cors")
-                .ifExists(c -> {
-                    Logger.getLogger(Main.class.getName()).info("Using the override configuration");
-                    corsBuilder.mappedConfig(c);
-                });
-        corsBuilder
-                .config(restrictiveConfig) // restricted sharing for PUT, DELETE
-                .addCrossOrigin(CrossOriginConfig.create()) // open sharing for other methods
-                .build();
-
-        return corsBuilder.build();
-    }
-]]>
-                                </value>
+                            <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
+                                <value>io.helidon.http.Headers</value>
                             </list>
                             <list key="MainTest-java-imports" if="${flavor} == 'se'">
                                 <value>java.util.Optional</value>
                             </list>
-                            <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.http.Headers</value>
-                                <value>io.helidon.cors.CrossOriginConfig</value>
-                            </list>
                             <list key="MainTest-static-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
+                                <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN_NAME</value>
                                 <value>io.helidon.http.HeaderNames.HOST</value>
                                 <value>io.helidon.http.HeaderNames.ORIGIN</value>
                                 <value>org.hamcrest.CoreMatchers.containsString</value>
@@ -314,9 +271,9 @@ restrictive-cors:
             assertThat(payload, containsString("Hello World"));
             Headers responseHeaders = response.headers();
             Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
-            assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
+            assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN_NAME + " is absent",
                     allowOrigin.isPresent(), is(true));
-            assertThat(allowOrigin.get(), is("*"));
+            assertThat(allowOrigin.get(), is("http://foo.com"));
         }
     }
 ]]>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -28,21 +29,21 @@ import org.testcontainers.utility.DockerImageName;
  */
 abstract class OracleTestContainer {
 
-    private static final DockerImageName IMAGE = DockerImageName.parse("container-registry.oracle.com/database/express");
+    private static final DockerImageName IMAGE = DockerImageName.parse("container-registry.oracle.com/database/free:latest-lite");
 
     static final GenericContainer<?> CONTAINER = new GenericContainer<>(IMAGE)
             .withEnv("ORACLE_PWD", "oracle123")
             .withExposedPorts(1521)
             .withStartupAttempts(3)
-            .waitingFor(Wait.forHealthcheck()
+            .waitingFor(Wait.forLogMessage(".*DATABASE IS READY TO USE.*", 1)
                     .withStartupTimeout(Duration.ofMinutes(5)));
 
     static Map<String, Supplier<?>> config() {
         return Map.of("db.connection.url", OracleTestContainer::jdbcUrl);
     }
 
-    private static String jdbcUrl() {
-        return "jdbc:oracle:thin:@localhost:%s/XE".formatted(CONTAINER.getMappedPort(1521));
+    static String jdbcUrl() {
+        return "jdbc:oracle:thin:@localhost:%s/FREE".formatted(CONTAINER.getMappedPort(1521));
     }
 
     private OracleTestContainer() {
