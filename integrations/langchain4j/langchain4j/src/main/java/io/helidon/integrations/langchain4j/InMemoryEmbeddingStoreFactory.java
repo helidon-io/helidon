@@ -43,7 +43,7 @@ class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<Embedding
     InMemoryEmbeddingStoreFactory(Config config) {
         this.config = config;
         this.embeddingStoreNames =
-                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.EMBEDDING_STORE, "langchain4j");
+                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.EMBEDDING_STORE, "lc4j-in-memory");
     }
 
     /**

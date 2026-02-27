@@ -139,7 +139,9 @@ Providers available out of the box:
 [cols="7,8,11"]
 |===
 | Provider                                         | Provider Key                      | Description
-| LangChain4j in-process models                    | `langchain4j`                     | Local https://docs.langchain4j.dev/integrations/embedding-models/in-process[in-process models]
+| LangChain4j content retriever                    | `lc4j-content-retriever`          | Built-in content-retriever
+| LangChain4j in-memory embedding store            | `lc4j-in-memory`                  | Built-in in-memory store
+| LangChain4j in-process models                    | `lc4j-in-process`                 | Local https://docs.langchain4j.dev/integrations/embedding-models/in-process[in-process models]
 | xref:open-ai.adoc[*Open AI*]                     | `open-ai`                         | OpenAI and OpenAI compatible models providers
 | xref:oci-genai.adoc[*OCI GenAI*]                 | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models
 | xref:jlama.adoc[*Jlama*]                         | `jlama`                           | Local inference with selected https://github.com/tjake/Jlama[Jlama] models
@@ -299,7 +301,7 @@ Services and Agents are typically Java interfaces annotated with LangChain4j and
 service beans]. You can access those anywhere in Helidon with `Services.get(FooBarAiService.class)` or inject it in another
 service bean as constructor parameter. Thanks to the CDI bridge, you can inject AI Services and Agents even to Helidon MP CDI beans.
 
-Both AI Services and Agens can be configured with following Helidon annotations:
+Both AI Services and Agents can be configured with the following Helidon annotations:
 
 [cols="1,5"]
 |===
@@ -311,6 +313,7 @@ Both AI Services and Agens can be configured with following Helidon annotations:
 | `Ai.ContentRetriever`    | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`.
 | `Ai.RetrievalAugmentor`  | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`.
 | `Ai.ToolProvider`        | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.
+| `Ai.Tools`               | Specifies the classes with tools. In case a singleton service bean of the same type exists, its instance is supplied.
 | `Ai.McpClients`          | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`.
 |===
 
