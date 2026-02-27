@@ -49,7 +49,8 @@ interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Pro
     Optional<Boolean> descriptions();
 
     /**
-     * Step size used in computing "windowed" statistics.
+     * Step size used in computing "windowed" statistics. Micrometer advises that this value should be close to the
+     * interval with which backend systems scrape the Prometheus-format metrics data.
      *
      * @return step time
      */

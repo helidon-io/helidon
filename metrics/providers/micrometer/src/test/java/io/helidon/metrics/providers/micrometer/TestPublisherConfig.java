@@ -68,4 +68,22 @@ class TestPublisherConfig {
                    metricsConfig.publishers(),
                    hasSize(2));
     }
+
+    @Test
+    void verifyBriefPrometheusMention() {
+        // Make sure that just mentioning a publisher type without any lower-level settings works.
+        String configText = """
+                metrics:
+                  publishers:
+                    micrometer-otlp:
+                    micrometer-prometheus:
+                """;
+
+        var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML)
+                                                         .get("metrics"));
+
+        assertThat("Publishers",
+                   metricsConfig.publishers(),
+                   hasSize(2));
+    }
 }

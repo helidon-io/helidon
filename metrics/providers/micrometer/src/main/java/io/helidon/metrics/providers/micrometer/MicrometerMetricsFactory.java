@@ -59,6 +59,8 @@ import io.prometheus.client.exemplars.DefaultExemplarSampler;
  */
 class MicrometerMetricsFactory implements MetricsFactory {
 
+    private static final System.Logger LOGGER = System.getLogger(MicrometerMetricsFactory.class.getName());
+
     private final Collection<MetersProvider> metersProviders;
 
     private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
@@ -337,6 +339,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                                   new DefaultExemplarSampler(spanCtxSupplierProvider.get())));
         }
 
+        if (enabledMicrometerPublishers.isEmpty()) {
+            LOGGER.log(System.Logger.Level.WARNING, "No active Micrometer publishers are configured");
+        }
         return enabledMicrometerPublishers;
 
     }
