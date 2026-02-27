@@ -254,7 +254,10 @@ interface MetricsConfigBlueprint {
     boolean warnOnMultipleRegistries();
 
     /**
-     * Settings for metrics publishers.
+     * Metrics publishers which make the metrics data available to external systems. Helidon's Micrometer-based
+     * metrics provider includes {@code micrometer-prometheus} (used by default) and {@code micrometer-otlp}.
+     * See the config reference entries for {@code io.helidon.metrics.providers.micrometer.PrometheusPublisher} and
+     * {@code io.helidon.metrics.providers.micrometer.OtlpPublisher}.
      *
      * @return metrics publishers
      */
