@@ -575,6 +575,9 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
 
     /**
      * Typed value of the property "{@code value}".
+     * <p>
+     * NOTE: {classValue} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @return value if present
      */
@@ -584,6 +587,9 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
 
     /**
      * Typed value of a named property.
+     * <p>
+     * NOTE: {classValue} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @param property name of the annotation property
      * @return value if present
@@ -595,6 +601,9 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     /**
      * Typed value of the property "{@code value}" that is defined as an array.
      * This will also work for a single values property.
+     * <p>
+     * NOTE: {classValues} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @return list of defined values if present
      */
@@ -605,6 +614,9 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     /**
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
+     * <p>
+     * NOTE: {classValues} is only available when the target class is on the classpath; do not use this method when within
+     * an annotation processor/codegen, as there is a very good chance the type will not be available.
      *
      * @param property name of the annotation property
      * @return list of defined values if present
