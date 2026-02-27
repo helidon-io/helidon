@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.metrics.providers.micrometer;
+
+import java.time.Duration;
+import java.util.Optional;
+
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+import io.helidon.metrics.api.MetricsPublisherConfig;
+import io.helidon.metrics.spi.MetricsPublisherProvider;
+
+/**
+ * Settings for a Micrometer Prometheus meter registry.
+ */
+@Prototype.Configured(value = PrometheusPublisherProvider.CONFIG_KEY, root = false)
+@Prototype.Blueprint
+@Prototype.Provides(MetricsPublisherProvider.class)
+interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Prototype.Factory<PrometheusPublisher> {
+
+    /**
+     * Property name prefix.
+     *
+     * @return property name prefix
+     */
+    @Option.Configured
+    Optional<String> prefix();
+
+    /**
+     * Whether to include meter descriptions in Prometheus output.
+     *
+     * @return true to include descriptions, false otherwise
+     */
+    @Option.Configured
+    Optional<Boolean> descriptions();
+
+    /**
+     * Step size used in computing "windowed" statistics.
+     *
+     * @return step time
+     */
+    @Option.Configured
+    Optional<Duration> step();
+
+}
