@@ -23,7 +23,7 @@
 
 include::{rootdir}/includes/attributes.adoc[]
 
-Helidon is a collection of Java libraries for writing microservices. As such, you don't install Helidon itself. Instead, you install the tools necessary to create an environment suitable for developing Helidon projects and applications.
+Helidon is a framework for developing microservices in Java. As such, you don't install Helidon itself. Instead, you install the tools necessary to create an environment suitable for developing Helidon projects and applications.
 
 == System Requirements
 

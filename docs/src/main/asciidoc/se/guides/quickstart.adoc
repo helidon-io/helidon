@@ -41,15 +41,7 @@ TIP: You can also generate the Quick Start project using the xref:../../about/cl
 
 Now that you've generated the project, you can build a Helidon application and start experimenting.
 
-. Extract the project files and navigate to the expanded directory. You should have the following files and folders:
-    * `.idea/`: Project-specific settings files for a JetBrains IntelliJ project.
-    * `src/`: Application source code
-    * `.gitignore`: A basic gitignore file designed for Maven projects.
-    * `.helidon`: Helidon project metadata.
-    * `app.yaml`: A Kubernetes Deployment and Service definition.
-    * `pom.xml`: The Maven project file.
-    * `README.md`: An overview of the capabilities of this project.
-    * Various Docker related files
+. Extract the project files and navigate to the expanded directory. It should include a Maven project file, Helidon project metadata, the application's source code, and various other development files.
 . Build the application by running `mvn package`. The project builds an application JAR file and saves all runtime dependencies in the `target/libs` directory, making it easy to start the application.
 . Start the application by running `java -jar target/myproject.jar`. The name of your application JAR file matches the `artifactId` specified when you built the Project Starter. If you changed the default `artifactId`, make sure you update the JAR file name in the command accordingly.
 

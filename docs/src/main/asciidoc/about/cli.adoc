@@ -29,7 +29,7 @@ The Helidon CLI also includes a development loop feature that automatically reco
 
 == Install the Helidon CLI
 
-The Helidon CLI is a standalone executable (compiled using GraalVM) for Linux, macOS, and Windows systems. Download the executable and install it in a location that is accessible from your PATH.
+The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems. Download the executable and install it in a location that is accessible from your PATH.
 
 === Prerequisites
 

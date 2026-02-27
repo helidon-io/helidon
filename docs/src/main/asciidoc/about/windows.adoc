@@ -31,14 +31,12 @@ Generally, the Helidon documentation assumes that you're using a Unix-like opera
 If you plan to develop Helidon projects and applications on Windows, make sure your environment meets the following requirements:
 
 * All of the requirements listed in xref:prerequisites.adoc[Getting Started]
-* Windows 10 
-* _If using the xref:cli.adoc[Helidon CLI] (which is recommended)_, Visual C++ Redistributable Runtime:
-    * https://aka.ms/vs/16/release/vc_redist.x64.exe[x64]
-    * https://aka.ms/vs/16/release/vc_redist.x86.exe[x86]
+* _If using the xref:cli.adoc[Helidon CLI] (which is recommended)_, Visual C\+\+ Redistributable Runtime. Download at https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14[Microsoft Visual C++ Redistributable latest supported downloads]
 
-The following are recommended but not required.
+The following are recommended but not required:
 
+* curl
 * PowerShell (_not_ Windows PowerShell)
 * Windows Terminal
 
-TIP: If you do not have `curl` installed, in PowerShell you can use `Invoke-WebRequest` instead.
+TIP: If you do not have `curl` installed, in PowerShell, you can use `Invoke-WebRequest` instead.
