@@ -193,7 +193,7 @@ The following example sets up an OTLP publisher to transmit metrics data every 3
 metrics:
   publishers:         # <1>
     otlp:  # <2>
-      step: PT30S
+      interval: PT30S
       url: 'http://somehost.com:4318/v1/metrics'
 ----
 <1> Introduces the configured publishers.
@@ -222,7 +222,7 @@ metrics:
   publishers:
     prometheus:
     otlp:
-      step: PT20S
+      interval: PT20S
 ----
 
 ==== Writing Additional Publishers
@@ -244,7 +244,7 @@ Refer to your publisher in configuration using the config key you set up in the 
 metrics:
   publishers:
     micrometer-datadog:
-      step: PT15S
+      interval: PT15S
 ----
 
 ==== Using and Controlling the Metrics Endpoint
