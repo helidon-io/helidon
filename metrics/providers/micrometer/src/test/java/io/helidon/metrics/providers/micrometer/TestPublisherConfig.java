@@ -32,10 +32,10 @@ class TestPublisherConfig {
         String configText = """
                 metrics:
                   publishers:
-                    - type: micrometer-prometheus
+                    - type: prometheus
                       name: one-second
                       step: "PT1S"
-                    - type: micrometer-prometheus
+                    - type: prometheus
                       name: one-minute
                       step: "PT60S"
                 """;
@@ -53,10 +53,10 @@ class TestPublisherConfig {
         String configText = """
                 metrics:
                   publishers:
-                    - type: micrometer-prometheus
+                    - type: prometheus
                       name: one-second
                       step: "PT1S"
-                    - type: micrometer-otlp
+                    - type: otlp
                       name: my-otlp
                       url: "http://localhost:8080/somewhere"
                 """;
@@ -75,8 +75,8 @@ class TestPublisherConfig {
         String configText = """
                 metrics:
                   publishers:
-                    micrometer-otlp:
-                    micrometer-prometheus:
+                    otlp:
+                    prometheus:
                 """;
 
         var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML)

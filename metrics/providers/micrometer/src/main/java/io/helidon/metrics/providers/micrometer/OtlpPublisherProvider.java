@@ -25,8 +25,8 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
  */
 public class OtlpPublisherProvider implements MetricsPublisherProvider {
 
-    static final String CONFIG_KEY = "micrometer-otlp";
-    static final String TYPE = "micrometer-otlp";
+    static final String CONFIG_KEY = "otlp";
+    static final String TYPE = "otlp";
 
     /**
      * Creates a new provider for service loading.

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
+    Copyright (c) 2021, 202 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ The following example sets up an OTLP publisher to transmit metrics data every 3
 ----
 metrics:
   publishers:         # <1>
-    micrometer-otlp:  # <2>
+    otlp:  # <2>
       step: PT30S
       url: 'http://somehost.com:4318/v1/metrics'
 ----
@@ -213,15 +213,15 @@ Note that Helidon uses the inferred publisher _only_ if you add _no_ publishers 
 
 In particular, Helidon _does not_ use the inferred Prometheus publisher if you create a `metrics.publishers` section containing only an OTLP publisher.
 
-You can configure other publishers and still have Helidon use the default one by simply adding the `micrometer-prometheus` publisher entry. You do not need to specify further settings for it.
+You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
 
 [source,yaml]
 .Using an OLTP publisher *and* the default Prometheus publisher
 ----
 metrics:
   publishers:
-    micrometer-prometheus:
-    micrometer-otlp:
+    prometheus:
+    otlp:
       step: PT20S
 ----
 

@@ -25,8 +25,8 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
  */
 public class PrometheusPublisherProvider implements MetricsPublisherProvider {
 
-    static final String CONFIG_KEY = "micrometer-prometheus";
-    static final String TYPE = "micrometer-prometheus";
+    static final String CONFIG_KEY = "prometheus";
+    static final String TYPE = "prometheus";
 
     /**
      * Creates a new provider for service loading.
