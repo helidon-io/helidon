@@ -41,6 +41,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
@@ -316,14 +317,18 @@ class MicrometerMetricsFactory implements MetricsFactory {
         var enabledMicrometerPublishers = new ArrayList<io.micrometer.core.instrument.MeterRegistry>();
         metricsConfig.publishers().stream()
                 .filter(p -> p instanceof MicrometerMetricsPublisher)
+                .filter(MetricsPublisher::enabled)
                 .map(p -> (MicrometerMetricsPublisher) p)
                 .map(p -> p instanceof PrometheusPublisher pp
                      ? pp.prometheusRegistry().apply(key -> metricsConfig.lookupConfig(key).orElse(null),
                                                      spanCtxSupplierProvider)
                         : p.registry().get())
                 .forEach(enabledMicrometerPublishers::add);
-
-        if (enabledMicrometerPublishers.isEmpty()) {
+        /*
+        Configured provider handling omits disabled services, so if the user disabled the Prometheus publisher
+        the list of publishers in the build config object is empty. To see
+         */
+        if (!metricsConfig.publishersConfigured()) {
             enabledMicrometerPublishers.add(spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
                     ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
                     : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),

@@ -264,6 +264,13 @@ interface MetricsConfigBlueprint {
     List<MetricsPublisher> publishers();
 
     /**
+     * Indicates if the publishers node has children.
+     *
+     * @return true if the publishers config node exists, false otherwise
+     */
+    boolean publishersConfigured();
+
+    /**
      * Reports whether the specified scope is enabled, according to any scope configuration that
      * is part of this metrics configuration.
      *
