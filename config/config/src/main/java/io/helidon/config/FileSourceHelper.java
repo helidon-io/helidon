@@ -228,39 +228,22 @@ public final class FileSourceHelper {
 
     static MessageDigest digest() {
         String algorithm = System.getProperty(PROPERTY_DIGEST_ALGORITHM);
-        String[] algorithms;
-        if (algorithm != null) {
-            algorithms = new String[] {algorithm};
-        } else {
-            // MD5 will be the default, and will fall back to SHA-256 if it fails
-            algorithms = new String[] {ALGORITHM_MD5, ALGORITHM_SHA256};
+        if (algorithm == null) {
+            return digest(ALGORITHM_MD5, ALGORITHM_SHA256);
         }
-        return getDigest(algorithms);
+        return digest(algorithm);
     }
 
-    // If multiple algorithms are specified, this will fall back to the next algorithm if the current one fails
-    private static MessageDigest getDigest(String[] algorithms) {
-        if (algorithms == null || algorithms.length == 0) {
-            throw new IllegalArgumentException("At least one algorithm must be provided");
-        }
-
-        for (int i = 0; i < algorithms.length; i++) {
-            String algorithm = algorithms[i];
-            boolean last = (i == algorithms.length - 1);
+    private static MessageDigest digest(String... algorithms) {
+        for (String algorithm : algorithms) {
             try {
                 return MessageDigest.getInstance(algorithm);
             } catch (NoSuchAlgorithmException e) {
-                if (last) {
-                    throw new ConfigException("Cannot get " + algorithm + " digest algorithm.", e);
-                }
-                String fallback = algorithms[i + 1];
                 LOGGER.log(Level.TRACE,
-                           () -> "Cannot get " + algorithm + " digest algorithm so will fall back to " + fallback + ".", e);
+                           () -> "Cannot get " + algorithm + " digest algorithm", e);
             }
         }
-
-        // Unreachable
-        throw new IllegalStateException("No digest algorithm could be obtained");
+        throw new ConfigException("Cannot get digest algorithm(s): " +  String.join(", ", algorithms));
     }
 
     /**
