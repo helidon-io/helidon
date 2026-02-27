@@ -116,7 +116,7 @@ public class OtlpPublisher implements MicrometerMetricsPublisher,
 
             @Override
             public Duration step() {
-                return config.step().orElse(OtlpConfig.super.step());
+                return config.interval().orElse(OtlpConfig.super.step());
             }
 
             @Override

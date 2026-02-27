@@ -55,6 +55,6 @@ interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Pro
      * @return step time
      */
     @Option.Configured
-    Optional<Duration> step();
+    Optional<Duration> interval();
 
 }

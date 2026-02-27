@@ -62,7 +62,7 @@ interface OtlpPublisherConfigBlueprint extends MetricsPublisherConfig, Prototype
      */
     @Option.Default("PT60s")
     @Option.Configured
-    Optional<Duration> step();
+    Optional<Duration> interval();
 
     /**
      * Attribute name/value pairs to be associated with all metrics transmissions.

@@ -148,7 +148,7 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
 
             @Override
             public Duration step() {
-                return config.step().orElse(PrometheusConfig.super.step());
+                return config.interval().orElse(PrometheusConfig.super.step());
             }
         };
     }
