@@ -17,14 +17,19 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exemplars.DefaultExemplarSampler;
 
 /**
  * Metrics publisher for Prometheus output.
@@ -98,10 +103,33 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
         return PrometheusPublisherProvider.TYPE;
     }
 
+    /**
+     * Returns a factory function accepting a property look-up function and the Micrometer span context supplier provider
+     * and producing a {@link io.micrometer.prometheus.PrometheusMeterRegistry}.
+     *
+     * @return factory function
+     */
+    public BiFunction<Function<String, String>, SpanContextSupplierProvider, PrometheusMeterRegistry> prometheusRegistry() {
+
+        return (lookupFunction, spanContextSupplierProvider) ->
+            spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
+                ? new PrometheusMeterRegistry(prometheusConfig(lookupFunction))
+                : new PrometheusMeterRegistry(prometheusConfig(lookupFunction),
+                                         new CollectorRegistry(),
+                                         io.micrometer.core.instrument.Clock.SYSTEM,
+                                         new DefaultExemplarSampler(spanContextSupplierProvider.get()));
+    }
+
     @Override
     public Supplier<MeterRegistry> registry() {
 
-        var prometheusConfig = new PrometheusConfig() {
+        throw new UnsupportedOperationException("Prometheus publisher does not support registry(); use prometheusRegistry()");
+
+    }
+
+    private PrometheusConfig prometheusConfig(Function<String, String> propertyLookup) {
+
+        return new PrometheusConfig() {
 
             @Override
             public String prefix() {
@@ -110,7 +138,7 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
 
             @Override
             public String get(String key) {
-                return null;
+                return propertyLookup.apply(key);
             }
 
             @Override
@@ -123,8 +151,5 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
                 return config.step().orElse(PrometheusConfig.super.step());
             }
         };
-
-        return () -> new PrometheusMeterRegistry(prometheusConfig);
-
     }
 }

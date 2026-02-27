@@ -40,6 +40,8 @@ module io.helidon.metrics.providers.micrometer {
     requires simpleclient;
     requires micrometer.registry.otlp;
     requires io.helidon.service.registry;
+    requires io.prometheus.metrics.model;
+    requires io.helidon.common.context;
 
     exports io.helidon.metrics.providers.micrometer.spi;
 

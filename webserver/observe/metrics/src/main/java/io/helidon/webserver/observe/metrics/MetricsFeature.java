@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
@@ -298,13 +299,19 @@ class MetricsFeature {
                 .options("/", DISABLED_ENDPOINT_HANDLER);
     }
 
+    private boolean enabled() {
+        return metricsConfig.enabled()
+                && Contexts.globalContext().get(MetricsFactory.PULL_PUBLISHERS_PRESENT, Boolean.class)
+                .orElse(true);
+    }
+
     /**
      * Separate metrics service class with an afterStop method that is properly invoked.
      */
     private class MetricsService implements HttpService {
         @Override
         public void routing(HttpRules rules) {
-            if (metricsConfig.enabled()) {
+            if (enabled()) {
                 setUpEndpoints(rules);
             } else {
                 setUpDisabledEndpoints(rules);
