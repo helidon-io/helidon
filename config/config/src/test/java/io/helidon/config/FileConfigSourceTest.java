@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
@@ -31,11 +33,13 @@ import io.helidon.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -117,6 +121,33 @@ public class FileConfigSourceTest {
         assertThat(maybeStamp, not(Optional.empty()));
         Object stamp = maybeStamp.get();
         assertThat(configSource.isModified((byte[]) stamp), is(false));
+    }
+
+    @Test
+    public void testLoadWithoutMD5Digest() {
+        Provider sunProvider = Security.getProvider("SUN");
+        try {
+            Security.removeProvider(sunProvider.getName());
+            FileConfigSource configSource = ConfigSources.file("application.conf").build();
+            Exception e = assertThrows(ConfigException.class, () -> configSource.load());
+            assertThat(e.getMessage(), containsString(FileSourceHelper.ALGORITHM_SHA256));
+        } finally {
+            Security.addProvider(sunProvider);
+        }
+    }
+
+    @Test
+    public void testLoadWithSpecifiedDigestAlgorithm() {
+        String dummyAlgorithm = "dummy-algorithm";
+        System.setProperty(FileSourceHelper.PROPERTY_DIGEST_ALGORITHM, dummyAlgorithm);
+        try {
+            FileConfigSource configSource = ConfigSources.file("application.conf").build();
+            Exception e = assertThrows(ConfigException.class, () -> configSource.load());
+            assertThat(e.getMessage(), containsString(dummyAlgorithm));
+        } finally {
+            System.clearProperty(FileSourceHelper.PROPERTY_DIGEST_ALGORITHM);
+        }
+
     }
 
     @Test
