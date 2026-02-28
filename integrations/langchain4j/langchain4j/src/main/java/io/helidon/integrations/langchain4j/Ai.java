@@ -157,9 +157,12 @@ public final class Ai {
 
     /**
      * Annotation to specify a ChatMemory for the service.
+     *
+     * @deprecated Use {@link io.helidon.integrations.langchain4j.Ai.ChatMemoryProvider} instead.
      */
     @Target(TYPE)
     @Retention(RUNTIME)
+    @Deprecated(since = "4.4.0", forRemoval = true)
     public @interface ChatMemory {
         /**
          * Name of the chat memory to be used.
@@ -172,9 +175,12 @@ public final class Ai {
     /**
      * Annotation to specify a {@link dev.langchain4j.memory.chat.MessageWindowChatMemory} for the service.
      * This annotation is mutually exclusive with {@link io.helidon.integrations.langchain4j.Ai.ChatMemory}.
+     *
+     * @deprecated Use {@link io.helidon.integrations.langchain4j.Ai.ChatMemoryProvider} instead.
      */
     @Target(TYPE)
     @Retention(RUNTIME)
+    @Deprecated(since = "4.4.0", forRemoval = true)
     public @interface ChatMemoryWindow {
         /**
          * The window of the chat memory.

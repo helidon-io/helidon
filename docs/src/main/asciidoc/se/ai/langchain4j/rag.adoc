@@ -1,0 +1,115 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= RAG
+:description: LangChain4j Retrieval-Augmented Generation
+:keywords: helidon, AI, LangChain4j, LC4J, RAG
+:feature-name: LangChain4j RAG
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Retrieval-Augmented Generation, Retrieval-Augmented Generation>>
+* <<Additional Information, Additional Information>>
+
+== Maven Coordinates
+
+No additional dependencies are required beyond the xref:langchain4j.adoc#maven-coordinates[LangChain4j integration core dependencies].
+
+== Retrieval-Augmented Generation
+
+To use RAG with LangChai4j in Helidon, we are going to work with several components.
+
+* **ChatModel** – LLM model for which are going to augment the prompts
+* **EmbeddingModel** – Special model trained to create embeddings and execute similarity search with the original prompt
+* **EmbeddingStore** – A storage for embeddings we are going to search embeddings similar to the original prompt
+* **ContentRetriever** - LangChain4j utility actually using embedding model for content retrieval from the embedding store
+
+RAG-capable AI Service or Agent needs to have content retriever configured,
+`@Ai.ContentRetriever` annotation can be used for that like in the following example:
+
+[source,java]
+----
+@Ai.Service
+@Ai.ChatModel("foo-bar-chat-model")
+@Ai.ContentRetriever("foo-bar-content-retriever")
+public interface FooBarExpert {
+    String askFoo(String foo);
+}
+----
+
+To use the `foo-bar-content-retriever` content retriever from the preceding example,
+you must provide configuration that specifies the embedding model and embedding store to use.
+
+See the complete configuration example below, which uses OpenAI models and the in-memory embedding store:
+
+[source,yaml]
+----
+langchain4j:
+
+  providers:
+    open-ai:
+      api-key: "${OPENAI_API_KEY}"
+
+  models:
+    foo-bar-chat-model:
+      provider: open-ai
+      model-name: "gpt-4o-mini"
+
+    foo-bar-embedding-model:
+      provider: open-ai
+      model-name: "text-embedding-3-small"
+
+  embedding-stores:
+    # Built-in in-memory embedding store
+    foo-bar-inmemory-embedding-store:
+      provider: langchain4j
+
+  content-retrievers:
+    foo-bar-content-retriever:
+      provider: langchain4j
+      # Type is optional 'embedding-store-content-retriever' is the default
+      type: embedding-store-content-retriever
+      max-results: 10
+      min-score: 0.6
+      embedding-model: foo-bar-embedding-model
+      embedding-store: foo-bar-inmemory-embedding-store
+----
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`display-name` |string |Display name.
+|`enabled` |boolean |If set to `false`, embedding store content retriever will be disabled even if configured.
+|`max-results` |int |Maximum number of results.
+|`min-score` |double |Minimum score threshold.
+|`embedding-model` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`.
+|`embedding-store` |string |Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`.
+
+|===
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4j Integration]

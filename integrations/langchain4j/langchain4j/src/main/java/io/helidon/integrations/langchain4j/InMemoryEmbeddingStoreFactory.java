@@ -30,7 +30,6 @@ import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 
 /**
  * Factory for content retrievers.
- *
  */
 @Service.Singleton
 @Service.Named(Service.Named.WILDCARD_NAME)
@@ -44,7 +43,7 @@ class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<Embedding
     InMemoryEmbeddingStoreFactory(Config config) {
         this.config = config;
         this.embeddingStoreNames =
-                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.EMBEDDING_STORE, "helidon");
+                HelidonConstants.modelNames(config, HelidonConstants.ConfigCategory.EMBEDDING_STORE, "lc4j-in-memory");
     }
 
     /**

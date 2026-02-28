@@ -43,6 +43,7 @@
         <module>coherence</module>
         <module>mock</module>
         <module>google-gemini</module>
+        <module>lc4j-in-process</module>
     </modules>
 
     <build>

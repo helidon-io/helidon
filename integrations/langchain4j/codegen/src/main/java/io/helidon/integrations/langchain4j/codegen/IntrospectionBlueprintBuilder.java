@@ -47,6 +47,7 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.BLDR_PR
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.BLDR_REGISTRY_SUPPORT_ANNOTATION;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.BLDR_SINGULAR_ANNOTATION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
+import static java.util.function.Predicate.not;
 
 abstract class IntrospectionBlueprintBuilder {
 
@@ -129,9 +130,16 @@ abstract class IntrospectionBlueprintBuilder {
                 .orElseThrow(() -> new CodegenException("No enclosing type for " + modelBldMethod.signature()));
 
         var b = Method.builder()
-                .addAnnotation(Annotation.create(LangchainTypes.OPT_CONFIGURED))
-                .description("Generated from {@link " + propType.fqName()
-                        .replaceAll("\\$", ".") + "#" + modelBldMethod.signature().text() + "}");
+                .addAnnotation(Annotation.create(LangchainTypes.OPT_CONFIGURED));
+
+        if (modelBldMethod.description()
+                .filter(not(String::isBlank))
+                .isPresent()) {
+            b.description(modelBldMethod.description().get());
+        } else {
+            b.description("Generated from {@link " + propType.fqName()
+                    .replaceAll("\\$", ".") + "#" + modelBldMethod.signature().text() + "}");
+        }
 
         if (isInjectedByDefault(modelBldMethod)) {
             // Properties which have by default @Option.ServiceRegistry
@@ -201,7 +209,7 @@ abstract class IntrospectionBlueprintBuilder {
             confMethodBuilder.commentOverriddenProperty(overrideProps.get(propName));
             if (!skipBuilderMapping) {
                 confMethodBuilder.configureProperty(propName, propType, false, false,
-                                                    // Overridden non-optional props are kept mandatory
+                        // Overridden non-optional props are kept mandatory
                                                     overrideProps.get(propName).typeName().isOptional());
             }
 

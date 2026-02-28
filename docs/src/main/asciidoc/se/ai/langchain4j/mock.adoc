@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= LangChain4J Mock ChatModel Provider
+= Mock ChatModel
 :description: LangChain4J Mock ChatModel
 :keywords: helidon, AI, LangChain4J, LC4J, Mock
 :feature-name: LangChain4J Mock ChatModel
@@ -77,6 +77,9 @@ langchain4j:
   services:
     food-service:
       chat-model: test-mock-model #<1>
+
+  providers:
+    helidon-mock: {}
 
   models:
     test-mock-model:
