@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ public final class TlsNioSocket extends NioSocket {
     private volatile PeerInfo localPeer;
     private volatile PeerInfo remotePeer;
     private volatile byte[] lastSslSessionId;
+    private volatile Optional<Certificate[]> cachedPeerCerts;
+    private volatile Optional<Principal> cachedPeerPrincipal;
 
     private TlsNioSocket(SocketChannel delegate, SSLEngine sslEngine, String channelId, String serverChannelId) {
         super(delegate, channelId, serverChannelId);
@@ -208,19 +210,31 @@ public final class TlsNioSocket extends NioSocket {
     }
 
     Optional<Principal> tlsPeerPrincipal() {
-        try {
-            return Optional.of(engine.getSession().getPeerPrincipal());
-        } catch (SSLPeerUnverifiedException e) {
-            return Optional.empty();
+        Optional<Principal> cached = cachedPeerPrincipal;
+        if (cached != null) {
+            return cached;
         }
+        try {
+            cached = Optional.of(engine.getSession().getPeerPrincipal());
+        } catch (SSLPeerUnverifiedException e) {
+            cached = Optional.empty();
+        }
+        cachedPeerPrincipal = cached;
+        return cached;
     }
 
     Optional<Certificate[]> tlsPeerCertificates() {
-        try {
-            return Optional.of(engine.getSession().getPeerCertificates());
-        } catch (SSLPeerUnverifiedException e) {
-            return Optional.empty();
+        Optional<Certificate[]> cached = cachedPeerCerts;
+        if (cached != null) {
+            return cached;
         }
+        try {
+            cached = Optional.of(engine.getSession().getPeerCertificates());
+        } catch (SSLPeerUnverifiedException e) {
+            cached = Optional.empty();
+        }
+        cachedPeerCerts = cached;
+        return cached;
     }
 
     Optional<Principal> tlsPrincipal() {
@@ -475,6 +489,8 @@ public final class TlsNioSocket extends NioSocket {
         }
 
         lastSslSessionId = currentSessionId;
+        cachedPeerCerts = null;
+        cachedPeerPrincipal = null;
         return true;
     }
 }

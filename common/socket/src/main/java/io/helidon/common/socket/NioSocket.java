@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -197,6 +198,12 @@ public sealed class NioSocket implements HelidonSocket permits TlsNioSocket {
     protected int read(ByteBuffer buffer) {
         try {
             return delegate.read(buffer);
+        } catch (SocketException e) {
+            // Connection reset by peer, treat as EOF and not as an exception.
+            if (e.getMessage() != null && e.getMessage().startsWith("Connection reset")) {
+                return -1;
+            }
+            throw new UncheckedIOException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
