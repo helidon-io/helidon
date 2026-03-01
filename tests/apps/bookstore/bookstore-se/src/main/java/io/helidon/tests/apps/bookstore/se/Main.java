@@ -130,8 +130,7 @@ public final class Main {
             context.mediaSupportsDiscoverServices(false);
             switch (jsonLibrary) {
             case JSONP -> context.addMediaSupport(JsonpSupport.create(config));
-            case JSONB -> context.addMediaSupport(JsonbSupport.create(config))
-                    .addMediaSupport(JsonpSupport.create(config)); // required for metrics
+            case JSONB -> context.addMediaSupport(JsonbSupport.create(config));
             case JACKSON -> context.addMediaSupport(JacksonSupport.create(config));
             default -> throw new RuntimeException("Unknown JSON library " + jsonLibrary);
             }

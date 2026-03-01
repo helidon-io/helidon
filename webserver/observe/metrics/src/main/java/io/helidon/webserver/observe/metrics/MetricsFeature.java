@@ -27,6 +27,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -44,6 +45,9 @@ import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
+
+import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -211,21 +215,34 @@ class MetricsFeature {
             return;
         }
 
-        getOrOptionsMatching(mediaType, res, () -> output(req,
+        getOrOptionsMatching(mediaType, req, res, () -> output(req,
                                                           mediaType,
                                                           scopeSelection,
                                                           nameSelection));
     }
 
     private void getOrOptionsMatching(MediaType mediaType,
+                                      ServerRequest req,
                                       ServerResponse res,
                                       Supplier<Optional<?>> dataSupplier) {
         Optional<?> output = dataSupplier.get();
 
         if (output.isPresent()) {
             res.status(OK_200)
-                    .headers().contentType(mediaType);
-            res.send(output.get());
+                    .headers()
+                    .contentType(mediaType);
+            // Json formatting must use an explicit media support, as it may not be configured on the webserver by user
+            var entity = output.get();
+            if (entity instanceof JsonObject o) {
+                JsonpSupport.<JsonObject>serverResponseWriter()
+                        .write(JsonpSupport.JSON_OBJECT_TYPE,
+                               o,
+                               res.outputStream(),
+                               req.headers(),
+                               res.headers());
+            } else {
+                res.send(entity);
+            }
         } else {
             res.status(NOT_FOUND_404);
             res.send();
@@ -299,7 +316,7 @@ class MetricsFeature {
             res.send();
         }
 
-        getOrOptionsMatching(mediaType, res, () -> outputMetadata(mediaType,
+        getOrOptionsMatching(mediaType, req, res, () -> outputMetadata(mediaType,
                                                                   scopeSelection,
                                                                   nameSelection));
     }
