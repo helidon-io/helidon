@@ -440,6 +440,14 @@
             <artifactId>helidon-codegen-helidon-copyright</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.processor</groupId>
             <artifactId>helidon-common-processor</artifactId>
         </dependency>

@@ -43,6 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
@@ -354,6 +355,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(generatedType)
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addInterface(WebServerCodegenTypes.SERVER_HTTP_FEATURE);
 
         boolean singleton = type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON);

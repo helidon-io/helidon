@@ -199,6 +199,8 @@ public class ServiceDescriptorCodegen {
                                  .add("Service descriptor for {@link " + serviceTypeName.fqName() + "}.")
                                  .addGenericArgument("T", "type of the service, for extensibility")
                                  .build())
+                .addAnnotation(ServiceCodegenAnnotations.API_INTERNAL)
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
@@ -366,6 +368,8 @@ public class ServiceDescriptorCodegen {
                                  .add("Service descriptor for {@link " + serviceTypeName.fqName() + "}.")
                                  .addGenericArgument("T", "type of the service, for extensibility")
                                  .build())
+                .addAnnotation(ServiceCodegenAnnotations.API_INTERNAL)
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API)
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
@@ -1249,9 +1253,9 @@ public class ServiceDescriptorCodegen {
                                 qualifier.values()
                                         .keySet()
                                         .forEach(propertyName -> {
-                                            it.addContent(".putValue(\"")
-                                                    .addContent(propertyName)
-                                                    .addContent("\", ");
+                                            it.addContent(".property(")
+                                                    .addContentLiteral(propertyName)
+                                                    .addContent(", ");
                                             addAnnotationValue(it, qualifier.objectValue(propertyName).get());
                                             it.addContentLine(")");
                                         });
@@ -2342,7 +2346,9 @@ public class ServiceDescriptorCodegen {
                                                                typeName,
                                                                wrapperType,
                                                                "1",
-                                                               ""));
+                                                               ""))
+                .addAnnotation(ServiceCodegenAnnotations.SUPPRESS_API);
+
         service.qualifiers()
                 .forEach(classModel::addAnnotation);
 

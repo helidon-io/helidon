@@ -44,6 +44,8 @@
         <module>apt</module>
         <module>scan</module>
         <module>compiler</module>
+        <module>api-stability</module>
+        <module>api-stability-enforcer</module>
     </modules>
 
     <build>

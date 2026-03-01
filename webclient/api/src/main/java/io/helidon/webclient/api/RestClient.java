@@ -24,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Status;
@@ -33,11 +34,8 @@ import io.helidon.service.registry.Service;
  * Annotations and APIs for type safe REST clients.
  * <p>
  * The type safe rest client is backed by Helidon {@link io.helidon.webclient.api.WebClient}.
- *
- * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
- *               and full removal. We welcome feedback for incubating features.
  */
-@Deprecated
+@Api.Incubating
 public final class RestClient {
     private RestClient() {
     }

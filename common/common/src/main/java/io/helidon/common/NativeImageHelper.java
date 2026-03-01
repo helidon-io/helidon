@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 /**
  * Utility for GraalVM native image.
  */
+@Api.Stable
 public final class NativeImageHelper {
     private static final String SYS_PROP_IMAGE_CODE = "org.graalvm.nativeimage.imagecode";
     private static final String BUILD_TIME = "buildtime";

@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
@@ -51,6 +52,13 @@ public final class DeclarativeTypes {
      * Annotation instance for {@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_SINGLETON}.
      */
     public static final Annotation SINGLETON_ANNOTATION = Annotation.create(SERVICE_ANNOTATION_SINGLETON);
+
+    /**
+     * Suppress all API stability warnings.
+     * When used in Helidon generated code, we can use APIs that are internal, incubating etc., as this is our code.
+     * The user will be warned on annotation usage.
+     */
+    public static final Annotation SUPPRESS_API = Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL);
 
     /**
      * Type for set of {@link #THROWABLE}.

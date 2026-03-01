@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
@@ -277,7 +278,7 @@ public final class Service {
 
     /**
      * Indicates the desired startup sequence for a service class.
-     *
+     * <p>
      * Helidon honors run levels only when using one of the start methods on
      * {@link io.helidon.service.registry.ServiceRegistryManager}:
      * <ul>
@@ -509,11 +510,9 @@ public final class Service {
      * <p>
      * This annotation is used by framework developers that need to extend the set of entry points of an
      * application.
-     *
-     * @deprecated this API is part of incubating features of Helidon. This API may change including backward incompatible changes
-     *               and full removal. We welcome feedback for incubating features.
      */
-    @Deprecated
+    @Api.Incubating
+    @Api.Since("4.3.0")
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     public @interface EntryPoint {
