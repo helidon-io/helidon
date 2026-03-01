@@ -47,7 +47,6 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 
 import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
