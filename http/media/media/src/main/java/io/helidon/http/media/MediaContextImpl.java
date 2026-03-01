@@ -151,11 +151,11 @@ class MediaContextImpl implements MediaContext {
 
     @Override
     public String toString() {
-        return "MediaContextImpl{" +
-                "supports=" + supports +
-                ", fallback=" + fallback +
-                ", prototype=" + prototype +
-                '}';
+        return "MediaContextImpl{"
+                + "supports=" + supports
+                + ", fallback=" + fallback
+                + ", prototype=" + prototype
+                + '}';
     }
 
     private <T> EntityWriter<T> entityWriter(WriterResponse<T> response) {
