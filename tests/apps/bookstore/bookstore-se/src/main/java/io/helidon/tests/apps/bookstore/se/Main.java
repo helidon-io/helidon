@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,8 @@ public final class Main {
             context.mediaSupportsDiscoverServices(false);
             switch (jsonLibrary) {
             case JSONP -> context.addMediaSupport(JsonpSupport.create(config));
-            case JSONB -> context.addMediaSupport(JsonbSupport.create(config));
+            case JSONB -> context.addMediaSupport(JsonbSupport.create(config))
+                    .addMediaSupport(JsonpSupport.create(config)); // required for metrics
             case JACKSON -> context.addMediaSupport(JacksonSupport.create(config));
             default -> throw new RuntimeException("Unknown JSON library " + jsonLibrary);
             }

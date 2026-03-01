@@ -60,6 +60,7 @@ class MetricsFeature {
 
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Status.NOT_FOUND_404)
             .send("Metrics are disabled");
+    private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
 
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
@@ -111,7 +112,8 @@ class MetricsFeature {
         routing.register(endpoint, new MetricsService());
     }
 
-    Optional<?> output(MediaType mediaType,
+    Optional<?> output(ServerRequest req,
+                       MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
@@ -119,6 +121,11 @@ class MetricsFeature {
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
+
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, "[" + req.serverSocketId() + " "
+                    + req.socketId() + "] Using formatter: " + formatter);
+        }
 
         return formatter.format();
     }
@@ -179,6 +186,9 @@ class MetricsFeature {
         if (formatter.isPresent()) {
             return formatter.get();
         }
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Failed to find MeterRegistryFormatter for media type: " + mediaType);
+        }
         throw new HttpException("Unsupported media type for metrics formatting: " + mediaType,
                                 Status.UNSUPPORTED_MEDIA_TYPE_415,
                                 true);
@@ -201,7 +211,8 @@ class MetricsFeature {
             return;
         }
 
-        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+        getOrOptionsMatching(mediaType, res, () -> output(req,
+                                                          mediaType,
                                                           scopeSelection,
                                                           nameSelection));
     }

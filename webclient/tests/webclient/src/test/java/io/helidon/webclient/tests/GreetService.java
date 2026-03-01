@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
@@ -119,7 +120,8 @@ public class GreetService implements HttpService {
                 .request()) {
             response.status(clientResponse.status());
             if (clientResponse.status() == Status.OK_200) {
-                response.send(clientResponse.entity().as(String.class));
+                response.header(HeaderValues.CONTENT_TYPE_JSON)
+                        .send(clientResponse.entity().as(String.class));
             } else {
                 response.send();
             }

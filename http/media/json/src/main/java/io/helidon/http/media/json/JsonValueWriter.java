@@ -16,33 +16,23 @@
 
 package io.helidon.http.media.json;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.io.Writer;
-import java.nio.charset.Charset;
-import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.EntityWriterBase;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonValue;
 
-class JsonValueWriter<T extends JsonValue> implements EntityWriter<T> {
-
-    private final JsonSupportConfig config;
-    private final Header contentTypeHeader;
+class JsonValueWriter<T extends JsonValue> extends EntityWriterBase<T> {
 
     JsonValueWriter(JsonSupportConfig config) {
-        this.config = config;
-        this.contentTypeHeader = HeaderValues.create(HeaderNames.CONTENT_TYPE,
-                                                     config.contentType().text());
+        super(config);
     }
 
     @Override
@@ -51,41 +41,46 @@ class JsonValueWriter<T extends JsonValue> implements EntityWriter<T> {
                       OutputStream outputStream,
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
-        responseHeaders.setIfAbsent(contentTypeHeader);
 
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            for (MediaType acceptedMediaType : config.acceptedMediaTypes()) {
-                if (acceptedType.test(acceptedMediaType)) {
-                    Optional<String> charset = acceptedType.charset();
-                    if (charset.isPresent()) {
-                        Charset characterSet = Charset.forName(charset.get());
-                        write(object, new OutputStreamWriter(outputStream, characterSet));
-                    } else {
-                        write(object, outputStream);
-                    }
-                    return;
-                }
-            }
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+
+        if (charset.isPresent()) {
+            write(object, new OutputStreamWriter(outputStream, charset.get()));
+        } else {
+            write(object, outputStream);
         }
-
-        write(object, outputStream);
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        headers.setIfAbsent(contentTypeHeader);
-        write(object, outputStream);
+        var charset = clientRequestContentTypeAndCharset(headers);
+
+        if (charset.isPresent()) {
+            write(object, new OutputStreamWriter(outputStream, charset.get()));
+        } else {
+            write(object, outputStream);
+        }
     }
 
     private void write(T object, OutputStream out) {
         JsonGenerator.create(out)
                 .write(object)
                 .close();
+        try {
+            out.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void write(T object, Writer out) {
         JsonGenerator.create(out)
                 .write(object)
                 .close();
+        try {
+            out.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

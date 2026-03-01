@@ -39,7 +39,7 @@ public class JsonBindingMediaSupportProvider implements MediaSupportProvider, We
 
     @Override
     public String configKey() {
-        return JsonBindingSupport.HELIDON_JSON_BINDING_TYPE;
+        return JsonBindingSupport.ID;
     }
 
     @Override
