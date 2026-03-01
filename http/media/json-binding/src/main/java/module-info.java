@@ -37,6 +37,7 @@ module io.helidon.http.media.json.binding {
     requires io.helidon.http;
 
     requires transitive io.helidon.config;
+    requires io.helidon.json;
 
     exports io.helidon.http.media.json.binding;
 

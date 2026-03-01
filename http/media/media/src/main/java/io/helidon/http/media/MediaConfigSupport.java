@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.http.media.json;
+package io.helidon.http.media;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.media.type.MediaType;
@@ -22,8 +22,8 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.http.HttpMediaType;
 
-final class JsonConfigSupport {
-    private JsonConfigSupport() {
+final class MediaConfigSupport {
+    private MediaConfigSupport() {
     }
 
     static class CustomMethods {

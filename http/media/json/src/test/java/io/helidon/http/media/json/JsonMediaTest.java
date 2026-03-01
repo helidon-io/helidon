@@ -28,8 +28,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
@@ -41,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
 When adding/updating tests in this class, consider if it should be done
@@ -212,6 +215,21 @@ class JsonMediaTest {
                 .read(JSON_ARRAY_TYPE, is, requestHeaders);
 
         assertThat(jsonObjects, is(createArray("čř", "šň")));
+    }
+
+    @Test
+    void testReadServerWrongCharset() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset("xxxxxxx"));
+
+        MediaSupport.ReaderResponse<JsonObject> res = provider.reader(JSON_OBJECT_TYPE, requestHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+
+        InputStream is = new ByteArrayInputStream("{\"title\": \"is-8859-2: řžýčň\"}".getBytes(ISO_8859_2));
+        var httpException = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(JSON_OBJECT_TYPE, is, requestHeaders));
+
+        assertThat(httpException.status(), is(Status.UNSUPPORTED_MEDIA_TYPE_415));
     }
 
     private JsonObject createObject(String title) {

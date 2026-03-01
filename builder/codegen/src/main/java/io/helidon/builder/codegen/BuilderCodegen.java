@@ -705,6 +705,8 @@ class BuilderCodegen implements CodegenExtension {
                 .copyright(CodegenUtil.copyright(GENERATOR,
                                                  blueprint.typeName(),
                                                  prototype))
+                // adding suppress warnings for config - once we remove helidon-common-config, we can remove this
+                .addAnnotation(Annotation.create(SuppressWarnings.class, "removal"))
                 .accessModifier(prototypeInfo.accessModifier());
 
         typeArguments.forEach(classModel::addGenericArgument);
