@@ -48,15 +48,14 @@ class ObjectConverter implements JsonConverter<Object> {
     @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(JsonParser parser) {
-        Class<?> type;
-        switch (parser.currentByte()) {
-        case Bytes.DOUBLE_QUOTE_BYTE -> type = String.class;
-        case Bytes.BRACE_OPEN_BYTE -> type = JsonObject.class;
-        case Bytes.SQUARE_BRACKET_OPEN_BYTE -> type = Object[].class;
-        case 'f', 't' -> type = boolean.class;
-        case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> type = double.class;
-        default -> throw parser.createException("Cannot determine proper type to deserialize into");
-        }
+        Class<?> type = switch (parser.currentByte()) {
+            case Bytes.DOUBLE_QUOTE_BYTE -> String.class;
+            case Bytes.BRACE_OPEN_BYTE -> JsonObject.class;
+            case Bytes.SQUARE_BRACKET_OPEN_BYTE -> Object[].class;
+            case 'f', 't' -> boolean.class;
+            case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> double.class;
+            default -> throw parser.createException("Cannot determine proper type to deserialize into");
+        };
         JsonDeserializer<Object> deserializer = (JsonDeserializer<Object>) jsonBindingConfigurator.deserializer(type);
         return deserializer.deserialize(parser);
     }
