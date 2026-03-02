@@ -53,6 +53,18 @@ class MetricsConfigSupport {
                 .asOptional();
     }
 
+    /**
+     * Indicates if publishers were specified, either by the application adding any programmatically or if the config
+     * contained the {@code publishers} node.
+     *
+     * @param metricsConfig the prepared {@code MetricsConfig}
+     * @return true if publishers were assigned or configured, false otherwise
+     */
+    @Prototype.PrototypeMethod
+    static boolean publishersConfigured(MetricsConfig metricsConfig) {
+        return !metricsConfig.publishers().isEmpty() || metricsConfig.config().get("publishers").exists();
+    }
+
     @Prototype.ConfigFactoryMethod("tags")
     static List<Tag> createTags(Config globalTagExpression) {
         return createTags(globalTagExpression.asString().get());
@@ -126,9 +138,6 @@ class MetricsConfigSupport {
             if (builder.scoping().isEmpty()) {
                 builder.scoping(ScopingConfig.create());
             }
-            builder.publishersConfigured(builder.config()
-                    .map(c -> c.get("publishers").exists())
-                    .orElse(false));
         }
     }
 

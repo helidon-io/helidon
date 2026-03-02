@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -65,5 +66,28 @@ class TestPublishers {
         assertThat("publishersConfigured setting " + testDescr,
                    metricsConfig.publishersConfigured(),
                    is(expectedPublishersConfigured));
+    }
+
+    @Test
+    void checkAbsentPublishers() {
+        var configText = """
+                metrics:
+                """;
+
+        var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML).get("metrics"));
+        assertThat("Publishers list " + configText, metricsConfig.publishersConfigured(), is(false));
+    }
+
+    @Test
+    void checkDisabledPublisher() {
+        var configText = """
+                metrics:
+                  publishers:
+                    test-publisher:
+                      enabled: false
+                """;
+
+        var metricsConfig = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML).get("metrics"));
+        assertThat("Publishers list " + configText, metricsConfig.publishersConfigured(), is(true));
     }
 }
