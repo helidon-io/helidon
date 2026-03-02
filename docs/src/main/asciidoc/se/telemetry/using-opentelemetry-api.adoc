@@ -104,7 +104,7 @@ If you use a parent POM other than the Helidon SE application parent, include th
 
 See the link:{helidon-github-examples-url}/telemetry/otel-auto-configure[example app] which inspires the illustrations below.
 
-Add the dependencies below. (You might be able to get away with fewer if you are willing to rely on transitive dependencies for components you use in your source code. The example shows them explicitly for completelness.)
+Add the dependencies below. (You might be able to get away with fewer if you are willing to rely on transitive dependencies for components you use in your source code. The example shows them explicitly for completeness.)
 
 [source,xml]
 .Dependencies for the OpenTelemetry API and Autoconfiguration
