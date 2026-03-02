@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,12 @@ import java.util.stream.Collectors;
  */
 public final class FileSourceHelper {
 
+    /**
+     * Property used for specifying the algorithm that will be used to generate digest of a config file.
+     */
+    public static final String PROPERTY_DIGEST_ALGORITHM = "io.helidon.config.file.digest.algorithm";
+    static final String ALGORITHM_MD5 = "MD5";
+    static final String ALGORITHM_SHA256 = "SHA-256";
     private static final System.Logger LOGGER = System.getLogger(FileSourceHelper.class.getName());
     private static final int FILE_BUFFER_SIZE = 4096;
 
@@ -109,7 +115,9 @@ public final class FileSourceHelper {
     }
 
     /**
-     * Returns an MD5 digest of the specified file or null if the file cannot be read.
+     * Returns an MD5 digest of the specified file or null if the file cannot be read. If MD5 is not available,
+     * SHA-256 will be used instead. Alternatively, a digest algorithm can be specified using
+     * {@value PROPERTY_DIGEST_ALGORITHM} system property.
      * <p>
      * The file is locked before the reading and the lock is released immediately after the reading.
      *
@@ -218,12 +226,24 @@ public final class FileSourceHelper {
         }
     }
 
-    private static MessageDigest digest() {
-        try {
-            return MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new ConfigException("Cannot get MD5 digest algorithm.", e);
+    static MessageDigest digest() {
+        String algorithm = System.getProperty(PROPERTY_DIGEST_ALGORITHM);
+        if (algorithm == null) {
+            return digest(ALGORITHM_MD5, ALGORITHM_SHA256);
         }
+        return digest(algorithm);
+    }
+
+    private static MessageDigest digest(String... algorithms) {
+        for (String algorithm : algorithms) {
+            try {
+                return MessageDigest.getInstance(algorithm);
+            } catch (NoSuchAlgorithmException e) {
+                LOGGER.log(Level.TRACE,
+                           () -> "Cannot get " + algorithm + " digest algorithm", e);
+            }
+        }
+        throw new ConfigException("Cannot get digest algorithm(s): " +  String.join(", ", algorithms));
     }
 
     /**
