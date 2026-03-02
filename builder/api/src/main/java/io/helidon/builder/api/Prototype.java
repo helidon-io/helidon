@@ -259,7 +259,7 @@ public final class Prototype {
          * Decorate a list of values, when a setter that replaces values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only list
          */
         default void decorateSetList(B builder, List<T> optionValues) {
         }
@@ -268,7 +268,7 @@ public final class Prototype {
          * Decorate a list of values, when a setter that adds values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only list
          */
         default void decorateAddList(B builder, List<T> optionValues) {
         }
@@ -277,7 +277,7 @@ public final class Prototype {
          * Decorate a set of values, when a setter that replaces values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only set
          */
         default void decorateSetSet(B builder, Set<T> optionValues) {
         }
@@ -286,7 +286,7 @@ public final class Prototype {
          * Decorate a set of values, when a setter that adds values is called.
          *
          * @param builder      the target builder being decorated
-         * @param optionValues option values set by the caller of the setter method
+         * @param optionValues option values set by the caller of the setter method, this is a read-only set
          */
         default void decorateAddSet(B builder, Set<T> optionValues) {
         }
