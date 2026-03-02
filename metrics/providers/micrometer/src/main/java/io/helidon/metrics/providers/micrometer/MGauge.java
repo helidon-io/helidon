@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,14 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         return new SupplierBased.Builder<>(name, supplier);
     }
 
+    static <N extends Number> Builder<?, ?> builder(MGauge<N> gauge) {
+        return switch (gauge) {
+            case FunctionBased<?> functionBased -> FunctionBased.from(functionBased);
+            case SupplierBased<?> supplierBased -> SupplierBased.from(supplierBased);
+            default -> throw new IllegalArgumentException("Unknown gauge: " + gauge);
+        };
+    }
+
     static <N extends Number> SupplierBased.Builder<N>  builderFrom(Gauge.Builder<N> gBuilder) {
         return builder(gBuilder.name(), gBuilder.supplier())
                 .from(gBuilder);
@@ -152,6 +160,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         private SupplierBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<N> builder) {
             super(id, gauge, builder);
             this.supplier = builder.supplier;
+        }
+
+        static SupplierBased.Builder<?> from(SupplierBased<?> gauge) {
+            return builder(gauge.id().name(), gauge.supplier)
+                    .from(gauge);
         }
 
         /**
@@ -246,6 +259,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             super(id, gauge, builder);
             stateObject = builder.stateObject;
             fn = builder.fn;
+        }
+
+        static <T> MGauge.Builder<?, Double> from(FunctionBased<T> gauge) {
+            return builder(gauge.id().name(), gauge.stateObject, gauge.fn)
+                    .from(gauge);
         }
 
         @Override

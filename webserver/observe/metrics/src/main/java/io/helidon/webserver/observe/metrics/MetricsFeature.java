@@ -30,6 +30,7 @@ import io.helidon.http.Status;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -44,6 +45,9 @@ import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
+
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -63,13 +67,12 @@ class MetricsFeature {
 
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
-    private final MeterRegistry meterRegistry;
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
         this.metricsConfig = config.metricsConfig();
-        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
+        config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
     }
 
     /**
@@ -79,7 +82,7 @@ class MetricsFeature {
      */
     void configureVendorMetrics(HttpRouting.Builder rules) {
         kpiMetrics =
-                KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                KeyPerformanceIndicatorMetricsImpls.get(Metrics.globalRegistry(),
                                                         KPI_METER_NAME_PREFIX_WITH_DOT,
                                                         metricsConfig
                                                                 .keyPerformanceIndicatorMetricsConfig(),
@@ -114,7 +117,7 @@ class MetricsFeature {
     Optional<?> output(MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
-        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+        MeterRegistryFormatter formatter = chooseFormatter(Metrics.globalRegistry(),
                                                            mediaType,
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
@@ -124,9 +127,9 @@ class MetricsFeature {
     }
 
     Optional<?> outputMetadata(MediaType mediaType,
-                       Iterable<String> scopeSelection,
-                       Iterable<String> nameSelection) {
-        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+                               Iterable<String> scopeSelection,
+                               Iterable<String> nameSelection) {
+        MeterRegistryFormatter formatter = chooseFormatter(Metrics.globalRegistry(),
                                                            mediaType,
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
@@ -134,8 +137,6 @@ class MetricsFeature {
 
         return formatter.formatMetadata();
     }
-
-
 
     private static MediaType bestAccepted(ServerRequest req) {
         return req.headers()
@@ -304,7 +305,7 @@ class MetricsFeature {
     private class MetricsService implements HttpService {
         @Override
         public void routing(HttpRules rules) {
-            if (metricsConfig.enabled()) {
+            if (metricsConfig.enabled() && isPrometheusRegistryPresent()) {
                 setUpEndpoints(rules);
             } else {
                 setUpDisabledEndpoints(rules);
@@ -314,6 +315,12 @@ class MetricsFeature {
         @Override
         public void afterStop() {
             kpiMetrics.close();
+        }
+
+        private static boolean isPrometheusRegistryPresent() {
+            return Metrics.globalRegistry().unwrap(CompositeMeterRegistry.class)
+                    .getRegistries().stream()
+                    .anyMatch(r -> r instanceof PrometheusMeterRegistry);
         }
     }
 }

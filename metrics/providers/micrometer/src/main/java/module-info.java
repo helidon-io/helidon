@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ module io.helidon.metrics.providers.micrometer {
     requires micrometer.core;
     requires static micrometer.registry.prometheus;
     requires static micrometer.registry.prometheus.simpleclient;
+    requires static micrometer.registry.otlp;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
     requires io.helidon.config;
@@ -39,6 +40,7 @@ module io.helidon.metrics.providers.micrometer {
     requires simpleclient.tracer.common;
     requires simpleclient;
     requires io.helidon.service.registry;
+    requires java.desktop;
 
     exports io.helidon.metrics.providers.micrometer.spi;
 
@@ -49,5 +51,10 @@ module io.helidon.metrics.providers.micrometer {
 
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
     uses io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
+    uses io.helidon.metrics.providers.micrometer.spi.ConfiguredMeterRegistryProvider;
+
+    provides io.helidon.metrics.providers.micrometer.spi.ConfiguredMeterRegistryProvider
+            with io.helidon.metrics.providers.micrometer.ConfiguredOtlpMeterRegistryProvider,
+                 io.helidon.metrics.providers.micrometer.ConfiguredPrometheusMeterRegistryProvider;
 
 }

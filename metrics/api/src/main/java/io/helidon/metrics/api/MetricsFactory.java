@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,6 +128,25 @@ public interface MetricsFactory {
      * @return metrics config used to create the metrics factory
      */
     MetricsConfig metricsConfig();
+
+    /**
+     * Returns the default {@code MetricsConfig} settings for this provider.
+     *
+     * @return default metrics config settings
+     */
+    default MetricsConfig defaultMetricsConfig() {
+        return MetricsConfig.create();
+    }
+
+    /**
+     * Returns a {@link io.helidon.metrics.api.MetricsConfig} derived from the provided configuration.
+     *
+     * @param config metrics configuration
+     * @return {@code MetricsConfig} based on the config
+     */
+    default MetricsConfig metricsConfig(Config config) {
+        return MetricsConfig.create(config);
+    }
 
     /**
      * Returns a builder for creating a new {@link io.helidon.metrics.api.MeterRegistry}.

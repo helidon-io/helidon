@@ -36,6 +36,9 @@ module io.helidon.webserver.observe.metrics {
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.webserver.observe;
+    requires micrometer.core;
+    requires micrometer.registry.prometheus;
+    requires micrometer.registry.prometheus.simpleclient;
 
     exports io.helidon.webserver.observe.metrics;
     exports io.helidon.webserver.observe.metrics.spi;

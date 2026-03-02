@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -39,18 +41,18 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.providers.micrometer.ConfiguredPrometheusMeterRegistryProvider.ConfiguredPrometheusMeterRegistry;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exemplars.DefaultExemplarSampler;
 
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
@@ -82,11 +84,22 @@ class MicrometerMetricsFactory implements MetricsFactory {
         this.metersProviders = metersProviders;
     }
 
+    private MicrometerMetricsFactory(Config metricsNode, Collection<MetersProvider> metersProviders) {
+        this(prepareMetricsConfig(metricsNode), metersProviders);
+    }
+
+    @Deprecated(since = "4.4.0", forRemoval = true)
     static MicrometerMetricsFactory create(io.helidon.common.config.Config rootConfig,
                                            MetricsConfig metricsConfig,
                                            Collection<MetersProvider> metersProviders) {
 
         return new MicrometerMetricsFactory(metricsConfig, metersProviders);
+    }
+
+    static MicrometerMetricsFactory create(io.helidon.common.config.Config metricsNode,
+                                           Collection<MetersProvider> metersProviders) {
+
+        return new MicrometerMetricsFactory(metricsNode, metersProviders);
     }
 
     void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
@@ -116,8 +129,8 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .metricsConfig(metricsConfig)
-                            .build());
+                .metricsConfig(metricsConfig)
+                .build());
     }
 
     @SuppressWarnings("unchecked")
@@ -126,11 +139,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+                                                          this)
+                .metricsConfig(metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build());
     }
 
     @SuppressWarnings("unchecked")
@@ -141,33 +154,38 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onRemoveListener) {
 
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .clock(clock)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+                                                          this)
+                .metricsConfig(metricsConfig)
+                .clock(clock)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build());
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
         return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .clock(clock)
-                            .metricsConfig(metricsConfig)
-                            .build());
+                .clock(clock)
+                .metricsConfig(metricsConfig)
+                .build());
     }
 
     @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry != null
                 ? globalMeterRegistry
-                : globalRegistry(MetricsConfig.create(Services.get(Config.class).get(MetricsConfig.METRICS_CONFIG_KEY)));
+                : globalRegistry(MicrometerMetricsConfig.create(Services.get(Config.class)
+                                                                        .get(MetricsConfig.METRICS_CONFIG_KEY)));
     }
 
     @Override
     public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
         lock.lock();
         try {
+            List<Meter> previouslyRegisteredMeters = null;
+            List<Consumer<Meter>> previousOnAddListeners = null;
+            List<Consumer<Meter>> previousOnRemoveListeners = null;
+
             if (globalMeterRegistry != null) {
                 if (metricsConfig.equals(this.metricsConfig)) {
                     return globalMeterRegistry;
@@ -176,13 +194,29 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 // But it's possible for it to be invoked more than once with different
                 // settings. In such a case we need to clear the old global registry and create a new one because
                 // the new settings might affect its behavior.
+                previouslyRegisteredMeters = globalMeterRegistry.meters();
+                previousOnAddListeners = globalMeterRegistry.onMeterAddedListeners();
+                previousOnRemoveListeners = globalMeterRegistry.onMeterRemovedListeners();
+
                 globalMeterRegistry.close();
                 meterRegistries.remove(globalMeterRegistry);
+
             }
-            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
+            if (metricsConfig instanceof MicrometerMetricsConfig micrometerMetricsConfig) {
+
+                var existingRegistries = Set.copyOf(Metrics.globalRegistry.getRegistries());
+                existingRegistries.forEach(Metrics.globalRegistry::remove);
+
+                micrometerMetricsConfig.registries().stream()
+                        .map(reg -> reg instanceof ConfiguredPrometheusMeterRegistry prometheusReg
+                                ? prometheusRegistryForExemplarAsNeeded(prometheusReg)
+                                : reg.meterRegistrySupplier().get())
+                        .forEach(Metrics.globalRegistry::add);
+            }
+
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                                               .metricsConfig(metricsConfig)
-                                               .build());
+                    .metricsConfig(metricsConfig)
+                    .build());
 
             /*
              Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
@@ -191,7 +225,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
              */
             notifyListenersOfCreate(globalMeterRegistry, metricsConfig);
 
-            applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+            if (previouslyRegisteredMeters != null) {
+                globalMeterRegistry.merge(previouslyRegisteredMeters, previousOnAddListeners, previousOnRemoveListeners);
+            } else {
+                applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+            }
 
             return globalMeterRegistry;
         } finally {
@@ -210,6 +248,16 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MetricsConfig metricsConfig() {
         return metricsConfig;
+    }
+
+    @Override
+    public MetricsConfig defaultMetricsConfig() {
+        return MicrometerMetricsConfig.create();
+    }
+
+    @Override
+    public MetricsConfig metricsConfig(Config config) {
+        return MicrometerMetricsConfig.create(config);
     }
 
     @Override
@@ -298,23 +346,41 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 
-    private void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
-                                          MetricsConfig metricsConfig) {
-        if (compositeMeterRegistry
-                .getRegistries()
-                .stream()
-                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
-            // If we have a non-no-op span context supplier provider we have to create the prometheus meter registry with
-            // some extra constructor arguments so that we can also pass the exemplar sampler with the span context supplier.
-            SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
-            PrometheusMeterRegistry prometheusMeterRegistry = provider instanceof NoOpSpanContextSupplierProvider
-                    ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
-                    : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
-                                                  new CollectorRegistry(),
-                                                  io.micrometer.core.instrument.Clock.SYSTEM,
-                                                  new DefaultExemplarSampler(provider.get()));
-            compositeMeterRegistry.add(prometheusMeterRegistry);
-        }
+    private static MicrometerMetricsConfig prepareMetricsConfig(Config metricsNode) {
+        var builder = MicrometerMetricsConfig.builder()
+                .config(metricsNode);
+        MetricsProgrammaticConfig.apply(target(builder));
+
+        var result = builder.build();
+        SystemTagsManager.instance(result);
+        return result;
+    }
+
+    private static MetricsProgrammaticConfig.Target target(MicrometerMetricsConfig.Builder builder) {
+        return new MetricsProgrammaticConfig.Target() {
+            @Override
+            public Optional<ScopingConfig> scoping() {
+                return builder.scoping();
+            }
+
+            @Override
+            public void appTagName(String appTagName) {
+                builder.appTagName(appTagName);
+            }
+
+            @Override
+            public void scoping(ScopingConfig.Builder scopingBuilder) {
+                builder.scoping(scopingBuilder);
+            }
+        };
+    }
+
+    private io.micrometer.core.instrument.MeterRegistry prometheusRegistryForExemplarAsNeeded(
+            ConfiguredPrometheusMeterRegistry configuredPrometheusRegistry) {
+        SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
+        return provider instanceof NoOpSpanContextSupplierProvider
+                ? configuredPrometheusRegistry.meterRegistrySupplier().get()
+                : configuredPrometheusRegistry.meterRegistryFunction().apply(provider.get());
     }
 
     private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {

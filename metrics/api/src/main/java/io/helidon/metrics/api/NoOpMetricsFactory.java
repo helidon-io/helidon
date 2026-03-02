@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,16 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
+
+import io.helidon.common.config.Config;
+import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.MetricsFactory} interface.
@@ -42,10 +48,19 @@ class NoOpMetricsFactory implements MetricsFactory {
         }
     };
     private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
-    private final MetricsConfig metricsConfig = MetricsConfig.create();
+    private final MetricsConfig metricsConfig;
+
+    private NoOpMetricsFactory(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
+    }
 
     static NoOpMetricsFactory create() {
-        return new NoOpMetricsFactory();
+        return new NoOpMetricsFactory(prepareMetricsConfig(MetricsConfig.builder()));
+    }
+
+    static NoOpMetricsFactory create(Config metricsNode, Collection<MetersProvider> metersProviders) {
+        return new NoOpMetricsFactory(prepareMetricsConfig(MetricsConfig.builder()
+                                                                   .config(metricsNode)));
     }
 
     @Override
@@ -174,4 +189,32 @@ class NoOpMetricsFactory implements MetricsFactory {
     public Timer.Sample timerStart(Clock clock) {
         return NoOpMeter.Timer.start(clock);
     }
+
+    private static MetricsConfig prepareMetricsConfig(MetricsConfig.Builder builder) {
+        MetricsProgrammaticConfig.apply(target(builder));
+
+        var result = builder.build();
+        SystemTagsManager.instance(result);
+        return result;
+    }
+
+    private static MetricsProgrammaticConfig.Target target(MetricsConfig.Builder builder) {
+        return new MetricsProgrammaticConfig.Target() {
+            @Override
+            public Optional<ScopingConfig> scoping() {
+                return builder.scoping();
+            }
+
+            @Override
+            public void appTagName(String appTagName) {
+                builder.appTagName(appTagName);
+            }
+
+            @Override
+            public void scoping(ScopingConfig.Builder scopingBuilder) {
+                builder.scoping(scopingBuilder);
+            }
+        };
+    }
+
 }

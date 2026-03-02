@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,14 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
      */
     private final Optional<TimeUnit> baseTimeUnit;
 
+    /*
+    Copy of the builder used to make this instance to simplify later creating a builder from this instance.
+     */
+    private Builder builder;
+
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Builder builder) {
         super(id, delegate, builder);
+        this.builder = builder;
         baseTimeUnit = builder.baseUnit()
                 .map(v -> v.toUpperCase(Locale.ROOT))
                 .map(TimeUnit::valueOf);
@@ -49,6 +55,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate) {
         super(id, delegate);
+
         baseTimeUnit = Optional.empty();
     }
 
@@ -63,6 +70,19 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     static Builder builder(String name) {
         return new Builder(name);
+    }
+
+    static Builder builder(MTimer timer) {
+        var builder = builder(timer.id().name());
+        /*
+        Timers created without a builder--from an existing Micrometer timer, for example--do not have the builder
+        for use in populating this new builder.
+         */
+        if (timer.builder != null) {
+            builder.from(timer.builder);
+        }
+        timer.baseUnit().ifPresent(builder::baseUnit);
+        return builder;
     }
 
     static Builder builderFrom(Timer.Builder tBuilder) {
@@ -196,6 +216,10 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), baseTimeUnit);
+    }
+
+    Builder builder() {
+        return builder;
     }
 
     static class Sample implements io.helidon.metrics.api.Timer.Sample {

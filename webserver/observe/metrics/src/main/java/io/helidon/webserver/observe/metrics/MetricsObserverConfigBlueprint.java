@@ -28,7 +28,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 /**
  * Metrics Observer configuration.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = MetricsObserverConfigSupport.BuilderDecorator.class)
 @Prototype.Configured("metrics")
 @Prototype.Provides(ObserveProvider.class)
 @Prototype.IncludeDefaultMethods
@@ -57,7 +57,7 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * @return the metrics settings to assign for use in building the {@code MetricsSupport} instance
      */
     @Option.Configured(merge = true)
-    @Option.DefaultMethod("create")
+    @Option.DefaultCode("io.helidon.metrics.api.MetricsFactory.getInstance().defaultMetricsConfig()")
     MetricsConfig metricsConfig();
 
     /**

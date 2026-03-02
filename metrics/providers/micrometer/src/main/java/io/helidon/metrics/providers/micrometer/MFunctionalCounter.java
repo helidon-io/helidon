@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,13 @@ import io.micrometer.core.instrument.Tag;
 class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCounter>
         implements io.helidon.metrics.api.FunctionalCounter {
 
+    private Builder<?> builder;
+
     private MFunctionalCounter(Meter.Id id,
                                io.micrometer.core.instrument.FunctionCounter delegate,
                                MFunctionalCounter.Builder<?> builder) {
         super(id, delegate, builder);
+        this.builder = builder;
     }
 
     private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate, Optional<String> scope) {
@@ -49,6 +52,10 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
      */
     static <T> Builder<T> builder(String name, T stateObject, Function<T, Long> fn) {
         return new Builder<>(name, stateObject, fn);
+    }
+
+    static Builder<?> builder(MFunctionalCounter mfCounter) {
+        return builderFrom(mfCounter.builder);
     }
 
     static <T> Builder<T> builderFrom(FunctionalCounter.Builder<T> origin) {

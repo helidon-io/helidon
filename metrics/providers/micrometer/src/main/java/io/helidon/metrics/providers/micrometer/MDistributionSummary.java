@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,23 @@ import static io.micrometer.core.instrument.distribution.DistributionStatisticCo
 class MDistributionSummary extends MMeter<io.micrometer.core.instrument.DistributionSummary>
         implements io.helidon.metrics.api.DistributionSummary {
 
+    private final DistributionStatisticsConfig.Builder statsConfigBuilder;
+
     private MDistributionSummary(Meter.Id id,
                                  io.micrometer.core.instrument.DistributionSummary delegate,
                                  Optional<String> scope) {
         super(id, delegate, scope);
+
+        /*
+        Unfortunately, this code path has no access to the Micrometer distribution summary
+        statistics so we cannot create a faithful mirror of those values in our stats config.
+         */
+        statsConfigBuilder = DistributionStatisticsConfig.builder();
     }
 
     private MDistributionSummary(Meter.Id id, io.micrometer.core.instrument.DistributionSummary delegate, Builder builder) {
         super(id, delegate, builder);
+        statsConfigBuilder = builder.distributionStatisticsConfigBuilder;
     }
 
     /**
@@ -52,6 +61,13 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
 
     static Builder builder(String name) {
         return new Builder(name);
+    }
+
+    static Builder builder(MDistributionSummary summary) {
+
+        return builder(summary.id().name())
+                .from(summary)
+                .distributionStatisticsConfig(summary.statsConfigBuilder);
     }
 
     static Builder builderFrom(DistributionSummary.Builder sBuilder) {
@@ -227,6 +243,9 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         }
 
         protected Builder from(DistributionSummary.Builder other) {
+            if (other == null) {
+                return this;
+            }
             other.scale().ifPresent(this::scale);
             return this;
         }

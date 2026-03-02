@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,6 +27,12 @@
         <Class name="io.helidon.metrics.providers.micrometer.MMeterRegistry"/>
         <Method name="findOrWrap"/>
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+    <Match>
+        <!-- False positive - we make sure the return value cannot be null. -->
+        <Class name="io.helidon.metrics.providers.micrometer.PrometheusMeterRegistryConfig$BuilderBase"/>
+        <Method name="from"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
 </FindBugsFilter>
