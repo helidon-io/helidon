@@ -19,10 +19,13 @@ package io.helidon.json.binding.converters;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonConverter;
+import io.helidon.json.binding.JsonDeserializer;
 import io.helidon.json.binding.JsonSerializer;
 import io.helidon.service.registry.Service;
 
@@ -30,11 +33,21 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class ObjectConverter implements JsonConverter<Object> {
 
+    private JsonDeserializer<String> stringDeserializer;
+    private JsonDeserializer<Double> doubleDeserializer;
+    private JsonDeserializer<JsonObject> objectDeserializer;
+    private JsonDeserializer<Object[]> arrayDeserializer;
+    private JsonDeserializer<Boolean> booleanDeserializer;
     private JsonBindingConfigurator jsonBindingConfigurator;
 
     @Override
     public void configure(JsonBindingConfigurator jsonBindingConfigurator) {
         this.jsonBindingConfigurator = jsonBindingConfigurator;
+        this.stringDeserializer = jsonBindingConfigurator.deserializer(String.class);
+        this.doubleDeserializer = jsonBindingConfigurator.deserializer(Double.class);
+        this.objectDeserializer = jsonBindingConfigurator.deserializer(JsonObject.class);
+        this.arrayDeserializer = jsonBindingConfigurator.deserializer(Object[].class);
+        this.booleanDeserializer = jsonBindingConfigurator.deserializer(Boolean.class);
     }
 
     @Override
@@ -42,9 +55,17 @@ class ObjectConverter implements JsonConverter<Object> {
         return GenericType.OBJECT;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(JsonParser parser) {
-        throw parser.createException("Deserialization into Object is not supported");
+        return switch (parser.currentByte()) {
+            case Bytes.DOUBLE_QUOTE_BYTE -> stringDeserializer.deserialize(parser);
+            case Bytes.BRACE_OPEN_BYTE -> objectDeserializer.deserialize(parser);
+            case Bytes.SQUARE_BRACKET_OPEN_BYTE -> arrayDeserializer.deserialize(parser);
+            case 'f', 't' -> booleanDeserializer.deserialize(parser);
+            case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> doubleDeserializer.deserialize(parser);
+            default -> throw parser.createException("Cannot determine proper type to deserialize into");
+        };
     }
 
     @Override
