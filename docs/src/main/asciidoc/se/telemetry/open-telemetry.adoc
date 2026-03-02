@@ -20,7 +20,7 @@
 :description: Helidon SE Telemetry Support
 :keywords: helidon, telemetry, tracing, observability
 :feature-name: OpenTelemetry Support
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 include::{rootdir}/includes/se.adoc[]
 :version-doc-opentelemetry: v{version-lib-opentelemetry}
 :semconv-link: https://github.com/open-telemetry/semantic-conventions/blob/{version-doc-opentelemetry}/docs/http/http-spans.md#http-server
@@ -41,7 +41,7 @@ NOTE: Helidon SE support for OpenTelemetry configuration and semantic convention
 
 Helidon SE supports OpenTelemetry in several important ways:
 
-* Implements the xref:{docdir}/tracing.adoc[neutral Helidon tracing API] using OpenTelemetry
+* Implements the xref:{rootdir}/se/tracing.adoc[neutral Helidon tracing API] using OpenTelemetry
 * Allows users to assign OpenTelemetry settings as follows:
 ** Declaratively, using Helidon config under the top-level `telemetry` config key
 ** Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
@@ -123,7 +123,7 @@ add one or more of the following dependencies to your project's `pom.xml` (see
 xref:{rootdir}/about/managing-dependencies.adoc[Managing Dependencies]).
 
 === Using the OpenTelemetry implementation of the Helidon Tracing API
-Helidon offers an implementation of its xref:tracing.adoc[ neutral tracing API] that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
+Helidon offers an implementation of its xref:{rootdir}/se/tracing.adoc[ neutral tracing API] that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
 [source,xml]
 .Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing
 ----
@@ -203,7 +203,7 @@ OpenTelemetry prescribes its own link:{metrics-semconv-link}[semantic convention
 ----
 
 === Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
-Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the xref:{docdir}/webclient.adoc#_configuring_telemetry[Helidon WebClient documentation].
+Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the xref:{rootdir}/se/webclient.adoc#_configuring_telemetry[Helidon WebClient documentation].
 
 === Specifying Additional OpenTelemetry Dependencies
 Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies--or the application code uses--particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry packages various exporters individually.
@@ -622,7 +622,7 @@ include::{rootdir}/config/io_helidon_telemetry_otelconfig_InstrumentSelectorConf
 
 === Helidon Documentation
 
-* xref:tracing.adoc[Helidon Tracing]
+* xref:{rootdir}/se/tracing.adoc[Helidon Tracing]
 
 === OpenTelemetry Documentation
 

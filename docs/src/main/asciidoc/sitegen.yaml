@@ -554,12 +554,15 @@ backend:
                 glyph:
                   type: "icon"
                   value: "outbox"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Telemetry"
-                source: "open-telemetry.adoc"
+                dir: "telemetry"
                 glyph:
                   type: "icon"
                   value: "analytics"
+                sources:
+                  - "open-telemetry.adoc"
+                  - "using-opentelemetry-api.adoc"
               - type: "PAGE"
                 title: "Testing"
                 source: "testing.adoc"

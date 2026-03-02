@@ -28,7 +28,7 @@ This page describes support for controlling OpenTelemetry tracing using the `tra
 
 That said, Helidon's support for OpenTelemetry using _tracing_ does not afford as much control as do the Helidon _telemetry_ settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
 
-The xref:{rootdir}/{flavor-lc}/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over  OpenTelemetry and OpenTelemetry tracing behavior.
+The xref:{rootdir}/{flavor-lc}/telemetry/open-telemetry.adoc[telemetry doc page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over  OpenTelemetry and OpenTelemetry tracing behavior.
 
 endif::se-flavor[]
 ifdef::mp-flavor[]

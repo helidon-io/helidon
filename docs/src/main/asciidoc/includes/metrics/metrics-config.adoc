@@ -84,7 +84,7 @@ Helidon can make the registered {metrics} and their current values available ext
 include::io_helidon_webserver_observe_metrics_MetricsObserver_extra.adoc[tag=config,leveloffset=+1]
 
 ifdef::se-flavor[]
-See the <<../../se/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
+See the <<../../se/telemetry/open-telemetry.adoc#enabling-automatic-metrics-for-inbound-http,Helidon OpenTelemetry documentation>> for more information.
 
 endif::se-flavor[]
 
