@@ -33,11 +33,21 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class ObjectConverter implements JsonConverter<Object> {
 
+    private JsonDeserializer<String> stringDeserializer;
+    private JsonDeserializer<Double> doubleDeserializer;
+    private JsonDeserializer<JsonObject> objectDeserializer;
+    private JsonDeserializer<Object[]> arrayDeserializer;
+    private JsonDeserializer<Boolean> booleanDeserializer;
     private JsonBindingConfigurator jsonBindingConfigurator;
 
     @Override
     public void configure(JsonBindingConfigurator jsonBindingConfigurator) {
         this.jsonBindingConfigurator = jsonBindingConfigurator;
+        this.stringDeserializer = jsonBindingConfigurator.deserializer(String.class);
+        this.doubleDeserializer = jsonBindingConfigurator.deserializer(Double.class);
+        this.objectDeserializer = jsonBindingConfigurator.deserializer(JsonObject.class);
+        this.arrayDeserializer = jsonBindingConfigurator.deserializer(Object[].class);
+        this.booleanDeserializer = jsonBindingConfigurator.deserializer(Boolean.class);
     }
 
     @Override
@@ -48,16 +58,14 @@ class ObjectConverter implements JsonConverter<Object> {
     @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(JsonParser parser) {
-        Class<?> type = switch (parser.currentByte()) {
-            case Bytes.DOUBLE_QUOTE_BYTE -> String.class;
-            case Bytes.BRACE_OPEN_BYTE -> JsonObject.class;
-            case Bytes.SQUARE_BRACKET_OPEN_BYTE -> Object[].class;
-            case 'f', 't' -> boolean.class;
-            case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> double.class;
+        return switch (parser.currentByte()) {
+            case Bytes.DOUBLE_QUOTE_BYTE -> stringDeserializer.deserialize(parser);
+            case Bytes.BRACE_OPEN_BYTE -> objectDeserializer.deserialize(parser);
+            case Bytes.SQUARE_BRACKET_OPEN_BYTE -> arrayDeserializer.deserialize(parser);
+            case 'f', 't' -> booleanDeserializer.deserialize(parser);
+            case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> doubleDeserializer.deserialize(parser);
             default -> throw parser.createException("Cannot determine proper type to deserialize into");
         };
-        JsonDeserializer<Object> deserializer = (JsonDeserializer<Object>) jsonBindingConfigurator.deserializer(type);
-        return deserializer.deserialize(parser);
     }
 
     @Override
