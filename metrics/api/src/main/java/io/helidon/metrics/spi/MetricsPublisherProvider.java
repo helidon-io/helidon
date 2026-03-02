@@ -24,6 +24,5 @@ import io.helidon.service.registry.Service;
  * Marks each configured provider of a {@link io.helidon.metrics.api.MetricsPublisher}.
  */
 @Service.Contract
-public
-interface MetricsPublisherProvider extends ConfiguredProvider<MetricsPublisher> {
+public interface MetricsPublisherProvider extends ConfiguredProvider<MetricsPublisher> {
 }

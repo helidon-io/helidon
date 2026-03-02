@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
-import io.helidon.metrics.api.MetricsPublisherConfig;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 import io.micrometer.registry.otlp.AggregationTemporality;
@@ -35,7 +34,16 @@ import io.micrometer.registry.otlp.AggregationTemporality;
 @Prototype.Configured(value = OtlpPublisherProvider.TYPE, root = false)
 @Prototype.Blueprint
 @Prototype.Provides(MetricsPublisherProvider.class)
-interface OtlpPublisherConfigBlueprint extends MetricsPublisherConfig, Prototype.Factory<OtlpPublisher> {
+interface OtlpPublisherConfigBlueprint extends Prototype.Factory<OtlpPublisher> {
+
+    /**
+     * Whether the configured publisher is enabled.
+     *
+     * @return true if enabled, false otherwise
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enabled();
 
     /**
      * The prefix for settings.
@@ -80,6 +88,15 @@ interface OtlpPublisherConfigBlueprint extends MetricsPublisherConfig, Prototype
     @Option.Default("CUMULATIVE")
     @Option.Configured
     Optional<AggregationTemporality> aggregationTemporality();
+
+    /**
+     * Number of measurements to send in a single request to the backend.
+     *
+     * @return transmission batch size
+     */
+    @Option.DefaultInt(10000)
+    @Option.Configured
+    Optional<Integer> batchSize();
 
     /**
      * Headers to add to each transmission message.

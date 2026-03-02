@@ -48,7 +48,7 @@ public interface MetricsFactory {
     /**
      * Qualifier for context setting indicating if any pull publishers are present.
      */
-    String PULL_PUBLISHERS_PRESENT = "pull-publishers";
+    String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
 
     /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at

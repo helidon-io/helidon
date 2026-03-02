@@ -17,6 +17,8 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -24,6 +26,7 @@ import io.helidon.builder.api.RuntimeType;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.registry.otlp.AggregationTemporality;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
 
@@ -61,7 +64,6 @@ public class OtlpPublisher implements MicrometerMetricsPublisher,
      * Creates a new OTLP publisher using the provided configuration.
      *
      * @param config OTLP publisher configuration
-     *
      * @return new OTLP publisher
      */
     public static OtlpPublisher create(OtlpPublisherConfig config) {
@@ -72,7 +74,6 @@ public class OtlpPublisher implements MicrometerMetricsPublisher,
      * Creates a new OTLP publisher using a new builder and applying a consumer of the builder.
      *
      * @param consumer code to process a builder
-     *
      * @return new OLTP publisher
      */
     public static OtlpPublisher create(Consumer<OtlpPublisherConfig.Builder> consumer) {
@@ -106,17 +107,63 @@ public class OtlpPublisher implements MicrometerMetricsPublisher,
 
             @Override
             public String prefix() {
-                return config.prefix().orElse(OtlpConfig.super.prefix());
+                return config.prefix().orElseGet(OtlpConfig.super::prefix);
             }
 
             @Override
             public String url() {
-                return config.url().orElse(OtlpConfig.super.url());
+                return config.url().orElseGet(OtlpConfig.super::url);
             }
 
             @Override
             public Duration step() {
-                return config.interval().orElse(OtlpConfig.super.step());
+                return config.interval().orElseGet(OtlpConfig.super::step);
+            }
+
+            @Override
+            public Map<String, String> resourceAttributes() {
+                return config.resourceAttributes().isEmpty()
+                        ? OtlpConfig.super.resourceAttributes()
+                        : config.resourceAttributes();
+            }
+
+            @Override
+            public int batchSize() {
+                return config.batchSize().orElseGet(OtlpConfig.super::batchSize);
+            }
+
+            @Override
+            public AggregationTemporality aggregationTemporality() {
+                return config.aggregationTemporality().orElseGet(OtlpConfig.super::aggregationTemporality);
+            }
+
+            @Override
+            public Map<String, String> headers() {
+                return config.headers().isEmpty()
+                        ? OtlpConfig.super.headers()
+                        : config.headers();
+            }
+
+            @Override
+            public int maxScale() {
+                return config.maxScale().orElseGet(OtlpConfig.super::maxScale);
+            }
+
+            @Override
+            public int maxBucketCount() {
+                return config.maxBucketCount().orElseGet(OtlpConfig.super::maxBucketCount);
+            }
+
+            @Override
+            public Map<String, Integer> maxBucketsPerMeter() {
+                return config.maxBucketsPerMeter().isEmpty()
+                        ? OtlpConfig.super.maxBucketsPerMeter()
+                        : config.maxBucketsPerMeter();
+            }
+
+            @Override
+            public TimeUnit baseTimeUnit() {
+                return config.baseTimeUnit().orElseGet(OtlpConfig.super::baseTimeUnit);
             }
 
             @Override
