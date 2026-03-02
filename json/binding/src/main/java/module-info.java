@@ -37,6 +37,7 @@ module io.helidon.json.binding {
 
     requires io.helidon.config;
     requires io.helidon.common;
+    requires io.helidon.common.buffers;
 
     exports io.helidon.json.binding;
     exports io.helidon.json.binding.converters;

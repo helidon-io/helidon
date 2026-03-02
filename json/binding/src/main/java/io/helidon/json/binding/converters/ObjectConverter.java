@@ -19,10 +19,13 @@ package io.helidon.json.binding.converters;
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBindingConfigurator;
 import io.helidon.json.binding.JsonConverter;
+import io.helidon.json.binding.JsonDeserializer;
 import io.helidon.json.binding.JsonSerializer;
 import io.helidon.service.registry.Service;
 
@@ -42,9 +45,20 @@ class ObjectConverter implements JsonConverter<Object> {
         return GenericType.OBJECT;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object deserialize(JsonParser parser) {
-        throw parser.createException("Deserialization into Object is not supported");
+        Class<?> type;
+        switch (parser.currentByte()) {
+        case Bytes.DOUBLE_QUOTE_BYTE -> type = String.class;
+        case Bytes.BRACE_OPEN_BYTE -> type = JsonObject.class;
+        case Bytes.SQUARE_BRACKET_OPEN_BYTE -> type = Object[].class;
+        case 'f', 't' -> type = boolean.class;
+        case '-', '+', '.', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> type = double.class;
+        default -> throw parser.createException("Cannot determine proper type to deserialize into");
+        }
+        JsonDeserializer<Object> deserializer = (JsonDeserializer<Object>) jsonBindingConfigurator.deserializer(type);
+        return deserializer.deserialize(parser);
     }
 
     @Override
