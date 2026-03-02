@@ -55,13 +55,11 @@ public abstract class EntityWriterBase<T> extends EntityIoBase implements Entity
      * Server response content type is handled as follows:
      * <ul>
      *     <li>If a content type is explicitly set, use it, and return its charset if configured</li>
-     *     <li>Check if there is an {@code Accept-Charset} header specified, if it is, set the
-     *     default header with this charset, and return it</li>
      *     <li>If the default content type contains charset, set it, and return its charset</li>
      *     <li>Set the default content type and return an empty optional</li>
      * </ul>
      *
-     * @param serverRequestHeaders  server request headers (to get Accept-Charset header)
+     * @param serverRequestHeaders  server request header
      * @param serverResponseHeaders server response headers (to configure content type)
      * @return charset to use to write the response, if it could be guessed
      */
@@ -69,20 +67,10 @@ public abstract class EntityWriterBase<T> extends EntityIoBase implements Entity
                                                                     WritableHeaders<?> serverResponseHeaders) {
         var existingContentType = serverResponseHeaders.contentType();
         if (existingContentType.isPresent()) {
-            // the user did not configure charset, use whatever is default for the support
+            // if the user did not configure charset, use whatever is default for the support
             return existingContentType.get()
                     .charset()
                     .map(EntityIoBase::charset);
-        }
-
-        var acceptCharset = serverRequestHeaders.find(HeaderNames.ACCEPT_CHARSET)
-                .map(Header::getString);
-
-        if (acceptCharset.isPresent()) {
-            var responseContentType = config.contentType()
-                    .withCharset(acceptCharset.get());
-            serverResponseHeaders.contentType(responseContentType);
-            return acceptCharset.map(EntityIoBase::charset);
         }
 
         // now we always use the default content type as is

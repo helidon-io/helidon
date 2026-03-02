@@ -35,12 +35,14 @@ public final class HeaderNames {
     public static final HeaderName ACCEPT = HeaderNameEnum.ACCEPT;
     /**
      * The {@value} header name.
-     * Character sets that are acceptedTypes.
+     * This header is no longer sent by browsers, and it should be ignored by servers.
+     * Character sets that are accepted.
      */
     public static final String ACCEPT_CHARSET_NAME = Strings.ACCEPT_CHARSET_NAME;
     /**
      * The {@value #ACCEPT_CHARSET_NAME} header name.
-     * Character sets that are acceptedTypes.
+     * This header is no longer sent by browsers, and it should be ignored by servers.
+     * Character sets that are accepted.
      */
     public static final HeaderName ACCEPT_CHARSET = HeaderNameEnum.ACCEPT_CHARSET;
     /**

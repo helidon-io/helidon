@@ -26,7 +26,7 @@ abstract class EntityIoBase {
     private static final System.Logger LOGGER = System.getLogger(EntityIoBase.class.getName());
 
     /**
-     * Convert charset (probably from Content-Type or Accept-Charset header) to {@link java.nio.charset.Charset}.
+     * Convert charset (probably from Content-Type {@code charset} property) to {@link java.nio.charset.Charset}.
      *
      * @param charset charset string
      * @return charset instance
