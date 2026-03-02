@@ -63,7 +63,7 @@ abstract class RoutingTestBase {
 
     @Test
     void testRouteWithSpace() {
-        try (Http1ClientResponse response = client.get("/my path").request()) {
+        try (Http1ClientResponse response = client.get().path("/my path").request()) {
 
             assertThat(response.status(), is(Status.OK_200));
 

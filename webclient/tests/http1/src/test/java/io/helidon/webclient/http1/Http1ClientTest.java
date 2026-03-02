@@ -44,6 +44,7 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
@@ -117,6 +118,34 @@ class Http1ClientTest {
         assertThat(request.headers().contentLength(), is(OptionalLong.of(0)));
 
         client.closeResource();
+    }
+
+    @Test
+    void testInvalidHost() {
+        var client = WebClient.builder()
+                .baseUri(baseURI)
+                .build();
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> client.get("http://invalid_host:80/foo"));
+        assertThat(exception.getMessage(), startsWith("Invalid authority"));
+    }
+
+    @Test
+    void testUriMethodEncoding() {
+        var client = WebClient.builder()
+                .baseUri(baseURI)
+                .build();
+
+        //This query is intentionally invalid. We are testing if uri is not encoded by the client.
+        //It is expected to receive already properly encoded uri.
+        ClientUri uri = client.get("http://test.com/foo?test=value?").uri();
+        assertThat(uri.toString(), is("http://test.com:80/foo?test=value?"));
+
+        //Here query should be properly encoded, since query specific method was used.
+        uri = client.get("http://test.com/foo")
+                .queryParam("test", "value?")
+                .uri();
+        assertThat(uri.toString(), is("http://test.com:80/foo?test=value%3F"));
     }
 
     @Test

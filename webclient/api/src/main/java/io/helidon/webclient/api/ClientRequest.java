@@ -47,13 +47,13 @@ import io.helidon.http.Status;
  */
 public interface ClientRequest<T extends ClientRequest<T>> {
     /**
-     * Configure URI.
+     * Configure URI. A properly encoded URI is expected to be provided.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
      */
     default T uri(String uri) {
-        return uri(URI.create(UriEncoding.encodeUri(uri)));
+        return uri(URI.create(uri));
     }
 
     /**
@@ -83,7 +83,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     T proxy(Proxy proxy);
 
     /**
-     * Configure URI.
+     * Configure URI. A properly encoded URI is expected to be provided.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
@@ -105,6 +105,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Configure request URI. This always replaces the existing URI (even if base URI is configured).
+     * A properly encoded URI is expected to be provided.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
