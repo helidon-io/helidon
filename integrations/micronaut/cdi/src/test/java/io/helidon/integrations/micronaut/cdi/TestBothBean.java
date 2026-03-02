@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,28 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 @MicronautBeanDef
 public class TestBothBean implements TestBean {
+
     @Override
     public String name() {
         return "BothBean";
+    }
+
+    @CdiIntercepted
+    @Override
+    public String cdiAnnotated() {
+        return TestBean.super.cdiAnnotated();
+    }
+
+    @MicroIntercepted
+    @Override
+    public String µAnnotated() {
+        return TestBean.super.µAnnotated();
+    }
+
+    @CdiIntercepted
+    @MicroIntercepted
+    @Override
+    public String bothAnnotated() {
+        return TestBean.super.bothAnnotated();
     }
 }
