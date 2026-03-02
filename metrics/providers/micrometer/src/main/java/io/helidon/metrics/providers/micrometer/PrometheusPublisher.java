@@ -95,7 +95,7 @@ public class PrometheusPublisher implements MicrometerMetricsPublisher,
 
     @Override
     public String name() {
-        return PrometheusPublisherProvider.TYPE;
+        return config.name().orElse(PrometheusPublisherProvider.TYPE);
     }
 
     @Override

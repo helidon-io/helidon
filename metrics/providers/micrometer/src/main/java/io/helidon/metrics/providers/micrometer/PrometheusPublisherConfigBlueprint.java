@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.metrics.api.MetricsPublisherConfig;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
@@ -29,7 +30,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 @Prototype.Configured(value = PrometheusPublisherProvider.CONFIG_KEY, root = false)
 @Prototype.Blueprint
 @Prototype.Provides(MetricsPublisherProvider.class)
-interface PrometheusPublisherConfigBlueprint extends Prototype.Factory<PrometheusPublisher> {
+interface PrometheusPublisherConfigBlueprint extends MetricsPublisherConfig, Prototype.Factory<PrometheusPublisher> {
 
     /**
      * Whether the configured publisher is enabled.

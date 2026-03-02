@@ -16,6 +16,8 @@
 
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 
 /**
@@ -24,11 +26,10 @@ import io.helidon.builder.api.Option;
 public interface MetricsPublisherConfig {
 
     /**
-     * Whether the configured publisher is enabled.
+     * Name for this instance of the publisher.
      *
-     * @return true if enabled, false otherwise
+     * @return name of the publisher instance
      */
     @Option.Configured
-    @Option.DefaultBoolean(true)
-    boolean enabled();
+    Optional<String> name();
 }

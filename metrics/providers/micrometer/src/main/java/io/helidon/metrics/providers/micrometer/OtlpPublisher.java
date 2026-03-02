@@ -87,7 +87,7 @@ public class OtlpPublisher implements MicrometerMetricsPublisher,
 
     @Override
     public String name() {
-        return OtlpPublisherProvider.TYPE;
+        return config.name().orElse(OtlpPublisherProvider.TYPE);
     }
 
     @Override
