@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,11 @@ import io.helidon.common.config.Config;
  * Also, various static methods create new instances or return previously-created ones.
  */
 public interface MetricsFactory {
+
+    /**
+     * Qualifier for context setting indicating if any pull publishers are present.
+     */
+    String PULL_PUBLISHERS_PRESENT = "pull-publishers";
 
     /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -28,6 +29,7 @@ import java.util.function.ToDoubleFunction;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
+import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -39,6 +41,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
@@ -47,7 +50,6 @@ import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exemplars.DefaultExemplarSampler;
@@ -56,6 +58,8 @@ import io.prometheus.client.exemplars.DefaultExemplarSampler;
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
  */
 class MicrometerMetricsFactory implements MetricsFactory {
+
+    private static final System.Logger LOGGER = System.getLogger(MicrometerMetricsFactory.class.getName());
 
     private final Collection<MetersProvider> metersProviders;
 
@@ -179,7 +183,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 globalMeterRegistry.close();
                 meterRegistries.remove(globalMeterRegistry);
             }
-            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
+
+            var meterRegistries = prepareMeterRegistries(metricsConfig);
+            meterRegistries.forEach(Metrics.globalRegistry::add);
+            Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
+                                              meterRegistries.stream()
+                                                      .anyMatch(r -> r instanceof PrometheusMeterRegistry));
+
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                                                .metricsConfig(metricsConfig)
                                                .build());
@@ -298,23 +308,42 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 
-    private void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
-                                          MetricsConfig metricsConfig) {
-        if (compositeMeterRegistry
-                .getRegistries()
-                .stream()
-                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
-            // If we have a non-no-op span context supplier provider we have to create the prometheus meter registry with
-            // some extra constructor arguments so that we can also pass the exemplar sampler with the span context supplier.
-            SpanContextSupplierProvider provider = spanContextSupplierProvider.get();
-            PrometheusMeterRegistry prometheusMeterRegistry = provider instanceof NoOpSpanContextSupplierProvider
+    private List<io.micrometer.core.instrument.MeterRegistry> prepareMeterRegistries(MetricsConfig metricsConfig) {
+        /*
+        If the user specified no publishers, then use an inferred Prometheus one
+        for backward compatibility. If the user specified at least one publisher, then do not
+        provide a default Prometheus one and use only those the user set up that are enabled.
+         */
+        SpanContextSupplierProvider spanCtxSupplierProvider = spanContextSupplierProvider.get();
+
+        var enabledMicrometerPublishers = new ArrayList<io.micrometer.core.instrument.MeterRegistry>();
+        metricsConfig.publishers().stream()
+                .filter(p -> p instanceof MicrometerMetricsPublisher)
+                .filter(MetricsPublisher::enabled)
+                .map(p -> (MicrometerMetricsPublisher) p)
+                .map(p -> p instanceof PrometheusPublisher pp
+                     ? pp.prometheusRegistry().apply(key -> metricsConfig.lookupConfig(key).orElse(null),
+                                                     spanCtxSupplierProvider)
+                        : p.registry().get())
+                .forEach(enabledMicrometerPublishers::add);
+        /*
+        Configured provider handling omits disabled services, so if the user disabled the Prometheus publisher
+        the list of publishers in the build config object is empty. To see
+         */
+        if (!metricsConfig.publishersConfigured()) {
+            enabledMicrometerPublishers.add(spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
                     ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
                     : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
                                                   new CollectorRegistry(),
                                                   io.micrometer.core.instrument.Clock.SYSTEM,
-                                                  new DefaultExemplarSampler(provider.get()));
-            compositeMeterRegistry.add(prometheusMeterRegistry);
+                                                  new DefaultExemplarSampler(spanCtxSupplierProvider.get())));
         }
+
+        if (enabledMicrometerPublishers.isEmpty()) {
+            LOGGER.log(System.Logger.Level.WARNING, "No active Micrometer publishers are configured");
+        }
+        return enabledMicrometerPublishers;
+
     }
 
     private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
