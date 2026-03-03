@@ -39,7 +39,7 @@ ifeval::["{helidon-version-is-release}" == "true"]
 endif::[]
 
 // versions
-:version-plugin-helidon: 4.0.24
+:version-plugin-helidon: 4.0.25
 
 :version-lib-microprofile-api: 6.1
 
