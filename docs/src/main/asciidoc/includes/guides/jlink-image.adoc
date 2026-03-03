@@ -167,7 +167,7 @@ mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 ==== For Java 25 or later
 [source,bash]
 ----
-mvn package -Pjlink-image -Djlink.image.addAotCache=false
+mvn package -Pjlink-image -Djlink.image.aotCache=false
 ----
 
 For more information on available configuration options see the
