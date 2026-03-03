@@ -237,8 +237,10 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
                             .addContent("().")
                             .addContent(decoratorSetMethodName())
                             .addContent("(this, ")
+                            .addContent(collectionType)
+                            .addContent(".copyOf(")
                             .addContent(name)
-                            .addContentLine(");"));
+                            .addContentLine("));"));
 
             extraSetterContent(it);
             it.addContentLine("this." + name + ".clear();")
@@ -283,8 +285,10 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
                             .addContent("().")
                             .addContent(decoratorAddMethodName())
                             .addContent("(this, ")
+                            .addContent(collectionType)
+                            .addContent(".copyOf(")
                             .addContent(name)
-                            .addContentLine(");"));
+                            .addContentLine("));"));
 
             it.addContentLine("this." + name + ".addAll(" + name + ");")
                     .addContentLine("return self();");
