@@ -39,6 +39,7 @@ module io.helidon.telemetry.otelconfig {
     requires io.opentelemetry.extension.trace.propagation;
     requires io.opentelemetry.sdk;
     requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.logs;
     requires io.opentelemetry.sdk.metrics;
     requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.semconv;
@@ -55,6 +56,7 @@ module io.helidon.telemetry.otelconfig {
     requires static io.opentelemetry.exporter.logging.otlp;
     requires static io.opentelemetry.exporter.otlp;
     requires static io.opentelemetry.exporter.zipkin;
+    requires io.opentelemetry.common;
 
     exports io.helidon.telemetry.otelconfig;
 

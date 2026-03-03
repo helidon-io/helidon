@@ -75,7 +75,7 @@ class OpenTelemetryTracingConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("processorConfigs")
-        static SpanProcessorConfig createProcessorConfigs(Config config) {
+        static ProcessorConfig createProcessorConfigs(Config config) {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 

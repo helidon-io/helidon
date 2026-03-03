@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+
 /**
- * Span Processor type. Batch is default for production.
+ * Settings for a log record exporter.
  */
-public enum SpanProcessorType {
-
-    /*
-    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
-    works.
-     */
+@Prototype.Configured
+@Prototype.Blueprint
+interface LogRecordExporterConfigBlueprint extends OtlpExporterConfigBlueprint {
 
     /**
-     * Simple Span Processor.
+     * Logger exporter type.
+     *
+     * @return exporter type
      */
-    SIMPLE,
-    /**
-     * Batch Span Processor.
-     */
-    BATCH;
+    @Option.Configured
+    @Option.Default("DEFAULT")
+    LogExporterType type();
 
 }
-

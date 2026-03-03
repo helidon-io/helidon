@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.telemetry.otelconfig;
 
 /**
- * Types of OpenTelemetry span exporters supported via Helidon {@code tracing} configuration.
+ * Types of OpenTelemetry log exporters supported via Helidon telemetry logging configuration.
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
  */
-public enum ExporterType {
+public enum LogExporterType {
 
     /*
     Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
@@ -29,18 +28,13 @@ public enum ExporterType {
      */
 
     /**
-     * OpenTelemetry Protocol {@link io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter} and
-     * {@link io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter}.
+     * OpenTelemetry Protocol {@link io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter} and
+     * {@link io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporterBuilder}.
      */
     OTLP, // There are different defaults for the different subtypes of OTLP exporters.
 
     /**
-     * Zipkin {@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}.
-     */
-    ZIPKIN,
-
-    /**
-     * Console ({@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
+     * Console {@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
      */
     CONSOLE,
 
@@ -49,6 +43,5 @@ public enum ExporterType {
      */
     LOGGING_OTLP;
 
-    static final ExporterType DEFAULT = OTLP;
-
+    static final LogExporterType DEFAULT = OTLP;
 }

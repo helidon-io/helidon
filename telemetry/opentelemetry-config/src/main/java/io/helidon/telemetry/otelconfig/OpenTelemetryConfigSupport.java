@@ -71,6 +71,20 @@ final class OpenTelemetryConfigSupport {
             openTelemetrySdkBuilder.setMeterProvider(sdkMeterProviderBuilder.build());
         }
 
+        if (target.loggingConfig().isPresent()) {
+            var loggingConfig = target.loggingConfig().get();
+            var loggingBuilderInfo = loggingConfig.loggingBuilderInfo();
+            var sdkLoggerProviderBuilder = loggingBuilderInfo.sdkLoggerProviderBuilder();
+
+            var attributesBuilder = loggingConfig.loggingBuilderInfo().attributesBuilder();
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
+
+            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            sdkLoggerProviderBuilder.setResource(resource);
+
+            openTelemetrySdkBuilder.setLoggerProvider(sdkLoggerProviderBuilder.build());
+        }
+
         var sdk = openTelemetrySdkBuilder.build();
         target.openTelemetrySdk(sdk);
         return sdk;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,9 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.sdk.logs.SdkLoggerProviderBuilder;
 
-@Prototype.Configured
-@Prototype.Blueprint
-interface SpanExporterConfigBlueprint {
-
-    /**
-     * Span exporter type.
-     *
-     * @return exporter type
-     */
-    @Option.Configured
-    @Option.Default("DEFAULT")
-    SpanExporterType type();
-
+record LoggingBuilderInfo(SdkLoggerProviderBuilder sdkLoggerProviderBuilder,
+                          AttributesBuilder attributesBuilder) {
 }

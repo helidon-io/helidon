@@ -60,7 +60,7 @@ interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
     @Option.Access("")
     @Option.Configured("processors")
     @Option.Singular
-    List<SpanProcessorConfig> processorConfigs();
+    List<ProcessorConfig> processorConfigs();
 
     /**
      * Constructed span processors.
@@ -74,7 +74,7 @@ interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
      * Span exporters.
      * <p>
      * The key in the map is a unique name--of the user's choice--for the exporter config settings.
-     * The {@link SpanProcessorConfig#exporters()} config setting for a processor config specifies zero
+     * The {@link ProcessorConfig#exporters()} config setting for a processor config specifies zero
      * or more of these names to associate the exporters built from the exporter configs with the processor
      * built from the processor config.
      *

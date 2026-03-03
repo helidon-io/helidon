@@ -114,14 +114,19 @@ class OpenTelemetryMetricsConfigSupport {
         var otlpExporterConfig = OtlpExporterConfig.create(config);
         var protocolType = otlpExporterConfig.protocol().orElse(OtlpExporterProtocolType.DEFAULT);
         return switch (protocolType) {
-            case HTTP_PROTO -> createHttpProtobufMetricExporter(metricExporterConfig, otlpExporterConfig);
+            case HTTP_PROTO -> createHttpProtobufMetricExporter(metricExporterConfig, OtlpHttpExporterConfig.create(config));
             case GRPC -> createGrpcMetricExporter(metricExporterConfig, otlpExporterConfig);
         };
     }
 
     private static MetricExporter createHttpProtobufMetricExporter(MetricExporterConfig metricExporterConfig,
-                                                                   OtlpExporterConfig exporterConfig) {
+                                                                   OtlpHttpExporterConfig exporterConfig) {
+
+
         var builder = OtlpHttpMetricExporter.builder();
+
+        OtlpExporterConfigSupport.CustomMethods.apply(exporterConfig, builder::setProxyOptions);
+
         OtlpExporterConfigSupport.CustomMethods.apply(exporterConfig,
                                                       builder::setEndpoint,
                                                       builder::setCompression,

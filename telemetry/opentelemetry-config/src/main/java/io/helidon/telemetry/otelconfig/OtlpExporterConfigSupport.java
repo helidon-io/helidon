@@ -29,12 +29,18 @@ import io.helidon.config.Config;
 
 import io.opentelemetry.api.metrics.MeterProvider;
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
+import io.opentelemetry.exporter.logging.SystemOutLogRecordExporter;
+import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter;
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter;
+import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
+import io.opentelemetry.sdk.common.export.ProxyOptions;
 import io.opentelemetry.sdk.common.export.RetryPolicy;
+import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 class OtlpExporterConfigSupport {
@@ -52,15 +58,26 @@ class OtlpExporterConfigSupport {
             return OtlpExporterProtocolType.from(config);
         }
 
-        @Prototype.ConfigFactoryMethod("spanExporter")
+        @Prototype.ConfigFactoryMethod
         static SpanExporter createSpanExporter(Config config) {
             SpanExporterConfig exporterConfig = SpanExporterConfig.create(config);
 
             return switch (exporterConfig.type()) {
-                case ExporterType.ZIPKIN -> createZipkinSpanExporter(config);
-                case ExporterType.CONSOLE -> LoggingSpanExporter.create();
-                case ExporterType.LOGGING_OTLP -> OtlpJsonLoggingSpanExporter.create();
-                case ExporterType.OTLP -> createOtlpSpanExporter(config);
+                case SpanExporterType.ZIPKIN -> createZipkinSpanExporter(config);
+                case SpanExporterType.CONSOLE -> LoggingSpanExporter.create();
+                case SpanExporterType.LOGGING_OTLP -> OtlpJsonLoggingSpanExporter.create();
+                case SpanExporterType.OTLP -> createOtlpSpanExporter(config);
+            };
+        }
+
+        @Prototype.ConfigFactoryMethod
+        static LogRecordExporter createLogRecordExporter(Config config) {
+            LogRecordExporterConfig exporterConfig = LogRecordExporterConfig.create(config);
+
+            return switch (exporterConfig.type()) {
+                case CONSOLE -> SystemOutLogRecordExporter.create();
+                case LOGGING_OTLP -> OtlpJsonLoggingLogRecordExporter.create();
+                case OTLP -> createOtlpLogRecordExporter(config);
             };
         }
 
@@ -83,8 +100,17 @@ class OtlpExporterConfigSupport {
             OtlpExporterConfig exporterConfig = OtlpExporterConfig.create(config);
             OtlpExporterProtocolType protocolType = exporterConfig.protocol().orElse(OtlpExporterProtocolType.DEFAULT);
             return switch (protocolType) {
-                case HTTP_PROTO -> createHttpProtobufSpanExporter(exporterConfig);
+                case HTTP_PROTO -> createHttpProtobufSpanExporter(OtlpHttpExporterConfig.create(config));
                 case GRPC -> createGrpcSpanExporter(exporterConfig);
+            };
+        }
+
+        static LogRecordExporter createOtlpLogRecordExporter(Config config) {
+            OtlpExporterConfig exporterConfig = OtlpExporterConfig.create(config);
+            OtlpExporterProtocolType protocolType = exporterConfig.protocol().orElse(OtlpExporterProtocolType.DEFAULT);
+            return switch (protocolType) {
+                case HTTP_PROTO -> createHttpProtobufLogRecordExporter(OtlpHttpExporterConfig.create(config));
+                case GRPC -> createGrpcLogRecordExporter(exporterConfig);
             };
         }
 
@@ -105,12 +131,54 @@ class OtlpExporterConfigSupport {
         }
 
         @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them
-        static SpanExporter createHttpProtobufSpanExporter(OtlpExporterConfig exporterConfig) {
+        static SpanExporter createHttpProtobufSpanExporter(OtlpHttpExporterConfig exporterConfig) {
             var builder = OtlpHttpSpanExporter.builder();
+
+            apply(exporterConfig, builder::setProxy);
+
             apply(exporterConfig,
                   builder::setEndpoint,
                   builder::setCompression,
                   builder::setTimeout,
+                  builder::setConnectTimeout,
+                  builder::addHeader,
+                  builder::setRetryPolicy,
+                  builder::setClientTls,
+                  builder::setTrustedCertificates,
+                  builder::setSslContext,
+                  builder::setMeterProvider);
+
+            return builder.build();
+        }
+
+        static LogRecordExporter createHttpProtobufLogRecordExporter(OtlpHttpExporterConfig exporterConfig) {
+            var builder = OtlpHttpLogRecordExporter.builder();
+
+            apply(exporterConfig, builder::setProxyOptions);
+
+            apply(exporterConfig,
+                  builder::setEndpoint,
+                  builder::setCompression,
+                  builder::setTimeout,
+                  builder::setConnectTimeout,
+                  builder::addHeader,
+                  builder::setRetryPolicy,
+                  builder::setClientTls,
+                  builder::setTrustedCertificates,
+                  builder::setSslContext,
+                  builder::setMeterProvider);
+
+            return builder.build();
+        }
+
+        static LogRecordExporter createGrpcLogRecordExporter(OtlpExporterConfig exporterConfig) {
+            var builder = OtlpGrpcLogRecordExporter.builder();
+
+            apply(exporterConfig,
+                  builder::setEndpoint,
+                  builder::setCompression,
+                  builder::setTimeout,
+                  builder::setConnectTimeout,
                   builder::addHeader,
                   builder::setRetryPolicy,
                   builder::setClientTls,
@@ -128,6 +196,7 @@ class OtlpExporterConfigSupport {
                   builder::setEndpoint,
                   builder::setCompression,
                   builder::setTimeout,
+                  builder::setConnectTimeout,
                   builder::addHeader,
                   builder::setRetryPolicy,
                   builder::setClientTls,
@@ -143,6 +212,7 @@ class OtlpExporterConfigSupport {
                           Consumer<String> doEndpoint,
                           Consumer<String> doCompression,
                           Consumer<Duration> doTimeout,
+                          Consumer<Duration> doConnectTimeout,
                           BiConsumer<String, String> addHeader,
                           Consumer<RetryPolicy> doRetryPolicy,
                           BiConsumer<byte[], byte[]> doClientTls,
@@ -153,6 +223,7 @@ class OtlpExporterConfigSupport {
                   doEndpoint,
                   doCompression,
                   doTimeout,
+                  doConnectTimeout,
                   addHeader,
                   doRetryPolicy,
                   doClientTls,
@@ -160,11 +231,18 @@ class OtlpExporterConfigSupport {
                   doSslContext);
 
         }
+
+        static void apply(OtlpHttpExporterConfig target,
+                          Consumer<ProxyOptions> doProxyOptions) {
+            target.proxyOptions().ifPresent(doProxyOptions);
+        }
+
         @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them
         static void apply(OtlpExporterConfig target,
                           Consumer<String> doEndpoint,
                           Consumer<String> doCompression,
                           Consumer<Duration> doTimeout,
+                          Consumer<Duration> doConnectTimeout,
                           BiConsumer<String, String> addHeader,
                           Consumer<RetryPolicy> doRetryPolicy,
                           BiConsumer<byte[], byte[]> doClientTls,
@@ -179,6 +257,7 @@ class OtlpExporterConfigSupport {
 
             target.headers().forEach(addHeader);
             target.timeout().ifPresent(doTimeout);
+            target.connectTimeout().ifPresent(doConnectTimeout);
             target.retryPolicy().ifPresent(doRetryPolicy);
 
             target.clientTlsPrivateKeyPem()

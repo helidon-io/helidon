@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,30 +22,30 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Generic configuration for a {@link io.opentelemetry.sdk.trace.SpanProcessor}, linked to a
- * {@link io.opentelemetry.sdk.trace.export.SpanExporter} by its name in the configuration.
+ * Generic configuration for a processor such as a {@link io.opentelemetry.sdk.trace.SpanProcessor}, linked to an
+ * exporter such as a {@link io.opentelemetry.sdk.trace.export.SpanExporter} by its name in the configuration.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface SpanProcessorConfigBlueprint {
+interface ProcessorConfigBlueprint {
 
     /**
-     * Name(s) of the span exporter(s) this span processor should use; specifying no names uses all configured exporters (or
+     * Name(s) of the  exporter(s) this processor should use; specifying no names uses all configured exporters (or
      * if no exporters are configured, the default OpenTelemetry exporter(s)).
      * <p>
      * Each name must be the name of one of the configured {@link OpenTelemetryTracingConfig#exporterConfigs()}.
      *
-     * @return span exporter name
+     * @return exporter name
      */
     @Option.Configured
     List<String> exporters();
 
     /**
-     * Span processor type.
-     * @return span processor type
+     * Processor type.
+     * @return processor type
      */
     @Option.Configured
     @Option.Required
-    SpanProcessorType type();
+    ProcessorType type();
 
 }
