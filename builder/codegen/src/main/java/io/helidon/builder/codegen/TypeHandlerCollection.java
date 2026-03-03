@@ -356,16 +356,19 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
     @Override
     Optional<GeneratedMethod> prepareBuilderSingularAddConsumer(Javadoc getterJavadoc) {
         if (option().singular().isEmpty()) {
+            // not a singular option, this setter is not desired
             return Optional.empty();
         }
 
         if (option().prototypedBy().isEmpty()
                 && option().builderInfo().isEmpty()
                 && option().runtimeType().map(RuntimeTypeInfo::optionBuilder).isEmpty()) {
+            // this option is not backed by a prototype with builder, this method cannot be done
             return Optional.empty();
         }
 
         if (option().prototypedBy().isPresent()) {
+            // explicit prototypedBy, use that annotation value
             return prepareSetterConsumerPrototypedBy(getterJavadoc, option().singular().get(), option().prototypedBy().get());
         }
 
