@@ -35,6 +35,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class LoggerPrototypeTest {
     @Test
+    public void testConsumer() {
+        // make sure the consumer methods for builders are generated
+        var using = UsingConfig.builder()
+                .logger(l -> l.name(LoggerPrototypeTest.class.getName()))
+                .addBaseLogger(l -> l.name(LoggerPrototypeTest.class.getName()))
+                .build();
+
+        assertThat(using.logger().getName(), is(LoggerPrototypeTest.class.getName()));
+        assertThat(using.baseLoggers(), hasSize(1));
+        assertThat(using.baseLoggers().getFirst().getName(), is(LoggerPrototypeTest.class.getName()));
+    }
+    @Test
     public void testFactoryPrototypeFromConfig() {
         Config config = Config.just(ConfigSources.classpath("/application.yaml"));
         var logger = LoggerConfig.create(config.get("test-1.logger"))
@@ -55,7 +67,7 @@ public class LoggerPrototypeTest {
     }
 
     @Test
-    public void testGeneratedMetadata() throws IOException {
+    public void \testGeneratedMetadata() throws IOException {
         String configMetaLocation = MetadataConstants.LOCATION + "/" + MetadataConstants.CONFIG_METADATA_FILE;
 
         try (var stream = LoggerConfigBlueprint.class.getClassLoader()
