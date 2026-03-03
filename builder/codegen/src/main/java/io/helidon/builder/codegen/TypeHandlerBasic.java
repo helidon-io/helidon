@@ -469,7 +469,7 @@ class TypeHandlerBasic implements TypeHandler {
     }
 
     Optional<GeneratedMethod> prepareSetterPrototypeOfRuntimeType(Javadoc getterJavadoc) {
-        if (option().runtimeType().isEmpty() && option.prototypedBy().isEmpty()) {
+        if (option().runtimeType().isEmpty() && option().prototypedBy().isEmpty()) {
             return Optional.empty();
         }
 
@@ -480,8 +480,8 @@ class TypeHandlerBasic implements TypeHandler {
         String methodName;
         TypeName factoryType;
 
-        if (option.prototypedBy().isPresent()) {
-            parameterType = fixPackage(option.prototypedBy().get());
+        if (option().prototypedBy().isPresent()) {
+            parameterType = fixPackage(option().prototypedBy().get());
             methodName = "build";
             factoryType = null;
         } else {

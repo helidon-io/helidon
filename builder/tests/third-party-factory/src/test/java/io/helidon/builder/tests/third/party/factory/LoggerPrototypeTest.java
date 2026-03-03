@@ -38,14 +38,16 @@ public class LoggerPrototypeTest {
     public void testConsumer() {
         // make sure the consumer methods for builders are generated
         var using = UsingConfig.builder()
-                .logger(l -> l.name(LoggerPrototypeTest.class.getName()))
-                .addBaseLogger(l -> l.name(LoggerPrototypeTest.class.getName()))
+                .logger(l -> l.name(LoggerPrototypeTest.First.class.getName()))
+                .addBaseLogger(l -> l.name(LoggerPrototypeTest.First.class.getName()))
+                .stringOption("Something")
                 .build();
 
-        assertThat(using.logger().getName(), is(LoggerPrototypeTest.class.getName()));
+        assertThat(using.logger().getName(), is(LoggerPrototypeTest.First.class.getName()));
         assertThat(using.baseLoggers(), hasSize(1));
-        assertThat(using.baseLoggers().getFirst().getName(), is(LoggerPrototypeTest.class.getName()));
+        assertThat(using.baseLoggers().getFirst().getName(), is(LoggerPrototypeTest.First.class.getName()));
     }
+
     @Test
     public void testFactoryPrototypeFromConfig() {
         Config config = Config.just(ConfigSources.classpath("/application.yaml"));
@@ -67,7 +69,7 @@ public class LoggerPrototypeTest {
     }
 
     @Test
-    public void \testGeneratedMetadata() throws IOException {
+    public void testGeneratedMetadata() throws IOException {
         String configMetaLocation = MetadataConstants.LOCATION + "/" + MetadataConstants.CONFIG_METADATA_FILE;
 
         try (var stream = LoggerConfigBlueprint.class.getClassLoader()
@@ -118,5 +120,11 @@ public class LoggerPrototypeTest {
             var annotated = loggerStruct.stringValue("annotatedType");
             assertThat(annotated, optionalValue(is("io.helidon.builder.tests.third.party.factory.LoggerConfig")));
         }
+    }
+
+    static class First {
+    }
+
+    static class Second {
     }
 }

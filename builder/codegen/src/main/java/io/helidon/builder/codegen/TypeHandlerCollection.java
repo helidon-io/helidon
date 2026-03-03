@@ -355,9 +355,18 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
 
     @Override
     Optional<GeneratedMethod> prepareBuilderSingularAddConsumer(Javadoc getterJavadoc) {
-        if (option().singular().isEmpty() || option().builderInfo().isEmpty()) {
+        if (option().singular().isEmpty()) {
             return Optional.empty();
         }
+
+        if (option().prototypedBy().isEmpty() && option().builderInfo().isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (option().prototypedBy().isPresent()) {
+            return prepareSetterConsumerPrototypedBy(getterJavadoc, option().singular().get(), option().prototypedBy().get());
+        }
+
         TypeName returnType = Utils.builderReturnType();
 
         OptionSingular optionSingular = option().singular().get();
@@ -542,6 +551,65 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
         content.addContent("new ")
                 .addContent(collectionImplType.genericTypeName())
                 .addContent("<>");
+    }
+
+    private Optional<GeneratedMethod> prepareSetterConsumerPrototypedBy(Javadoc getterJavadoc,
+                                                                        OptionSingular optionSingular,
+                                                                        TypeName prototypeType) {
+
+        TypeName returnType = Utils.builderReturnType();
+        String methodName = optionSingular.methodName();
+
+        TypeName prototype = fixPackage(prototypeType);
+
+        TypeName builderType = TypeName.builder()
+                .className("Builder")
+                .addEnclosingName(prototype.className())
+                .packageName(prototype.packageName())
+                .build();
+
+        TypeName paramType = TypeName.builder()
+                .type(Consumer.class)
+                .addTypeArgument(builderType)
+                .build();
+
+        String paramName = "consumer";
+        Javadoc setterJavadoc = setterJavadoc(getterJavadoc, paramName, "consumer of builder for ");
+
+        var method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .accessModifier(option().accessModifier())
+                .typeName(returnType)
+                .elementName(methodName)
+                .update(this::deprecation)
+                .update(it -> option().annotations().forEach(it::addAnnotation));
+
+        method.addParameterArgument(param -> param
+                .kind(ElementKind.PARAMETER)
+                .typeName(paramType)
+                .elementName(paramName)
+        );
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(" + paramName + ");");
+
+            it.addContent("var builder = ")
+                    .addContent(prototype)
+                    .addContentLine(".builder();");
+
+
+            // decorator and add will be called as part of singular setter
+            it.addContentLine("consumer.accept(builder);")
+                    .addContentLine("this." + methodName + "(builder.build());")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.ofNullable(GeneratedMethod.builder()
+                                           .method(method.build())
+                                           .javadoc(setterJavadoc)
+                                           .contentBuilder(contentConsumer)
+                                           .build());
     }
 
 }
