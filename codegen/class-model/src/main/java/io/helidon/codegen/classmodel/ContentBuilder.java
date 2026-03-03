@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,12 +74,24 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
 
     /**
      * Adds the provided literal as content, enclosed in double quotes.
+     * <p>
+     * In case the {@code literal} contains an end of line character, the output will be a text-block (multiline string),
+     * otherwise it will be a quotes string, with escaped tabs, quotes, and backslashes.
      *
      * @param literal the literal string to be added as content
      * @return updated builder instance
      */
     default T addContentLiteral(String literal) {
-        return addContent("\"" + literal + "\"");
+        if (literal.contains("\n")) {
+            // the simplest solution is to use multiline string
+            return addContent("\"\"\"\n" + literal + "\"\"\"");
+        }
+        // escape tabs, double quote, and backslashes
+        String toWrite = literal;
+        toWrite = toWrite.replace("\\", "\\\\");
+        toWrite = toWrite.replace("\"", "\\\"");
+        toWrite = toWrite.replace("\t", "\\t");
+        return addContent("\"" + toWrite + "\"");
     }
 
     /**
