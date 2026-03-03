@@ -359,7 +359,9 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
             return Optional.empty();
         }
 
-        if (option().prototypedBy().isEmpty() && option().builderInfo().isEmpty()) {
+        if (option().prototypedBy().isEmpty()
+                && option().builderInfo().isEmpty()
+                && option().runtimeType().map(RuntimeTypeInfo::optionBuilder).isEmpty()) {
             return Optional.empty();
         }
 
@@ -373,7 +375,20 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
         String methodName = optionSingular.methodName();
 
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
-        OptionBuilder optionBuilder = option().builderInfo().get();
+        OptionBuilder optionBuilder;
+        if (option().builderInfo().isPresent()) {
+            optionBuilder = option().builderInfo().get();
+        } else {
+            var runtimeType = option().runtimeType().get();
+            if (runtimeType.factoryMethod().isPresent()) {
+                // we do not have a builder that builds the runtime type, though we could still create the
+                // setter with consumer, ignoring as we now support the `prototypedBy` approach
+                return Optional.empty();
+            }
+            optionBuilder = option().runtimeType().get()
+                    .optionBuilder();
+        }
+
         TypeName builderType = optionBuilder.builderType();
         String builderMethod = optionBuilder.builderMethodName();
         String buildMethod = optionBuilder.buildMethodName();
