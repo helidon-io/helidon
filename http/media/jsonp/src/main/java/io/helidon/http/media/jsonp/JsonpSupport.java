@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,28 @@
 
 package io.helidon.http.media.jsonp;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
-import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.MediaSupportBase;
 
-import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonStructure;
-import jakarta.json.JsonWriterFactory;
 
 /**
  * Media support implementation for JSON Processing media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportConfig> {
+public class JsonpSupport extends MediaSupportBase<JsonpSupportConfig> implements RuntimeType.Api<JsonpSupportConfig> {
     /**
      * Json object generic type.
      */
@@ -54,19 +47,19 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
      */
     public static final GenericType<JsonArray> JSON_ARRAY_TYPE = GenericType.create(JsonArray.class);
 
-    private static final JsonReaderFactory READER_FACTORY = Json.createReaderFactory(Map.of());
-    private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Map.of());
+    static final String ID = "jsonp";
+
+    private static final JsonpSupportConfig DEFAULT_CONFIG = JsonpSupportConfig.create();
+    private static final System.Logger LOGGER = System.getLogger(JsonpSupport.class.getName());
 
     private final JsonpReader reader;
     private final JsonpWriter writer;
-    private final String name;
-    private final JsonpSupportConfig jsonpSupportConfig;
 
     private JsonpSupport(JsonpSupportConfig jsonpSupportConfig) {
-        this.jsonpSupportConfig = jsonpSupportConfig;
-        this.name = jsonpSupportConfig.name();
-        this.reader = new JsonpReader(jsonpSupportConfig.readerFactory());
-        this.writer = new JsonpWriter(jsonpSupportConfig.writerFactory());
+        super(jsonpSupportConfig, ID);
+
+        this.reader = new JsonpReader(jsonpSupportConfig);
+        this.writer = new JsonpWriter(jsonpSupportConfig);
     }
 
     /**
@@ -83,9 +76,40 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
      *
      * @param config must not be {@code null}
      * @return a new {@link JsonpSupport}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    @SuppressWarnings("removal")
+    public static MediaSupport create(io.helidon.common.config.Config config) {
+        return create(config, ID);
+    }
+
+    /**
+     * Creates a new {@link JsonpSupport}.
+     *
+     * @param config must not be {@code null}
+     * @return a new {@link JsonpSupport}
      */
     public static MediaSupport create(Config config) {
-        return create(config, "jsonp");
+        return create(config, ID);
+    }
+
+    /**
+     * Creates a new named {@link JsonpSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name name of the support
+     * @return a new {@link JsonpSupport}
+     * @deprecated use {@link #create(io.helidon.config.Config, java.lang.String)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    @SuppressWarnings("removal")
+    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        return builder()
+                .name(name)
+                .build();
     }
 
     /**
@@ -98,7 +122,10 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
     public static MediaSupport create(Config config, String name) {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
-        return builder().name(name).build();
+        return builder()
+                .name(name)
+                .config(config)
+                .build();
     }
 
     /**
@@ -138,7 +165,7 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
      * @return a writer to write JSON-P objects
      */
     public static <T extends JsonStructure> EntityWriter<T> serverResponseWriter() {
-        return new JsonpWriter<>(WRITER_FACTORY);
+        return new JsonpWriter<>(DEFAULT_CONFIG);
     }
 
     /**
@@ -148,27 +175,18 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
      * @return a reader to read JSON-P objects
      */
     public static <T extends JsonStructure> EntityReader<T> serverRequestReader() {
-        return new JsonpReader<>(READER_FACTORY);
-    }
-
-    @Override
-    public String name() {
-        return name;
+        return new JsonpReader<>(DEFAULT_CONFIG);
     }
 
     @Override
     public String type() {
-        return "jsonp";
+        return ID;
     }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (isSupportedType(type)) {
-            if (requestHeaders.contentType()
-                    .map(this::isMediaTypeSupported)
-                    .orElse(true)) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
+        if (matchesServerRequest(type, requestHeaders)) {
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
         }
         return ReaderResponse.unsupported();
     }
@@ -178,8 +196,13 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
 
-        if (isSupportedType(type)) {
+        if (matchesServerResponse(type, requestHeaders, responseHeaders)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        }
+
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE) && canSerialize(type)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Refusing writer for " + type.rawType().getName()
+                    + ", request headers: " + requestHeaders + ", response headers: " + responseHeaders);
         }
 
         return WriterResponse.unsupported();
@@ -189,17 +212,9 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
-        if (isSupportedType(type)) {
-            List<HttpMediaType> acceptedTypes = requestHeaders.acceptedTypes();
-            // check if accepted
-            if (acceptedTypes.isEmpty()) {
-                return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-            }
-            for (HttpMediaType acceptedType : acceptedTypes) {
-                if (isMediaTypeSupported(acceptedType)) {
-                    return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-                }
-            }
+
+        if (matchesClientResponse(type, responseHeaders)) {
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
         }
 
         return ReaderResponse.unsupported();
@@ -207,21 +222,25 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        // if the type is JsonStructure, we support it and do not care about content type
-        // you provide json, you get json...
-        if (isSupportedType(type)) {
+        if (matchesClientRequest(type, requestHeaders)) {
             return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
         }
         return WriterResponse.unsupported();
     }
 
-    boolean isSupportedType(GenericType<?> type) {
+    @Override
+    protected boolean canSerialize(GenericType<?> type) {
         return JsonStructure.class.isAssignableFrom(type.rawType());
     }
 
-    boolean isMediaTypeSupported(HttpMediaType mediaType) {
-        return mediaType.test(MediaTypes.APPLICATION_JSON)
-                || mediaType.test(MediaTypes.APPLICATION_JSON_PATCH_JSON);
+    @Override
+    protected boolean canDeserialize(GenericType<?> type) {
+        return canSerialize(type);
+    }
+
+    @Override
+    public JsonpSupportConfig prototype() {
+        return config();
     }
 
     <T> EntityReader<T> reader() {
@@ -231,24 +250,4 @@ public class JsonpSupport implements MediaSupport, RuntimeType.Api<JsonpSupportC
     <T> EntityWriter<T> writer() {
         return writer;
     }
-
-    @Override
-    public JsonpSupportConfig prototype() {
-        return jsonpSupportConfig;
-    }
-
-    static class Decorator implements Prototype.BuilderDecorator<JsonpSupportConfig.BuilderBase<?, ?>> {
-
-        @Override
-        public void decorate(JsonpSupportConfig.BuilderBase<?, ?> target) {
-            if (target.readerFactory().isEmpty()) {
-                target.readerFactory(READER_FACTORY);
-            }
-            if (target.writerFactory().isEmpty()) {
-                target.writerFactory(WRITER_FACTORY);
-            }
-        }
-
-    }
-
 }

@@ -25,7 +25,8 @@
     </parent>
 
     <artifactId>helidon-http-media-json-binding</artifactId>
-    <name>Helidon HTTP Media Helidon JSON Binding</name>
+    <name>Helidon HTTP Media JSON Binding</name>
+    <description>Helidon JSON Binding Media support</description>
 
     <dependencies>
         <dependency>

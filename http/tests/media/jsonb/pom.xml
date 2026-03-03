@@ -24,7 +24,7 @@
         <version>4.4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-http-tests-tegration-media-jsonb</artifactId>
+    <artifactId>helidon-http-tests-media-jsonb</artifactId>
     <name>Helidon HTTP Tests Media JSON-B</name>
 
     <dependencies>

@@ -22,23 +22,18 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.media.MediaSupportConfig;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * Configuration of Helidon JSON media support.
  */
-@Prototype.Configured(value = JsonSupport.HELIDON_JSON_TYPE, root = false)
+@Prototype.Configured(value = JsonSupport.ID, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
 @Prototype.Blueprint
-@Prototype.CustomMethods(JsonConfigSupport.CustomMethods.class)
-interface JsonSupportConfigBlueprint extends Prototype.Factory<JsonSupport> {
-    /**
-     * Name of the support.
-     *
-     * @return name of the support
-     */
-    @Option.Default(JsonSupport.HELIDON_JSON_TYPE)
-    @Option.Configured
+interface JsonSupportConfigBlueprint extends MediaSupportConfig, Prototype.Factory<JsonSupport> {
+    @Option.Default(JsonSupport.ID)
+    @Override
     String name();
 
     /**
@@ -51,10 +46,9 @@ interface JsonSupportConfigBlueprint extends Prototype.Factory<JsonSupport> {
      *
      * @return accepted media types
      */
-    @Option.Singular
-    @Option.Configured
     @Option.DefaultCode("@java.util.Set@.of(@io.helidon.common.media.type.MediaTypes@.APPLICATION_JSON, @io.helidon.common"
             + ".media.type.MediaTypes@.APPLICATION_JSON_PATCH_JSON)")
+    @Override
     Set<MediaType> acceptedMediaTypes();
 
     /**
@@ -62,7 +56,7 @@ interface JsonSupportConfigBlueprint extends Prototype.Factory<JsonSupport> {
      *
      * @return content type to use, defaults to {@link io.helidon.http.HttpMediaTypes#JSON_UTF_8}
      */
-    @Option.Configured
     @Option.DefaultCode("@io.helidon.http.HttpMediaTypes@.JSON_UTF_8")
+    @Override
     HttpMediaType contentType();
 }

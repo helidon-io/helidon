@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.helidon.http.media.gson;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -35,12 +35,13 @@ public class GsonMediaSupportProvider implements MediaSupportProvider, Weighted 
 
     @Override
     public String configKey() {
-        return "gson";
+        return GsonSupport.ID;
     }
 
+    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(Config config, String name) {
-        return GsonSupport.create(config, name);
+    public MediaSupport create(io.helidon.common.config.Config config, String name) {
+        return GsonSupport.create(Config.config(config), name);
     }
 
     @Override

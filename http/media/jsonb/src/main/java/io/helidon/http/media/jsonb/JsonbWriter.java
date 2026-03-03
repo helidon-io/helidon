@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,22 +22,19 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.EntityWriterBase;
 
 import jakarta.json.bind.Jsonb;
 
-class JsonbWriter<T> implements EntityWriter<T> {
+class JsonbWriter<T> extends EntityWriterBase<T> {
     private final Jsonb jsonb;
 
-    JsonbWriter(Jsonb jsonb) {
+    JsonbWriter(JsonbSupportConfig config, Jsonb jsonb) {
+        super(config);
         this.jsonb = jsonb;
     }
 
@@ -48,34 +45,31 @@ class JsonbWriter<T> implements EntityWriter<T> {
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
 
-        responseHeaders.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
 
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                Optional<String> charset = acceptedType.charset();
-                if (charset.isPresent()) {
-                    Charset characterSet = Charset.forName(charset.get());
-                    write(type, object, new OutputStreamWriter(outputStream, characterSet));
-                } else {
-                    write(type, object, outputStream);
-                }
-                return;
-            }
+        if (charset.isPresent()) {
+            Charset characterSet = charset.get();
+            write(type, object, new OutputStreamWriter(outputStream, characterSet));
+        } else {
+            write(type, object, outputStream);
         }
 
-        write(type, object, outputStream);
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        headers.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
-        write(type, object, outputStream);
+        var charset = clientRequestContentTypeAndCharset(headers);
+
+        if (charset.isPresent()) {
+            write(type, object, new OutputStreamWriter(outputStream, charset.get()));
+        } else {
+            write(type, object, outputStream);
+        }
     }
 
     private void write(GenericType<T> type, T object, Writer out) {
-        jsonb.toJson(object, type.type(), out);
-        try {
-            out.flush();
+        try (out) {
+            jsonb.toJson(object, type.type(), out);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

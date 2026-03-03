@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,25 @@
  */
 package io.helidon.http.media.gson;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
-import java.util.Optional;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.EntityWriterBase;
 
 import com.google.gson.Gson;
 
-class GsonWriter<T> implements EntityWriter<T> {
+class GsonWriter<T> extends EntityWriterBase<T> {
     private final Gson gson;
 
-    GsonWriter(Gson gson) {
+    GsonWriter(GsonSupportConfig config, Gson gson) {
+        super(config);
+
         this.gson = gson;
     }
 
@@ -42,47 +42,41 @@ class GsonWriter<T> implements EntityWriter<T> {
                       OutputStream outputStream,
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
-        responseHeaders.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()){
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                Optional<String> charset = acceptedType.charset();
-                if (charset.isPresent()) {
-                    Charset characterSet = Charset.forName(charset.get());
-                    write(type, object, new OutputStreamWriter(outputStream, characterSet));
-                } else {
-                    write(type, object, outputStream);
-                }
-                return;
-            }
-        }
-    }
 
-    private void write(GenericType<T> type, T object, OutputStreamWriter outputStreamWriter) {
-        try {
-            gson.toJson(object, type.type(), outputStreamWriter);
-            outputStreamWriter.flush();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to write object to output stream", e);
+        var charset = serverResponseContentTypeAndCharset(requestHeaders, responseHeaders);
+
+        if (charset.isPresent()) {
+            write(type, object, new OutputStreamWriter(outputStream, charset.get()));
+        } else {
+            write(type, object, outputStream);
         }
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        headers.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
-        try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, Charset.defaultCharset())) {
-            gson.toJson(object, type.type(), writer);
-            writer.flush();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to write object to output stream", e);
+        var charset = clientRequestContentTypeAndCharset(headers);
+
+        if (charset.isPresent()) {
+            write(type, object, new OutputStreamWriter(outputStream, charset.get()));
+        } else {
+            write(type, object, outputStream);
+        }
+    }
+
+    private void write(GenericType<T> type, T object, OutputStreamWriter outputStreamWriter) {
+        try (outputStreamWriter) {
+            gson.toJson(object, type.type(), outputStreamWriter);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write object to output stream", e);
         }
     }
 
     private void write(GenericType<T> type, T object, OutputStream outputStream) {
-        try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, Charset.defaultCharset())) {
+        // using UTF-8 as a default to be consistent with the GsonReader
+        try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
             gson.toJson(object, type.type(), writer);
-            writer.flush();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to write object to output stream", e);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write object to output stream", e);
         }
     }
 }

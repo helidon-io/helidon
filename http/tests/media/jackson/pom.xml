@@ -24,7 +24,7 @@
         <version>4.4.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-http-tests-tegration-media-jackson</artifactId>
+    <artifactId>helidon-http-tests-media-jackson</artifactId>
     <name>Helidon HTTP Tests Media Jackson</name>
 
     <dependencies>

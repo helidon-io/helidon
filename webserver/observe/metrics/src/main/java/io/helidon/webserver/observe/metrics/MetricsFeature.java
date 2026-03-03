@@ -27,6 +27,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -45,6 +46,8 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.spi.AutoHttpMetricsProvider;
 
+import jakarta.json.JsonObject;
+
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
 import static io.helidon.http.Status.NOT_FOUND_404;
@@ -60,6 +63,7 @@ class MetricsFeature {
 
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Status.NOT_FOUND_404)
             .send("Metrics are disabled");
+    private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
 
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
@@ -111,7 +115,8 @@ class MetricsFeature {
         routing.register(endpoint, new MetricsService());
     }
 
-    Optional<?> output(MediaType mediaType,
+    Optional<?> output(ServerRequest req,
+                       MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
@@ -119,6 +124,11 @@ class MetricsFeature {
                                                            SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
+
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG, "[" + req.serverSocketId() + " "
+                    + req.socketId() + "] Using formatter: " + formatter);
+        }
 
         return formatter.format();
     }
@@ -179,6 +189,9 @@ class MetricsFeature {
         if (formatter.isPresent()) {
             return formatter.get();
         }
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Failed to find MeterRegistryFormatter for media type: " + mediaType);
+        }
         throw new HttpException("Unsupported media type for metrics formatting: " + mediaType,
                                 Status.UNSUPPORTED_MEDIA_TYPE_415,
                                 true);
@@ -201,20 +214,34 @@ class MetricsFeature {
             return;
         }
 
-        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+        getOrOptionsMatching(mediaType, req, res, () -> output(req,
+                                                          mediaType,
                                                           scopeSelection,
                                                           nameSelection));
     }
 
     private void getOrOptionsMatching(MediaType mediaType,
+                                      ServerRequest req,
                                       ServerResponse res,
                                       Supplier<Optional<?>> dataSupplier) {
         Optional<?> output = dataSupplier.get();
 
         if (output.isPresent()) {
             res.status(OK_200)
-                    .headers().contentType(mediaType);
-            res.send(output.get());
+                    .headers()
+                    .contentType(mediaType);
+            // Json formatting must use an explicit media support, as it may not be configured on the webserver by user
+            var entity = output.get();
+            if (entity instanceof JsonObject o) {
+                JsonpSupport.<JsonObject>serverResponseWriter()
+                        .write(JsonpSupport.JSON_OBJECT_TYPE,
+                               o,
+                               res.outputStream(),
+                               req.headers(),
+                               res.headers());
+            } else {
+                res.send(entity);
+            }
         } else {
             res.status(NOT_FOUND_404);
             res.send();
@@ -288,7 +315,7 @@ class MetricsFeature {
             res.send();
         }
 
-        getOrOptionsMatching(mediaType, res, () -> outputMetadata(mediaType,
+        getOrOptionsMatching(mediaType, req, res, () -> outputMetadata(mediaType,
                                                                   scopeSelection,
                                                                   nameSelection));
     }

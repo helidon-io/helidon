@@ -36,7 +36,7 @@ public class JsonMediaSupportProvider implements MediaSupportProvider {
 
     @Override
     public String configKey() {
-        return JsonSupport.HELIDON_JSON_TYPE;
+        return JsonSupport.ID;
     }
 
     @SuppressWarnings("removal")

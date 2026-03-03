@@ -33,7 +33,6 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Configured(CorsFeature.CORS_ID)
 @Prototype.Provides(ServerFeatureProvider.class)
 @Prototype.IncludeDefaultMethods
-@Prototype.Annotated("java.lang.SuppressWarnings(\"removal\")")
 interface CorsConfigBlueprint extends Prototype.Factory<CorsFeature>, Weighted {
 
     /**

@@ -25,7 +25,8 @@
     </parent>
 
     <artifactId>helidon-http-media-json</artifactId>
-    <name>Helidon HTTP Media Helidon JSON</name>
+    <name>Helidon HTTP Media JSON</name>
+    <description>Helidon JSON Media support for JsonValue subtypes (i.e. JsonObject)</description>
 
     <dependencies>
         <dependency>

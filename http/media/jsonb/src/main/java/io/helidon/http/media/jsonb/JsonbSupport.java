@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +16,40 @@
 
 package io.helidon.http.media.jsonb;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderNames;
+import io.helidon.config.Config;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.MediaSupportBase;
 
 import jakarta.json.JsonObject;
+import jakarta.json.JsonStructure;
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
-
-import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportConfig> {
-    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
-    private static final String DEFAULT_JSON_B_NAME = "jsonb";
+public class JsonbSupport extends MediaSupportBase<JsonbSupportConfig> implements RuntimeType.Api<JsonbSupportConfig> {
+    static final String ID = "jsonb";
 
-    private static final Jsonb JSON_B = JsonbBuilder.create();
+    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
 
     private final JsonbReader reader;
     private final JsonbWriter writer;
-    private final JsonbSupportConfig jsonbSupportConfig;
-    private final String name;
 
     private JsonbSupport(JsonbSupportConfig jsonbSupportConfig) {
-        this.jsonbSupportConfig = jsonbSupportConfig;
+        super(jsonbSupportConfig, ID);
+
         this.reader = new JsonbReader(jsonbSupportConfig.jsonb());
-        this.writer = new JsonbWriter(jsonbSupportConfig.jsonb());
-        this.name = jsonbSupportConfig.name();
+        this.writer = new JsonbWriter(jsonbSupportConfig, jsonbSupportConfig.jsonb());
     }
 
     /**
@@ -76,9 +66,22 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
      *
      * @param config must not be {@code null}
      * @return a new {@link JsonbSupport}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    @SuppressWarnings("removal")
+    public static MediaSupport create(io.helidon.common.config.Config config) {
+        return create(config, ID);
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param config must not be {@code null}
+     * @return a new {@link JsonbSupport}
      */
     public static MediaSupport create(Config config) {
-        return create(config, DEFAULT_JSON_B_NAME);
+        return create(config, ID);
     }
 
     /**
@@ -88,6 +91,21 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
      * @param name   name of this instance
      * @return a new {@link JsonbSupport}
      * @see #create(io.helidon.common.config.Config)
+     * @deprecated use {@link #create(io.helidon.config.Config, java.lang.String)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    @SuppressWarnings("removal")
+    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
+        return create(Config.config(config), name);
+    }
+
+    /**
+     * Creates a new {@link JsonbSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name   name of this instance
+     * @return a new {@link JsonbSupport}
+     * @see #create(io.helidon.config.Config)
      */
     public static MediaSupport create(Config config, String name) {
         return builder()
@@ -139,24 +157,13 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
     public String type() {
-        return "jsonb";
+        return ID;
     }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-                .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                .orElse(true)) {
-            if (type.equals(JSON_OBJECT_TYPE)) {
-                // leave this to JSON-P
-                return ReaderResponse.unsupported();
-            }
+        if (matchesServerRequest(type, requestHeaders)) {
             return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
@@ -167,18 +174,8 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     public <T> WriterResponse<T> writer(GenericType<T> type,
                                         Headers requestHeaders,
                                         WritableHeaders<?> responseHeaders) {
-        if (JSON_OBJECT_TYPE.equals(type)) {
-            return WriterResponse.unsupported();
-        }
 
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
+        if (matchesServerResponse(type, requestHeaders, responseHeaders)) {
             return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
 
@@ -189,18 +186,7 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
     public <T> ReaderResponse<T> reader(GenericType<T> type,
                                         Headers requestHeaders,
                                         Headers responseHeaders) {
-        if (JSON_OBJECT_TYPE.equals(type)) {
-            return ReaderResponse.unsupported();
-        }
-
-        // check if accepted
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.mediaType().isWildcardType()) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
+        if (matchesClientResponse(type, responseHeaders)) {
             return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
@@ -209,17 +195,28 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (type.equals(JSON_OBJECT_TYPE)) {
-            return WriterResponse.unsupported();
-        }
-        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
-        } else {
-            return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        if (matchesClientRequest(type, requestHeaders)) {
+            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
         return WriterResponse.unsupported();
+    }
+
+    @Override
+    protected boolean canSerialize(GenericType<?> type) {
+        if (type.isClass()) {
+            return !JsonStructure.class.isAssignableFrom(type.rawType());
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean canDeserialize(GenericType<?> type) {
+        return canSerialize(type);
+    }
+
+    @Override
+    public JsonbSupportConfig prototype() {
+        return config();
     }
 
     <T> EntityReader<T> reader() {
@@ -228,32 +225,5 @@ public class JsonbSupport implements MediaSupport, RuntimeType.Api<JsonbSupportC
 
     <T> EntityWriter<T> writer() {
         return writer;
-    }
-
-    @Override
-    public JsonbSupportConfig prototype() {
-        return jsonbSupportConfig;
-    }
-
-    static class Decorator implements Prototype.BuilderDecorator<JsonbSupportConfig.BuilderBase<?, ?>> {
-
-        @Override
-        public void decorate(JsonbSupportConfig.BuilderBase<?, ?> target) {
-            Map<String, Object> properties = target.properties();
-            target.stringProperties().forEach(properties::putIfAbsent);
-            target.booleanProperties().forEach(properties::putIfAbsent);
-            target.classProperties().forEach(properties::putIfAbsent);
-
-            if (target.jsonb().isEmpty()) {
-                if (properties.isEmpty()) {
-                    target.jsonb(JSON_B);
-                } else {
-                    JsonbConfig jsonbConfig = new JsonbConfig();
-                    properties.forEach(jsonbConfig::setProperty);
-                    target.jsonb(JsonbBuilder.create(jsonbConfig));
-                }
-            }
-        }
-
     }
 }

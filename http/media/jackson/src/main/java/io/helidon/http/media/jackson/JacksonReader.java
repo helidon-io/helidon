@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,15 @@ import java.io.Reader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderBase;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-class JacksonReader<T> implements EntityReader<T> {
+class JacksonReader<T> extends EntityReaderBase<T> {
 
     private final ObjectMapper objectMapper;
 
@@ -68,12 +66,5 @@ class JacksonReader<T> implements EntityReader<T> {
         } catch (IOException e) {
             throw new JacksonRuntimeException("Failed to deserialize JSON to " + type, e);
         }
-    }
-
-    private Charset contentTypeCharset(Headers headers) {
-        return headers.contentType()
-                .flatMap(HttpMediaType::charset)
-                .map(Charset::forName)
-                .orElse(StandardCharsets.UTF_8);
     }
 }

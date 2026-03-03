@@ -21,16 +21,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
-import java.nio.charset.Charset;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderBase;
 import io.helidon.json.binding.JsonBinding;
 
-class JsonBindingReader<T> implements EntityReader<T> {
+class JsonBindingReader<T> extends EntityReaderBase<T> {
     private final JsonBinding jsonBinding;
 
     JsonBindingReader(JsonBinding jsonBinding) {
@@ -39,7 +37,7 @@ class JsonBindingReader<T> implements EntityReader<T> {
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
-        Optional<InputStreamReader> reader = contentTypeCharset(headers)
+        Optional<InputStreamReader> reader = findContentTypeCharset(headers)
                 .map(charset -> new InputStreamReader(stream, charset));
         if (reader.isPresent()) {
             return read(type, reader.get());
@@ -49,7 +47,7 @@ class JsonBindingReader<T> implements EntityReader<T> {
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers requestHeaders, Headers responseHeaders) {
-        Optional<InputStreamReader> reader = contentTypeCharset(responseHeaders)
+        Optional<InputStreamReader> reader = findContentTypeCharset(responseHeaders)
                 .map(charset -> new InputStreamReader(stream, charset));
         if (reader.isPresent()) {
             return read(type, reader.get());
@@ -71,11 +69,5 @@ class JsonBindingReader<T> implements EntityReader<T> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private Optional<Charset> contentTypeCharset(Headers headers) {
-        return headers.contentType()
-                .flatMap(HttpMediaType::charset)
-                .map(Charset::forName);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import io.helidon.common.features.api.HelidonFlavor;
 
-import static io.helidon.common.features.api.Features.*;
+import static io.helidon.common.features.api.Features.Description;
+import static io.helidon.common.features.api.Features.Flavor;
+import static io.helidon.common.features.api.Features.Name;
+import static io.helidon.common.features.api.Features.Path;
 
 /**
  * Jackson media support.
@@ -34,6 +38,8 @@ module io.helidon.http.media.jackson {
     requires io.helidon.http.media;
 
     requires static io.helidon.common.features.api;
+    requires io.helidon.common.media.type;
+    requires io.helidon.http;
 
     exports io.helidon.http.media.jackson;
 

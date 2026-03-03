@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -362,10 +362,14 @@ class MainTest {
 
             // current metrics implementation not compatible with Jackson
             if (!Objects.equals(jsonLibrary, "jackson")) {
-                jsonObject = webClient.get()
+                var response = webClient.get()
                         .path("/metrics")
-                        .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
-                        .requestEntity(JsonObject.class);
+                        .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON_VALUE)
+                        .request(JsonObject.class);
+
+                assertThat(response.status(), is(Status.OK_200));
+
+                jsonObject = response.entity();
                 assertThat("Checking request count",
                         jsonObject.getJsonObject("vendor").getInt("requests.count"), greaterThan(0));
             }

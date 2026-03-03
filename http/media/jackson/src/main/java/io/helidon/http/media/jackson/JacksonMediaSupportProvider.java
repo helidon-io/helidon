@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.http.media.jackson;
 
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -36,11 +35,12 @@ public class JacksonMediaSupportProvider implements MediaSupportProvider, Weight
 
     @Override
     public String configKey() {
-        return "jackson";
+        return JacksonSupport.ID;
     }
 
+    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(Config config, String name) {
+    public MediaSupport create(io.helidon.common.config.Config config, String name) {
         return JacksonSupport.create(config, name);
     }
 

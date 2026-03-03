@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,52 +15,51 @@
  */
 package io.helidon.http.media.gson;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
-import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderNames;
+import io.helidon.config.Config;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.MediaSupportBase;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapterFactory;
-
-import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for Gson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportConfig> {
-
-    private static final Gson GSON = new GsonBuilder().create();
+public class GsonSupport extends MediaSupportBase<GsonSupportConfig> implements RuntimeType.Api<GsonSupportConfig> {
+    static final String ID = "gson";
 
     private final Gson gson;
     private final GsonReader reader;
     private final GsonWriter writer;
 
-    private final String name;
-    private final GsonSupportConfig config;
-
     private GsonSupport(GsonSupportConfig config) {
-        this.config = config;
-        this.name = config.name();
+        super(config, ID);
+
         this.gson = config.gson();
         this.reader = new GsonReader(gson);
-        this.writer = new GsonWriter(gson);
+        this.writer = new GsonWriter(config, gson);
+    }
+
+    /**
+     * Creates a new {@link GsonSupport}.
+     *
+     * @param config must not be {@code null}
+     * @return a new {@link GsonSupport}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    @SuppressWarnings("removal")
+    public static MediaSupport create(io.helidon.common.config.Config config) {
+        return create(io.helidon.config.Config.config(config));
     }
 
     /**
@@ -70,7 +69,21 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
      * @return a new {@link GsonSupport}
      */
     public static MediaSupport create(Config config) {
-        return create(config, "gson");
+        return create(config, ID);
+    }
+
+    /**
+     * Creates a new {@link GsonSupport}.
+     *
+     * @param config must not be {@code null}
+     * @param name   of the Gson support
+     * @return a new {@link GsonSupport}
+     * @deprecated use {@link #create(io.helidon.config.Config, java.lang.String)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.4.0")
+    public static MediaSupport create(io.helidon.common.config.Config config, String name) {
+        return create(Config.config(config), name);
     }
 
     /**
@@ -84,15 +97,10 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
         Objects.requireNonNull(config, "Config must not be null");
         Objects.requireNonNull(name, "Name must not be null");
 
-        GsonSupportConfig.Builder builder = builder()
+        return builder()
                 .name(name)
-                .config(config);
-
-        // Enable the registering of custom type adapters by using service providers for TypeAdapterFactory.
-        HelidonServiceLoader.create(ServiceLoader.load(TypeAdapterFactory.class))
-                .forEach(builder::addTypeAdapterFactory);
-
-        return builder.build();
+                .config(config)
+                .build();
     }
 
     /**
@@ -102,7 +110,7 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
      * @return a new {@link GsonSupport}
      */
     public static MediaSupport create(Gson gson) {
-        return create(gson, "gson");
+        return create(gson, ID);
     }
 
     /**
@@ -152,35 +160,13 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
     public String type() {
-        return "gson";
+        return ID;
     }
 
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
-        if (requestHeaders.contentType()
-                .map(it -> it.test(MediaTypes.APPLICATION_JSON))
-                .orElse(true)) {
-            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-        }
-
-        return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
-    }
-
-    @Override
-    public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders, Headers responseHeaders) {
-        for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
-            if (acceptedType.test(MediaTypes.APPLICATION_JSON) || acceptedType.isWildcardType()) {
-                return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
-            }
-        }
-
-        if (requestHeaders.acceptedTypes().isEmpty()) {
+        if (matchesServerRequest(type, requestHeaders)) {
             return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
@@ -188,29 +174,47 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
     }
 
     @Override
-    public <T> WriterResponse<T> writer(
-            GenericType<T> type,
-            Headers requestHeaders,
-            WritableHeaders<?> responseHeaders
-    ) {
-        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
+    public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders, Headers responseHeaders) {
+        if (matchesClientResponse(type, responseHeaders)) {
+            return new ReaderResponse<>(SupportLevel.COMPATIBLE, this::reader);
         }
 
-        return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        return ReaderResponse.unsupported();
+    }
+
+    @Override
+    public <T> WriterResponse<T> writer(GenericType<T> type,
+                                        Headers requestHeaders,
+                                        WritableHeaders<?> responseHeaders) {
+        if (matchesServerResponse(type, requestHeaders, responseHeaders)) {
+            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
+        }
+
+        return WriterResponse.unsupported();
     }
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
-                return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
-            }
+        if (matchesClientRequest(type, requestHeaders)) {
+            return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
         }
 
-        return new WriterResponse<>(SupportLevel.SUPPORTED, this::writer);
+        return WriterResponse.unsupported();
+    }
+
+    @Override
+    public GsonSupportConfig prototype() {
+        return config();
+    }
+
+    @Override
+    protected boolean canSerialize(GenericType<?> type) {
+        return true;
+    }
+
+    @Override
+    protected boolean canDeserialize(GenericType<?> type) {
+        return true;
     }
 
     <T> EntityReader<T> reader() {
@@ -219,58 +223,5 @@ public class GsonSupport implements MediaSupport, RuntimeType.Api<GsonSupportCon
 
     <T> EntityWriter<T> writer() {
         return writer;
-    }
-
-    @Override
-    public GsonSupportConfig prototype() {
-        return config;
-    }
-
-    static class Decorator implements Prototype.BuilderDecorator<GsonSupportConfig.BuilderBase<?, ?>> {
-
-        private static final Map<String, Consumer<GsonBuilder>> BOOLEAN_PROPERTIES;
-
-        static {
-            BOOLEAN_PROPERTIES = Map.of("pretty-printing",
-                                        GsonBuilder::setPrettyPrinting,
-                                        "disable-html-escaping",
-                                        GsonBuilder::disableHtmlEscaping,
-                                        "disable-inner-class-serialization",
-                                        GsonBuilder::disableInnerClassSerialization,
-                                        "disable-jdk-unsafe",
-                                        GsonBuilder::disableJdkUnsafe,
-                                        "enable-complex-map-key-serialization",
-                                        GsonBuilder::enableComplexMapKeySerialization,
-                                        "exclude-fields-without-expose-annotation",
-                                        GsonBuilder::excludeFieldsWithoutExposeAnnotation,
-                                        "generate-non-executable-json",
-                                        GsonBuilder::generateNonExecutableJson,
-                                        "serialize-special-floating-point-values",
-                                        GsonBuilder::serializeSpecialFloatingPointValues,
-                                        "lenient",
-                                        GsonBuilder::setLenient,
-                                        "serialize-nulls",
-                                        GsonBuilder::serializeNulls);
-        }
-
-        @Override
-        public void decorate(GsonSupportConfig.BuilderBase<?, ?> target) {
-            if (target.gson().isEmpty()) {
-                if (target.properties().isEmpty() && target.typeAdapterFactories().isEmpty()) {
-                    target.gson(GSON);
-                } else {
-                    GsonBuilder builder = new GsonBuilder();
-                    target.properties()
-                            .entrySet()
-                            .stream()
-                            .filter(Map.Entry::getValue)
-                            .filter(entry -> BOOLEAN_PROPERTIES.containsKey(entry.getKey()))
-                            .forEach(entry -> BOOLEAN_PROPERTIES.get(entry.getKey()).accept(builder));
-                    target.typeAdapterFactories()
-                            .forEach(builder::registerTypeAdapterFactory);
-                    target.gson(builder.create());
-                }
-            }
-        }
     }
 }

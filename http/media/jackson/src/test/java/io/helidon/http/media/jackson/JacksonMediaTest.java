@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,15 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
@@ -46,6 +48,7 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
 When adding/updating tests in this class, consider if it should be done
@@ -71,7 +74,7 @@ class JacksonMediaTest {
         WritableHeaders<?> headers = WritableHeaders.create();
 
         MediaSupport.WriterResponse<Book> res = support.writer(BOOK_TYPE, headers);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -97,7 +100,7 @@ class JacksonMediaTest {
         WritableHeaders<?> headers = WritableHeaders.create();
 
         MediaSupport.WriterResponse<List<Book>> res = support.writer(BOOK_LIST_TYPE, headers);
-        assertThat(res.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -257,7 +260,7 @@ class JacksonMediaTest {
 
     @Test
     void testCustomInstanceFromConfiguration() {
-        Config config = io.helidon.config.Config.create();
+        Config config = Config.create();
         MediaSupport jacksonSupport = JacksonSupport.create(config);
 
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
@@ -272,6 +275,23 @@ class JacksonMediaTest {
                 .read(BOOK_TYPE, is, requestHeaders);
 
         assertThat(book.getTitle(), is("Some Test"));
+    }
+
+    @Test
+    void testReadServerWrongCharset() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_XML);
+        responseHeaders.contentType(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset("xxxxxxx"));
+
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders, responseHeaders);
+        assertThat(res.support(), is(MediaSupport.SupportLevel.COMPATIBLE));
+
+        InputStream is = new ByteArrayInputStream("{\"title\": \"utf-8: řžýčň\"}".getBytes(ISO_8859_2));
+        var httpException = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders, responseHeaders));
+
+        assertThat(httpException.status(), is(Status.UNSUPPORTED_MEDIA_TYPE_415));
     }
 
     public static class Book {
