@@ -261,4 +261,50 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2025-67487</cve>
 </suppress>
 
+<!-- False Positive.
+     This CVE is against Static Web Server (SWS) not Helidon WebServer static content support
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.webserver:helidon-webserver-static-content:2.6.15-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.webserver/helidon-webserver-static-content@.*$</packageUrl>
+   <cve>CVE-2026-27480</cve>
+</suppress>
+
+
+<!-- False Positive.
+     This CVE is against Neo4J database, not the driver
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: neo4j-java-driver-slim-4.4.11.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.neo4j\.driver/neo4j-java-driver-slim@.*$</packageUrl>
+   <cve>CVE-2026-1337</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:2.6.15-SNAPSHOT
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j@.*$</packageUrl>
+   <cve>CVE-2026-1337</cve>
+</suppress>
+
+<!-- 
+     This CVE is old and was fixed in Kotlin 1.4.21. The CPE recently changed in NVD.
+     Will keep an eye on this to see if the CPE in NVD is bad, or if there is something new.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: kotlin-stdlib-1.9.10.jar
+   file name: kotlin-stdlib-jdk7-1.9.10.jar
+   file name: kotlin-stdlib-jdk8-1.9.10.jar
+   file name: kotlin-stdlib-common-1.9.10.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*$</packageUrl>
+   <cve>CVE-2020-29582</cve>
+</suppress>
+
+
 </suppressions>
