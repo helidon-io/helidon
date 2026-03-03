@@ -72,7 +72,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <version.lib.jackson>2.20.0</version.lib.jackson>
+        <version.lib.jackson>2.21.1</version.lib.jackson>
         <version.lib.jaegertracing>1.8.1</version.lib.jaegertracing>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
@@ -93,8 +93,8 @@
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
-        <version.lib.kafka>3.9.1</version.lib.kafka>
-        <version.lib.log4j>2.21.1</version.lib.log4j>
+        <version.lib.kafka>3.9.2</version.lib.kafka>
+        <version.lib.log4j>2.25.3</version.lib.log4j>
         <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
