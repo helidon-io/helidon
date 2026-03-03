@@ -84,7 +84,7 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
     default T addContentLiteral(String literal) {
         if (literal.contains("\n")) {
             // the simplest solution is to use multiline string
-            return addContent("\"\"\"\n" + literal + "\n\"\"\"");
+            return addContent("\"\"\"\n" + literal + "\"\"\"");
         }
         // escape tabs, double quote, and backslashes
         String toWrite = literal;

@@ -48,16 +48,9 @@ class ContentBuilderTest {
 
     @Test
     void testAddContentLiteralNewLine() {
-        var string = """
-                test string with
-                "quotes"
-                 lines""";
-
-        assertThat(string, is("test string with\n\"quotes\"\n lines"));
-
         var c = new TestContentBuilder();
         c.addContentLiteral("test string with\n lines");
 
-        assertThat(c.generatedString(), is("    \"\"\"\ntest string with\n lines\n\"\"\""));
+        assertThat(c.generatedString(), is("    \"\"\"\ntest string with\n lines\"\"\""));
     }
 }
