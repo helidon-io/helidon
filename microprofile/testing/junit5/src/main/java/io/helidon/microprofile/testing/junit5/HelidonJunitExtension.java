@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.testing.junit5;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,6 +29,9 @@ import io.helidon.microprofile.testing.HelidonTestScope;
 import io.helidon.microprofile.testing.Instrumented;
 import io.helidon.testing.junit5.TestJunitExtension;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.inject.Qualifier;
+import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -189,7 +195,14 @@ public class HelidonJunitExtension extends TestJunitExtension
         return supplyChecked(ctx, () -> {
             Store store = store(ctx, ctx.getRequiredTestMethod());
             HelidonTestContainerImpl container = requiredContainer(store);
-            return !container.initFailed() && container.isSupported(pc.getParameter().getType());
+            Class<?> type = pc.getParameter().getType();
+            if (type.equals(WebTarget.class) || type.equals(SeContainer.class)) {
+                return true;
+            }
+            Annotation[] qualifiers = qualifiers(pc.getParameter().getAnnotations());
+            return qualifiers.length > 0
+                   && !container.initFailed()
+                   && container.isSupported(type, qualifiers);
         });
     }
 
@@ -200,7 +213,9 @@ public class HelidonJunitExtension extends TestJunitExtension
         return supplyChecked(ctx, () -> {
             Store store = store(ctx, ctx.getRequiredTestMethod());
             HelidonTestContainerImpl container = requiredContainer(store);
-            return container.initFailed() ? null : container.resolveInstance(pc.getParameter().getType());
+            Parameter param = pc.getParameter();
+            return container.initFailed() ? null : container.resolveInstance(
+                    param.getType(), qualifiers(param.getAnnotations()));
         });
     }
 
@@ -240,5 +255,11 @@ public class HelidonJunitExtension extends TestJunitExtension
             c = c.getParent().orElseThrow();
         }
         return c;
+    }
+
+    private static Annotation[] qualifiers(Annotation[] annotations) {
+        return Arrays.stream(annotations)
+                .filter(it -> it.annotationType().getAnnotation(Qualifier.class) != null)
+                .toArray(Annotation[]::new);
     }
 }

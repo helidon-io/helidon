@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -312,6 +312,13 @@ public abstract class HelidonTestExtension implements Extension {
 
             // methods
             for (AnnotatedMethod<?> method : type.getMethods()) {
+
+                // method parameters
+                for (AnnotatedParameter<?> parameter : method.getParameters()) {
+                    processAnnotated(parameter, fieldAnnotationTypes(), this::processParameterAnnotation);
+                }
+
+                // method annotations
                 processAnnotated(method, methodAnnotationTypes(), a -> {
                     if (method.isStatic()) {
                         processStaticMethodAnnotation(a, method.getJavaMember());

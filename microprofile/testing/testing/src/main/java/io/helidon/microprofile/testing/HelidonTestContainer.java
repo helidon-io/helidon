@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.microprofile.testing;
 
 import java.lang.System.Logger.Level;
+import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -107,33 +108,32 @@ public class HelidonTestContainer {
      * Resolve an unqualified bean of the given type.
      *
      * @param type type
+     * @param qualifiers qualifiers
      * @param <T>  type
      * @return resolved instance
      * @throws InitializationFailed if the container previusly failed to
      *                              start
      */
     @SuppressWarnings("resource")
-    public <T> T resolveInstance(Class<T> type) throws InitializationFailed {
+    public <T> T resolveInstance(Class<T> type, Annotation... qualifiers) throws InitializationFailed {
         if (type.isAssignableFrom(SeContainer.class)) {
             return type.cast(container());
         }
-        return container().select(type).get();
+        return container().select(type, qualifiers).get();
     }
 
     /**
      * Test if the given type is supported for injection.
      *
      * @param type type
+     * @param qualifiers qualifiers
      * @return {@code true} if supported, {@code false} otherwise
      * @throws InitializationFailed if the container previusly failed to
      *                              start
      */
     @SuppressWarnings("resource")
-    public boolean isSupported(Class<?> type) throws InitializationFailed {
-        if (type.isAssignableFrom(SeContainer.class)) {
-            return true;
-        }
-        return !container().select(type).isUnsatisfied();
+    public boolean isSupported(Class<?> type, Annotation... qualifiers) throws InitializationFailed {
+        return !container().select(type, qualifiers).isUnsatisfied();
     }
 
     private SeContainer container() {

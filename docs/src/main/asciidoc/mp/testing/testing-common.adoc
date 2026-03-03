@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -258,9 +258,6 @@ Here are all the built-in types that can be injected:
 |`String`
 |A raw URI representing the current server
 
-|link:{jakarta-cdi-javadoc-url}/inject/se/SeContainer.html[`SeContainer`]
-| The current CDI container instance
-
 |===
 
 NOTE: Types that reflect the current server require link:{mp-server-javadoc-url}/ServerCdiExtension.html[`ServerCdiExtension`]
@@ -277,6 +274,15 @@ Use link:{mp-testing-javadoc-url}/Socket.html[`@Socket`] to specify the socket f
 .Inject a JAX-RS client for the admin socket
 ----
 include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_14, indent=0]
+----
+
+NOTE: Except link:{jakarta-jaxrs-javadoc-url}/client/WebTarget.html[`WebTarget`], all types require the
+link:{mp-testing-javadoc-url}/Socket.html[`@Socket`] annotation
+
+[source,java]
+.Inject a URI for the default socket
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_20, indent=0]
 ----
 // end::usage[]
 
