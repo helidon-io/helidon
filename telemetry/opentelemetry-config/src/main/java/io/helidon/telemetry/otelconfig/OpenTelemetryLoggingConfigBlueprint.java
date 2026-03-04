@@ -63,7 +63,7 @@ interface OpenTelemetryLoggingConfigBlueprint {
     Optional<Boolean> traceBased();
 
     /**
-     * Preconstructed (non-configured) log limits to apply to log transmission.
+     * Log limits to apply to log transmission.
      *
      * @return log limits
      */
