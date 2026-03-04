@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.tests.third.party.factory;
+package io.helidon.metrics.spi;
 
-import java.util.List;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.metrics.api.MetricsPublisher;
+import io.helidon.service.registry.Service;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-
-@Prototype.Blueprint
-@Prototype.Configured
-interface UsingConfigBlueprint {
-    @Option.Configured
-    String stringOption();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    System.Logger logger();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    @Option.Singular
-    List<System.Logger> baseLoggers();
+/**
+ * Marks each configured provider of a {@link io.helidon.metrics.api.MetricsPublisher}.
+ */
+@Service.Contract
+public interface MetricsPublisherProvider extends ConfiguredProvider<MetricsPublisher> {
 }

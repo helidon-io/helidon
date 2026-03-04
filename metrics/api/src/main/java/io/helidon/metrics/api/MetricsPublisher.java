@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.tests.third.party.factory;
+package io.helidon.metrics.api;
 
-import java.util.List;
+import io.helidon.common.config.NamedService;
+import io.helidon.service.registry.Service;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+/**
+ * Behavior common to all metrics publishers.
+ */
+@Service.Contract
+public interface MetricsPublisher extends NamedService {
 
-@Prototype.Blueprint
-@Prototype.Configured
-interface UsingConfigBlueprint {
-    @Option.Configured
-    String stringOption();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    System.Logger logger();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    @Option.Singular
-    List<System.Logger> baseLoggers();
+    /**
+     * Whether this publisher is enabled.
+     *
+     * @return true if enabled, false otherwise
+     */
+    boolean enabled();
 }

@@ -35,6 +35,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class LoggerPrototypeTest {
     @Test
+    public void testConsumer() {
+        // make sure the consumer methods for builders are generated
+        var using = UsingConfig.builder()
+                .logger(l -> l.name(LoggerPrototypeTest.First.class.getName()))
+                .addBaseLogger(l -> l.name(LoggerPrototypeTest.First.class.getName()))
+                .stringOption("Something")
+                .build();
+
+        assertThat(using.logger().getName(), is(LoggerPrototypeTest.First.class.getName()));
+        assertThat(using.baseLoggers(), hasSize(1));
+        assertThat(using.baseLoggers().getFirst().getName(), is(LoggerPrototypeTest.First.class.getName()));
+    }
+
+    @Test
     public void testFactoryPrototypeFromConfig() {
         Config config = Config.just(ConfigSources.classpath("/application.yaml"));
         var logger = LoggerConfig.create(config.get("test-1.logger"))
@@ -106,5 +120,11 @@ public class LoggerPrototypeTest {
             var annotated = loggerStruct.stringValue("annotatedType");
             assertThat(annotated, optionalValue(is("io.helidon.builder.tests.third.party.factory.LoggerConfig")));
         }
+    }
+
+    static class First {
+    }
+
+    static class Second {
     }
 }

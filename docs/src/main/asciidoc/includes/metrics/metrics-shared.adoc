@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -155,13 +155,105 @@ endif::se-flavor[]
 // end::usage-body[]
 
 // tag::usage-retrieving[]
-=== Retrieving Metrics Reports from your Service
+=== Publishing Metrics for External Access
+Helidon's Micrometer-based metrics implementation includes these ways of publishing metrics data to external systems:
+
+* Prometheus/OpenMetrics
+* OTLP (OpenTelemetry Protocol)
+
+==== Configuring Publishers
+
+NOTE: The configuration of metrics publishers as described below is a
+link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html[preview feature] which Helidon intends to keep, but its external interface or behavior might evolve between dot releases.
+
+You can configure publishers in the `publishers` configuration section under the top level `metrics` node or under `server.features.observe.observers.metrics`. If you do not set up publishers explicitly, Helidon uses an inferred Prometheus publisher for backward compatibility. See <<understanding_inferred,this later section>> for details.
+
+Publishers in Helidon's Micrometer-based metrics implementation use Micrometer `MeterRegistry` implementations. For each enabled publisher, Helidon adds the corresponding meter registry to Micrometer's global registry. This has these important effects:
+
+* {meters_uc} which Helidon or your code registers using the Helidon metrics API are registered in all active Micrometer meter registries.
+* Each Helidon meter registered has an implementation in every active Micrometer meter registry.
+* When Helidon or your code updates a Helidon {meter}, Micrometer applies the change to every corresponding {meter} from each active meter registry.
+
+As a result, configuring more than one active meter registry can affect performance.
+
+NOTE: Make sure at least one of the configured publishers is enabled. If not, Micrometer does not have any active meter registry implementations and the registered metrics are no-ops. Helidon logs a warning in this case during the metrics observer initialization.
+
+===== Configuring an OTLP Publisher
+
+If you configure an OTLP publisher, Helidon exports metrics data periodically to a backend system you configure.
+
+include::{rootdir}/config/io_helidon_metrics_providers_micrometer_OtlpPublisher.adoc[tag=config,leveloffset=+2]
+The configuration directly mirrors the Micrometer `OtlpMeterRegistry` settings so you can control all behavior which Micrometer exposes for the meter registry.
+
+The following example sets up an OTLP publisher to transmit metrics data every 30 seconds.
+
+[source,yaml]
+.Example OTLP publisher settings
+----
+metrics:
+  publishers:         # <1>
+    otlp:  # <2>
+      interval: PT30S
+      url: 'http://somehost.com:4318/v1/metrics'
+----
+<1> Introduces the configured publishers.
+<2> Configures an OTLP publisher to transmit every 30 seconds to the given endpoint.
+
+===== Configuring a Prometheus Publisher
+
+If you configure a Prometheus publisher or rely on the inferred one, Helidon can make the metrics data available in the Prometheus/OpenMetrics format. (To serve the data at the metrics endpoint in your service, your project must also depend on the Helidon metrics observer component.)
+
+include::{rootdir}/config/io_helidon_metrics_providers_micrometer_PrometheusPublisher.adoc[tag=config,leveloffset=+2]
+
+[[understanding_inferred]]
+===== Understanding the Inferred Prometheus Publisher
+As described earlier, Helidon prepares an inferred Prometheus publisher if you do not set up any publishers.
+
+Note that Helidon uses the inferred publisher _only_ if you add _no_ publishers explicitly, either in the configuration or programmatically. If you specify any publishers explicitly, Helidon uses only the ones you set up.
+
+In particular, Helidon _does not_ use the inferred Prometheus publisher if you create a `metrics.publishers` section containing only an OTLP publisher.
+
+You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
+
+[source,yaml]
+.Using an OLTP publisher *and* the default Prometheus publisher
+----
+metrics:
+  publishers:
+    prometheus:
+    otlp:
+      interval: PT20S
+----
+
+==== Writing Additional Publishers
+You can write other publishers by following these steps:
+
+. Choose one of the Micrometer `MeterRegistry` implementations for the type of publishing you want to support. (for example link:https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog[`DatadogMeterRegistry`])
+. Create a config blueprint which exposes the meter registry's link:https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java[settable properties from `DatadogConfig`].
+. Write a `DatadogPublisher` class which implements Helidon's `MetricsPublisher` for Datadog.
+. Write a `DatadogPublisherProvider` class which implements Helidon's `MetricsPublisherProvider` for your publisher.
+. Advertise your provider so Java service loading can find it, creating a `META-INF/services/io.helidon.metrics.spi.PublisherProvider` file listing your implementation class.
+
+Look at Helidon's link:{https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java[OTLP publisher blueprint] and the related types as an example.
+
+Refer to your publisher in configuration using the config key you set up in the publisher provider.
+
+[source,yaml]
+.Example config using a hypothetical Datadog publisher
+----
+metrics:
+  publishers:
+    micrometer-datadog:
+      interval: PT15S
+----
+
+==== Using and Controlling the Metrics Endpoint
 When you add the
 ifdef::mp-flavor[metrics dependency]
 ifdef::se-flavor[`helidon-webserver-observe-metrics` dependency]
-to your project, Helidon automatically provides a built-in REST endpoint `{metrics-endpoint}` which responds with a report of the registered {metrics} and their values.
+to your project, and if you explicitly set up a Prometheus publisher or use the default one, Helidon provides a built-in REST endpoint `{metrics-endpoint}` which responds with a report of the registered {metrics} and their values.
 
-Clients can request a particular output format.
+Clients can request a particular output format from the endpoint.
 
 .Formats for `{metrics-endpoint}` output
 [%autowidth]

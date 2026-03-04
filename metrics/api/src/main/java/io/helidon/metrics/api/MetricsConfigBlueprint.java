@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
  * Configuration settings for metrics.
@@ -251,6 +252,19 @@ interface MetricsConfigBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean warnOnMultipleRegistries();
+
+    /**
+     * Metrics publishers which make the metrics data available to external systems. Helidon's Micrometer-based
+     * metrics provider includes {@code micrometer-prometheus} (used by default) and {@code micrometer-otlp}.
+     * See the config reference entries for {@code io.helidon.metrics.providers.micrometer.PrometheusPublisher} and
+     * {@code io.helidon.metrics.providers.micrometer.OtlpPublisher}.
+     *
+     * @return metrics publishers
+     */
+    @Option.Configured
+    @Option.Provider(value = MetricsPublisherProvider.class, discoverServices = false)
+    @Option.Singular
+    List<MetricsPublisher> publishers();
 
     /**
      * Reports whether the specified scope is enabled, according to any scope configuration that

@@ -14,25 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.tests.third.party.factory;
+package io.helidon.metrics.providers.micrometer;
 
-import java.util.List;
+import java.util.function.Supplier;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import io.helidon.metrics.api.MetricsPublisher;
 
-@Prototype.Blueprint
-@Prototype.Configured
-interface UsingConfigBlueprint {
-    @Option.Configured
-    String stringOption();
+import io.micrometer.core.instrument.MeterRegistry;
 
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    System.Logger logger();
+interface MicrometerMetricsPublisher extends MetricsPublisher {
 
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    @Option.Singular
-    List<System.Logger> baseLoggers();
+    Supplier<MeterRegistry> registry();
 }

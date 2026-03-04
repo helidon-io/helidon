@@ -46,6 +46,11 @@ import io.helidon.config.Config;
 public interface MetricsFactory {
 
     /**
+     * Qualifier for context setting indicating if any pull publishers are present.
+     */
+    String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
+
+    /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
      * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
      * current config.
