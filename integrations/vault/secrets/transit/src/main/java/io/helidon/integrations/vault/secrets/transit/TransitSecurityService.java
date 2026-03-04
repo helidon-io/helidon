@@ -36,7 +36,7 @@ public class TransitSecurityService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return new TransitSecurityProvider(Vault.create(config));
     }
 }

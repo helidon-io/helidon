@@ -39,7 +39,7 @@ public class HeaderAtnService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return HeaderAtnProvider.create(config);
     }
 }

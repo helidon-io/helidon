@@ -1184,7 +1184,7 @@ public interface Security {
             if (null == providerService) {
                 provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
             } else {
-                provider = providerService.providerInstance(providerSpecificConfig);
+                provider = providerService.create(providerSpecificConfig);
             }
 
             if (isAuthn && (provider instanceof AuthenticationProvider)) {

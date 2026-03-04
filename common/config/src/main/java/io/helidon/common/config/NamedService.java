@@ -19,8 +19,9 @@ package io.helidon.common.config;
 /**
  * To be used with {@link io.helidon.common.config.ConfiguredProvider}, each configured service may have a name.
  *
- * @deprecated this class will be moved to {@code helidon-config} module in Helidon 5
+ * @deprecated use {@code io.helidon.config.NamedService} instead
  */
+@SuppressWarnings("removal")
 @Deprecated(since = "4.3.0", forRemoval = true)
 public interface NamedService {
     /**

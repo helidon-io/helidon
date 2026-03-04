@@ -37,7 +37,7 @@ public class HttpDigestAuthService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return HttpDigestAuthProvider.create(config);
     }
 }

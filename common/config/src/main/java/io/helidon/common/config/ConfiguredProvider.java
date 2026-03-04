@@ -31,7 +31,7 @@ package io.helidon.common.config;
  *
  * @param <T> type of the service this provider provides
  *
- * @deprecated this class will be moved to {@code helidon-config} module in Helidon 5
+ * @deprecated use {@code io.helidon.config.ConfiguredProvider} instead
  */
 @SuppressWarnings("removal")
 @Deprecated(since = "4.3.0", forRemoval = true)

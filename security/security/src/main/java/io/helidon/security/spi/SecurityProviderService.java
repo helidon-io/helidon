@@ -56,13 +56,13 @@ public interface SecurityProviderService {
      *
      * @param config Config with provider configuration
      * @return provider instance created from the {@link io.helidon.common.config.Config} provided
-     * @deprecated use {@link #providerInstance(io.helidon.config.Config)} instead,
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead,
      */
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.4.0")
     default SecurityProvider providerInstance(io.helidon.common.config.Config config) {
         // default to avoid forcing deprecated symbols references
-        return providerInstance(Config.config(config));
+        return create(Config.config(config));
     }
 
     /**
@@ -77,7 +77,7 @@ public interface SecurityProviderService {
      * @since 4.4.0
      */
     @SuppressWarnings("removal")
-    default SecurityProvider providerInstance(Config config) {
+    default SecurityProvider create(Config config) {
         // default to preserve backward compatibility
         // require the deprecated variant to be implemented
         DeprecationSupport.requireOverride(this, SecurityProviderService.class, "providerInstance",

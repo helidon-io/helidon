@@ -43,7 +43,7 @@ public class Kv1SecurityService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return new Kv1SecurityProvider(Vault.create(config));
     }
 }

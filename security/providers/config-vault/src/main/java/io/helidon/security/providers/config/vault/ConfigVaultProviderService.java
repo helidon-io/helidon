@@ -47,7 +47,7 @@ public class ConfigVaultProviderService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return ConfigVaultProvider.create(config);
     }
 }

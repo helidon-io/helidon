@@ -36,7 +36,7 @@ public class HttpBasicAuthService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return HttpBasicAuthProvider.create(config);
     }
 }

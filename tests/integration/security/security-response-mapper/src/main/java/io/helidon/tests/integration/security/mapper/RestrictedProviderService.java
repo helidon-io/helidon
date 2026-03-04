@@ -36,7 +36,7 @@ public class RestrictedProviderService implements SecurityProviderService {
     This method is intentionally kept as deprecated implementation, to make sure it works fine
      */
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return new RestrictedProvider();
     }
 }

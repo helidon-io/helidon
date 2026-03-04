@@ -35,7 +35,7 @@ public class JwtAuthProviderService implements SecurityProviderService {
     }
 
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return JwtAuthProvider.create(config);
     }
 }
