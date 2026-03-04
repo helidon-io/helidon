@@ -35,6 +35,10 @@ import io.helidon.json.JsonValue;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonSupport extends MediaSupportBase<JsonSupportConfig> implements RuntimeType.Api<JsonSupportConfig> {
+    /**
+     * Generic type of this type, as it is required when this media type is used programmatically.
+     */
+    public static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
 
     static final String ID = "json";
 

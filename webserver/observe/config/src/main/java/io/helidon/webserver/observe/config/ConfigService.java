@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -38,7 +37,6 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 class ConfigService implements HttpService {
-    private static final GenericType<JsonObject> JSON_OBJECT_TYPE = GenericType.create(JsonObject.class);
     private static final EntityWriter<JsonObject> WRITER = JsonSupport.serverResponseWriter();
 
     private final List<Pattern> secretPatterns;
@@ -108,7 +106,7 @@ class ConfigService implements HttpService {
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
         res.header(HeaderValues.X_CONTENT_TYPE_OPTIONS_NOSNIFF);
-        WRITER.write(JSON_OBJECT_TYPE,
+        WRITER.write(JsonSupport.JSON_OBJECT_TYPE,
                      json,
                      res.outputStream(),
                      req.headers(),
