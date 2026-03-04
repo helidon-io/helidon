@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -58,6 +58,19 @@ public class SecurityTime {
      */
     public static SecurityTime create() {
         return SecurityTime.builder().build();
+    }
+
+    /**
+     * Load an instance from configuration.
+     *
+     * @param config configuration
+     * @return a new instance of time configured from this configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static SecurityTime create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -180,6 +193,19 @@ public class SecurityTime {
         public Builder value(ChronoField field, long value) {
             this.values.add(new ChronoValues(field, value));
             return this;
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config configuration
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

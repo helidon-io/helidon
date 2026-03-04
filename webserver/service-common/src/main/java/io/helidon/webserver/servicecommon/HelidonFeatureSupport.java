@@ -17,7 +17,7 @@ package io.helidon.webserver.servicecommon;
 
 import java.util.Objects;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
@@ -157,6 +157,19 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
 
         /**
          * Sets the configuration to be used by this builder.
+         *
+         * @param config the Helidon config instance
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public B config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Sets the configuration to be used by this builder.
          * <p>
          * Concrete builder implementations may override this method but should invoke {@code super.config(config)} to
          * benefit from the common routing set-up.
@@ -188,7 +201,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
          *
          * @return the Config
          */
-        public Config config() {
+        public io.helidon.common.config.Config config() {
             return config;
         }
 

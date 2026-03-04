@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -69,6 +69,19 @@ public class WebClientMetrics implements WebClientService {
      */
     public static WebClientMetric.Builder gaugeInProgress() {
         return WebClientMetric.builder(WebClientMetricType.GAUGE_IN_PROGRESS);
+    }
+
+    /**
+     * Creates new client metrics based on config.
+     *
+     * @param config config
+     * @return client metrics instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static WebClientMetrics create(io.helidon.common.config.Config config) {
+        return create(Config.config(config));
     }
 
     /**

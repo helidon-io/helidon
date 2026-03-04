@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.integrations.micrometer;
 
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -75,6 +75,19 @@ public class MicrometerFeature extends HelidonFeatureSupport {
      */
     public static MicrometerFeature create() {
         return builder().build();
+    }
+
+    /**
+     * Creates a new {@code MicrometerSupport} using the provided {@code Config} (anchored at the "metrics.micrometer" node).
+     *
+     * @param config Config settings for Micrometer set-up
+     * @return newly-created MicrometerSupport
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static MicrometerFeature create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**

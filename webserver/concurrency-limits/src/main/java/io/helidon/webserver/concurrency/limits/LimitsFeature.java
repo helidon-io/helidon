@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -89,6 +89,21 @@ public class LimitsFeature implements ServerFeature, Weighted, RuntimeType.Api<L
     public static LimitsFeature create() {
         return builder()
                 .enabled(true)
+                .build();
+    }
+
+    /**
+     * Create a new context feature with custom setup.
+     *
+     * @param config configuration
+     * @return a new configured feature
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static LimitsFeature create(io.helidon.common.config.Config config) {
+        return builder()
+                .config(config)
                 .build();
     }
 

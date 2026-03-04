@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Base64Value;
-import io.helidon.common.config.Config;
 import io.helidon.common.crypto.SymmetricCipher;
+import io.helidon.config.Config;
 import io.helidon.config.encryption.ConfigProperties;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -124,6 +124,19 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          */
         public static EncryptionConfig create(char[] password) {
             return new EncryptionConfig(Optional.ofNullable(password));
+        }
+
+        /**
+         * Create a new instance from config.
+         *
+         * @param config config to read password from (if any)
+         * @return a new instance configured from config
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public static EncryptionConfig create(io.helidon.common.config.Config config) {
+            return create(Config.config(config));
         }
 
         /**
@@ -232,6 +245,19 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
                     .or(Builder::resolveMasterPassword);
 
             return new ConfigVaultProvider(this);
+        }
+
+        /**
+         * Update this builder from provided configuration.
+         *
+         * @param config configuration to use
+         * @return updated builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

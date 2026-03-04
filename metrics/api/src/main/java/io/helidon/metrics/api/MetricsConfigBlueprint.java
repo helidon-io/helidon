@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
@@ -200,7 +200,7 @@ interface MetricsConfigBlueprint {
      * @return metrics configuration
      */
     @Option.Redundant
-    Config config();
+    io.helidon.common.config.Config config();
 
     /**
      * Whether the {@code gc.time} meter should be registered as a gauge (vs. a counter).

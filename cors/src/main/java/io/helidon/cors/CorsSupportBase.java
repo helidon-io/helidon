@@ -19,7 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -127,6 +127,19 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         public abstract T build();
 
         /**
+         * Merges CORS config information.
+         *
+         * @param config the CORS config
+         * @return the updated builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public B config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
          * Merges CORS config information. Typically, the app or component will retrieve the provided {@code Config} instance
          * from its own config.
          *
@@ -137,6 +150,21 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
             reportUseOfMissingConfig(config);
             helperBuilder.config(config);
             return identity();
+        }
+
+        /**
+         * Merges mapped CORS config information. Typically, the app or component will retrieve the provided {@code Config}
+         * instance from its own config.
+         *
+         * @param config the mapped CORS config information
+         * @return the updated builder
+         * @deprecated use {@link #mappedConfig(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public B mappedConfig(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+
         }
 
         /**

@@ -20,7 +20,7 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Semaphore based limit, that supports queuing for a permit, and timeout on the queue.
@@ -95,6 +95,21 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
     public static FixedLimit create(Semaphore semaphore) {
         return builder()
                 .semaphore(semaphore)
+                .build();
+    }
+
+    /**
+     * Create a new instance from configuration.
+     *
+     * @param config configuration of the fixed limit
+     * @return a new limit instance configured from {@code config}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static FixedLimit create(io.helidon.common.config.Config config) {
+        return builder()
+                .config(config)
                 .build();
     }
 

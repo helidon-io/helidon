@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.Collections;
 
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
+import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -97,6 +97,19 @@ public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Bui
         }
         // first set of validations
         collector.collect().checkValid();
+    }
+
+    /**
+     * Update this builder with values from configuration.
+     *
+     * @param config provided config
+     * @return updated builder instance
+     * @deprecated use {@link #config(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public B config(io.helidon.common.config.Config config) {
+        return config(Config.config(config));
     }
 
     /**

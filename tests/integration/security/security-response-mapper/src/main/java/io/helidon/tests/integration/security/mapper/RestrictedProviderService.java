@@ -16,7 +16,7 @@
 
 package io.helidon.tests.integration.security.mapper;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
 
@@ -36,7 +36,7 @@ public class RestrictedProviderService implements SecurityProviderService {
     This method is intentionally kept as deprecated implementation, to make sure it works fine
      */
     @Override
-    public SecurityProvider providerInstance(Config config) {
+    public SecurityProvider create(Config config) {
         return new RestrictedProvider();
     }
 }

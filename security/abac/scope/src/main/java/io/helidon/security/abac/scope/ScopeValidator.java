@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.Errors;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -73,6 +73,19 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
      */
     public static ScopeValidator create() {
         return ScopeValidator.builder().build();
+    }
+
+    /**
+     * Create a new validator instance from configuration.
+     *
+     * @param config configuration on the key of this provider
+     * @return scope validator instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static ScopeValidator create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -250,6 +263,19 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          *
          * @param config config located on key of this validator
          * @return updated builder instance
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Update builder from configuration.
+         *
+         * @param config config located on key of this validator
+         * @return updated builder instance
          */
         public Builder config(Config config) {
             config.get("operator").asString().map("OR"::equals).ifPresent(this::useOrOperator);
@@ -290,6 +316,19 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
                 allScopes.add(scope.value());
             }
             return new ScopesConfig(allScopes);
+        }
+
+        /**
+         * Create an instance from configuration (of endpoint).
+         *
+         * @param config config located on the key of this validator
+         * @return configuration based on the config
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public static ScopesConfig create(io.helidon.common.config.Config config) {
+            return create(Config.config(config));
         }
 
         /**

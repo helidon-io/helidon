@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import java.util.List;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.config.Config;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.config.Config;
 import io.helidon.metadata.reflection.AnnotationFactory;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
@@ -53,7 +53,6 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
                 .equals(LOGIN_CONFIG_METHOD);
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void init(Config config) {
         config.get(PROVIDER_NAME + ".auth-method-mapping")

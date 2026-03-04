@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.data.DataException;
 
 import oracle.ucp.jdbc.PoolDataSource;
@@ -45,6 +45,19 @@ public class UcpDataSourceFactory {
         this.dataSource = xaDataSource
                 ? PoolDataSourceFactory.getPoolXADataSource()
                 : PoolDataSourceFactory.getPoolDataSource();
+    }
+
+    /**
+     * Create new instance of UCP {@link DataSource}.
+     *
+     * @param config UCP {@link DataSource} specific configuration node.
+     * @return new instance of UCP {@link DataSource}
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static DataSource create(io.helidon.common.config.Config config) {
+        return create(UcpDataSourceConfig.create(config));
     }
 
     /**

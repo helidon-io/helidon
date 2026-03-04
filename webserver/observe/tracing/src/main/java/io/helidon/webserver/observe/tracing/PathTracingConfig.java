@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.uri.UriPath;
+import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.http.MethodPredicate;
 import io.helidon.http.PathMatcher;
@@ -31,8 +31,22 @@ import io.helidon.tracing.config.TracingConfig;
  * Traced system configuration for web server for a specific path.
  */
 public interface PathTracingConfig {
+
     /**
-     * Create a new traced path configuration from {@link io.helidon.common.config.Config}.
+     * Create a new traced path from configuration.
+     *
+     * @param config config of a path
+     * @return traced path configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static PathTracingConfig create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Create a new traced path from configuration.
      *
      * @param config config of a path
      * @return traced path configuration
@@ -104,6 +118,19 @@ public interface PathTracingConfig {
                     return path + "(" + finalMethods + "): " + finalTracingConfig;
                 }
             };
+        }
+
+        /**
+         * Update this builder from provided {@link io.helidon.common.config.Config}.
+         *
+         * @param config config to update this builder from
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

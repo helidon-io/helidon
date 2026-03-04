@@ -27,8 +27,8 @@ import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
 import io.helidon.common.uri.UriInfo;
+import io.helidon.config.Config;
 import io.helidon.cors.LogHelper.Headers;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -192,10 +192,36 @@ public class CorsSupportHelper<Q, R> {
          *
          * @param config config node containing CORS set-up information
          * @return updated builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder<Q, R> config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
+        }
+
+        /**
+         * Adds cross-origin information via config.
+         *
+         * @param config config node containing CORS set-up information
+         * @return updated builder
          */
         public Builder<Q, R> config(Config config) {
             aggregatorBuilder.config(config);
             return this;
+        }
+
+        /**
+         * Adds mapped cross-origin information via config.
+         *
+         * @param config config node containing mapped CORS set-up information
+         * @return updated builder
+         * @deprecated use {@link #mappedConfig(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder<Q, R> mappedConfig(io.helidon.common.config.Config config) {
+            return mappedConfig(Config.config(config));
         }
 
         /**

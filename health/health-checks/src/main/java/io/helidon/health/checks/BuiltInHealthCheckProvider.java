@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 
 import io.helidon.common.NativeImageHelper;
-import io.helidon.common.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
 
@@ -34,7 +33,8 @@ public class BuiltInHealthCheckProvider implements HealthCheckProvider {
     }
 
     @Override
-    public List<HealthCheck> healthChecks(Config config) {
+    @SuppressWarnings("removal")
+    public List<HealthCheck> healthChecks(io.helidon.common.config.Config config) {
         if (NativeImageHelper.isNativeImage()) {
             return List.of(diskSpace(config), heapMemory(config));
         } else {
@@ -47,13 +47,15 @@ public class BuiltInHealthCheckProvider implements HealthCheckProvider {
     }
 
 
-    private HeapMemoryHealthCheck heapMemory(Config config) {
+    @SuppressWarnings("removal")
+    private HeapMemoryHealthCheck heapMemory(io.helidon.common.config.Config config) {
         return HeapMemoryHealthCheck.builder()
                 .config(config)
                 .build();
     }
 
-    private DiskSpaceHealthCheck diskSpace(Config config) {
+    @SuppressWarnings("removal")
+    private DiskSpaceHealthCheck diskSpace(io.helidon.common.config.Config config) {
         return DiskSpaceHealthCheck.builder()
                 .config(config)
                 .build();

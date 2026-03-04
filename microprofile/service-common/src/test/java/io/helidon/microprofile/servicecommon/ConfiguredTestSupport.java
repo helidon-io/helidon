@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package io.helidon.microprofile.servicecommon;
 
 import java.util.Optional;
 
-import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
+import io.helidon.config.Config;
 import io.helidon.webserver.http.HttpService;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.
  */
-public class ConfiguredTestSupport extends HelidonFeatureSupport {
+@SuppressWarnings("removal")
+public class ConfiguredTestSupport extends io.helidon.webserver.servicecommon.HelidonFeatureSupport {
 
     static final String ENDPOINT_PATH = "/testendpoint";
 
@@ -53,7 +54,7 @@ public class ConfiguredTestSupport extends HelidonFeatureSupport {
         return importance;
     }
 
-    static class Builder extends HelidonFeatureSupport.Builder<Builder, ConfiguredTestSupport>
+    static class Builder extends io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder<Builder, ConfiguredTestSupport>
             implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
 
         private int importance;
@@ -68,7 +69,7 @@ public class ConfiguredTestSupport extends HelidonFeatureSupport {
         }
 
         @Override
-        public Builder config(io.helidon.common.config.Config config) {
+        public Builder config(Config config) {
             super.config(config);
             config.get("importance").asInt().ifPresent(this::importance);
             return this;

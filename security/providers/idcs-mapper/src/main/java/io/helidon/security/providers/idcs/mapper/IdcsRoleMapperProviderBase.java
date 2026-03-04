@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.HeaderValues;
@@ -279,6 +279,19 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * Default constructor.
          */
         protected Builder() {
+        }
+
+        /**
+         * Update this builder state from configuration.
+         *
+         * @param config current node must have "oidc-config" as one of its children
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public B config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

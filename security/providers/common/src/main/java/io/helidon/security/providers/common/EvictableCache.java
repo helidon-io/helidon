@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -31,7 +31,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Generic cache with eviction support.
  * Default implementation is backed by {@link java.util.concurrent.ConcurrentHashMap} and provides
  * configuration to set this map up, as can be done through {@link #builder()},
- * and {@link #create(io.helidon.common.config.Config)}.
+ * and {@link #create(io.helidon.config.Config)}.
  *
  * Cache timeouts:
  * <ul>
@@ -98,6 +98,23 @@ public interface EvictableCache<K, V> {
     static <K, V> EvictableCache<K, V> create() {
         Builder<K, V> builder = builder();
         return builder.build();
+    }
+
+    /**
+     * Create a new cache from configuration.
+     *
+     * @param config config to read configuration of this cache from
+     * @param <K>    type of keys in the cache
+     * @param <V>    type of values in the cache
+     * @return new cache configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static <K, V> EvictableCache<K, V> create(io.helidon.common.config.Config config) {
+        Builder<K, V> builder = builder();
+        return builder.config(config)
+                .build();
     }
 
     /**
@@ -313,6 +330,19 @@ public interface EvictableCache<K, V> {
         public Builder<K, V> cacheEnabled(boolean cacheEnabled) {
             this.cacheEnabled = cacheEnabled;
             return this;
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config Config to use to load configuration options for this builder
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder<K, V> config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

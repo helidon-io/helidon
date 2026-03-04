@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.webserver.tests.imperative;
 
-import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.config.Config;
 import io.helidon.http.Method;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -35,7 +35,7 @@ public final class ImperativeMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Config config = GlobalConfig.config();
+        Config config = Services.get(Config.class);
 
         WebServer server = WebServer.create(ws -> ws.config(config.get("server"))
                         .routing(ImperativeMain::routing))

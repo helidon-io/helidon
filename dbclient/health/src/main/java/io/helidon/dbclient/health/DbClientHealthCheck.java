@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
@@ -36,6 +36,21 @@ public abstract class DbClientHealthCheck implements HealthCheck {
     /* Default hHealth check timeout in seconds (to wait for statement execution response). */
     private static final int DEFAULT_TIMEOUT_SECONDS = 10;
     private final Duration timeout;
+
+    /**
+     * Create a health check with configured settings for the database.
+     * This health check will execute health check as defined in provided {@link Config} node.
+     *
+     * @param dbClient database client used to execute health check statement
+     * @param config   {@link Config} node with health check configuration
+     * @return health check that can be used with health services
+     * @deprecated use {@link #create(io.helidon.dbclient.DbClient, io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static DbClientHealthCheck create(DbClient dbClient, io.helidon.common.config.Config config) {
+        return builder(dbClient).config(config).build();
+    }
 
     /**
      * Create a health check with configured settings for the database.
@@ -315,6 +330,19 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         public Builder name(String name) {
             this.name = name;
             return this;
+        }
+
+        /**
+         * Set health check parameters using {@link Config} node.
+         *
+         * @param config {@link Config} instance with health check parameters
+         * @return updated builder instance
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

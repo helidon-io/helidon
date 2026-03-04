@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,20 @@
  */
 package io.helidon.data.sql.testing;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
-import io.helidon.common.config.ConfigValue;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
+import io.helidon.config.ConfigMappingException;
+import io.helidon.config.ConfigValue;
+import io.helidon.config.spi.ConfigMapper;
 import io.helidon.service.registry.Service;
 
 /**
@@ -85,13 +90,23 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         }
 
         @Override
+        public Instant timestamp() {
+            return factory.config().timestamp();
+        }
+
+        @Override
+        public Type type() {
+            return factory.config().type();
+        }
+
+        @Override
         public Key key() {
             return factory.config().key();
         }
 
         @Override
-        public Config get(String s) throws ConfigException {
-            return factory.config().get(s);
+        public Config get(Key key) {
+            return factory.config().get(key);
         }
 
         @Override
@@ -100,33 +115,13 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         }
 
         @Override
+        public Stream<Config> traverse(Predicate<Config> predicate) {
+            return factory.config().traverse(predicate);
+        }
+
+        @Override
         public Config detach() throws ConfigException {
             return factory.config().detach();
-        }
-
-        @Override
-        public boolean exists() {
-            return factory.config().exists();
-        }
-
-        @Override
-        public Stream<? extends Config> traverse() {
-            return factory.config().traverse();
-        }
-
-        @Override
-        public boolean isLeaf() {
-            return factory.config().isLeaf();
-        }
-
-        @Override
-        public boolean isObject() {
-            return factory.config().isObject();
-        }
-
-        @Override
-        public boolean isList() {
-            return factory.config().isList();
         }
 
         @Override
@@ -140,8 +135,13 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         }
 
         @Override
-        public <T> ConfigValue<T> map(Function<Config, T> function) {
-            return factory.config().map(function);
+        public <T> ConfigValue<T> as(GenericType<T> genericType) {
+            return factory.config().as(genericType);
+        }
+
+        @Override
+        public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+            return factory.config().as(mapper);
         }
 
         @Override
@@ -150,12 +150,12 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         }
 
         @Override
-        public <T> ConfigValue<List<T>> mapList(Function<Config, T> function) throws ConfigException {
-            return factory.config().mapList(function);
+        public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+            return factory.config().asList(mapper);
         }
 
         @Override
-        public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
+        public ConfigValue<List<Config>> asNodeList() throws ConfigException {
             return factory.config().asNodeList();
         }
 
@@ -163,6 +163,15 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         public ConfigValue<Map<String, String>> asMap() throws ConfigException {
             return factory.config().asMap();
         }
-    }
 
+        @Override
+        public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
+            return factory.config().convert(type, value);
+        }
+
+        @Override
+        public ConfigMapper mapper() {
+            return factory.config().mapper();
+        }
+    }
 }

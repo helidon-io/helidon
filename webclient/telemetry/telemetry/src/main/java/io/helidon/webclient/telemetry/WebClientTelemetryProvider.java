@@ -47,19 +47,7 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
     }
 
     @Override
-    public WebClientService create(io.helidon.common.config.Config config, String name) {
-        return create((Config) config, name);
-    }
-
-    /**
-     * Creates a new client telemetry service.
-     *
-     * @param config client telemetry config
-     * @param name   component name
-     * @return new webclient service instance for client telemetry
-     */
     public WebClientService create(Config config, String name) {
-
         if (config.get("metrics").exists()) {
             subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package io.helidon.integrations.oci.tls.certificates;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.config.Config;
 import io.helidon.common.tls.TlsManager;
+import io.helidon.config.Config;
 
 /**
  * The OCI Certificates contract of {@link io.helidon.common.tls.TlsManager}. The implementation should load/create
@@ -36,6 +36,19 @@ public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<O
      */
     static OciCertificatesTlsManager create() {
         return builder().build();
+    }
+
+    /**
+     * Creates a configured {@link OciCertificatesTlsManager} instance.
+     *
+     * @param config the config
+     * @return a configured instance
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static OciCertificatesTlsManager create(io.helidon.common.config.Config config) {
+        return builder().config(config).build();
     }
 
     /**

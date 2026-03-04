@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.common.configurable;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 
 /**
  * Supplier of a custom thread pool with defaults appropriate for a thread-per-request server.
@@ -74,6 +74,20 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
      */
     public static ThreadPoolSupplier create() {
         return builder().build();
+    }
+
+    /**
+     * Create supplier from configuration.
+     *
+     * @param config config instance
+     * @return a new thread pool supplier configured from config
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static ThreadPoolSupplier create(io.helidon.common.config.Config config) {
+        return builder().config(config)
+                .build();
     }
 
     /**

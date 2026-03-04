@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
 
@@ -68,6 +68,21 @@ public class HttpBasicOutboundConfig {
      */
     public static HttpBasicOutboundConfig create() {
         return builder().build();
+    }
+
+    /**
+     * Create basic outbound configuration from config.
+     *
+     * @param config configuration for outbound config
+     * @return a new configuration
+     * @deprecated use {@link #create(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    public static HttpBasicOutboundConfig create(io.helidon.common.config.Config config) {
+        return builder()
+                .config(config)
+                .build();
     }
 
     /**
@@ -144,6 +159,19 @@ public class HttpBasicOutboundConfig {
                                                     + " outbound");
             }
             return new HttpBasicOutboundConfig(this);
+        }
+
+        /**
+         * Updated this configuration from the config instance.
+         *
+         * @param config configuration
+         * @return updated builder instance
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

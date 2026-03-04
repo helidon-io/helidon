@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
@@ -90,6 +90,16 @@ public interface DbClient extends AutoCloseable {
      * @param config name of the configuration node with driver configuration
      * @return database client instance
      */
+    static DbClient create(io.helidon.common.config.Config config) {
+        return builder(config).build();
+    }
+
+    /**
+     * Create Helidon database client.
+     *
+     * @param config name of the configuration node with driver configuration
+     * @return database client instance
+     */
     static DbClient create(Config config) {
         return builder(config).build();
     }
@@ -139,6 +149,19 @@ public interface DbClient extends AutoCloseable {
                                               + " Available names: %s",
                                       providerName,
                                       Arrays.toString(DbClientProviderLoader.names()))));
+    }
+
+    /**
+     * Create Helidon database client builder from configuration.
+     *
+     * @param config config
+     * @return a builder pre-configured from the provided config
+     * @deprecated use {@link #builder(io.helidon.config.Config)} instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static Builder builder(io.helidon.common.config.Config config) {
+        return builder(Config.config(config));
     }
 
     /**
@@ -201,6 +224,19 @@ public interface DbClient extends AutoCloseable {
             }
 
             return clientBuilder.build();
+        }
+
+        /**
+         * Use database connection configuration from configuration file.
+         *
+         * @param config {@link Config} instance with database connection attributes
+         * @return database provider builder
+         * @deprecated use {@link #config(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public Builder config(io.helidon.common.config.Config config) {
+            return config(Config.config(config));
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package io.helidon.dbclient.hikari.spi;
 
 import java.util.ServiceLoader;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.DeprecationSupport;
+import io.helidon.config.Config;
 import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 
 /**
@@ -37,7 +38,32 @@ public interface HikariMetricsProvider {
      *
      * @param config provider configuration
      * @return interceptor to handle connection pool configuration.
+     * @deprecated use {@link #extension(io.helidon.config.Config)} instead
      */
-    HikariMetricsRegistry extension(Config config);
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    default HikariMetricsRegistry extension(io.helidon.common.config.Config config) {
+        // default to avoid forcing deprecated symbols references
+        return extension(Config.config(config));
+    }
+
+    /**
+     * Get instance of {@link HikariMetricsRegistry} from config.
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
+     *
+     * @param config provider configuration
+     * @return interceptor to handle connection pool configuration.
+     * @since 4.4.0
+     */
+    @SuppressWarnings("removal")
+    default HikariMetricsRegistry extension(Config config) {
+        // default to preserve backward compatibility
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this, HikariMetricsProvider.class, "extension",
+                io.helidon.common.config.Config.class);
+        return extension((io.helidon.common.config.Config) config);
+    }
 
 }

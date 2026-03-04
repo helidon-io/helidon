@@ -38,10 +38,9 @@ public class GsonMediaSupportProvider implements MediaSupportProvider, Weighted 
         return GsonSupport.ID;
     }
 
-    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(io.helidon.common.config.Config config, String name) {
-        return GsonSupport.create(Config.config(config), name);
+    public MediaSupport create(Config config, String name) {
+        return GsonSupport.create(config, name);
     }
 
     @Override

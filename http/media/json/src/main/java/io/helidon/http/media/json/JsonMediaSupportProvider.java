@@ -16,6 +16,7 @@
 
 package io.helidon.http.media.json;
 
+import io.helidon.config.Config;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
@@ -39,9 +40,8 @@ public class JsonMediaSupportProvider implements MediaSupportProvider {
         return JsonSupport.ID;
     }
 
-    @SuppressWarnings("removal")
     @Override
-    public MediaSupport create(io.helidon.common.config.Config config, String name) {
+    public MediaSupport create(Config config, String name) {
         return JsonSupportConfig.builder()
                 .name(name)
                 .build();

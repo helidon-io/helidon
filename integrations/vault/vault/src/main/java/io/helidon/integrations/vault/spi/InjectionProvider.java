@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.integrations.vault.spi;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 
 /**
@@ -48,7 +48,7 @@ public interface InjectionProvider {
          * @param instanceConfig configuration of an instance
          * @return a new instance to be injected
          */
-        T apply(Vault vault, Config vaultConfig, InstanceConfig instanceConfig);
+        T apply(Vault vault, io.helidon.common.config.Config vaultConfig, InstanceConfig instanceConfig);
     }
 
     /**
@@ -84,6 +84,22 @@ public interface InjectionProvider {
          */
         public Class<T> injectedType() {
             return type;
+        }
+
+        /**
+         * Create a new instance of the injectable.
+         *
+         * @param vault vault to use
+         * @param vaultConfig vault configuration node
+         * @param instanceConfig configuration of the instance
+         * @return a new injectable instance
+         * @deprecated use {@link #createInstance(io.helidon.integrations.vault.Vault,
+         * io.helidon.config.Config, io.helidon.integrations.vault.spi.InjectionProvider.InstanceConfig)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public T createInstance(Vault vault, io.helidon.common.config.Config vaultConfig, InstanceConfig instanceConfig) {
+            return creator.apply(vault, vaultConfig, instanceConfig);
         }
 
         /**

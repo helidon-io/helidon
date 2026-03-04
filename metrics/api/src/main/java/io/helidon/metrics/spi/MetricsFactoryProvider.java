@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package io.helidon.metrics.spi;
 
 import java.util.Collection;
 
-import io.helidon.common.config.Config;
+import io.helidon.common.DeprecationSupport;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 
@@ -27,6 +28,25 @@ import io.helidon.metrics.api.MetricsFactory;
 public interface MetricsFactoryProvider {
 
     /**
+     * Creates a new instance from configuration.
+     *
+     * @param rootConfig      root config node
+     * @param metricsConfig   metrics config
+     * @param metersProviders group of providers
+     * @return new metrics factory
+     * @deprecated use {@link #create(io.helidon.config.Config, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
+     * instead
+     */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    default MetricsFactory create(io.helidon.common.config.Config rootConfig,
+                          MetricsConfig metricsConfig,
+                          Collection<MetersProvider> metersProviders) {
+        // default to avoid forcing deprecated symbols references
+        return create(Config.config(rootConfig), metricsConfig, metersProviders);
+    }
+
+    /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} from which the caller can obtain
      * {@link io.helidon.metrics.api.MeterRegistry} and {@link io.helidon.metrics.api.Meter.Builder} instances.
      * <p>
@@ -34,14 +54,27 @@ public interface MetricsFactoryProvider {
      * new factory will only need to know the metrics configuration so that object is provided as a convenience. The root
      * config node allows the factory to use information from elsewhere in the config tree if needed.
      * </p>
+     * <p>
+     * API Note: the default method implementation is provided for backward compatibility
+     * and <b>will be removed in the next major version</b>
      *
      * @param rootConfig      root {@link Config} node
      * @param metricsConfig   {@link io.helidon.metrics.api.MetricsConfig} settings
      * @param metersProviders group of {@link io.helidon.metrics.spi.MetersProvider} which can furnish
      *                        {@link io.helidon.metrics.api.Meter.Builder} instances
      * @return new metrics factory
+     * @since 4.4.0
      */
-    MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);
+    @SuppressWarnings("removal")
+    default MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
+        // default to preserve backward compatibility
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this, MetricsFactoryProvider.class, "create",
+                io.helidon.common.config.Config.class,
+                MetricsConfig.class,
+                Collection.class);
+        return create((io.helidon.common.config.Config) rootConfig, metricsConfig, metersProviders);
+    }
 
     /**
      * Closes all metrics factories created by this provider.

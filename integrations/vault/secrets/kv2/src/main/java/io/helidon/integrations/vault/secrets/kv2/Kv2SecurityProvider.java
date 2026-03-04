@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.security.spi.ProviderConfig;
 import io.helidon.security.spi.SecretsProvider;
@@ -77,6 +77,21 @@ public class Kv2SecurityProvider implements SecretsProvider<Kv2SecurityProvider.
          *
          * @param config config to use
          * @return a new secret configuration
+         * @deprecated use {@link #create(io.helidon.config.Config)} instead
+         */
+        @SuppressWarnings("removal")
+        @Deprecated(since = "4.4.0", forRemoval = true)
+        public static Kv2SecretConfig create(io.helidon.common.config.Config config) {
+            return builder()
+                    .config(config)
+                    .build();
+        }
+
+        /**
+         * Create a new secrets configuration from config.
+         *
+         * @param config config to use
+         * @return a new secret configuration
          */
         public static Kv2SecretConfig create(Config config) {
             return builder()
@@ -110,6 +125,19 @@ public class Kv2SecurityProvider implements SecretsProvider<Kv2SecurityProvider.
                 Objects.requireNonNull(key, "Secret value key must be defined. Config property \"key\"");
 
                 return new Kv2SecretConfig(this);
+            }
+
+            /**
+             * Update this builder from configuration.
+             *
+             * @param config config to use
+             * @return updated builder
+             * @deprecated use {@link #config(io.helidon.config.Config)} instead
+             */
+            @SuppressWarnings("removal")
+            @Deprecated(since = "4.4.0", forRemoval = true)
+            public Builder config(io.helidon.common.config.Config config) {
+                return config(Config.config(config));
             }
 
             /**

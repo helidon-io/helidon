@@ -28,8 +28,8 @@ import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -86,10 +86,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
         this.metersProviders = metersProviders;
     }
 
-    static MicrometerMetricsFactory create(io.helidon.common.config.Config rootConfig,
-                                           MetricsConfig metricsConfig,
-                                           Collection<MetersProvider> metersProviders) {
-
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
         return new MicrometerMetricsFactory(metricsConfig, metersProviders);
     }
 
