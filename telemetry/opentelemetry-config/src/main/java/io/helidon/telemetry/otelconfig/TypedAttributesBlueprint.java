@@ -33,7 +33,7 @@ interface TypedAttributesBlueprint {
      *
      * @return string attributes
      */
-    @Option.Configured("attributes.strings")
+    @Option.Configured("strings")
     @Option.Singular
     Map<String, String> stringAttributes();
 
@@ -42,7 +42,7 @@ interface TypedAttributesBlueprint {
      *
      * @return boolean attributes
      */
-    @Option.Configured("attributes.booleans")
+    @Option.Configured("booleans")
     @Option.Singular
     Map<String, Boolean> booleanAttributes();
 
@@ -51,7 +51,7 @@ interface TypedAttributesBlueprint {
      *
      * @return long attributes
      */
-    @Option.Configured("attributes.longs")
+    @Option.Configured("longs")
     @Option.Singular
     Map<String, Long> longAttributes();
 
@@ -60,7 +60,7 @@ interface TypedAttributesBlueprint {
      *
      * @return double attributes
      */
-    @Option.Configured("attributes.doubles")
+    @Option.Configured("doubles")
     @Option.Singular
     Map<String, Double> doubleAttributes();
 

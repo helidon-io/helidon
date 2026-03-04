@@ -18,6 +18,7 @@ package io.helidon.telemetry.otelconfig;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -66,8 +67,8 @@ interface OpenTelemetryMetricsConfigBlueprint {
      *
      * @return typed attribute settings
      */
-    @Option.Configured(merge = true)
-    AttributesBuilder attributes();
+    @Option.Configured
+    Optional<AttributesBuilder> attributes();
 
     /**
      * Metric view information, configurable using {@link io.helidon.telemetry.otelconfig.ViewRegistrationConfig}.

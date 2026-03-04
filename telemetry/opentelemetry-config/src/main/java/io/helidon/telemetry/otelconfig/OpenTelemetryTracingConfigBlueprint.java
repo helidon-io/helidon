@@ -76,8 +76,8 @@ interface OpenTelemetryTracingConfigBlueprint {
      *
      * @return typed attribute settings
      */
-    @Option.Configured(merge = true)
-    AttributesBuilder attributes();
+    @Option.Configured
+    Optional<AttributesBuilder> attributes();
 
     /**
      * Span exporters.

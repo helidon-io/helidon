@@ -108,8 +108,8 @@ interface OpenTelemetryLoggingConfigBlueprint {
      *
      * @return typed attribute settings
      */
-    @Option.Configured(merge = true)
-    AttributesBuilder attributes();
+    @Option.Configured
+    Optional<AttributesBuilder> attributes();
 
     /**
      * Information shared with the parent prototype.
