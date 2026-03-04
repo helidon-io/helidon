@@ -111,7 +111,7 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 Helidon stores all meters in a _meter registry_. Typically, applications use the global meter registry which is the registry where Helidon stores built-in meters.
 Application code refers to the global registry using `Metrics.globalRegistry()`.
 
-
+[[usage-publishing]]
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
 
 
