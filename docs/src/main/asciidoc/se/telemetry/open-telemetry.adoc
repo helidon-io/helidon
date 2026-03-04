@@ -355,7 +355,7 @@ An OpenTelemetry span processor is one of the following types:
 
 In the table below only the `type` and `exporters` setting apply to `simple` span processors; the other settings are for batch processors.
 
-include::{rootdir}/config/io_helidon_telemetry_otelconfig_BatchSpanProcessorConfig.adoc[tag=config,leveloffset=+3]
+include::{rootdir}/config/io_helidon_telemetry_otelconfig_BatchProcessorConfig.adoc[tag=config,leveloffset=+3]
 
 [[span-exporters-config]]
 ==== Configuring Span Exporters
