@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 
 /**
- * OpenTelemetry tracer settings.
+ * OpenTelemetry tracer settings. Optional values left unspecified in the configuration defer to the OpenTelemetry defaults.
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)

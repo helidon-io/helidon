@@ -29,7 +29,8 @@ import io.opentelemetry.sdk.logs.LogRecordProcessor;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 
 /**
- * Configuration settings for OpenTelemetry logging.
+ * Configuration settings for OpenTelemetry logging. Optional values left unspecified in the configuration defer to the
+ * OpenTelemetry defaults.
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryLoggingConfigSupport.BuilderDecorator.class)
@@ -37,15 +38,15 @@ import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 interface OpenTelemetryLoggingConfigBlueprint extends TypedAttributes {
 
     /**
-     * Whether logging support is enabled.
+     * Whether the OpenTelemetry logger should be enabled. (Passed to OpenTelemetry.)
      *
-     * @return true if OTel logging support is on, false otherwise
+     * @return true if the OpenTelemetry logger should be enabled, false otherwise
      */
     @Option.Configured
     Optional<Boolean> enabled();
 
     /**
-     * Minimum severity level of log records to process. Defaults to {@code Severity.UNDEFINED_SEVERITY_NUMBER}.
+     * Minimum severity level of log records to process.
      *
      * @return minimum severity level
      */
@@ -53,7 +54,7 @@ interface OpenTelemetryLoggingConfigBlueprint extends TypedAttributes {
     Optional<Severity> minimumSeverity();
 
     /**
-     * Whether to include <em>only</em> log records from traces which are sampled. Defaults to {@code false}.
+     * Whether to include <em>only</em> log records from traces which are sampled. Defaults to the OpenTelemetry default.
      *
      * @return whether to restrict exported log records to only those from sampled traces
      */

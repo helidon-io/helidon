@@ -56,7 +56,7 @@ interface OpenTelemetryMetricsConfigBlueprint extends TypedAttributes {
      *
      * @return metric exporters
      */
-    @Option.Configured("exporters")
+    @Option.Configured
     @Option.Singular
     Map<String, MetricExporter> exporters();
 

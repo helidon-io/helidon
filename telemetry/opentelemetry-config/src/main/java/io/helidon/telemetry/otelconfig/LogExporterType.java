@@ -34,12 +34,13 @@ public enum LogExporterType {
     OTLP, // There are different defaults for the different subtypes of OTLP exporters.
 
     /**
-     * Console {@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
+     * Console {@link io.opentelemetry.exporter.logging.SystemOutLogRecordExporter}.
      */
     CONSOLE,
 
     /**
-     * JSON logging to console {@link io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter}.
+     * Writes logs to a Logger in OTLP JSON
+     * format {@link io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter}.
      */
     LOGGING_OTLP;
 
