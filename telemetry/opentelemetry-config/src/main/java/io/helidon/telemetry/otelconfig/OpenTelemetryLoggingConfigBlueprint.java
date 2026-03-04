@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.logs.Severity;
 import io.opentelemetry.sdk.logs.LogLimits;
 import io.opentelemetry.sdk.logs.LogRecordProcessor;
@@ -35,7 +36,7 @@ import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryLoggingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryLoggingConfigSupport.CustomMethods.class)
-interface OpenTelemetryLoggingConfigBlueprint extends TypedAttributes {
+interface OpenTelemetryLoggingConfigBlueprint {
 
     /**
      * Whether the OpenTelemetry logger should be enabled. (Passed to OpenTelemetry.)
@@ -102,6 +103,13 @@ interface OpenTelemetryLoggingConfigBlueprint extends TypedAttributes {
     @Option.Singular
     Map<String, LogRecordExporter> exporterConfigs();
 
+    /**
+     * Name/value pairs passed to OpenTelemetry.
+     *
+     * @return typed attribute settings
+     */
+    @Option.Configured(merge = true)
+    AttributesBuilder attributes();
 
     /**
      * Information shared with the parent prototype.

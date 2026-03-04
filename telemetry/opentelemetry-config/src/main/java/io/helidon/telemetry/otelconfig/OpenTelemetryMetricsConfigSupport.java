@@ -23,6 +23,7 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.exporter.logging.LoggingMetricExporter;
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
 import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
@@ -171,13 +172,6 @@ class OpenTelemetryMetricsConfigSupport {
 
             var sdkMetricsProviderBuilder = SdkMeterProvider.builder();
 
-            var attributesBuilder = Attributes.builder();
-            TypedAttributes.apply(attributesBuilder,
-                                  target.stringAttributes(),
-                                  target.longAttributes(),
-                                  target.doubleAttributes(),
-                                  target.booleanAttributes());
-
             /*
             Defer creation of the readers until here (rather than using a config factory method) because we need the
             exporters to be fully populated first, before preparing the readers, and we cannot be sure that would be
@@ -197,7 +191,8 @@ class OpenTelemetryMetricsConfigSupport {
                     .forEach(viewRegistration -> sdkMetricsProviderBuilder.registerView(viewRegistration.instrumentSelector,
                                                                                         viewRegistration.view));
 
-            target.metricsBuilderInfo(new MetricsBuilderInfo(sdkMetricsProviderBuilder, attributesBuilder));
+            target.metricsBuilderInfo(new MetricsBuilderInfo(sdkMetricsProviderBuilder,
+                                                             target.attributes().orElseGet(Attributes::builder)));
         }
     }
 
@@ -266,6 +261,11 @@ class OpenTelemetryMetricsConfigSupport {
             viewBuilder.setAggregation(viewRegistrationConfig.aggregation());
 
             return new ViewRegistration(viewRegistrationConfig.instrumentSelector(), viewBuilder.build());
+        }
+
+        @Prototype.ConfigFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(Config config) {
+            return OtelConfigSupport.createAttributesBuilder(config);
         }
     }
 

@@ -21,9 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.logs.LogRecordProcessor;
@@ -180,6 +183,18 @@ class OtelConfigSupport {
         config.timeout().ifPresent(builder::setExporterTimeout);
 
         return builder.build();
+    }
+
+    static AttributesBuilder createAttributesBuilder(Config config) {
+        var typedAttributes = TypedAttributes.create(config);
+        var builder = Attributes.builder();
+
+        typedAttributes.booleanAttributes().forEach(builder::put);
+        typedAttributes.doubleAttributes().forEach(builder::put);
+        typedAttributes.stringAttributes().forEach(builder::put);
+        typedAttributes.longAttributes().forEach(builder::put);
+
+        return builder;
     }
 
 }

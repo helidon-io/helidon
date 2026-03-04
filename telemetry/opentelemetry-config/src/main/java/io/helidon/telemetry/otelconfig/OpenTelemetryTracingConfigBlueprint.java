@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -34,7 +35,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracingConfigSupport.CustomMethods.class)
-interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
+interface OpenTelemetryTracingConfigBlueprint {
 
     /**
      * Tracing sampler.
@@ -69,6 +70,14 @@ interface OpenTelemetryTracingConfigBlueprint extends TypedAttributes {
      */
     @Option.Singular
     List<SpanProcessor> processors();
+
+    /**
+     * Name/value pairs passed to OpenTelemetry.
+     *
+     * @return typed attribute settings
+     */
+    @Option.Configured(merge = true)
+    AttributesBuilder attributes();
 
     /**
      * Span exporters.

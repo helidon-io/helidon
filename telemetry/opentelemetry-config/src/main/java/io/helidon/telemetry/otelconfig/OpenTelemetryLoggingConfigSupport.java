@@ -21,10 +21,12 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.logs.LogLimits;
 import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 import io.opentelemetry.sdk.logs.internal.LoggerConfig;
+import io.opentelemetry.sdk.resources.Resource;
 
 class OpenTelemetryLoggingConfigSupport {
 
@@ -41,13 +43,6 @@ class OpenTelemetryLoggingConfigSupport {
             // Associate each processor with either its named exporter(s) or all exporters.
 
             Errors.Collector errorsCollector = Errors.collector();
-
-            var attributesBuilder = Attributes.builder();
-            TypedAttributes.apply(attributesBuilder,
-                                  target.stringAttributes(),
-                                  target.longAttributes(),
-                                  target.doubleAttributes(),
-                                  target.booleanAttributes());
 
             var loggerConfigBuilder = LoggerConfig.builder();
             target.enabled().ifPresent(loggerConfigBuilder::setEnabled);
@@ -70,7 +65,8 @@ class OpenTelemetryLoggingConfigSupport {
             // Exporters are not set on the SDK builder directly; they are used to prepare the processors (above).
 
             errorsCollector.collect().log(LOGGER);
-            target.loggingBuilderInfo(new LoggingBuilderInfo(sdkLoggerProviderBuilder, attributesBuilder));
+            target.loggingBuilderInfo(new LoggingBuilderInfo(sdkLoggerProviderBuilder,
+                                                             target.attributes().orElseGet(Attributes::builder)));
 
         }
     }
@@ -99,6 +95,11 @@ class OpenTelemetryLoggingConfigSupport {
             logLimitsConfig.maxNumberOfAttributes().ifPresent(builder::setMaxNumberOfAttributes);
 
             return builder.build();
+        }
+
+        @Prototype.ConfigFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(Config config) {
+            return OtelConfigSupport.createAttributesBuilder(config);
         }
     }
 }
