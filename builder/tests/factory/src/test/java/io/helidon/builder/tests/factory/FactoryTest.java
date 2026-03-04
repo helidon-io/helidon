@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.tests.third.party.factory;
+package io.helidon.builder.tests.factory;
 
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@Prototype.Blueprint
-@Prototype.Configured
-interface UsingConfigBlueprint {
-    @Option.Configured
-    String stringOption();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    System.Logger logger();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    @Option.Singular
-    List<System.Logger> baseLoggers();
+public class FactoryTest {
+    @Test
+    public void testEnsureGeneratedMethods() {
+        // this is a compilation test mostly - the method with consumer must be added
+        var using = Using.builder()
+                .addD(builder -> builder.name("name"))
+                .build();
+        assertThat(using.ds(), hasItems(D.builder().name("name").build()));
+    }
 }

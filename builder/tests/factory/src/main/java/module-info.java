@@ -14,25 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.tests.third.party.factory;
+module io.helidon.builder.tests.factory {
+    requires io.helidon.builder.api;
+    requires io.helidon.common;
 
-import java.util.List;
-
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-
-@Prototype.Blueprint
-@Prototype.Configured
-interface UsingConfigBlueprint {
-    @Option.Configured
-    String stringOption();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    System.Logger logger();
-
-    @Option.Configured
-    @Option.PrototypedBy("LoggerConfig")
-    @Option.Singular
-    List<System.Logger> baseLoggers();
+    exports io.helidon.builder.tests.factory;
 }
