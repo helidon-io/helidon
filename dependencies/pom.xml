@@ -141,7 +141,7 @@
         <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.oci>3.78.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
-        <version.lib.ojdbc>${version.lib.ojdbc.family}.26.0.0.0</version.lib.ojdbc>
+        <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade of okio for dependency convergence: make the OTel otlp exporter use the release langchain4j uses -->
         <version.lib.okio>3.6.0</version.lib.okio>
