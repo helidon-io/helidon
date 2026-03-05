@@ -22,7 +22,6 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/attributes.adoc[]
-// Decide on present or past tense: present; parallelize titles ; confirm nesting structure
 
 Helidon 4.x introduces significant changes to APIs and runtime behavior. Use this guide to help you understand the changes required to transition a Helidon SE 3.x application to Helidon 4.x.
 
