@@ -60,9 +60,9 @@ class TestLoggingConfig {
 
         var otelConfig = OpenTelemetryConfig.create(config.get("telemetry"));
 
-        assertThat("Logging in OTel config", otelConfig.loggingConfig(), OptionalMatcher.optionalPresent());
+        assertThat("Logging in OTel config", otelConfig.logging(), OptionalMatcher.optionalPresent());
 
-        OpenTelemetryLoggingConfig loggingConfig = otelConfig.loggingConfig().get();
+        OpenTelemetryLoggingConfig loggingConfig = otelConfig.logging().get();
 
         assertThat("Logging processors", loggingConfig.processors(), hasSize(2));
 

@@ -78,36 +78,33 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
      *
      * @return tracing settings
      */
-    @Option.Access("")
     @Option.Configured("signals.tracing")
     /*
     Used only internally from the decorator.
      */
-    Optional<OpenTelemetryTracingConfig> tracingConfig();
+    Optional<OpenTelemetryTracingConfig> tracing();
 
     /**
      * OpenTelemetry metrics settings.
      *
      * @return metrics settings
      */
-    @Option.Access("")
     @Option.Configured("signals.metrics")
     /*
     Used only internally from the decorator.
      */
-    Optional<OpenTelemetryMetricsConfig> metricsConfig();
+    Optional<OpenTelemetryMetricsConfig> metrics();
 
     /**
      * OpenTelemetry logging settings.
      *
      * @return logging settings
      */
-    @Option.Access("")
     @Option.Configured("signals.logging")
     /*
     Used only internally from the decorator.
      */
-    Optional<OpenTelemetryLoggingConfig> loggingConfig();
+    Optional<OpenTelemetryLoggingConfig> logging();
 
     /**
      * The {@link io.opentelemetry.api.OpenTelemetry} instance to use for telemetry.
