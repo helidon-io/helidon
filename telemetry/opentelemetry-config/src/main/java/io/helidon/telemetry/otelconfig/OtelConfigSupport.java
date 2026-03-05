@@ -24,7 +24,14 @@ import java.util.Set;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.sdk.logs.LogRecordProcessor;
+import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
+import io.opentelemetry.sdk.logs.export.LogRecordExporter;
+import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor;
 import io.opentelemetry.sdk.trace.SpanLimits;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
@@ -42,11 +49,11 @@ class OtelConfigSupport {
      * specified) all exporters.
      *
      * @param spanProcessorConfig span processor config
-     * @param spanExporters available span exporters
-     * @param errorsCollector error note collector to report exporter names specified to ber used but not present
+     * @param spanExporters       available span exporters
+     * @param errorsCollector     error note collector to report exporter names specified to ber used but not present
      * @return new {@code Processor}
      */
-    static SpanProcessor createSpanProcessor(SpanProcessorConfig spanProcessorConfig,
+    static SpanProcessor createSpanProcessor(ProcessorConfig spanProcessorConfig,
                                              Map<String, SpanExporter> spanExporters,
                                              Errors.Collector errorsCollector) {
 
@@ -71,13 +78,12 @@ class OtelConfigSupport {
                         : SpanExporter.composite(exportersToUse);
 
         return switch (spanProcessorConfig.type()) {
-            case SpanProcessorType.SIMPLE -> SimpleSpanProcessor.create(exporterToUse);
-            case SpanProcessorType.BATCH ->
-                    createBatchSpanProcessor((BatchSpanProcessorConfig) spanProcessorConfig, exporterToUse);
+            case ProcessorType.SIMPLE -> SimpleSpanProcessor.create(exporterToUse);
+            case ProcessorType.BATCH -> createBatchSpanProcessor((BatchProcessorConfig) spanProcessorConfig, exporterToUse);
         };
     }
 
-    static BatchSpanProcessor createBatchSpanProcessor(BatchSpanProcessorConfig config, SpanExporter spanExporter) {
+    static BatchSpanProcessor createBatchSpanProcessor(BatchProcessorConfig config, SpanExporter spanExporter) {
 
         var builder = BatchSpanProcessor.builder(spanExporter);
 
@@ -105,8 +111,8 @@ class OtelConfigSupport {
                                                       .map(Number::doubleValue)
                                                       .orElseThrow()));
             case SamplerType.TRACEIDRATIO -> Sampler.traceIdRatioBased(samplerConfig.param()
-                                                                                 .map(Number::doubleValue)
-                                                                                 .orElseThrow());
+                                                                               .map(Number::doubleValue)
+                                                                               .orElseThrow());
         };
     }
 
@@ -126,13 +132,68 @@ class OtelConfigSupport {
         return builder.build();
     }
 
-    static SpanProcessorConfig createProcessorConfig(Config config) {
+    static ProcessorConfig createProcessorConfig(Config config) {
 
         // Apply the default.
-        return switch (SpanProcessorConfig.create(config).type()) {
-            case SpanProcessorType.BATCH -> BatchSpanProcessorConfig.create(config);
-            case SpanProcessorType.SIMPLE -> SpanProcessorConfig.create(config);
+        return switch (ProcessorConfig.create(config).type()) {
+            case ProcessorType.BATCH -> BatchProcessorConfig.create(config);
+            case ProcessorType.SIMPLE -> ProcessorConfig.create(config);
         };
+    }
+
+    static LogRecordProcessor createLogRecordProcessor(ProcessorConfig processorConfig,
+                                                       Map<String, LogRecordExporter> logRecordExporters,
+                                                       Errors.Collector errorsCollector) {
+        List<LogRecordExporter> exportersToUse = (
+                processorConfig.exporters().isEmpty()
+                        ? logRecordExporters.values().stream()
+                        : processorConfig.exporters().stream()
+                                .filter(logRecordExporters::containsKey)
+                                .map(logRecordExporters::get))
+                .toList();
+
+        Set<String> missingExporterNames = new HashSet<>(processorConfig.exporters());
+        missingExporterNames.removeAll(logRecordExporters.keySet());
+        if (!missingExporterNames.isEmpty()) {
+            errorsCollector.fatal(processorConfig, "Missing exporter(s): " + missingExporterNames);
+        }
+
+        LogRecordExporter exporterToUse = exportersToUse.isEmpty()
+                ? OtlpHttpLogRecordExporter.getDefault() // The factory method below requires an exporter so use OTel's default.
+                : (exportersToUse.size() == 1)
+                        ? exportersToUse.getFirst()
+                        : LogRecordExporter.composite(exportersToUse);
+
+        return switch (processorConfig.type()) {
+            case ProcessorType.SIMPLE -> SimpleLogRecordProcessor.create(exporterToUse);
+            case ProcessorType.BATCH ->
+                    createBatchLogRecordProcessor((BatchProcessorConfig) processorConfig, exporterToUse);
+        };
+    }
+
+    static BatchLogRecordProcessor createBatchLogRecordProcessor(BatchProcessorConfig config,
+                                                                 LogRecordExporter logRecordExporter) {
+
+        var builder = BatchLogRecordProcessor.builder(logRecordExporter);
+
+        config.maxExportBatchSize().ifPresent(builder::setMaxExportBatchSize);
+        config.maxQueueSize().ifPresent(builder::setMaxQueueSize);
+        config.scheduleDelay().ifPresent(builder::setScheduleDelay);
+        config.timeout().ifPresent(builder::setExporterTimeout);
+
+        return builder.build();
+    }
+
+    static AttributesBuilder createAttributesBuilder(Config config) {
+        var typedAttributes = TypedAttributes.create(config);
+        var builder = Attributes.builder();
+
+        typedAttributes.booleanAttributes().forEach(builder::put);
+        typedAttributes.doubleAttributes().forEach(builder::put);
+        typedAttributes.stringAttributes().forEach(builder::put);
+        typedAttributes.longAttributes().forEach(builder::put);
+
+        return builder;
     }
 
 }

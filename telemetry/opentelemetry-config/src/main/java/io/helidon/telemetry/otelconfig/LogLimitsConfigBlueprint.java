@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.telemetry.otelconfig;
+
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+/**
+ * Settings for log limits.
+ */
 @Prototype.Configured
 @Prototype.Blueprint
-interface SpanExporterConfigBlueprint {
+interface LogLimitsConfigBlueprint {
 
     /**
-     * Span exporter type.
+     * Maximum number of attributes allowed.
      *
-     * @return exporter type
+     * @return maximum number of attributes
      */
     @Option.Configured
-    @Option.Default("DEFAULT")
-    SpanExporterType type();
+    Optional<Integer> maxNumberOfAttributes();
 
+    /**
+     * Maximum length of an attribute value.
+     *
+     * @return max length of an attribute value
+     */
+    @Option.Configured
+    Optional<Integer> maxAttributeValueLength();
 }

@@ -16,20 +16,24 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
+/**
+ * Processor type. Batch is default for production.
+ */
+public enum ProcessorType {
 
-@Prototype.Configured
-@Prototype.Blueprint
-interface SpanExporterConfigBlueprint {
+    /*
+    Enum values are chosen to be the upper-case version of the OTel setting values so Helidon's built-in enum config mapping
+    works.
+     */
 
     /**
-     * Span exporter type.
-     *
-     * @return exporter type
+     * Simple Processor.
      */
-    @Option.Configured
-    @Option.Default("DEFAULT")
-    SpanExporterType type();
+    SIMPLE,
+    /**
+     * Batch Processor.
+     */
+    BATCH;
 
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,23 @@
 
 package io.helidon.telemetry.otelconfig;
 
-import io.helidon.builder.api.Option;
+import java.util.Optional;
+
 import io.helidon.builder.api.Prototype;
 
+import io.opentelemetry.sdk.common.export.ProxyOptions;
+
+/**
+ * Settings common to HTTP-based OTLP exporters.
+ */
 @Prototype.Configured
 @Prototype.Blueprint
-interface SpanExporterConfigBlueprint {
+interface OtlpHttpExporterConfigBlueprint extends OtlpExporterConfigBlueprint {
 
     /**
-     * Span exporter type.
+     * Proxy options.
      *
-     * @return exporter type
+     * @return proxy options
      */
-    @Option.Configured
-    @Option.Default("DEFAULT")
-    SpanExporterType type();
-
+    Optional<ProxyOptions> proxyOptions();
 }

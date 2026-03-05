@@ -43,8 +43,8 @@ final class OpenTelemetryConfigSupport {
                     TextMapPropagator.composite(target.propagators())));
         }
 
-        if (target.tracingConfig().isPresent()) {
-            var tracingConfig = target.tracingConfig().get();
+        if (target.tracing().isPresent()) {
+            var tracingConfig = target.tracing().get();
             var tracingBuilderInfo = tracingConfig.tracingBuilderInfo();
             var sdkTracerProviderBuilder = tracingBuilderInfo.sdkTracerProviderBuilder();
 
@@ -57,8 +57,8 @@ final class OpenTelemetryConfigSupport {
             openTelemetrySdkBuilder.setTracerProvider(sdkTracerProviderBuilder.build());
         }
 
-        if (target.metricsConfig().isPresent()) {
-            var metricsConfig = target.metricsConfig().get();
+        if (target.metrics().isPresent()) {
+            var metricsConfig = target.metrics().get();
             var metricsBuilderInfo = metricsConfig.metricsBuilderInfo();
             var sdkMeterProviderBuilder = metricsBuilderInfo.sdkMeterProviderBuilder();
 
@@ -69,6 +69,20 @@ final class OpenTelemetryConfigSupport {
             sdkMeterProviderBuilder.setResource(resource);
 
             openTelemetrySdkBuilder.setMeterProvider(sdkMeterProviderBuilder.build());
+        }
+
+        if (target.logging().isPresent()) {
+            var loggingConfig = target.logging().get();
+            var loggingBuilderInfo = loggingConfig.loggingBuilderInfo();
+            var sdkLoggerProviderBuilder = loggingBuilderInfo.sdkLoggerProviderBuilder();
+
+            var attributesBuilder = loggingConfig.loggingBuilderInfo().attributesBuilder();
+            attributesBuilder.put(ServiceAttributes.SERVICE_NAME, target.service().orElseThrow());
+
+            var resource = Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
+            sdkLoggerProviderBuilder.setResource(resource);
+
+            openTelemetrySdkBuilder.setLoggerProvider(sdkLoggerProviderBuilder.build());
         }
 
         var sdk = openTelemetrySdkBuilder.build();
