@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.webserver.sse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -29,9 +31,12 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.sse.SseEvent;
@@ -64,109 +69,140 @@ class DataWriterSseSink implements SseSink {
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ServerResponse response;
-    private final ConnectionContext ctx;
     private final MediaContext mediaContext;
     private final Runnable closeRunnable;
+    private final ConnectionContext ctx;
+    private final OutputStream outputStream;
 
     DataWriterSseSink(SinkProviderContext context) {
         this.response = context.serverResponse();
         this.ctx = context.connectionContext();
         this.mediaContext = ctx.listenerContext().mediaContext();
         this.closeRunnable = context.closeRunnable();
-        writeStatusAndHeaders();
+
+        // output stream to write headers
+        OutputStream headersOutputStream = new DataWriterOutputStream(ctx.dataWriter());
+
+        // check for content encoding
+        ContentEncoder encoder = null;
+        ServerRequestHeaders requestHeaders = context.serverRequest().headers();
+        ContentEncodingContext encodingContext = ctx.listenerContext().contentEncodingContext();
+        if (encodingContext.contentEncodingEnabled() && requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
+            encoder = encodingContext.encoder(requestHeaders);
+            encoder.headers(response.headers());        // adds Content-Encoding
+        }
+
+        // write status and headers before encoding stream
+        writeStatusAndHeaders(headersOutputStream);
+
+        // set the final output stream
+        this.outputStream = (encoder != null) ? encoder.apply(headersOutputStream) : headersOutputStream;
     }
 
     @Override
     public DataWriterSseSink emit(SseEvent sseEvent) {
-        BufferData bufferData = BufferData.growing(512);
-
-        Optional<String> comment = sseEvent.comment();
-        if (comment.isPresent()) {
-            bufferData.write(SSE_COMMENT);
-            bufferData.write(comment.get().getBytes(StandardCharsets.UTF_8));
-            bufferData.write(SSE_NL);
-        }
-        Optional<String> id = sseEvent.id();
-        if (id.isPresent()) {
-            bufferData.write(SSE_ID);
-            bufferData.write(id.get().getBytes(StandardCharsets.UTF_8));
-            bufferData.write(SSE_NL);
-        }
-        Optional<String> name = sseEvent.name();
-        if (name.isPresent()) {
-            bufferData.write(SSE_EVENT);
-            bufferData.write(name.get().getBytes(StandardCharsets.UTF_8));
-            bufferData.write(SSE_NL);
-        }
-        Object data = sseEvent.data();
-        if (data != null) {
-            MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
-
-            // is it multi-line string data?
-            if (data instanceof String stringData && stringData.contains("\n")) {
-                String[] lines = stringData.split("\n");
-                for (String line : lines) {
-                    bufferData.write(SSE_DATA);
-                    byte[] bytes = serializeData(line, mediaType);
-                    bufferData.write(bytes);
-                    bufferData.write(SSE_NL);
-                }
-            } else {
-                bufferData.write(SSE_DATA);
-                byte[] bytes = serializeData(data, mediaType);
-                bufferData.write(bytes);
-                bufferData.write(SSE_NL);
+        try {
+            Optional<String> comment = sseEvent.comment();
+            if (comment.isPresent()) {
+                outputStream.write(SSE_COMMENT);
+                outputStream.write(comment.get().getBytes(StandardCharsets.UTF_8));
+                outputStream.write(SSE_NL);
             }
-        }
-        bufferData.write(SSE_NL);
+            Optional<String> id = sseEvent.id();
+            if (id.isPresent()) {
+                outputStream.write(SSE_ID);
+                outputStream.write(id.get().getBytes(StandardCharsets.UTF_8));
+                outputStream.write(SSE_NL);
+            }
+            Optional<String> name = sseEvent.name();
+            if (name.isPresent()) {
+                outputStream.write(SSE_EVENT);
+                outputStream.write(name.get().getBytes(StandardCharsets.UTF_8));
+                outputStream.write(SSE_NL);
+            }
+            Object data = sseEvent.data();
+            if (data != null) {
+                MediaType mediaType = sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN);
 
-        // write event to the network
-        ctx.dataWriter().writeNow(bufferData);
-        return this;
+                // is it multi-line string data?
+                if (data instanceof String stringData && stringData.contains("\n")) {
+                    String[] lines = stringData.split("\n");
+                    for (String line : lines) {
+                        outputStream.write(SSE_DATA);
+                        byte[] bytes = serializeData(line, mediaType);
+                        outputStream.write(bytes);
+                        outputStream.write(SSE_NL);
+                    }
+                } else {
+                    outputStream.write(SSE_DATA);
+                    byte[] bytes = serializeData(data, mediaType);
+                    outputStream.write(bytes);
+                    outputStream.write(SSE_NL);
+                }
+            }
+            outputStream.write(SSE_NL);
+
+            // write event to the output
+            outputStream.flush();
+
+            return this;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public void close() {
         closeRunnable.run();
-        ctx.serverSocket().close();
+        try {
+            outputStream.close();
+            ctx.serverSocket().close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    void writeStatusAndHeaders() {
-        ServerResponseHeaders headers = response.headers();
+    void writeStatusAndHeaders(OutputStream headersOutputStream) {
+        try {
+            ServerResponseHeaders headers = response.headers();
 
-        // verify response has no status or content type
-        HttpMediaType ct = headers.contentType().orElse(null);
-        if (response.status().code() != Status.OK_200.code()
-                || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
-            throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
+            // verify response has no status or content type
+            HttpMediaType ct = headers.contentType().orElse(null);
+            if (response.status().code() != Status.OK_200.code()
+                    || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
+                throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
+            }
+
+            // start writing status line
+            headersOutputStream.write(OK_200);
+
+            // serialize a date header if not included
+            if (!headers.contains(HeaderNames.DATE)) {
+                headersOutputStream.write(DATE);
+                byte[] dateBytes = DateTime.http1Bytes();
+                headersOutputStream.write(dateBytes);
+            }
+
+            // set up and write headers
+            if (ct == null) {
+                headers.add(CONTENT_TYPE_EVENT_STREAM);
+            }
+            headers.set(CACHE_NO_CACHE_ONLY);
+            BufferData buffer = BufferData.growing(512);
+            for (Header header : headers) {
+                header.writeHttp1Header(buffer);
+            }
+            headersOutputStream.write(buffer.readBytes());
+
+            // complete heading
+            headersOutputStream.write('\r');        // "\r\n" - empty line after headers
+            headersOutputStream.write('\n');
+
+            // write response heading to the output
+            headersOutputStream.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-
-        // start writing status line
-        BufferData buffer = BufferData.growing(256);
-        buffer.write(OK_200);
-
-        // serialize a date header if not included
-        if (!headers.contains(HeaderNames.DATE)) {
-            buffer.write(DATE);
-            byte[] dateBytes = DateTime.http1Bytes();
-            buffer.write(dateBytes);
-        }
-
-        // set up and write headers
-        if (ct == null) {
-            headers.add(CONTENT_TYPE_EVENT_STREAM);
-        }
-        headers.set(CACHE_NO_CACHE_ONLY);
-        for (Header header : headers) {
-            header.writeHttp1Header(buffer);
-        }
-
-        // complete heading
-        buffer.write('\r');        // "\r\n" - empty line after headers
-        buffer.write('\n');
-
-        // write response heading to the network
-        ctx.dataWriter().writeNow(buffer);
     }
 
     private byte[] serializeData(Object object, MediaType mediaType) {
