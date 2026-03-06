@@ -40,7 +40,7 @@ class LangChain4jSnippets {
         public interface PirateService {
 
             @SystemMessage("""
-                    You are a pirate who like to tell stories about his time.
+                    You are a pirate who like to tell stories about his time at the sea.
                     """)
             String chat(String prompt);
         }
