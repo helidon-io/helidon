@@ -81,11 +81,11 @@ langchain4j:
   embedding-stores:
     # Built-in in-memory embedding store
     foo-bar-inmemory-embedding-store:
-      provider: langchain4j
+      provider: lc4j-in-memory
 
   content-retrievers:
     foo-bar-content-retriever:
-      provider: langchain4j
+      provider: lc4j-content-retriever
       # Type is optional 'embedding-store-content-retriever' is the default
       type: embedding-store-content-retriever
       max-results: 10
@@ -93,6 +93,8 @@ langchain4j:
       embedding-model: foo-bar-embedding-model
       embedding-store: foo-bar-inmemory-embedding-store
 ----
+
+image::lc4j/content-retriever-relationships.svg[Content retriever relationships with Lc4j components, align="center"]
 
 Full list of configuration properties:
 
