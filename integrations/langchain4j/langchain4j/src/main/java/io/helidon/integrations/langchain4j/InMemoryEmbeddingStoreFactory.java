@@ -25,7 +25,6 @@ import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 
 /**
@@ -34,7 +33,7 @@ import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 @Service.Singleton
 @Service.Named(Service.Named.WILDCARD_NAME)
 @Weight(98.0D)
-class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<EmbeddingStore<TextSegment>> {
+class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<InMemoryEmbeddingStore<TextSegment>> {
 
     private final List<String> embeddingStoreNames;
     private final Config config;
@@ -53,18 +52,23 @@ class InMemoryEmbeddingStoreFactory implements Service.ServicesFactory<Embedding
      * @return content retriever instance
      * @throws java.lang.IllegalStateException in case the configuration is not enabled
      */
-    static Optional<EmbeddingStore<TextSegment>> create(String name, Config c) {
+    static Optional<InMemoryEmbeddingStore<TextSegment>> create(String name, Config c) {
         var mergedConfig = HelidonConstants.create(c, HelidonConstants.ConfigCategory.EMBEDDING_STORE, name);
         var config = InMemoryEmbeddingStoreConfig.create(mergedConfig);
 
         if (!config.enabled()) {
             return Optional.empty();
         }
+
+        if (config.fromFile().isPresent()) {
+            return Optional.of(InMemoryEmbeddingStore.fromFile(config.fromFile().get()));
+        }
+
         return Optional.of(new InMemoryEmbeddingStore<>());
     }
 
     @Override
-    public List<Service.QualifiedInstance<EmbeddingStore<TextSegment>>> services() {
+    public List<Service.QualifiedInstance<InMemoryEmbeddingStore<TextSegment>>> services() {
         return embeddingStoreNames.stream()
                 .map(name -> create(name, config)
                         .map(model ->

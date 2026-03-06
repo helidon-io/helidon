@@ -16,6 +16,9 @@
 
 package io.helidon.integrations.langchain4j;
 
+import java.nio.file.Path;
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
@@ -36,4 +39,15 @@ interface InMemoryEmbeddingStoreConfigBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enabled();
+
+    /**
+     * Path to a JSON file used to initialize the in-memory embedding store via {@code InMemoryEmbeddingStore.fromFile}.
+     * <p>
+     * If configured, the implementation may read the file and import previously persisted embeddings/segments into
+     * the store during startup/initialization; if not configured, the store starts empty.
+     *
+     * @return path to the JSON file, if configured
+     */
+    @Option.Configured
+    Optional<Path> fromFile();
 }
