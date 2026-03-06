@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - Copyright (c) 2026 Oracle and/or its affiliates.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+
+<svg
+   width="1071.5"
+   height="733"
+   viewBox="40 110 1071.5 733"
+   version="1.1"
+   id="svg28"
+   sodipodi:docname="agentic-workflow.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview28"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.0821429"
+     inkscape:cx="535.74614"
+     inkscape:cy="222.36707"
+     inkscape:window-width="3440"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg28" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .title { font: 700 20px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #1f2a44; }
+      .subtitle { font: 600 16px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #1f2a44; }
+      .label { font: 600 13px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #2b2b2b; }
+      .small { font: 500 11px &quot;Segoe UI&quot;, Arial, sans-serif; fill: #2b2b2b; }
+      .code { font: 12px &quot;Fira Mono&quot;, &quot;Courier New&quot;, monospace; fill: #1b1f23; }
+      .code-key { fill: #0969da; }
+      .code-string { fill: #0a7a45; }
+      .code-comment { fill: #6a737d; font-style: italic; }
+      .box { fill: #f8f9fb; stroke: #c8d1e0; stroke-width: 1.5; rx: 12; }
+      .note { fill: #fff4db; stroke: #f1c232; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #4b6cb7; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #4b6cb7; stroke-width: 2; fill: none; stroke-dasharray: 6 6; marker-end: url(#arrowhead); }
+    </style>
+    <marker
+       id="arrowhead"
+       markerWidth="8"
+       markerHeight="8"
+       refX="7"
+       refY="4"
+       orient="auto">
+      <polygon
+         points="8,4 0,8 0,0 "
+         fill="#4b6cb7"
+         id="polygon1" />
+    </marker>
+  </defs>
+  <rect
+     x="40.897915"
+     y="110.89792"
+     width="1069.7042"
+     height="731.20416"
+     class="box"
+     id="rect1" />
+  <text
+     x="60.75"
+     y="140.75"
+     class="label"
+     id="text1"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Agentic Workflow example: @SequenceAgent + @ConditionalAgent</text>
+  <rect
+     x="70.75"
+     y="175.75"
+     width="220"
+     height="70"
+     class="note"
+     id="rect2" />
+  <text
+     x="85.75"
+     y="202.75"
+     class="label"
+     id="text2"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Input</text>
+  <text
+     x="85.75"
+     y="224.75"
+     class="small"
+     id="text3"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">User request: &quot;How do I ...?&quot;</text>
+  <rect
+     x="454.2887"
+     y="166.60321"
+     width="541.15442"
+     height="99.955208"
+     class="box"
+     id="rect3" />
+  <text
+     x="474.2663"
+     y="195.58081"
+     class="label"
+     id="text4"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Root agent</text>
+  <text
+     x="474.2663"
+     y="218.58081"
+     class="code"
+     id="text5"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan4">@Ai.Agent</tspan>(<tspan
+   class="code-string"
+   id="tspan5">&quot;helidon-expert&quot;</tspan>)</text>
+  <text
+     x="474.2663"
+     y="240.58081"
+     class="code"
+     id="text6"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan6">@SequenceAgent</tspan>(subAgents = {FlavorClassifierAgent, FlavorRouterAgent},</text>
+  <text
+     x="494.2663"
+     y="260.58081"
+     class="code"
+     id="text7"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">outputKey = <tspan
+   class="code-string"
+   id="tspan7">&quot;response&quot;</tspan>)</text>
+  <rect
+     x="100.75"
+     y="320.75"
+     width="320"
+     height="145"
+     class="box"
+     id="rect7" />
+  <text
+     x="120.75"
+     y="349.75"
+     class="label"
+     id="text8"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Step 1: FlavorClassifierAgent</text>
+  <text
+     x="120.75"
+     y="373.75"
+     class="code"
+     id="text9"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan8">@Ai.Agent</tspan>(<tspan
+   class="code-string"
+   id="tspan9">&quot;flavor-classifier&quot;</tspan>)</text>
+  <text
+     x="120.75"
+     y="395.75"
+     class="code"
+     id="text11"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan10">@Agent</tspan>(outputKey = <tspan
+   class="code-string"
+   id="tspan11">&quot;flavor&quot;</tspan>)</text>
+  <text
+     x="120.75"
+     y="417.75"
+     class="small"
+     id="text12"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Classifies request (SE / MP)</text>
+  <rect
+     x="585.38965"
+     y="320.94077"
+     width="504.81183"
+     height="144.61848"
+     class="box"
+     id="rect12" />
+  <text
+     x="605.19891"
+     y="349.75"
+     class="label"
+     id="text13"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Step 2: FlavorRouterAgent</text>
+  <text
+     x="605.19891"
+     y="373.75"
+     class="code"
+     id="text14"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan13">@Ai.Agent</tspan>(<tspan
+   class="code-string"
+   id="tspan14">&quot;flavor-router&quot;</tspan>)</text>
+  <text
+     x="605.19891"
+     y="395.75"
+     class="code"
+     id="text15"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace"><tspan
+   class="code-key"
+   id="tspan15">@ConditionalAgent</tspan>(subAgents = {HelidonSeExpert, HelidonMpExpert},</text>
+  <text
+     x="625.19891"
+     y="417.75"
+     class="code"
+     id="text16"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:'Fira Mono', 'Courier New', monospace">outputKey = <tspan
+   class="code-string"
+   id="tspan16">&quot;response&quot;</tspan>)</text>
+  <rect
+     x="645.44983"
+     y="621.19598"
+     width="270"
+     height="75"
+     class="box"
+     id="rect16" />
+  <text
+     x="665.44983"
+     y="648.19598"
+     class="label"
+     id="text17"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">HelidonSeExpert</text>
+  <text
+     x="665.44983"
+     y="670.19598"
+     class="small"
+     id="text18"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Activated when flavor == SE</text>
+  <rect
+     x="356.71964"
+     y="621.94598"
+     width="270"
+     height="75"
+     class="box"
+     id="rect18" />
+  <text
+     x="376.71964"
+     y="648.94598"
+     class="label"
+     id="text19"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">HelidonMpExpert</text>
+  <text
+     x="376.71964"
+     y="670.94598"
+     class="small"
+     id="text20"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Activated when flavor == MP</text>
+  <rect
+     x="507.35254"
+     y="742.24231"
+     width="270"
+     height="70"
+     class="note"
+     id="rect20" />
+  <text
+     x="527.35254"
+     y="769.24231"
+     class="label"
+     id="text21"
+     style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:13px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Result</text>
+  <text
+     x="527.35254"
+     y="791.24231"
+     class="small"
+     id="text22"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">Selected expert response (outputKey: response)</text>
+  <path
+     class="arrow"
+     d="M 290.75,210.75 H 454.2887"
+     id="path22"
+     sodipodi:nodetypes="cc" />
+  <text
+     x="355.09943"
+     y="200.75"
+     class="small"
+     id="text23"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">request</text>
+  <path
+     class="arrow"
+     d="m 500.75,265.75 v 35 h -240 v 20"
+     id="path23" />
+  <text
+     x="390.75"
+     y="293.75"
+     class="small"
+     id="text24"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">sequence step 1</text>
+  <path
+     class="arrow"
+     d="m 420.75,393.25 164.63965,2e-5"
+     id="path24"
+     sodipodi:nodetypes="cc" />
+  <text
+     x="425.21753"
+     y="376.73047"
+     class="small"
+     id="text25"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">step 2 (uses outputKey &quot;flavor&quot;)</text>
+  <path
+     class="arrow-dashed"
+     d="M 640.0565,466.5 470.94043,621.19598"
+     id="path25"
+     sodipodi:nodetypes="cc" />
+  <text
+     x="494.25366"
+     y="531.27783"
+     class="small"
+     id="text26"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">flavor == SE</text>
+  <path
+     class="arrow-dashed"
+     d="M 640.0565,466.5 780.44983,621.19598"
+     id="path26"
+     sodipodi:nodetypes="cc" />
+  <text
+     x="707.9455"
+     y="531.27783"
+     class="small"
+     id="text27"
+     style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11px;line-height:normal;font-family:'Segoe UI', Arial, sans-serif">flavor == MP</text>
+  <path
+     class="arrow"
+     d="m 780.44983,696.19598 c -138.09729,46.04633 0,0 -138.09729,46.04633"
+     id="path27"
+     sodipodi:nodetypes="cc" />
+  <path
+     class="arrow"
+     d="m 526.71965,696.94598 c 115.63289,45.29633 0,0 115.63289,45.29633"
+     id="path28"
+     sodipodi:nodetypes="cc" />
+</svg>
