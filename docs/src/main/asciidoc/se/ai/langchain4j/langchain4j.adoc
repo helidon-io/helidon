@@ -120,9 +120,9 @@ image::lc4j/model-provider-config.svg[Provider and model configuration merge, al
 Once you have configured named model, like `cheaper-model` on the example above, you can reference it from
 AiServices and Agents via `@Ai.ChatModel` or `@Ai.StreamingChatModel` annotations by its name:
 
-[source,java]
+[source,java,subs="-specialchars"]
 ----
-@Ai.Service
+<div v-pre>@Ai.Service
 @Ai.ChatModel("cheaper-model") //<1>
 public interface ChefAiService {
     @SystemMessage("You are an expert in the food preparation.")
@@ -130,7 +130,7 @@ public interface ChefAiService {
             Provide a short step-by-step instructions how to prepare: {{foodName}}
             """)
     String cookingInstructions(@V("foodName") String foodName);
-}
+}</div>
 ----
 <1> Custom name selected in the model configuration above
 
@@ -139,9 +139,9 @@ Providers available out of the box:
 [cols="7,8,11"]
 |===
 | Provider                                         | Provider Key                      | Description
-| LangChain4j content retriever                    | `lc4j-content-retriever`          | Built-in content-retriever
-| LangChain4j in-memory embedding store            | `lc4j-in-memory`                  | Built-in in-memory store
-| LangChain4j in-process models                    | `lc4j-in-process`                 | Local https://docs.langchain4j.dev/integrations/embedding-models/in-process[in-process models]
+| xref:lc4j-providers.adoc#Lc4jContentRetrieverProvider[*LangChain4j content retriever*]                    | `lc4j-content-retriever`          | Built-in content-retriever for RAG
+| xref:lc4j-providers.adoc#Lc4jInMemoryEmbeddingStoreProvider[*LangChain4j in-memory embedding store*]      | `lc4j-in-memory`                  | Built-in in-memory embedding store
+| xref:lc4j-in-process.adoc[*LangChain4j in-process models*] | `lc4j-in-process`                 | Local https://docs.langchain4j.dev/integrations/embedding-models/in-process[in-process models]
 | xref:open-ai.adoc[*Open AI*]                     | `open-ai`                         | OpenAI and OpenAI compatible models providers
 | xref:oci-genai.adoc[*OCI GenAI*]                 | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models
 | xref:jlama.adoc[*Jlama*]                         | `jlama`                           | Local inference with selected https://github.com/tjake/Jlama[Jlama] models
@@ -152,7 +152,6 @@ Providers available out of the box:
 | xref:coherence.adoc[*Coherence Embedding Store*] | `coherence`                       | Coherence as embedding and chat memory store
 | xref:mock.adoc[*Mock*]                           | `helidon-mock`                    | Mockable chat model for deterministic testing
 |===
-
 
 NOTE: Missing your favorite AI vendor already supported by LangChain4j? You can generate your own Helidon integration with our
 xref:codegen-provider.adoc[*LangChain4j Model Provider Generator*] or use the supplier factory!
@@ -185,9 +184,10 @@ NOTE: Supplier factories can be *standalone* or *static inner* classes.
 
 To use such a manually created model, reference it by name.
 
-[source,java]
+// <div v-pre> escapes {{foodName}} in vue, '-specialchars' preserves div
+[source,java,subs="-specialchars"]
 ----
-@Ai.Service
+<div v-pre>@Ai.Service
 @Ai.ChatModel("custom-chat-model") //<1>
 public interface ChefAiService {
     @SystemMessage("You are an expert in the food preparation.")
@@ -196,6 +196,7 @@ public interface ChefAiService {
             """)
     String cookingInstructions(@V("foodName") String foodName);
 }
+</div>
 ----
 <1> Custom name selected in the supplier factory above
 
@@ -410,4 +411,3 @@ Helidon provides `MetricsChatModelListener` which generates metrics that follow 
 * https://docs.langchain4j.dev/[LangChain4j documentation]
 * Components Reference
 ** xref:codegen-provider.adoc[Code generated Lc4j Provider]
-
