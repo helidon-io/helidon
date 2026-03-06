@@ -195,15 +195,15 @@ curl -X GET http://localhost:8080/observe/health/ready
                 <inputs>
                     <enum id="provider"
                           name="Select a Tracing Provider"
-                          default="jaeger"
+                          default="opentelemetry"
                           optional="true">
-                        <option value="jaeger"
-                                name="Jaeger"
-                                description="Send traces to a Jaeger backend">
+                        <option value="opentelemetry"
+                                name="OpenTelemetry"
+                                description="Send traces to an OpenTelemetry backend (OTLP)">
                             <output>
                                 <model>
                                     <list key="readme-sections">
-                                        <value file="/common/files/README.jaeger.md"/>
+                                        <value file="/common/files/README.opentelemetry.md"/>
                                     </list>
                                 </model>
                             </output>
